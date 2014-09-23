@@ -123,7 +123,8 @@ public class Engine {
 
 		// TODO: add help info.
 		if (!cl.hasOption("job")) {
-			System.err.printf(String.format("Usage: %s/bin/datax.py job.xml .",
+			System.err.printf(String.format(
+					"Usage: %s/bin/datax.py job.json .",
 					CoreConstant.DATAX_HOME));
 			System.exit(Status.FAIL.value());
 		}
