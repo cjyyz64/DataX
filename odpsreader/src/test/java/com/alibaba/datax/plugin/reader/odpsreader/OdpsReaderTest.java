@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.reader.odpsreader;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,14 +54,27 @@ public class OdpsReaderTest extends BasicReaderPluginTest {
 		}
 	}
 
+	// TODO 添加自动化数据校验
+	@TestLogger(log = "测试test0.json. 分区配置重复，需要报错")
+	@Test
+	public void test0() {
+		List<Record> noteRecordForTest = new ArrayList<Record>();
+
+		super.doReaderTest("test0.json", 1, noteRecordForTest);
+
+		for (Record record : noteRecordForTest) {
+			System.out.println(record);
+		}
+	}
+
 	@Override
 	protected OutputStream buildDataOutput(String optionalOutputName) {
-//		File f = new File(optionalOutputName + "-output.txt");
-//		try {
-//			return new FileOutputStream(f);
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		}
+		// File f = new File(optionalOutputName + "-output.txt");
+		// try {
+		// return new FileOutputStream(f);
+		// } catch (FileNotFoundException e) {
+		// e.printStackTrace();
+		// }
 		return null;
 	}
 

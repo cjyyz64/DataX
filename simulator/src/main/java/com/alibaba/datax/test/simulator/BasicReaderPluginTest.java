@@ -3,6 +3,7 @@ package com.alibaba.datax.test.simulator;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
@@ -108,6 +109,13 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 		Void v = null;
 		String outputNameTemplate = "%s-%s-%d-%s";
 		String tempOutputName = null;
+
+		List<List<Record>> allTempRecordForTest = new ArrayList<List<Record>>();
+
+		for (int i = 0, len = numThread; i < len; i++) {
+			allTempRecordForTest.add(new ArrayList<Record>());
+		}
+
 		for (int i = 0, len = jobs.size(); i < len; i++) {
 			tempOutputName = String.format(outputNameTemplate, Thread
 					.currentThread().getClass().getResource("/").getPath()
@@ -119,7 +127,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 
 			ReaderRunner readerRunner = getReaderRunner(jobs.get(i),
 					(int) slaveId, output == null ? null : new PrintWriter(
-							output), noteRecordForTest);
+							output), allTempRecordForTest.get(i));
 			completionService.submit(readerRunner, v);
 		}
 
@@ -132,6 +140,9 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 			}
 		}
 
+		for (List<Record> tempList : allTempRecordForTest) {
+			noteRecordForTest.addAll(tempList);
+		}
 		readerMaster.post();
 		readerMaster.destroy();
 
