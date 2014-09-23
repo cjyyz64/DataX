@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.core.container.AbstractContainer;
+import com.alibaba.datax.core.container.SlaveContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.Status;
 
@@ -10,11 +10,11 @@ import com.alibaba.datax.core.util.Status;
  */
 public class SlaveContainerRunner implements Runnable {
 
-	private AbstractContainer slave;
+	private SlaveContainer slave;
 
 	private Status status;
 
-	public SlaveContainerRunner(AbstractContainer slave) {
+	public SlaveContainerRunner(SlaveContainer slave) {
 		this.slave = slave;
 		this.status = Status.SUCCESS;
 	}
@@ -22,7 +22,9 @@ public class SlaveContainerRunner implements Runnable {
 	@Override
 	public void run() {
 		try {
-			this.slave.start();
+            Thread.currentThread().setName(
+                    String.format("slave-%d", this.slave.getSlaveId()));
+            this.slave.start();
 			this.status = Status.SUCCESS;
 		} catch (Throwable e) {
 			this.status = Status.FAIL;
@@ -31,7 +33,7 @@ public class SlaveContainerRunner implements Runnable {
 		}
 	}
 
-	public AbstractContainer getSlave() {
+	public SlaveContainer getSlave() {
 		return slave;
 	}
 

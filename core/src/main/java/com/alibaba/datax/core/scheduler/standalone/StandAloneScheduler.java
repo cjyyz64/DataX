@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.alibaba.datax.core.container.SlaveContainer;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.AbstractContainer;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
@@ -99,9 +99,9 @@ public class StandAloneScheduler implements Scheduler {
 
 	private SlaveContainerRunner newSlaveContainerRunner(
 			Configuration configuration) {
-		AbstractContainer slaveContainer = ClassUtil.instantiate(configuration
+        SlaveContainer slaveContainer = ClassUtil.instantiate(configuration
 				.getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
-				AbstractContainer.class, configuration);
+				SlaveContainer.class, configuration);
 
 		return new SlaveContainerRunner(slaveContainer);
 	}
