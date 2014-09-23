@@ -2,7 +2,6 @@ package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
-import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.metric.Metric;
 
 /**

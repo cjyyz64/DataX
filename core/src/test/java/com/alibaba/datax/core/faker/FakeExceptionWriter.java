@@ -1,12 +1,11 @@
 package com.alibaba.datax.core.faker;
 
-import com.alibaba.datax.common.element.Record;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by jingxing on 14-9-12.

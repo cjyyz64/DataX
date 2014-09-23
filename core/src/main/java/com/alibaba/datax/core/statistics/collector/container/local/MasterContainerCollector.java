@@ -4,6 +4,7 @@ import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCo
 import com.alibaba.datax.core.statistics.metric.MetricJsonify;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.CoreConstant;
+
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.fluent.Request;
@@ -18,6 +19,7 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(MasterContainerCollector.class);
 
+	@SuppressWarnings("unused")
 	private long masterId;
 
 	private String masterReportAddress;
