@@ -1,0 +1,27 @@
+{
+    "job": {
+        "setting": {},
+        "content": [
+            {
+                "reader": {
+                    "type": "fakereader",
+                    "parameter": {}
+                },
+                "writer": {
+                    "type": "fakewriter",
+                    "parameter": {}
+                }
+            },
+            {
+                "reader": {
+                    "type": "fakereader",
+                    "parameter": {}
+                },
+                "writer": {
+                    "type": "fakewriter",
+                    "parameter": {}
+                }
+            }
+        ]
+    }
+}

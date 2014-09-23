@@ -1,0 +1,39 @@
+{
+    "job": {
+        "setting": {
+            "speed": 10
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "txtfilereader",
+                    "parameter": {
+                        "path": "/home/usr/source",
+                        "column": [
+                            {
+                                "type": "int",
+                                "index": 1
+                            },
+                            {
+                                "type": "String",
+                                "const": "alibaba"
+                            }
+                        ],
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+                        "lineDelimiter": "\n"
+                    }
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/usr/dest/",
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+                        "lineDelimiter": "\n"
+                    }
+                }
+            }
+        ]
+    }
+}

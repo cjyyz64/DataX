@@ -1,0 +1,37 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "streamreader",
+                    "parameter": {
+                        "column": [
+                            {
+                                "type": "int",
+                                "name": "age"
+                            },
+                            {
+                                "type": "string",
+                                "name": "hello-DataX"
+                            },
+                            {
+                                "type": "double",
+                                "name": "pai"
+                            },
+                            {
+                                "type": "byte",
+                                "name": "image"
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "fakewriter",
+                    "parameter": {
+                        "k1": "v1"
+                    }
+                }
+            }
+        ]
+    }
+}

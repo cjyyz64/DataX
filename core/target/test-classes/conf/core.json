@@ -1,0 +1,50 @@
+{
+    "entry": {
+        "jvm": "-Xms1G -Xmx1G",
+        "environment": {
+            "PATH": "/home/admin",
+            "DATAX_HOME": "/home/admin"
+        }
+    },
+    "core": {
+        "channel": {
+            "class": "com.alibaba.datax.core.MemoryChannel",
+            "speed": 1000000,
+            "capacity": 128,
+            "queue": {
+                "class": "com.alibaba.datax.core.transport.channel.memory.DoubleQueue",
+                "timeOut": 30
+            }
+        },
+        "container": {
+            "master": {
+                "class": "com.alibaba.datax.core.container.MasterContainer"
+            },
+            "slave": {
+                "class": "com.alibaba.datax.core.container.SlaveContainer"
+            },
+            "model": "master",
+        	"id": 1
+        },
+        "statistics": {
+            "collector": {
+                "framework": {
+                    "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterCollector",
+                                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveCollector"
+                },
+                "plugin": {
+                    "maxDirtyNumber": 1000
+                }
+            }
+        },
+        "scheduler": {
+            "class": "com.alibaba.datax.core.scheduler.LocalScheduler"
+        },
+        "plugin": {
+            "exchanger": {
+                "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
+                "bufferSize": 32
+            }
+        }
+    }
+}
