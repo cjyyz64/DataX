@@ -105,7 +105,7 @@ public class SlaveContainer extends AbstractContainer {
 			}
 
 			LOG.info(String.format(
-					"SlaveId=[%03d] start [%d] channels for [%d] slices.",
+					"SlaveId=[%d] start [%d] channels for [%d] slices.",
 					this.slaveId, channelNumber, jobsConfigs.size()));
 
 			long lastReportTimeStamp = 0;
