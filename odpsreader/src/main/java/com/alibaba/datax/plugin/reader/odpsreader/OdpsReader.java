@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.reader.odpsreader;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -111,6 +113,15 @@ public class OdpsReader extends Reader {
 					List<String> parsedPartitions = expandUserConfigedPartition(
 							allPartitions, userConfigedPartitions);
 
+					if (null == parsedPartitions || parsedPartitions.isEmpty()) {
+						throw new DataXException(
+								OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+								String.format(
+										"Can not find matched partition. all partitions:[\n%s\n], you configed partition:[\n%s\n].",
+										StringUtils.join(allPartitions, "\n"),
+										StringUtils.join(
+												userConfigedPartitions, "\n")));
+					}
 					originalConfig.set(Key.PARTITION, parsedPartitions);
 				}
 			} else {
@@ -139,7 +150,7 @@ public class OdpsReader extends Reader {
 					.formatPartitions(userConfigedPartitions);
 
 			if (userConfigedPartitions.indexOf("*") > 0) {
-				// 说明含有至少两个分区配置为*，不允许
+				// *要么分区只配置一个*，表示全表拖取；不允许在其他位置单独配置一个*
 				throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
 						"* means read the whole table. you can not read one table[%s] >1 times.");
 			}
@@ -153,6 +164,19 @@ public class OdpsReader extends Reader {
 						allStandardPartitions,
 						allStandardUserConfigedPartitions);
 
+				List<String> tempCheckPartitions = new ArrayList<String>(
+						retPartitions);
+				Collections.sort(tempCheckPartitions);
+				for (int i = 0, len = tempCheckPartitions.size(); i < len - 1; i++) {
+					if (tempCheckPartitions.get(i).equalsIgnoreCase(
+							tempCheckPartitions.get(i + 1))) {
+						throw new DataXException(
+								OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+								String.format(
+										"Partition:[%s] choose more than one time.",
+										tempCheckPartitions.get(i)));
+					}
+				}
 				return retPartitions;
 			}
 		}
