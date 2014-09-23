@@ -33,14 +33,16 @@ public class StandAloneSchedulerTest extends TestInitializer {
 			configuration
 					.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL,
 							11);
-            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, 0);
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, 0);
 			configuration.set(CoreConstant.DATAX_JOB_CONTENT, internal);
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS,
 					StandAloneTestSlaveContainer.class.getName());
-            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, i);
-            configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVECLASS,
-                    SlaveContainerCollector.class.getName());
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, i);
+			configuration
+					.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVECLASS,
+							SlaveContainerCollector.class.getName());
 			jobList.add(configuration);
+
 		}
 
 		StandAloneScheduler scheduler = new StandAloneScheduler();

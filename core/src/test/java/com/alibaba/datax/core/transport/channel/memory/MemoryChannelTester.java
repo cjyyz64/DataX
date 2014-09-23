@@ -3,21 +3,27 @@ package com.alibaba.datax.core.transport.channel.memory;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
-
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.alibaba.datax.common.element.NumberColumn;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.ConfigurationProducer;
 import com.alibaba.datax.core.scaffold.RecordProducer;
+import com.alibaba.datax.core.scaffold.base.TestInitializer;
+import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
+import com.alibaba.datax.core.util.CoreConstant;
 
 public class MemoryChannelTester extends TestInitializer {
+
+	@Before
+	public void before() {
+		MetricManager.registerMetric(0, 0);
+	}
 
 	// 测试SEQ
 	@Test
@@ -26,8 +32,8 @@ public class MemoryChannelTester extends TestInitializer {
 
 		System.out.println(ConfigurationProducer.produce().toJSON());
 
-        Configuration configuration = ConfigurationProducer.produce();
-        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+		Configuration configuration = ConfigurationProducer.produce();
+		configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
 		Channel channel = new MemoryChannel(configuration);
 
 		Record record = null;
@@ -61,13 +67,15 @@ public class MemoryChannelTester extends TestInitializer {
 
 	@Test
 	public void test_Block() throws InterruptedException {
-        Configuration configuration = ConfigurationProducer.produce();
-        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+		Configuration configuration = ConfigurationProducer.produce();
+		configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
 		Channel channel = new MemoryChannel(configuration);
 
 		int tryCount = 100;
 		int capacity = ConfigurationProducer.produce().getInt(
 				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY);
+
+		System.out.println("capacity: " + capacity);
 
 		Thread thread = new Thread(new Consumer(channel, tryCount * capacity));
 		thread.start();
@@ -82,6 +90,46 @@ public class MemoryChannelTester extends TestInitializer {
 		for (int i = 0; i < tryCount; i++) {
 			channel.pushAll(records);
 		}
+
+		Thread.sleep(5000L);
+
+		List<Record> termindateRecords = new ArrayList<Record>();
+		termindateRecords.add(TerminateRecord.get());
+		channel.pushAll(termindateRecords);
+
+		Thread.sleep(1000L);
+
+		thread.join();
+
+	}
+
+	@Test
+	public void test_BlockAndSeq() throws InterruptedException {
+		Configuration configuration = ConfigurationProducer.produce();
+		configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+		Channel channel = new MemoryChannel(configuration);
+
+		int tryCount = 100;
+		int capacity = ConfigurationProducer.produce().getInt(
+				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY);
+
+		System.out.println("capacity: " + capacity);
+
+		Thread thread = new Thread(new Consumer(channel, tryCount * capacity));
+		thread.start();
+
+		List<Record> records = new ArrayList<Record>(capacity);
+		for (int i = 0; i < capacity; i++) {
+			Record record = RecordProducer.produceRecord();
+			record.setColumn(0, new NumberColumn(i));
+			records.add(record);
+		}
+
+		for (int i = 0; i < tryCount; i++) {
+			channel.pushAll(records);
+		}
+
+		Thread.sleep(5000L);
 
 		channel.push(TerminateRecord.get());
 

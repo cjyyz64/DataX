@@ -2,6 +2,7 @@ package com.alibaba.datax.core.transport.channel.memory;
 
 import java.util.Collection;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -22,9 +23,9 @@ public class MemoryChannel extends Channel {
 
 	private ArrayBlockingQueue<Record> queue = null;
 
-    private ReentrantLock lock;
+	private ReentrantLock lock;
 
-    private Condition notInsufficient, notEmpty;
+	private Condition notInsufficient, notEmpty;
 
 	public MemoryChannel(final Configuration configuration) {
 		super(configuration);
@@ -32,9 +33,9 @@ public class MemoryChannel extends Channel {
 		this.bufferSize = configuration
 				.getInt(CoreConstant.DATAX_CORE_TRANSPORT_EXCHANGER_BUFFERSIZE);
 
-        lock = new ReentrantLock();
-        notInsufficient = lock.newCondition();
-        notEmpty = lock.newCondition();
+		lock = new ReentrantLock();
+		notInsufficient = lock.newCondition();
+		notEmpty = lock.newCondition();
 	}
 
 	@Override
@@ -58,20 +59,20 @@ public class MemoryChannel extends Channel {
 
 	@Override
 	protected void doPushAll(Collection<Record> rs) {
-        try {
-            lock.lockInterruptibly();
-		    while (rs.size() > this.queue.remainingCapacity()) {
-                notInsufficient.await();
-            }
+		try {
+			lock.lockInterruptibly();
+			while (rs.size() > this.queue.remainingCapacity()) {
+				notInsufficient.await(200L, TimeUnit.MILLISECONDS);
+			}
 
-		    this.queue.addAll(rs);
-            notEmpty.signalAll();
-        } catch (InterruptedException e) {
-            throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
-        } finally {
-            lock.unlock();
-        }
-    }
+			this.queue.addAll(rs);
+			notEmpty.signalAll();
+		} catch (InterruptedException e) {
+			throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
+		} finally {
+			lock.unlock();
+		}
+	}
 
 	@Override
 	protected Record doPull() {
@@ -87,19 +88,19 @@ public class MemoryChannel extends Channel {
 	protected void doPullAll(Collection<Record> rs) {
 		assert rs != null;
 		rs.clear();
-        try {
-            lock.lockInterruptibly();
-		    while (this.queue.drainTo(rs, bufferSize) <= 0) {
-                notEmpty.await();
-            }
+		try {
+			lock.lockInterruptibly();
+			while (this.queue.drainTo(rs, bufferSize) <= 0) {
+				notEmpty.await(200L, TimeUnit.MILLISECONDS);
+			}
 
-            notInsufficient.signalAll();
-        } catch (InterruptedException e) {
-            throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
-        } finally {
-            lock.unlock();
-        }
-    }
+			notInsufficient.signalAll();
+		} catch (InterruptedException e) {
+			throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
+		} finally {
+			lock.unlock();
+		}
+	}
 
 	@Override
 	public int size() {
