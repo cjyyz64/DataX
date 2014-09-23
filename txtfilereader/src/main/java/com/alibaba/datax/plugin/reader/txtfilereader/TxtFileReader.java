@@ -10,6 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
@@ -30,22 +31,23 @@ public class TxtFileReader extends Reader {
 		private static final Logger LOG = LoggerFactory
 				.getLogger(TxtFileReader.Master.class);
 
-		private Configuration readerSliceConfig = null;
+		private Configuration readerOriginConfig = null;
 		private String path = null;
 		private List<String> sourceFiles;
+		private Pattern pattern;
 
 		@Override
 		public void init() {
 			LOG.info("init()");
-			this.readerSliceConfig = this.getPluginJobConf();
+			this.readerOriginConfig = this.getPluginJobConf();
 			this.validate();
 		}
 
 		// TODO validate column
 		private void validate() {
-			path = this.readerSliceConfig.getNecessaryValue(Key.PATH,
+			path = this.readerOriginConfig.getNecessaryValue(Key.PATH,
 					TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION);
-			String charset = this.readerSliceConfig.getString(Key.CHARSET,
+			String charset = this.readerOriginConfig.getString(Key.CHARSET,
 					Constants.DEFAULT_CHARSET);
 			try {
 				Charsets.toCharset(charset);
@@ -65,6 +67,10 @@ public class TxtFileReader extends Reader {
 		public void prepare() {
 			LOG.info("prepare()");
 			this.sourceFiles = this.buildSourceTargets();
+
+			String regexString = this.path.replace(".*", "*")
+					.replace("*", ".*");
+			pattern = Pattern.compile(regexString);
 		}
 
 		@Override
@@ -79,15 +85,17 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public List<Configuration> split(int adviceNumber) {
+			LOG.info("begin split()");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
-					sourceFiles, adviceNumber);
+					this.sourceFiles, adviceNumber);
 			for (List<String> files : splitedSourceFiles) {
-				Configuration splitedConfig = this.readerSliceConfig.clone();
+				Configuration splitedConfig = this.readerOriginConfig.clone();
 				splitedConfig.set(Constants.SOURCE_FILES, files);
 				readerSplitConfigs.add(splitedConfig);
 			}
+			LOG.info("end split()");
 			return readerSplitConfigs;
 		}
 
@@ -106,17 +114,21 @@ public class TxtFileReader extends Reader {
 			return this.buildSourceTargets(parentDirectory);
 		}
 
-		private List<String> buildSourceTargets(String sourcePath) {
+		private List<String> buildSourceTargets(String parentDirectory) {
 			List<String> sourceFiles = new ArrayList<String>();
-			buildSourceTargets(sourceFiles, sourcePath);
+			buildSourceTargets(sourceFiles, parentDirectory);
 			return sourceFiles;
 		}
 
-		private void buildSourceTargets(List<String> result, String sourcePath) {
-			File directory = new File(sourcePath);
+		private void buildSourceTargets(List<String> result,
+				String parentDirectory) {
+			File directory = new File(parentDirectory);
 			if (!directory.isDirectory()) {
 				if (this.isTargetFile(directory.getAbsolutePath())) {
-					result.add(sourcePath);
+					result.add(parentDirectory);
+					LOG.info(String.format(
+							"add file [%s] as a candidate to read",
+							parentDirectory));
 				}
 			} else {
 				for (String subFileNames : directory.list()) {
@@ -127,7 +139,7 @@ public class TxtFileReader extends Reader {
 
 		// TODO 正则过滤
 		private boolean isTargetFile(String absoluteFilePath) {
-			return true;
+			return this.pattern.matcher(absoluteFilePath).matches();
 		}
 
 		private <T> List<List<T>> splitSourceFiles(final List<T> sourceList,
@@ -193,10 +205,13 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void startRead(RecordSender recordSender) {
+			LOG.info("start startRead()");
 			for (String fileName : this.sourceFiles) {
+				LOG.info(String.format("reading file [%s]", fileName));
 				this.readerFromFile(fileName, recordSender);
 				recordSender.flush();
 			}
+			LOG.info("end startRead()");
 		}
 
 		// TODO 优化异常相关
