@@ -128,6 +128,7 @@ public class Engine {
 					CoreConstant.DATAX_HOME));
 			System.exit(Status.FAIL.value());
 		}
+		
 		String jobPath = cl.getOptionValue("job");
 		Configuration configuration = ConfigParser.parse(jobPath);
 
