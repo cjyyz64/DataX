@@ -1,6 +1,0 @@
-# mysql -h10.232.128.67 -P3306 -uroot -proot
-
-ip:			10.232.128.67
-port:		3306
-username:	root
-password:	root
