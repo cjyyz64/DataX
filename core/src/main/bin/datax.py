@@ -160,13 +160,14 @@ def add_core_config_for_http(job_json_content, job_path):
     m = re.match(r"^http[s]?://\S+/(\d+)/config$", job_path)
     if m:
         job_id = m.group(1)
+        job_json_content = json.loads(job_json_content)
         job_json_content["core"] = {"container":{"master":{"id":job_id}}}
         job_json_content["core"]["statistics"] = {"collector":{"container":{"masterReportAddress":job_path.replace("config", "status")}}}
     else:
         print >>sys.stderr, "can not get job id from url[%s]"%(job_path)
         return None
 
-    return job_json_content
+    return json.dumps(job_json_content, sort_keys=True, indent=4)
 
 # 根据job配置字符串判断其类型
 def get_string_type(job_content):

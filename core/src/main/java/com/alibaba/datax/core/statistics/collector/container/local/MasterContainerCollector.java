@@ -3,6 +3,7 @@ package com.alibaba.datax.core.statistics.collector.container.local;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.metric.MetricJsonify;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
+import com.alibaba.datax.core.statistics.metric.MetricStringify;
 import com.alibaba.datax.core.util.CoreConstant;
 
 import org.apache.commons.lang.Validate;
@@ -42,7 +43,7 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 	@Override
 	public void report(Metric nowMetric) {
 		String message = MetricJsonify.getSnapshot(nowMetric);
-		LOG.debug(message);
+        LOG.info(MetricStringify.getSnapshot(nowMetric));
 
 		try {
 			// TODO 这里可能需要组装masterId到address里面来

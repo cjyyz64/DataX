@@ -23,7 +23,7 @@ class XmlConvertor:
         self.reader_dict = {}
         self.writer_dict = {}
 
-    # 返回json对象
+    # 返回json字符串
     def parse_to_json(self):
         if not self.parse_reader():
             print >>sys.stderr, "parse reader error"
@@ -36,6 +36,7 @@ class XmlConvertor:
         job_json = {}
         job_json["setting"] = self.job_setting
         job_json["content"] = [{"reader": self.reader_dict, "writer": self.writer_dict}]
+
         return json.dumps({"job": job_json}, sort_keys=True, indent=4)
     
     def parse_reader(self):

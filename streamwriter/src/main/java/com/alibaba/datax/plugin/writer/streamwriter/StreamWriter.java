@@ -25,12 +25,12 @@ public class StreamWriter extends Writer {
 
         @Override
         public void init() {
-            LOG.info("init()");
+            LOG.debug("init()");
         }
 
         @Override
         public void prepare() {
-            LOG.info("prepare()");
+            LOG.debug("prepare()");
         }
 
         @Override
@@ -45,12 +45,12 @@ public class StreamWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.info("post()");
+            LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
+            LOG.debug("destroy()");
         }
     }
 
@@ -76,7 +76,7 @@ public class StreamWriter extends Writer {
 
         @Override
         public void prepare() {
-            LOG.info("prepare()");
+            LOG.debug("prepare()");
         }
 
         @Override
@@ -101,12 +101,12 @@ public class StreamWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.info("post()");
+            LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
+            LOG.debug("destroy()");
         }
 
         private String makeVisual(Record record) {
