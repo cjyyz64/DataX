@@ -59,12 +59,12 @@ public class OdpsReaderTest extends BasicReaderPluginTest {
 
 	@Override
 	protected OutputStream buildDataOutput(String optionalOutputName) {
-		File f = new File(optionalOutputName + "-output.txt");
-		try {
-			return new FileOutputStream(f);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
+//		File f = new File(optionalOutputName + "-output.txt");
+//		try {
+//			return new FileOutputStream(f);
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		}
 		return null;
 	}
 

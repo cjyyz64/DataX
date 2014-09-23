@@ -28,7 +28,9 @@ public class RecordSenderForTest implements RecordSender {
 	@Override
 	public void sendToWriter(Record record) {
 		if (record instanceof TerminateRecord) {
-			this.printWriter.close();
+			if (null != this.printWriter) {
+				this.printWriter.close();
+			}
 		} else {
 			if (null != this.printWriter) {
 				this.printWriter.write(record.toString() + "\n");

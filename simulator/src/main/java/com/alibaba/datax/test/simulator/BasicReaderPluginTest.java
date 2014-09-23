@@ -115,9 +115,11 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 					: jobConf.getString("jobName"), "readerRunner", i,
 					getTestPluginName());
 
+			OutputStream output = buildDataOutput(tempOutputName);
+
 			ReaderRunner readerRunner = getReaderRunner(jobs.get(i),
-					(int) slaveId, new PrintWriter(
-							buildDataOutput(tempOutputName)), noteRecordForTest);
+					(int) slaveId, output == null ? null : new PrintWriter(
+							output), noteRecordForTest);
 			completionService.submit(readerRunner, v);
 		}
 
