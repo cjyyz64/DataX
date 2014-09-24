@@ -1,0 +1,6 @@
+{
+    "endpoint":"http://10.101.168.117",            
+    "accessid":"dataxaccessid",            
+    "accesskey":"dataxaccesskey",           
+    "instance-name":"dataxtest"    
+}

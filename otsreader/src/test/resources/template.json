@@ -1,0 +1,74 @@
+{
+    "job": {
+        "setting": {
+            "speed": 10
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "otsreader",
+                    "parameter": {
+                        /* ----------- 必填 --------------*/
+                    	"endpoint":"",            
+                    	"accessid":"",            
+                    	"accesskey":"",           
+                    	"instance-name":"",
+                    	
+                    	// 导出数据表的表名   
+                    	"table":"",
+                    	
+                    	// 需要导出的列名，支持重复类和常量列，区分大小写
+                    	// 常量列：类型支持STRING，INTEGER，DOUBLE，BOOLEAN和BINARY
+                    	// 备注：BINARY需要通过Base64转换为对应的字符串传入插件
+                    	"column":[
+                    	    "col1", "col1", "colN", 
+                    	    {"type":"STRING","value" : ""},
+                    	    {"type":"INTEGER","value" : ""},
+                    	    {"type":"DOUBLE","value" : ""},
+                    	    {"type":"BOOLEAN","value" : ""},
+                    	    {"type":"BINARY","value" : Base64(bin)}
+                    	],       
+                    	// 导出数据的起始范围
+                    	// 支持INF_MIN, INF_MAX, STRING, INTEGER
+                    	"range-begin":[
+                    	    {"type":"INF_MIN", "value":""},
+                    	    {"type":"INF_MAX", "value":""},
+                    	    {"type":"STRING", "value":"hello"},
+                    	    {"type":"INTEGER", "value":"2999"},
+                    	], 
+                    	
+                    	// 导出数据的结束范围
+                    	// 支持INF_MIN, INF_MAX, STRING, INTEGER
+                    	"range-end":[
+                            {"type":"INF_MAX", "value":""},
+                            {"type":"INF_MIN", "value":""},
+                            {"type":"STRING", "value":"hello"},
+                            {"type":"INTEGER", "value":"2999"},
+                        ], 
+                    	
+                    	// 用户指定的切分点，如果指定了切分点，Job将按照range-begin、range-end和range-split进行Task的切分，
+                    	// 切分的列只能是Partition Key（ParimaryKey的第一列）
+                    	// 支持INF_MIN, INF_MAX, STRING, INTEGER
+                    	"range-split":[
+                            {"type":"INF_MIN", "value":""},
+                            {"type":"STRING", "value":"1"},
+                            {"type":"STRING", "value":"2"},
+                            {"type":"STRING", "value":"3"},
+                            {"type":"STRING", "value":"4"},
+                            {"type":"STRING", "value":"5"},
+                            {"type":"INF_MAX", "value":""}
+                        ],
+                    	
+                    	/* ----------- 选填 --------------*/
+                        // 出现异常时，可以重复的次数
+                    	"error-retry-limit":20,
+                    	
+                    	// 每次重试的时候，Sleep的时间，单位为毫秒
+                    	"error-retry-sleep-in-million-second":1
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
