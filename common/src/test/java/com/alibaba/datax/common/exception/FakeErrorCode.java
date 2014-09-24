@@ -2,19 +2,19 @@ package com.alibaba.datax.common.exception;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-public enum FakeErrorCodeOnlyForTest implements ErrorCode {
+public enum FakeErrorCode implements ErrorCode {
 
-	FAKE_ERROR_CODE_ONLY_FOR_TEST_00("FakeErrorCodeOnlyForTest-00",
-			"only a test, FakeErrorCodeOnlyForTest."), FAKE_ERROR_CODE_ONLY_FOR_TEST_01(
-			"FakeErrorCodeOnlyForTest-01",
-			"only a test, FakeErrorCodeOnlyForTest，测试中文."),
+	FAKE_ERROR_CODE_ONLY_FOR_TEST_00("FakeErrorCode-00",
+			"only a test, FakeErrorCode."), FAKE_ERROR_CODE_ONLY_FOR_TEST_01(
+			"FakeErrorCode-01",
+			"only a test, FakeErrorCode，测试中文."),
 
 	;
 
 	private final String code;
 	private final String description;
 
-	private FakeErrorCodeOnlyForTest(String code, String description) {
+	private FakeErrorCode(String code, String description) {
 		this.code = code;
 		this.description = description;
 	}
