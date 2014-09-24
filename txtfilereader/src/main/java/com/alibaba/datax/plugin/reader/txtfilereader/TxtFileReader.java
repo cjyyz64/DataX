@@ -43,6 +43,7 @@ public class TxtFileReader extends Reader {
 			this.validate();
 		}
 
+		// TODO 文件 权限
 		// TODO validate column
 		private void validate() {
 			path = this.readerOriginConfig.getNecessaryValue(Key.PATH,
@@ -68,8 +69,7 @@ public class TxtFileReader extends Reader {
 			LOG.info("prepare()");
 			this.sourceFiles = this.buildSourceTargets();
 
-			String regexString = this.path.replace(".*", "*")
-					.replace("*", ".*");
+			String regexString = this.path.replace("*", ".*").replace("?", "."); // TODO
 			pattern = Pattern.compile(regexString);
 		}
 
@@ -103,17 +103,38 @@ public class TxtFileReader extends Reader {
 		// path must be a absolute path
 		private List<String> buildSourceTargets() {
 			// 获取路径前缀，无 * ?
-			int firstMark = this.path.indexOf('*');
-			int firstQuestionMark = this.path.indexOf('?');
-			firstMark = firstMark < firstQuestionMark ? firstMark
-					: firstQuestionMark;
-			int lastDirSeparator = this.path.substring(0, firstMark)
+			int endMark = 0;
+			for(int i = 0; i < this.path.length(); i++){
+				if('*' != this.path.charAt(i) && '?' != this.path.charAt(i)){
+					endMark = i;
+				}else{
+					break;
+				}
+			}
+//		     /tmp/20* 
+//			int firstMark = this.path.indexOf('*');//7
+//			int firstQuestionMark = this.path.indexOf('?');//-1
+//			
+//			int endMark = this.path.length();//7
+//			if(firstMark > 0){
+//				endMark = firstMark;
+//			}
+//			if(0 < firstQuestionMark && firstQuestionMark < endMark){
+//				endMark = firstQuestionMark;
+//			}
+			
+			
+//			firstMark = firstMark < firstQuestionMark ? firstMark
+//					: firstQuestionMark;
+			
+			int lastDirSeparator = this.path.substring(0, endMark)
 					.lastIndexOf(IOUtils.DIR_SEPARATOR);
 			String parentDirectory = this.path.substring(0,
 					lastDirSeparator + 1);
 			return this.buildSourceTargets(parentDirectory);
 		}
 
+		// TODO 文件数据限制
 		private List<String> buildSourceTargets(String parentDirectory) {
 			List<String> sourceFiles = new ArrayList<String>();
 			buildSourceTargets(sourceFiles, parentDirectory);
@@ -242,6 +263,8 @@ public class TxtFileReader extends Reader {
 					}
 					recordSender.sendToWriter(record);
 				}
+
+				getSlavePluginCollector();// ///////////////////////////////////////
 			} catch (UnsupportedEncodingException uee) {
 				throw new DataXException(
 						TxtFileReaderErrorCode.FILE_EXCEPTION,
@@ -263,6 +286,7 @@ public class TxtFileReader extends Reader {
 			}
 		}
 
+		// TODO 脏数据处理
 		private Column generateColumn(Configuration columnConfig,
 				String[] sourceLine) {
 			String columnType = columnConfig.getNecessaryValue(Key.TYPE,
