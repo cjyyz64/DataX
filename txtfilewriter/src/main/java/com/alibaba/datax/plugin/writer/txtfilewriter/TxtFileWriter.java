@@ -36,9 +36,10 @@ public class TxtFileWriter extends Writer {
 
 		@Override
 		public void init() {
-			LOG.info("init()");
+			LOG.info("init() begin...");
 			this.writerSliceConfig = this.getPluginJobConf();
 			this.validate();
+			LOG.info("init() end...");
 
 		}
 
@@ -65,11 +66,13 @@ public class TxtFileWriter extends Writer {
 			} catch (UnsupportedCharsetException uce) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("the named charset [%s] is unavailable", charset), uce);
+						String.format("the named charset [%s] is unavailable",
+								charset), uce);
 			} catch (SecurityException se) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("path [%s] is unable to be created", path), se);
+						String.format("path [%s] is unable to be created", path),
+						se);
 			} catch (Exception e) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
@@ -79,7 +82,7 @@ public class TxtFileWriter extends Writer {
 
 		@Override
 		public void prepare() {
-			LOG.info("prefare()");
+			LOG.info("prefare() begin...");
 			// truncate files
 			boolean truncate = this.writerSliceConfig.getBool(Key.TRUNCATE,
 					Constants.DEFAULT_TRUNCATE);
@@ -93,6 +96,7 @@ public class TxtFileWriter extends Writer {
 							"could not truncate old files");
 				}
 			}
+			LOG.info("prefare() end...");
 		}
 
 		@Override
@@ -107,12 +111,10 @@ public class TxtFileWriter extends Writer {
 
 		@Override
 		public List<Configuration> split(int mandatoryNumber) {
+			LOG.info("split() begin...");
 			List<Configuration> writerSplitConfigs = new ArrayList<Configuration>();
-			// System.currentTimeMillis();
-			Date nowTime = new Date();
-			;
 			String filePrefix = new SimpleDateFormat("yyyy_MM_dd_hh_mm_ss")
-					.format(nowTime);
+					.format(new Date());
 			String fileSuffix;
 
 			for (int i = 0; i < mandatoryNumber; i++) {
@@ -129,6 +131,7 @@ public class TxtFileWriter extends Writer {
 
 				writerSplitConfigs.add(splitedTaskConfig);
 			}
+			LOG.info("split() end...");
 			return writerSplitConfigs;
 		}
 
@@ -148,7 +151,7 @@ public class TxtFileWriter extends Writer {
 
 		@Override
 		public void init() {
-			LOG.info("init()");
+			LOG.info("init() begin...");
 
 			this.writerSliceConfig = this.getPluginJobConf();
 			this.path = this.writerSliceConfig.getString(Key.PATH);
@@ -161,6 +164,7 @@ public class TxtFileWriter extends Writer {
 
 			this.fileName = this.writerSliceConfig.getString(
 					Constants.FILE_NAME, this.fileName);
+			LOG.info("init() end...");
 		}
 
 		@Override
@@ -184,7 +188,8 @@ public class TxtFileWriter extends Writer {
 				}
 			} catch (IOException ioe) {
 				throw new DataXException(TxtFileWriterErrorCode.FILE_EXCEPTION,
-						String.format("could not write [%s]", this.fileName), ioe);
+						String.format("could not write [%s]", this.fileName),
+						ioe);
 			} catch (Exception dxe) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.RUNTIME_EXCEPTION,

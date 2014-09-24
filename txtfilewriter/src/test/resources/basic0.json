@@ -1,0 +1,22 @@
+{
+    "job": {
+        "setting": {
+            "speed": 10
+        },
+        "content": [
+            {
+                "reader": {
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "d:/",
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+                        "lineDelimiter": "\n"
+                    }
+                }
+            }
+        ]
+    }
+}
