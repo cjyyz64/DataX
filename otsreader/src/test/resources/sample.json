@@ -1,0 +1,39 @@
+{
+    "job": {
+        "setting": {
+            "speed": 10
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "otsreader",
+                    "parameter": {
+                    	"endpoint":"http://10.101.168.117",            
+                    	"accessid":"dataxaccessid",            
+                    	"accesskey":"dataxaccesskey",           
+                    	"instance-name":"dataxtest",
+                    	"table":"ots_reader_somkettest",
+                    	"column":[
+                    	    "col1", "col1", "colN"
+                    	],       
+                    	"range-begin":[
+                    	    {"type":"INF_MIN", "value":""},
+                    	    {"type":"INF_MAX", "value":""},
+                    	    {"type":"STRING", "value":"hello"},
+                    	    {"type":"INTEGER", "value":"2999"},
+                    	], 
+                    	"range-end":[
+                            {"type":"INF_MAX", "value":""},
+                            {"type":"INF_MIN", "value":""},
+                            {"type":"STRING", "value":"hello"},
+                            {"type":"INTEGER", "value":"2999"},
+                        ], 
+                    	"range-split":[
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

@@ -6,10 +6,10 @@ import com.alibaba.datax.core.container.runner.RunnerManager;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.Status;
 import org.junit.Assert;
@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Created by jingxing on 14-9-4.
  */
-public class SlaveContainerTest extends TestInitializer {
+public class SlaveContainerTest extends CaseInitializer {
     private Configuration configuration;
 
     @Before

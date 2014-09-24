@@ -34,6 +34,7 @@
 		<!-- reader -->
 		<module>mysqlreader</module>
 		<module>streamreader</module>
+		<module>otsreader</module>
 
 		<!-- writer -->
 		<module>mysqlwriter</module>
@@ -42,10 +43,10 @@
 		<!-- some support module -->
 		<module>plugin-rdbms-util</module>
 		<module>simulator</module>
-		<module>odpsreader</module>
 		<module>txtfilewriter</module>
 		<module>txtfilereader</module>
 		<module>sqlserverreader</module>
+		<module>odpsreader</module>
 		<module>odpswriter</module>
 	</modules>
 
