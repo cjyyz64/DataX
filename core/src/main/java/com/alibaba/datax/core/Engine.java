@@ -24,6 +24,7 @@ import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.ConfigurationValidate;
 import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.core.util.Status;
 
 /**
@@ -128,7 +129,7 @@ public class Engine {
 					CoreConstant.DATAX_HOME));
 			System.exit(Status.FAIL.value());
 		}
-		
+
 		String jobPath = cl.getOptionValue("job");
 		Configuration configuration = ConfigParser.parse(jobPath);
 
@@ -149,7 +150,7 @@ public class Engine {
 			engine.start(configuration);
 			System.exit(Status.SUCCESS.value());
 		} catch (Throwable e) {
-			System.err.println(e.getStackTrace());
+			LOG.error("\n" + ExceptionTracker.trace(e));
 			System.exit(Status.FAIL.value());
 		}
 

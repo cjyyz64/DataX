@@ -25,6 +25,14 @@
 			<outputDirectory>datax</outputDirectory>
 		</fileSet>
 		<fileSet>
+			<directory>txtfilereader/target/datax/</directory>
+			<includes>
+				<include>**/*.*</include>
+			</includes>
+			<outputDirectory>datax</outputDirectory>
+		</fileSet>
+	
+		<fileSet>
 			<directory>odpsreader/target/datax/</directory>
 			<includes>
 				<include>**/*.*</include>
@@ -40,6 +48,13 @@
 		</fileSet>
 
 		<!-- writer -->
+		<fileSet>
+			<directory>txtfilewriter/target/datax/</directory>
+			<includes>
+				<include>**/*.*</include>
+			</includes>
+			<outputDirectory>datax</outputDirectory>
+		</fileSet>
 		<fileSet>
 			<directory>mysqlwriter/target/datax/</directory>
 			<includes>
