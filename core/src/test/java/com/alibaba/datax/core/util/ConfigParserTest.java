@@ -1,18 +1,17 @@
 package com.alibaba.datax.core.util;
 
-import java.io.File;
-import java.net.URISyntaxException;
-
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
+import java.io.File;
+import java.net.URISyntaxException;
 
-public class ConfigParserTester extends TestInitializer {
+public class ConfigParserTest extends CaseInitializer {
 	@Test
 	public void test() throws URISyntaxException {
-		String path = ConfigParserTester.class.getClassLoader()
+		String path = ConfigParserTest.class.getClassLoader()
 				.getResource(".").getFile();
 		Configuration configuration = ConfigParser.parse(path + File.separator
 				+ "job" + File.separator + "job.json");

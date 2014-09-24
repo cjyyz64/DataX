@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import com.alibaba.fastjson.JSON;
 
-public class ConfigurationTester {
+public class ConfigurationTest {
 
 	@Test
 	public void test_get() {
@@ -530,7 +530,7 @@ public class ConfigurationTester {
 	@Test
 	public void test_beautify() {
 		Configuration configuration = Configuration
-				.from(ConfigurationTester.class.getClassLoader()
+				.from(ConfigurationTest.class.getClassLoader()
 						.getResourceAsStream("all.json"));
 		System.out.println(configuration.getConfiguration("job.content")
 				.beautify());
@@ -540,10 +540,10 @@ public class ConfigurationTester {
 	@Test
 	public void test() {
 		Configuration configuration = Configuration
-				.from(ConfigurationTester.class.getClassLoader()
+				.from(ConfigurationTest.class.getClassLoader()
 						.getResourceAsStream("all.json"));
 		System.out.println(configuration.toJSON());
-		configuration.merge(Configuration.from(ConfigurationTester.class
+		configuration.merge(Configuration.from(ConfigurationTest.class
 				.getClassLoader().getResourceAsStream("all.json")), true);
 		Assert.assertTrue(((List<Object>) configuration
 				.get("job.content[0].reader.parameter.jdbcUrl")).size() == 2);

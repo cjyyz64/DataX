@@ -1,17 +1,17 @@
 package com.alibaba.datax.common.element;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ColumnCastTester {
+import java.io.File;
+import java.io.IOException;
+
+public class ColumnCastTest {
 	private Configuration produce() throws IOException {
-		String path = ColumnCastTester.class.getClassLoader().getResource(".")
+		String path = ColumnCastTest.class.getClassLoader().getResource(".")
 				.getFile();
 		String content = FileUtils.readFileToString(new File(StringUtils.join(new String[] {
 				path, "all.json" }, File.separator)));

@@ -1,19 +1,18 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.util.CoreConstant;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
-import com.alibaba.datax.core.util.CoreConstant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-2.
  */
-public class StandAloneSchedulerTest extends TestInitializer {
+public class StandAloneSchedulerTest extends CaseInitializer {
 	private int randomSize = 20;
 
 	@Test

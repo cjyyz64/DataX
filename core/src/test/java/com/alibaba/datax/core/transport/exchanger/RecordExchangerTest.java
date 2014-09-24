@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.transport.exchanger;
 
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,11 +11,10 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.scaffold.ConfigurationProducer;
 import com.alibaba.datax.core.scaffold.RecordProducer;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.channel.memory.MemoryChannel;
 
-public class RecordExchangerTester extends TestInitializer {
+public class RecordExchangerTest extends CaseInitializer {
 
 	private Configuration configuration = null;
 

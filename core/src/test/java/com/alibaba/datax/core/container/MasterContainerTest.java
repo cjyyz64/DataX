@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
 import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 
@@ -21,7 +21,7 @@ import com.alibaba.datax.core.util.ConfigParser;
 /**
  * Created by jingxing on 14-9-2.
  */
-public class MasterContainerTest extends TestInitializer {
+public class MasterContainerTest extends CaseInitializer {
 	private Configuration configuration;
 
 	@Before

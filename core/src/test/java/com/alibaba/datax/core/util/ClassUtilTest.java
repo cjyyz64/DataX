@@ -6,7 +6,7 @@ import org.junit.Test;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.AbstractContainer;
 
-public final class ClassUtilTester {
+public final class ClassUtilTest {
 	@Test
 	public void test() {
 

@@ -1,23 +1,21 @@
 package com.alibaba.datax.core.transport.channel.memory;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scaffold.base.TestInitializer;
-
+import com.alibaba.datax.core.scaffold.ConfigurationProducer;
+import com.alibaba.datax.core.scaffold.RecordProducer;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.transport.channel.Channel;
+import com.alibaba.datax.core.transport.record.TerminateRecord;
+import com.alibaba.datax.core.util.CoreConstant;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.datax.common.element.NumberColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.scaffold.ConfigurationProducer;
-import com.alibaba.datax.core.scaffold.RecordProducer;
-import com.alibaba.datax.core.transport.channel.Channel;
-import com.alibaba.datax.core.transport.record.TerminateRecord;
+import java.util.ArrayList;
+import java.util.List;
 
-public class MemoryChannelTester extends TestInitializer {
+public class MemoryChannelTest extends CaseInitializer {
 
 	// 测试SEQ
 	@Test

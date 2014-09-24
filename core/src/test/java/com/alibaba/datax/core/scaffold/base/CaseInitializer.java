@@ -6,10 +6,10 @@ import org.junit.BeforeClass;
 
 import java.io.File;
 
-public class TestInitializer {
+public class CaseInitializer {
 	@BeforeClass
 	public static void beforeClass() {
-        CoreConstant.DATAX_HOME = TestInitializer.class.getClassLoader()
+        CoreConstant.DATAX_HOME = CaseInitializer.class.getClassLoader()
                 .getResource(".").getFile();
 
         CoreConstant.DATAX_CONF_PATH = StringUtils.join(new String[]{
