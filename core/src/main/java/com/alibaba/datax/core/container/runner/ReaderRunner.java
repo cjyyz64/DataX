@@ -33,6 +33,7 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
 		assert null != this.recordSender;
 
 		Reader.Slave readerSlave = (Reader.Slave) this.getPlugin();
+
 		try {
 			LOG.debug("slave reader starts to do init ...");
 			readerSlave.init();

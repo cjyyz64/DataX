@@ -48,7 +48,8 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 									CoreConstant.DATAX_CORE_TRANSPORT_RECORD_CLASS,
 									"com.alibaba.datax.core.transport.record.DefaultRecord")));
 		} catch (Exception e) {
-			throw new DataXException(FrameworkErrorCode.CONFIG_ERROR, e);
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.CONFIG_ERROR, e);
 		}
 	}
 
@@ -57,7 +58,8 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 		try {
 			return BufferedRecordExchanger.RECORD_CLASS.newInstance();
 		} catch (Exception e) {
-			throw new DataXException(FrameworkErrorCode.CONFIG_ERROR, e);
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.CONFIG_ERROR, e);
 		}
 	}
 

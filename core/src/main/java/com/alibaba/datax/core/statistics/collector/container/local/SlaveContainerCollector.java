@@ -9,31 +9,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SlaveContainerCollector extends AbstractContainerCollector {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(SlaveContainerCollector.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(SlaveContainerCollector.class);
 
-    private int slaveId;
+	private int slaveId;
 
-    public SlaveContainerCollector(Configuration configuration) {
-        super(configuration);
-        this.slaveId = configuration.getInt(
-                CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
+	public SlaveContainerCollector(Configuration configuration) {
+		super(configuration);
+		this.slaveId = configuration
+				.getInt(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
 	}
 
-    /**
-     * TODO
-     * 目前由于分布式还没有上去，所以先将local的slave report设置为跟standalone一样，
-     * 实际应该反馈给上端http去更新，等分布式上了再改
-     * @param nowMetric
-     */
+	/**
+	 * TODO 目前由于分布式还没有上去，所以先将local的slave report设置为跟standalone一样，
+	 * 实际应该反馈给上端http去更新，等分布式上了再改
+	 * 
+	 * @param nowMetric
+	 */
 	@Override
 	public void report(Metric nowMetric) {
-        LOG.debug("Slave collector: \n" + nowMetric.toString());
+		LOG.debug("Slave collector: \n" + nowMetric.toString());
+		MetricManager.reportSlaveMetric(slaveId, nowMetric);
 	}
 
 	@Override
 	public Metric collect() {
-        return MetricManager
-                .getSlaveMetricBySlaveId(this.slaveId);
+		return MetricManager.getSlaveMetricBySlaveId(this.slaveId);
 	}
 }

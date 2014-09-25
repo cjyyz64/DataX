@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.Status;
 
@@ -16,6 +17,10 @@ public abstract class AbstractRunner {
 	private Configuration jobConf;
 
 	private RunnerStatus runnerStatus = new RunnerStatus();
+
+	private int slaveId;
+
+	private int channelId;
 
 	public AbstractRunner(AbstractSlavePlugin abstractSlavePlugin) {
 		this.plugin = abstractSlavePlugin;
@@ -47,25 +52,23 @@ public abstract class AbstractRunner {
 		this.plugin.setSlavePluginCollector(pluginCollector);
 	}
 
-	private void mark(int status, Exception exception) {
+	private void mark(int status) {
 		runnerStatus.setStatus(status);
-		runnerStatus.setException(exception);
 	}
 
 	public void markRun() {
-		mark(Status.RUN.value(), null);
+		mark(Status.RUN.value());
 	}
 
 	public void markSuccess() {
-		mark(Status.SUCCESS.value(), null);
+		mark(Status.SUCCESS.value());
 	}
 
 	public void markFail(final Throwable throwable) {
-		if (throwable instanceof Exception) {
-			mark(Status.FAIL.value(), (Exception) throwable);
-		} else {
-			mark(Status.FAIL.value(), new Exception(throwable));
-		}
+		mark(Status.FAIL.value());
+
+		MetricManager.getChannelMetric(this.getSlaveId(), this.getChannelId())
+				.setError(throwable);
 
 		throw DataXException.asDataXException(
 				FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
@@ -77,5 +80,35 @@ public abstract class AbstractRunner {
 
 	public void setRunnerStatus(RunnerStatus runnerStatus) {
 		this.runnerStatus = runnerStatus;
+	}
+
+	/**
+	 * @param slaveId
+	 *            the slaveId to set
+	 */
+	public void setSlaveId(int slaveId) {
+		this.slaveId = slaveId;
+	}
+
+	/**
+	 * @param channelId
+	 *            the channelId to set
+	 */
+	public void setChannelId(int channelId) {
+		this.channelId = channelId;
+	}
+
+	/**
+	 * @return the slaveId
+	 */
+	public int getSlaveId() {
+		return slaveId;
+	}
+
+	/**
+	 * @return the channelId
+	 */
+	public int getChannelId() {
+		return channelId;
 	}
 }

@@ -116,22 +116,18 @@ public class SlaveContainer extends AbstractContainer {
 						.getRunners(this.slaveId);
 
 				if (null != runnerList) {
+
 					for (AbstractRunner runner : runnerList) {
 						if (runner.getRunnerStatus().isFail()) {
-							String msg = String
-									.format("Slave:[%d] found runner failed, reason: %s",
-											slaveId, runner.getRunnerStatus()
-													.getException());
-
 							Metric nowMetric = super.getContainerCollector()
 									.collect();
-							nowMetric.setException(msg);
+							nowMetric.setError(nowMetric.getError());
 							nowMetric.setStatus(Status.FAIL);
 							super.getContainerCollector().report(nowMetric);
 
-							throw new DataXException(
+							throw DataXException.asDataXException(
 									FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-									msg);
+									nowMetric.getError());
 						}
 					}
 				}
@@ -177,7 +173,9 @@ public class SlaveContainer extends AbstractContainer {
 
 		} catch (Throwable e) {
 			Metric nowMetric = super.getContainerCollector().collect();
-			nowMetric.setException(e.getMessage());
+
+			nowMetric.setError(nowMetric.getError() != null ? nowMetric
+					.getError() : e);
 			nowMetric.setStatus(Status.FAIL);
 			super.getContainerCollector().report(nowMetric);
 
@@ -247,6 +245,10 @@ public class SlaveContainer extends AbstractContainer {
 					.getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
 			writerRunner.setRecordReceiver(new BufferedRecordExchanger(
 					this.channel));
+
+			writerRunner.setChannelId(this.channel.getChannelId());
+			writerRunner.setSlaveId(this.channel.getSlaveId());
+
 			/**
 			 * 设置slavePlugin的collector，用来处理脏数据和master/slave通信
 			 */
@@ -267,7 +269,9 @@ public class SlaveContainer extends AbstractContainer {
 			while (!this.writerThread.isAlive()) {
 				if (writerRunner.getRunnerStatus().isFail()) {
 					throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-							writerRunner.getRunnerStatus().getException());
+							MetricManager.getChannelMetric(
+									this.channel.getSlaveId(),
+									this.channel.getChannelId()).getError());
 				} else {
 					break;
 				}
@@ -285,6 +289,10 @@ public class SlaveContainer extends AbstractContainer {
 					.getConfiguration(CoreConstant.JOB_READER_PARAMETER));
 			readerRunner.setRecordSender(new BufferedRecordExchanger(
 					this.channel));
+
+			readerRunner.setChannelId(this.channel.getChannelId());
+			readerRunner.setSlaveId(this.channel.getSlaveId());
+
 			/**
 			 * 设置slavePlugin的collector，用来处理脏数据和master/slave通信
 			 */
@@ -308,7 +316,9 @@ public class SlaveContainer extends AbstractContainer {
 				// 这里有可能出现Reader线上启动即挂情况 对于这类情况 需要立刻抛出异常
 				if (readerRunner.getRunnerStatus().isFail()) {
 					throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-							readerRunner.getRunnerStatus().getException());
+							MetricManager.getChannelMetric(
+									this.channel.getSlaveId(),
+									this.channel.getChannelId()).getError());
 				} else {
 					break;
 				}

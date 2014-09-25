@@ -8,13 +8,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.Status;
-
 import org.apache.commons.beanutils.BeanUtils;
 
 import com.alibaba.datax.common.base.BaseObject;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.Status;
 
 /**
  * Created by jingxing on 14-8-27.
@@ -42,7 +41,7 @@ public class Metric extends BaseObject implements Cloneable {
 	 * */
 	private long timeStamp;
 
-	private String exception;
+	private Throwable throwable;
 
 	private AtomicLong readSucceedRecords;
 
@@ -218,12 +217,16 @@ public class Metric extends BaseObject implements Cloneable {
 		this.timeStamp = timeStamp;
 	}
 
-	public String getException() {
-		return exception;
+	public String getErrorMessage() {
+		return getError() == null ? "" : getError().getMessage();
 	}
 
-	public void setException(String exception) {
-		this.exception = exception;
+	public Throwable getError() {
+		return throwable;
+	}
+
+	public void setError(Throwable exception) {
+		this.throwable = exception;
 	}
 
 	public synchronized void addMessage(String key, String value) {
@@ -338,6 +341,9 @@ public class Metric extends BaseObject implements Cloneable {
 
 		this.stage += metric.getStage();
 
+		this.throwable = (this.throwable != null ? this.throwable : metric
+				.getError());
+
 		for (Entry<String, List<String>> entry : metric.getMessage().entrySet()) {
 			String key = entry.getKey();
 			List<String> valueList = this.message.get(key);
@@ -347,6 +353,7 @@ public class Metric extends BaseObject implements Cloneable {
 			}
 			valueList.addAll(entry.getValue());
 		}
+
 		return this;
 	}
 }

@@ -5,14 +5,13 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.alibaba.datax.core.container.SlaveContainer;
 import org.apache.commons.lang.Validate;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.container.SlaveContainer;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
@@ -34,7 +33,7 @@ public class StandAloneScheduler implements Scheduler {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(StandAloneScheduler.class);
 
-	private List<SlaveContainerRunner> slaveContainerRunnerList = new ArrayList<SlaveContainerRunner>();
+	private List<SlaveContainerRunner> slaveContainerRunners = new ArrayList<SlaveContainerRunner>();
 
 	@Override
 	public void schedule(List<Configuration> configurations,
@@ -60,7 +59,7 @@ public class StandAloneScheduler implements Scheduler {
 			totalSlices += slaveConfiguration.getListConfiguration(
 					CoreConstant.DATAX_JOB_CONTENT).size();
 			slaveExecutorService.execute(slaveContainerRunner);
-			slaveContainerRunnerList.add(slaveContainerRunner);
+			slaveContainerRunners.add(slaveContainerRunner);
 		}
 		slaveExecutorService.shutdown();
 
@@ -68,23 +67,25 @@ public class StandAloneScheduler implements Scheduler {
 		lastMetric.setTimeStamp(0);
 		try {
 			do {
+
 				Metric nowMetric = frameworkCollector.collect();
 				nowMetric.setTimeStamp(System.currentTimeMillis());
 				LOG.debug(nowMetric.toString());
 
 				if (nowMetric.getStatus() == Status.FAIL) {
 					slaveExecutorService.shutdownNow();
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-							"Plugin run failed .");
+							nowMetric.getError());
 				}
 
-                Metric runMetric = MetricManager.getReportMetric(nowMetric,
-                        lastMetric, totalSlices);
-                frameworkCollector.report(runMetric);
-                ErrorRecordLimit.checkLimit(runMetric);
+				Metric runMetric = MetricManager.getReportMetric(nowMetric,
+						lastMetric, totalSlices);
+				frameworkCollector.report(runMetric);
+				ErrorRecordLimit.checkLimit(runMetric);
 
-				if (slaveExecutorService.isTerminated() && !hasSlaveException(runMetric)) {
+				if (slaveExecutorService.isTerminated()
+						&& !hasSlaveException(runMetric)) {
 					LOG.info("Scheduler accomplished all jobs.");
 					break;
 				}
@@ -92,15 +93,17 @@ public class StandAloneScheduler implements Scheduler {
 				lastMetric = nowMetric;
 				Thread.sleep(masterReportIntervalInMillSec);
 			} while (true);
+
 		} catch (InterruptedException e) {
 			LOG.error("InterruptedException caught!", e);
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.INNER_ERROR, e);
 		}
 	}
 
 	private SlaveContainerRunner newSlaveContainerRunner(
 			Configuration configuration) {
-        SlaveContainer slaveContainer = ClassUtil.instantiate(configuration
+		SlaveContainer slaveContainer = ClassUtil.instantiate(configuration
 				.getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
 				SlaveContainer.class, configuration);
 
@@ -108,15 +111,11 @@ public class StandAloneScheduler implements Scheduler {
 	}
 
 	private boolean hasSlaveException(Metric runMetric) {
-		for (SlaveContainerRunner slaveContainerRunner : slaveContainerRunnerList) {
-			if (slaveContainerRunner.getStatus() != Status.SUCCESS) {
-                String exceptionString = runMetric.getException();
-                if(StringUtils.isBlank(exceptionString)) {
-                    exceptionString = "Slave runs failed.";
-                }
-				throw new DataXException(
+		for (SlaveContainerRunner slaveContainerRunner : slaveContainerRunners) {
+			if (!slaveContainerRunner.getStatus().equals(Status.SUCCESS)) {
+				throw DataXException.asDataXException(
 						FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                        exceptionString);
+						runMetric.getError());
 			}
 		}
 		return false;

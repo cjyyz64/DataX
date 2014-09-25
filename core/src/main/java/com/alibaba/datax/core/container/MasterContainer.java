@@ -109,8 +109,8 @@ public class MasterContainer extends AbstractContainer {
 			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
 					"DataX caught OutOfMemoryError excaption", oomException);
 		} catch (Throwable e) {
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-					"DataX caught exception", e);
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.INNER_ERROR, e);
 		} finally {
 			this.destroy();
 			this.endTimeStamp = System.currentTimeMillis();
@@ -227,7 +227,8 @@ public class MasterContainer extends AbstractContainer {
 		} catch (Exception e) {
 			LOG.error("run scheduler[{}] error", schedulerClassName);
 			this.endTransferTimeStamp = System.currentTimeMillis();
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR, e);
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.INNER_ERROR, e);
 		}
 
 		/**

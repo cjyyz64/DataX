@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -358,27 +357,27 @@ public class Configuration {
 	}
 
 	/**
-	 * 根据用户提供的json path，寻址List对象，如果对象不存在，返回Collections.EMPTY_LIST
+	 * 根据用户提供的json path，寻址List对象，如果对象不存在，返回null
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public List<Object> getList(final String path) {
 		List<Object> list = this.get(path, List.class);
 		if (null == list) {
-			return Collections.EMPTY_LIST;
+			return null;
 		}
 		return list;
 	}
 
 	/**
-	 * 根据用户提供的json path，寻址List对象，如果对象不存在，返回Collections.EMPTY_LIST
+	 * 根据用户提供的json path，寻址List对象，如果对象不存在，返回null
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> List<T> getList(final String path, Class<T> t) {
 		Object object = this.get(path, List.class);
 		if (null == object) {
-			return Collections.EMPTY_LIST;
+			return null;
 		}
 
 		List<T> result = new ArrayList<T>();
@@ -412,22 +411,20 @@ public class Configuration {
 	public <T> List<T> getList(final String path, final List<T> defaultList,
 			Class<T> t) {
 		List<T> list = this.getList(path, t);
-		if (null == list || Collections.EMPTY_LIST == list) {
+		if (null == list) {
 			return defaultList;
 		}
 		return list;
 	}
 
 	/**
-	 * 根据用户提供的json
-	 * path，寻址包含Configuration的List，如果对象不存在，返回默认Collections.EMPTY_LIST
+	 * 根据用户提供的json path，寻址包含Configuration的List，如果对象不存在，返回默认null
 	 * 
 	 */
-	@SuppressWarnings("unchecked")
 	public List<Configuration> getListConfiguration(final String path) {
 		List<Object> lists = getList(path);
 		if (lists == null) {
-			return Collections.EMPTY_LIST;
+			return null;
 		}
 
 		List<Configuration> result = new ArrayList<Configuration>();
@@ -438,27 +435,27 @@ public class Configuration {
 	}
 
 	/**
-	 * 根据用户提供的json path，寻址Map对象，如果对象不存在，返回Collections.EMPTY_MAP;
+	 * 根据用户提供的json path，寻址Map对象，如果对象不存在，返回null
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getMap(final String path) {
 		Map<String, Object> result = this.get(path, Map.class);
 		if (null == result) {
-			return Collections.EMPTY_MAP;
+			return null;
 		}
 		return result;
 	}
 
 	/**
-	 * 根据用户提供的json path，寻址Map对象，如果对象不存在，返回Collections.EMPTY_MAP;
+	 * 根据用户提供的json path，寻址Map对象，如果对象不存在，返回null;
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public <T> Map<String, T> getMap(final String path, Class<T> t) {
 		Map<String, Object> map = this.get(path, Map.class);
 		if (null == map) {
-			return Collections.EMPTY_MAP;
+			return null;
 		}
 
 		Map<String, T> result = new HashMap<String, T>();
@@ -490,21 +487,21 @@ public class Configuration {
 	public <T> Map<String, T> getMap(final String path,
 			final Map<String, T> defaultMap, Class<T> t) {
 		Map<String, T> result = getMap(path, t);
-		if (null == result || Collections.EMPTY_MAP == result) {
+		if (null == result) {
 			return defaultMap;
 		}
 		return result;
 	}
 
 	/**
-	 * 根据用户提供的json path，寻址包含Configuration的Map，如果对象不存在，返回默认Collections.EMPTY_MAP
+	 * 根据用户提供的json path，寻址包含Configuration的Map，如果对象不存在，返回默认null
 	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public Map<String, Configuration> getMapConfiguration(final String path) {
 		Map<String, Object> map = this.get(path, Map.class);
-		if (null == map || Collections.EMPTY_MAP == map) {
-			return Collections.EMPTY_MAP;
+		if (null == map) {
+			return null;
 		}
 
 		Map<String, Configuration> result = new HashMap<String, Configuration>();

@@ -23,7 +23,10 @@ public final class MetricManager {
 			.getLogger(MetricManager.class);
 
 	// 第一级 key为 slaveId，第二级 key为 channelId
-	private static Map<Long, Map<Long, Metric>> METRIC_CENTER = new HashMap<Long, Map<Long, Metric>>();
+	private static Map<Long, Map<Long, Metric>> CHANNEL_METRICS = new HashMap<Long, Map<Long, Metric>>();
+
+	// 单机汇报缓存
+	private static Map<Long, Metric> SLAVE_METRICS = new HashMap<Long, Metric>();
 
 	private MetricManager() {
 	}
@@ -33,10 +36,10 @@ public final class MetricManager {
 		Validate.isTrue(slaveId >= 0 && channelId >= 0,
 				"Illegal parameter: slaveId and channelId can not be less than 0.");
 
-		Map<Long, Metric> slaveMetricMap = METRIC_CENTER.get(slaveId);
+		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
 			slaveMetricMap = new HashMap<Long, Metric>();
-			METRIC_CENTER.put(slaveId, slaveMetricMap);
+			CHANNEL_METRICS.put(slaveId, slaveMetricMap);
 		}
 
 		Metric channelMetric = slaveMetricMap.get(channelId);
@@ -51,21 +54,23 @@ public final class MetricManager {
 	public static synchronized Metric getMasterMetric() {
 		Metric masterMetric = new Metric();
 
-		for (Entry<Long, Map<Long, Metric>> entry : METRIC_CENTER.entrySet()) {
-			Map<Long, Metric> v = entry.getValue();
-			for (Entry<Long, Metric> innerEntry : v.entrySet()) {
-				masterMetric.mergeFrom(innerEntry.getValue());
-			}
+		for (long slaveId : SLAVE_METRICS.keySet()) {
+			masterMetric.mergeFrom(SLAVE_METRICS.get(slaveId));
 		}
 
 		masterMetric.setStatus(getMasterStatus());
 		return masterMetric;
 	}
 
+	public static synchronized void reportSlaveMetric(long slaveId,
+			final Metric metric) {
+		MetricManager.SLAVE_METRICS.put(slaveId, metric);
+	}
+
 	public static synchronized Metric getSlaveMetricBySlaveId(long slaveId) {
 		Metric slaveMetric = new Metric();
 
-		Map<Long, Metric> slaveStatics = METRIC_CENTER.get(slaveId);
+		Map<Long, Metric> slaveStatics = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveStatics) {
 			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
 					String.format(
@@ -84,7 +89,7 @@ public final class MetricManager {
 	public static synchronized Map<Long, Metric> getAllSlaveMetric() {
 		Map<Long, Metric> slaveMetricMap = new HashMap<Long, Metric>();
 
-		for (Entry<Long, Map<Long, Metric>> entry : METRIC_CENTER.entrySet()) {
+		for (Entry<Long, Map<Long, Metric>> entry : CHANNEL_METRICS.entrySet()) {
 			Long slaveId = entry.getKey();
 			slaveMetricMap.put(slaveId, getSlaveMetricBySlaveId(slaveId));
 		}
@@ -97,7 +102,7 @@ public final class MetricManager {
 		Validate.isTrue(slaveId >= 0 && channelId >= 0,
 				"Illegal parameter: slaveId and channelId can not be less than 0.");
 
-		Map<Long, Metric> slaveMetricMap = METRIC_CENTER.get(slaveId);
+		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
 			throw new DataXException(
 					FrameworkErrorCode.INNER_ERROR,
@@ -119,7 +124,7 @@ public final class MetricManager {
 	}
 
 	private static synchronized Status getMasterStatus() {
-		for (Entry<Long, Map<Long, Metric>> entry : METRIC_CENTER.entrySet()) {
+		for (Entry<Long, Map<Long, Metric>> entry : CHANNEL_METRICS.entrySet()) {
 			long slaveId = entry.getKey();
 			Map<Long, Metric> slaveMetricMap = entry.getValue();
 			for (Entry<Long, Metric> innerEntry : slaveMetricMap.entrySet()) {
@@ -128,13 +133,13 @@ public final class MetricManager {
 				if (channelMetric.getStatus() == Status.FAIL) {
 					LOG.error(String.format(
 							"slaveId[%d] channelId[%d] failed, reason: %s",
-							slaveId, channelId, channelMetric.getException()));
+							slaveId, channelId, channelMetric.getErrorMessage()));
 					return Status.FAIL;
 				}
 			}
 		}
 
-		for (Entry<Long, Map<Long, Metric>> entry : METRIC_CENTER.entrySet()) {
+		for (Entry<Long, Map<Long, Metric>> entry : CHANNEL_METRICS.entrySet()) {
 			Map<Long, Metric> slaveMetricMap = entry.getValue();
 			for (Entry<Long, Metric> innerEntry : slaveMetricMap.entrySet()) {
 				Metric channelMetric = innerEntry.getValue();
@@ -152,7 +157,7 @@ public final class MetricManager {
 	}
 
 	public static synchronized Status getSlaveStatusBySlaveId(long slaveId) {
-		Map<Long, Metric> slaveMetric = METRIC_CENTER.get(slaveId);
+		Map<Long, Metric> slaveMetric = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetric) {
 			return Status.RUN;
 		}
@@ -180,7 +185,7 @@ public final class MetricManager {
 	}
 
 	public static Metric getReportMetric(Metric now, Metric old, int totalStage) {
-		Validate.isTrue(now != null && old != null,
+		Validate.isTrue(now != null || old != null,
 				"now and old metric not null for report metric");
 
 		long timeInterval = now.getTimeStamp() - old.getTimeStamp();
