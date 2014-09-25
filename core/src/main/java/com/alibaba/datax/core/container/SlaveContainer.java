@@ -176,10 +176,8 @@ public class SlaveContainer extends AbstractContainer {
 			super.getContainerCollector().report(nowMetric);
 
 		} catch (Throwable e) {
-			String msg = "Caught exception while slave running, exit.";
-
 			Metric nowMetric = super.getContainerCollector().collect();
-			nowMetric.setException(msg);
+			nowMetric.setException(e.getMessage());
 			nowMetric.setStatus(Status.FAIL);
 			super.getContainerCollector().report(nowMetric);
 
