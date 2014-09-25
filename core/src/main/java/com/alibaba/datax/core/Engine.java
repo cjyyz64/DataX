@@ -151,8 +151,6 @@ public class Engine {
 		} catch (Throwable e) {
 			throw e;
 		}
-
-		return;
 	}
 
 	public static void main(String[] args) throws Exception {
