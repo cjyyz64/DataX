@@ -5,6 +5,7 @@
 
 import json
 import time
+import sys
 
 try:
     from xml.etree import ElementTree as XmlTree
@@ -55,6 +56,8 @@ class XmlConvertor:
         self.writer_dict["name"] = writer_plugin
         if writer_plugin == "streamwriter":
             return self.parse_streamwriter()
+        elif writer_plugin == "odpswriter":
+            return self.parse_odpswriter()
         else:
             print >>sys.stderr, "not suppotted writer plugin[%s]"%(writer_plugin)
             return False
@@ -144,6 +147,34 @@ class XmlConvertor:
         else:
             tables = self.get_value_from_xml(self.reader, "table")
             connection_dict["table"] = tables.split("|")
+
+        return True
+
+    def parse_odpswriter(self):
+        error_limit = self.get_value_from_xml(self.writer, "error-limit")
+        if not error_limit:
+            error_limit = 0
+        self.job_setting["errorLimit"] = error_limit
+
+        parameter = {}
+        self.writer_dict["parameter"] = parameter
+        parameter["accessId"] = self.get_value_from_xml(self.writer, "access-id")
+        parameter["accessKey"] = self.get_value_from_xml(self.writer, "access-key")
+        parameter["project"] = self.get_value_from_xml(self.writer, "project")
+        parameter["table"] = self.get_value_from_xml(self.writer, "table")
+        parameter["partition"] = self.get_value_from_xml(self.writer, "partition")
+        parameter["odpsServer"] = self.get_value_from_xml(self.writer, "odps-server")
+
+        truncate = self.get_value_from_xml(self.writer, "truncate")
+        if truncate:
+            is_truncate = False
+            if truncate.lower() == "true":
+                is_truncate = True
+            parameter["truncate"] = is_truncate
+
+        account_provider = self.get_value_from_xml(self.writer, "account-provider")
+        if account_provider:
+            parameter["accountProvider"] = account_provider
 
         return True
 

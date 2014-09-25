@@ -303,7 +303,7 @@ if __name__ == "__main__":
     os.chdir(DATAX_HOME)
     command = Template(ENGINE_COMMAND).substitute(**run_context)
 
-#    print command
+     # print command
     child_process = subprocess.Popen(command, shell=True)
     register_signal()
     (stdout, stderr) = child_process.communicate()
