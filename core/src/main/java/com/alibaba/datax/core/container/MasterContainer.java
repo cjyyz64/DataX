@@ -574,7 +574,8 @@ public class MasterContainer extends AbstractContainer {
 
 		Metric masterMetric = super.getContainerCollector().collect();
 		long total = masterMetric.getTotalReadRecords();
-		long error = total - masterMetric.getWriteSucceedRecordNumber();
+		long error = total - masterMetric.getWriteSucceedRecords();
+
 		if (errorLimit <= 0.0) {
 			LOG.debug("No error-limit set, check ignored .");
 		} else if (errorLimit > 0.0 && errorLimit < 1.0) {

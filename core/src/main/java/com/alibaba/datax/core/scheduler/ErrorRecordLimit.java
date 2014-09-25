@@ -30,7 +30,8 @@ public class ErrorRecordLimit {
 	public static void checkLimit(Metric metric) {
 		if (needCheck) {
 			long errorNumber = metric.getTotalReadRecords()
-					- metric.getWriteSucceedRecordNumber();
+					- metric.getWriteSucceedRecords();
+
 			if (errorRecordsLimit <= errorNumber) {
 				LOG.debug(String.format(
 						"Error-limit set to %d, error count check .",

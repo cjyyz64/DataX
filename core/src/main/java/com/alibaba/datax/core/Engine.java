@@ -108,7 +108,7 @@ public class Engine {
 		return jobConf.beautify();
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void entry(final String[] args) throws Throwable {
 		Options options = new Options();
 		options.addOption("job", true, "Job Config .");
 		options.addOption("help", false, "Show help .");
@@ -127,7 +127,7 @@ public class Engine {
 			System.err.printf(String.format(
 					"Usage: %s/bin/datax.py job.json .",
 					CoreConstant.DATAX_HOME));
-			System.exit(Status.FAIL.value());
+			return;
 		}
 
 		String jobPath = cl.getOptionValue("job");
@@ -148,13 +148,22 @@ public class Engine {
 		Engine engine = new Engine();
 		try {
 			engine.start(configuration);
-			System.exit(Status.SUCCESS.value());
+		} catch (Throwable e) {
+			throw e;
+		}
+
+		return;
+	}
+
+	public static void main(String[] args) throws Exception {
+		try {
+			Engine.entry(args);
 		} catch (Throwable e) {
 			LOG.error("\n" + ExceptionTracker.trace(e));
 			System.exit(Status.FAIL.value());
 		}
 
-		System.exit(Status.FAIL.value());
+		System.exit(Status.SUCCESS.value());
 	}
 
 }
