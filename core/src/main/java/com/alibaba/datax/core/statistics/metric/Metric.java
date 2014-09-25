@@ -238,7 +238,7 @@ public class Metric extends BaseObject implements Cloneable {
 	}
 
 	public List<String> getMessage(final String key) {
-		return this.getMessage(key);
+		return this.message.get(key);
 	}
 
 	public synchronized long getTotalReadRecords() {

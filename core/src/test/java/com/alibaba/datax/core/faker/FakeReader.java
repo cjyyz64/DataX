@@ -1,8 +1,12 @@
 package com.alibaba.datax.core.faker;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +53,36 @@ public class FakeReader extends Reader {
 	public static final class Slave extends Reader.Slave {
 		@Override
 		public void startRead(RecordSender lineSender) {
+			Record record = lineSender.createRecord();
+			record.addColumn(new NumberColumn(1L));
 
+			for (int i = 0; i < 10; i++) {
+				lineSender.sendToWriter(record);
+			}
+
+			for (int i = 0; i < 10; i++) {
+				this.getSlavePluginCollector().collectDirtyRecord(
+						record,
+						new DataXException(FrameworkErrorCode.INNER_ERROR,
+								"TEST"), "TEST");
+			}
+
+			for (int i = 0; i < 10; i++) {
+				this.getSlavePluginCollector().collectDirtyRecord(record,
+						"TEST");
+			}
+
+			for (int i = 0; i < 10; i++) {
+				this.getSlavePluginCollector().collectDirtyRecord(
+						record,
+						new DataXException(FrameworkErrorCode.INNER_ERROR,
+								"TEST"));
+			}
+
+			for (int i = 0; i < 10; i++) {
+				this.getSlavePluginCollector().collectMessage("bazhen-reader",
+						"bazhen");
+			}
 		}
 
 		@Override

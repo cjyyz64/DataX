@@ -1,9 +1,11 @@
 package com.alibaba.datax.core.faker;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,12 +52,20 @@ public class FakeWriter extends Writer {
 
 	public static final class Slave extends Writer.Slave {
 
-		@SuppressWarnings("unused")
 		@Override
 		public void startWrite(RecordReceiver lineReceiver) {
 			Record record = null;
 
 			while ((record = lineReceiver.getFromReader()) != null) {
+				this.getSlavePluginCollector().collectDirtyRecord(
+						record,
+						new DataXException(FrameworkErrorCode.INNER_ERROR,
+								"TEST"), "TEST");
+			}
+
+			for (int i = 0; i < 10; i++) {
+				this.getSlavePluginCollector().collectMessage("bazhen-writer",
+						"bazhen");
 			}
 		}
 

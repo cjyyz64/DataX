@@ -63,9 +63,6 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 		} else if (this.pluginType.equals(PluginType.WRITER)) {
 			this.metric.incrWriteFailedRecords(1L);
 			this.metric.incrWriteFailedBytes(dirtyRecord.getByteSize());
-		} else if (this.pluginType.equals(PluginType.TRANSFORMER)) {
-			// TODO transformer以后补充
-			return;
 		} else {
 			throw new DataXException(
 					FrameworkErrorCode.INNER_ERROR,
