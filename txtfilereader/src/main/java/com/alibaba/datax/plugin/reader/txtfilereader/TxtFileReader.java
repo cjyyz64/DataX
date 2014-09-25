@@ -35,12 +35,14 @@ public class TxtFileReader extends Reader {
 		private String path = null;
 		private List<String> sourceFiles;
 		private Pattern pattern;
+		private boolean isRegexPath;
 
 		@Override
 		public void init() {
-			LOG.info("init()");
+			LOG.info("init() begin...");
 			this.readerOriginConfig = this.getPluginJobConf();
 			this.validate();
+			LOG.info("init() ok and end...");
 		}
 
 		// TODO 文件 权限
@@ -67,10 +69,10 @@ public class TxtFileReader extends Reader {
 		@Override
 		public void prepare() {
 			LOG.info("prepare()");
-			this.sourceFiles = this.buildSourceTargets();
-
-			String regexString = this.path.replace("*", ".*").replace("?", "."); // TODO
+			//warn:make sure this regex string
+			String regexString = this.path.replace("*", ".*").replace("?", ".?");
 			pattern = Pattern.compile(regexString);
+			this.sourceFiles = this.buildSourceTargets();
 		}
 
 		@Override
@@ -85,7 +87,7 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public List<Configuration> split(int adviceNumber) {
-			LOG.info("begin split()");
+			LOG.info("split() begin...");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
@@ -95,7 +97,7 @@ public class TxtFileReader extends Reader {
 				splitedConfig.set(Constants.SOURCE_FILES, files);
 				readerSplitConfigs.add(splitedConfig);
 			}
-			LOG.info("end split()");
+			LOG.info("split() ok and end...");
 			return readerSplitConfigs;
 		}
 
@@ -103,38 +105,28 @@ public class TxtFileReader extends Reader {
 		// path must be a absolute path
 		private List<String> buildSourceTargets() {
 			// 获取路径前缀，无 * ?
-			int endMark = 0;
-			for(int i = 0; i < this.path.length(); i++){
-				if('*' != this.path.charAt(i) && '?' != this.path.charAt(i)){
-					endMark = i;
-				}else{
+			int endMark;
+			for (endMark = 0; endMark < this.path.length(); endMark++) {
+				if ('*' != this.path.charAt(endMark)
+						&& '?' != this.path.charAt(endMark)) {
+				} else {
+					this.isRegexPath = true;
 					break;
 				}
 			}
-//		     /tmp/20* 
-//			int firstMark = this.path.indexOf('*');//7
-//			int firstQuestionMark = this.path.indexOf('?');//-1
-//			
-//			int endMark = this.path.length();//7
-//			if(firstMark > 0){
-//				endMark = firstMark;
-//			}
-//			if(0 < firstQuestionMark && firstQuestionMark < endMark){
-//				endMark = firstQuestionMark;
-//			}
-			
-			
-//			firstMark = firstMark < firstQuestionMark ? firstMark
-//					: firstQuestionMark;
-			
-			int lastDirSeparator = this.path.substring(0, endMark)
-					.lastIndexOf(IOUtils.DIR_SEPARATOR);
-			String parentDirectory = this.path.substring(0,
-					lastDirSeparator + 1);
+
+			String parentDirectory;
+			if (this.isRegexPath) {
+				int lastDirSeparator = this.path.substring(0, endMark)
+						.lastIndexOf(IOUtils.DIR_SEPARATOR);
+				parentDirectory = this.path.substring(0, lastDirSeparator + 1);
+			} else {
+				parentDirectory = this.path;
+			}
+
 			return this.buildSourceTargets(parentDirectory);
 		}
 
-		// TODO 文件数据限制
 		private List<String> buildSourceTargets(String parentDirectory) {
 			List<String> sourceFiles = new ArrayList<String>();
 			buildSourceTargets(sourceFiles, parentDirectory);
@@ -150,17 +142,30 @@ public class TxtFileReader extends Reader {
 					LOG.info(String.format(
 							"add file [%s] as a candidate to read",
 							parentDirectory));
+					// 文件数量限制
+					if (result.size() > Constants.MAX_FILE_READ) {
+						throw new DataXException(
+								TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+								String.format("too much files to read > [%d]",
+										Constants.MAX_FILE_READ));
+					}
 				}
 			} else {
-				for (String subFileNames : directory.list()) {
-					buildSourceTargets(result, subFileNames);
+				for (File subFileNames : directory.listFiles()) {
+					buildSourceTargets(result, subFileNames.getAbsolutePath());
 				}
 			}
 		}
 
-		// TODO 正则过滤
+		// 正则过滤
 		private boolean isTargetFile(String absoluteFilePath) {
-			return this.pattern.matcher(absoluteFilePath).matches();
+			LOG.info(absoluteFilePath);
+			if (this.isRegexPath) {
+				return this.pattern.matcher(absoluteFilePath).matches();
+			} else {
+				return true;
+			}
+
 		}
 
 		private <T> List<List<T>> splitSourceFiles(final List<T> sourceList,
@@ -229,42 +234,31 @@ public class TxtFileReader extends Reader {
 			LOG.info("start startRead()");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file [%s]", fileName));
-				this.readerFromFile(fileName, recordSender);
+				this.readFromFile(fileName, recordSender);
 				recordSender.flush();
 			}
 			LOG.info("end startRead()");
 		}
 
-		// TODO 优化异常相关
 		// TODO readLine lineDelimiter 字符 or 字符串
-		private void readerFromFile(String fileName, RecordSender recordSender) {
+		private void readFromFile(String fileName, RecordSender recordSender) {
 			BufferedReader reader = null;
 			try {
 				reader = new BufferedReader(new InputStreamReader(
 						new FileInputStream(fileName), this.charset));
 				String fetchLine = null;
-				Record record = null;
 				while ((fetchLine = reader.readLine()) != null) {
-					record = recordSender.createRecord();
 					String[] sourceLine = fetchLine.split(this.fieldDelimiter);
-					Column columnGenerated;
 					// 未配置column 全为String
-					if (this.column == null) {
-						for (String columnValue : sourceLine) {
-							columnGenerated = new StringColumn(columnValue);
-							record.addColumn(columnGenerated);
-						}
+					if (null == this.column || 0 == this.column.size()) {
+						this.generateAndSendStringRecord(recordSender,
+								sourceLine);
 					} else {
 						// 根据用户配置column生成
-						for (Configuration conf : this.column) {
-							columnGenerated = this.generateColumn(conf,
-									sourceLine);
-						}
+						this.generateAndSendConfigRecord(recordSender,
+								sourceLine);
 					}
-					recordSender.sendToWriter(record);
 				}
-
-				getSlavePluginCollector();// ///////////////////////////////////////
 			} catch (UnsupportedEncodingException uee) {
 				throw new DataXException(
 						TxtFileReaderErrorCode.FILE_EXCEPTION,
@@ -286,7 +280,58 @@ public class TxtFileReader extends Reader {
 			}
 		}
 
-		// TODO 脏数据处理
+		// 创建都为String类型column的record
+		private Record generateAndSendStringRecord(RecordSender recordSender,
+				String[] sourceLine) {
+
+			Record record;
+			Column columnGenerated;
+			record = recordSender.createRecord();
+
+			for (String columnValue : sourceLine) {
+				columnGenerated = new StringColumn(columnValue);
+				record.addColumn(columnGenerated);
+			}
+
+			recordSender.sendToWriter(record);
+			return record;
+		}
+
+		private Record generateAndSendConfigRecord(RecordSender recordSender,
+				String[] sourceLine) {
+			// 根据用户配置column生成
+			Record record;
+			Column columnGenerated;
+			try {
+				record = recordSender.createRecord();
+				for (Configuration conf : this.column) {
+					columnGenerated = this.generateColumn(conf, sourceLine);
+					record.addColumn(columnGenerated);
+				}
+
+				recordSender.sendToWriter(record);
+				return record;
+
+			} catch (DataXException dxe) {
+				// 脏数据处理,已经调用sendToWriter
+				record = this.generateAndSendStringRecord(recordSender,
+						sourceLine);
+
+				String dirtyDataMessage = String.format(
+						"got a dirty data : [%s]", record);
+				this.getSlavePluginCollector().collectDirtyRecord(record,
+						dirtyDataMessage);
+				LOG.warn(dirtyDataMessage);
+
+				return record;
+
+			} catch (Exception e) {
+				throw new DataXException(
+						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+						e.getMessage());
+			}
+		}
+
 		private Column generateColumn(Configuration columnConfig,
 				String[] sourceLine) {
 			String columnType = columnConfig.getNecessaryValue(Key.TYPE,

@@ -1,7 +1,8 @@
 {
     "job": {
         "setting": {
-            "speed": 10
+            "speed": 10,
+            "errorLimit" : 
         },
         "content": [
             {
@@ -20,8 +21,7 @@
                             }
                         ],
                         "charset": "UTF-8",
-                        "fieldDelimiter": "\t",
-                        "lineDelimiter": "\n"
+                        "fieldDelimiter": "\t"
                     }
                 },
                 "writer": {
@@ -30,7 +30,6 @@
                         "path": "/home/usr/dest/",
                         "charset": "UTF-8",
                         "fieldDelimiter": "\t",
-                        "lineDelimiter": "\n"
                     }
                 }
             }
