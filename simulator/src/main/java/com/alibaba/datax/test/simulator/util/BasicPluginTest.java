@@ -3,6 +3,7 @@ package com.alibaba.datax.test.simulator.util;
 import java.io.File;
 import java.io.FilenameFilter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 
 import com.alibaba.datax.common.constant.PluginType;
@@ -102,8 +103,14 @@ public abstract class BasicPluginTest {
 		TESTCLASSES_PATH = Thread.currentThread().getClass().getResource("/")
 				.getPath();
 
-		String basicDirPath = TESTCLASSES_PATH
-				+ "../"
+		String targetDir = new File(TESTCLASSES_PATH).getParent();
+		if (StringUtils.isBlank(targetDir)) {
+			throw new DataXException(FrameworkErrorCode.PLUGIN_NOT_FOUND,
+					String.format("ge Plugin Dir Failed. testclass_path:[%s].",
+							TESTCLASSES_PATH));
+		}
+
+		String basicDirPath = targetDir
 				+ String.format("datax%splugin%s", File.separator,
 						File.separator);
 		String pluginDirPath = null;
