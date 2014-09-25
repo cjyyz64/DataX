@@ -10,7 +10,8 @@ public enum TxtFileReaderErrorCode implements ErrorCode {
 			"TxtFileReader-01", "file read exception"), CONFIG_INVALID_EXCEPTION(
 			"TxtFileReader-02", "config parameter is invalid"), NOT_SUPPORT_TYPE(
 			"TxtFileReader-03", "not supported column type"), CAST_VALUE_TYPE_ERROR(
-			"TxtFileReader-04", "can not cast value to pointed type"), ;
+			"TxtFileReader-04", "can not cast value to pointed type"), SECURITY_EXCEPTION(
+			"TxtFileReader-05", "do not have permission"), ;
 
 	private final String code;
 	private final String description;

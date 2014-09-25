@@ -69,8 +69,9 @@ public class TxtFileReader extends Reader {
 		@Override
 		public void prepare() {
 			LOG.info("prepare()");
-			//warn:make sure this regex string
-			String regexString = this.path.replace("*", ".*").replace("?", ".?");
+			// warn:make sure this regex string
+			String regexString = this.path.replace("*", ".*")
+					.replace("?", ".?");
 			pattern = Pattern.compile(regexString);
 			this.sourceFiles = this.buildSourceTargets();
 		}
@@ -85,6 +86,7 @@ public class TxtFileReader extends Reader {
 			LOG.info("destroy()");
 		}
 
+		// TODO 如果源目录为空，这时候出错
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			LOG.info("split() begin...");
@@ -128,6 +130,26 @@ public class TxtFileReader extends Reader {
 		}
 
 		private List<String> buildSourceTargets(String parentDirectory) {
+			// 检测目录是否存在，错误情况更明确
+			try {
+				File dir = new File(parentDirectory);
+				boolean isExists = dir.exists();
+				if (!isExists) {
+					String message = String.format(
+							"the directory does not exist : [%s]",
+							parentDirectory);
+					LOG.error(message);
+					throw new DataXException(
+							TxtFileReaderErrorCode.FILE_EXCEPTION, message);
+				}
+			} catch (SecurityException se) {
+				String message = String.format(
+						"do not have permission to : [%s]", parentDirectory);
+				LOG.error(message);
+				throw new DataXException(
+						TxtFileReaderErrorCode.SECURITY_EXCEPTION, message);
+			}
+
 			List<String> sourceFiles = new ArrayList<String>();
 			buildSourceTargets(sourceFiles, parentDirectory);
 			return sourceFiles;
@@ -136,6 +158,7 @@ public class TxtFileReader extends Reader {
 		private void buildSourceTargets(List<String> result,
 				String parentDirectory) {
 			File directory = new File(parentDirectory);
+			// 是文件
 			if (!directory.isDirectory()) {
 				if (this.isTargetFile(directory.getAbsolutePath())) {
 					result.add(parentDirectory);
@@ -151,8 +174,24 @@ public class TxtFileReader extends Reader {
 					}
 				}
 			} else {
-				for (File subFileNames : directory.listFiles()) {
-					buildSourceTargets(result, subFileNames.getAbsolutePath());
+				// 是目录
+				try {
+					// warn:对于没有权限的目录,listFiles 返回null，而不是抛出SecurityException
+					File[] files = directory.listFiles();
+					if (null != files) {
+						for (File subFileNames : files) {
+							buildSourceTargets(result,
+									subFileNames.getAbsolutePath());
+						}
+					} else {
+						// TODO 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn,
+						// =》如何区分无用的隐藏文件（无权限），和用户指定的文件（无权限）
+						LOG.warn(String.format("unable list files for : [%s]",
+								directory));
+					}
+
+				} catch (SecurityException e) {
+					LOG.warn(e.getMessage());
 				}
 			}
 		}
@@ -229,13 +268,20 @@ public class TxtFileReader extends Reader {
 			LOG.info("destroy()");
 		}
 
+		// TODO sock 文件无法read
 		@Override
 		public void startRead(RecordSender recordSender) {
 			LOG.info("start startRead()");
 			for (String fileName : this.sourceFiles) {
-				LOG.info(String.format("reading file [%s]", fileName));
-				this.readFromFile(fileName, recordSender);
-				recordSender.flush();
+				LOG.info(String.format("reading file : [%s]", fileName));
+				try {
+					this.readFromFile(fileName, recordSender);
+					recordSender.flush();
+				} catch (Exception e) {
+					// 一个文件失败，不能影响所有文件的传输?
+					LOG.warn(String.format("could not read file : [%s]",
+							fileName));
+				}
 			}
 			LOG.info("end startRead()");
 		}
@@ -260,17 +306,16 @@ public class TxtFileReader extends Reader {
 					}
 				}
 			} catch (UnsupportedEncodingException uee) {
-				throw new DataXException(
-						TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("could not use charset [%]", this.charset),
-						uee);
+				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
+						String.format("could not use charset : [%]",
+								this.charset), uee);
 			} catch (FileNotFoundException fnfe) {
 				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("could not find file [%s]", fileName),
+						String.format("could not find file : [%s]", fileName),
 						fnfe);
 			} catch (IOException ioe) {
 				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("read file error [%s]", fileName), ioe);
+						String.format("read file error : [%s]", fileName), ioe);
 			} catch (Exception e) {
 				throw new DataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
@@ -367,7 +412,7 @@ public class TxtFileReader extends Reader {
 					return new BytesColumn(((String) columnValue).getBytes());
 				} else {
 					String errorMessage = String.format(
-							"not support column type [%s]", columnType);
+							"not support column type :[%s]", columnType);
 					LOG.error(errorMessage);
 					throw new DataXException(
 							TxtFileReaderErrorCode.NOT_SUPPORT_TYPE,

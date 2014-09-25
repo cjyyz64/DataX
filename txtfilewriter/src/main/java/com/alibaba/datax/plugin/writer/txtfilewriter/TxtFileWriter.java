@@ -75,7 +75,7 @@ public class TxtFileWriter extends Writer {
 			} catch (Exception e) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						e.getMessage(), e);
+						"unable to go on for " + e.getMessage(), e);
 			}
 		}
 
@@ -136,7 +136,7 @@ public class TxtFileWriter extends Writer {
 				splitedTaskConfig.set(Constants.FILE_NAME, fileName);
 
 				LOG.info(String.format(
-						"TxtFileWriter Master, splited write file name:[%s]",
+						"splited write file name:[%s]",
 						fileName));
 
 				writerSplitConfigs.add(splitedTaskConfig);
@@ -170,6 +170,8 @@ public class TxtFileWriter extends Writer {
 
 			this.fieldDelimiter = this.writerSliceConfig.getString(
 					Key.FIELD_DELIMITER, Constants.DEFAULT_FIELD_DELIMITER);
+			
+			//TODO 支持行分割符
 			this.lineDelimiter = IOUtils.LINE_SEPARATOR;
 
 			this.fileName = this.writerSliceConfig.getString(
@@ -193,7 +195,7 @@ public class TxtFileWriter extends Writer {
 				File newFile = new File(fileFullPath);
 				newFile.createNewFile();
 				fileWriter = new BufferedWriter(new FileWriterWithEncoding(
-						fileFullPath, this.charset));
+						newFile, this.charset));
 
 				Record record;
 				while ((record = lineReceiver.getFromReader()) != null) {
