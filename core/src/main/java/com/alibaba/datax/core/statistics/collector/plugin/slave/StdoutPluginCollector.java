@@ -6,6 +6,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.statistics.metric.Metric;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +32,15 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 								100));
 	}
 
+	private String formatDirty(final Record dirty, final Throwable t,
+			final String msg) {
+		StringBuilder sb = new StringBuilder();
+		sb.append(dirty == null ? "" : "Bad Record: " + dirty.toString() + "\n");
+		sb.append(t == null ? "" : "Java Exception: " + t.getMessage() + "\n");
+		sb.append(StringUtils.isBlank(msg) ? "" : "Error Tip: " + msg);
+		return sb.toString();
+	}
+
 	@Override
 	public void collectDirtyRecord(Record dirtyRecord, Throwable t,
 			String errorMessage) {
@@ -38,7 +48,7 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 
 		currentLogNum.incrementAndGet();
 		if (currentLogNum.intValue() < maxLogNum.intValue()) {
-			LOG.error(dirtyRecord.toString(), t);
+			LOG.error("\n" + this.formatDirty(dirtyRecord, t, errorMessage));
 		}
 	}
 }

@@ -64,19 +64,19 @@ public class FakeReader extends Reader {
 				this.getSlavePluginCollector().collectDirtyRecord(
 						record,
 						new DataXException(FrameworkErrorCode.INNER_ERROR,
-								"TEST"), "TEST");
+								"EXCEPTION MSG"), "ERROR MSG");
 			}
 
 			for (int i = 0; i < 10; i++) {
 				this.getSlavePluginCollector().collectDirtyRecord(record,
-						"TEST");
+						"ERROR MSG");
 			}
 
 			for (int i = 0; i < 10; i++) {
 				this.getSlavePluginCollector().collectDirtyRecord(
 						record,
 						new DataXException(FrameworkErrorCode.INNER_ERROR,
-								"TEST"));
+								"EXCEPTION MSG"));
 			}
 
 			for (int i = 0; i < 10; i++) {
