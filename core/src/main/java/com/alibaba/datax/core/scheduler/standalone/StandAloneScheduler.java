@@ -7,6 +7,7 @@ import java.util.concurrent.Executors;
 
 import com.alibaba.datax.core.container.SlaveContainer;
 import org.apache.commons.lang.Validate;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +84,7 @@ public class StandAloneScheduler implements Scheduler {
                 frameworkCollector.report(runMetric);
                 ErrorRecordLimit.checkLimit(runMetric);
 
-				if (slaveExecutorService.isTerminated() && !hasSlaveException()) {
+				if (slaveExecutorService.isTerminated() && !hasSlaveException(runMetric)) {
 					LOG.info("Scheduler accomplished all jobs.");
 					break;
 				}
@@ -106,12 +107,16 @@ public class StandAloneScheduler implements Scheduler {
 		return new SlaveContainerRunner(slaveContainer);
 	}
 
-	private boolean hasSlaveException() {
+	private boolean hasSlaveException(Metric runMetric) {
 		for (SlaveContainerRunner slaveContainerRunner : slaveContainerRunnerList) {
 			if (slaveContainerRunner.getStatus() != Status.SUCCESS) {
+                String exceptionString = runMetric.getException();
+                if(StringUtils.isBlank(exceptionString)) {
+                    exceptionString = "Slave runs failed.";
+                }
 				throw new DataXException(
 						FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-						String.format("Slave runs failed."));
+                        exceptionString);
 			}
 		}
 		return false;
