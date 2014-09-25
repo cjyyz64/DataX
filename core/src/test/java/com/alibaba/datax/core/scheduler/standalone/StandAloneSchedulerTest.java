@@ -23,7 +23,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		List<Configuration> jobList = new ArrayList<Configuration>();
 
 		List<Configuration> internal = new ArrayList<Configuration>();
-		int length = RandomUtils.nextInt(0, randomSize);
+		int length = RandomUtils.nextInt(0, randomSize)+1;
 		for (int i = 0; i < length; i++) {
 			internal.add(Configuration.newDefault());
 		}
