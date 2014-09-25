@@ -1,12 +1,16 @@
 package com.alibaba.datax.core.container;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
@@ -251,4 +255,64 @@ public class MasterContainerTest extends CaseInitializer {
 
 		Assert.assertEquals("slices equal to split sum", sliceNumber, sumSlices);
 	}
+
+    @Test
+    public void testErrorLimitIgnoreCheck() throws Exception {
+        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, -1);
+        MasterContainer masterContainer = new MasterContainer(
+                this.configuration);
+
+        MetricManager.registerMetric(0, 0);
+        Metric metric = MetricManager.getChannelMetric(0, 0);
+        metric.setReadSucceedRecords(100);
+        metric.setReadFailedRecords(0);
+        metric.setWriteReceivedRecords(100);
+        metric.setWriteFailedRecords(0);
+
+        Method initMethod = masterContainer.getClass()
+                .getDeclaredMethod("checkLimit");
+        initMethod.setAccessible(true);
+        initMethod.invoke(masterContainer, new Object[] {});
+        initMethod.setAccessible(false);
+    }
+
+    @Test(expected = Exception.class)
+    public void testErrorLimitPercentCheck() throws Exception {
+        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 0.1);
+        MasterContainer masterContainer = new MasterContainer(
+                this.configuration);
+
+        MetricManager.registerMetric(0, 0);
+        Metric metric = MetricManager.getChannelMetric(0, 0);
+        metric.setReadSucceedRecords(100);
+        metric.setReadFailedRecords(0);
+        metric.setWriteReceivedRecords(80);
+        metric.setWriteFailedRecords(20);
+
+        Method initMethod = masterContainer.getClass()
+                .getDeclaredMethod("checkLimit");
+        initMethod.setAccessible(true);
+        initMethod.invoke(masterContainer, new Object[] {});
+        initMethod.setAccessible(false);
+    }
+
+    @Test(expected = Exception.class)
+    public void testErrorLimitCountCheck() throws Exception {
+        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 1);
+        MasterContainer masterContainer = new MasterContainer(
+                this.configuration);
+
+        MetricManager.registerMetric(0, 0);
+        Metric metric = MetricManager.getChannelMetric(0, 0);
+        metric.setReadSucceedRecords(100);
+        metric.setReadFailedRecords(0);
+        metric.setWriteReceivedRecords(98);
+        metric.setWriteFailedRecords(2);
+
+        Method initMethod = masterContainer.getClass()
+                .getDeclaredMethod("checkLimit");
+        initMethod.setAccessible(true);
+        initMethod.invoke(masterContainer, new Object[] {});
+        initMethod.setAccessible(false);
+    }
 }

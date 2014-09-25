@@ -32,7 +32,7 @@ public class ErrorRecordLimit {
 			long errorNumber = metric.getTotalReadRecords()
 					- metric.getWriteSucceedRecords();
 
-			if (errorRecordsLimit <= errorNumber) {
+			if (errorRecordsLimit < errorNumber) {
 				LOG.debug(String.format(
 						"Error-limit set to %d, error count check .",
 						errorRecordsLimit));
