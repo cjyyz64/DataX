@@ -1,6 +1,5 @@
 package com.alibaba.datax.core.container;
 
-import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
