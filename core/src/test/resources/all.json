@@ -29,7 +29,7 @@
             },
             "date": {
                 "string": {
-                    "timeFormat": "yyyy-mm-dd hh:mi:ss",
+                    "timeFormat": "yyyy-MM-dd hh:mm:ss",
                     "timeZone": "GMT+8"
                 }
             },
