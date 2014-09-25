@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.container;
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -576,12 +577,12 @@ public class MasterContainer extends AbstractContainer {
 		long total = masterMetric.getTotalReadRecords();
 		long error = total - masterMetric.getWriteSucceedRecords();
 
-		if (errorLimit <= 0.0) {
+		if (errorLimit < 0) {
 			LOG.debug("No error-limit set, check ignored .");
 		} else if (errorLimit > 0.0 && errorLimit < 1.0) {
 			LOG.debug(String.format(
 					"Error-limit set to %f, error percent check .", errorLimit));
-			if (total > 0 && ((double) error / (double) total) >= errorLimit) {
+			if (total > 0 && ((double) error / (double) total) > errorLimit) {
 				throw new DataXException(
 						FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
 						String.format(
@@ -593,7 +594,7 @@ public class MasterContainer extends AbstractContainer {
 					"Error-limit set to %d, error count check .",
 					(long) errorLimit));
 
-			if (error >= errorLimit) {
+			if (error > errorLimit) {
 				throw new DataXException(
 						FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
 						String.format(

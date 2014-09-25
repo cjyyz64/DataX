@@ -39,7 +39,7 @@ public class TxtFileWriter extends Writer {
 			LOG.info("init() begin...");
 			this.writerSliceConfig = this.getPluginJobConf();
 			this.validate();
-			LOG.info("init() end...");
+			LOG.info("init() ok and end...");
 
 		}
 
@@ -57,22 +57,21 @@ public class TxtFileWriter extends Writer {
 							"path [%s] is not directory.", path));
 				}
 				if (!dir.exists()) {
-					if (!dir.mkdir()) {
-						throw new Exception(String.format(
-								"path [%s] is invalid", path));
-					}
+					dir.mkdir();
 				}
 
 			} catch (UnsupportedCharsetException uce) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("the named charset [%s] is unavailable",
+						String.format(
+								"charset error:the named charset [%s] is unavailable",
 								charset), uce);
 			} catch (SecurityException se) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("path [%s] is unable to be created", path),
-						se);
+						String.format(
+								"security forbidden:path [%s] is unable to be created,",
+								path), se);
 			} catch (Exception e) {
 				throw new DataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
@@ -89,14 +88,24 @@ public class TxtFileWriter extends Writer {
 			String path = this.writerSliceConfig.getString(Key.PATH);
 			if (truncate) {
 				File dir = new File(path);
-				boolean isDeleteOK = FileUtils.deleteQuietly(dir);
-				if (!isDeleteOK) {
+				// warn:需要判断文件是否存在，不存在时，不能删除
+				try {
+					if (dir.exists()) {
+						// warn:不用使用FileUtils.deleteQuietly(dir);
+						FileUtils.cleanDirectory(dir);
+					}
+				} catch (SecurityException se) {
 					throw new DataXException(
 							TxtFileWriterErrorCode.FILE_EXCEPTION,
-							"could not truncate old files");
+							String.format("could not list directory [%s]", path));
+				} catch (IOException e) {
+					throw new DataXException(
+							TxtFileWriterErrorCode.FILE_EXCEPTION,
+							String.format("could not truncate directory [%s]",
+									path));
 				}
 			}
-			LOG.info("prefare() end...");
+			LOG.info("prefare() ok and end...");
 		}
 
 		@Override
@@ -126,12 +135,13 @@ public class TxtFileWriter extends Writer {
 						fileSuffix);
 				splitedTaskConfig.set(Constants.FILE_NAME, fileName);
 
-				LOG.info(String
-						.format("splited write file name:[%s]", fileName));
+				LOG.info(String.format(
+						"TxtFileWriter Master, splited write file name:[%s]",
+						fileName));
 
 				writerSplitConfigs.add(splitedTaskConfig);
 			}
-			LOG.info("split() end...");
+			LOG.info("split() ok and end...");
 			return writerSplitConfigs;
 		}
 
@@ -164,7 +174,7 @@ public class TxtFileWriter extends Writer {
 
 			this.fileName = this.writerSliceConfig.getString(
 					Constants.FILE_NAME, this.fileName);
-			LOG.info("init() end...");
+			LOG.info("init() ok and end...");
 		}
 
 		@Override
@@ -174,18 +184,25 @@ public class TxtFileWriter extends Writer {
 
 		@Override
 		public void startWrite(RecordReceiver lineReceiver) {
-			LOG.info("begin startWrite()...");
+			LOG.info("startWrite() begin...");
 			String fileFullPath = this.buildFilePath();
-			LOG.info(fileFullPath);
+			LOG.info(String.format("write to file : [%s]", fileFullPath));
 
 			BufferedWriter fileWriter = null;
 			try {
+				File newFile = new File(fileFullPath);
+				newFile.createNewFile();
 				fileWriter = new BufferedWriter(new FileWriterWithEncoding(
 						fileFullPath, this.charset));
+
 				Record record;
 				while ((record = lineReceiver.getFromReader()) != null) {
 					fileWriter.write(this.format(record));
 				}
+			} catch (SecurityException se) {
+				throw new DataXException(TxtFileWriterErrorCode.FILE_EXCEPTION,
+						String.format("could not create file [%s]",
+								this.fileName));
 			} catch (IOException ioe) {
 				throw new DataXException(TxtFileWriterErrorCode.FILE_EXCEPTION,
 						String.format("could not write [%s]", this.fileName),
@@ -197,7 +214,7 @@ public class TxtFileWriter extends Writer {
 			} finally {
 				IOUtils.closeQuietly(fileWriter);
 			}
-			LOG.info("end startWrite()...");
+			LOG.info("startWrite() ok and end...");
 		}
 
 		private String buildFilePath() {

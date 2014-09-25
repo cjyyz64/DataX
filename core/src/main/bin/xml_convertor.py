@@ -44,6 +44,8 @@ class XmlConvertor:
         self.reader_dict["name"] = reader_plugin
         if reader_plugin == "streamreader":
             return self.parse_streamreader()
+        elif reader_plugin == "mysqlreader":
+            return self.parse_mysqlreader()
         else:
             print >>sys.stderr, "not suppotted reader plugin[%s]"%(reader_plugin)
             return False
@@ -113,6 +115,35 @@ class XmlConvertor:
             parameter["fieldDelimiter"] = field_delimiter
         else:
             parameter["visible"] = False
+
+        return True
+
+    def parse_mysqlreader(self):
+        parameter = {}
+        self.reader_dict["parameter"] = parameter
+
+        parameter["username"] = self.get_value_from_xml(self.reader, "username")
+        parameter["password"] = self.get_value_from_xml(self.reader, "password")
+
+        encoding = self.get_value_from_xml(self.reader, "encoding")
+        if encoding:
+            session_dict = {}
+            parameter["session"] = session_dict
+            session_dict["character_set_client"] = encoding
+            session_dict["character_set_results"] = encoding
+            session_dict["character_set_connection"] = encoding
+
+        jdbc_url = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
+        self.job_setting["speed"] = 1048576 * len(jdbc_url)
+        connection_dict = {"jdbcUrl":jdbc_url}
+        parameter["connection"] = [connection_dict]
+
+        pointed_sql = self.get_value_from_xml(self.reader, "sql")
+        if pointed_sql:
+            connection_dict["querySql"] = pointed_sql
+        else:
+            tables = self.get_value_from_xml(self.reader, "table")
+            connection_dict["table"] = tables.split("|")
 
         return True
 

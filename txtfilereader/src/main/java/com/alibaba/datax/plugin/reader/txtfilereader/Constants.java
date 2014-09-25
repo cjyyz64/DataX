@@ -10,5 +10,7 @@ public class Constants {
 
 	public static final String DEFAULT_FIELD_DELIMITER = "\t";
 
+	public static final int MAX_FILE_READ = 1000000;
+
 	// public static final String DEFAULT_LINE_DELIMITER = "\n";
 }
