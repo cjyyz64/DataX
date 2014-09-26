@@ -1,75 +1,87 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
-import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.aliyun.odps.Column;
+import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.TableSchema;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordWriter;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class WriterProxy {
     private RecordReceiver recordReceiver;
 
-    private long blockId;
     private TableSchema tableSchema;
     private List<OdpsType> tableOriginalColumnTypeList;
     private UploadSession uploadSession;
+    List<Integer> positions;
+    private long blockId;
 
-    public WriterProxy(RecordReceiver recordReceiver, TableSchema tableSchema,
-                       List<OdpsType> tableOriginalColumnTypeList,
-                       UploadSession uploadSession, long blockId) {
+    public WriterProxy(RecordReceiver recordReceiver,
+                       UploadSession uploadSession, List<Integer> positions, long blockId) {
         this.recordReceiver = recordReceiver;
-        this.tableSchema = tableSchema;
-        this.tableOriginalColumnTypeList = tableOriginalColumnTypeList;
         this.uploadSession = uploadSession;
+        this.positions = positions;
         this.blockId = blockId;
+
+        this.tableSchema = uploadSession.getSchema();
+        this.tableOriginalColumnTypeList = OdpsUtil.getTableOriginalColumnTypeList(this.tableSchema.getColumns());
     }
 
     public void doWrite() {
+        Set<Integer> shouldFillNullPositions = new HashSet<Integer>();
+        for (int i = 0, len = this.tableOriginalColumnTypeList.size(); i < len; i++) {
+            shouldFillNullPositions.add(i);
+        }
+        shouldFillNullPositions.removeAll(this.positions);
 
         try {
-            Record odpsRecord = null;
+            Record odpsRecord;
             com.alibaba.datax.common.element.Record dataXRecord;
-            int originalColumnSize = this.tableSchema.getColumns().size();
             RecordWriter recordWriter = this.uploadSession.openRecordWriter(this.blockId);
 
+            int currentIndex;
             while ((dataXRecord = this.recordReceiver.getFromReader()) != null) {
                 odpsRecord = this.uploadSession.newRecord();
+                this.uploadSession.newRecord();
 
-                for (int i = 0, len = dataXRecord.getColumnNumber(); i < len; i++) {
-                    Column column = tableSchema.getColumn(i);
-                    switch (column.getType()) {
+                //处理补空的情况
+//                for (int i : shouldFillNullPositions) {
+//                    odpsRecord.set(i, null);
+//                }
+
+                for (int i = 0, len = positions.size(); i < len; i++) {
+                    currentIndex = positions.get(i);
+                    OdpsType type = tableSchema.getColumn(currentIndex).getType();
+                    switch (type) {
                         case BIGINT:
-                            odpsRecord.setBigint(i, dataXRecord.getColumn(i)
+                            odpsRecord.setBigint(currentIndex, dataXRecord.getColumn(i)
                                     .asLong());
                             break;
                         case BOOLEAN:
-                            odpsRecord.setBoolean(i, dataXRecord.getColumn(i)
+                            odpsRecord.setBoolean(currentIndex, dataXRecord.getColumn(i)
                                     .asBoolean());
                             break;
                         case DATETIME:
-                            odpsRecord.setDatetime(i, dataXRecord.getColumn(i)
+                            odpsRecord.setDatetime(currentIndex, dataXRecord.getColumn(i)
                                     .asDate());
                             break;
                         case DOUBLE:
-                            odpsRecord.setDouble(i, dataXRecord.getColumn(i)
+                            odpsRecord.setDouble(currentIndex, dataXRecord.getColumn(i)
                                     .asDouble());
                             break;
                         case STRING:
-                            odpsRecord.setString(i, dataXRecord.getColumn(i)
+                            odpsRecord.setString(currentIndex, dataXRecord.getColumn(currentIndex)
                                     .toString());
                             break;
                         default:
-                            throw new RuntimeException("Unknown column type: "
-                                    + column.getType());
+                            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                                    String.format("Unknown column type:[%s].", type));
 
                     }
                 }
@@ -79,37 +91,6 @@ public class WriterProxy {
 
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private void odpsColumnToDataXField(Record odpsRecord,
-                                        com.alibaba.datax.common.element.Record dataXRecord,
-                                        List<OdpsType> tableOriginalColumnTypeList, int i) {
-        OdpsType type = tableOriginalColumnTypeList.get(i);
-        switch (type) {
-            case BIGINT: {
-                dataXRecord.addColumn(new NumberColumn(odpsRecord.getBigint(i)));
-                break;
-            }
-            case BOOLEAN: {
-                dataXRecord.addColumn(new BoolColumn(odpsRecord.getBoolean(i)));
-                break;
-            }
-            case DATETIME: {
-                dataXRecord.addColumn(new DateColumn(odpsRecord.getDatetime(i)));
-                break;
-            }
-            case DOUBLE: {
-                dataXRecord.addColumn(new NumberColumn(odpsRecord.getDouble(i)));
-                break;
-            }
-            case STRING: {
-                dataXRecord.addColumn(new StringColumn(odpsRecord.getString(i)));
-                break;
-            }
-            default:
-                throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                        "Unknown column type: " + type);
         }
     }
 

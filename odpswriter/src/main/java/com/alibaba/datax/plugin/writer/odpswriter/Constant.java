@@ -6,6 +6,10 @@ public class Constant {
 
 	public static final String DEFAULT_ACCOUNT_TYPE = "aliyun";
 
+	public static final String TAOBAO_ACCOUNT_TYPE = "taobao";
+
+    public static final String COLUMN_POSITION = "columnPosition";
+
 	public static final String BLOCK_ID = "blockId";
 
     public static final String UPLOAD_ID = "uploadId";

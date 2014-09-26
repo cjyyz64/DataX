@@ -12,7 +12,7 @@ public class Constant {
 
     public static final String ALL_COLUMN_PARSED_WITH_CONSTANT = "allColumnParsedWithConstant";
 
-    public static final String COLUMN_POSITIONS = "columnPositions";
+    public static final String COLUMN_POSITION = "columnPosition";
 
     public static final String DEFAULT_ACCOUNT_TYPE = "aliyun";
 

@@ -1,14 +1,5 @@
 package com.alibaba.datax.plugin.reader.odpsreader;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -16,14 +7,18 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.FilterUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
-import com.aliyun.odps.Column;
-import com.aliyun.odps.Odps;
-import com.aliyun.odps.OdpsType;
-import com.aliyun.odps.Table;
-import com.aliyun.odps.TableSchema;
+import com.aliyun.odps.*;
 import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 import com.aliyun.odps.tunnel.TunnelException;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class OdpsReader extends Reader {
 	public static class Master extends Reader.Master {
@@ -181,6 +176,7 @@ public class OdpsReader extends Reader {
 			}
 		}
 
+        //TODO 对列格式进行调整
 		private void dealColumn(Configuration originalConfig, Table table) {
 			// 用户配置的 column
 			List<String> userConfigedColumns = this.originalConfig.getList(
@@ -224,7 +220,7 @@ public class OdpsReader extends Reader {
 
 			originalConfig.set(Constant.ALL_COLUMN_PARSED_WITH_CONSTANT,
 					allColumnParsedWithConstant);
-			originalConfig.set(Constant.COLUMN_POSITIONS, columnPositions);
+			originalConfig.set(Constant.COLUMN_POSITION, columnPositions);
 		}
 
 		@Override

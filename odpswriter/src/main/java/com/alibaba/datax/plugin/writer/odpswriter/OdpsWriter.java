@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.FilterUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.aliyun.odps.Column;
@@ -16,93 +15,55 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+//TODO: 换行符：System.getProperties("line.separator")方式获取。
 public class OdpsWriter extends Writer {
     public static class Master extends Writer.Master {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Master.class);
-
         private static boolean IS_DEBUG = LOG.isDebugEnabled();
+
+        public static final int DEFAULT_MAX_RETRY_TIME = 3;
 
         private Configuration originalConfig;
         private Odps odps;
         private Table table;
         private List<Long> blockIds = new ArrayList<Long>();
         private String uploadId;
-        private UploadSession uploadSession;
+        private UploadSession masterUploadSession;
 
         @Override
         public void init() {
-            this.originalConfig = getPluginJobConf();
+            this.originalConfig = super.getPluginJobConf();
             dealMaxRetryTime(this.originalConfig);
 
             this.odps = OdpsUtil.initOdps(this.originalConfig);
+            this.table = OdpsUtil.initTable(this.odps, this.originalConfig);
 
-            String tableName = this.originalConfig.getNecessaryValue(Key.TABLE,
-                    OdpsWriterErrorCode.NOT_SUPPORT_TYPE);
-
-            try {
-                this.table = OdpsUtil.getTable(this.odps, tableName);
-                this.originalConfig.set(Constant.IS_PARTITIONED_TABLE,
-                        OdpsUtil.isPartitionedTable(table));
-            } catch (Exception e) {
-                throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION,
-                        e);
-            }
-
-            boolean isVirtualView = table.isVirtualView();
+            boolean isVirtualView = this.table.isVirtualView();
             if (isVirtualView) {
                 throw new DataXException(
                         OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
                         String.format(
-                                "Table:[%s] is Virtual View, DataX not support to write data to it.",
-                                tableName));
+                                "Table:[%s] is virtual view, DataX not support to write data to it.",
+                                this.table.getName()));
             }
 
-            this.uploadSession = initMasterUploadSession(this.odps,this.originalConfig);
+            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps, this.originalConfig);
 
-            this.uploadId = this.uploadSession.getId();
+            this.uploadId = this.masterUploadSession.getId();
             LOG.info("UploadId:[{}]", this.uploadId);
 
-            dealPartition(this.originalConfig, table);
+            dealPartition(this.originalConfig, this.table);
 
-            // column 可能不需要用户配置以及顺序调整
-            // dealColumn(originalConfig, table);
+            dealColumn(this.originalConfig, this.table);
         }
 
-        private UploadSession initMasterUploadSession(Odps odps, Configuration originalConfig) {
-            UploadSession uploadSession = null;
-            String partition = originalConfig.getString(Key.PARTITION);
-
-            boolean isPartitionedTable = originalConfig
-                    .getBool(Constant.IS_PARTITIONED_TABLE);
-
-            if (isPartitionedTable) {
-                try {
-                    uploadSession = OdpsSplitUtil
-                            .createSessionForPartitionedTable(this.odps,
-                                    this.originalConfig.getString(Key.TUNNEL_SERVER, null),
-                                    this.table.getName(), partition);
-
-                    LOG.info("Session status:[{}]", uploadSession.getStatus()
-                            .toString());
-                } catch (Exception e) {
-                    throw new DataXException(
-                            OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
-                }
-            } else {
-                uploadSession = OdpsSplitUtil.createSessionForNonPartitionedTable(
-                        this.odps, this.originalConfig.getString(Key.TUNNEL_SERVER, null),
-                        this.table.getName());
-            }
-
-            return uploadSession;
-        }
 
         @Override
         public void prepare() {
-            LOG.info("begin prepare()");
             boolean truncate = this.originalConfig.getBool(Key.TRUNCATE, true);
 
             boolean isPartitionedTable = this.originalConfig
@@ -112,18 +73,16 @@ public class OdpsWriter extends Writer {
                     String partition = this.originalConfig
                             .getString(Key.PARTITION);
                     LOG.info(
-                            "try to clean partitioned table:[{}], partition:[{}].",
+                            "Begin to clean partitioned table:[{}], partition:[{}].",
                             this.table.getName(), partition);
                     OdpsUtil.truncatePartition(this.table, partition);
                 } else {
-                    LOG.info("try to clean non partitioned table:[{}].",
+                    LOG.info("Begin to clean non partitioned table:[{}].",
                             this.table.getName());
 
-                    OdpsUtil.truncateTable(this.odps,this.table);
-                    // table.truncate();
+                    OdpsUtil.truncateTable(this.odps, this.table);
                 }
             }
-            LOG.info("end prepare()");
         }
 
         @Override
@@ -134,11 +93,11 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.info("begin to commit all blocks in post() method. uploadId:[{}],blocks:[{}],", this.uploadId
-                    , StringUtils.join(this.blockIds, "%n"));
+            LOG.info("Begin to commit all blocks. uploadId:[{}],blocks:[{}].", this.uploadId
+                    , StringUtils.join(this.blockIds, "\n"));
 
             try {
-                this.uploadSession.commit(blockIds.toArray(new Long[0]));
+                this.masterUploadSession.commit(blockIds.toArray(new Long[0]));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -151,61 +110,56 @@ public class OdpsWriter extends Writer {
         }
 
         private void dealMaxRetryTime(Configuration originalConfig) {
-            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, 3);
+            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, DEFAULT_MAX_RETRY_TIME);
             if (maxRetryTime < 1) {
-                throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         "maxRetryTime should >=1.");
             }
-            this.originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
+
+            originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
         }
 
         /**
          * 对分区的配置处理。如果是分区表，则必须配置一个叶子分区。如果是非分区表，则不允许配置分区。
          */
         private void dealPartition(Configuration originalConfig, Table table) {
-            String userConfigedPartition = originalConfig
-                    .getString(Key.PARTITION);
-
             boolean isPartitionedTable = originalConfig
                     .getBool(Constant.IS_PARTITIONED_TABLE);
 
+            String userConfigedPartition = originalConfig
+                    .getString(Key.PARTITION);
+
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
-                if (StringUtils.isBlank(userConfigedPartition)) {
+                if (null == userConfigedPartition) {
+                    //缺失 Key:partition
                     throw new DataXException(
-                            OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                            OdpsWriterErrorCode.REQUIRED_KEY,
                             String.format(
-                                    "Lost partition config, table:[%s] is partitioned.",
+                                    "Lost key named partition, table:[%s] is partitioned.",
+                                    table.getName()));
+                } else if (StringUtils.isEmpty(userConfigedPartition)) {
+                    //缺失 partition的值配置
+                    throw new DataXException(
+                            OdpsWriterErrorCode.REQUIRED_VALUE,
+                            String.format(
+                                    "Lost partition value, table:[%s] is partitioned.",
                                     table.getName()));
                 } else {
                     List<String> allPartitions = OdpsUtil
                             .getTableAllPartitions(table,
                                     originalConfig.getInt(Key.MAX_RETRY_TIME));
 
-                    List<String> retPartitions = checkUserConfigedPartition(
+                    String standardUserConfigedPartitions = checkUserConfigedPartition(
                             allPartitions, userConfigedPartition);
 
-                    if (null == retPartitions || retPartitions.isEmpty()) {
-                        throw new DataXException(
-                                OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                                String.format(
-                                        "illegal partition:[%s], can not found it in all partition:[\n%s\n].",
-                                        userConfigedPartition,
-                                        StringUtils.join(allPartitions, "\n")));
-                    } else if (retPartitions.size() > 1) {
-                        throw new DataXException(
-                                OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                                String.format(
-                                        "illegal partition:[%s], more than one partitions in all partition:[\n%s\n].",
-                                        userConfigedPartition,
-                                        StringUtils.join(allPartitions, "\n")));
-                    }
-                    originalConfig.set(Key.PARTITION, retPartitions);
+                    originalConfig.set(Key.PARTITION, standardUserConfigedPartitions);
                 }
             } else {
-                // 非分区表，则不能配置分区
-                if (null != userConfigedPartition
-                        && !userConfigedPartition.isEmpty()) {
+                // 非分区表，则不能配置分区( 严格到不能出现 partition 这个 key)
+                userConfigedPartition = originalConfig
+                        .getString(Key.PARTITION);
+                if (null != userConfigedPartition) {
                     throw new DataXException(
                             OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
@@ -213,10 +167,9 @@ public class OdpsWriter extends Writer {
                                     table.getName()));
                 }
             }
-
         }
 
-        private List<String> checkUserConfigedPartition(
+        private String checkUserConfigedPartition(
                 List<String> allPartitions, String userConfigedPartition) {
             // 对odps 本身的所有分区进行特殊字符的处理
             List<String> allStandardPartitions = OdpsUtil
@@ -226,54 +179,115 @@ public class OdpsWriter extends Writer {
             String standardUserConfigedPartitions = OdpsUtil
                     .formatPartition(userConfigedPartition);
 
-            if (standardUserConfigedPartitions.indexOf("*") >= 0) {
+            if ("*" .equals(standardUserConfigedPartitions)) {
                 // 不允许
                 throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                        " partition can not configed as *。.");
+                        "Partition can not be *.");
             }
 
-            List<String> retPartitions = FilterUtil.filterByRegular(
-                    allStandardPartitions, standardUserConfigedPartitions);
+            if (!allStandardPartitions.contains(userConfigedPartition)) {
+                throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, String.format("Can not find partition:[%s] in all partitions:[\n%s\n].",
+                        userConfigedPartition, StringUtils.join(allPartitions, "\n")));
+            }
 
-            return retPartitions;
+            return standardUserConfigedPartitions;
         }
 
-        private void dealColumn(Configuration originalConfig, Table t) {
+        private void dealColumn(Configuration originalConfig, Table table) {
             // 用户配置的 column
             List<String> userConfigedColumns = this.originalConfig.getList(
                     Key.COLUMN, String.class);
+            if (null == userConfigedColumns) {
+                //缺失 Key:column
+                throw new DataXException(
+                        OdpsWriterErrorCode.REQUIRED_KEY,
+                        String.format(
+                                "Lost key named column, table:[%s].",
+                                table.getName()));
+            } else if (userConfigedColumns.isEmpty()) {
+                //缺失 column 的值配置
+                throw new DataXException(
+                        OdpsWriterErrorCode.REQUIRED_VALUE,
+                        String.format(
+                                "Lost column value, table:[%s].",
+                                table.getName()));
+            } else {
+                List<Column> columns = OdpsUtil.getTableAllColumns(table);
+                LOG.info("tableAllColumn:[{}]", columns);
 
-            List<Column> allColumns = OdpsUtil.getTableAllColumns(t);
-            List<String> tableOriginalColumnNameList = OdpsUtil
-                    .getTableOriginalColumnNameList(allColumns);
+                LOG.info("Column configured as * is not recommend, DataX will convert it.");
+                List<String> tableOriginalColumnNameList = OdpsUtil.getTableOriginalColumnNameList(columns);
 
-            if (IS_DEBUG) {
-                LOG.debug("Table:[{}] all columns:[{}]", t.getName(),
-                        StringUtils.join(tableOriginalColumnNameList, ","));
+                if (1 == userConfigedColumns.size() && "*" .equals(userConfigedColumns.get(0))) {
+                    //处理 * 配置，替换为：odps 表所有列
+                    this.originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
+                    List<Integer> positions = new ArrayList<Integer>();
+                    for (int i = 0, len = tableOriginalColumnNameList.size(); i < len; i++) {
+                        positions.add(i);
+                    }
+                    this.originalConfig.set(Constant.COLUMN_POSITION, positions);
+                } else {
+                    /**
+                     * 处理配置为["column0","column1"]的情况。
+                     *
+                     * <p>
+                     *     检查列名称是否都是来自表本身，以及不允许列重复等；然后解析其顺序。
+                     * </p>
+                     */
+
+                    doCheckColumn(userConfigedColumns, tableOriginalColumnNameList);
+
+                    List<Integer> positions = OdpsUtil.parsePosition(
+                            userConfigedColumns, tableOriginalColumnNameList);
+                    this.originalConfig.set(Constant.COLUMN_POSITION, positions);
+                }
             }
 
-            if (null == userConfigedColumns || userConfigedColumns.isEmpty()) {
-                LOG.warn("column blank is not recommended.");
-                originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
-            } else if (1 == userConfigedColumns.size()
-                    && "*" .equals(userConfigedColumns.get(0))) {
-                LOG.warn("column * is not recommended.");
-                originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
+        }
+
+        private void doCheckColumn(List<String> userConfigedColumns, List<String> tableOriginalColumnNameList) {
+            //检查列是否重复
+            List<String> tempUserConfigedCoumns = new ArrayList<String>(userConfigedColumns);
+            Collections.sort(tempUserConfigedCoumns);
+            for (int i = 0, len = tempUserConfigedCoumns.size(); i < len - 1; i++) {
+                if (tempUserConfigedCoumns.get(i).equalsIgnoreCase(tempUserConfigedCoumns.get(i + 1))) {
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("Can not config duplicate column:[%s]",
+                            tempUserConfigedCoumns.get(i)));
+                }
             }
 
+            //检查列是否都来自于表(列名称大小写不敏感)
+            List<String> lowerCaseUserConfigedColumns = listToLowerCase(userConfigedColumns);
+            List<String> lowerCaseTableOriginalColumnNameList = listToLowerCase(tableOriginalColumnNameList);
+            for (String aColumn : lowerCaseUserConfigedColumns) {
+                if (!lowerCaseTableOriginalColumnNameList.contains(aColumn)) {
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("Can not find column:[%s] in all column:[%s].",
+                            aColumn, StringUtils.join(tableOriginalColumnNameList, ",")));
+                }
+            }
+        }
+
+        private List<String> listToLowerCase(List<String> aList) {
+            List<String> lowerCaseList = new ArrayList<String>();
+            for (String e : aList) {
+                lowerCaseList.add(e == null ? null : e.toLowerCase());
+            }
+
+            return lowerCaseList;
         }
 
     }
 
+
     public static class Slave extends Writer.Slave {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Slave.class);
-        private Configuration writerSliceConf;
 
+        private Configuration writerSliceConf;
         private String tunnelServer;
-        private String table = null;
 
         private Odps odps = null;
+        private String table = null;
         private boolean isPartitionedTable;
         private long blockId;
         private String uploadId;
@@ -284,16 +298,15 @@ public class OdpsWriter extends Writer {
             this.tunnelServer = this.writerSliceConf.getString(
                     Key.TUNNEL_SERVER, null);
 
+            this.odps = OdpsUtil.initOdps(this.writerSliceConf);
             this.table = this.writerSliceConf.getString(Key.TABLE);
 
-            this.odps = OdpsUtil.initOdps(this.writerSliceConf);
             this.isPartitionedTable = this.writerSliceConf
                     .getBool(Constant.IS_PARTITIONED_TABLE);
 
-            //blockId 应该是在 master 中直接分配好了
+            //blockId 在 master 中已分配完成
             this.blockId = this.writerSliceConf.getLong(Constant.BLOCK_ID);
             this.uploadId = this.writerSliceConf.getString(Constant.UPLOAD_ID);
-
         }
 
         @Override
@@ -304,37 +317,20 @@ public class OdpsWriter extends Writer {
         // ref:http://odps.alibaba-inc.com/doc/prddoc/odps_tunnel/odps_tunnel_examples.html#id4
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
-            UploadSession uploadSession = null;
-            String partition = this.writerSliceConf.getString(Key.PARTITION);
+            UploadSession uploadSession = OdpsUtil.getSlaveSession(this.odps, this.writerSliceConf);
 
-            if (this.isPartitionedTable) {
-                try {
-                    uploadSession = OdpsSplitUtil
-                            .getSessionForPartitionedTable(this.odps,
-                                    this.tunnelServer, this.table, partition, this.uploadId);
-
-                    LOG.info("Session status:[{}]", uploadSession.getStatus()
-                            .toString());
-                } catch (Exception e) {
-                    throw new DataXException(
-                            OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
-                }
-            } else {
-                uploadSession = OdpsSplitUtil.getSessionForNonPartitionedTable(
-                        this.odps, this.tunnelServer, this.table, this.uploadId);
-            }
+            List<Integer> positions = this.writerSliceConf.getList(Constant.COLUMN_POSITION, Integer.class);
 
             try {
-
-                WriterProxy writerProxy = new WriterProxy(recordReceiver,
-                        uploadSession.getSchema(), null, uploadSession, this.blockId);
-
+                LOG.info("Session status:[{}]", uploadSession.getStatus()
+                        .toString());
+                WriterProxy writerProxy = new WriterProxy(recordReceiver, uploadSession,
+                        positions, this.blockId);
                 writerProxy.doWrite();
             } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOG.error("error when startWrite.", e);
+                throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION, e);
             }
-
         }
 
         @Override
