@@ -6,11 +6,14 @@ public class Constant {
 
 	public static final String DEFAULT_ACCOUNT_TYPE = "aliyun";
 
+	public static final String BLOCK_ID = "blockId";
+
+    public static final String UPLOAD_ID = "uploadId";
+
 	/**
 	 * 以下是获取accesskey id 需要用到的常量值
 	 */
 	public static final String SKYNET_ACCESSID = "SKYNET_ACCESSID";
 
 	public static final String SKYNET_ACCESSKEY = "SKYNET_ACCESSKEY";
-
 }

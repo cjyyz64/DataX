@@ -1,18 +1,13 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
+import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
+import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
+import org.junit.Test;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import org.junit.Test;
-
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.core.transport.record.DefaultRecord;
-import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
 
 public class OdpsWriterTest extends BasicWriterPluginTest {
 
