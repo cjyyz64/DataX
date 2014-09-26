@@ -43,10 +43,16 @@ class XmlConvertor:
     def parse_reader(self):
         reader_plugin = self.reader.find("plugin").text
         self.reader_dict["name"] = reader_plugin
+        self.set_run_speed()
+
         if reader_plugin == "streamreader":
             return self.parse_streamreader()
         elif reader_plugin == "mysqlreader":
             return self.parse_mysqlreader()
+        elif reader_plugin == "odpsreader":
+            return self.parse_odpsreader()
+        elif reader_plugin == "sqlserverreader":
+            return self.parse_sqlserverreader()
         else:
             print >>sys.stderr, "not suppotted reader plugin[%s]"%(reader_plugin)
             return False
@@ -54,6 +60,7 @@ class XmlConvertor:
     def parse_writer(self):
         writer_plugin = self.writer.find("plugin").text
         self.writer_dict["name"] = writer_plugin
+
         if writer_plugin == "streamwriter":
             return self.parse_streamwriter()
         elif writer_plugin == "odpswriter":
@@ -62,7 +69,13 @@ class XmlConvertor:
             print >>sys.stderr, "not suppotted writer plugin[%s]"%(writer_plugin)
             return False
 
-    ############### 这里有问题，无法获取param的值  ############
+    def set_run_speed(self):
+        # 速度是原reader的concurrency * 1M
+        concurrency = self.get_value_from_xml(self.reader, "concurrency")
+        if not concurrency:
+            concurrency = "1"
+        self.job_setting["speed"] = 1048576 * int(concurrency)
+
     def get_value_from_xml(self, node_root, key):
         value = None
         try:
@@ -73,10 +86,8 @@ class XmlConvertor:
         finally:
             return value
 
+    ############ stream #############
     def parse_streamreader(self):
-        self.job_setting["speed"] = 10485760
-        self.job_setting["errorLimit"] = 0.0
-
         parameter = {}
         self.reader_dict["parameter"] = parameter
         sliceRecordCount = self.get_value_from_xml(self.reader, "record-count")
@@ -102,6 +113,7 @@ class XmlConvertor:
         return True
 
     def parse_streamwriter(self):
+        self.job_setting["errorLimit"] = 0.0
         parameter = {}
         self.writer_dict["parameter"] = parameter
 
@@ -121,6 +133,7 @@ class XmlConvertor:
 
         return True
 
+    ############ mysql #############
     def parse_mysqlreader(self):
         parameter = {}
         self.reader_dict["parameter"] = parameter
@@ -137,7 +150,6 @@ class XmlConvertor:
             session_dict["character_set_connection"] = encoding
 
         jdbc_url = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
-        self.job_setting["speed"] = 1048576 * len(jdbc_url)
         connection_dict = {"jdbcUrl":jdbc_url}
         parameter["connection"] = [connection_dict]
 
@@ -147,6 +159,25 @@ class XmlConvertor:
         else:
             tables = self.get_value_from_xml(self.reader, "table")
             connection_dict["table"] = tables.split("|")
+
+        return True
+
+    ############ odps #############
+    def parse_odpsreader(self):
+        parameter = {}
+        self.reader_dict["parameter"] = parameter
+
+        parameter["accessId"] = self.get_value_from_xml(self.reader, "access-id")
+        parameter["accessKey"] = self.get_value_from_xml(self.reader, "access-key")
+        parameter["project"] = self.get_value_from_xml(self.reader, "project")
+        parameter["table"] = self.get_value_from_xml(self.reader, "table")
+        parameter["partition"] = self.get_value_from_xml(self.reader, "partition")
+        parameter["odpsServer"] = self.get_value_from_xml(self.reader, "odps-server")
+
+        column = self.get_value_from_xml(self.reader, "column")
+        if column:
+            # 可能有","这类的bug
+            parameter["column"] = column.split(",")
 
         return True
 
@@ -175,6 +206,33 @@ class XmlConvertor:
         account_provider = self.get_value_from_xml(self.writer, "account-provider")
         if account_provider:
             parameter["accountProvider"] = account_provider
+
+        return True
+
+    ############ sqlserver #############
+    def parse_sqlserverreader(self):
+        parameter = {}
+        self.reader_dict["parameter"] = parameter
+
+        parameter["username"] = self.get_value_from_xml(self.reader, "username")
+        parameter["password"] = self.get_value_from_xml(self.reader, "password")
+
+        connection_dict = {}
+        parameter["connection"] = [connection_dict]
+
+        pointed_sql = self.get_value_from_xml(self.reader, "sql")
+        if pointed_sql:
+            connection_dict["querySql"] = pointed_sql
+        else:
+            parameter["column"] = self.get_value_from_xml(self.reader, "column").split(",")
+            parameter["where"] = self.get_value_from_xml(self.reader, "where")
+            tables = self.get_value_from_xml(self.reader, "table")
+            connection_dict["table"] = tables.split("|")
+
+        ip = self.get_value_from_xml(self.reader, "ip")
+        port = self.get_value_from_xml(self.reader, "port")
+        database = self.get_value_from_xml(self.reader, "database")
+        connection_dict["jdbcUrl"] = ["jdbc:microsoft:%s://%s:%s"%(ip, port, database)]
 
         return True
 
