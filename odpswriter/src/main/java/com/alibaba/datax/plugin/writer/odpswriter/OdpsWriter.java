@@ -119,6 +119,7 @@ public class OdpsWriter extends Writer {
                     LOG.info("try to clean non partitioned table:[{}].",
                             this.table.getName());
 
+                    OdpsUtil.truncateTable(this.odps,this.table);
                     // table.truncate();
                 }
             }

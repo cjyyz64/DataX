@@ -9,6 +9,7 @@ import com.aliyun.odps.*;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
+import com.aliyun.odps.task.SQLTask;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,14 @@ public final class OdpsUtil {
         }
     }
 
-    public static void truncateTable(Table table){
+    public static void truncateTable(Odps odps, Table table) {
+        String dropDdl = "truncate table " + table.getName() + ";";
+        try {
+            SQLTask.run(odps, dropDdl);
+        } catch (OdpsException e) {
+            LOG.error(String.format("error when truncate table. SQL:[%s].", dropDdl), e);
+            new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
+        }
     }
 
     // TODO retry
