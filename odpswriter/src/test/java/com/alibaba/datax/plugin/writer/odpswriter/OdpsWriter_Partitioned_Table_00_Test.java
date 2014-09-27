@@ -13,18 +13,12 @@ import java.util.Date;
 import java.util.List;
 
 @RunWith(LoggedRunner.class)
-public class OdpsWriterTest extends BasicWriterPluginTest {
+public class OdpsWriter_Partitioned_Table_00_Test extends BasicWriterPluginTest {
 
-    @TestLogger(log = "基本测试basic0，写入两行数据到一张非分区表。不能配置 partition，并且 column 配置为*")
+    @TestLogger(log = "基本测试basic3，写入两行数据到一张分区表。配置 partition，并且 column 配置为*")
     @Test
-    public void testBasic0() {
-        super.doWriterTest("basic0.json", 1);
-    }
-
-    @TestLogger(log = "基本测试basic1，写入两行数据到一张非分区表。不能配置 partition，并且 column 配置为其中部分字段。写入份数为2份")
-    @Test
-    public void testBasic1() {
-        super.doWriterTest("basic1.json", 2);
+    public void testBasic3() {
+        super.doWriterTest("basic3.json", 1);
     }
 
 

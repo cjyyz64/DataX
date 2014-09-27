@@ -80,12 +80,10 @@ public final class OdpsUtil {
         return table;
     }
 
+    // 检查分区是否存在，api 没有？
     // 处理逻辑是：如果分区存在，则先删除分区，再重建分区；如果分区不存在，则直接创建分区
-    public static void truncatePartition(Table table, String partition) {
-        PartitionSpec part = new PartitionSpec(partition);
-
-        boolean isPartExist = table.getPartition(part) != null;
-        if (isPartExist) {
+    public static void truncatePartition(Table table, String partition, boolean isPartitionExist) {
+        if (isPartitionExist) {
             try {
                 table.deletePartition(new PartitionSpec(partition));
             } catch (OdpsException e) {
@@ -101,6 +99,7 @@ public final class OdpsUtil {
                     partition, table.getName()), e);
             throw new DataXException(OdpsWriterErrorCode.CREATE_PARTITION_FAIL, e);
         }
+
     }
 
     // TODO 确认表名称特殊字符处理规则，以及大小写敏感等问题
@@ -152,16 +151,13 @@ public final class OdpsUtil {
             }
         }
 
-        if (null == tableAllPartitions) {
-            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL,
-                    String.format("Get all partitions in table:[%s] failed.", table.getName()));
-        }
         List<String> retPartitions = new ArrayList<String>();
 
-        for (Partition partition : tableAllPartitions) {
-            retPartitions.add(partition.getPartitionSpec().toString());
+        if (null != tableAllPartitions) {
+            for (Partition partition : tableAllPartitions) {
+                retPartitions.add(partition.getPartitionSpec().toString());
+            }
         }
-
         return retPartitions;
     }
 

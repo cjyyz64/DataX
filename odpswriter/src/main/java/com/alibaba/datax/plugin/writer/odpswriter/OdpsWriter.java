@@ -44,12 +44,6 @@ public class OdpsWriter extends Writer {
 
             OdpsUtil.checkIfVirtualTable(this.table);
 
-            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps,
-                    this.originalConfig);
-
-            this.uploadId = this.masterUploadSession.getId();
-            LOG.info("UploadId:[{}]", this.uploadId);
-
             dealPartition(this.originalConfig, this.table);
 
             dealColumn(this.originalConfig, this.table);
@@ -71,16 +65,32 @@ public class OdpsWriter extends Writer {
                 if (isPartitionedTable) {
                     String partition = this.originalConfig
                             .getString(Key.PARTITION);
-                    LOG.info(
-                            "Begin to clean partitioned table:[{}], partition:[{}].",
+                    LOG.info("Begin to clean partitioned table:[{}], partition:[{}].",
                             this.table.getName(), partition);
-                    OdpsUtil.truncatePartition(this.table, partition);
+                    OdpsUtil.truncatePartition(this.table, partition, this.originalConfig.getBool(
+                            Constant.IS_PARTITION_EXIST));
+
+                    LOG.info("Finished clean partitioned table:[{}], partition:[{}].",
+                            this.table.getName(), partition);
                 } else {
                     LOG.info("Begin to clean non partitioned table:[{}].",
                             this.table.getName());
 
                     OdpsUtil.truncateTable(this.odps, this.table);
+                    LOG.info("Finished clean non partitioned table:[{}].",
+                            this.table.getName());
                 }
+            }
+
+            //注意，createMasterSession要求分区已经创建完成
+            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps,
+                    this.originalConfig);
+            this.uploadId = this.masterUploadSession.getId();
+            LOG.info("UploadId:[{}]", this.uploadId);
+
+            if (IS_DEBUG) {
+                LOG.debug("After prepare(), the originalConfig now is:[\n{}\n]",
+                        this.originalConfig.toJSON());
             }
         }
 
@@ -147,14 +157,24 @@ public class OdpsWriter extends Writer {
                                     "Lost partition value, table:[%s] is partitioned.",
                                     table.getName()));
                 } else {
-                    List<String> allPartitions = OdpsUtil
-                            .getTableAllPartitions(table,
-                                    originalConfig.getInt(Key.MAX_RETRY_TIME));
+                    //TODO 需要添加对分区级数校验的方法（sdk 本身有级数api吗？）
+                    List<String> tableAllPartitions = OdpsUtil.getTableAllPartitions(this.table,
+                            this.originalConfig.getInt(Key.MAX_RETRY_TIME));
 
-                    String standardUserConfiguredPartitions = checkUserConfiguredPartition(
-                            allPartitions, userConfiguredPartition);
+                    List<String> formattedTableAllPartitions = listToLowerCase(OdpsUtil.formatPartitions(
+                            tableAllPartitions));
 
-                    originalConfig.set(Key.PARTITION, standardUserConfiguredPartitions);
+                    String formatteddUserConfiguredPartition = checkUserConfiguredPartition(
+                            userConfiguredPartition);
+
+                    if (formattedTableAllPartitions.contains(formatteddUserConfiguredPartition.toLowerCase())) {
+                        originalConfig.set(Constant.IS_PARTITION_EXIST, true);
+                    } else {
+                        originalConfig.set(Constant.IS_PARTITION_EXIST, false);
+                    }
+
+
+                    originalConfig.set(Key.PARTITION, formatteddUserConfiguredPartition);
                 }
             } else {
                 // 非分区表，则不能配置分区( 严格到不能出现 partition 这个 key)
@@ -171,11 +191,7 @@ public class OdpsWriter extends Writer {
         }
 
         private String checkUserConfiguredPartition(
-                List<String> allPartitions, String userConfiguredPartition) {
-            // 对odps 本身的所有分区进行特殊字符的处理
-            List<String> allStandardPartitions = OdpsUtil
-                    .formatPartitions(allPartitions);
-
+                String userConfiguredPartition) {
             // 对用户自身配置的所有分区进行特殊字符的处理
             String standardUserConfiguredPartition = OdpsUtil
                     .formatPartition(userConfiguredPartition);
@@ -184,12 +200,6 @@ public class OdpsWriter extends Writer {
                 // 不允许
                 throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
                         "Partition can not be *.");
-            }
-
-            if (!allStandardPartitions.contains(userConfiguredPartition)) {
-                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                        String.format("Can not find partition:[%s] in all partitions:[\n%s\n].",
-                                userConfiguredPartition, StringUtils.join(allPartitions, "\n")));
             }
 
             //返回的是：已经进行过特殊字符处理的分区配置值
