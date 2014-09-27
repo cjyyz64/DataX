@@ -9,9 +9,7 @@ import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordWriter;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class WriterProxy {
     private RecordReceiver recordReceiver;
@@ -34,12 +32,6 @@ public class WriterProxy {
     }
 
     public void doWrite() {
-        Set<Integer> shouldFillNullPositions = new HashSet<Integer>();
-        for (int i = 0, len = this.tableOriginalColumnTypeList.size(); i < len; i++) {
-            shouldFillNullPositions.add(i);
-        }
-        shouldFillNullPositions.removeAll(this.positions);
-
         try {
             Record odpsRecord;
             com.alibaba.datax.common.element.Record dataXRecord;
@@ -49,11 +41,6 @@ public class WriterProxy {
             while ((dataXRecord = this.recordReceiver.getFromReader()) != null) {
                 odpsRecord = this.uploadSession.newRecord();
                 this.uploadSession.newRecord();
-
-                //处理补空的情况
-//                for (int i : shouldFillNullPositions) {
-//                    odpsRecord.set(i, null);
-//                }
 
                 for (int i = 0, len = positions.size(); i < len; i++) {
                     currentIndex = positions.get(i);

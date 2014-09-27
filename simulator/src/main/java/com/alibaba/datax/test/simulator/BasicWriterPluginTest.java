@@ -1,15 +1,5 @@
 package com.alibaba.datax.test.simulator;
 
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -21,12 +11,19 @@ import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
 	protected Writer.Master writerMaster = null;
-
-	protected Writer.Slave writerSlave = null;
 
 	@BeforeClass
 	public static void checkPluginPackageDir() {

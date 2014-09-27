@@ -1,18 +1,5 @@
 package com.alibaba.datax.test.simulator;
 
-import java.io.File;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
@@ -25,11 +12,21 @@ import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordSenderForTest;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+
+import java.io.File;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public abstract class BasicReaderPluginTest extends BasicPluginTest {
 	protected Reader.Master readerMaster = null;
-
-	protected Reader.Slave readerSlave = null;
 
 	@BeforeClass
 	public static void checkPluginPackageDir() {
