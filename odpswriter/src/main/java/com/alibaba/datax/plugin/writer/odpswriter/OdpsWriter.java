@@ -23,7 +23,7 @@ public class OdpsWriter extends Writer {
     public static class Master extends Writer.Master {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Master.class);
-        private static boolean IS_DEBUG = LOG.isDebugEnabled();
+        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         public static final int DEFAULT_MAX_RETRY_TIME = 3;
 
@@ -44,7 +44,8 @@ public class OdpsWriter extends Writer {
 
             OdpsUtil.checkIfVirtualTable(this.table);
 
-            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps, this.originalConfig);
+            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps,
+                    this.originalConfig);
 
             this.uploadId = this.masterUploadSession.getId();
             LOG.info("UploadId:[{}]", this.uploadId);
@@ -52,6 +53,11 @@ public class OdpsWriter extends Writer {
             dealPartition(this.originalConfig, this.table);
 
             dealColumn(this.originalConfig, this.table);
+
+            if (IS_DEBUG) {
+                LOG.debug("After init(), the originalConfig now is:[\n{}\n]",
+                        this.originalConfig.toJSON());
+            }
         }
 
 
@@ -87,15 +93,15 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.info("Begin to commit all blocks. uploadId:[{}],blocks:[\n{}\n].", this.uploadId
-                    , StringUtils.join(this.blockIds, "\n"));
+            LOG.info("Begin to commit all blocks. uploadId:[{}],blocks:[\n{}\n].", this.uploadId,
+                    StringUtils.join(this.blockIds, "\n"));
 
             try {
                 this.masterUploadSession.commit(blockIds.toArray(new Long[0]));
             } catch (Exception e) {
                 LOG.error(String.format("Error while commit all blocks. uploadId:[%s]",
                         this.uploadId), e);
-                throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION, e);
+                throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
             }
         }
 
@@ -145,10 +151,6 @@ public class OdpsWriter extends Writer {
                             .getTableAllPartitions(table,
                                     originalConfig.getInt(Key.MAX_RETRY_TIME));
 
-                    if (null == allPartitions || allPartitions.isEmpty()) {
-                        throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION,
-                                String.format("Table:[%s] partitions are empty.", table.getName()));
-                    }
                     String standardUserConfiguredPartitions = checkUserConfiguredPartition(
                             allPartitions, userConfiguredPartition);
 
@@ -175,21 +177,23 @@ public class OdpsWriter extends Writer {
                     .formatPartitions(allPartitions);
 
             // 对用户自身配置的所有分区进行特殊字符的处理
-            String standardUserConfiguredPartitions = OdpsUtil
+            String standardUserConfiguredPartition = OdpsUtil
                     .formatPartition(userConfiguredPartition);
 
-            if ("*".equals(standardUserConfiguredPartitions)) {
+            if ("*".equals(standardUserConfiguredPartition)) {
                 // 不允许
-                throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
                         "Partition can not be *.");
             }
 
             if (!allStandardPartitions.contains(userConfiguredPartition)) {
-                throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, String.format("Can not find partition:[%s] in all partitions:[\n%s\n].",
-                        userConfiguredPartition, StringUtils.join(allPartitions, "\n")));
+                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
+                        String.format("Can not find partition:[%s] in all partitions:[\n%s\n].",
+                                userConfiguredPartition, StringUtils.join(allPartitions, "\n")));
             }
 
-            return standardUserConfiguredPartitions;
+            //返回的是：已经进行过特殊字符处理的分区配置值
+            return standardUserConfiguredPartition;
         }
 
         private void dealColumn(Configuration originalConfig, Table table) {
@@ -211,57 +215,58 @@ public class OdpsWriter extends Writer {
                                 "Lost column value, table:[%s].",
                                 table.getName()));
             } else {
-                List<Column> columns = OdpsUtil.getTableAllColumns(table);
-                LOG.info("tableAllColumn:[{}]", columns);
+                List<Column> tableOriginalColumns = OdpsUtil.getTableAllColumns(table);
+                LOG.info("tableAllColumn:[\n{}\n]", StringUtils.join(tableOriginalColumns, "\n"));
 
-                LOG.info("Column configured as * is not recommend, DataX will convert it.");
-                List<String> tableOriginalColumnNameList = OdpsUtil.getTableOriginalColumnNameList(columns);
+                LOG.info("Column configured as * is not recommend, DataX will convert it to tableOriginalColumns by order.");
+                List<String> tableOriginalColumnNameList = OdpsUtil.getTableOriginalColumnNameList(tableOriginalColumns);
 
                 if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
                     //处理 * 配置，替换为：odps 表所有列
                     this.originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
-                    List<Integer> positions = new ArrayList<Integer>();
+                    List<Integer> columnPositions = new ArrayList<Integer>();
                     for (int i = 0, len = tableOriginalColumnNameList.size(); i < len; i++) {
-                        positions.add(i);
+                        columnPositions.add(i);
                     }
-                    this.originalConfig.set(Constant.COLUMN_POSITION, positions);
+                    this.originalConfig.set(Constant.COLUMN_POSITION, columnPositions);
                 } else {
                     /**
                      * 处理配置为["column0","column1"]的情况。
                      *
                      * <p>
-                     *     检查列名称是否都是来自表本身，以及不允许列重复等；然后解析其顺序。
+                     *     检查列名称是否都是来自表本身，以及不允许列重复等；然后解析其写入顺序。
                      * </p>
                      */
 
                     doCheckColumn(userConfiguredColumns, tableOriginalColumnNameList);
 
-                    List<Integer> positions = OdpsUtil.parsePosition(
+                    List<Integer> columnPositions = OdpsUtil.parsePosition(
                             userConfiguredColumns, tableOriginalColumnNameList);
-                    this.originalConfig.set(Constant.COLUMN_POSITION, positions);
+                    this.originalConfig.set(Constant.COLUMN_POSITION, columnPositions);
                 }
             }
 
         }
 
-        private void doCheckColumn(List<String> userConfigedColumns, List<String> tableOriginalColumnNameList) {
-            //检查列是否重复
-            List<String> tempUserConfigedCoumns = new ArrayList<String>(userConfigedColumns);
-            Collections.sort(tempUserConfigedCoumns);
-            for (int i = 0, len = tempUserConfigedCoumns.size(); i < len - 1; i++) {
-                if (tempUserConfigedCoumns.get(i).equalsIgnoreCase(tempUserConfigedCoumns.get(i + 1))) {
-                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("Can not config duplicate column:[%s]",
-                            tempUserConfigedCoumns.get(i)));
+        private void doCheckColumn(List<String> userConfiguredColumns,
+                                   List<String> tableOriginalColumnNameList) {
+            // 检查列是否重复
+            List<String> tempUserConfiguredColumns = new ArrayList<String>(userConfiguredColumns);
+            Collections.sort(tempUserConfiguredColumns);
+            for (int i = 0, len = tempUserConfiguredColumns.size(); i < len - 1; i++) {
+                if (tempUserConfiguredColumns.get(i).equalsIgnoreCase(tempUserConfiguredColumns.get(i + 1))) {
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("Can not config duplicate column:[%s].", tempUserConfiguredColumns.get(i)));
                 }
             }
 
-            //检查列是否都来自于表(列名称大小写不敏感)
-            List<String> lowerCaseUserConfigedColumns = listToLowerCase(userConfigedColumns);
+            // 检查列是否都来自于表(列名称大小写不敏感)
+            List<String> lowerCaseUserConfiguredColumns = listToLowerCase(userConfiguredColumns);
             List<String> lowerCaseTableOriginalColumnNameList = listToLowerCase(tableOriginalColumnNameList);
-            for (String aColumn : lowerCaseUserConfigedColumns) {
+            for (String aColumn : lowerCaseUserConfiguredColumns) {
                 if (!lowerCaseTableOriginalColumnNameList.contains(aColumn)) {
-                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("Can not find column:[%s] in all column:[%s].",
-                            aColumn, StringUtils.join(tableOriginalColumnNameList, ",")));
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("Can not find column:[%s].", aColumn));
                 }
             }
         }
@@ -282,19 +287,26 @@ public class OdpsWriter extends Writer {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Slave.class);
 
-        private Configuration writerSliceConf;
+        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+
+        private Configuration writerSliceConfig;
 
         private Odps odps = null;
         private long blockId;
 
         @Override
         public void init() {
-            this.writerSliceConf = getPluginJobConf();
+            this.writerSliceConfig = getPluginJobConf();
 
-            this.odps = OdpsUtil.initOdps(this.writerSliceConf);
+            this.odps = OdpsUtil.initOdps(this.writerSliceConfig);
 
             //blockId 在 master 中已分配完成
-            this.blockId = this.writerSliceConf.getLong(Constant.BLOCK_ID);
+            this.blockId = this.writerSliceConfig.getLong(Constant.BLOCK_ID);
+
+            if (IS_DEBUG) {
+                LOG.debug("After init deal, the writerSliceConfig now is:[\n{}\n]",
+                        this.writerSliceConfig.toJSON());
+            }
         }
 
         @Override
@@ -305,19 +317,26 @@ public class OdpsWriter extends Writer {
         // ref:http://odps.alibaba-inc.com/doc/prddoc/odps_tunnel/odps_tunnel_examples.html#id4
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
-            UploadSession uploadSession = OdpsUtil.getSlaveSession(this.odps, this.writerSliceConf);
+            UploadSession uploadSession = OdpsUtil.getSlaveSession(this.odps, this.writerSliceConfig);
 
-            List<Integer> positions = this.writerSliceConf.getList(Constant.COLUMN_POSITION, Integer.class);
+            List<Integer> positions = this.writerSliceConfig.getList(Constant.COLUMN_POSITION, Integer.class);
 
             try {
                 LOG.info("Session status:[{}]", uploadSession.getStatus()
                         .toString());
+            } catch (Exception e) {
+                LOG.error("Failed to get session status.", e);
+                throw new DataXException(OdpsWriterErrorCode.GET_SESSION_STATUS_FAIL, e);
+            }
+
+
+            try {
                 WriterProxy writerProxy = new WriterProxy(recordReceiver, uploadSession,
-                        positions, this.blockId);
+                        positions, this.blockId, super.getSlavePluginCollector());
                 writerProxy.doWrite();
             } catch (Exception e) {
-                LOG.error("error when startWrite.", e);
-                throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION, e);
+                LOG.error("Failed to write odps record.", e);
+                throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
             }
         }
 

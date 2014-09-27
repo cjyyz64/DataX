@@ -2,82 +2,90 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
+import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.TableSchema;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordWriter;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class WriterProxy {
-    private RecordReceiver recordReceiver;
+    private static final Logger LOG = LoggerFactory
+            .getLogger(WriterProxy.class);
 
-    private TableSchema tableSchema;
-    private List<OdpsType> tableOriginalColumnTypeList;
+    private RecordReceiver recordReceiver;
     private UploadSession uploadSession;
-    List<Integer> positions;
+
+    private List<Integer> columnPositions;
     private long blockId;
+    private TableSchema tableSchema;
+    private SlavePluginCollector slavePluginCollector;
 
     public WriterProxy(RecordReceiver recordReceiver,
-                       UploadSession uploadSession, List<Integer> positions, long blockId) {
+                       UploadSession uploadSession, List<Integer> columnPositions, long blockId,
+                       SlavePluginCollector slavePluginCollector) {
         this.recordReceiver = recordReceiver;
         this.uploadSession = uploadSession;
-        this.positions = positions;
+        this.columnPositions = columnPositions;
         this.blockId = blockId;
 
         this.tableSchema = uploadSession.getSchema();
-        this.tableOriginalColumnTypeList = OdpsUtil.getTableOriginalColumnTypeList(this.tableSchema.getColumns());
+        this.slavePluginCollector = slavePluginCollector;
     }
 
-    public void doWrite() {
+    public void doWrite() throws Exception {
         try {
-            Record odpsRecord;
-            com.alibaba.datax.common.element.Record dataXRecord;
             RecordWriter recordWriter = this.uploadSession.openRecordWriter(this.blockId);
 
             int currentIndex;
+            Record odpsRecord;
+            com.alibaba.datax.common.element.Record dataXRecord;
             while ((dataXRecord = this.recordReceiver.getFromReader()) != null) {
                 odpsRecord = this.uploadSession.newRecord();
-                this.uploadSession.newRecord();
 
-                for (int i = 0, len = positions.size(); i < len; i++) {
-                    currentIndex = positions.get(i);
-                    OdpsType type = tableSchema.getColumn(currentIndex).getType();
-                    switch (type) {
-                        case BIGINT:
-                            odpsRecord.setBigint(currentIndex, dataXRecord.getColumn(i)
-                                    .asLong());
-                            break;
-                        case BOOLEAN:
-                            odpsRecord.setBoolean(currentIndex, dataXRecord.getColumn(i)
-                                    .asBoolean());
-                            break;
-                        case DATETIME:
-                            odpsRecord.setDatetime(currentIndex, dataXRecord.getColumn(i)
-                                    .asDate());
-                            break;
-                        case DOUBLE:
-                            odpsRecord.setDouble(currentIndex, dataXRecord.getColumn(i)
-                                    .asDouble());
-                            break;
-                        case STRING:
-                            odpsRecord.setString(currentIndex, dataXRecord.getColumn(currentIndex)
-                                    .toString());
-                            break;
-                        default:
-                            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                                    String.format("Unknown column type:[%s].", type));
-
+                try {
+                    for (int i = 0, len = columnPositions.size(); i < len; i++) {
+                        currentIndex = columnPositions.get(i);
+                        OdpsType type = tableSchema.getColumn(currentIndex).getType();
+                        switch (type) {
+                            case STRING:
+                                odpsRecord.setString(currentIndex, dataXRecord.getColumn(currentIndex)
+                                        .toString());
+                                break;
+                            case BIGINT:
+                                odpsRecord.setBigint(currentIndex, dataXRecord.getColumn(i)
+                                        .asLong());
+                                break;
+                            case BOOLEAN:
+                                odpsRecord.setBoolean(currentIndex, dataXRecord.getColumn(i)
+                                        .asBoolean());
+                                break;
+                            case DATETIME:
+                                odpsRecord.setDatetime(currentIndex, dataXRecord.getColumn(i)
+                                        .asDate());
+                                break;
+                            case DOUBLE:
+                                odpsRecord.setDouble(currentIndex, dataXRecord.getColumn(i)
+                                        .asDouble());
+                                break;
+                            default:
+                                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
+                                        String.format("Unsupported column type:[%s].", type));
+                        }
                     }
+                    recordWriter.write(odpsRecord);
+                } catch (Exception e) {
+                    slavePluginCollector.collectDirtyRecord(dataXRecord, e);
                 }
-                recordWriter.write(odpsRecord);
             }
             recordWriter.close();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            throw e;
         }
     }
 

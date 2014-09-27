@@ -3,13 +3,28 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum OdpsWriterErrorCode implements ErrorCode {
-    REQUIRED_KEY("OdpsReader-00", "lost necessary key"),
-    REQUIRED_VALUE("OdpsReader-01", "lost necessary value"),
-    ILLEGAL_KEY("OdpsReader-02", "illegal key"),
-    ILLEGAL_VALUE("OdpsReader-03", "illegal value"),
+    REQUIRED_KEY("OdpsWriter-00", "lost necessary key"),
+    REQUIRED_VALUE("OdpsWriter-01", "lost necessary value"),
+    ILLEGAL_KEY("OdpsWriter-02", "illegal key"),
+    ILLEGAL_VALUE("OdpsWriter-03", "illegal value"),
 
-    RUNTIME_EXCEPTION("OdpsReader-03", "run time exception"),
-    NOT_SUPPORT_TYPE("OdpsReader-04", "not supported column type");
+    CHECK_TABLE_FAIL("OdpsWriter-04", "check table fail."),
+    UNSUPPORTED_ACCOUNT_TYPE("OdpsWriter-05", "unsupported account type"),
+    UNSUPPORTED_COLUMN_TYPE("OdpsWriter-06", "unsupported column type"),
+
+    CREATE_MASTER_SESSION_FAIL("OdpsWriter-07", "failed to create master session"),
+    GET_SLAVE_SESSION_FAIL("OdpsWriter-08", "failed to get slave session"),
+    GET_SESSION_STATUS_FAIL("OdpsWriter-09", "failed to get session status"),
+
+    GET_PARTITION_FAIL("OdpsWriter-10", "failed to get table all partitions"),
+
+    DELETE_PARTITION_FAIL("OdpsWriter-11", "failed to delete partition"),
+    CREATE_PARTITION_FAIL("OdpsWriter-12", "failed to create partition"),
+    TRUNCATE_TABLE_FAIL("OdpsWriter-13", "failed to truncate table"),
+    WRITER_RECORD_FAIL("OdpsWriter-14", "failed to write odps record"),
+
+    COMMIT_BLOCK_FAIL("OdpsWriter-15", "failed to commit block");
+
 
     private final String code;
     private final String description;

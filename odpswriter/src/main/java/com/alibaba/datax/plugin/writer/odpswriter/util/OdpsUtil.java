@@ -41,8 +41,8 @@ public final class OdpsUtil {
         } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
-            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                    String.format("Unsupport account type:[%s].", accountType));
+            throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
+                    String.format("Unsupported account type:[%s].", accountType));
         }
 
         Odps odps = new Odps(account);
@@ -56,7 +56,7 @@ public final class OdpsUtil {
         boolean isVirtualView = table.isVirtualView();
         if (isVirtualView) {
             throw new DataXException(
-                    OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                    OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
                     String.format(
                             "Table:[%s] is virtual view, DataX not support to write data to it.",
                             table.getName()));
@@ -72,14 +72,15 @@ public final class OdpsUtil {
             originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                     OdpsUtil.isPartitionedTable(table));
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION,
+            LOG.error("Failed to init table.", e);
+            throw new DataXException(OdpsWriterErrorCode.CHECK_TABLE_FAIL,
                     e);
         }
 
         return table;
     }
 
-    //处理逻辑是：如果分区存在，则先删除分区，再重建分区；如果分区不存在，则直接创建分区。
+    // 处理逻辑是：如果分区存在，则先删除分区，再重建分区；如果分区不存在，则直接创建分区
     public static void truncatePartition(Table table, String partition) {
         PartitionSpec part = new PartitionSpec(partition);
 
@@ -88,27 +89,28 @@ public final class OdpsUtil {
             try {
                 table.deletePartition(new PartitionSpec(partition));
             } catch (OdpsException e) {
-                //TODO
-                e.printStackTrace();
+                LOG.error(String.format("Failed to delete partition:[%s].", partition), e);
+                throw new DataXException(OdpsWriterErrorCode.DELETE_PARTITION_FAIL, e);
             }
         }
 
         try {
             table.createPartition(new PartitionSpec(partition));
         } catch (OdpsException e) {
-            String errorMsg = String.format("error when truncate partition:[%s], table:[%s]",
-                    partition, table.getName());
-            LOG.error(errorMsg, e);
+            LOG.error(String.format("Failed to create partition:[%s], table:[%s].",
+                    partition, table.getName()), e);
+            throw new DataXException(OdpsWriterErrorCode.CREATE_PARTITION_FAIL, e);
         }
     }
 
+    // TODO 确认表名称特殊字符处理规则，以及大小写敏感等问题
     public static void truncateTable(Odps odps, Table table) {
         String dropDdl = "truncate table " + table.getName() + ";";
         try {
             SQLTask.run(odps, dropDdl);
         } catch (OdpsException e) {
-            LOG.error(String.format("error when truncate table. SQL:[%s].", dropDdl), e);
-            new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
+            LOG.error(String.format("Failed to truncate table. SQL:[%s].", dropDdl), e);
+            throw new DataXException(OdpsWriterErrorCode.TRUNCATE_TABLE_FAIL, e);
         }
     }
 
@@ -131,7 +133,8 @@ public final class OdpsUtil {
                 tableAllPartitions = table.getPartitions();
             } catch (Exception e) {
                 if (i < retryTime) {
-                    LOG.warn("try to list odps partitions for {} times.", i + 1);
+                    LOG.warn("Try to get table:[{}] all partitions for [{}] times.",
+                            table.getName(), i + 1);
 
                     try {
                         Thread.sleep((long) (Math.pow(2, i) * 1000));
@@ -139,8 +142,8 @@ public final class OdpsUtil {
                     }
                     continue;
                 } else {
-                    throw new DataXException(
-                            OdpsWriterErrorCode.RUNTIME_EXCEPTION, e);
+                    throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL,
+                            String.format("Get all partitions in table:[%s] failed.", table.getName()));
                 }
             }
 
@@ -148,12 +151,15 @@ public final class OdpsUtil {
                 break;
             }
         }
+
+        if (null == tableAllPartitions) {
+            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL,
+                    String.format("Get all partitions in table:[%s] failed.", table.getName()));
+        }
         List<String> retPartitions = new ArrayList<String>();
 
-        if (null != tableAllPartitions) {
-            for (Partition partition : tableAllPartitions) {
-                retPartitions.add(partition.getPartitionSpec().toString());
-            }
+        for (Partition partition : tableAllPartitions) {
+            retPartitions.add(partition.getPartitionSpec().toString());
         }
 
         return retPartitions;
@@ -189,7 +195,7 @@ public final class OdpsUtil {
 
     public static String formatPartition(String partition) {
         if (StringUtils.isBlank(partition)) {
-            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+            throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
                     "bad partition which is blank.");
         } else {
             return partition.trim().replaceAll(" *= *", "=")
@@ -211,13 +217,13 @@ public final class OdpsUtil {
         }
     }
 
-    public static List<Integer> parsePosition(List<String> userConfigedColumns,
+    public static List<Integer> parsePosition(List<String> userConfiguredColumns,
                                               List<String> allColumnList) {
         List<Integer> retList = new ArrayList<Integer>();
 
-        for (String col : userConfigedColumns) {
+        for (String column : userConfiguredColumns) {
             for (int i = 0, len = allColumnList.size(); i < len; i++) {
-                if (allColumnList.get(i).equalsIgnoreCase(col)) {
+                if (allColumnList.get(i).equalsIgnoreCase(column)) {
                     retList.add(i);
                     break;
                 }
@@ -229,10 +235,12 @@ public final class OdpsUtil {
     // TODO retry
     public static TableTunnel.UploadSession createMasterSession(Odps odps,
                                                                 Configuration originalConfig) {
-
-        String project = originalConfig.getString(Key.PROJECT);
-        String tableName = originalConfig.getString(Key.TABLE);
+        // 线下环境必填，线上环境不需要
         String tunnelServer = originalConfig.getString(Key.TUNNEL_SERVER);
+
+        // 以下参数必填
+        String project = originalConfig.getNecessaryValue(Key.PROJECT, OdpsWriterErrorCode.REQUIRED_VALUE);
+        String tableName = originalConfig.getNecessaryValue(Key.TABLE, OdpsWriterErrorCode.REQUIRED_VALUE);
 
         TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNotBlank(tunnelServer)) {
@@ -243,17 +251,19 @@ public final class OdpsUtil {
                 .getBool(Constant.IS_PARTITIONED_TABLE);
 
         TableTunnel.UploadSession uploadSession;
-        String partition = originalConfig.getString(Key.PARTITION, null);
 
         try {
             if (isPartitionedTable) {
+                String partition = originalConfig.getNecessaryValue(Key.PARTITION, OdpsWriterErrorCode.REQUIRED_VALUE);
                 uploadSession = tunnel.createUploadSession(project, tableName,
                         new PartitionSpec(partition));
             } else {
                 uploadSession = tunnel.createUploadSession(project, tableName);
             }
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
+            LOG.error(String.format("Error while createUploadSession. project:[%s], table:[{}].",
+                    project, tableName), e);
+            throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_SESSION_FAIL, e);
         }
 
         return uploadSession;
@@ -262,10 +272,13 @@ public final class OdpsUtil {
     // TODO retry
     public static TableTunnel.UploadSession getSlaveSession(Odps odps,
                                                             Configuration sliceConfig) {
-        String project = sliceConfig.getString(Key.PROJECT);
+        // 线下环境必填，线上环境不需要
         String tunnelServer = sliceConfig.getString(Key.TUNNEL_SERVER, null);
-        String tableName = sliceConfig.getString(Key.TABLE);
-        String uploadId = sliceConfig.getString(Constant.UPLOAD_ID);
+
+        // 以下参数必填
+        String project = sliceConfig.getNecessaryValue(Key.PROJECT, OdpsWriterErrorCode.REQUIRED_VALUE);
+        String tableName = sliceConfig.getNecessaryValue(Key.TABLE, OdpsWriterErrorCode.REQUIRED_VALUE);
+        String uploadId = sliceConfig.getNecessaryValue(Constant.UPLOAD_ID, OdpsWriterErrorCode.REQUIRED_VALUE);
 
 
         boolean isPartitionedTable = sliceConfig
@@ -278,17 +291,19 @@ public final class OdpsUtil {
         }
 
         TableTunnel.UploadSession uploadSession;
-        String partition = sliceConfig.getString(Key.PARTITION, null);
-
 
         try {
             if (isPartitionedTable) {
-                uploadSession = tunnel.getUploadSession(project, tableName, new PartitionSpec(partition), uploadId);
+                String partition = sliceConfig.getNecessaryValue(Key.PARTITION, OdpsWriterErrorCode.REQUIRED_VALUE);
+                uploadSession = tunnel.getUploadSession(project, tableName,
+                        new PartitionSpec(partition), uploadId);
             } else {
                 uploadSession = tunnel.getUploadSession(project, tableName, uploadId);
             }
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, e);
+            LOG.error(String.format("Error while getUploadSession. uploadId:[%s], project:[%s], table:[{}].", uploadId,
+                    project, tableName), e);
+            throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_SESSION_FAIL, e);
         }
 
         return uploadSession;
