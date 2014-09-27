@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-//TODO: 换行符：System.getProperties("line.separator")方式获取。
+//TODO: 换行符：System.getProperties("line.separator")方式获取
 public class OdpsWriter extends Writer {
     public static class Master extends Writer.Master {
         private static final Logger LOG = LoggerFactory
@@ -42,14 +42,7 @@ public class OdpsWriter extends Writer {
             this.odps = OdpsUtil.initOdps(this.originalConfig);
             this.table = OdpsUtil.initTable(this.odps, this.originalConfig);
 
-            boolean isVirtualView = this.table.isVirtualView();
-            if (isVirtualView) {
-                throw new DataXException(
-                        OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
-                        String.format(
-                                "Table:[%s] is virtual view, DataX not support to write data to it.",
-                                this.table.getName()));
-            }
+            OdpsUtil.checkIfVirtualTable(this.table);
 
             this.masterUploadSession = OdpsUtil.createMasterSession(this.odps, this.originalConfig);
 
@@ -87,21 +80,23 @@ public class OdpsWriter extends Writer {
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            return OdpsSplitUtil.doSplit(this.originalConfig, this.uploadId, this.blockIds, mandatoryNumber);
+            return OdpsSplitUtil.doSplit(this.originalConfig, this.uploadId, this.blockIds,
+                    mandatoryNumber);
         }
 
 
         @Override
         public void post() {
-            LOG.info("Begin to commit all blocks. uploadId:[{}],blocks:[{}].", this.uploadId
+            LOG.info("Begin to commit all blocks. uploadId:[{}],blocks:[\n{}\n].", this.uploadId
                     , StringUtils.join(this.blockIds, "\n"));
 
             try {
                 this.masterUploadSession.commit(blockIds.toArray(new Long[0]));
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error(String.format("Error while commit all blocks. uploadId:[%s]",
+                        this.uploadId), e);
+                throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION, e);
             }
-
         }
 
         @Override
@@ -126,19 +121,19 @@ public class OdpsWriter extends Writer {
             boolean isPartitionedTable = originalConfig
                     .getBool(Constant.IS_PARTITIONED_TABLE);
 
-            String userConfigedPartition = originalConfig
+            String userConfiguredPartition = originalConfig
                     .getString(Key.PARTITION);
 
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
-                if (null == userConfigedPartition) {
+                if (null == userConfiguredPartition) {
                     //缺失 Key:partition
                     throw new DataXException(
                             OdpsWriterErrorCode.REQUIRED_KEY,
                             String.format(
                                     "Lost key named partition, table:[%s] is partitioned.",
                                     table.getName()));
-                } else if (StringUtils.isEmpty(userConfigedPartition)) {
+                } else if (StringUtils.isEmpty(userConfiguredPartition)) {
                     //缺失 partition的值配置
                     throw new DataXException(
                             OdpsWriterErrorCode.REQUIRED_VALUE,
@@ -150,18 +145,22 @@ public class OdpsWriter extends Writer {
                             .getTableAllPartitions(table,
                                     originalConfig.getInt(Key.MAX_RETRY_TIME));
 
-                    String standardUserConfigedPartitions = checkUserConfigedPartition(
-                            allPartitions, userConfigedPartition);
+                    if (null == allPartitions || allPartitions.isEmpty()) {
+                        throw new DataXException(OdpsWriterErrorCode.RUNTIME_EXCEPTION,
+                                String.format("Table:[%s] partitions are empty.", table.getName()));
+                    }
+                    String standardUserConfiguredPartitions = checkUserConfiguredPartition(
+                            allPartitions, userConfiguredPartition);
 
-                    originalConfig.set(Key.PARTITION, standardUserConfigedPartitions);
+                    originalConfig.set(Key.PARTITION, standardUserConfiguredPartitions);
                 }
             } else {
                 // 非分区表，则不能配置分区( 严格到不能出现 partition 这个 key)
-                userConfigedPartition = originalConfig
+                userConfiguredPartition = originalConfig
                         .getString(Key.PARTITION);
-                if (null != userConfigedPartition) {
+                if (null != userConfiguredPartition) {
                     throw new DataXException(
-                            OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                            OdpsWriterErrorCode.ILLEGAL_KEY,
                             String.format(
                                     "Can not config partition, Table:[%s] is not partitioned, ",
                                     table.getName()));
@@ -169,42 +168,42 @@ public class OdpsWriter extends Writer {
             }
         }
 
-        private String checkUserConfigedPartition(
-                List<String> allPartitions, String userConfigedPartition) {
+        private String checkUserConfiguredPartition(
+                List<String> allPartitions, String userConfiguredPartition) {
             // 对odps 本身的所有分区进行特殊字符的处理
             List<String> allStandardPartitions = OdpsUtil
                     .formatPartitions(allPartitions);
 
             // 对用户自身配置的所有分区进行特殊字符的处理
-            String standardUserConfigedPartitions = OdpsUtil
-                    .formatPartition(userConfigedPartition);
+            String standardUserConfiguredPartitions = OdpsUtil
+                    .formatPartition(userConfiguredPartition);
 
-            if ("*" .equals(standardUserConfigedPartitions)) {
+            if ("*".equals(standardUserConfiguredPartitions)) {
                 // 不允许
                 throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
                         "Partition can not be *.");
             }
 
-            if (!allStandardPartitions.contains(userConfigedPartition)) {
+            if (!allStandardPartitions.contains(userConfiguredPartition)) {
                 throw new DataXException(OdpsWriterErrorCode.NOT_SUPPORT_TYPE, String.format("Can not find partition:[%s] in all partitions:[\n%s\n].",
-                        userConfigedPartition, StringUtils.join(allPartitions, "\n")));
+                        userConfiguredPartition, StringUtils.join(allPartitions, "\n")));
             }
 
-            return standardUserConfigedPartitions;
+            return standardUserConfiguredPartitions;
         }
 
         private void dealColumn(Configuration originalConfig, Table table) {
             // 用户配置的 column
-            List<String> userConfigedColumns = this.originalConfig.getList(
+            List<String> userConfiguredColumns = originalConfig.getList(
                     Key.COLUMN, String.class);
-            if (null == userConfigedColumns) {
+            if (null == userConfiguredColumns) {
                 //缺失 Key:column
                 throw new DataXException(
                         OdpsWriterErrorCode.REQUIRED_KEY,
                         String.format(
                                 "Lost key named column, table:[%s].",
                                 table.getName()));
-            } else if (userConfigedColumns.isEmpty()) {
+            } else if (userConfiguredColumns.isEmpty()) {
                 //缺失 column 的值配置
                 throw new DataXException(
                         OdpsWriterErrorCode.REQUIRED_VALUE,
@@ -218,7 +217,7 @@ public class OdpsWriter extends Writer {
                 LOG.info("Column configured as * is not recommend, DataX will convert it.");
                 List<String> tableOriginalColumnNameList = OdpsUtil.getTableOriginalColumnNameList(columns);
 
-                if (1 == userConfigedColumns.size() && "*" .equals(userConfigedColumns.get(0))) {
+                if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
                     //处理 * 配置，替换为：odps 表所有列
                     this.originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
                     List<Integer> positions = new ArrayList<Integer>();
@@ -235,10 +234,10 @@ public class OdpsWriter extends Writer {
                      * </p>
                      */
 
-                    doCheckColumn(userConfigedColumns, tableOriginalColumnNameList);
+                    doCheckColumn(userConfiguredColumns, tableOriginalColumnNameList);
 
                     List<Integer> positions = OdpsUtil.parsePosition(
-                            userConfigedColumns, tableOriginalColumnNameList);
+                            userConfiguredColumns, tableOriginalColumnNameList);
                     this.originalConfig.set(Constant.COLUMN_POSITION, positions);
                 }
             }
@@ -284,29 +283,18 @@ public class OdpsWriter extends Writer {
                 .getLogger(OdpsWriter.Slave.class);
 
         private Configuration writerSliceConf;
-        private String tunnelServer;
 
         private Odps odps = null;
-        private String table = null;
-        private boolean isPartitionedTable;
         private long blockId;
-        private String uploadId;
 
         @Override
         public void init() {
             this.writerSliceConf = getPluginJobConf();
-            this.tunnelServer = this.writerSliceConf.getString(
-                    Key.TUNNEL_SERVER, null);
 
             this.odps = OdpsUtil.initOdps(this.writerSliceConf);
-            this.table = this.writerSliceConf.getString(Key.TABLE);
-
-            this.isPartitionedTable = this.writerSliceConf
-                    .getBool(Constant.IS_PARTITIONED_TABLE);
 
             //blockId 在 master 中已分配完成
             this.blockId = this.writerSliceConf.getLong(Constant.BLOCK_ID);
-            this.uploadId = this.writerSliceConf.getString(Constant.UPLOAD_ID);
         }
 
         @Override

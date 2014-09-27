@@ -5,7 +5,8 @@ import com.alibaba.datax.common.spi.ErrorCode;
 public enum OdpsWriterErrorCode implements ErrorCode {
     REQUIRED_KEY("OdpsReader-00", "lost necessary key"),
     REQUIRED_VALUE("OdpsReader-01", "lost necessary value"),
-    ILLEGAL_VALUE("OdpsReader-02", "illegal value"),
+    ILLEGAL_KEY("OdpsReader-02", "illegal key"),
+    ILLEGAL_VALUE("OdpsReader-03", "illegal value"),
 
     RUNTIME_EXCEPTION("OdpsReader-03", "run time exception"),
     NOT_SUPPORT_TYPE("OdpsReader-04", "not supported column type");

@@ -52,6 +52,17 @@ public final class OdpsUtil {
         return odps;
     }
 
+    public static void checkIfVirtualTable(Table table) {
+        boolean isVirtualView = table.isVirtualView();
+        if (isVirtualView) {
+            throw new DataXException(
+                    OdpsWriterErrorCode.NOT_SUPPORT_TYPE,
+                    String.format(
+                            "Table:[%s] is virtual view, DataX not support to write data to it.",
+                            table.getName()));
+        }
+    }
+
     public static Table initTable(Odps odps, Configuration originalConfig) {
         String tableName = originalConfig.getNecessaryValue(Key.TABLE,
                 OdpsWriterErrorCode.ILLEGAL_VALUE);
@@ -103,9 +114,7 @@ public final class OdpsUtil {
 
     // TODO retry
     public static Table getTable(Odps odps, String tableName) {
-        Table table = odps.tables().get(tableName);
-
-        return table;
+        return odps.tables().get(tableName);
     }
 
     public static boolean isPartitionedTable(Table table) {
@@ -123,6 +132,11 @@ public final class OdpsUtil {
             } catch (Exception e) {
                 if (i < retryTime) {
                     LOG.warn("try to list odps partitions for {} times.", i + 1);
+
+                    try {
+                        Thread.sleep((long) (Math.pow(2, i) * 1000));
+                    } catch (InterruptedException unused) {
+                    }
                     continue;
                 } else {
                     throw new DataXException(
@@ -136,8 +150,10 @@ public final class OdpsUtil {
         }
         List<String> retPartitions = new ArrayList<String>();
 
-        for (Partition partition : tableAllPartitions) {
-            retPartitions.add(partition.getPartitionSpec().toString());
+        if (null != tableAllPartitions) {
+            for (Partition partition : tableAllPartitions) {
+                retPartitions.add(partition.getPartitionSpec().toString());
+            }
         }
 
         return retPartitions;
@@ -145,9 +161,8 @@ public final class OdpsUtil {
 
     public static List<Column> getTableAllColumns(Table table) {
         TableSchema tableSchema = table.getSchema();
-        List<Column> columns = tableSchema.getColumns();
 
-        return columns;
+        return tableSchema.getColumns();
     }
 
     public static List<OdpsType> getTableOriginalColumnTypeList(

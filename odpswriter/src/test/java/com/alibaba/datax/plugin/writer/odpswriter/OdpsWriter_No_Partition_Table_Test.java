@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.List;
 
 @RunWith(LoggedRunner.class)
-public class OdpsWriter_02Test extends BasicWriterPluginTest {
+public class OdpsWriter_No_Partition_Table_Test extends BasicWriterPluginTest {
 
 
     @TestLogger(log = "基本测试basic2，写入两行数据到一张非分区表。不能配置 partition，并且 column 配置为其中部分字段，顺序调整。写入份数为2份")
