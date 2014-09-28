@@ -8,26 +8,22 @@ import com.aliyun.odps.TableSchema;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordWriter;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class WriterProxy {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(WriterProxy.class);
-
     private RecordReceiver recordReceiver;
     private UploadSession uploadSession;
-
     private List<Integer> columnPositions;
+
     private long blockId;
     private TableSchema tableSchema;
+
     private SlavePluginCollector slavePluginCollector;
 
     public WriterProxy(RecordReceiver recordReceiver,
-                       UploadSession uploadSession, List<Integer> columnPositions, long blockId,
-                       SlavePluginCollector slavePluginCollector) {
+                       UploadSession uploadSession, List<Integer> columnPositions,
+                       long blockId, SlavePluginCollector slavePluginCollector) {
         this.recordReceiver = recordReceiver;
         this.uploadSession = uploadSession;
         this.columnPositions = columnPositions;
@@ -79,7 +75,7 @@ public class WriterProxy {
                     }
                     recordWriter.write(odpsRecord);
                 } catch (Exception e) {
-                    slavePluginCollector.collectDirtyRecord(dataXRecord, e);
+                    this.slavePluginCollector.collectDirtyRecord(dataXRecord, e);
                 }
             }
             recordWriter.close();

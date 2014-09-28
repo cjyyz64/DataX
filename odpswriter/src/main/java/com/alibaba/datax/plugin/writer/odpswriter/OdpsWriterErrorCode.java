@@ -5,12 +5,13 @@ import com.alibaba.datax.common.spi.ErrorCode;
 public enum OdpsWriterErrorCode implements ErrorCode {
     REQUIRED_KEY("OdpsWriter-00", "lost necessary key"),
     REQUIRED_VALUE("OdpsWriter-01", "lost necessary value"),
-    ILLEGAL_KEY("OdpsWriter-02", "illegal key"),
     ILLEGAL_VALUE("OdpsWriter-03", "illegal value"),
 
     CHECK_TABLE_FAIL("OdpsWriter-04", "check table fail."),
     UNSUPPORTED_ACCOUNT_TYPE("OdpsWriter-05", "unsupported account type"),
     UNSUPPORTED_COLUMN_TYPE("OdpsWriter-06", "unsupported column type"),
+
+    UNSUPPORTED_TABLE_TYPE("OdpsWriterXXXXXXXX", "unsupported table type"),
 
     CREATE_MASTER_SESSION_FAIL("OdpsWriter-07", "failed to create master session"),
     GET_SLAVE_SESSION_FAIL("OdpsWriter-08", "failed to get slave session"),

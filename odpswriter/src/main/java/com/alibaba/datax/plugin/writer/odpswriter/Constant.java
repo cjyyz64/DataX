@@ -16,6 +16,8 @@ public class Constant {
 
     public static final String UPLOAD_ID = "uploadId";
 
+    public static final int DEFAULT_MAX_RETRY_TIME = 3;
+
     /**
      * 以下是获取accesskey id 需要用到的常量值
      */

@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.aliyun.odps.Column;
@@ -24,8 +25,6 @@ public class OdpsWriter extends Writer {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Master.class);
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
-
-        public static final int DEFAULT_MAX_RETRY_TIME = 3;
 
         private Configuration originalConfig;
         private Odps odps;
@@ -57,36 +56,43 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void prepare() {
-            boolean truncate = this.originalConfig.getBool(Key.TRUNCATE, true);
+            //TODO 无默认值
+            Boolean truncate = this.originalConfig.getBool(Key.TRUNCATE);
+            if (null == truncate) {
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        "key named truncate should configured and only be 'true' or 'false'.");
+            } else {
+                boolean isPartitionedTable = this.originalConfig
+                        .getBool(Constant.IS_PARTITIONED_TABLE);
+                if (truncate.booleanValue()) {
+                    if (isPartitionedTable) {
+                        String partition = this.originalConfig
+                                .getString(Key.PARTITION);
+                        LOG.info("Begin to clean partitioned table:[{}], partition:[{}].",
+                                this.table.getName(), partition);
+                        OdpsUtil.truncatePartition(this.table, partition,
+                                this.originalConfig.getBool(Constant.IS_PARTITION_EXIST));
 
-            boolean isPartitionedTable = this.originalConfig
-                    .getBool(Constant.IS_PARTITIONED_TABLE);
-            if (truncate) {
-                if (isPartitionedTable) {
-                    String partition = this.originalConfig
-                            .getString(Key.PARTITION);
-                    LOG.info("Begin to clean partitioned table:[{}], partition:[{}].",
-                            this.table.getName(), partition);
-                    OdpsUtil.truncatePartition(this.table, partition, this.originalConfig.getBool(
-                            Constant.IS_PARTITION_EXIST));
+                        LOG.info("Finished clean partitioned table:[{}], partition:[{}].",
+                                this.table.getName(), partition);
+                    } else {
+                        LOG.info("Begin to clean non partitioned table:[{}].",
+                                this.table.getName());
 
-                    LOG.info("Finished clean partitioned table:[{}], partition:[{}].",
-                            this.table.getName(), partition);
-                } else {
-                    LOG.info("Begin to clean non partitioned table:[{}].",
-                            this.table.getName());
-
-                    OdpsUtil.truncateTable(this.odps, this.table);
-                    LOG.info("Finished clean non partitioned table:[{}].",
-                            this.table.getName());
+                        OdpsUtil.truncateTable(this.odps, this.table);
+                        LOG.info("Finished clean non partitioned table:[{}].",
+                                this.table.getName());
+                    }
                 }
+
+                //注意，createMasterSession要求分区已经创建完成
+                this.masterUploadSession = OdpsUtil.createMasterSession(this.odps,
+                        this.originalConfig);
+                this.uploadId = this.masterUploadSession.getId();
+                LOG.info("UploadId:[{}]", this.uploadId);
+
             }
 
-            //注意，createMasterSession要求分区已经创建完成
-            this.masterUploadSession = OdpsUtil.createMasterSession(this.odps,
-                    this.originalConfig);
-            this.uploadId = this.masterUploadSession.getId();
-            LOG.info("UploadId:[{}]", this.uploadId);
 
             if (IS_DEBUG) {
                 LOG.debug("After prepare(), the originalConfig now is:[\n{}\n]",
@@ -109,8 +115,10 @@ public class OdpsWriter extends Writer {
             try {
                 this.masterUploadSession.commit(blockIds.toArray(new Long[0]));
             } catch (Exception e) {
-                LOG.error(String.format("Error while commit all blocks. uploadId:[%s]",
-                        this.uploadId), e);
+                String message = StrUtil.buildOriginalCauseMessage(String.format
+                        ("Error while commit all blocks. uploadId:[%s]", this.uploadId), null);
+
+                LOG.error(message);
                 throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
             }
         }
@@ -121,10 +129,13 @@ public class OdpsWriter extends Writer {
         }
 
         private void dealMaxRetryTime(Configuration originalConfig) {
-            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, DEFAULT_MAX_RETRY_TIME);
+            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, Constant.DEFAULT_MAX_RETRY_TIME);
             if (maxRetryTime < 1) {
-                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        "maxRetryTime should >=1.");
+                String bussinessMessage = "maxRetryTime should >=1.";
+                String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, bussinessMessage);
             }
 
             originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
@@ -142,64 +153,79 @@ public class OdpsWriter extends Writer {
 
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
-                if (null == userConfiguredPartition) {
-                    //缺失 Key:partition
-                    throw new DataXException(
-                            OdpsWriterErrorCode.REQUIRED_KEY,
-                            String.format(
-                                    "Lost key named partition, table:[%s] is partitioned.",
-                                    table.getName()));
-                } else if (StringUtils.isEmpty(userConfiguredPartition)) {
-                    //缺失 partition的值配置
-                    throw new DataXException(
-                            OdpsWriterErrorCode.REQUIRED_VALUE,
-                            String.format(
-                                    "Lost partition value, table:[%s] is partitioned.",
-                                    table.getName()));
+
+                if (StringUtils.isBlank(userConfiguredPartition)) {
+                    String message = StrUtil.buildOriginalCauseMessage(String.format(
+                            "Lost partition value, table:[%s] is partitioned.",
+                            table.getName()), null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, message);
                 } else {
-                    //TODO 需要添加对分区级数校验的方法（sdk 本身有级数api吗？）
+                    //TODO 需要添加对分区级数校验的方法
                     List<String> tableAllPartitions = OdpsUtil.getTableAllPartitions(this.table,
                             this.originalConfig.getInt(Key.MAX_RETRY_TIME));
 
                     List<String> formattedTableAllPartitions = listToLowerCase(OdpsUtil.formatPartitions(
                             tableAllPartitions));
 
-                    String formatteddUserConfiguredPartition = checkUserConfiguredPartition(
+                    String formattedUserConfiguredPartition = checkUserConfiguredPartition(this.table,
                             userConfiguredPartition);
 
-                    if (formattedTableAllPartitions.contains(formatteddUserConfiguredPartition.toLowerCase())) {
+
+                    if (formattedTableAllPartitions.contains(formattedUserConfiguredPartition.toLowerCase())) {
                         originalConfig.set(Constant.IS_PARTITION_EXIST, true);
                     } else {
                         originalConfig.set(Constant.IS_PARTITION_EXIST, false);
                     }
 
 
-                    originalConfig.set(Key.PARTITION, formatteddUserConfiguredPartition);
+                    originalConfig.set(Key.PARTITION, formattedUserConfiguredPartition);
                 }
             } else {
-                // 非分区表，则不能配置分区( 严格到不能出现 partition 这个 key)
+                // 非分区表，则不能配置分区值
                 userConfiguredPartition = originalConfig
                         .getString(Key.PARTITION);
-                if (null != userConfiguredPartition) {
-                    throw new DataXException(
-                            OdpsWriterErrorCode.ILLEGAL_KEY,
-                            String.format(
-                                    "Can not config partition, Table:[%s] is not partitioned, ",
-                                    table.getName()));
+
+                if (null == userConfiguredPartition) {
+                    //nothing
+                } else if (StringUtils.isBlank(userConfiguredPartition)) {
+                    LOG.warn("It is better to remove key:partition because Table:[{}] is not partitioned",
+                            table.getName());
+                } else {
+                    String bussinessMessage = String.format("Can not config partition, Table:[%s] is not partitioned, ",
+                            table.getName());
+                    String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, bussinessMessage);
                 }
             }
         }
 
-        private String checkUserConfiguredPartition(
-                String userConfiguredPartition) {
+        private String checkUserConfiguredPartition(Table table, String userConfiguredPartition) {
             // 对用户自身配置的所有分区进行特殊字符的处理
             String standardUserConfiguredPartition = OdpsUtil
                     .formatPartition(userConfiguredPartition);
 
             if ("*".equals(standardUserConfiguredPartition)) {
                 // 不允许
-                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                        "Partition can not be *.");
+                String businessMessage = "Partition can not be *.";
+                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
+            }
+
+            int tablePartitionDepth = OdpsUtil.getPartitionDepth(table);
+            int userConfiguredPartitionDepth = userConfiguredPartition.split(",").length;
+            if (tablePartitionDepth != userConfiguredPartitionDepth) {
+                String businessMessage = String.format("Partition depth not equal. table:[%s] partition depth:[%s], user configured partition depth:[%s].",
+                        tablePartitionDepth, userConfiguredPartition);
+                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
             }
 
             //返回的是：已经进行过特殊字符处理的分区配置值
@@ -210,28 +236,22 @@ public class OdpsWriter extends Writer {
             // 用户配置的 column
             List<String> userConfiguredColumns = originalConfig.getList(
                     Key.COLUMN, String.class);
-            if (null == userConfiguredColumns) {
-                //缺失 Key:column
-                throw new DataXException(
-                        OdpsWriterErrorCode.REQUIRED_KEY,
-                        String.format(
-                                "Lost key named column, table:[%s].",
-                                table.getName()));
-            } else if (userConfiguredColumns.isEmpty()) {
-                //缺失 column 的值配置
-                throw new DataXException(
-                        OdpsWriterErrorCode.REQUIRED_VALUE,
-                        String.format(
-                                "Lost column value, table:[%s].",
-                                table.getName()));
+            if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
+                //缺失 column配置
+                String businessMessage = String.format("Lost column config, table:[%s].",
+                        table.getName());
+                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.REQUIRED_KEY, businessMessage);
             } else {
                 List<Column> tableOriginalColumns = OdpsUtil.getTableAllColumns(table);
                 LOG.info("tableAllColumn:[\n{}\n]", StringUtils.join(tableOriginalColumns, "\n"));
 
-                LOG.info("Column configured as * is not recommend, DataX will convert it to tableOriginalColumns by order.");
                 List<String> tableOriginalColumnNameList = OdpsUtil.getTableOriginalColumnNameList(tableOriginalColumns);
 
                 if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
+                    LOG.info("Column configured as * is not recommend, DataX will convert it to tableOriginalColumns by order.");
                     //处理 * 配置，替换为：odps 表所有列
                     this.originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
                     List<Integer> columnPositions = new ArrayList<Integer>();
@@ -260,13 +280,17 @@ public class OdpsWriter extends Writer {
 
         private void doCheckColumn(List<String> userConfiguredColumns,
                                    List<String> tableOriginalColumnNameList) {
-            // 检查列是否重复
+            // 检查列是否重复 TODO 大小写
             List<String> tempUserConfiguredColumns = new ArrayList<String>(userConfiguredColumns);
             Collections.sort(tempUserConfiguredColumns);
             for (int i = 0, len = tempUserConfiguredColumns.size(); i < len - 1; i++) {
                 if (tempUserConfiguredColumns.get(i).equalsIgnoreCase(tempUserConfiguredColumns.get(i + 1))) {
-                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("Can not config duplicate column:[%s].", tempUserConfiguredColumns.get(i)));
+                    String businessMessage = String.format("Can not config duplicate column:[%s].",
+                            tempUserConfiguredColumns.get(i));
+                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
                 }
             }
 
@@ -275,8 +299,11 @@ public class OdpsWriter extends Writer {
             List<String> lowerCaseTableOriginalColumnNameList = listToLowerCase(tableOriginalColumnNameList);
             for (String aColumn : lowerCaseUserConfiguredColumns) {
                 if (!lowerCaseTableOriginalColumnNameList.contains(aColumn)) {
-                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("Can not find column:[%s].", aColumn));
+                    String businessMessage = String.format("Can not find column:[%s].", aColumn);
+                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
                 }
             }
         }
@@ -310,7 +337,7 @@ public class OdpsWriter extends Writer {
 
             this.odps = OdpsUtil.initOdps(this.writerSliceConfig);
 
-            //blockId 在 master 中已分配完成
+            //blockId 在 master 中已分配完成 TODO
             this.blockId = this.writerSliceConfig.getLong(Constant.BLOCK_ID);
 
             if (IS_DEBUG) {
@@ -329,13 +356,16 @@ public class OdpsWriter extends Writer {
         public void startWrite(RecordReceiver recordReceiver) {
             UploadSession uploadSession = OdpsUtil.getSlaveSession(this.odps, this.writerSliceConfig);
 
-            List<Integer> positions = this.writerSliceConfig.getList(Constant.COLUMN_POSITION, Integer.class);
+            List<Integer> positions = this.writerSliceConfig.getList(Constant.COLUMN_POSITION,
+                    Integer.class);
 
             try {
                 LOG.info("Session status:[{}]", uploadSession.getStatus()
                         .toString());
             } catch (Exception e) {
-                LOG.error("Failed to get session status.", e);
+                String message = StrUtil.buildOriginalCauseMessage("Failed to get session status.", e);
+
+                LOG.error(message);
                 throw new DataXException(OdpsWriterErrorCode.GET_SESSION_STATUS_FAIL, e);
             }
 
@@ -345,7 +375,9 @@ public class OdpsWriter extends Writer {
                         positions, this.blockId, super.getSlavePluginCollector());
                 writerProxy.doWrite();
             } catch (Exception e) {
-                LOG.error("Failed to write odps record.", e);
+                String message = StrUtil.buildOriginalCauseMessage("Failed to write odps record.", e);
+
+                LOG.error(message);
                 throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
             }
         }

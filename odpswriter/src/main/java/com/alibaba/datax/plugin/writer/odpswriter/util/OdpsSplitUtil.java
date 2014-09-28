@@ -19,6 +19,8 @@ public final class OdpsSplitUtil {
 
             tempConf = originalConfig.clone();
             tempConf.set(Constant.UPLOAD_ID, uploadId);
+
+            //TODO block id 不能直接指定死
             tempConf.set(Constant.BLOCK_ID, i);
             configs.add(tempConf);
         }
