@@ -269,11 +269,13 @@ public class TxtFileReader extends Reader {
 		}
 
 		// TODO sock 文件无法read
+		// TODO check print exception stack
 		@Override
 		public void startRead(RecordSender recordSender) {
 			LOG.info("start startRead()");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
+				
 				try {
 					this.readFromFile(fileName, recordSender);
 					recordSender.flush();
