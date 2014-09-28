@@ -1,0 +1,35 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "sqlserverreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": ["a", "b", "function()"],
+                        "splitPk":"a",
+                        "where": "",
+                        
+                        //"querySql":"select * from tablename",
+                        
+                        "connection": [
+                            {
+                            	//"querySql": [
+                  				//	"select db_id,db_type,db_ip"
+                				//],
+                                "table": [
+                                    "db_info", "db_message", "db_para[0-32]"                                 
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:microsoft:sqlserver://<server_name>:<port>"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
