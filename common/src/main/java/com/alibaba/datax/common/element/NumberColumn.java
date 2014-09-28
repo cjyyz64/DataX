@@ -2,8 +2,10 @@ package com.alibaba.datax.common.element;
 
 import java.util.Date;
 
-import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -22,8 +24,16 @@ public class NumberColumn extends Column {
 		this(String.valueOf(i));
 	}
 
-	private NumberColumn(final String content) {
+	public NumberColumn(final String content) {
 		super(content, Column.Type.NUMBER, content.length());
+
+		boolean isLegalNumber = (null == content || NumberUtils
+				.isNumber(content));
+		if (!isLegalNumber) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("[%s] illegal number format .", content));
+		}
+
 	}
 
 	@Override
@@ -32,7 +42,7 @@ public class NumberColumn extends Column {
 			return null;
 		}
 
-		return Long.valueOf(this.toString());
+		return (long) (double) (this.asDouble());
 	}
 
 	@Override
@@ -41,7 +51,7 @@ public class NumberColumn extends Column {
 			return null;
 		}
 
-		return Double.valueOf(this.toString());
+		return NumberUtils.toDouble(this.toString());
 	}
 
 	@Override
