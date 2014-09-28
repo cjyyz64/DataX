@@ -225,7 +225,9 @@ class XmlConvertor:
                 replace = "replace"
             else:
                 replace = "insert"
-            self.writer_parameter["insertOrReplace"] = replace
+        else:
+            replace = "replace"
+        self.writer_parameter["insertOrReplace"] = replace
         encoding =  self.get_value_from_xml(self.writer, "encoding")
         if encoding:
             session = {}
@@ -289,12 +291,12 @@ class XmlConvertor:
         self.writer_parameter["partition"] = self.get_value_from_xml(self.writer, "partition")
         self.writer_parameter["odpsServer"] = self.get_value_from_xml(self.writer, "odps-server")
 
+        is_truncate = True
         truncate = self.get_value_from_xml(self.writer, "truncate")
         if truncate:
-            is_truncate = False
-            if truncate.lower() == "true":
-                is_truncate = True
-            self.writer_parameter["truncate"] = is_truncate
+            if truncate.lower() == "false":
+                is_truncate = False
+        self.writer_parameter["truncate"] = is_truncate
 
         account_provider = self.get_value_from_xml(self.writer, "account-provider")
         if account_provider:
