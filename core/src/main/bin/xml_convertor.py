@@ -97,9 +97,9 @@ class XmlConvertor:
         finally:
             return value
 
-    def parse_column(self, columns):
+    def parse_map_column(self, columns):
         if not columns or not columns.strip() or columns == "*":
-            return ["*"]
+            return [{"name":"*"}]
 
         columns = columns.strip().strip(",")
         column_array = []
@@ -112,6 +112,31 @@ class XmlConvertor:
             elif ch == ",":
                 if bracket_count == 0 and quote_count%2 == 0:
                     column_array.append({"name":columns[begin:i]})
+                    begin = i+1 
+            elif ch == "'":
+                quote_count += 1
+            elif ch == "(":
+                bracket_count += 1
+            elif ch == ")":
+                bracket_count -= 1
+
+        return column_array
+
+    def parse_column(self, columns):
+        if not columns or not columns.strip() or columns == "*":
+            return ["*"]
+
+        columns = columns.strip().strip(",")
+        column_array = []
+        bracket_count = 0 
+        quote_count = 0 
+        begin = 0 
+        for i, ch in enumerate(columns):
+            if i == len(columns)-1:
+                column_array.append(columns[begin:])
+            elif ch == ",":
+                if bracket_count == 0 and quote_count%2 == 0:
+                    column_array.append(columns[begin:i])
                     begin = i+1 
             elif ch == "'":
                 quote_count += 1
@@ -252,7 +277,7 @@ class XmlConvertor:
         self.reader_parameter["partition"] = self.get_value_from_xml(self.reader, "partition")
         self.reader_parameter["odpsServer"] = self.get_value_from_xml(self.reader, "odps-server")
 
-        self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
+        self.reader_parameter["column"] = self.parse_map_column(self.get_value_from_xml(self.reader, "column"))
 
         return True
 
@@ -290,7 +315,7 @@ class XmlConvertor:
             connection_dict["querySql"] = pointed_sql
         else:
             # 可能有","这类的bug
-            self.reader_parameter["column"] = self.get_value_from_xml(self.reader, "column").split(",")
+            self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
             self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
             tables = self.get_value_from_xml(self.reader, "table")
             connection_dict["table"] = tables.split("|")
