@@ -79,7 +79,9 @@ class XmlConvertor:
         concurrency = self.get_value_from_xml(self.reader, "concurrency")
         if not concurrency:
             concurrency = "1"
-        self.job_setting["speed"] = 1048576 * int(concurrency)
+        speed_dict = {}
+        self.job_setting["speed"] = speed_dict
+        speed_dict["byte"] = 1048576 * int(concurrency)
 
     def set_error_limit(self):
         error_limit = self.get_value_from_xml(self.writer, "error-limit")
@@ -322,10 +324,13 @@ class XmlConvertor:
             tables = self.get_value_from_xml(self.reader, "table")
             connection_dict["table"] = tables.split("|")
 
-        ip = self.get_value_from_xml(self.reader, "ip")
-        port = self.get_value_from_xml(self.reader, "port")
-        database = self.get_value_from_xml(self.reader, "database")
-        connection_dict["jdbcUrl"] = ["jdbc:microsoft:%s://%s:%s"%(ip, port, database)]
+        jdbc_url = self.get_value_from_xml(self.reader, "jdbc_url")
+        if not jdbc_url:
+            ip = self.get_value_from_xml(self.reader, "ip")
+            port = self.get_value_from_xml(self.reader, "port")
+            database = self.get_value_from_xml(self.reader, "database")
+            jdbc_url = "jdbc:sqlserver://%s:%s;DatabaseName=%s"%(ip, port, database)
+        connection_dict["jdbcUrl"] = [jdbc_url]
 
         return True
 

@@ -111,7 +111,6 @@ public class SlaveContainer extends AbstractContainer {
 			long lastReportTimeStamp = 0;
 			int jobIndex = 0;
 			while (true) {
-
 				List<AbstractRunner> runnerList = RunnerManager
 						.getRunners(this.slaveId);
 
@@ -161,13 +160,12 @@ public class SlaveContainer extends AbstractContainer {
 				// 如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
 				long now = System.currentTimeMillis();
 				if (now - lastReportTimeStamp > reportIntervalInMillSec) {
+                    Metric nowMetric = super.getContainerCollector().collect();
+                    super.getContainerCollector().report(nowMetric);
 					lastReportTimeStamp = now;
 				}
 
 				Thread.sleep(sleepIntervalInMillSec);
-
-				Metric nowMetric = super.getContainerCollector().collect();
-				super.getContainerCollector().report(nowMetric);
 			}
 
 			Metric nowMetric = super.getContainerCollector().collect();
