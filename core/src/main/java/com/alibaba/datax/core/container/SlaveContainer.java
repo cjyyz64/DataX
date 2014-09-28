@@ -165,6 +165,9 @@ public class SlaveContainer extends AbstractContainer {
 				}
 
 				Thread.sleep(sleepIntervalInMillSec);
+
+				Metric nowMetric = super.getContainerCollector().collect();
+				super.getContainerCollector().report(nowMetric);
 			}
 
 			Metric nowMetric = super.getContainerCollector().collect();
