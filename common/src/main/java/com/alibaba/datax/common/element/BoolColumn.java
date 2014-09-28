@@ -38,7 +38,7 @@ public class BoolColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		return ColumnCast.bool2String(this);
 	}
 

@@ -30,7 +30,7 @@ public class BytesColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		return ColumnCast.bytes2String(this);
 	}
 

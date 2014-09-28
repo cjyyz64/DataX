@@ -28,24 +28,24 @@ public class NumberColumn extends Column {
 
 	@Override
 	public Long asLong() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
 		}
 
-		return Long.valueOf(this.toString());
+		return Long.valueOf(this.asString());
 	}
 
 	@Override
 	public Double asDouble() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
 		}
 
-		return Double.valueOf(this.toString());
+		return Double.valueOf(this.asString());
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		if (null == this.getContent()) {
 			return null;
 		}
@@ -55,7 +55,7 @@ public class NumberColumn extends Column {
 
 	@Override
 	public Date asDate() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
 		}
 

@@ -37,7 +37,7 @@ public abstract class Column {
 
 	public abstract Double asDouble();
 
-	public abstract String toString();
+	public abstract String asString();
 
 	public abstract Date asDate();
 

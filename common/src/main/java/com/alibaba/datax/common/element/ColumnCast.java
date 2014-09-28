@@ -85,7 +85,7 @@ final class NumberCast {
 	}
 
 	static Boolean asBool(final NumberColumn number) {
-		String s = number.toString();
+		String s = number.asString();
 		if (null == s) {
 			return null;
 		}
@@ -130,13 +130,13 @@ final class StringCast {
 	}
 
 	static Date asDate(final StringColumn column) {
-		if (null == column.toString()) {
+		if (null == column.asString()) {
 			return null;
 		}
 
 		try {
 			return DateUtils
-					.parseDate(column.toString(), StringCast.timeFormat);
+					.parseDate(column.asString(), StringCast.timeFormat);
 		} catch (ParseException e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					e.getMessage());
@@ -144,11 +144,11 @@ final class StringCast {
 	}
 
 	static Boolean asBoolean(final StringColumn column) {
-		if (null == column.toString()) {
+		if (null == column.asString()) {
 			return null;
 		}
 
-		String string = column.toString().toLowerCase();
+		String string = column.asString().toLowerCase();
 		if (String2Bool.containsKey(string)) {
 			return String2Bool.get(string);
 		}
@@ -158,12 +158,12 @@ final class StringCast {
 	}
 
 	static byte[] asBytes(final StringColumn column) {
-		if (null == column.toString()) {
+		if (null == column.asString()) {
 			return null;
 		}
 
 		try {
-			return column.toString().getBytes(StringCast.encoding);
+			return column.asString().getBytes(StringCast.encoding);
 		} catch (UnsupportedEncodingException e) {
 			// it cannot be happen, since we test charset at first
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,

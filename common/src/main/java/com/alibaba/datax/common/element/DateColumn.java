@@ -1,9 +1,9 @@
 package com.alibaba.datax.common.element;
 
-import java.util.Date;
-
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+
+import java.util.Date;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -33,7 +33,7 @@ public class DateColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		return ColumnCast.date2String(this);
 	}
 

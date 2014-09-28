@@ -13,7 +13,7 @@ public class StringColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		if (null == this.getContent()) {
 			return null;
 		}
@@ -27,7 +27,7 @@ public class StringColumn extends Column {
 			return null;
 		}
 
-		return Long.valueOf(this.toString());
+		return Long.valueOf(this.asString());
 	}
 
 	@Override
@@ -36,7 +36,7 @@ public class StringColumn extends Column {
 			return null;
 		}
 
-		return Double.valueOf(this.toString());
+		return Double.valueOf(this.asString());
 	}
 
 	@Override
