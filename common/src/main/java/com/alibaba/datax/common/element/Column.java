@@ -11,18 +11,18 @@ public abstract class Column {
 
 	private Type type;
 
-	private Object content;
+	private Object rawData;
 
 	private int byteSize;
 
 	public Column(final Object object, final Type type, int byteSize) {
-		this.content = object;
+		this.rawData = object;
 		this.type = type;
 		this.byteSize = byteSize;
 	}
 
-	public Object getContent() {
-		return this.content;
+	public Object getRawData() {
+		return this.rawData;
 	}
 
 	public Type getType() {
@@ -33,11 +33,23 @@ public abstract class Column {
 		return this.byteSize;
 	}
 
+	protected void setType(Type type) {
+		this.type = type;
+	}
+
+	protected void setRawData(Object rawData) {
+		this.rawData = rawData;
+	}
+
+	protected void setByteSize(int byteSize) {
+		this.byteSize = byteSize;
+	}
+
 	public abstract Long asLong();
 
 	public abstract Double asDouble();
 
-	public abstract String toString();
+	public abstract String asString();
 
 	public abstract Date asDate();
 

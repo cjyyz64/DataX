@@ -137,7 +137,9 @@
     },
     "job": {
         "setting": {
-            "speed": 104857600,
+            "speed": {
+                "byte": 104857600
+            },
             "errorLimit": -1
         },
         "content": [

@@ -12,6 +12,10 @@ import com.alibaba.datax.common.exception.DataXException;
  */
 public class NumberColumn extends Column {
 
+	public NumberColumn() {
+		this(null);
+	}
+
 	public NumberColumn(long l) {
 		this(String.valueOf(l));
 	}
@@ -24,21 +28,26 @@ public class NumberColumn extends Column {
 		this(String.valueOf(i));
 	}
 
-	public NumberColumn(final String content) {
-		super(content, Column.Type.NUMBER, content.length());
+	public NumberColumn(final String numberInString) {
+		super(numberInString, Column.Type.NUMBER, (null == numberInString ? 0
+				: numberInString.length()));
 
-		boolean isLegalNumber = (null == content || NumberUtils
-				.isNumber(content));
+		if (null == numberInString) {
+			return;
+		}
+
+		boolean isLegalNumber = NumberUtils.isNumber(numberInString);
 		if (!isLegalNumber) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("[%s] illegal number format .", content));
+					String.format("[%s] illegal number format .",
+							numberInString));
 		}
 
 	}
 
 	@Override
 	public Long asLong() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
 		}
 
@@ -47,26 +56,32 @@ public class NumberColumn extends Column {
 
 	@Override
 	public Double asDouble() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
 		}
 
-		return NumberUtils.toDouble(this.toString());
+		return Double.valueOf(this.asString());
 	}
 
 	@Override
-	public String toString() {
-		if (null == this.getContent()) {
+	public String asString() {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return (String) this.getContent();
+		return (String) this.getRawData();
 	}
 
 	@Override
 	public Date asDate() {
-		if (null == this.toString()) {
+		if (null == this.asString()) {
 			return null;
+		}
+
+		boolean isDouble = this.asString().indexOf(".") >= 0;
+		if (isDouble) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"Double cannot cast to Date .");
 		}
 
 		return new Date(this.asLong());

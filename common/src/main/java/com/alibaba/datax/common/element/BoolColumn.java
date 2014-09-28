@@ -14,31 +14,39 @@ public class BoolColumn extends Column {
 		super(bool, Column.Type.BOOL, 1);
 	}
 
+	public BoolColumn() {
+		super(null, Column.Type.BOOL, 1);
+	}
+
 	@Override
 	public Boolean asBoolean() {
-		if (null == super.getContent()) {
+		if (null == super.getRawData()) {
 			return null;
 		}
 
-		return (Boolean) super.getContent();
+		return (Boolean) super.getRawData();
 	}
 
 	@Override
 	public Long asLong() {
-		return ColumnCast.bool2Long(this);
+		if (null == this.asBoolean()) {
+			return null;
+		}
+
+		return this.asBoolean() ? 1L : 0L;
 	}
 
 	@Override
 	public Double asDouble() {
-		if (null == this.asLong()) {
+		if (null == this.asBoolean()) {
 			return null;
 		}
 
-		return this.asLong() == 1L ? 1.0 : 0.0;
+		return this.asBoolean() ? 1.0d : 0.0d;
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		return ColumnCast.bool2String(this);
 	}
 

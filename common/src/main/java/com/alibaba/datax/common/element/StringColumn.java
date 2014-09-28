@@ -1,6 +1,10 @@
 package com.alibaba.datax.common.element;
 
+import java.math.BigDecimal;
 import java.util.Date;
+
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -8,35 +12,50 @@ import java.util.Date;
 
 public class StringColumn extends Column {
 
-	public StringColumn(final String content) {
-		super(content, Column.Type.STRING, content.length());
+	public StringColumn() {
+		this(null);
+	}
+
+	public StringColumn(final String rawData) {
+		super(rawData, Column.Type.STRING, (null == rawData ? 0 : rawData
+				.length()));
 	}
 
 	@Override
-	public String toString() {
-		if (null == this.getContent()) {
+	public String asString() {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return (String) this.getContent();
+		return (String) this.getRawData();
 	}
 
 	@Override
 	public Long asLong() {
-		if (null == this.getContent()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return Long.valueOf(this.toString());
+		try {
+			return new BigDecimal(this.asString()).longValue();
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"String convert to Long failed, for " + e.getMessage());
+		}
 	}
 
 	@Override
 	public Double asDouble() {
-		if (null == this.getContent()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return Double.valueOf(this.toString());
+		try {
+			return new BigDecimal(this.asString()).doubleValue();
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"String convert to Double failed, for " + e.getMessage());
+		}
 	}
 
 	@Override

@@ -12,9 +12,27 @@ import com.alibaba.datax.common.exception.CommonErrorCode;
  */
 public class BytesColumn extends Column {
 
+	public BytesColumn() {
+		this(null);
+	}
+
 	public BytesColumn(byte[] bytes) {
 		super(ArrayUtils.clone(bytes), Column.Type.BYTES, null == bytes ? 0
 				: bytes.length);
+	}
+
+	@Override
+	public byte[] asBytes() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		return (byte[]) this.getRawData();
+	}
+
+	@Override
+	public String asString() {
+		return ColumnCast.bytes2String(this);
 	}
 
 	@Override
@@ -30,23 +48,9 @@ public class BytesColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
-		return ColumnCast.bytes2String(this);
-	}
-
-	@Override
 	public Date asDate() {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Date .");
-	}
-
-	@Override
-	public byte[] asBytes() {
-		if (null == this.getContent()) {
-			return null;
-		}
-
-		return (byte[]) this.getContent();
 	}
 
 	@Override

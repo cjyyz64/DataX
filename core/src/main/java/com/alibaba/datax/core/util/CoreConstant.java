@@ -68,7 +68,7 @@ public class CoreConstant {
 
     public static final String DATAX_JOB_CONTENT = "job.content";
 
-	public static final String DATAX_JOB_SETTING_SPEED = "job.setting.speed";
+	public static final String DATAX_JOB_SETTING_SPEED_BYTE = "job.setting.speed.byte";
 
 	public static final String DATAX_JOB_SETTING_ERRORLIMIT = "job.setting.errorLimit";
 

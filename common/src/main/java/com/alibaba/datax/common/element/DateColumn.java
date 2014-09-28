@@ -2,24 +2,28 @@ package com.alibaba.datax.common.element;
 
 import java.util.Date;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
  */
 public class DateColumn extends Column {
-	public DateColumn(final Date date) {
-		this(date.getTime());
+	public DateColumn() {
+		this(null);
 	}
 
 	public DateColumn(final long stamp) {
-		super(new Date(stamp), Type.DATE, 4);
+		this(new Date(stamp));
+	}
+
+	public DateColumn(final Date date) {
+		super(date, Column.Type.DATE, (null == date ? 0 : 4));
 	}
 
 	@Override
 	public Long asLong() {
-		if (null == this.getContent()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
@@ -33,17 +37,17 @@ public class DateColumn extends Column {
 	}
 
 	@Override
-	public String toString() {
+	public String asString() {
 		return ColumnCast.date2String(this);
 	}
 
 	@Override
 	public Date asDate() {
-		if (null == this.getContent()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return (Date) this.getContent();
+		return (Date) this.getRawData();
 	}
 
 	@Override

@@ -160,7 +160,7 @@ public class MasterContainer extends AbstractContainer {
 	 */
 	private void split() {
 		long globalLimitedSpeed = this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED, 10 * 1024 * 1024);
+				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 10 * 1024 * 1024);
 		long channelLimitedSpeed = this.configuration.getInt(
 				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED, 1024 * 1024);
 
