@@ -236,6 +236,31 @@ public final class DBUtil {
 
 	}
 
+	public static List<String> getTableColumns(String dbType,
+			String jdbcUrl, String user, String pass, String tableName) {
+		List<String> columns = new ArrayList<String>();
+		Connection conn = getConnection(dbType, jdbcUrl, user, pass);
+		try {
+			DatabaseMetaData databaseMetaData = conn.getMetaData();
+			String dbName = getDBNameFromJdbcUrl(jdbcUrl);
+
+			ResultSet rs = databaseMetaData.getColumns(dbName, null, tableName,
+					"%");
+
+			String tempColumn = null;
+			while (rs.next()) {
+				tempColumn = rs.getString("COLUMN_NAME");
+
+				columns.add(tempColumn);
+			}
+
+		} catch (SQLException e) {
+			throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
+		}
+		return columns;
+
+	}
+
 	private static String getDBNameFromJdbcUrl(String jdbcUrl) {
 		int jdbcUrlBeginIndex = jdbcUrl.lastIndexOf("/") + 1;
 		int tempEndIndex = jdbcUrl.indexOf("?");
