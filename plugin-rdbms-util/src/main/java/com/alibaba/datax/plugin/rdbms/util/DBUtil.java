@@ -236,14 +236,14 @@ public final class DBUtil {
 
 	}
 
-	public static List<String> getTableColumns(String dbType,
-			String jdbcUrl, String user, String pass, String tableName) {
+	public static List<String> getTableColumns(String dbType, String jdbcUrl,
+			String user, String pass, String tableName) {
 		List<String> columns = new ArrayList<String>();
 		Connection conn = getConnection(dbType, jdbcUrl, user, pass);
 		try {
 			DatabaseMetaData databaseMetaData = conn.getMetaData();
-			String dbName = getDBNameFromJdbcUrl(jdbcUrl);
-
+			// String dbName = getDBNameFromJdbcUrl(jdbcUrl);
+			String dbName = conn.getCatalog(); // 获取数据库名databaseName
 			ResultSet rs = databaseMetaData.getColumns(dbName, null, tableName,
 					"%");
 
@@ -262,6 +262,11 @@ public final class DBUtil {
 	}
 
 	private static String getDBNameFromJdbcUrl(String jdbcUrl) {
+		// warn：如果是sql server，此方法有问题
+		// if(jdbcUrl.trim().startsWith("jdbc:sqlserver:")){
+		//
+		// }
+		// 如果是mysql
 		int jdbcUrlBeginIndex = jdbcUrl.lastIndexOf("/") + 1;
 		int tempEndIndex = jdbcUrl.indexOf("?");
 		int jdbcUrlEndIndex = -1 == tempEndIndex ? jdbcUrl.length()
