@@ -10,7 +10,6 @@ import com.aliyun.odps.*;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
-import com.aliyun.odps.task.SQLTask;
 import com.aliyun.odps.tunnel.TableTunnel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -74,6 +73,9 @@ public final class OdpsUtil {
         Table table;
         try {
             table = OdpsUtil.getTable(odps, tableName);
+
+            //用于检查表是否存在，以及权限是否足够
+            table.reload();
             originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                     OdpsUtil.isPartitionedTable(table));
         } catch (Exception e) {
@@ -114,21 +116,23 @@ public final class OdpsUtil {
     }
 
     // TODO 确认表名称特殊字符处理规则，以及大小写敏感等问题
-    public static void truncateTable(Odps odps, Table table) {
-        String dropDdl = "truncate table " + table.getName() + ";";
+    public static void truncateTable(Table table) {
         try {
-            SQLTask.run(odps, dropDdl);
+            table.truncate();
         } catch (OdpsException e) {
-            String message = StrUtil.buildOriginalCauseMessage(String.format("Failed to truncate table. SQL:[%s].",
-                    dropDdl), e);
+            String message = StrUtil.buildOriginalCauseMessage("Failed to truncate table.", e);
 
             LOG.error(message);
             throw new DataXException(OdpsWriterErrorCode.TRUNCATE_TABLE_FAIL, e);
         }
+
     }
 
-    // TODO retry  tableName大小写敏感？
+    // tableName大小写不敏感
     public static Table getTable(Odps odps, String tableName) {
+        //TODO currentProjct
+        //odps.tables().get("",tableName);
+
         return odps.tables().get(tableName);
     }
 
@@ -142,6 +146,8 @@ public final class OdpsUtil {
         return table.getSchema().getPartitionColumns().size();
     }
 
+
+    //TODO remove it
     public static List<String> getTableAllPartitions(Table table, int retryTime) {
         List<Partition> tableAllPartitions = null;
 

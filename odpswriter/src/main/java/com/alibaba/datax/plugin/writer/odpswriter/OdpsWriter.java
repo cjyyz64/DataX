@@ -7,9 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
-import com.aliyun.odps.Column;
-import com.aliyun.odps.Odps;
-import com.aliyun.odps.Table;
+import com.aliyun.odps.*;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -79,7 +77,7 @@ public class OdpsWriter extends Writer {
                         LOG.info("Begin to clean non partitioned table:[{}].",
                                 this.table.getName());
 
-                        OdpsUtil.truncateTable(this.odps, this.table);
+                        OdpsUtil.truncateTable(this.table);
                         LOG.info("Finished clean non partitioned table:[{}].",
                                 this.table.getName());
                     }
@@ -90,7 +88,6 @@ public class OdpsWriter extends Writer {
                         this.originalConfig);
                 this.uploadId = this.masterUploadSession.getId();
                 LOG.info("UploadId:[{}]", this.uploadId);
-
             }
 
 
@@ -163,24 +160,26 @@ public class OdpsWriter extends Writer {
                     throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, message);
                 } else {
                     //TODO 需要添加对分区级数校验的方法
-                    List<String> tableAllPartitions = OdpsUtil.getTableAllPartitions(this.table,
-                            this.originalConfig.getInt(Key.MAX_RETRY_TIME));
 
-                    List<String> formattedTableAllPartitions = listToLowerCase(OdpsUtil.formatPartitions(
-                            tableAllPartitions));
+                    String standardUserConfiguredPartition = OdpsUtil
+                            .formatPartition(userConfiguredPartition);
+                    boolean isPartitionExist = false;
+                    try {
+                        isPartitionExist = this.table.hasPartition(new PartitionSpec(standardUserConfiguredPartition));
+                    } catch (OdpsException e) {
+                        //TODO
+                        e.printStackTrace();
+                        throw new DataXException(OdpsWriterErrorCode.CHECK_TABLE_FAIL, e);
+                    }
 
+                    //TODO remove ?
                     String formattedUserConfiguredPartition = checkUserConfiguredPartition(this.table,
                             userConfiguredPartition);
 
 
-                    if (formattedTableAllPartitions.contains(formattedUserConfiguredPartition.toLowerCase())) {
-                        originalConfig.set(Constant.IS_PARTITION_EXIST, true);
-                    } else {
-                        originalConfig.set(Constant.IS_PARTITION_EXIST, false);
-                    }
+                    originalConfig.set(Constant.IS_PARTITION_EXIST, isPartitionExist);
 
-
-                    originalConfig.set(Key.PARTITION, formattedUserConfiguredPartition);
+                    originalConfig.set(Key.PARTITION, standardUserConfiguredPartition);
                 }
             } else {
                 // 非分区表，则不能配置分区值

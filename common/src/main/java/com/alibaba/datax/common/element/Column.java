@@ -4,60 +4,65 @@ import java.util.Date;
 
 /**
  * Created by jingxing on 14-8-24.
- * 
+ * <p/>
  * 暂时不支持
  */
 public abstract class Column {
 
-	private Type type;
+    private Type type;
 
-	private Object rawData;
+    private Object rawData;
 
-	private int byteSize;
+    private int byteSize;
 
-	public Column(final Object object, final Type type, int byteSize) {
-		this.rawData = object;
-		this.type = type;
-		this.byteSize = byteSize;
-	}
+    public Column(final Object object, final Type type, int byteSize) {
+        this.rawData = object;
+        this.type = type;
+        this.byteSize = byteSize;
+    }
 
-	public Object getRawData() {
-		return this.rawData;
-	}
+    public Object getRawData() {
+        return this.rawData;
+    }
 
-	public Type getType() {
-		return this.type;
-	}
+    public Type getType() {
+        return this.type;
+    }
 
-	public int getByteSize() {
-		return this.byteSize;
-	}
+    public int getByteSize() {
+        return this.byteSize;
+    }
 
-	protected void setType(Type type) {
-		this.type = type;
-	}
+    protected void setType(Type type) {
+        this.type = type;
+    }
 
-	protected void setRawData(Object rawData) {
-		this.rawData = rawData;
-	}
+    protected void setRawData(Object rawData) {
+        this.rawData = rawData;
+    }
 
-	protected void setByteSize(int byteSize) {
-		this.byteSize = byteSize;
-	}
+    protected void setByteSize(int byteSize) {
+        this.byteSize = byteSize;
+    }
 
-	public abstract Long asLong();
+    public abstract Long asLong();
 
-	public abstract Double asDouble();
+    public abstract Double asDouble();
 
-	public abstract String asString();
+    public abstract String asString();
 
-	public abstract Date asDate();
+    public abstract Date asDate();
 
-	public abstract byte[] asBytes();
+    public abstract byte[] asBytes();
 
-	public abstract Boolean asBoolean();
+    public abstract Boolean asBoolean();
 
-	public enum Type {
-		NULL, STRING, NUMBER, BOOL, DATE, BYTES
-	}
+    @Override
+    public String toString() {
+        return asString();
+    }
+
+    public enum Type {
+        NULL, STRING, NUMBER, BOOL, DATE, BYTES
+    }
 }

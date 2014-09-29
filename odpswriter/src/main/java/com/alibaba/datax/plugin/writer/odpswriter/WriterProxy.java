@@ -9,6 +9,7 @@ import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordWriter;
 import com.aliyun.odps.tunnel.TableTunnel.UploadSession;
 
+import java.io.IOException;
 import java.util.List;
 
 public class WriterProxy {
@@ -39,6 +40,7 @@ public class WriterProxy {
 
             int currentIndex;
             Record odpsRecord;
+
             com.alibaba.datax.common.element.Record dataXRecord;
             while ((dataXRecord = this.recordReceiver.getFromReader()) != null) {
                 odpsRecord = this.uploadSession.newRecord();
@@ -73,9 +75,15 @@ public class WriterProxy {
                                         String.format("Unsupported column type:[%s].", type));
                         }
                     }
-                    recordWriter.write(odpsRecord);
                 } catch (Exception e) {
                     this.slavePluginCollector.collectDirtyRecord(dataXRecord, e);
+                }
+
+
+                try {
+                    recordWriter.write(odpsRecord);
+                } catch (IOException e) {
+                    throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
                 }
             }
             recordWriter.close();

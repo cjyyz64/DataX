@@ -128,6 +128,9 @@ public final class OriginalConfPretreatmentUtil {
             } else if (1 == columns.size() && "*".equals(columns.get(0))) {
                 LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
                         + "because column configured as * may not work when you changed your table structure.");
+
+                //回填其值，需要以 String 的方式转角后续处理
+                originalConfig.set(Key.COLUMN, "*");
             } else {
                 // TODO 检查用户配置的 column 是否重复(取决于字段是否大小写敏感)
                 String jdbcUrl = originalConfig.getString(String.format(
@@ -204,11 +207,16 @@ public final class OriginalConfPretreatmentUtil {
             tableModeFlag.add(StringUtils.isNotBlank(table));
             querySqlModeFlag.add(StringUtils.isNotBlank(querySql));
 
-            // table 和 querySql 二者均未配制
-            if (tableModeFlag.get(i).booleanValue() == false
-                    && querySqlModeFlag.get(i).booleanValue() == false) {
+            // table 和 querySql 二者均未配制或者均配置
+            boolean illlegalMode = tableModeFlag.get(i).booleanValue() ==
+                    querySqlModeFlag.get(i).booleanValue();
+
+            if (illlegalMode && tableModeFlag.get(i).booleanValue() == false) {
                 throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
                         "table and querySql can only have one.");
+            } else if (illlegalMode && tableModeFlag.get(i).booleanValue() == true) {
+                throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
+                        "table and querySql can not mixed.");
             }
         }
 
