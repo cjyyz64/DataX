@@ -121,7 +121,7 @@ public class SqlServerReader {
 				// ignore it
 			}
 
-			LOG.info("do query [\n{}\n], from jdbc-url:[\n{}\n]",
+			LOG.info("do query \n[{}\n]\n, from jdbc-url:\n[{}]\n",
 					null != formatedSql ? formatedSql : sql, this.jdbcUrl);
 
 			ResultSet rs = null;
@@ -152,7 +152,7 @@ public class SqlServerReader {
 				columnNumber = metaData.getColumnCount();
 
 				// warn:begin from 1
-				for (int i = 1; i < columnNumber; i++) {
+				for (int i = 1; i <= columnNumber; i++) {
 					switch (metaData.getColumnType(i)) {
 
 					case Types.CHAR:

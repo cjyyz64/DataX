@@ -75,18 +75,21 @@ public class TableSplitUtil {
 						for (String table : tables) {
 							tempSlice = sliceConfig.clone();
 							tempSlice.set(Key.TABLE, table);
-
+//							List<Configuration> splittedSlices = TableSplitUtil
+//									.splitSingleTable(tempSlice,
+//											eachTableShouldSplittedNumber);
+							//warn : this should be adviceNumber
 							List<Configuration> splittedSlices = TableSplitUtil
 									.splitSingleTable(tempSlice,
-											eachTableShouldSplittedNumber);
+											adviceNumber);
 
 							for (Configuration splittedSlice : splittedSlices) {
 								splittedConfigs.add(splittedSlice);
 							}
 						}
 					} else {
-						tempSlice = sliceConfig.clone();
 						for (String table : tables) {
+							tempSlice = sliceConfig.clone();
 							tempSlice.set(Key.QUERYSQL, TableSplitUtil
 									.buildQuerySql(column, table, where));
 							splittedConfigs.add(tempSlice);
@@ -95,12 +98,12 @@ public class TableSplitUtil {
 
 				} else {
 					// querySql mode
-					tempSlice = sliceConfig.clone();
 					List<String> sqls = connConf
 							.getList(Key.QUERYSQL, String.class);
 
 					// TODO more than one querySql
 					for (String querySql : sqls) {
+						tempSlice = sliceConfig.clone();
 						tempSlice.set(Key.QUERYSQL, querySql);
 						splittedConfigs.add(tempSlice);
 					}
@@ -132,7 +135,8 @@ public class TableSplitUtil {
 			String where = pluginParam.getString(Key.WHERE, null);
 
 			boolean hasWhere = StringUtils.isNotBlank(where);
-			String template = "`%s` >= %s and `%s` < %s";
+			//different rds is different
+			String template = "[%s] >= %s and [%s] < %s";
 
 			long lastIndex = min;
 			long currentIndex = min;
@@ -150,7 +154,7 @@ public class TableSplitUtil {
 				lastIndex = currentIndex;
 			}
 			// 处理lastIndex到max区间的值
-			String specialTemplate = "`%s` >= %s and `%s` <= %s";
+			String specialTemplate = "[%s] >= %s and [%s] <= %s";
 			tempSQL = buildQuerySql(column, table, where)
 					+ (hasWhere ? " and " : " where ")
 					+ String.format(specialTemplate, splitPK, lastIndex,
@@ -250,10 +254,10 @@ public class TableSplitUtil {
 		String table = plugin.getString(Key.TABLE).trim();
 		String where = plugin.getString(Key.WHERE, null);
 
-		String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE `%s` IS NULL";
+		String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE [%s] IS NULL";
 		String checkPKSQL = String.format(checkPKTemplate, table, splitPK);
 
-		String minMaxTemplate = "SELECT MIN(`%s`),MAX(`%s`) FROM %s";
+		String minMaxTemplate = "SELECT MIN([%s]),MAX([%s]) FROM %s";
 		String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
 				table);
 		if (StringUtils.isNotBlank(where)) {

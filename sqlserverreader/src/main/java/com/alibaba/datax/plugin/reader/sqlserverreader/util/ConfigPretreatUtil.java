@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Constants;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Key;
 import com.alibaba.datax.plugin.reader.sqlserverreader.SqlServerReaderErrorCode;
@@ -37,13 +36,13 @@ public class ConfigPretreatUtil {
 					"fetchSize can not less than 1.");
 		}
 		originReaderConfig.set(Key.FETCH_SIZE, fetchSize);
-		
 
 		// connect part
 		List<Object> conns = originReaderConfig.getList(Constants.CONNECTION,
 				Object.class);
 
-		if (null == conns || conns.isEmpty()) {
+		//warn:to sql server ,connect part array size must be 1
+		if (null == conns || 1 != conns.size()) {
 			throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
 					"no connection configuration");
 		}
@@ -79,8 +78,16 @@ public class ConfigPretreatUtil {
 			tableModeFlag.add(StringUtils.isNotBlank(table));
 			querySqlModeFlag.add(StringUtils.isNoneBlank(querySql));
 
+			// both false
 			if (!tableModeFlag.get(i).booleanValue()
 					&& !querySqlModeFlag.get(i)) {
+				throw new DataXException(
+						SqlServerReaderErrorCode.TABLE_QUERYSQL_MIXED,
+						"table and querySql must have one.");
+			}
+			// warn:both true
+			if (tableModeFlag.get(i).booleanValue()
+					&& querySqlModeFlag.get(i)) {
 				throw new DataXException(
 						SqlServerReaderErrorCode.TABLE_QUERYSQL_MIXED,
 						"table and querySql can only have one.");
@@ -170,10 +177,11 @@ public class ConfigPretreatUtil {
 			if (null == columns || 0 == columns.size()) {
 				originReaderConfig.set(Key.COLUMN, "*");
 				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
-						+ "because column configed as empty may not work when you changed your table structure.");
+						+ ": because column configed as empty may not work when you changed your table structure.");
 			} else if (1 == columns.size() && "*".equals(columns.get(0))) {
 				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
-						+ "because column configed as * may not work when you changed your table structure.");
+						+ ": because column configed as * may not work when you changed your table structure.");
+				originReaderConfig.set(Key.COLUMN, "*");
 			} else {
 				// TODO ignore case or not for column name
 				// warn : at connect segment

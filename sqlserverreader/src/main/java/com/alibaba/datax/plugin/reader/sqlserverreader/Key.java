@@ -21,7 +21,7 @@ public class Key {
 	public static final String COLUMN = "column";
 
 	// not must, default nothing
-	public static final String SPLIT_PK = "splitPK";
+	public static final String SPLIT_PK = "splitPk";
 
 	// not must, default nothing
 	public static final String WHERE = "where";
