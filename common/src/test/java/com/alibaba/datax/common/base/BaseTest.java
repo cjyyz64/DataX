@@ -10,6 +10,7 @@ import org.junit.BeforeClass;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.element.ColumnCastTest;
 import com.alibaba.datax.common.util.Configuration;
+import org.junit.Test;
 
 public class BaseTest {
 
@@ -21,4 +22,9 @@ public class BaseTest {
 				StringUtils.join(new String[] { path, "all.json" },
 						File.separator)))));
 	}
+
+    @Test
+    public void emptyTest() {
+        
+    }
 }
