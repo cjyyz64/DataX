@@ -35,19 +35,20 @@
 		<module>mysqlreader</module>
 		<module>streamreader</module>
 		<module>otsreader</module>
+		<module>sqlserverreader</module>
+		<module>txtfilereader</module>
+		<module>odpsreader</module>
 
 		<!-- writer -->
 		<module>mysqlwriter</module>
 		<module>streamwriter</module>
+		<module>txtfilewriter</module>
+		<module>odpswriter</module>
 
 		<!-- some support module -->
 		<module>plugin-rdbms-util</module>
 		<module>simulator</module>
-		<module>txtfilewriter</module>
-		<module>txtfilereader</module>
-		<module>sqlserverreader</module>
-		<module>odpsreader</module>
-		<module>odpswriter</module>
+		
 	</modules>
 
 	<dependencyManagement>
