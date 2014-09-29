@@ -249,7 +249,7 @@ public class TxtFileWriter extends Writer {
 			StringBuilder sb = new StringBuilder();
 			for (int i = 0; i < recordLength; i++) {
 				column = record.getColumn(i);
-				sb.append(column == null ? "" : column.toString());
+				sb.append(column == null ? "" : column.asString());
 				if (i != recordLength - 1) {
 					sb.append(this.fieldDelimiter);
 				}
