@@ -1,0 +1,39 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "sqlserverreader",
+                    "parameter": {
+                        "username": "xuhongxing016",
+                        "password": "",
+                        "column": ["*"],
+                        "splitPk":"name",
+                        "where": "",
+						"fetchSize":22,
+                        "connection": [
+                            {
+                                "table": [
+                                    "test_cdp_import","table_name"                                 
+                                ],
+                                "jdbcUrl": [
+
+				   					 "jdbc:sqlserver://caiyunjian.sqlserver.rds.aliyuncs.com:3433;DatabaseName=dpc"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/haiweiluo/job_data/sink_data/",
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+						"truncate":"true"
+                    }
+                }
+            }
+        ]
+    }
+}

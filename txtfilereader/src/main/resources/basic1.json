@@ -1,0 +1,27 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "txtfilereader",
+                    "parameter": {
+						"path": "/home/haiweiluo/work/app-dsc",
+                        "column": [
+                        ],
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t"
+                    }
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/haiweiluo/job_data/sink_data/",
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+						"truncate":"true"
+                    }
+                }
+            }
+        ]
+    }
+}
