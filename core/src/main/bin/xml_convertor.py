@@ -92,7 +92,7 @@ class XmlConvertor:
     def get_value_from_xml(self, node_root, key):
         value = None
         try:
-            for item in node_root.iter(tag="param"):
+            for item in node_root.getiterator(tag="param"):
                 if item.attrib["key"] == key:
                     value = item.attrib["value"]
                     break
@@ -318,7 +318,6 @@ class XmlConvertor:
         if pointed_sql:
             connection_dict["querySql"] = pointed_sql
         else:
-            # 可能有","这类的bug
             self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
             self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
             tables = self.get_value_from_xml(self.reader, "table")
