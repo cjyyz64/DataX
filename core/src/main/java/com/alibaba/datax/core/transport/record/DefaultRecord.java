@@ -58,7 +58,8 @@ public class DefaultRecord implements Record {
 
 	@Override
 	public String toString() {
-		return StringUtils.join(columns, ",");
+		return String.format("size: %d, data: %s .", getColumnNumber(),
+				StringUtils.join(this.columns, ","));
 	}
 
 	@Override

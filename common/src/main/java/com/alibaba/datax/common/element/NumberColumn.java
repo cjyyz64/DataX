@@ -1,11 +1,14 @@
 package com.alibaba.datax.common.element;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -43,6 +46,17 @@ public class NumberColumn extends Column {
 							numberInString));
 		}
 
+	}
+
+	@Override
+	public String toString() {
+		Map<String, String> map = new HashMap<String, String>();
+
+		map.put("type", "number");
+		map.put("value",
+				null == this.getRawData() ? null : (String) this.getRawData());
+
+		return JSON.toJSONString(map);
 	}
 
 	@Override
