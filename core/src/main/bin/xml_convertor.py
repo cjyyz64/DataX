@@ -92,7 +92,7 @@ class XmlConvertor:
     def get_value_from_xml(self, node_root, key):
         value = None
         try:
-            for item in node_root.iter(tag="param"):
+            for item in node_root.getiterator(tag="param"):
                 if item.attrib["key"] == key:
                     value = item.attrib["value"]
                     break
