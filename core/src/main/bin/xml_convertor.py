@@ -318,7 +318,6 @@ class XmlConvertor:
         if pointed_sql:
             connection_dict["querySql"] = pointed_sql
         else:
-            # 可能有","这类的bug
             self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
             self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
             tables = self.get_value_from_xml(self.reader, "table")
