@@ -1,14 +1,15 @@
 package com.alibaba.datax.core.transport.record;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Map;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -58,8 +59,10 @@ public class DefaultRecord implements Record {
 
 	@Override
 	public String toString() {
-		return String.format("size: %d, data: %s .", getColumnNumber(),
-				StringUtils.join(this.columns, ","));
+		Map<String, Object> json = new HashMap<String, Object>();
+		json.put("size", this.getColumnNumber());
+		json.put("data", this.columns);
+		return JSON.toJSONString(json);
 	}
 
 	@Override

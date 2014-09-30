@@ -2,12 +2,9 @@ package com.alibaba.datax.common.element;
 
 import java.math.BigDecimal;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -74,14 +71,5 @@ public class StringColumn extends Column {
 	@Override
 	public Boolean asBoolean() {
 		return ColumnCast.string2Bool(this);
-	}
-
-	@Override
-	public String toString() {
-		Map<String, String> result = new HashMap<String, String>();
-		result.put("type", "string");
-		result.put("value",
-				null == this.getRawData() ? null : (String) this.getRawData());
-		return JSON.toJSONString(result);
 	}
 }

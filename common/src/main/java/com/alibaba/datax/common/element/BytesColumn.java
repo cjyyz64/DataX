@@ -1,15 +1,11 @@
 package com.alibaba.datax.common.element;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.ArrayUtils;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -61,22 +57,5 @@ public class BytesColumn extends Column {
 	public Boolean asBoolean() {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Boolean .");
-	}
-
-	@Override
-	public String toString() {
-		Map<String, String> map = new HashMap<String, String>();
-
-		map.put("type", "bytes");
-		if (null == this.getRawData()) {
-			map.put("value", null);
-		} else {
-			map.put("value",
-					"0x"
-							+ new String(Hex.encodeHex((byte[]) this
-									.getRawData())));
-		}
-
-		return JSON.toJSONString(map);
 	}
 }

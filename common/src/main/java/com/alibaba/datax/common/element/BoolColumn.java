@@ -1,12 +1,9 @@
 package com.alibaba.datax.common.element;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.fastjson.JSON;
+import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -65,17 +62,4 @@ public class BoolColumn extends Column {
 				"Boolean cannot cast to Bytes .");
 	}
 
-	@Override
-	public String toString() {
-		Map<String, String> map = new HashMap<String, String>();
-
-		map.put("type", "bool");
-		if (null == this.getRawData()) {
-			map.put("value", null);
-		} else {
-			map.put("value", (((Boolean) this.getRawData()) ? "true" : "false"));
-		}
-
-		return JSON.toJSONString(map);
-	}
 }

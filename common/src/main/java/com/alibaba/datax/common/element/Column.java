@@ -2,6 +2,8 @@ package com.alibaba.datax.common.element;
 
 import java.util.Date;
 
+import com.alibaba.fastjson.JSON;
+
 /**
  * Created by jingxing on 14-8-24.
  * <p/>
@@ -58,7 +60,9 @@ public abstract class Column {
 	public abstract Boolean asBoolean();
 
 	@Override
-	public abstract String toString();
+	public String toString() {
+		return JSON.toJSONString(this);
+	}
 
 	public enum Type {
 		NULL, STRING, NUMBER, BOOL, DATE, BYTES
