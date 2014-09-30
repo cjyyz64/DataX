@@ -24,7 +24,9 @@ public enum OdpsWriterErrorCode implements ErrorCode {
     TRUNCATE_TABLE_FAIL("OdpsWriter-13", "failed to truncate table"),
     WRITER_RECORD_FAIL("OdpsWriter-14", "failed to write odps record"),
 
-    COMMIT_BLOCK_FAIL("OdpsWriter-15", "failed to commit block");
+    COMMIT_BLOCK_FAIL("OdpsWriter-15", "failed to commit block"),
+
+    TEMP("TEMP", "Todo"),;
 
 
     private final String code;

@@ -1,6 +1,6 @@
 {
-  "name": "odpswriter",
-  "class": "com.alibaba.datax.plugin.writer.odpswriter.OdpsWriter",
+  "name": "temp_odpswriter",
+  "class": "com.alibaba.datax.plugin.writer.temp_odpswriter.OdpsWriter",
   "description": {
     "useScene": "prod.",
     "mechanism": "TODO",
