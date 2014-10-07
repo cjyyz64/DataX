@@ -49,7 +49,7 @@ public class OdpsWriter_Partitioned_Table_00_Test extends BasicWriterPluginTest 
 
     @Override
     protected String getTestPluginName() {
-        return "temp_odpswriter";
+        return "odpswriter";
     }
 
 }

@@ -23,21 +23,21 @@ import javax.crypto.spec.DESKeySpec;
 import java.security.SecureRandom;
 
 /**
- * ¡¡¡¡* DES¼Ó½âÃÜ,Ö§³ÖÓëdelphi½»»¥(×Ö·û´®±àÂëĞèÍ³Ò»ÎªUTF-8)
+ * ã€€ã€€* DESåŠ è§£å¯†,æ”¯æŒä¸delphiäº¤äº’(å­—ç¬¦ä¸²ç¼–ç éœ€ç»Ÿä¸€ä¸ºUTF-8)
  *
- * ¡¡¡¡*
+ * ã€€ã€€*
  *
- * ¡¡¡¡* @author wym
+ * ã€€ã€€* @author wym
  *
- * ¡¡¡¡
+ * ã€€ã€€
  */
 
 public class DESCipher {
 
 	/**
-	 * ¡¡¡¡* ÃÜÔ¿
+	 * ã€€ã€€* å¯†é’¥
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static final String KEY = "u4Gqu4Z8";
@@ -45,127 +45,127 @@ public class DESCipher {
 	private final static String DES = "DES";
 
 	/**
-	 * ¡¡¡¡* ¼ÓÃÜ
+	 * ã€€ã€€* åŠ å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* Ã÷ÎÄ(×Ö½Ú)
+	 * ã€€ã€€* æ˜æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @param key
+	 * ã€€ã€€* @param key
 	 *
-	 * ¡¡¡¡* ÃÜÔ¿£¬³¤¶È±ØĞëÊÇ8µÄ±¶Êı
+	 * ã€€ã€€* å¯†é’¥ï¼Œé•¿åº¦å¿…é¡»æ˜¯8çš„å€æ•°
 	 *
-	 * ¡¡¡¡* @return ÃÜÎÄ(×Ö½Ú)
+	 * ã€€ã€€* @return å¯†æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static byte[] encrypt(byte[] src, byte[] key) throws Exception {
 
-		// DESËã·¨ÒªÇóÓĞÒ»¸ö¿ÉĞÅÈÎµÄËæ»úÊıÔ´
+		// DESç®—æ³•è¦æ±‚æœ‰ä¸€ä¸ªå¯ä¿¡ä»»çš„éšæœºæ•°æº
 
 		SecureRandom sr = new SecureRandom();
 
-		// ´ÓÔ­Ê¼ÃÜ³×Êı¾İ´´½¨DESKeySpec¶ÔÏó
+		// ä»åŸå§‹å¯†åŒ™æ•°æ®åˆ›å»ºDESKeySpecå¯¹è±¡
 
 		DESKeySpec dks = new DESKeySpec(key);
 
-		// ´´½¨Ò»¸öÃÜ³×¹¤³§£¬È»ºóÓÃËü°ÑDESKeySpec×ª»»³É
+		// åˆ›å»ºä¸€ä¸ªå¯†åŒ™å·¥å‚ï¼Œç„¶åç”¨å®ƒæŠŠDESKeySpecè½¬æ¢æˆ
 
-		// Ò»¸öSecretKey¶ÔÏó
+		// ä¸€ä¸ªSecretKeyå¯¹è±¡
 
 		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(DES);
 
 		SecretKey securekey = keyFactory.generateSecret(dks);
 
-		// Cipher¶ÔÏóÊµ¼ÊÍê³É¼ÓÃÜ²Ù×÷
+		// Cipherå¯¹è±¡å®é™…å®ŒæˆåŠ å¯†æ“ä½œ
 
 		Cipher cipher = Cipher.getInstance(DES);
 
-		// ÓÃÃÜ³×³õÊ¼»¯Cipher¶ÔÏó
+		// ç”¨å¯†åŒ™åˆå§‹åŒ–Cipherå¯¹è±¡
 
 		cipher.init(Cipher.ENCRYPT_MODE, securekey, sr);
 
-		// ÏÖÔÚ£¬»ñÈ¡Êı¾İ²¢¼ÓÃÜ
+		// ç°åœ¨ï¼Œè·å–æ•°æ®å¹¶åŠ å¯†
 
-		// ÕıÊ½Ö´ĞĞ¼ÓÃÜ²Ù×÷
+		// æ­£å¼æ‰§è¡ŒåŠ å¯†æ“ä½œ
 
 		return cipher.doFinal(src);
 
 	}
 
 	/**
-	 * ¡¡¡¡* ½âÃÜ
+	 * ã€€ã€€* è§£å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* ÃÜÎÄ(×Ö½Ú)
+	 * ã€€ã€€* å¯†æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @param key
+	 * ã€€ã€€* @param key
 	 *
-	 * ¡¡¡¡* ÃÜÔ¿£¬³¤¶È±ØĞëÊÇ8µÄ±¶Êı
+	 * ã€€ã€€* å¯†é’¥ï¼Œé•¿åº¦å¿…é¡»æ˜¯8çš„å€æ•°
 	 *
-	 * ¡¡¡¡* @return Ã÷ÎÄ(×Ö½Ú)
+	 * ã€€ã€€* @return æ˜æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static byte[] decrypt(byte[] src, byte[] key) throws Exception {
 
-		// DESËã·¨ÒªÇóÓĞÒ»¸ö¿ÉĞÅÈÎµÄËæ»úÊıÔ´
+		// DESç®—æ³•è¦æ±‚æœ‰ä¸€ä¸ªå¯ä¿¡ä»»çš„éšæœºæ•°æº
 
 		SecureRandom sr = new SecureRandom();
 
-		// ´ÓÔ­Ê¼ÃÜ³×Êı¾İ´´½¨Ò»¸öDESKeySpec¶ÔÏó
+		// ä»åŸå§‹å¯†åŒ™æ•°æ®åˆ›å»ºä¸€ä¸ªDESKeySpecå¯¹è±¡
 
 		DESKeySpec dks = new DESKeySpec(key);
 
-		// ´´½¨Ò»¸öÃÜ³×¹¤³§£¬È»ºóÓÃËü°ÑDESKeySpec¶ÔÏó×ª»»³É
+		// åˆ›å»ºä¸€ä¸ªå¯†åŒ™å·¥å‚ï¼Œç„¶åç”¨å®ƒæŠŠDESKeySpecå¯¹è±¡è½¬æ¢æˆ
 
-		// Ò»¸öSecretKey¶ÔÏó
+		// ä¸€ä¸ªSecretKeyå¯¹è±¡
 
 		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(DES);
 
 		SecretKey securekey = keyFactory.generateSecret(dks);
 
-		// Cipher¶ÔÏóÊµ¼ÊÍê³É½âÃÜ²Ù×÷
+		// Cipherå¯¹è±¡å®é™…å®Œæˆè§£å¯†æ“ä½œ
 
 		Cipher cipher = Cipher.getInstance(DES);
 
-		// ÓÃÃÜ³×³õÊ¼»¯Cipher¶ÔÏó
+		// ç”¨å¯†åŒ™åˆå§‹åŒ–Cipherå¯¹è±¡
 
 		cipher.init(Cipher.DECRYPT_MODE, securekey, sr);
 
-		// ÏÖÔÚ£¬»ñÈ¡Êı¾İ²¢½âÃÜ
+		// ç°åœ¨ï¼Œè·å–æ•°æ®å¹¶è§£å¯†
 
-		// ÕıÊ½Ö´ĞĞ½âÃÜ²Ù×÷
+		// æ­£å¼æ‰§è¡Œè§£å¯†æ“ä½œ
 
 		return cipher.doFinal(src);
 
 	}
 
 	/**
-	 * ¡¡¡¡* ¼ÓÃÜ
+	 * ã€€ã€€* åŠ å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* Ã÷ÎÄ(×Ö½Ú)
+	 * ã€€ã€€* æ˜æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @return ÃÜÎÄ(×Ö½Ú)
+	 * ã€€ã€€* @return å¯†æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static byte[] encrypt(byte[] src) throws Exception {
@@ -175,19 +175,19 @@ public class DESCipher {
 	}
 
 	/**
-	 * ¡¡¡¡* ½âÃÜ
+	 * ã€€ã€€* è§£å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* ÃÜÎÄ(×Ö½Ú)
+	 * ã€€ã€€* å¯†æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @return Ã÷ÎÄ(×Ö½Ú)
+	 * ã€€ã€€* @return æ˜æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static byte[] decrypt(byte[] src) throws Exception {
@@ -197,19 +197,19 @@ public class DESCipher {
 	}
 
 	/**
-	 * ¡¡¡¡* ¼ÓÃÜ
+	 * ã€€ã€€* åŠ å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* Ã÷ÎÄ(×Ö·û´®)
+	 * ã€€ã€€* æ˜æ–‡(å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @return ÃÜÎÄ(16½øÖÆ×Ö·û´®)
+	 * ã€€ã€€* @return å¯†æ–‡(16è¿›åˆ¶å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public final static String encrypt(String src) {
@@ -229,19 +229,19 @@ public class DESCipher {
 	}
 
 	/**
-	 * ¡¡¡¡* ½âÃÜ
+	 * ã€€ã€€* è§£å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* ÃÜÎÄ(×Ö·û´®)
+	 * ã€€ã€€* å¯†æ–‡(å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @return Ã÷ÎÄ(×Ö·û´®)
+	 * ã€€ã€€* @return æ˜æ–‡(å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public final static String decrypt(String src) {
@@ -260,19 +260,19 @@ public class DESCipher {
 	}
 
 	/**
-	 * ¡¡¡¡* ¼ÓÃÜ
+	 * ã€€ã€€* åŠ å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* Ã÷ÎÄ(×Ö½Ú)
+	 * ã€€ã€€* æ˜æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @return ÃÜÎÄ(16½øÖÆ×Ö·û´®)
+	 * ã€€ã€€* @return å¯†æ–‡(16è¿›åˆ¶å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static String encryptToString(byte[] src) throws Exception {
@@ -282,19 +282,19 @@ public class DESCipher {
 	}
 
 	/**
-	 * ¡¡¡¡* ½âÃÜ
+	 * ã€€ã€€* è§£å¯†
 	 *
-	 * ¡¡¡¡*
+	 * ã€€ã€€*
 	 *
-	 * ¡¡¡¡* @param src
+	 * ã€€ã€€* @param src
 	 *
-	 * ¡¡¡¡* ÃÜÎÄ(×Ö½Ú)
+	 * ã€€ã€€* å¯†æ–‡(å­—èŠ‚)
 	 *
-	 * ¡¡¡¡* @return Ã÷ÎÄ(×Ö·û´®)
+	 * ã€€ã€€* @return æ˜æ–‡(å­—ç¬¦ä¸²)
 	 *
-	 * ¡¡¡¡* @throws Exception
+	 * ã€€ã€€* @throws Exception
 	 *
-	 * ¡¡¡¡
+	 * ã€€ã€€
 	 */
 
 	public static String decryptToString(byte[] src) throws Exception {
@@ -331,7 +331,7 @@ public class DESCipher {
 
 		if ((b.length % 2) != 0)
 
-			throw new IllegalArgumentException("³¤¶È²»ÊÇÅ¼Êı");
+			throw new IllegalArgumentException("é•¿åº¦ä¸æ˜¯å¶æ•°");
 
 		byte[] b2 = new byte[b.length / 2];
 
@@ -348,8 +348,8 @@ public class DESCipher {
 
 	/*
 	 * public static void main(String[] args) { try { String src = "cheetah";
-	 * String crypto = DESCipher.encrypt(src); System.out.println("ÃÜÎÄ[" + src +
-	 * "]:" + crypto); System.out.println("½âÃÜºó:" + DESCipher.decrypt(crypto)); }
+	 * String crypto = DESCipher.encrypt(src); System.out.println("å¯†æ–‡[" + src +
+	 * "]:" + crypto); System.out.println("è§£å¯†å:" + DESCipher.decrypt(crypto)); }
 	 * catch (Exception e) { e.printStackTrace(); } }
 	 */
 }

@@ -5,12 +5,13 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
-import com.alibaba.odps.tunnel.*;
+import com.alibaba.odps.tunnel.Column;
+import com.alibaba.odps.tunnel.DataTunnel;
+import com.alibaba.odps.tunnel.RecordSchema;
+import com.alibaba.odps.tunnel.Upload;
 import com.alibaba.odps.tunnel.io.ProtobufRecordWriter;
 import com.alibaba.odps.tunnel.io.Record;
-import com.aliyun.openservices.odps.ODPSConnection;
 import com.aliyun.openservices.odps.Project;
-import com.aliyun.openservices.odps.tables.Table;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +23,7 @@ import java.util.List;
 
 //TODO: 换行符：System.getProperties("line.separator")方式获取
 public class OdpsWriter extends Writer {
+
     public static class Master extends Writer.Master {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Master.class);
@@ -32,251 +34,124 @@ public class OdpsWriter extends Writer {
         private String table;
         private String partition;
 
-        private String odpsServer;
-        private String tunnelServer;
         private String accountType;
 
         private boolean truncate;
 
 
-        private ODPSConnection conn;
-        private Project odpsProj;
-        private DataTunnel tunnel;
-        private com.alibaba.odps.tunnel.Configuration config;
+        private DataTunnel dataTunnel;
+        private Project odpsProject;
         private String uploadId;
+        private Upload masterUpload;
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
 
-            this.odpsServer = this.originalConfig.getString(Key.ODPS_SERVER);
-            this.tunnelServer = this.originalConfig.getString(Key.TUNNEL_SERVER);
+            checkNecessaryConfig(this.originalConfig);
 
             this.project = this.originalConfig.getString(Key.PROJECT);
             this.table = this.originalConfig.getString(Key.TABLE);
 
-            this.partition = this.originalConfig.getString(Key.PARTITION, "").trim()
-                    .replaceAll(" *= *", "=").replaceAll(" */ *", ",")
-                    .replaceAll(" *, *", ",");
+            this.partition = OdpsUtil.formatPartition(this.originalConfig.getString(Key.PARTITION, ""));
+            this.originalConfig.set(Key.PARTITION, this.partition);
 
             this.accountType = this.originalConfig.getString(Key.ACCOUNT_TYPE,
-                    "aliyun");
+                    Constant.DEFAULT_ACCOUNT_TYPE);
+            this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
             if (IS_DEBUG) {
-                LOG.debug("init() PluginParam: [\n{}\n] .", this.originalConfig.toJSON());
+                LOG.debug("after init, job config: [\n{}\n] .", this.originalConfig.toJSON());
             }
+        }
+
+        private void checkNecessaryConfig(Configuration originalConfig) {
+            originalConfig.getNecessaryValue(Key.ODPS_SERVER, OdpsWriterErrorCode.REQUIRED_VALUE);
+            originalConfig.getNecessaryValue(Key.TUNNEL_SERVER, OdpsWriterErrorCode.REQUIRED_VALUE);
+
+            originalConfig.getNecessaryValue(Key.PROJECT, OdpsWriterErrorCode.REQUIRED_VALUE);
+            originalConfig.getNecessaryValue(Key.TABLE, OdpsWriterErrorCode.REQUIRED_VALUE);
+
+            //getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
+            originalConfig.getBool(Key.TRUNCATE);
         }
 
 
         @Override
         public void prepare() {
-            if ("aliyun".equals(this.accountType)) {
-                this.originalConfig = SecurityChecker.flushAccessKeyID(this.originalConfig);
+            // TODO 更正其行为。以前是优先环境变量获取 id,key 。现在需要校正为：优先使用用户配置的 id,key
+            String accessId = null;
+            String accessKey = null;
+
+            if (Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
+                this.originalConfig = SecurityChecker.parseAccessIdAndKey(this.originalConfig);
+                accessId = this.originalConfig.getString(Key.ACCESS_ID);
+                accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+                if (IS_DEBUG) {
+                    LOG.debug("accessId:[{}], accessKey:[{}] .", accessId, accessKey);
+                }
+
+                LOG.info("accessId:[{}] .", accessId);
             }
 
-            if (IS_DEBUG) {
-                LOG.debug("prepare PluginParam: [{}] .", this.originalConfig.toString());
-            }
+            //init dataTunnel config
+            this.dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
 
-            Account tunnelAccount = new Account(this.accountType,
-                    this.originalConfig.getString(Key.ACCESS_ID), this.originalConfig.getString(
-                    Key.ACCESS_KEY));
-            if ("taobao".equalsIgnoreCase(this.accountType)) {
-                tunnelAccount.setAlgorithm("rsa");
-            }
-
-            this.config = new com.alibaba.odps.tunnel.Configuration(tunnelAccount, tunnelServer);
-
-            this.tunnel = new DataTunnel(config);
-
-            com.aliyun.openservices.odps.Account opdsAccount = new com.aliyun.openservices.odps.Account(
-                    this.accountType, this.originalConfig.getString(Key.ACCESS_ID),
-                    this.originalConfig.getString(Key.ACCESS_KEY));
-            if ("taobao".equalsIgnoreCase(this.accountType)) {
-                opdsAccount.setAlgorithm("rsa");
-            }
-
-            this.conn = new ODPSConnection(this.odpsServer, opdsAccount);
-
-            this.odpsProj = new Project(conn, this.project);
+            //init odps config
+            this.odpsProject = OdpsUtil.initOpdsProject(this.originalConfig);
 
             if (this.truncate) {
                 LOG.info("Try to clean {}:{} .", this.table, this.partition);
-                if ("".equals(this.partition.trim())) {
-                    truncateTable();
+                if (StringUtils.isBlank(this.partition)) {
+                    LOG.info("Try to clean {}.", this.table);
+                    OdpsUtil.truncateTable(this.originalConfig, this.odpsProject);
                 } else {
-                    truncatePart();
+                    LOG.info("Try to clean partition:[{}] in table:[{}].", this.partition, this.table);
+                    OdpsUtil.truncatePart(this.odpsProject, this.table, this.partition);
                 }
             } else {
                 // add part if not exists
-                if (!"".equals(this.partition.trim()) && !isPartExists()) {
-                    addPart();
+                if (StringUtils.isNotBlank(this.partition) && !OdpsUtil.isPartExists(this.odpsProject, this.table, this.partition)) {
+                    LOG.info("Try to add partition:[{}] in table:[{}].", this.partition, this.table);
+                    OdpsUtil.addPart(this.odpsProject, this.table, this.partition);
                 }
             }
         }
 
-        private void truncateTable() {
-            com.aliyun.openservices.odps.Account opdsAccount = new com.aliyun.openservices.odps.Account(
-                    this.originalConfig.getString(this.accountType), this.originalConfig.getString(
-                    Key.ACCESS_ID), this.originalConfig.getString(Key.ACCESS_KEY));
-            if ("taobao".equalsIgnoreCase(this.accountType)) {
-                opdsAccount.setAlgorithm("rsa");
-            }
 
-            ODPSConnection conn = new ODPSConnection(this.odpsServer, opdsAccount);
-
-            Project project = new Project(conn, this.project);
-            Table tab = new Table(project, this.table);
-            try {
-                tab.load();
-            } catch (Exception e) {
-                throw new DataXException(null, "Error when truncate table." + e);
-            }
-            String dropDdl = "drop table IF EXISTS " + this.table + ";";
-            String ddl = ODPSUtils.getTableDdl(tab);
-
-            ODPSUtils.runSqlTask(project, dropDdl);
-            ODPSUtils.runSqlTask(project, ddl);
-
-            List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
-            try {
-                partitionKeys = tab.getPartitionKeys();
-            } catch (Exception e) {
-                throw new DataXException(null, e);
-            }
-            if (partitionKeys == null || partitionKeys.isEmpty()) {
-                LOG.info("Table [{}] has no partition .", tab);
-            } else {
-                LOG.info("Table [{}] has partition [{}] .", tab,
-                        partitionKeys.toString());
-                String addPart = ODPSUtils.getAddPartitionDdl(tab);
-                ODPSUtils.runSqlTask(project, addPart);
-            }
-        }
-
-        private void truncatePart() {
-            if (isPartExists()) {
-                dropPart();
-            }
-            addPart();
-        }
-
-        private Boolean isPartExists() {
-            Table table = new Table(this.odpsProj, this.table);
-            // check if exist partition
-            List<String> odpsParts = ODPSUtils.listOdpsPartitions(table);
-            if (null == odpsParts) {
-                throw new DataXException("Error when list table partitions.");
-            }
-            int j = 0;
-            for (j = 0; j < odpsParts.size(); j++) {
-                if (odpsParts.get(j).replaceAll("'", "").equals(this.partition)) {
-                    break;
-                }
-            }
-            if (j == odpsParts.size())
-                return false;
-            return true;
-        }
-
-        private void dropPart() {
-            String partSpec = getPartSpec();
-            StringBuilder dropPart = new StringBuilder();
-            dropPart.append("alter table ").append(this.table)
-                    .append(" drop IF EXISTS partition(").append(partSpec)
-                    .append(");");
-            ODPSUtils.runSqlTask(this.odpsProj, dropPart.toString());
-        }
-
-        private void addPart() {
-            String partSpec = getPartSpec();
-            // add if not exists partition
-            StringBuilder addPart = new StringBuilder();
-            addPart.append("alter table ").append(this.table)
-                    .append(" add IF NOT EXISTS partition(").append(partSpec)
-                    .append(");");
-            ODPSUtils.runSqlTask(this.odpsProj, addPart.toString());
-        }
-
-        private String getPartSpec() {
-            StringBuilder partSpec = new StringBuilder();
-            String[] parts = this.partition.split(",");
-            for (int i = 0; i < parts.length; i++) {
-                String part = parts[i];
-                String[] kv = part.split("=");
-                if (kv.length != 2)
-                    throw new DataXException(null, "Wrong partition Spec: " + this.partition);
-                partSpec.append(kv[0]).append("=");
-                partSpec.append("'").append(kv[1].replace("'", "")).append("'");
-                if (i != parts.length - 1)
-                    partSpec.append(",");
-            }
-            return partSpec.toString();
-        }
-
+        /**
+         * 此处主要是对 uploadId进行设置，以及对 blockId 的开始值进行设置。
+         * <p/>
+         * 对 blockId 需要同时设置开始值以及下一个 blockId 的步长值(INTERVAL_STEP)。
+         */
         @Override
         public List<Configuration> split(int mandatoryNumber) {
             List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
-            Upload upload = createTunnelUpload("");
-            String id = upload.getUploadId();
-            this.uploadId = id;
+            this.masterUpload = OdpsUtil.createMasterTunnelUpload(this.dataTunnel, this.project, this.table, this.partition);
+            this.uploadId = this.masterUpload.getUploadId();
+            LOG.info("uploadId:[{}].", this.uploadId);
 
             for (int i = 0; i < mandatoryNumber; i++) {
-                Configuration iParam = this.originalConfig.clone();
+                Configuration tempConfig = this.originalConfig.clone();
 
-                iParam.set(com.alibaba.datax.plugin.writer.odpswriter.Constant.UPLOAD_ID, id);
-                iParam.set(com.alibaba.datax.plugin.writer.odpswriter.Constant.BLOCK_ID, String.valueOf(i));
-                iParam.set("distributedConcurrencyCount", mandatoryNumber);
-                splittedConfigs.add(iParam);
+                tempConfig.set(Constant.UPLOAD_ID, this.uploadId);
+                tempConfig.set(Constant.BLOCK_ID, String.valueOf(i));
+                tempConfig.set(Constant.INTERVAL_STEP, mandatoryNumber);
+
+                splittedConfigs.add(tempConfig);
             }
             return splittedConfigs;
         }
 
-        private static final int MAX_RETRY_TIME = 3;
-
-        private Upload createTunnelUpload(String uploadId) {
-            Upload upload = null;
-            int count = 0;
-            while (true) {
-                count++;
-                try {
-                    LOG.info("Try to create tunnel Upload for {} times .", count);
-                    if (!"".equals(uploadId)) {
-                        upload = tunnel.createUpload(project, table, partition,
-                                uploadId);
-                    } else {
-                        upload = tunnel.createUpload(project, table, partition);
-                    }
-                    LOG.info("Try to create tunnel Upload OK.");
-                    break;
-                } catch (Exception e) {
-                    if (count > MAX_RETRY_TIME)
-                        throw new DataXException(null, "Error when create upload." + e);
-                    else {
-                        try {
-                            Thread.sleep(2 * count * 1000);
-                        } catch (InterruptedException e1) {
-
-                        }
-                        continue;
-                    }
-                }
-            }
-            return upload;
-        }
-
-
         @Override
         public void post() {
-            Upload upload = createTunnelUpload(uploadId);
             List<Long> blocks = new ArrayList<Long>();
+            List<String> salveWroteBlockIds = super.getMasterPluginCollector().getMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE);
 
-            List<String> salveWrotedBlockIds = super.getMasterPluginCollector().getMessage("slaveWrotedBlockId");
-
-            for (String context : salveWrotedBlockIds) {
+            for (String context : salveWroteBlockIds) {
 
                 String[] blockIdStrs = context.split(",");
                 for (int i = 0, len = blockIdStrs.length; i < len; i++) {
@@ -288,10 +163,10 @@ public class OdpsWriter extends Writer {
             while (true) {
                 count++;
                 try {
-                    upload.complete(blocks.toArray(new Long[0]));
+                    this.masterUpload.complete(blocks.toArray(new Long[0]));
                     break;
                 } catch (Exception e) {
-                    if (count > MAX_RETRY_TIME)
+                    if (count > Constant.MAX_RETRY_TIME)
                         throw new DataXException(null, "Error when complete upload." + e);
                     else {
                         try {
@@ -310,7 +185,7 @@ public class OdpsWriter extends Writer {
         }
 
         private void dealMaxRetryTime(Configuration originalConfig) {
-            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, MAX_RETRY_TIME);
+            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, Constant.MAX_RETRY_TIME);
             if (maxRetryTime < 1) {
                 String bussinessMessage = "maxRetryTime should >=1.";
                 String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
@@ -322,10 +197,10 @@ public class OdpsWriter extends Writer {
             originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
         }
 
-
     }
 
 
+    // TODO 重构：odpswriterProxy 进行写入的操作。
     public static class Slave extends Writer.Slave {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Slave.class);
@@ -333,16 +208,13 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration sliceConfig;
-        private String accountType;
-        private String tunnelServer;
-        private com.alibaba.odps.tunnel.Configuration config;
-        private DataTunnel tunnel;
+        private DataTunnel dataTunnel;
         private RecordSchema schema;
 
-        //TODO got their values
         private String project;
         private String table;
         private String partition;
+        private Upload slaveUpload;
 
 
         private ByteArrayOutputStream out = new ByteArrayOutputStream(
@@ -353,56 +225,17 @@ public class OdpsWriter extends Writer {
         public void init() {
             this.sliceConfig = super.getPluginJobConf();
 
-            this.accountType = this.sliceConfig.getString(Key.ACCOUNT_TYPE);
-            this.tunnelServer = this.sliceConfig.getString(Key.TUNNEL_SERVER);
+            this.project = this.sliceConfig.getString(Key.PROJECT);
+            this.table = this.sliceConfig.getString(Key.TABLE);
+            this.partition = OdpsUtil.formatPartition(this.sliceConfig.getString(Key.PARTITION, ""));
 
-            Account tunnelAccount = new Account(this.accountType, this.sliceConfig.getString(Key.ACCESS_ID), this.sliceConfig.getString(
-                    Key.ACCESS_KEY));
-            if ("taobao".equalsIgnoreCase(this.accountType)) {
-                tunnelAccount.setAlgorithm("rsa");
-            }
+            this.dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
 
-            this.config = new com.alibaba.odps.tunnel.Configuration(tunnelAccount, this.tunnelServer);
-
-            this.tunnel = new DataTunnel(config);
-
-            String uploadId = this.sliceConfig.getString(com.alibaba.datax.plugin.writer.odpswriter.Constant.UPLOAD_ID);
-            Upload upload = createTunnelUpload(uploadId);
-            this.schema = upload.getSchema();
+            String uploadId = this.sliceConfig.getString(Constant.UPLOAD_ID);
+            this.slaveUpload = OdpsUtil.getSlaveTunnelUpload(this.dataTunnel, this.project, this.table, this.partition, uploadId);
+            this.schema = this.slaveUpload.getSchema();
         }
 
-        private static final int MAX_RETRY_TIME = 3;
-
-        private Upload createTunnelUpload(String uploadId) {
-            Upload upload = null;
-            int count = 0;
-            while (true) {
-                count++;
-                try {
-                    LOG.info("Try to create tunnel Upload for {} times .", count);
-                    if (!"".equals(uploadId)) {
-                        upload = tunnel.createUpload(project, table, partition,
-                                uploadId);
-                    } else {
-                        upload = tunnel.createUpload(project, table, partition);
-                    }
-                    LOG.info("Try to create tunnel Upload OK.");
-                    break;
-                } catch (Exception e) {
-                    if (count > MAX_RETRY_TIME)
-                        throw new DataXException(null, "Error when create upload." + e);
-                    else {
-                        try {
-                            Thread.sleep(2 * count * 1000);
-                        } catch (InterruptedException e1) {
-
-                        }
-                        continue;
-                    }
-                }
-            }
-            return upload;
-        }
 
         @Override
         public void prepare() {
@@ -413,11 +246,11 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
-            long blockId = this.sliceConfig.getLong(com.alibaba.datax.plugin.writer.odpswriter.Constant.BLOCK_ID, 0);
+            //blockId 的开始值，master在 split 的时候已经准备好
+            long blockId = this.sliceConfig.getLong(Constant.BLOCK_ID);
             List<Long> blocks = new ArrayList<Long>();
             com.alibaba.datax.common.element.Record dataxRecord = null;
 
-            // 当前已经打印的脏数据行数
             try {
                 pwriter = new ProtobufRecordWriter(schema, out);
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
@@ -428,51 +261,45 @@ public class OdpsWriter extends Writer {
 
                     if (out.size() >= max_buffer_length) {
                         pwriter.close();
-                        writeBlock(blockId);
+                        writeBlock(this.slaveUpload, blockId);
                         blocks.add(blockId);
                         out.reset();
                         pwriter = new ProtobufRecordWriter(schema, out);
 
-                        // 小心：为了保证分布式情况下，每个blockId号不同，设置步长应该这样取 tempKey
-                        // "distributedConcurrencyCount"
-                        blockId += this.sliceConfig.getInt("distributedConcurrencyCount");
+                        blockId += this.sliceConfig.getInt(Constant.INTERVAL_STEP);
                     }
                 }
                 // complete protobuf stream, then write to http
                 pwriter.close();
                 if (out.size() != 0) {
-                    writeBlock(blockId);
+                    writeBlock(this.slaveUpload, blockId);
                     blocks.add(blockId);
                     // reset the buffer for next block
                     out.reset();
                 }
 
-                super.getSlavePluginCollector().collectMessage("slaveWrotedBlockId", StringUtils.join(blockId, ","));
+                super.getSlavePluginCollector().collectMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE, StringUtils.join(blockId, ","));
             } catch (Exception e) {
-                throw new DataXException(null, "Error when upload data to odps tunnel" + e);
+                throw new DataXException(null, "Error when upload data to odps dataTunnel" + e);
             }
         }
 
 
-        public void writeBlock(long blockId) {
-            String uploadId = this.sliceConfig.getString(com.alibaba.datax.plugin.writer.odpswriter.Constant.UPLOAD_ID, "");
-
+        private void writeBlock(Upload slaveUpload, long blockId) {
             int count = 0;
             while (true) {
                 count++;
                 try {
-                    Upload upload = createTunnelUpload(uploadId);
-                    OutputStream hpout = upload.openOutputStream(blockId);
+                    OutputStream hpout = slaveUpload.openOutputStream(blockId);
                     LOG.info("Current buf size: {} .", out.size());
-                    LOG.info("Start to write block {}, UploadId is {}.", blockId,
-                            uploadId);
+                    LOG.info("Start to write block {}, UploadId is {}.", blockId);
                     out.writeTo(hpout);
                     hpout.close();
                     LOG.info("Write block [{}] OK .", blockId);
                     break;
                 } catch (Exception e) {
-                    if (count > MAX_RETRY_TIME)
-                        throw new DataXException(null, "Error when upload data to odps tunnel" + e);
+                    if (count > Constant.MAX_RETRY_TIME)
+                        throw new DataXException(null, "Error when upload data to odps dataTunnel" + e);
                     else {
                         try {
                             Thread.sleep(2 * count * 1000);
@@ -485,7 +312,7 @@ public class OdpsWriter extends Writer {
         }
 
         private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
-        private volatile boolean is_compatible = true;// TODO config or delete it
+        private volatile boolean is_compatible = true;// TODO tunnelConfig or delete it
 
         public Record line2Record(com.alibaba.datax.common.element.Record dataxRecord, RecordSchema schema) {
             int destColumnCount = schema.getColumnCount();
@@ -508,9 +335,10 @@ public class OdpsWriter extends Writer {
                 com.alibaba.datax.common.element.Column v = dataxRecord.getColumn(i);
                 if (null == v)
                     continue;
-                // for compatible dt lib, "" as null
-                if (is_compatible && "".equals(v))
+                // for compatible dt lib, "" as null ?? TODO
+                if (is_compatible && "".equals(v)) {
                     continue;
+                }
                 Column.Type type = schema.getColumnType(i);
                 try {
                     switch (type) {

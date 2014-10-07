@@ -45,7 +45,7 @@ public class OdpsWriter_No_Partition_Table_01_Test extends BasicWriterPluginTest
 
     @Override
     protected String getTestPluginName() {
-        return "temp_odpswriter";
+        return "odpswriter";
     }
 
 }

@@ -15,4 +15,15 @@ public class Constant {
     public static final String SKYNET_ACCESSID = "SKYNET_ACCESSID";
 
     public static final String SKYNET_ACCESSKEY = "SKYNET_ACCESSKEY";
+
+    public static final String DEFAULT_ACCOUNT_TYPE = "aliyun";
+
+    public static final String TAOBAO_ACCOUNT_TYPE = "taobao";
+
+    public static final String TAOBAO_ACCOUNT_TYPE_ALGORITHM = "rsa";
+
+    public static final int MAX_RETRY_TIME = 3;
+
+    public static final String INTERVAL_STEP = "intervalStep";
+    public static final String SLAVE_WROTE_BLOCK_MESSAGE = "slaveWroteBlockId";
 }

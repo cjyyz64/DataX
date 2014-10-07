@@ -27,16 +27,26 @@ import java.util.Map;
 public class SecurityChecker {
     private static Logger LOG = LoggerFactory.getLogger(SecurityChecker.class);
 
-    private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+    public static Configuration parseAccessIdAndKey(Configuration originalConfig) {
+        String accessId = originalConfig.getString(Key.ACCESS_ID);
+        String accessKey = originalConfig.getString(Key.ACCESS_KEY);
 
-    public static Configuration flushAccessKeyID(Configuration param) {
-        Map<String, String> envProp = System.getenv();
-
-        return doFlushAccessKeyID(param, envProp);
+        // åªè¦ accessId,accessKey äºŒè€…é…ç½®äº†ä¸€ä¸ªï¼Œå°±ç†è§£ä¸ºæ˜¯ç”¨æˆ·æœ¬æ„æ˜¯è¦ç›´æ¥æ‰‹åŠ¨é…ç½®å…¶ accessid/accessKey
+        if (StringUtils.isNotBlank(accessId) || StringUtils.isNotBlank(accessKey)) {
+            LOG.info("try to get accessId/accessKey from user config.");
+            //é€šè¿‡å¦‚ä¸‹è¯­å¥ï¼Œè¿›è¡Œæ£€æŸ¥æ˜¯å¦ç¡®å®é…ç½®äº†
+            accessId = originalConfig.getNecessaryValue(Key.ACCESS_ID, OdpsWriterErrorCode.REQUIRED_VALUE);
+            accessKey = originalConfig.getNecessaryValue(Key.ACCESS_KEY, OdpsWriterErrorCode.REQUIRED_VALUE);
+            //æ£€æŸ¥å®Œæ¯•ï¼Œè¿”å›å³å¯
+            return originalConfig;
+        } else {
+            Map<String, String> envProp = System.getenv();
+            return getAccessIdAndKeyFromEnv(originalConfig, envProp);
+        }
     }
 
-    private static Configuration doFlushAccessKeyID(Configuration param,
-                                                    Map<String, String> envProp) {
+    private static Configuration getAccessIdAndKeyFromEnv(Configuration originalConfig,
+                                                          Map<String, String> envProp) {
 
         String accessId = null;
         String accessKey = null;
@@ -46,40 +56,31 @@ public class SecurityChecker {
 
         if (StringUtils.isNotBlank(skynetAccessID)
                 || StringUtils.isNotBlank(skynetAccessKey)) {
-            // »·¾³±äÁ¿ÖĞ£¬Èç¹û´æÔÚSKYNET_ACCESSID/SKYNET_ACCESSKEy£¨Ö»ÒªÓĞÆäÖĞÒ»¸ö±äÁ¿£¬ÔòÈÏÎªÒ»¶¨ÊÇÁ½¸ö¶¼´æÔÚµÄ£¡£©£¬ÔòÊ¹ÓÃÆäÖµ×÷Îªodps
-            // µÄaccessid/accesskey(»á½âÃÜ)
-            LOG.info("try to get accessid/accesskey from skynet-env.");
+            /**
+             * ç¯å¢ƒå˜é‡ä¸­ï¼Œå¦‚æœå­˜åœ¨SKYNET_ACCESSID/SKYNET_ACCESSKEyï¼ˆåªè¦æœ‰å…¶ä¸­ä¸€ä¸ªå˜é‡ï¼Œåˆ™è®¤ä¸ºä¸€å®šæ˜¯ä¸¤ä¸ªéƒ½å­˜åœ¨çš„ï¼ï¼‰ï¼Œ
+             * åˆ™ä½¿ç”¨å…¶å€¼ä½œä¸ºodpsçš„accessId/accessKey(ä¼šè§£å¯†)
+             */
+
+            LOG.info("Try to get accessId/accessKey from skynet-env.");
             accessId = skynetAccessID;
             accessKey = DESCipher.decrypt(skynetAccessKey);
             if (StringUtils.isNotBlank(accessKey)) {
-                param.set(Key.ACCESS_ID, accessId);
-                param.set(Key.ACCESS_KEY, accessKey);
-                LOG.info(
-                        "get accessid/accesskey from skynet-env successfully, and access_id=[{}]",
-                        accessId);
+                originalConfig.set(Key.ACCESS_ID, accessId);
+                originalConfig.set(Key.ACCESS_KEY, accessKey);
+                LOG.info("Get accessId/accessKey from skynet-env successfully.");
             } else {
-                String errMsg = String
-                        .format("get accessid/accesskey from skynet-env failed, and access_id=[%s]",
-                                accessId);
+                String errMsg = String.format("Get accessId/accessKey from skynet-env failed, which access_id=[%s]",
+                        accessId);
                 LOG.error(errMsg);
                 throw new DataXException(null, errMsg);
             }
         } else {
-            // ²ÉÓÃÓÃ»§ÅäÖÃµÄaccessid/accesskey£¬²»ĞèÒª¶Ôaccesskey ½âÃÜ¡£
-            LOG.info("try to get accessid/accesskey from user config.");
-            accessId = param.getString(Key.ACCESS_ID);
-            accessKey = param.getString(Key.ACCESS_KEY);
-            LOG.info(
-                    "get accessid/accesskey from user config successfully, and access_id=[{}]",
-                    accessId);
+            // æ— å¤„è·å–ï¼ˆæ—¢æ²¡æœ‰é…ç½®åœ¨ä½œä¸šä¸­ï¼Œä¹Ÿæ²¡ç”¨åœ¨ç¯å¢ƒå˜é‡ä¸­ï¼‰
+            String errMsg = "No place to get accessId/accessKey.";
+            LOG.error(errMsg);
+            throw new DataXException(null, errMsg);
         }
 
-        if (IS_DEBUG) {
-            LOG.debug("access-id:[{}], access-key:[{}] .", accessId, accessKey);
-        }
-
-        LOG.info("access-id:[{}] .", accessId);
-
-        return param;
+        return originalConfig;
     }
 }
