@@ -41,7 +41,7 @@ class XmlConvertor:
         job_json["content"] = [{"reader": self.reader_dict, "writer": self.writer_dict}]
 
         return json.dumps({"job": job_json}, sort_keys=True, indent=4)
-    
+
     def parse_reader(self):
         reader_plugin = self.reader.find("plugin").text
         self.reader_dict["name"] = reader_plugin
@@ -70,6 +70,8 @@ class XmlConvertor:
             return self.parse_odpswriter()
         elif writer_plugin == "mysqlwriter":
             return self.parse_mysqlwriter()
+        elif writer_plugin == "txtfilewriter":
+            return self.parse_txtfilewriter()
         else:
             print >>sys.stderr, "not suppotted writer plugin[%s]"%(writer_plugin)
             return False
@@ -86,7 +88,7 @@ class XmlConvertor:
     def set_error_limit(self):
         error_limit = self.get_value_from_xml(self.writer, "error-limit")
         if not error_limit:
-            error_limit = 0 
+            error_limit = 0
         self.job_setting["errorLimit"] = error_limit
 
     def get_value_from_xml(self, node_root, key):
@@ -105,16 +107,16 @@ class XmlConvertor:
 
         columns = columns.strip().strip(",")
         column_array = []
-        bracket_count = 0 
-        quote_count = 0 
-        begin = 0 
+        bracket_count = 0
+        quote_count = 0
+        begin = 0
         for i, ch in enumerate(columns):
             if i == len(columns)-1:
                 column_array.append({"name":columns[begin:]})
             elif ch == ",":
                 if bracket_count == 0 and quote_count%2 == 0:
                     column_array.append({"name":columns[begin:i]})
-                    begin = i+1 
+                    begin = i+1
             elif ch == "'":
                 quote_count += 1
             elif ch == "(":
@@ -130,16 +132,16 @@ class XmlConvertor:
 
         columns = columns.strip().strip(",")
         column_array = []
-        bracket_count = 0 
-        quote_count = 0 
-        begin = 0 
+        bracket_count = 0
+        quote_count = 0
+        begin = 0
         for i, ch in enumerate(columns):
             if i == len(columns)-1:
                 column_array.append(columns[begin:])
             elif ch == ",":
                 if bracket_count == 0 and quote_count%2 == 0:
                     column_array.append(columns[begin:i])
-                    begin = i+1 
+                    begin = i+1
             elif ch == "'":
                 quote_count += 1
             elif ch == "(":
@@ -156,7 +158,7 @@ class XmlConvertor:
             self.reader_parameter["sliceRecordCount"] = sliceRecordCount
         else:
              self.reader_parameter["sliceRecordCount"] = 100000
-        
+
         if self.get_value_from_xml(self.reader, "column"):
             columns = []
             self.reader_parameter["column"] = columns
@@ -330,6 +332,13 @@ class XmlConvertor:
             database = self.get_value_from_xml(self.reader, "database")
             jdbc_url = "jdbc:sqlserver://%s:%s;DatabaseName=%s"%(ip, port, database)
         connection_dict["jdbcUrl"] = [jdbc_url]
+
+        return True
+
+    ############ txtfile #############
+    def parse_txtfilewriter(self):
+        self.writer_parameter["path"] = self.get_value_from_xml(self.writer,"path");
+        self.writer_parameter["concurrency"] = self.get_value_from_xml(self.writer,"concurrency")
 
         return True
 
