@@ -44,6 +44,10 @@ public class TxtFileWriter extends Writer {
 		}
 
 		private void validate() {
+
+			this.writerSliceConfig.getNecessaryValue(Key.TRUNCATE,
+					TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION);
+
 			String path = this.writerSliceConfig.getNecessaryValue(Key.PATH,
 					TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION);
 			String charset = this.writerSliceConfig.getString(Key.CHARSET,
@@ -83,8 +87,8 @@ public class TxtFileWriter extends Writer {
 		public void prepare() {
 			LOG.info("prefare() begin...");
 			// truncate files
-			boolean truncate = this.writerSliceConfig.getBool(Key.TRUNCATE,
-					Constants.DEFAULT_TRUNCATE);
+			boolean truncate = this.writerSliceConfig.getBool(Key.TRUNCATE);
+
 			String path = this.writerSliceConfig.getString(Key.PATH);
 			if (truncate) {
 				File dir = new File(path);
@@ -135,9 +139,8 @@ public class TxtFileWriter extends Writer {
 						fileSuffix);
 				splitedTaskConfig.set(Constants.FILE_NAME, fileName);
 
-				LOG.info(String.format(
-						"splited write file name:[%s]",
-						fileName));
+				LOG.info(String
+						.format("splited write file name:[%s]", fileName));
 
 				writerSplitConfigs.add(splitedTaskConfig);
 			}
@@ -152,9 +155,13 @@ public class TxtFileWriter extends Writer {
 				.getLogger(TxtFileWriter.Slave.class);
 
 		private Configuration writerSliceConfig;
+
 		private String path;
+
 		private String charset;
+
 		private String fieldDelimiter;
+
 		private String lineDelimiter;
 
 		private String fileName = "0";
@@ -170,8 +177,8 @@ public class TxtFileWriter extends Writer {
 
 			this.fieldDelimiter = this.writerSliceConfig.getString(
 					Key.FIELD_DELIMITER, Constants.DEFAULT_FIELD_DELIMITER);
-			
-			//TODO 支持行分割符
+
+			// TODO 支持行分割符
 			this.lineDelimiter = IOUtils.LINE_SEPARATOR;
 
 			this.fileName = this.writerSliceConfig.getString(
