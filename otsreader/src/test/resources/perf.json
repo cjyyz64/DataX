@@ -1,0 +1,36 @@
+{
+    "job": {
+        "setting": {
+            "speed": 1
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "otsreader",
+                    "parameter": {
+                        "endpoint":"",            
+                        "accessId":"",            
+                        "accessKey":"",           
+                        "instanceName":"",
+                        "table":"",
+                        "column":[
+
+                        ], 
+                        "range":{
+                            "begin":[
+
+                            ],
+                            "end":[
+                            ]
+                        }
+                    }
+                },
+                "writer": {
+                    "name":"streamwriter",
+                    "parameter":{
+                    }
+                }
+            }
+        ]
+    }
+}
