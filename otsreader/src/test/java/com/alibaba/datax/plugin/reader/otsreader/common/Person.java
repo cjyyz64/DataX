@@ -39,16 +39,30 @@ public class Person implements Serializable {
         this.age = age;
     }
     
-    public static byte[] toByte(Person p) throws IOException {
+    public static byte[] toByte(Person p) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ObjectOutputStream oout = new ObjectOutputStream(out);
-        oout.writeObject(p);
+        ObjectOutputStream oout;
+        try {
+            oout = new ObjectOutputStream(out);
+            oout.writeObject(p);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
         return out.toByteArray();
     }
     
-    public static Person toPerson(byte [] b) throws Exception {
+    public static Person toPerson(byte [] b) {
         ByteArrayInputStream bais = new ByteArrayInputStream(b);
-        ObjectInputStream ois = new ObjectInputStream(bais);
-        return (Person) ois.readObject();
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(bais);
+            return (Person) ois.readObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

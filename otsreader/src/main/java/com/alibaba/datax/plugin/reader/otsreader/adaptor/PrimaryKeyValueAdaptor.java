@@ -52,6 +52,8 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
             json.add(TYPE, new JsonPrimitive(ColumnType.INTEGER.toString())); 
             json.add(VALUE, new JsonPrimitive(obj.asLong()));
             break;
+        default:
+            throw new IllegalArgumentException("Unsupport serialize the type : " + obj.getType() + "");
         }
         return json;
     }
@@ -62,8 +64,7 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
 
         JsonObject obj = ele.getAsJsonObject();
         String strType = obj.getAsJsonPrimitive(TYPE).getAsString();
-        String strValue =  obj.getAsJsonPrimitive(VALUE).getAsString();
-        
+        JsonPrimitive jsonValue =  obj.getAsJsonPrimitive(VALUE);
         
         if (strType.equals(INF_MIN)) {
             return PrimaryKeyValue.INF_MIN;
@@ -77,11 +78,13 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
         PrimaryKeyType type = PrimaryKeyType.valueOf(strType);
         switch(type) {
         case STRING : 
-            value = PrimaryKeyValue.fromString(strValue);
+            value = PrimaryKeyValue.fromString(jsonValue.getAsString());
             break;
         case INTEGER : 
-            value = PrimaryKeyValue.fromLong(Long.parseLong(strValue));
+            value = PrimaryKeyValue.fromLong(jsonValue.getAsLong());
             break;
+        default:
+            throw new IllegalArgumentException("Unsupport deserialize the type : " + type + "");
         }
         return value;
     }

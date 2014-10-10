@@ -11,7 +11,8 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.OtsReaderMasterProxy;
 import com.alibaba.datax.plugin.reader.otsreader.OtsReaderSlaveProxy;
-import com.aliyun.openservices.ClientException;
+import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
+import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
 
 public class OtsReader extends Reader {
@@ -25,23 +26,28 @@ public class OtsReader extends Reader {
             try {
                 this.proxy.init(getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.INVALID_PARAM, e.getMessage(), e);
+                LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.INVALID_PARAM, Common.getDetailMessage(e), e);
             } catch (Exception e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.ERROR, e.getMessage(), e);
+                LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.ERROR, Common.getDetailMessage(e), e);
             }
             LOG.info("init() end ...");
         }
 
         @Override
         public void destroy() {
+            this.proxy.close();
         }
 
         @Override
@@ -57,17 +63,21 @@ public class OtsReader extends Reader {
             try {
                 confs = this.proxy.split(adviceNumber);
             } catch (OTSException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.INVALID_PARAM, e.getMessage(), e);
+                LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.INVALID_PARAM, Common.getDetailMessage(e), e);
             } catch (Exception e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.ERROR, e.getMessage(), e);
+                LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.ERROR, Common.getDetailMessage(e), e);
             }
 
             LOG.info("split() end ...");
@@ -93,17 +103,21 @@ public class OtsReader extends Reader {
             try {
                 this.proxy.read(recordSender,getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(new OtsReaderError(e.getErrorCode()), e.getMessage(), e);
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
+                        new Object[]{e.getErrorCode(), e.getMessage()});
+                LOG.error("Stack", e);
+                throw new DataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.INVALID_PARAM, e.getMessage(), e);
+                LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.INVALID_PARAM, Common.getDetailMessage(e), e);
             } catch (Exception e) {
-                LOG.error(e.getMessage());
-                throw new DataXException(OtsReaderError.ERROR, e.getMessage(), e);
+                LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
+                throw new DataXException(OtsReaderError.ERROR, Common.getDetailMessage(e), e);
             }
             LOG.info("startRead() end ...");
         }

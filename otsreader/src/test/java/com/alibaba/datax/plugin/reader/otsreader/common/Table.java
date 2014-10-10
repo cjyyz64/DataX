@@ -96,4 +96,8 @@ public class Table {
             ots.putRow(putRowRequest);
         }
     }
+    
+    public void close() {
+        ots.shutdown();
+    }
 }

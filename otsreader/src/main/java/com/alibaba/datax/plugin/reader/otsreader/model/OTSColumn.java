@@ -1,26 +1,71 @@
 package com.alibaba.datax.plugin.reader.otsreader.model;
 
-import com.aliyun.openservices.ots.model.ColumnValue;
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.StringColumn;
+import com.aliyun.openservices.ots.model.ColumnType;
 
 public class OTSColumn {
-    private ColumnValue value;
-    private OTSColumnType type;
+    private String name;
+    private Column value;
+    private OTSColumnType columnType;
+    private ColumnType valueType;
     
     public static enum OTSColumnType {
         NORMAL, // 普通列
         CONST   // 常量列
     }
     
-    public OTSColumn(ColumnValue value, OTSColumnType type) {
-        this.value = value;
-        this.type = type;
+    private OTSColumn(String name) {
+        this.name = name;
+        this.columnType = OTSColumnType.NORMAL;
     }
     
-    public ColumnValue getValue() {
+    private OTSColumn(Column value, ColumnType type) {
+        this.value = value;
+        this.columnType = OTSColumnType.CONST;
+        this.valueType = type;
+    }
+    
+    public static OTSColumn fromNormalColumn(String name) {
+        return new OTSColumn(name);
+    } 
+    
+    public static OTSColumn fromConstStringColumn(String value) {
+        return new OTSColumn(new StringColumn(value), ColumnType.STRING);
+    } 
+    
+    public static OTSColumn fromConstIntegerColumn(long value) {
+        return new OTSColumn(new NumberColumn(value), ColumnType.INTEGER);
+    } 
+    
+    public static OTSColumn fromConstDoubleColumn(double value) {
+        return new OTSColumn(new NumberColumn(value), ColumnType.DOUBLE);
+    } 
+    
+    public static OTSColumn fromConstBoolColumn(boolean value) {
+        return new OTSColumn(new BoolColumn(value), ColumnType.BOOLEAN);
+    } 
+    
+    public static OTSColumn fromConstBytesColumn(byte[] value) {
+        return new OTSColumn(new BytesColumn(value), ColumnType.BINARY);
+    } 
+    
+    public Column getValue() {
         return value;
     }
     
-    public OTSColumnType getType() {
-        return type;
+    public OTSColumnType getColumnType() {
+        return columnType;
+    }
+    
+    public ColumnType getValueType() {
+        return valueType;
+    }
+
+    public String getName() {
+        return name;
     }
 }

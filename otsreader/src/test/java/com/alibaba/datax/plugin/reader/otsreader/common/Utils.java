@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import com.alibaba.datax.common.element.Column;
@@ -19,7 +18,8 @@ import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
-import com.alibaba.datax.plugin.reader.otsreader.utils.CommonUtils;
+import com.alibaba.datax.plugin.reader.otsreader.utils.ParamChecker;
+import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.CapacityUnit;
 import com.aliyun.openservices.ots.model.ColumnType;
@@ -43,7 +43,7 @@ import com.aliyun.openservices.ots.model.TableMeta;
 public class Utils {
     public static String getRowPKString(RowPrimaryKey pk) {
         Set<String> keys = pk.getPrimaryKey().keySet();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String key:keys) {
             PrimaryKeyValue value = pk.getPrimaryKey().get(key);
             sb.append("[");
@@ -67,7 +67,7 @@ public class Utils {
     }
 
     public static String getCriateriaString(RangeRowQueryCriteria criteria) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(getRowPKString(criteria.getInclusiveStartPrimaryKey()));
         sb.append("\n");
         sb.append(getRowPKString(criteria.getExclusiveEndPrimaryKey()));
@@ -94,7 +94,7 @@ public class Utils {
     }
 
     public static String getRangeString(OTSClient ots, RangeRowQueryCriteria criteria) {
-        StringBuffer ss = new StringBuffer();
+        StringBuilder ss = new StringBuilder();
         RowPrimaryKey token = criteria.getInclusiveStartPrimaryKey();
         do {
             RangeRowQueryCriteria cur = new RangeRowQueryCriteria(criteria.getTableName());
@@ -113,7 +113,7 @@ public class Utils {
             for (Row row:rows) {
                 Map<String, ColumnValue> cols = row.getColumns();
                 Set<String> keys = cols.keySet();
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 for (String key:keys) {
                     ColumnValue v = cols.get(key);
                     if (v == null) {
@@ -290,19 +290,19 @@ public class Utils {
     }
     
     public static String getRecordString(Record r) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for(int i = 0; i < r.getColumnNumber(); i++) {
             Column c = r.getColumn(i);
             if (c == null) {
                 sb.append("N/A, ");
             } else {
                 switch (c.getType()) {
-                case STRING:  sb.append(c.toString() + "(STRING), "); break;
+                case STRING:  sb.append(c.asString() + "(STRING), "); break;
                 case NUMBER:  sb.append(c.asDouble() + "(NUMBER), "); break;
                 case BOOL:  sb.append(c.asBoolean() + "(BOOL), "); break;
                 case BYTES: sb.append("(BYTES), "); ; break;
                 default:
-                    break;
+                    throw new RuntimeException("Unsupport the type.");
                 }
             }
             
@@ -310,29 +310,20 @@ public class Utils {
         return sb.toString();
     }
     
-    private static Map<String, Record> getMapping (List<PrimaryKeyType> types, List<Record> records) {
+    private static Map<String, Record> getMapping (List<Record> records) {
         Map<String, Record> mapping = new LinkedHashMap<String, Record>();
         for (Record r: records) {
-            StringBuffer key = new StringBuffer();
-            for (int i = 0; i < types.size(); i++) {
-                switch(types.get(i)) {
-                case STRING: key.append(r.getColumn(i).toString() + "_"); break;
-                case INTEGER: key.append(r.getColumn(i).asLong() + "_"); break;
-                }
-            }
+            //System.out.println(Utils.getRecordString(r));
+            StringBuilder key = new StringBuilder();
+            key.append(r.getColumn(0).asString() + "_");
             mapping.put(key.toString(), r);
         }
         return mapping;
     }
     
-    private static Record getRecord(List<PrimaryKeyType> types, Map<String, Record> mapping, Record r) {
-        StringBuffer key = new StringBuffer();
-        for (int i = 0; i < types.size(); i++) {
-            switch(types.get(i)) {
-            case STRING: key.append(r.getColumn(i).toString() + "_"); break;
-            case INTEGER: key.append(r.getColumn(i).asLong() + "_"); break;
-            }
-        }
+    private static Record getRecord(Map<String, Record> mapping, Record r) {
+        StringBuilder key = new StringBuilder();
+        key.append(r.getColumn(0).asString() + "_");
         return mapping.get(key.toString());
     }
     
@@ -350,22 +341,12 @@ public class Utils {
         Direction direction = null;
         TableMeta meta = getTableMeta(ots, conf);
 
-        OTSRange range = new OTSRange();
-        range.setBegin(CommonUtils.checkInputPrimaryKeyAndGet(meta, conf.getRangeBegin()));
-        range.setEnd(CommonUtils.checkInputPrimaryKeyAndGet(meta, conf.getRangeEnd()));
+        OTSRange range = ParamChecker.checkRangeAndGet(meta, conf.getRangeBegin(), conf.getRangeEnd());
 
-        int cmp = CommonUtils.compareRangeBeginAndEnd(meta, range.getBegin(), range.getEnd()) ;
-
-        if (cmp > 0) {
-            direction = Direction.BACKWARD;
-        } else if (cmp < 0) {
-            direction = Direction.FORWARD;
-        } else {
-            throw new IllegalArgumentException("Value of 'range-begin' equal value of 'range-end'.");
-        }
+        direction = ParamChecker.checkDirectionAndEnd(meta, range.getBegin(), range.getEnd());
 
         List<Record> results = new ArrayList<Record>();
-        List<String> cc = CommonUtils.getNormalColumnNameList(conf.getColumns());
+        List<String> cc = Common.getNormalColumnNameList(conf.getColumns());
         RowPrimaryKey token = range.getBegin();
         do {
             RangeRowQueryCriteria cur = new RangeRowQueryCriteria(conf.getTableName());
@@ -382,23 +363,19 @@ public class Utils {
             token = result.getNextStartPrimaryKey();
             for (Row row : result.getRows()) {
                 Record line = new DefaultRecord();
-                results.add(CommonUtils.parseRowToLine(row, conf.getColumns(), line));
+                results.add(Common.parseRowToLine(row, conf.getColumns(), line));
             }
         } while (token != null);
         if (results.size() != output.size()) {
             return false;
         }
-        List<PrimaryKeyType> types = new ArrayList<PrimaryKeyType>();
-        for (Entry<String, PrimaryKeyType> e : meta.getPrimaryKey().entrySet()){
-            types.add(e.getValue());
-        }
-        Map<String, Record> m = getMapping(types, output);
+        Map<String, Record> m = getMapping(output);
         
         for (int i = 0; i < results.size(); i++) {
             Record r1 = results.get(i);
-            Record r2 = getRecord(types, m, r1);
-            //System.out.println(getRecordString(r1));
-            //System.out.println(getRecordString(r2));
+            Record r2 = getRecord(m, r1);
+            System.out.println(getRecordString(r1));
+            System.out.println(getRecordString(r2));
             if (r1.getColumnNumber() != r2.getColumnNumber()) {
                 return false;
             }
@@ -418,12 +395,12 @@ public class Utils {
                 boolean flag = true;
                 switch (c1.getType()) {
                 case NULL: break;
-                case STRING: flag = c1.toString().equals(c2.toString());          break;
+                case STRING: flag = c1.asString().equals(c2.asString());          break;
                 case NUMBER: flag = c1.asDouble().equals(c2.asDouble());          break;
                 case BOOL:   flag = c1.asBoolean().equals(c2.asBoolean());        break;
                 case BYTES:  flag = (compareBytes(c1.asBytes(), c2.asBytes()) == 0 ? true : false) ; break;
                 default:
-                    break;
+                    throw new RuntimeException("Unsupport the type.");
                 }
                 if (!flag) {
                     return false;

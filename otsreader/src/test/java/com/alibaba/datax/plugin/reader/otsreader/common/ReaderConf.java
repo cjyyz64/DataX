@@ -41,26 +41,26 @@ public class ReaderConf {
     private String columnToString(List<OTSColumn> columns) {
         List<String> lines = new ArrayList<String>();
         for (OTSColumn col : columns) {
-            if (col.getType() == OTSColumn.OTSColumnType.NORMAL) {
-                lines.add(String.format("\t\t\"%s\"", col.getValue().asString()));
+            if (col.getColumnType() == OTSColumn.OTSColumnType.NORMAL) {
+                lines.add(String.format("\t\t{\"name\":\"%s\"}", col.getName()));
             } else {
-                if (col.getValue().getType() == ColumnType.STRING) {
-                    lines.add(String.format("\t\t{ \"type\":\"STRING\", \"value\":\"%s\" }", col.getValue().asString()));
-                } else if (col.getValue().getType() == ColumnType.INTEGER) {
-                    lines.add(String.format("\t\t{ \"type\":\"INTEGER\", \"value\":\"%d\" }", col.getValue().asLong()));
-                } else if (col.getValue().getType() == ColumnType.DOUBLE) {
+                if (col.getValueType() == ColumnType.STRING) {
+                    lines.add(String.format("\t\t{ \"type\":\"STRING\", \"value\":\"%s\" }", col.getValue().toString()));
+                } else if (col.getValueType() == ColumnType.INTEGER) {
+                    lines.add(String.format("\t\t{ \"type\":\"INT\", \"value\":\"%d\" }", col.getValue().asLong()));
+                } else if (col.getValueType() == ColumnType.DOUBLE) {
                     lines.add(String.format("\t\t{ \"type\":\"DOUBLE\", \"value\":\"%f\" }", col.getValue().asDouble()));
-                } else if (col.getValue().getType() == ColumnType.BOOLEAN) {
-                    lines.add(String.format("\t\t{ \"type\":\"BOOLEAN\", \"value\":\"%s\" }", col.getValue().asBoolean()));
-                } else if (col.getValue().getType() == ColumnType.BINARY) {
-                    lines.add(String.format("\t\t{ \"type\":\"BINARY\", \"value\":\"%s\" }", Base64.encodeBase64String(col.getValue().asBinary())));
+                } else if (col.getValueType() == ColumnType.BOOLEAN) {
+                    lines.add(String.format("\t\t{ \"type\":\"BOOL\", \"value\":\"%s\" }", col.getValue().asBoolean()));
+                } else if (col.getValueType() == ColumnType.BINARY) {
+                    lines.add(String.format("\t\t{ \"type\":\"BINARY\", \"value\":\"%s\" }", Base64.encodeBase64String(col.getValue().asBytes())));
                 }
             }
         }
         return linesToString(lines);
     }
     
-    private String rangeToString(List<PrimaryKeyValue> columns) {
+    private String parimaryKeysToString(List<PrimaryKeyValue> columns) {
         List<String> lines = new ArrayList<String>();
         for (PrimaryKeyValue col: columns) {
             if (col == PrimaryKeyValue.INF_MAX) {
@@ -69,12 +69,42 @@ public class ReaderConf {
                 lines.add("\t\t{\"type\":\"INF_MIN\", \"value\":\"\"}");
             } else {
                 if (col.getType() == PrimaryKeyType.INTEGER) {
-                    lines.add(String.format("\t\t{\"type\":\"INTEGER\", \"value\":\"%d\"}", col.asLong()));
+                    lines.add(String.format("\t\t{\"type\":\"INT\", \"value\":\"%d\"}", col.asLong()));
                 } else {
                     lines.add(String.format("\t\t{\"type\":\"STRING\", \"value\":\"%s\"}", col.asString()));
                 }
             }
         }
+        return linesToString(lines);
+    }
+    
+    private String rangeToString(List<PrimaryKeyValue> begin, List<PrimaryKeyValue> end, List<PrimaryKeyValue> split) {
+        List<String> lines = new ArrayList<String>();
+        
+        if (conf.getRangeBegin() != null) {
+            String cols = parimaryKeysToString(conf.getRangeBegin());
+            if (cols == null) {
+                lines.add(String.format("\t\t\"%s\":[]", Key.RANGE_BEGIN));
+            } else {
+                lines.add(String.format("\t\t\"%s\":[\n\t%s\t\t]", Key.RANGE_BEGIN, cols));
+            }    
+        }
+        if (end != null) {
+            String cols = parimaryKeysToString(conf.getRangeEnd());
+            if (cols == null) {
+                lines.add(String.format("\t\t\"%s\":[]", Key.RANGE_END));
+            } else {
+                lines.add(String.format("\t\t\"%s\":[\n\t%s\t\t]", Key.RANGE_END, cols));
+            }    
+        }
+        if (split != null) {
+            String cols = parimaryKeysToString(conf.getRangeSplit());
+            if (cols == null) {
+                lines.add(String.format("\t\t\"%s\":[]", Key.RANGE_SPLIT));
+            } else {
+                lines.add(String.format("\t\t\"%s\":[\n\t%s\t\t]", Key.RANGE_SPLIT, cols));
+            }    
+        } 
         return linesToString(lines);
     }
 
@@ -103,30 +133,9 @@ public class ReaderConf {
                 lines.add(String.format("\t\"%s\":[\n%s\t]", Key.COLUMN, cols));
             }
         }
-        if (conf.getRangeBegin() != null) {
-            String cols = rangeToString(conf.getRangeBegin());
-            if (cols == null) {
-                lines.add(String.format("\t\"%s\":[]", Key.RANGE_BEGIN));
-            } else {
-                lines.add(String.format("\t\"%s\":[\n%s\t]", Key.RANGE_BEGIN, cols));
-            }    
-        }
-        if (conf.getRangeEnd() != null) {
-            String cols = rangeToString(conf.getRangeEnd());
-            if (cols == null) {
-                lines.add(String.format("\t\"%s\":[]", Key.RANGE_END));
-            } else {
-                lines.add(String.format("\t\"%s\":[\n%s\t]", Key.RANGE_END, cols));
-            }    
-        }
-        if (conf.getRangeSplit() != null) {
-            String cols = rangeToString(conf.getRangeSplit());
-            if (cols == null) {
-                lines.add(String.format("\t\"%s\":[]", Key.RANGE_SPLIT));
-            } else {
-                lines.add(String.format("\t\"%s\":[\n%s\t]", Key.RANGE_SPLIT, cols));
-            }    
-        }
+        
+        lines.add(String.format("\t\"%s\":{\n%s\t}",Key.RANGE, rangeToString(conf.getRangeBegin(), conf.getRangeEnd(), conf.getRangeSplit())));
+        
         if (conf.getRetry() > 0) {
             lines.add(String.format("\t\"%s\":%d", Key.RETRY, conf.getRetry()));
         }

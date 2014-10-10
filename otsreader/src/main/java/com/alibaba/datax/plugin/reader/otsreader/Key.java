@@ -18,13 +18,13 @@ package com.alibaba.datax.plugin.reader.otsreader;
 
 public final class Key {
     /* ots account configuration */
-    public final static String OTS_ENDPOINT = "endpoint"; // 采用驼峰表达式
+    public final static String OTS_ENDPOINT = "endpoint"; 
         
-    public final static String OTS_ACCESSID = "accessid"; 
+    public final static String OTS_ACCESSID = "accessId"; 
     
-    public final static String OTS_ACCESSKEY = "accesskey";
+    public final static String OTS_ACCESSKEY = "accessKey";
     
-    public final static String OTS_INSTANCE_NAME = "instance-name";
+    public final static String OTS_INSTANCE_NAME = "instanceName";
     
     public final static String TABLE_NAME = "table";
 
@@ -33,17 +33,24 @@ public final class Key {
     //======================================================
     // 注意：如果range-begin大于range-end,那么系统将逆序导出所有数据
     //======================================================
+    // Range的组织格式
+    // "range":{
+    //   "begin":[],
+    //   "end":[],
+    //   "split":[]
+    // }
+    public final static String RANGE = "range";
     
-    public final static String RANGE_BEGIN = "range-begin";
+    public final static String RANGE_BEGIN = "begin";
     
-    public final static String RANGE_END = "range-end";
+    public final static String RANGE_END = "end";
     
-    public final static String RANGE_SPLIT = "range-split";
+    public final static String RANGE_SPLIT = "split";
     
     //Option
     
-    public final static String RETRY = "error-retry-limit"; // maxRetryTime
+    public final static String RETRY = "maxRetryTime"; // maxRetryTime
     
-    public final static String SLEEP_IN_MILLI_SECOND = "error-retry-sleep-in-million-second";
+    public final static String SLEEP_IN_MILLI_SECOND = "retrySleepInMillionSecond";
 
 }
