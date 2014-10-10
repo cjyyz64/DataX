@@ -36,7 +36,7 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_ID = "core.transport.channel.id";
 
-	public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED = "core.transport.channel.speed";
+	public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE = "core.transport.channel.speed.byte";
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL = "core.transport.channel.flowControlInterval";
 

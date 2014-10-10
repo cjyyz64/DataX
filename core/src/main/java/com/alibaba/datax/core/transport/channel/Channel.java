@@ -46,7 +46,7 @@ public abstract class Channel {
 		int capacity = configuration.getInt(
 				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
 		long speed = configuration.getLong(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED, 1024 * 1024);
+				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
 
 		if (capacity <= 0 || speed <= 0) {
 			throw new IllegalArgumentException(String.format(

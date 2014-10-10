@@ -162,7 +162,7 @@ public class MasterContainer extends AbstractContainer {
 		long globalLimitedSpeed = this.configuration.getInt(
 				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 10 * 1024 * 1024);
 		long channelLimitedSpeed = this.configuration.getInt(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED, 1024 * 1024);
+				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
 
 		this.needChannelNumber = (int) (globalLimitedSpeed / channelLimitedSpeed);
 		if (this.needChannelNumber <= 0) {

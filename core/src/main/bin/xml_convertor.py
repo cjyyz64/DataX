@@ -103,7 +103,7 @@ class XmlConvertor:
 
     def parse_map_column(self, columns):
         if not columns or not columns.strip() or columns == "*":
-            return [{"name":"*"}]
+            return ["*"]
 
         columns = columns.strip().strip(",")
         column_array = []
@@ -117,7 +117,7 @@ class XmlConvertor:
                 if bracket_count == 0 and quote_count%2 == 0:
                     column_array.append({"name":columns[begin:i]})
                     begin = i+1
-            elif ch == "'":
+            elif ch == "'" or ch == "\"":
                 quote_count += 1
             elif ch == "(":
                 bracket_count += 1
@@ -142,7 +142,7 @@ class XmlConvertor:
                 if bracket_count == 0 and quote_count%2 == 0:
                     column_array.append(columns[begin:i])
                     begin = i+1
-            elif ch == "'":
+            elif ch == "'" or ch == "\"":
                 quote_count += 1
             elif ch == "(":
                 bracket_count += 1
@@ -197,6 +197,7 @@ class XmlConvertor:
         self.reader_parameter["username"] = self.get_value_from_xml(self.reader, "username")
         self.reader_parameter["password"] = self.get_value_from_xml(self.reader, "password")
 
+        ## session maybe no use
         encoding = self.get_value_from_xml(self.reader, "encoding")
         if encoding:
             session_dict = {}
@@ -205,18 +206,28 @@ class XmlConvertor:
             session_dict["character_set_results"] = encoding
             session_dict["character_set_connection"] = encoding
 
-        jdbc_url = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
-        connection_dict = {"jdbcUrl":jdbc_url}
-        self.reader_parameter["connection"] = [connection_dict]
+        jdbc_url_list = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
+        connection_list = []
+        self.reader_parameter["connection"] = connection_list
 
         pointed_sql = self.get_value_from_xml(self.reader, "sql")
         if pointed_sql:
+            connection_dict = {"jdbcUrl":jdbc_url_list}
             connection_dict["querySql"] = pointed_sql
+            connection_list.append(connection_dict)
         else:
             tables = self.get_value_from_xml(self.reader, "table")
-            connection_dict["table"] = tables.split("|")
-            connection_dict["where"] = self.get_value_from_xml(self.reader, "where")
-            connection_dict["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
+            table_list = tables.split("|")
+            if len(table_list) != len(jdbc_url_list):
+                print >>sys.stderr, "table length[%d] not equal to jdbc-url length[%d]"%(len(table_list), len(jdbc_url_list))
+                return False
+            for i in range(len(table_list)):
+                connection_dict = {}
+                connection_list.append(connection_dict)
+                connection_dict["table"] = table_list[i].split(",")
+                connection_dict["jdbcUrl"] = jdbc_url_list[i].split(",")
+            self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
+            self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
 
         return True
 
@@ -249,28 +260,22 @@ class XmlConvertor:
                 port = "3306"
             database = self.get_value_from_xml(self.writer, "database")
             jdbc_url = "jdbc:mysql://%s:%s/%s"%(ip, port, database)
-        connection_unit = []
-        self.writer_parameter["connection"] = [{"jdbcUrl":jdbc_url, "unit":connection_unit}]
+
+        connection_list = []
+        self.writer_parameter["connection"] = connection_list
+        jdbc_url_array = jdbc_url.split("|")
         tables = self.get_value_from_xml(self.writer, "table")
         table_array = tables.split("|")
-        for table in table_array:
-            connection_unit.append({"table":table})
-        pre_sqls = self.get_value_from_xml(self.writer, "pre")
-        if pre_sqls:
-            pre_sqls_json = json.loads(pre_sqls)
-            if len(pre_sqls_json) != len(table_array):
-                print >>sys.stderr, "pre sql len[%d] not equals to table len[%d]"%(len(pre_sqls_json), len(table_array))
-                return False
-            for index in range(len(table_array)):
-                connection_unit[index]["preSql"] = pre_sqls_json[index]
-        post_sqls = self.get_value_from_xml(self.writer, "post")
-        if post_sqls:
-            post_sqls_json = json.loads(post_sqls)
-            if len(post_sqls_json) != len(table_array):
-                print >>sys.stderr, "post sql len[%d] not equals to table len[%d]"%(len(post_sqls_json), len(table_array))
-                return False
-            for index in range(len(table_array)):
-                connection_unit[index]["postSql"] = post_sqls_json[index]
+        if len(jdbc_url_array) != len(table_array):
+            print >>sys.stderr, "mysql writer table length[%d] not equal to jdbcUrl length[%d]"%(len(table_array), len(jdbc_url_array))
+            return False
+        for i in range(len(table_array)):
+            connection_dict = {}
+            connection_list.append(connection_dict)
+            connection_dict["jdbcUrl"] = jdbc_url_array[i]
+            connection_dict["table"] = table_array[i].split(",")
+        self.writer_parameter["preSql"] = self.get_value_from_xml(self.writer, "pre")
+        self.writer_parameter["postSql"] = self.get_value_from_xml(self.writer, "post")
 
         return True
 
