@@ -64,10 +64,9 @@ public class StandAloneScheduler implements Scheduler {
 		slaveExecutorService.shutdown();
 
 		Metric lastMetric = new Metric();
-		lastMetric.setTimeStamp(0);
+		lastMetric.setTimeStamp(System.currentTimeMillis());
 		try {
 			do {
-
 				Metric nowMetric = frameworkCollector.collect();
 				nowMetric.setTimeStamp(System.currentTimeMillis());
 				LOG.debug(nowMetric.toString());
@@ -79,19 +78,25 @@ public class StandAloneScheduler implements Scheduler {
 							nowMetric.getError());
 				}
 
-				Metric runMetric = MetricManager.getReportMetric(nowMetric,
-						lastMetric, totalSlices);
-				frameworkCollector.report(runMetric);
-				ErrorRecordLimit.checkLimit(runMetric);
+                Metric runMetric = MetricManager.getReportMetric(nowMetric,
+                        lastMetric, totalSlices);
+                frameworkCollector.report(runMetric);
+                ErrorRecordLimit.checkLimit(runMetric);
 
 				if (slaveExecutorService.isTerminated()
-						&& !hasSlaveException(runMetric)) {
+                        && !hasSlaveException(runMetric)) {
+                    // 结束前还需统计一次，准确统计
+                    nowMetric = frameworkCollector.collect();
+                    nowMetric.setTimeStamp(System.currentTimeMillis());
+                    runMetric = MetricManager.getReportMetric(nowMetric,
+                            lastMetric, totalSlices);
+                    frameworkCollector.report(runMetric);
 					LOG.info("Scheduler accomplished all jobs.");
 					break;
 				}
 
-				lastMetric = nowMetric;
-				Thread.sleep(masterReportIntervalInMillSec);
+                lastMetric = nowMetric;
+                Thread.sleep(masterReportIntervalInMillSec);
 			} while (true);
 
 		} catch (InterruptedException e) {
