@@ -45,7 +45,7 @@ public class ReaderConf {
                 lines.add(String.format("\t\t{\"name\":\"%s\"}", col.getName()));
             } else {
                 if (col.getValueType() == ColumnType.STRING) {
-                    lines.add(String.format("\t\t{ \"type\":\"STRING\", \"value\":\"%s\" }", col.getValue().toString()));
+                    lines.add(String.format("\t\t{ \"type\":\"STRING\", \"value\":\"%s\" }", col.getValue().asString()));
                 } else if (col.getValueType() == ColumnType.INTEGER) {
                     lines.add(String.format("\t\t{ \"type\":\"INT\", \"value\":\"%d\" }", col.getValue().asLong()));
                 } else if (col.getValueType() == ColumnType.DOUBLE) {

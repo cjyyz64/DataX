@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.reader.otsreader.utils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,23 +14,23 @@ import com.aliyun.openservices.ots.model.RowPrimaryKey;
 import com.aliyun.openservices.ots.model.TableMeta;
 
 public class ParamChecker {
-    
+
     private static void throwNotExistException(String key) {
         throw new IllegalArgumentException("The param '" + key + "' is not exist.");
     }
-    
+
     private static void throwStringLengthZeroException(String key) {
         throw new IllegalArgumentException("The param length of '" + key + "' is zero.");
     }
-    
+
     private static void throwEmptyException(String key) {
         throw new IllegalArgumentException("The param  '" + key + "' is empty.");
     }
-    
+
     private static void throwNotListException(String key) {
         throw new IllegalArgumentException("The param  '" + key + "' is not a json array.");
     }
-    
+
     private static void throwNotMapException(String key) {
         throw new IllegalArgumentException("The param  '" + key + "' is not a json map.");
     }
@@ -85,7 +84,7 @@ public class ParamChecker {
             throw new IllegalArgumentException("Can not parse list of '" + key + "' from map.");
         }
     }
-    
+
     public static List<Object> checkListAndGet(Map<String, Object> range, String key, List<Object> defaultList) {
         Object obj =  range.get(key);
         if (null == obj) {
@@ -99,7 +98,7 @@ public class ParamChecker {
             throw new IllegalArgumentException("Can not parse list of '" + key + "' from map.");
         }
     }
-    
+
     public static Map<String, Object> checkMapAndGet(Configuration param, String key, boolean isCheckEmpty) {
         Map<String, Object> value = null;
         try {
@@ -136,7 +135,7 @@ public class ParamChecker {
         }
         return pk;
     }
-    
+
     public static OTSRange checkRangeAndGet(TableMeta meta, List<PrimaryKeyValue> begin, List<PrimaryKeyValue> end) {
         OTSRange range = new OTSRange();
         if (begin.size() == 0 && end.size() == 0) {
@@ -156,7 +155,7 @@ public class ParamChecker {
         }
         return range;
     }
-    
+
     public static Direction checkDirectionAndEnd(TableMeta meta, RowPrimaryKey begin, RowPrimaryKey end) {
         Direction direction = null;
         int cmp = Common.compareRangeBeginAndEnd(meta, begin, end) ;
@@ -171,13 +170,12 @@ public class ParamChecker {
         return direction;
     }
 
-    private static void checkPrimaryKeyValueTypeWithPartitionKey(OTSPrimaryKeyColumn part, PrimaryKeyValue item) {
-        if ( item.getType() != part.getType() && item.getType() != null) {
-            throw new IllegalArgumentException("Input type of 'range-split' not match partition key. "
-                    + "Item of 'range-split' type:" + item.getType()+ ", Partition type:" + part.getType());
-        }
-    }
-    
+    /**
+     * 检查类型是否一致，是否重复，方向是否一致
+     * @param direction
+     * @param before
+     * @param after
+     */
     private static void checkDirection(Direction direction, PrimaryKeyValue before, PrimaryKeyValue after) {
         int cmp = Common.primaryKeyValueCmp(before, after);
         if (cmp > 0) { // 反向
@@ -189,10 +187,28 @@ public class ParamChecker {
                 throw new IllegalArgumentException("Input direction of 'range-split' is BACKWARD, but direction of 'range' is FORWARD.");
             }
         } else { // 重复列
-            throw new IllegalArgumentException("Multi same column in 'range-split' or 'range-split' and 'range-(begin, end)' have some overlap.");
+            throw new IllegalArgumentException("Multi same column in 'range-split'.");
         }
     }
-    
+
+    /**
+     * 检查 points中的所有点是否是在Begin和end之间
+     * @param begin
+     * @param end
+     * @param points
+     */
+    private static void checkPointsRange(Direction direction, PrimaryKeyValue begin, PrimaryKeyValue end, List<PrimaryKeyValue> points) {
+        if (direction == Direction.FORWARD) {
+            if (!(Common.primaryKeyValueCmp(begin, points.get(0)) < 0 && Common.primaryKeyValueCmp(end, points.get(points.size() - 1)) > 0)) {
+                throw new IllegalArgumentException("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.");
+            }
+        } else {
+            if (!(Common.primaryKeyValueCmp(begin, points.get(0)) > 0 && Common.primaryKeyValueCmp(end, points.get(points.size() - 1)) < 0)) {
+                throw new IllegalArgumentException("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.");
+            }
+        }
+    }
+
     /**
      * 1.检测用户的输入类型是否和PartitionKey一致
      * 2.顺序是否和Range一致
@@ -202,49 +218,28 @@ public class ParamChecker {
      * @param points
      */
     public static void checkInputSplitPoints(TableMeta meta, OTSRange range, Direction direction, List<PrimaryKeyValue> points) {
-        if (null == points) {
+        if (null == points || points.isEmpty()) {
             return;
         }
-//        OTSPrimaryKeyColumn part = Common.getPartitionKey(meta);
-//        
-//        for (int i = 0 ; i < points.size() - 1; i++) {
-//            PrimaryKeyValue before = points.get(i);
-//            PrimaryKeyValue after = points.get(i + 1);
-//            // 检查类型是否一致，是否重复，方向是否一致
-//            checkBeforeAndEnd(part, direction, before, after);
-//        }
-//        
-//        PrimaryKeyValue begin = range.getBegin().getPrimaryKey().get(part.getName());
-//        PrimaryKeyValue end = range.getEnd().getPrimaryKey().get(part.getName());
-//        // 检查 points中的所有点
-//        checkScope(begin, end, points);
-        
-        
-        
-        List<PrimaryKeyValue> newPoints = new ArrayList<PrimaryKeyValue>();
-        newPoints.addAll(points);
+
         OTSPrimaryKeyColumn part = Common.getPartitionKey(meta);
 
-        PrimaryKeyValue begin = range.getBegin().getPrimaryKey().get(part.getName());
-        PrimaryKeyValue end = range.getEnd().getPrimaryKey().get(part.getName());
-        
-        newPoints.add(0, begin);
-        newPoints.add(end);
-        
-        for (int i = 0 ; i < newPoints.size() - 1; i++) {
-            PrimaryKeyValue before = newPoints.get(i);
-            PrimaryKeyValue after = newPoints.get(i + 1);
-            
-            // 检查类型是否和PartitionKey一致
-            if (i == 0) {
-                checkPrimaryKeyValueTypeWithPartitionKey(part, before);
-                checkPrimaryKeyValueTypeWithPartitionKey(part, after);
-            } else {
-                checkPrimaryKeyValueTypeWithPartitionKey(part, after);
-            }
+        // 处理第一个
+        PrimaryKeyValue item = points.get(0);
+        if ( item.getType() != part.getType()) {
+            throw new IllegalArgumentException("Input type of 'range-split' not match partition key. "
+                    + "Item of 'range-split' type:" + item.getType()+ ", Partition type:" + part.getType());
+        }
 
-            // 检查方向和重复列
+        for (int i = 0 ; i < points.size() - 1; i++) {
+            PrimaryKeyValue before = points.get(i);
+            PrimaryKeyValue after = points.get(i + 1);
             checkDirection(direction, before, after);
         }
+
+        PrimaryKeyValue begin = range.getBegin().getPrimaryKey().get(part.getName());
+        PrimaryKeyValue end   = range.getEnd().getPrimaryKey().get(part.getName());
+
+        checkPointsRange(direction, begin, end, points);
     }
 }

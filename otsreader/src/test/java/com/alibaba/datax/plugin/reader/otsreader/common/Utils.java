@@ -374,8 +374,8 @@ public class Utils {
         for (int i = 0; i < results.size(); i++) {
             Record r1 = results.get(i);
             Record r2 = getRecord(m, r1);
-            System.out.println(getRecordString(r1));
-            System.out.println(getRecordString(r2));
+            //System.out.println(getRecordString(r1));
+            //System.out.println(getRecordString(r2));
             if (r1.getColumnNumber() != r2.getColumnNumber()) {
                 return false;
             }
@@ -396,8 +396,14 @@ public class Utils {
                 switch (c1.getType()) {
                 case NULL: break;
                 case STRING: flag = c1.asString().equals(c2.asString());          break;
-                case NUMBER: flag = c1.asDouble().equals(c2.asDouble());          break;
-                case BOOL:   flag = c1.asBoolean().equals(c2.asBoolean());        break;
+                case NUMBER:
+                    try {
+                        flag = c1.asLong() == c2.asLong();
+                    } catch (Exception e){
+                        flag = c1.asDouble() == c2.asDouble();
+                    }
+                    break;
+                case BOOL:   flag = c1.asBoolean() == c2.asBoolean();        break;
                 case BYTES:  flag = (compareBytes(c1.asBytes(), c2.asBytes()) == 0 ? true : false) ; break;
                 default:
                     throw new RuntimeException("Unsupport the type.");

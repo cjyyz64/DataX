@@ -77,7 +77,7 @@ public class BaseTest{
             columns.add(OTSColumn.fromConstStringColumn(""));
             columns.add(OTSColumn.fromConstStringColumn("测试切分功能正常，切分的范围符合预期!@!!$)(*&^%^"));
             columns.add(OTSColumn.fromConstIntegerColumn(100L));
-            columns.add(OTSColumn.fromConstDoubleColumn(1121111111111.0));
+            columns.add(OTSColumn.fromConstDoubleColumn(1121111111111.012211));
             columns.add(OTSColumn.fromConstIntegerColumn(Long.MIN_VALUE));
             columns.add(OTSColumn.fromConstIntegerColumn(Long.MAX_VALUE));
             columns.add(OTSColumn.fromConstBoolColumn(true));

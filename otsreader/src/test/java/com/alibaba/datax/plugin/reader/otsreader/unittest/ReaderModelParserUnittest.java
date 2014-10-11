@@ -353,11 +353,11 @@ public class ReaderModelParserUnittest {
             assertEquals(false, v5.getValue().asBoolean());
 
             String value = "world中国14为53495291‘，。，了；rwer";
-            String encodeStr = Base64.encodeBase64String(value.getBytes());
+            String encodeStr = Base64.encodeBase64String(value.getBytes("UTF-8"));
             OTSColumn v6 = ReaderModelParser.parseConstColumn("BInary", encodeStr);
             assertEquals(ColumnType.BINARY, v6.getValueType());
 
-            assertEquals(value, new String(v6.getValue().asBytes()));
+            assertEquals(value, new String(v6.getValue().asBytes(), "UTF-8"));
         }
 
         // String边界条件
@@ -468,11 +468,11 @@ public class ReaderModelParserUnittest {
                     + "处理异常场景的能力。总是，测试场景构造要全面，忘记你的代码是怎么写的，把自己"
                     + "想成用户，而且是那种很笨的用户才行";
 
-            String encodeStr = Base64.encodeBase64String(ss.getBytes());
+            String encodeStr = Base64.encodeBase64String(ss.getBytes("UTF-8"));
 
             OTSColumn v1 = ReaderModelParser.parseConstColumn("binary", encodeStr);
             assertEquals(ColumnType.BINARY, v1.getValueType());
-            assertEquals(ss, new String(v1.getValue().asBytes()));
+            assertEquals(ss, new String(v1.getValue().asBytes(), "UTF-8"));
 
             Person p = new Person();
             p.setName("张三");

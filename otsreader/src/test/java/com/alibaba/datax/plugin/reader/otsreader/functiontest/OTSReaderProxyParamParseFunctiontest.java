@@ -813,8 +813,8 @@ public class OTSReaderProxyParamParseFunctiontest {
                             + "\"column\":[{\"name\":\"xxxx\"}],"
                             + "\"range\":{"
                             +    "\"begin\":[{\"type\":\"string\", \"value\":\"0\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
-                            +    "\"end\":[{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
-                            +    "\"split\":[{\"type\":\"string\", \"value\":\"0\"}, {\"type\":\"string\", \"value\":\"10\"}]"
+                            +    "\"end\":  [{\"type\":\"inf_MAX\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"split\":[{\"type\":\"string\", \"value\":\"0\"},{\"type\":\"string\", \"value\":\"10\"}]"
                             + "},"
                             + "\"table\":\""+ tableName +"\"}";
             Configuration p = Configuration.from(json);
@@ -822,7 +822,7 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Multi same column in 'range-split' or 'range-split' and 'range-(begin, end)' have some overlap.", e.getMessage());
+                assertEquals("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.", e.getMessage());
             }
         }
         // split 的边界和end，有重叠,如：{\"type\":\"string\", \"value\":\"中国\"}
@@ -844,7 +844,7 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Multi same column in 'range-split' or 'range-split' and 'range-(begin, end)' have some overlap.", e.getMessage());
+                assertEquals("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.", e.getMessage());
             }
         }
         // split 的所有点和begin，end没有交集
@@ -866,14 +866,189 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("", e.getMessage());
+                assertEquals("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.", e.getMessage());
             }
         }
         // split 的部分点和begin，end有交集，左边交集
+        //    [55~77)
+        // [00~69]
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"string\", \"value\":\"55\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":  [{\"type\":\"string\", \"value\":\"77\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"split\":[{\"type\":\"string\", \"value\":\"00\"}, {\"type\":\"string\", \"value\":\"66\"},{\"type\":\"string\", \"value\":\"69\"}]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.", e.getMessage());
+            }
+        }
         // split 的部分点和begin，end有交集，右边交集
-        // split 中的点类型不一致
-        // split 中的点有重复点
-        // split 中的点格式不对
+        // [55~77)
+        //    [69~99]
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"string\", \"value\":\"55\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":  [{\"type\":\"string\", \"value\":\"77\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"split\":[{\"type\":\"string\", \"value\":\"69\"},{\"type\":\"string\", \"value\":\"99\"}]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("The item of 'range-split' is not within scope of 'range-begin' and 'range-end'.", e.getMessage());
+            }
+        }
+        // split 中的点类型不一致,如：{\"type\":\"string\", \"value\":\"56\"},{\"type\":\"int\", \"value\":\"66\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"string\", \"value\":\"55\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":  [{\"type\":\"string\", \"value\":\"77\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"split\":[{\"type\":\"string\", \"value\":\"56\"},{\"type\":\"int\", \"value\":\"66\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Not same column type, column1:STRING, column2:INTEGER", e.getMessage());
+            }
+        }
+        // split 中的点有重复点, 如：{\"type\":\"string\", \"value\":\"66\"},{\"type\":\"string\", \"value\":\"66\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"string\", \"value\":\"55\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":  [{\"type\":\"string\", \"value\":\"77\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"split\":[{\"type\":\"string\", \"value\":\"66\"},{\"type\":\"String\", \"value\":\"66\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Multi same column in 'range-split'.", e.getMessage());
+            }
+        }
+        // split 中的点格式不对, {\"name\":\"string\", \"value\":\"66\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":  [],"
+                            +    "\"split\":[{\"name\":\"string\", \"value\":\"66\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("The map must include 'type' and 'value'.", e.getMessage());
+            }
+        }
+        // split 中的点格式不对, {\"type\":\"int\", \"value\":\"\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":  [],"
+                            +    "\"split\":[{\"type\":\"int\", \"value\":\"\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Can not parse the value '' to int.", e.getMessage());
+            }
+        }
+        // split 中的点格式不对, {\"type\":\"int\", \"value\":\"hello\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":  [],"
+                            +    "\"split\":[{\"type\":\"int\", \"value\":\"hello\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Can not parse the value 'hello' to int.", e.getMessage());
+            }
+        }
+        // split 中的点格式不对, {\"type\":\"bool\", \"value\":\"world\"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":  [],"
+                            +    "\"split\":[{\"type\":\"bool\", \"value\":\"world\"}]" //point
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Can not parse the value 'world' to bool.", e.getMessage());
+            }
+        }
     }
 
     /**

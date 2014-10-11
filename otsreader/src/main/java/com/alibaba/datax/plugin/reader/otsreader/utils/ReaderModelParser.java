@@ -77,17 +77,22 @@ public class ReaderModelParser {
     }
     
     public static PrimaryKeyValue parsePrimaryKeyValue(String type, String value) {
-        if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
-            return PrimaryKeyValue.fromString(value);
-        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
-            return PrimaryKeyValue.fromLong(Long.parseLong(value));
-        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
-            return PrimaryKeyValue.INF_MIN;
-        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
-            return PrimaryKeyValue.INF_MAX;
-        } else {
-            throw new IllegalArgumentException("Can not parse String to 'PrimaryKeyValue'. input type:" + type + ", value:" + value + ".");
+        try {
+            if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
+                return PrimaryKeyValue.fromString(value);
+            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
+                return PrimaryKeyValue.fromLong(Long.parseLong(value));
+            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
+                return PrimaryKeyValue.INF_MIN;
+            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
+                return PrimaryKeyValue.INF_MAX;
+            } else {
+                throw new IllegalArgumentException("Can not parse String to 'PrimaryKeyValue'. input type:" + type + ", value:" + value + ".");
+            }
+        } catch (RuntimeException e) {
+            throw new IllegalArgumentException("Can not parse the value '"+ value +"' to "+ type +".");
         }
+        
     }
     
     public static PrimaryKeyValue parsePrimaryKeyValue(Map<String, Object> item) {
