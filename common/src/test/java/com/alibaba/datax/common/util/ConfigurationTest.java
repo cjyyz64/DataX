@@ -578,5 +578,6 @@ public class ConfigurationTest {
 		Assert.assertTrue(configuration.getString("a").equals("\u0001"));
 		Assert.assertTrue(new String(new byte[] { 0x01 }).equals(configuration
 				.get("a")));
+
 	}
 }

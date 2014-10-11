@@ -1,17 +1,26 @@
 package com.alibaba.datax.common.util;
 
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.spi.ErrorCode;
-import com.alibaba.fastjson.JSON;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.CharUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import java.io.*;
-import java.util.*;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.spi.ErrorCode;
+import com.alibaba.fastjson.JSON;
 
 /**
  * Configuration 提供多级JSON配置信息无损存储 <br>
@@ -179,7 +188,7 @@ public class Configuration {
 		if (null == string) {
 			return null;
 		}
-		return StringEscapeUtils.unescapeJava(String.valueOf(string));
+		return String.valueOf(string);
 	}
 
 	/**
