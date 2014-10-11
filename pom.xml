@@ -43,7 +43,7 @@
 		<module>mysqlwriter</module>
 		<module>streamwriter</module>
 		<module>txtfilewriter</module>
-        <!--<module>odpswriter</module>-->
+        <module>odpswriter</module>
 
 		<!-- some support module -->
 		<module>plugin-rdbms-util</module>
