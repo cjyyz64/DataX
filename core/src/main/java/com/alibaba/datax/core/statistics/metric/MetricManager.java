@@ -83,6 +83,7 @@ public final class MetricManager {
 			slaveMetric.mergeFrom(v);
 		}
 
+        slaveMetric.setStatus(getSlaveStatusBySlaveId(slaveId));
 		return slaveMetric;
 	}
 

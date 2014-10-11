@@ -84,7 +84,7 @@ def is_url(path):
         return False
 
     assert(isinstance(path, str))
-    m = re.match(r"^http[s]?://\S+/config$", path.lower())
+    m = re.match(r"^http[s]?://\S+\w*", path.lower())
     if m:
         return True
     else:
@@ -124,12 +124,11 @@ def get_json_job_path(job_path):
             sys.exit(RET_STATE["FAIL"])
 
     is_resaved_json = False
+    job_json_content = None
     # 将非json配置转为json
     try:
         json.loads(job_content)
-        if is_job_from_http:
-            job_path = save_to_tmp_file(job_path, True, job_content)
-            is_resaved_json = True
+        job_json_content = job_content
     except:
         string_type = get_string_type(job_content)
         convertor = None
@@ -143,26 +142,28 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
-        else:
-            # 把masterId 和 reportAddress写入配置中(上面没有做是因为以后直接传json里面会填写好这些信息)
-            if is_job_from_http:
-                job_json_content = add_core_config_for_http(job_json_content, job_path)
-                if not job_json_content:
-                    print >>sys.stderr, "add core config for http error"
-                    sys.exit(RET_STATE["FAIL"])
-            # 将转换后的json落地到文件
-            job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
-            is_resaved_json = True
+        is_resaved_json = True
+
+    if is_job_from_http:
+        # 把masterId 和 reportAddress写入配置中
+        job_json_content = add_core_config_for_http(job_json_content, job_path)
+        if not job_json_content:
+            print >>sys.stderr, "add core config for http error"
+            sys.exit(RET_STATE["FAIL"])
+        is_resaved_json = True
+    job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
 
     return job_path, is_resaved_json
 
 def add_core_config_for_http(job_json_content, job_path):
-    m = re.match(r"^http[s]?://\S+/(\d+)/config$", job_path)
+    m = re.match(r"^http[s]?://\S+/(\d+)\w*", job_path)
     if m:
         job_id = m.group(1)
         job_json_content = json.loads(job_json_content)
         job_json_content["core"] = {"container":{"master":{"id":job_id}}}
-        job_json_content["core"]["statistics"] = {"collector":{"container":{"masterReportAddress":job_path.replace("config", "status")}}}
+        if job_path.endswith("/config"):
+            job_path = job_path[0:-7]
+        job_json_content["core"]["statistics"] = {"collector":{"container":{"masterReportAddress":"%s/status"%(job_path)}}}
     else:
         print >>sys.stderr, "can not get job id from url[%s]"%(job_path)
         return None
@@ -201,6 +202,8 @@ def get_job_from_http(job_path):
 
     try:
         # 这里的参数可能需要处理
+        if not job_path.endswith("/config"):
+            job_path = "%s/config"%(job_path)
         response = urllib2.urlopen(job_path)
         job_conf = response.read()
     except Exception, ex:
