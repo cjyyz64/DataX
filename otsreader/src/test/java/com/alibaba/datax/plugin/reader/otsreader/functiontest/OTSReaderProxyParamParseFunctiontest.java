@@ -472,7 +472,7 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse map to 'ColumnValue', input type:INTXXX, value:100.", e.getMessage());
+                assertEquals("Can not parse map to 'OTSColumn', input type:INTXXX, value:100.", e.getMessage());
             }
         }
 
@@ -547,6 +547,30 @@ public class OTSReaderProxyParamParseFunctiontest {
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
                 assertEquals("Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'. ", e.getMessage());
+            }
+        }
+        // 只有常量列的情况
+        // 如 : [{\"type\":\"int\", \"value\":\"11111\"}]
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"type\":\"int\", \"value\":\"11111\"}]," //point
+                            + "\"range\":{"
+                            + "  \"begin\":[],"
+                            + "  \"end\":[],"
+                            + "  \"split\":[]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Invalid 'column', 'column' should include at least one or more Normal Column.", e.getMessage());
             }
         }
     }
@@ -719,11 +743,11 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse String to 'PrimaryKeyValue'. input type:intt, value:900.", e.getMessage());
+                assertEquals("Not supprot parsing type: intt for PrimaryKeyValue.", e.getMessage());
             }
         }
         
-        // 和PartitionKey类型不一致
+        // 传入非法的PartitionKey类型
         {
             String json = 
                     "{\"accessId\":\""+ p.getString("accessid") +"\","
@@ -741,12 +765,72 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse String to 'PrimaryKeyValue'. input type:double, value:100.0.", e.getMessage());
+                assertEquals("Not supprot parsing type: double for PrimaryKeyValue.", e.getMessage());
             }
         }
-        // 错误的Map，如：{"invalid":"bug", "type":"INF_MIN","value":""}
+        // 错误的Map，如：{"invalid":"bug", "type":"INF_MIN","value":""}, 预期不会报错
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"invalid\":\"bug\", \"type\":\"INF_MIN\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":[{\"type\":\"inf_mAX\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(true);
+            } catch (IllegalArgumentException e) {
+                assertTrue(false);
+            }
+        }
         // 不存在的非法type， 如：{"type":"INVALID", "value":"1"}
-        // INF类型带值，如：{"type":"INF_MAX","value":"some"}
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"INVALID\", \"value\":\"1\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":[{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertEquals("Not supprot parsing type: INVALID for PrimaryKeyValue.", e.getMessage());
+            }
+        }
+        // INF类型带值，如：{"type":"INF_MAX","value":"some"}，预期不会报错
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[{\"type\":\"INF_MIN\", \"value\":\"some\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}],"
+                            +    "\"end\":[{\"type\":\"inf_mAX\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"},{\"type\":\"inf_min\", \"value\":\"\"}]"
+                            + "},"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            try {
+                proxy.init(p);
+                assertTrue(true);
+            } catch (IllegalArgumentException e) {
+                assertTrue(false);
+            }
+        }
     }
     
     /**
@@ -1002,7 +1086,7 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse the value '' to int.", e.getMessage());
+                assertEquals("Can not parse the value '' to Int.", e.getMessage());
             }
         }
         // split 中的点格式不对, {\"type\":\"int\", \"value\":\"hello\"}
@@ -1024,29 +1108,7 @@ public class OTSReaderProxyParamParseFunctiontest {
                 proxy.init(p);
                 assertTrue(false);
             } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse the value 'hello' to int.", e.getMessage());
-            }
-        }
-        // split 中的点格式不对, {\"type\":\"bool\", \"value\":\"world\"}
-        {
-            String json = 
-                    "{\"accessId\":\""+ p.getString("accessid") +"\","
-                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
-                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
-                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
-                            + "\"column\":[{\"name\":\"xxxx\"}],"
-                            + "\"range\":{"
-                            +    "\"begin\":[],"
-                            +    "\"end\":  [],"
-                            +    "\"split\":[{\"type\":\"bool\", \"value\":\"world\"}]" //point
-                            + "},"
-                            + "\"table\":\""+ tableName +"\"}";
-            Configuration p = Configuration.from(json);
-            try {
-                proxy.init(p);
-                assertTrue(false);
-            } catch (IllegalArgumentException e) {
-                assertEquals("Can not parse the value 'world' to bool.", e.getMessage());
+                assertEquals("Can not parse the value 'hello' to Int.", e.getMessage());
             }
         }
     }

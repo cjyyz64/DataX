@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
@@ -41,6 +44,8 @@ import com.aliyun.openservices.ots.model.RowPutChange;
 import com.aliyun.openservices.ots.model.TableMeta;
 
 public class Utils {
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    
     public static String getRowPKString(RowPrimaryKey pk) {
         Set<String> keys = pk.getPrimaryKey().keySet();
         StringBuilder sb = new StringBuilder();
@@ -374,9 +379,9 @@ public class Utils {
         for (int i = 0; i < results.size(); i++) {
             Record r1 = results.get(i);
             Record r2 = getRecord(m, r1);
-            //System.out.println(getRecordString(r1));
-            //System.out.println(getRecordString(r2));
+            LOG.debug("\nRecord1:{} \nRecord2:{}", getRecordString(r1), getRecordString(r2));
             if (r1.getColumnNumber() != r2.getColumnNumber()) {
+                LOG.error("Size({}) of Record 1  not equal size({}) of Record 2", r1.getColumnNumber(), r2.getColumnNumber());
                 return false;
             }
             for (int j = 0; j < r1.getColumnNumber(); j++) {
@@ -390,6 +395,7 @@ public class Utils {
                 }
                 
                 if (c1.getType() != c2.getType()) {
+                    LOG.error("Type 1 not match type 2, {}, {}", c1.getType(), c2.getType());
                     return false;
                 }
                 boolean flag = true;
@@ -398,17 +404,18 @@ public class Utils {
                 case STRING: flag = c1.asString().equals(c2.asString());          break;
                 case NUMBER:
                     try {
-                        flag = c1.asLong() == c2.asLong();
+                        flag = c1.asLong().longValue() == c2.asLong().longValue();
                     } catch (Exception e){
-                        flag = c1.asDouble() == c2.asDouble();
+                        flag = c1.asDouble().doubleValue() == c2.asDouble().doubleValue();
                     }
                     break;
-                case BOOL:   flag = c1.asBoolean() == c2.asBoolean();        break;
+                case BOOL:   flag = c1.asBoolean().booleanValue() == c2.asBoolean().booleanValue();        break;
                 case BYTES:  flag = (compareBytes(c1.asBytes(), c2.asBytes()) == 0 ? true : false) ; break;
                 default:
                     throw new RuntimeException("Unsupport the type.");
                 }
                 if (!flag) {
+                    LOG.error("not equal.");
                     return false;
                 }
             }

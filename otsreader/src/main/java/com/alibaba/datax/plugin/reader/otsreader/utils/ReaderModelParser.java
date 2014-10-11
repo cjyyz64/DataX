@@ -15,19 +15,42 @@ import com.aliyun.openservices.ots.model.PrimaryKeyValue;
  */
 public class ReaderModelParser {
     
+    private static long getLongValue(String value) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Can not parse the value '"+ value +"' to Int.");
+        }
+    }
+    
+    private static double getDoubleValue(String value) {
+        try {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Can not parse the value '"+ value +"' to Double.");
+        }
+    }
+    
+    private static boolean getBoolValue(String value) {
+        if (!(value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false"))) {
+            throw new IllegalArgumentException("Can not parse the value '"+ value +"' to Bool.");
+        }
+        return Boolean.parseBoolean(value);
+    }
+    
     public static OTSColumn parseConstColumn(String type, String value) {
         if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
             return OTSColumn.fromConstStringColumn(value);
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
-            return OTSColumn.fromConstIntegerColumn(Long.parseLong(value));
+            return OTSColumn.fromConstIntegerColumn(getLongValue(value));
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_DOUBLE)) {
-            return OTSColumn.fromConstDoubleColumn(Double.parseDouble(value));
+            return OTSColumn.fromConstDoubleColumn(getDoubleValue(value));
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_BOOLEAN)) {
-            return OTSColumn.fromConstBoolColumn(Boolean.parseBoolean(value));
+            return OTSColumn.fromConstBoolColumn(getBoolValue(value));
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_BINARY)) {
             return OTSColumn.fromConstBytesColumn(Base64.decodeBase64(value));
         } else {
-            throw new IllegalArgumentException("Can not parse map to 'ColumnValue', input type:" + type + ", value:" + value + ".");
+            throw new IllegalArgumentException("Can not parse map to 'OTSColumn', input type:" + type + ", value:" + value + ".");
         }
     }
     
@@ -55,6 +78,15 @@ public class ReaderModelParser {
                     "Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'. ");
         }
     }
+    
+    private static void checkIsAllConstColumn(List<OTSColumn> columns) {
+        for (OTSColumn c : columns) {
+            if (c.getColumnType() == OTSColumn.OTSColumnType.NORMAL) {
+                return ;
+            }
+        }
+        throw new IllegalArgumentException("Invalid 'column', 'column' should include at least one or more Normal Column.");
+    }
 
     public static List<OTSColumn> parseOTSColumnList(List<Object> input) {
         if (input.isEmpty()) {
@@ -72,27 +104,22 @@ public class ReaderModelParser {
                 throw new IllegalArgumentException("Can not parse Object to 'OTSColumn', item of list is not a map.");
             }
         }
-        
+        checkIsAllConstColumn(columns);
         return columns;
     }
     
     public static PrimaryKeyValue parsePrimaryKeyValue(String type, String value) {
-        try {
-            if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
-                return PrimaryKeyValue.fromString(value);
-            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
-                return PrimaryKeyValue.fromLong(Long.parseLong(value));
-            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
-                return PrimaryKeyValue.INF_MIN;
-            } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
-                return PrimaryKeyValue.INF_MAX;
-            } else {
-                throw new IllegalArgumentException("Can not parse String to 'PrimaryKeyValue'. input type:" + type + ", value:" + value + ".");
-            }
-        } catch (RuntimeException e) {
-            throw new IllegalArgumentException("Can not parse the value '"+ value +"' to "+ type +".");
+        if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
+            return PrimaryKeyValue.fromString(value);
+        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
+            return PrimaryKeyValue.fromLong(getLongValue(value));
+        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
+            return PrimaryKeyValue.INF_MIN;
+        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
+            return PrimaryKeyValue.INF_MAX;
+        } else {
+            throw new IllegalArgumentException("Not supprot parsing type: "+ type +" for PrimaryKeyValue.");
         }
-        
     }
     
     public static PrimaryKeyValue parsePrimaryKeyValue(Map<String, Object> item) {

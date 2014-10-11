@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.otsreader.common;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
@@ -50,6 +51,11 @@ public class BaseTest{
             List<PrimaryKeyValue> rangeEnd,
             List<PrimaryKeyValue> rangeSplit
             ) {
+        
+        if (pkCount == 0 && attrCount == 0) {
+            throw new RuntimeException("Not support pkCount == 0 && attrCount == 0 .");
+        }
+        
         OTSConf conf = new OTSConf();
         conf.setEndpoint(p.getString("endpoint"));
         conf.setAccessId(p.getString("accessid"));
@@ -84,12 +90,19 @@ public class BaseTest{
             columns.add(OTSColumn.fromConstBoolColumn(false));
             columns.add(OTSColumn.fromConstBytesColumn(Person.toByte(person)));
         }
-        conf.setColumns(columns);
+        
+        List<OTSColumn> newColumns = new ArrayList<OTSColumn>();
+        newColumns.add(columns.remove(0));
+        while (!columns.isEmpty()) {
+            Random r = new Random();
+            newColumns.add(columns.remove(r.nextInt(columns.size())));
+        }
+        
+        conf.setColumns(newColumns);
         
         conf.setRangeBegin(rangeBegin);
         conf.setRangeEnd(rangeEnd);
         conf.setRangeSplit(rangeSplit);
-
         return conf;
     }
 

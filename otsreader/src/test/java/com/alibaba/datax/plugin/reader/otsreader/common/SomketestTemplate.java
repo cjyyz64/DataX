@@ -3,9 +3,8 @@ package com.alibaba.datax.plugin.reader.otsreader.common;
 import java.io.OutputStream;
 import com.alibaba.datax.test.simulator.BasicReaderPluginTest;
 
-public class TemplateSomketest extends BasicReaderPluginTest{
+public class SomketestTemplate extends BasicReaderPluginTest{
 
-    
     @Override
     protected OutputStream buildDataOutput(String optionalOutputName) {
         return null;

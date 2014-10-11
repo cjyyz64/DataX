@@ -399,7 +399,7 @@ public class ReaderModelParserUnittest {
             try {
                 ReaderModelParser.parseConstColumn("int", "xx010");
                 assertTrue(false);
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 assertTrue(true);
             }
         }
@@ -421,7 +421,7 @@ public class ReaderModelParserUnittest {
             try {
                 ReaderModelParser.parseConstColumn("DOUBLE", "xx010.00");
                 assertTrue(false);
-            } catch (NumberFormatException e) {
+            } catch (IllegalArgumentException e) {
                 assertTrue(true);
             }
         }
@@ -451,13 +451,19 @@ public class ReaderModelParserUnittest {
             assertEquals(ColumnType.BOOLEAN, v6.getValueType());
             assertEquals(false, v6.getValue().asBoolean());
 
-            OTSColumn v7 = ReaderModelParser.parseConstColumn("bool", "FALS=E---");
-            assertEquals(ColumnType.BOOLEAN, v7.getValueType());
-            assertEquals(false, v7.getValue().asBoolean());
-
-            OTSColumn v8 = ReaderModelParser.parseConstColumn("bool", "ssdfstrue---");
-            assertEquals(ColumnType.BOOLEAN, v8.getValueType());
-            assertEquals(false, v8.getValue().asBoolean());
+            try {
+                ReaderModelParser.parseConstColumn("bool", "FALS=E---");
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertTrue(true);
+            }
+            
+            try {
+                ReaderModelParser.parseConstColumn("bool", "ssdfstrue---");
+                assertTrue(false);
+            } catch (IllegalArgumentException e) {
+                assertTrue(true);
+            }
         }
         // Binary边界
         {

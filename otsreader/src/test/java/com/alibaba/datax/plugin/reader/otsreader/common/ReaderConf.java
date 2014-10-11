@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import com.alibaba.datax.plugin.reader.otsreader.Key;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
@@ -71,7 +72,7 @@ public class ReaderConf {
                 if (col.getType() == PrimaryKeyType.INTEGER) {
                     lines.add(String.format("\t\t{\"type\":\"INT\", \"value\":\"%d\"}", col.asLong()));
                 } else {
-                    lines.add(String.format("\t\t{\"type\":\"STRING\", \"value\":\"%s\"}", col.asString()));
+                    lines.add(String.format("\t\t{\"type\":\"STRING\", \"value\":\"%s\"}", StringEscapeUtils.escapeJson(col.asString())));
                 }
             }
         }
