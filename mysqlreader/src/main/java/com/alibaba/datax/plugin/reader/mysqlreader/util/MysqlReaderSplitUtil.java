@@ -89,13 +89,13 @@ public final class MysqlReaderSplitUtil {
                 }
             } else {
                 // 说明是配置的 querySql 方式
-                Configuration tempSlice = sliceConfig.clone();
-
+                Configuration tempSlice;
                 List<String> sqls = connConf.getList(Key.QUERY_SQL,
                         String.class);
 
                 // TODO 是否check 配置为多条语句？？
                 for (String querySql : sqls) {
+                	tempSlice = sliceConfig.clone();
                     tempSlice.set(Key.QUERY_SQL, querySql);
                     splittedConfigs.add(tempSlice);
 
