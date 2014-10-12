@@ -51,6 +51,8 @@ public final class MysqlReaderSplitUtil {
             sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
 
             sliceConfig.remove(Constant.CONN_MARK);
+            
+            Configuration tempSlice;
 
             // 说明是配置的 table 方式
             if (isTableMode) {
@@ -69,7 +71,7 @@ public final class MysqlReaderSplitUtil {
                 if (needSplitTable) {
                     // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
                     for (String table : tables) {
-                        Configuration tempSlice = sliceConfig.clone();
+                        tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
 
                         List<Configuration> splittedSlices = SingleTableSplitUtil
@@ -80,8 +82,9 @@ public final class MysqlReaderSplitUtil {
                         }
                     }
                 } else {
-                    Configuration tempSlice = sliceConfig.clone();
+                    
                     for (String table : tables) {
+                    	tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
                                 .buildQuerySql(column, table, where));
                         splittedConfigs.add(tempSlice);
@@ -89,7 +92,6 @@ public final class MysqlReaderSplitUtil {
                 }
             } else {
                 // 说明是配置的 querySql 方式
-                Configuration tempSlice;
                 List<String> sqls = connConf.getList(Key.QUERY_SQL,
                         String.class);
 
