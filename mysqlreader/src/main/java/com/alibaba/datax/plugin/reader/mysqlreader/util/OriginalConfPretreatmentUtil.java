@@ -78,6 +78,7 @@ public final class OriginalConfPretreatmentUtil {
             Configuration connConf = Configuration
                     .from(conns.get(i).toString());
 
+            connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.CONF_ERROR);
             List<String> jdbcUrls = connConf
                     .getList(Key.JDBC_URL, String.class);
 
