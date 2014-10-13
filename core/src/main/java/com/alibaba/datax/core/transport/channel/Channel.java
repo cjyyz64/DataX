@@ -2,8 +2,9 @@ package com.alibaba.datax.core.transport.channel;
 
 import java.util.Collection;
 
-import com.alibaba.datax.core.util.Status;
 import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
@@ -11,6 +12,7 @@ import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.SleepQuiet;
+import com.alibaba.datax.core.util.Status;
 
 /**
  * 统计和限速都在这里
@@ -18,7 +20,9 @@ import com.alibaba.datax.core.util.SleepQuiet;
  */
 public abstract class Channel {
 
-    protected int channelId;
+	private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
+
+	protected int channelId;
 
 	protected int slaveId;
 
@@ -26,11 +30,13 @@ public abstract class Channel {
 
 	protected long speed; // 单位：byte/s
 
-    protected long flowControlInterval;
+	protected long flowControlInterval;
 
 	protected volatile boolean isClosed = false;
 
 	protected Configuration configuration = null;
+
+	private static Boolean isFirstPrint = true;
 
 	private Metric lastMetric = new Metric();
 
@@ -46,12 +52,21 @@ public abstract class Channel {
 		int capacity = configuration.getInt(
 				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
 		long speed = configuration.getLong(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
+				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
+				1024 * 1024);
 
-		if (capacity <= 0 || speed <= 0) {
+		if (capacity <= 0) {
 			throw new IllegalArgumentException(String.format(
-					"Capacity [%d] Speed [%d] must be > 0 .", capacity, speed));
+					"Capacity [%d] must be > 0 .", capacity));
 
+		}
+
+		synchronized (isFirstPrint) {
+			if (isFirstPrint) {
+				Channel.LOGGER.info("Channel set speed limit to " + speed
+						+ (speed <= 0 ? " , No Limit actived ." : " ."));
+				isFirstPrint = false;
+			}
 		}
 
 		this.channelId = id;
@@ -59,8 +74,9 @@ public abstract class Channel {
 				.getInt(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
 		this.capacity = capacity;
 		this.speed = speed;
-        this.flowControlInterval = configuration.getLong(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
+		this.flowControlInterval = configuration.getLong(
+				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL,
+				1000);
 
 		this.configuration = configuration;
 	}
@@ -126,8 +142,8 @@ public abstract class Channel {
 		Metric metric = this.getChannelMetric();
 		metric.setReadSucceedRecords(metric.getReadSucceedRecords() - 1);
 		metric.setWriteReceivedRecords(metric.getWriteReceivedRecords() - 1);
-        metric.setStage(1);
-        metric.setStatus(Status.SUCCESS);
+		metric.setStage(1);
+		metric.setStatus(Status.SUCCESS);
 	}
 
 	protected abstract void doPush(Record r);
@@ -157,10 +173,16 @@ public abstract class Channel {
 	private void statPush(Metric metric, long recordSize, long byteSize) {
 		metric.incrReadSucceedRecords(recordSize);
 		metric.incrReadSucceedBytes(byteSize);
+
+		boolean isChannelSpeedLimit = (this.speed > 0);
+		if (!isChannelSpeedLimit) {
+			return;
+		}
+
 		long lastTimestamp = lastMetric.getTimeStamp();
 		long nowTimestamp = System.currentTimeMillis();
 		long interval = nowTimestamp - lastTimestamp;
-		if (interval-this.flowControlInterval >= 0) {
+		if (interval - this.flowControlInterval >= 0) {
 			if (lastTimestamp > 0) {
 				long currentSpeed = (metric.getTotalReadBytes() - lastMetric
 						.getTotalReadBytes()) * 1000 / interval;
@@ -170,7 +192,7 @@ public abstract class Channel {
 					 */
 					long sleepTime = currentSpeed * interval / this.speed
 							- interval;
-                    SleepQuiet.sleep(sleepTime);
+					SleepQuiet.sleep(sleepTime);
 				}
 			}
 			lastMetric.setReadSucceedBytes(metric.getReadSucceedBytes());

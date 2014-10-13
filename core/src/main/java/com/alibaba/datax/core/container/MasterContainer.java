@@ -159,12 +159,8 @@ public class MasterContainer extends AbstractContainer {
 	 * 然后，为避免顺序给读写端带来长尾影响，将整合的结果shuffler掉
 	 */
 	private void split() {
-		long globalLimitedSpeed = this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 10 * 1024 * 1024);
-		long channelLimitedSpeed = this.configuration.getInt(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
+		this.adjustChannelNumber();
 
-		this.needChannelNumber = (int) (globalLimitedSpeed / channelLimitedSpeed);
 		if (this.needChannelNumber <= 0) {
 			this.needChannelNumber = 1;
 		}
@@ -185,6 +181,42 @@ public class MasterContainer extends AbstractContainer {
 				new Random(System.currentTimeMillis()));
 
 		this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
+	}
+
+	private void adjustChannelNumber() {
+		boolean isByteLimit = (this.configuration.getInt(
+				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, -1) != -1);
+		if (isByteLimit) {
+
+			long globalLimitedSpeed = this.configuration
+					.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE,
+							10 * 1024 * 1024);
+			long channelLimitedSpeed = this.configuration.getInt(
+					CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
+					1024 * 1024);
+
+			this.needChannelNumber = (int) (globalLimitedSpeed / channelLimitedSpeed);
+
+			LOG.info("Job set Max-Speed-Byte to " + globalLimitedSpeed
+					+ " bytes .");
+
+			return;
+		}
+
+		boolean isChannelLimit = (this.configuration.getInt(
+				CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, -1) != -1);
+		if (isChannelLimit) {
+			this.needChannelNumber = this.configuration
+					.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);
+
+			LOG.info("Job set Max-Speed-Channel to " + this.needChannelNumber
+					+ " channels .");
+
+			return;
+		}
+
+		throw new DataXException(FrameworkErrorCode.CONFIG_ERROR,
+				"Job speed must be set !");
 	}
 
 	/**
