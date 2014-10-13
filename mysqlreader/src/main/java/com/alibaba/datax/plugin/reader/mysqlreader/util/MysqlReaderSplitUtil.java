@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.reader.mysqlreader.util;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,11 +8,7 @@ import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
 import com.alibaba.datax.plugin.reader.mysqlreader.Key;
 
@@ -53,6 +48,8 @@ public final class MysqlReaderSplitUtil {
 
 			sliceConfig.remove(Constant.CONN_MARK);
 
+			Configuration tempSlice;
+
 			// 说明是配置的 table 方式
 			if (isTableMode) {
 				// 已在之前进行了扩展和`处理，可以直接使用
@@ -70,7 +67,7 @@ public final class MysqlReaderSplitUtil {
 				if (needSplitTable) {
 					// 尝试对每个表，切分为eachTableShouldSplittedNumber 份
 					for (String table : tables) {
-						Configuration tempSlice = sliceConfig.clone();
+						tempSlice = sliceConfig.clone();
 						tempSlice.set(Key.TABLE, table);
 
 						List<Configuration> splittedSlices = SingleTableSplitUtil
@@ -81,8 +78,9 @@ public final class MysqlReaderSplitUtil {
 						}
 					}
 				} else {
-					Configuration tempSlice = sliceConfig.clone();
+
 					for (String table : tables) {
+						tempSlice = sliceConfig.clone();
 						tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
 								.buildQuerySql(column, table, where));
 						splittedConfigs.add(tempSlice);
@@ -90,7 +88,6 @@ public final class MysqlReaderSplitUtil {
 				}
 			} else {
 				// 说明是配置的 querySql 方式
-				Configuration tempSlice;
 				List<String> sqls = connConf.getList(Key.QUERY_SQL,
 						String.class);
 
@@ -142,35 +139,4 @@ public final class MysqlReaderSplitUtil {
 
 		return (int) Math.ceil(tempNum);
 	}
-
-	private static List<String> expandTableConf(List<String> tables) {
-		List<String> parsedTables = new ArrayList<String>();
-		for (String table : tables) {
-			List<String> splittedTables = TableExpandUtil.splitTables(table);
-			parsedTables.addAll(splittedTables);
-		}
-
-		return parsedTables;
-	}
-
-	private static String chooseJdbcUrl(List<String> jdbcUrls, String username,
-			String password) {
-		Connection conn = null;
-		for (String jdbcUrl : jdbcUrls) {
-			// TODO 需要修改其逻辑，不要直接报错
-			try {
-				conn = DBUtil.getConnection("mysql", jdbcUrl, username,
-						password);
-			} catch (Exception e) {
-				LOG.warn("jdbcUrl:[{}] not available.", jdbcUrl);
-			}
-			if (null != conn) {
-				return jdbcUrl;
-			}
-		}
-
-		throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,
-				"no available jdbc.");
-	}
-
 }

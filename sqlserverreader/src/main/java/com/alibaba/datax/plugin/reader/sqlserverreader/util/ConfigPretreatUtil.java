@@ -134,6 +134,9 @@ public class ConfigPretreatUtil {
 		for (int i = 0; i < conns.size(); i++) {
 			Configuration connConf = Configuration
 					.from(conns.get(i).toString());
+			
+			connConf.getNecessaryValue(Key.JDBC_URL, SqlServerReaderErrorCode.CONF_ERROR);
+			
 			List<String> jdbcUrls = connConf
 					.getList(Key.JDBC_URL, String.class);
 			String jdbcUrl = checkJdbcUrl(jdbcUrls, username, password);

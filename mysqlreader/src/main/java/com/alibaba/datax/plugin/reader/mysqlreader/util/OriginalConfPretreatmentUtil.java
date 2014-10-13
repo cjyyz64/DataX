@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class OriginalConfPretreatmentUtil {
-
 	private static final Logger LOG = LoggerFactory
 			.getLogger(OriginalConfPretreatmentUtil.class);
 
@@ -33,10 +32,6 @@ public final class OriginalConfPretreatmentUtil {
 
 		simplifyConf(originalConfig);
 	}
-
-	// private static void dealFetchSize(Configuration originalConfig) {
-	// originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
-	//	}
 
 	/**
 	 * 对配置进行初步处理：
@@ -67,6 +62,9 @@ public final class OriginalConfPretreatmentUtil {
 		for (int i = 0, len = conns.size(); i < len; i++) {
 			Configuration connConf = Configuration
 					.from(conns.get(i).toString());
+
+			connConf.getNecessaryValue(Key.JDBC_URL,
+					MysqlReaderErrorCode.CONF_ERROR);
 
 			List<String> jdbcUrls = connConf
 					.getList(Key.JDBC_URL, String.class);
