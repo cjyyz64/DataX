@@ -18,8 +18,5 @@ public final class Key {
 
 	public final static String SESSION = "session";
 
-	public final static String FETCH_SIZE = "fetchSize";
-
 	public final static String SPLIT_PK = "splitPk";
-
 }

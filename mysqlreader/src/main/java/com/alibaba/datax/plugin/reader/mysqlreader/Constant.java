@@ -13,6 +13,8 @@ public final class Constant {
 
 	public static String TABLE_MODE = "tableMode";
 
+	public final static String FETCH_SIZE = "fetchSize";
+
 	public static String QUERY_SQL_TEMPLATE_WHITOUT_WHERE = "select %s from %s ";
 
 	public static String QUERY_SQL_TEMPLATE = "select %s from %s where (%s)";

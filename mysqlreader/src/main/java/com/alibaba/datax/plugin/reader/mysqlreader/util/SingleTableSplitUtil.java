@@ -105,21 +105,19 @@ public class SingleTableSplitUtil {
 		String username = plugin.getString(Key.USERNAME);
 		String password = plugin.getString(Key.PASSWORD);
 
-		int fetchSize = plugin.getInt(Key.FETCH_SIZE, 32);
-
 		Connection conn = null;
 		ResultSet rs = null;
 		List<Long> minMaxPK = new ArrayList<Long>();
 		try {
 			conn = DBUtil.getConnection("mysql", jdbcURL, username, password);
-			rs = DBUtil.query(conn, checkPKSQL, fetchSize);
+			rs = DBUtil.query(conn, checkPKSQL, Integer.MIN_VALUE);
 			while (rs.next()) {
 				if (rs.getLong(1) > 0L) {
 					throw new DataXException(MysqlReaderErrorCode.CONF_ERROR,
 							"Configed PK has null value!");
 				}
 			}
-			rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
+			rs = DBUtil.query(conn, pkRangeSQL, Integer.MIN_VALUE);
 			ResultSetMetaData rsMetaData = rs.getMetaData();
 			if (isPKTypeValid(rsMetaData)) {
 				while (rs.next()) {

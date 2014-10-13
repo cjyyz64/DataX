@@ -48,12 +48,12 @@ public class MysqlReader extends Reader {
 
 		@Override
 		public void post() {
-			LOG.info("post()");
+			LOG.debug("post()");
 		}
 
 		@Override
 		public void destroy() {
-			LOG.info("destroy()");
+			LOG.debug("destroy()");
 		}
 
 	}
@@ -70,8 +70,6 @@ public class MysqlReader extends Reader {
 
 		private String jdbcUrl;
 
-		private int fetchSize;
-
 		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
 		private static String BASIC_MESSAGE;
 
@@ -87,8 +85,6 @@ public class MysqlReader extends Reader {
 			this.jdbcUrl = this.readerSliceConfig.getNecessaryValue(
 					Key.JDBC_URL, MysqlReaderErrorCode.REQUIRED_VALUE);
 
-			this.fetchSize = this.readerSliceConfig.getInt(Key.FETCH_SIZE);
-
 			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
 		}
 
@@ -102,7 +98,7 @@ public class MysqlReader extends Reader {
 			} catch (Exception unused) {
 				// ignore it
 			}
-			LOG.info("do query [\n{}\n], from jdbcUrl:[\n{}\n].",
+			LOG.info("\nSql [{}] \nTo jdbcUrl:[{}].",
 					null != formattedSql ? formattedSql : querySql, jdbcUrl);
 
 			ResultSet rs = null;
@@ -115,7 +111,7 @@ public class MysqlReader extends Reader {
 					this.readerSliceConfig.getMap(Key.SESSION, String.class));
 
 			try {
-				rs = DBUtil.query(conn, querySql, this.fetchSize);
+				rs = DBUtil.query(conn, querySql, Integer.MIN_VALUE);
 				ResultSetMetaData metaData = rs.getMetaData();
 				columnNumber = rs.getMetaData().getColumnCount();
 
@@ -136,6 +132,13 @@ public class MysqlReader extends Reader {
 
 		private static void dealSessionConf(Connection conn,
 				Map<String, String> sessionConfs) {
+
+			boolean hasNoSessionConfs = (null == sessionConfs || sessionConfs
+					.isEmpty());
+			if (hasNoSessionConfs) {
+				return;
+			}
+
 			Statement stmt;
 			try {
 				stmt = conn.createStatement();
@@ -249,14 +252,10 @@ public class MysqlReader extends Reader {
 
 		@Override
 		public void post() {
-			LOG.info("post() begin ...");
-			LOG.info("post() end ...");
 		}
 
 		@Override
 		public void destroy() {
-			LOG.info("destroy() begin ...");
-			LOG.info("destroy() end ...");
 		}
 
 	}
