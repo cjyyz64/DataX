@@ -1,14 +1,5 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
-import org.apache.commons.lang.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.SlaveContainer;
@@ -21,6 +12,14 @@ import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.Status;
+import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -34,6 +33,7 @@ public class StandAloneScheduler implements Scheduler {
 			.getLogger(StandAloneScheduler.class);
 
 	private List<SlaveContainerRunner> slaveContainerRunners = new ArrayList<SlaveContainerRunner>();
+    private ErrorRecordLimit errorLimit;
 
 	@Override
 	public void schedule(List<Configuration> configurations,
@@ -44,8 +44,7 @@ public class StandAloneScheduler implements Scheduler {
 		int masterReportIntervalInMillSec = configurations.get(0).getInt(
 				CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL, 10000);
 
-		ErrorRecordLimit.setErrorRecordsLimit(configurations.get(0).getDouble(
-				CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 0.0));
+        errorLimit = new ErrorRecordLimit(configurations.get(0));
 
 		ExecutorService slaveExecutorService = Executors
 				.newFixedThreadPool(configurations.size());
@@ -81,7 +80,7 @@ public class StandAloneScheduler implements Scheduler {
                 Metric runMetric = MetricManager.getReportMetric(nowMetric,
                         lastMetric, totalSlices);
                 frameworkCollector.report(runMetric);
-                ErrorRecordLimit.checkLimit(runMetric);
+                errorLimit.checkRecordLimit(runMetric);
 
 				if (slaveExecutorService.isTerminated()
                         && !hasSlaveException(runMetric)) {

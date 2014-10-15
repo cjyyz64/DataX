@@ -75,8 +75,12 @@ public class CoreConstant {
 
 	public static final String DATAX_JOB_SETTING_ERRORLIMIT = "job.setting.errorLimit";
 
-	// ----------------------------- 局部使用的变量
-	public static final String JOB_WRITER = "reader";
+    public static final String DATAX_JOB_SETTING_ERRORLIMIT_RECORD = "job.setting.errorLimit.record";
+
+    public static final String DATAX_JOB_SETTING_ERRORLIMIT_PERCENT = "job.setting.errorLimit.percentage";
+
+    // ----------------------------- 局部使用的变量
+    public static final String JOB_WRITER = "reader";
 
 	public static final String JOB_READER = "reader";
 

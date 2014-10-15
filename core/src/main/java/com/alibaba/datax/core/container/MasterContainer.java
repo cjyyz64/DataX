@@ -1,15 +1,5 @@
 package com.alibaba.datax.core.container;
 
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-
-import org.apache.commons.lang.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.MasterPluginCollector;
@@ -19,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.container.util.ClassLoaderSwapper;
 import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
@@ -27,6 +18,15 @@ import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -67,12 +67,15 @@ public class MasterContainer extends AbstractContainer {
 
 	private int needChannelNumber;
 
+    private ErrorRecordLimit errorLimit;
+
 	public MasterContainer(Configuration configuration) {
 		super(configuration);
 		super.setContainerCollector(ClassUtil.instantiate(
 				configuration
 						.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
 				AbstractContainerCollector.class, configuration));
+        errorLimit = new ErrorRecordLimit(configuration);
 	}
 
 	/**
@@ -315,7 +318,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * reader master的初始化，返回Reader.Master
-	 * 
+	 *
 	 * @return
 	 */
 	private Reader.Master initReaderMaster(
@@ -341,7 +344,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * writer master的初始化，返回Writer.Master
-	 * 
+	 *
 	 * @return
 	 */
 	private Writer.Master initWriterMaster(
@@ -418,7 +421,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * 按顺序整合reader和writer的配置，这里的顺序不能乱！ 输入是reader、writer级别的配置，输出是一个完整slice的配置
-	 * 
+	 *
 	 * @param readerSlicesConfigs
 	 * @param writerSlicesConfigs
 	 * @return
@@ -470,7 +473,7 @@ public class MasterContainer extends AbstractContainer {
 	 * 处理：我们先将这负责4个channel的slaveContainer处理掉，逻辑是：
 	 * 先按平均为3个slices找4个channel，设置subJobId为0，
 	 * 接下来就像发牌一样轮询分配slice到剩下的包含平均channel数的slice中
-	 * 
+	 *
 	 * @param averSlicesPerChannel
 	 * @param channelNumber
 	 * @param channelsPerSlaveContainer
@@ -597,42 +600,13 @@ public class MasterContainer extends AbstractContainer {
 	}
 
 	/**
-	 * 检查最终结果是否超出阈值，如果阈值设定小于1，则表示百分数阈值，大于1表示条数阈值
-	 * 
+	 * 检查最终结果是否超出阈值，如果阈值设定小于1，则表示百分数阈值，大于1表示条数阈值。
+	 *
 	 * @param
 	 */
 	private void checkLimit() {
-		double errorLimit = this.configuration.getDouble(
-				CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 0.0);
-
 		Metric masterMetric = super.getContainerCollector().collect();
-		long total = masterMetric.getTotalReadRecords();
-		long error = total - masterMetric.getWriteSucceedRecords();
-
-		if (errorLimit < 0) {
-			LOG.debug("No error-limit set, check ignored .");
-		} else if (errorLimit > 0.0 && errorLimit < 1.0) {
-			LOG.debug(String.format(
-					"Error-limit set to %f, error percent check .", errorLimit));
-			if (total > 0 && ((double) error / (double) total) > errorLimit) {
-				throw new DataXException(
-						FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
-						String.format(
-								"Error-limit check failed, limit %f but %f reached in fact .",
-								errorLimit, ((double) error / (double) total)));
-			}
-		} else {
-			LOG.debug(String.format(
-					"Error-limit set to %d, error count check .",
-					(long) errorLimit));
-
-			if (error > errorLimit) {
-				throw new DataXException(
-						FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
-						String.format(
-								"Error-limit check failed, limit %d but %d reached in fact .",
-								(long) errorLimit, error));
-			}
-		}
+        errorLimit.checkRecordLimit(masterMetric);
+        errorLimit.checkPercentageLimit(masterMetric);
 	}
 }
