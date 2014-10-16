@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.MysqlWriterSplitUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.OriginalConfPretreatmentUtil;
 import org.slf4j.Logger;
@@ -99,14 +100,11 @@ public class MysqlWriter extends Writer {
             this.columnNumber = this.writerSliceConfig
                     .getInt(Constant.COLUMN_NUMBER_MARK);
 
-            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL,
-                    String.class);
-            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL,
-                    String.class);
+            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
+            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
 
-            this.conn = DBUtil.getConnection("mysql", this.jdbcUrl, username,
-                    password);
+            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username, password);
 
             INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
                     .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);

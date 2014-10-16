@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.MysqlReaderSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.OriginalConfPretreatmentUtil;
@@ -96,8 +97,8 @@ public class MysqlReader extends Reader {
                     null != formattedSql ? formattedSql : querySql, jdbcUrl);
 
 
-            Connection conn = DBUtil.getConnection("mysql", jdbcUrl, username,
-                    password);
+            Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl,
+                    username, password);
 
             int columnNumber = 0;
             ResultSet rs = null;

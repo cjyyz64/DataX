@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -9,84 +8,49 @@ import java.util.*;
 
 public final class RangeSplitUtil {
 
-    public static List<String> getAsciiStringSplitAndWarappedResult(String left, String right, int expectSliceNumber,
-                                                                    String columnName, String quote) {
-        String[] tempResult = doAsciiStringSplit(left, right, expectSliceNumber);
-        return doConditionWrap(tempResult, columnName, quote);
+    public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
+                                            String columnName, String quote, DataBaseType dataBaseType) {
+        String[] tempResult = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+        return RangeWrapUtil.wrapRange(tempResult, columnName, quote, dataBaseType);
     }
 
-    public static List<String> doConditionWrap(long[] rangeResult, String columnName) {
-        String[] rangeStr = new String[rangeResult.length];
-        for (int i = 0, len = rangeResult.length; i < len; i++) {
-            rangeStr[i] = String.valueOf(rangeResult[i]);
-        }
-        return doConditionWrap(rangeStr, columnName, "");
+    public static List<String> splitAndWrap(long left, long right, int expectSliceNumber, String columnName) {
+        long[] tempResult = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
+        return RangeWrapUtil.wrapRange(tempResult, columnName);
     }
 
-    public static List<String> doConditionWrap(BigInteger[] rangeResult, String columnName) {
-        String[] rangeStr = new String[rangeResult.length];
-        for (int i = 0, len = rangeResult.length; i < len; i++) {
-            rangeStr[i] = rangeResult[i].toString();
-        }
-        return doConditionWrap(rangeStr, columnName, "");
+    public static List<String> splitAndWrap(BigInteger left, BigInteger right, int expectSliceNumber, String columnName) {
+        BigInteger[] tempResult = RangeSplitUtil.doBigIntegerSplit(left, right, expectSliceNumber);
+        return RangeWrapUtil.wrapRange(tempResult, columnName);
     }
 
-    //TODO 目前是按照 mysql的 sql 特征 进行 quote的
-    public static List<String> doConditionWrap(String[] rangeResult, String columnName, String quote) {
-        if (null == rangeResult || rangeResult.length < 2) {
-            throw new IllegalArgumentException(String.format(
-                    "Parameter rangeResult can not be null and its length can not <2. detail:rangeResult=[%s].",
-                    StringUtils.join(rangeResult, ",")));
-        }
-
-        List<String> result = new ArrayList<String>();
-        if (2 == rangeResult.length) {
-            result.add(String.format(" %s%s%s >= %s AND %s <= %s%s%s ", quote, quoteMysqlConstantValue(rangeResult[0]), quote,
-                    columnName, columnName, quote, quoteMysqlConstantValue(rangeResult[1]), quote));
-            return result;
-        } else {
-            for (int i = 0, len = rangeResult.length - 2; i < len; i++) {
-                result.add(String.format(" %s%s%s >= %s AND %s < %s%s%s ", quote, quoteMysqlConstantValue(rangeResult[i]), quote,
-                        columnName, columnName, quote, quoteMysqlConstantValue(rangeResult[i + 1]), quote));
-            }
-
-            result.add(String.format(" %s%s%s >= %s AND %s <= %s%s%s ", quote, quoteMysqlConstantValue(rangeResult[rangeResult.length - 2]),
-                    quote, columnName, columnName, quote, quoteMysqlConstantValue(rangeResult[rangeResult.length - 1]), quote));
-            return result;
-        }
-    }
-
-    private static String quoteMysqlConstantValue(String aString) {
-        return aString.replace("'", "''").replace("\\", "\\\\");
-    }
 
     public static String[] doAsciiStringSplit(String left, String right, int expectSliceNumber) {
-        Pair<Integer, Integer> leftMinMax = getMinAndMaxCharacter(left);
-        Pair<Integer, Integer> rightMinMax = getMinAndMaxCharacter(right);
+        Pair<Character, Character> leftMinMax = getMinAndMaxCharacter(left);
+        Pair<Character, Character> rightMinMax = getMinAndMaxCharacter(right);
 
-        List<Integer> aList = new ArrayList<Integer>();
+        List<Character> aList = new ArrayList<Character>();
         aList.add(leftMinMax.getLeft());
         aList.add(leftMinMax.getRight());
 
         aList.add(rightMinMax.getLeft());
         aList.add(rightMinMax.getRight());
 
-        int basic = Collections.min(aList).intValue();
-        int radix = Collections.max(aList).intValue() - basic + 1;
+        int basic = Collections.min(aList).charValue();
+        int radix = Collections.max(aList).charValue() - basic + 1;
 
-        BigInteger[] result = doBigIntegerSplit(stringToBigInteger(left, radix, basic),
+        BigInteger[] tempResult = doBigIntegerSplit(stringToBigInteger(left, radix, basic),
                 stringToBigInteger(right, radix, basic), expectSliceNumber);
-        String[] returnResult = new String[result.length];
+        String[] result = new String[tempResult.length];
 
         //处理第一个字符串（因为：在转换为数字，再还原的时候，如果首字符刚好是 basic,则不知道应该添加多少个 basic）
-        returnResult[0] = left;
+        result[0] = left;
 
-        for (int i = 1, len = result.length; i < len; i++) {
-            returnResult[i] = bigIntegerToString(result[i], radix, basic);
+        for (int i = 1, len = tempResult.length; i < len; i++) {
+            result[i] = bigIntegerToString(tempResult[i], radix, basic);
         }
 
-
-        return returnResult;
+        return result;
     }
 
 
@@ -122,27 +86,19 @@ public final class RangeSplitUtil {
             }
 
             //left < right
-            if (right.subtract(left).compareTo(BigInteger.valueOf(expectSliceNumber)) <= 0) {
-                BigInteger tempValue = right.subtract(left);
-                if (tempValue.intValue() > Integer.MAX_VALUE) {
-                    throw new IllegalArgumentException("exceed range.");
-                }
-
-                expectSliceNumber = tempValue.intValue();
-            }
-
             BigInteger endAndStartGap = right.subtract(left);
 
             BigInteger step = endAndStartGap.divide(BigInteger.valueOf(expectSliceNumber));
             BigInteger remainder = endAndStartGap.remainder(BigInteger.valueOf(expectSliceNumber));
 
+            //remainder 不可能超过expectSliceNumber,所以不需要检查remainder的 Integer 的范围
             if (step.intValue() == 0) {
                 expectSliceNumber = remainder.intValue();
             }
 
-            BigInteger[] splittedResult = new BigInteger[expectSliceNumber + 1];
-            splittedResult[0] = left;
-            splittedResult[expectSliceNumber] = right;
+            BigInteger[] result = new BigInteger[expectSliceNumber + 1];
+            result[0] = left;
+            result[expectSliceNumber] = right;
 
             BigInteger lowerBound;
             BigInteger upperBound = left;
@@ -151,10 +107,10 @@ public final class RangeSplitUtil {
                 upperBound = lowerBound.add(step);
                 upperBound = upperBound.add((remainder.compareTo(BigInteger.valueOf(i)) >= 0)
                         ? BigInteger.ONE : BigInteger.ZERO);
-                splittedResult[i] = upperBound;
+                result[i] = upperBound;
             }
 
-            return splittedResult;
+            return result;
         }
     }
 
@@ -197,53 +153,86 @@ public final class RangeSplitUtil {
         return result;
     }
 
-    public static String bigIntegerToString(BigInteger bigInteger, int radix, int basic) {
-
-        Map<Integer, Character> map = new HashMap<Integer, Character>();
-
-        for (int i = 0; i < radix; i++) {
-            map.put(i, (char) (i + basic));
+    /**
+     * 把BigInteger 转换为 String.注意：radix 和 basic 范围都为[1,128], radix + basic 的范围也必须在[1,128].
+     */
+    private static String bigIntegerToString(BigInteger bigInteger, int radix, int basic) {
+        if (null == bigInteger) {
+            throw new IllegalArgumentException("parameter bigInteger can not be null.");
         }
 
-        List<Integer> list = new ArrayList<Integer>();
-        StringBuilder stringBuilder = new StringBuilder();
-        BigInteger currentValue = bigInteger;
-        BigInteger radixBigInteger = BigInteger.valueOf(radix);
+        checkIfBetweenRange(radix, 1, 128);
+        checkIfBetweenRange(basic, 1, 128);
+        checkIfBetweenRange(radix + basic, 1, 128);
 
-        BigInteger sang = currentValue.divide(radixBigInteger);
-        while (sang.compareTo(BigInteger.ZERO) > 0) {
+        StringBuilder resultStringBuilder = new StringBuilder();
+
+        List<Integer> list = new ArrayList<Integer>();
+        BigInteger radixBigInteger = BigInteger.valueOf(radix);
+        BigInteger currentValue = bigInteger;
+
+        BigInteger quotient = currentValue.divide(radixBigInteger);
+        while (quotient.compareTo(BigInteger.ZERO) > 0) {
             list.add(currentValue.remainder(radixBigInteger).intValue());
             currentValue = currentValue.divide(radixBigInteger);
-            sang = currentValue;
+            quotient = currentValue;
         }
         Collections.reverse(list);
 
         if (list.isEmpty()) {
-            list.add(0, currentValue.remainder(radixBigInteger).intValue());
+            list.add(0, bigInteger.remainder(radixBigInteger).intValue());
+        }
+
+        Map<Integer, Character> map = new HashMap<Integer, Character>();
+        for (int i = 0; i < radix; i++) {
+            map.put(i, (char) (i + basic));
         }
 
 //        String msg = String.format("%s 转为 %s 进制，结果为：%s", bigInteger.longValue(), radix, list);
 //        System.out.println(msg);
 
         for (int i = 0, len = list.size(); i < len; i++) {
-            stringBuilder.append(map.get(list.get(i)));
+            resultStringBuilder.append(map.get(list.get(i)));
         }
 
-        return stringBuilder.toString();
+        return resultStringBuilder.toString();
     }
 
-    public static Pair<Integer, Integer> getMinAndMaxCharacter(String aString) {
-        int min = aString.charAt(0);
-        int max = min;
+    /**
+     * 获取字符串中的最小字符和最大字符（依据 ascii 进行判断）.要求字符串必须非空，并且为 ascii 字符串.
+     * 返回的Pair，left=最小字符，right=最大字符.
+     */
+    public static Pair<Character, Character> getMinAndMaxCharacter(String aString) {
+        if (!isPureAscii(aString)) {
+            throw new IllegalArgumentException(String.format(
+                    "parameter aString not pure ascii. detail:aString=[%s].", aString));
+        }
 
-        int temp = 0;
+        char min = aString.charAt(0);
+        char max = min;
+
+        char temp = 0;
         for (int i = 1, len = aString.length(); i < len; i++) {
             temp = aString.charAt(i);
             min = min < temp ? min : temp;
             max = max > temp ? max : temp;
         }
 
-        return new ImmutablePair<Integer, Integer>(min, max);
+        return new ImmutablePair<Character, Character>(min, max);
+    }
+
+    private static boolean isPureAscii(String aString) {
+        if (null == aString) {
+            return false;
+        }
+
+        for (int i = 0, len = aString.length(); i < len; i++) {
+            char ch = aString.charAt(i);
+            if (ch >= 127 || ch < 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }

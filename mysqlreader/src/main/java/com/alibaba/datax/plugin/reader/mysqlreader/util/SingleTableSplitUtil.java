@@ -3,11 +3,14 @@ package com.alibaba.datax.plugin.reader.mysqlreader.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
 import com.alibaba.datax.plugin.reader.mysqlreader.Key;
 import com.alibaba.datax.plugin.reader.mysqlreader.MysqlReaderErrorCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +30,7 @@ public class SingleTableSplitUtil {
 
     public static List<Configuration> splitSingleTable(Configuration plugin,
                                                        int adviceNum) {
-        List<Object> minMaxPK = getPKRange(plugin);
+        Pair<Object, Object> minMaxPK = getPKRange(plugin);
 
         String splitPkName = plugin.getString(Key.SPLIT_PK);
         String column = plugin.getString(Key.COLUMN);
@@ -40,13 +43,12 @@ public class SingleTableSplitUtil {
         boolean isLongType = Constant.PK_TYPE_LONG.equals(plugin.getString(Constant.PK_TYPE));
         List<String> rangeList = null;
         if (isStringType) {
-            String[] rangeResult = RangeSplitUtil.doAsciiStringSplit(String.valueOf(minMaxPK.get(0)),
-                    String.valueOf(minMaxPK.get(1)), adviceNum);
-            rangeList = RangeSplitUtil.doConditionWrap(rangeResult, splitPkName, "'");
+            rangeList = RangeSplitUtil.splitAndWrap(String.valueOf(minMaxPK.getLeft()), String.valueOf(minMaxPK.getRight()),
+                    adviceNum, splitPkName, "'", DataBaseType.MySql);
         } else if (isLongType) {
-            long[] rangeResult = RangeSplitUtil.doLongSplit(Long.parseLong(minMaxPK.get(0).toString()),
-                    Long.parseLong(minMaxPK.get(1).toString()), adviceNum);
-            rangeList = RangeSplitUtil.doConditionWrap(rangeResult, splitPkName);
+
+            rangeList = RangeSplitUtil.splitAndWrap(Long.parseLong(minMaxPK.getLeft().toString()),
+                    Long.parseLong(minMaxPK.getRight().toString()), adviceNum, splitPkName);
         } else {
             //error
         }
@@ -90,7 +92,7 @@ public class SingleTableSplitUtil {
         return querySql;
     }
 
-    private static List<Object> getPKRange(Configuration plugin) {
+    private static Pair<Object, Object> getPKRange(Configuration plugin) {
         List<String> sqls = genPKRangeSQL(plugin);
 
         String checkPKSQL = sqls.get(0);
@@ -102,9 +104,9 @@ public class SingleTableSplitUtil {
 
         Connection conn = null;
         ResultSet rs = null;
-        List<Object> minMaxPK = new ArrayList<Object>();
+        Pair<Object, Object> minMaxPK = null;
         try {
-            conn = DBUtil.getConnection("mysql", jdbcURL, username, password);
+            conn = DBUtil.getConnection(DataBaseType.MySql, jdbcURL, username, password);
             rs = DBUtil.query(conn, checkPKSQL, Integer.MIN_VALUE);
             while (rs.next()) {
                 if (rs.getLong(1) > 0L) {
@@ -118,15 +120,13 @@ public class SingleTableSplitUtil {
                 if (isStringType(rsMetaData.getColumnType(1))) {
                     plugin.set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
                     while (rs.next()) {
-                        minMaxPK.add(rs.getString(1));
-                        minMaxPK.add(rs.getString(2));
+                        minMaxPK = new ImmutablePair<Object, Object>(rs.getString(1), rs.getString(2));
                     }
                 } else if (isLongType(rsMetaData.getColumnType(1))) {
                     plugin.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
 
                     while (rs.next()) {
-                        minMaxPK.add(rs.getLong(1));
-                        minMaxPK.add(rs.getLong(2));
+                        minMaxPK = new ImmutablePair<Object, Object>(rs.getString(1), rs.getString(2));
                     }
                 } else {
                     LOG.warn("pk type not long nor string. split single table failed, use no-split strategy.");

@@ -1,29 +1,20 @@
 package com.alibaba.datax.plugin.reader.sqlserverreader;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.util.ConfigPretreatUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.util.TableSplitUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.List;
 
 /**
  * Created by haiwei.luo on 14-9-17.
@@ -125,7 +116,7 @@ public class SqlServerReader {
 					null != formatedSql ? formatedSql : sql, this.jdbcUrl);
 
 			ResultSet rs = null;
-			Connection conn = DBUtil.getConnection("sqlserver", this.jdbcUrl,
+			Connection conn = DBUtil.getConnection(DataBaseType.SQLServer, this.jdbcUrl,
 					this.username, this.password);
 
 			try {

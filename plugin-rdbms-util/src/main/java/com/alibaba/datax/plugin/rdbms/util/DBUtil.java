@@ -1,56 +1,39 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.alibaba.datax.common.exception.DataXException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.exception.DataXException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * TODO 常量字符串：mysql，oracle等，采用 Enum 管理
  */
 public final class DBUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
+
     private DBUtil() {
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
 
     private static final int TIMEOUT_SECONDS = 3;
 
     private static final int MAX_TRY_TIMES = 4;
 
-    private static Map<String, String> CONNECTION_TYPE = new HashMap<String, String>();
+    private static Map<String, String> CONNECTION_TYPE = DataBaseType.getTypeAndDriverMap();
 
-    static {
-        CONNECTION_TYPE.put("mysql", "com.mysql.jdbc.Driver");
-        CONNECTION_TYPE.put("oracle", "oracle.jdbc.OracleDriver");
-        CONNECTION_TYPE.put("sqlserver",
-                "com.microsoft.sqlserver.jdbc.SQLServerDriver");
-    }
-
-    /**
-     * Get driver class
-     */
-    private static String getDriverClassName(final String type) {
-        String driverClassName = CONNECTION_TYPE.get(type);
+    private static String getDriverClassName(DataBaseType dataBaseType) {
+        String driverClassName = CONNECTION_TYPE.get(dataBaseType.getTypeName());
 
         if (!StringUtils.isBlank(driverClassName)) {
             return driverClassName;
         }
 
         throw new IllegalArgumentException(String.format(
-                "Driver type [%s] not registered .", type));
+                "Driver type [%s] not registered .", dataBaseType.getTypeName()));
     }
 
     /**
@@ -59,18 +42,14 @@ public final class DBUtil {
      * if connecting failed, try to connect for 3 times
      * <p/>
      * NOTE: In DataX, we don't need connection pool in fact
-     *
-     * @param jdbc     jdbc url
-     * @param username
-     * @param password
      */
-    public static Connection getConnection(final String type, final String url,
-                                           final String user, final String pass) {
+    public static Connection getConnection(DataBaseType dataBaseType, String url,
+                                           String user, String pass) {
         Exception saveException = null;
         for (int tryTime = 0; tryTime < MAX_TRY_TIMES; tryTime++) {
             try {
                 Connection connection = DBUtil.connect(
-                        DBUtil.getDriverClassName(type), url, user, pass);
+                        DBUtil.getDriverClassName(dataBaseType), url, user, pass);
                 if (null != connection) {
                     return connection;
                 }
@@ -196,7 +175,7 @@ public final class DBUtil {
     public static List<String> getMysqlTableColumns(String jdbcUrl,
                                                     String user, String pass, String tableName) {
         List<String> columns = new ArrayList<String>();
-        Connection conn = getConnection("mysql", jdbcUrl, user, pass);
+        Connection conn = getConnection(DataBaseType.MySql, jdbcUrl, user, pass);
         try {
             DatabaseMetaData databaseMetaData = conn.getMetaData();
             String dbName = getDBNameFromJdbcUrl(jdbcUrl);
@@ -218,10 +197,10 @@ public final class DBUtil {
 
     }
 
-    public static List<String> getTableColumns(String dbType, String jdbcUrl,
+    public static List<String> getTableColumns(DataBaseType dataBaseType, String jdbcUrl,
                                                String user, String pass, String tableName) {
         List<String> columns = new ArrayList<String>();
-        Connection conn = getConnection(dbType, jdbcUrl, user, pass);
+        Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
         try {
             DatabaseMetaData databaseMetaData = conn.getMetaData();
             // String dbName = getDBNameFromJdbcUrl(jdbcUrl);

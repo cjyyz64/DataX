@@ -35,13 +35,13 @@ public class RangeSplitUtilTest {
 
     @Test
     public void testGetMinAndMaxCharacter() {
-        Pair<Integer, Integer> result = RangeSplitUtil.getMinAndMaxCharacter("abc%^&");
-        Assert.assertEquals('%', result.getLeft().intValue());
-        Assert.assertEquals('c', result.getRight().intValue());
+        Pair<Character, Character> result = RangeSplitUtil.getMinAndMaxCharacter("abc%^&");
+        Assert.assertEquals('%', result.getLeft().charValue());
+        Assert.assertEquals('c', result.getRight().charValue());
 
         result = RangeSplitUtil.getMinAndMaxCharacter("\tAabcZx");
-        Assert.assertEquals('\t', result.getLeft().intValue());
-        Assert.assertEquals('x', result.getRight().intValue());
+        Assert.assertEquals('\t', result.getLeft().charValue());
+        Assert.assertEquals('x', result.getRight().charValue());
     }
 
 
@@ -57,7 +57,7 @@ public class RangeSplitUtilTest {
 
         String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
         System.out.println(ToStringBuilder.reflectionToString(result, ToStringStyle.SIMPLE_STYLE));
-        System.out.println(RangeSplitUtil.getAsciiStringSplitAndWarappedResult(left, right, expectSliceNumber, "id", "'"));
+        System.out.println(RangeSplitUtil.splitAndWrap(left, right, expectSliceNumber, "id", "'", DataBaseType.MySql));
 
     }
 
