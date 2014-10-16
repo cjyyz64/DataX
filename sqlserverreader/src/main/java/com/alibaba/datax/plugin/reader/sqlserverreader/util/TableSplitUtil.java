@@ -128,7 +128,7 @@ public class TableSplitUtil {
         boolean hasWhere = StringUtils.isNotBlank(where);
 
         boolean isStringType = false;
-        if (minMaxPK.get(0) instanceof String) {
+        if (minMaxPK.getLeft() instanceof String) {
             isStringType = true;
         }
 
