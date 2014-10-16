@@ -1,14 +1,5 @@
 package com.alibaba.datax.core.container;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
@@ -18,6 +9,14 @@ import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-2.
@@ -129,8 +128,7 @@ public class MasterContainerTest extends CaseInitializer {
 		initMethod.setAccessible(true);
 
 		List<Configuration> mergedConfigs = (List<Configuration>) initMethod
-				.invoke(masterContainer, new Object[] {
-						readerSplitConfigurations, writerSplitConfigurations });
+				.invoke(masterContainer, readerSplitConfigurations, writerSplitConfigurations);
 
 		Assert.assertEquals("merge number equals to split number", splitNumber,
 				mergedConfigs.size());
@@ -175,8 +173,7 @@ public class MasterContainerTest extends CaseInitializer {
 		initMethod = masterContainer.getClass().getDeclaredMethod(
 				"mergeReaderAndWriterSlicesConfigs", List.class, List.class);
 		initMethod.setAccessible(true);
-		initMethod.invoke(masterContainer, new Object[] {
-				readerSplitConfigurations, writerSplitConfigurations });
+		initMethod.invoke(masterContainer, readerSplitConfigurations, writerSplitConfigurations);
 	}
 
 	@Test
@@ -228,8 +225,8 @@ public class MasterContainerTest extends CaseInitializer {
 				int.class);
 		initMethod.setAccessible(true);
 		List<Configuration> slaveConfigs = (List<Configuration>) initMethod
-				.invoke(masterContainer, new Object[] { averSlicesPerChannel,
-						channelNumber, channelsPerSlaveContainer });
+				.invoke(masterContainer, averSlicesPerChannel,
+                        channelNumber, channelsPerSlaveContainer);
 		initMethod.setAccessible(false);
 
 		Assert.assertEquals("slave size check", channelNumber
@@ -275,12 +272,16 @@ public class MasterContainerTest extends CaseInitializer {
 
     @Test(expected = Exception.class)
     public void testErrorLimitPercentCheck() throws Exception {
-        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 0.1);
+//        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 0.1);
+//        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT_RECORD, null);
+        this.configuration.remove(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT_RECORD);
+        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT_PERCENT, 0.1);
         MasterContainer masterContainer = new MasterContainer(
                 this.configuration);
 
         MetricManager.registerMetric(0, 0);
         Metric metric = MetricManager.getChannelMetric(0, 0);
+        MetricManager.reportSlaveMetric(0, metric);
         metric.setReadSucceedRecords(100);
         metric.setReadFailedRecords(0);
         metric.setWriteReceivedRecords(80);
@@ -289,18 +290,20 @@ public class MasterContainerTest extends CaseInitializer {
         Method initMethod = masterContainer.getClass()
                 .getDeclaredMethod("checkLimit");
         initMethod.setAccessible(true);
-        initMethod.invoke(masterContainer, new Object[] {});
+        initMethod.invoke(masterContainer);
         initMethod.setAccessible(false);
     }
 
     @Test(expected = Exception.class)
     public void testErrorLimitCountCheck() throws Exception {
-        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT, 1);
+        this.configuration.remove(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT_PERCENT);
+        this.configuration.set(CoreConstant.DATAX_JOB_SETTING_ERRORLIMIT_RECORD, 1);
         MasterContainer masterContainer = new MasterContainer(
                 this.configuration);
 
         MetricManager.registerMetric(0, 0);
         Metric metric = MetricManager.getChannelMetric(0, 0);
+        MetricManager.reportSlaveMetric(0, metric);
         metric.setReadSucceedRecords(100);
         metric.setReadFailedRecords(0);
         metric.setWriteReceivedRecords(98);
@@ -309,7 +312,7 @@ public class MasterContainerTest extends CaseInitializer {
         Method initMethod = masterContainer.getClass()
                 .getDeclaredMethod("checkLimit");
         initMethod.setAccessible(true);
-        initMethod.invoke(masterContainer, new Object[] {});
+        initMethod.invoke(masterContainer);
         initMethod.setAccessible(false);
     }
 }
