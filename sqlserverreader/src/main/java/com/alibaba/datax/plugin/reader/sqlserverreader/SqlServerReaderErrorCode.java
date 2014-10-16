@@ -4,7 +4,7 @@ import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum SqlServerReaderErrorCode implements ErrorCode {
 	RUNTIME_EXCEPTION("SqlServerReader-00", "run time exception"), CONF_ERROR(
-			"SqlServerReader-00", "username/password not filled."), UNKNOWN_ERROR(
+			"SqlServerReader-00", "meet a configure error."), UNKNOWN_ERROR(
 			"SqlServerReader-01", "todo"), NOT_RECOMMENDED(
 			"SqlServerReader-02", "your config not recommended."), TABLE_QUERYSQL_MIXED(
 			"SqlServerReader-03",

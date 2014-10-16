@@ -44,7 +44,7 @@ public class ConfigPretreatUtil {
 		//warn:to sql server ,connect part array size must be 1
 		if (null == conns || 1 != conns.size()) {
 			throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
-					"no connection configuration");
+					"connection configuration part invalid, shall have one and only one element");
 		}
 
 		boolean isTableMode = recognizeTableOrQuerySqlMode(originReaderConfig);
@@ -56,7 +56,6 @@ public class ConfigPretreatUtil {
 	}
 
 	// resolve table mode or querySql mode
-	// TODO something is not equals with mysqlreader,这里的connect 数组其实只有一项，循环执行一次
 	private static boolean recognizeTableOrQuerySqlMode(
 			Configuration originReaderConfig) {
 
@@ -181,6 +180,9 @@ public class ConfigPretreatUtil {
 				originReaderConfig.set(Key.COLUMN, "*");
 				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
 						+ ": because column configed as empty may not work when you changed your table structure.");
+				throw new DataXException(
+						SqlServerReaderErrorCode.CONF_ERROR,
+						"columns could not be empty or blank.");
 			} else if (1 == columns.size() && "*".equals(columns.get(0))) {
 				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
 						+ ": because column configed as * may not work when you changed your table structure.");

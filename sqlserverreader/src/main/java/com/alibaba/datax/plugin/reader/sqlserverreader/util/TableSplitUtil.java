@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Constants;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Key;
 import com.alibaba.datax.plugin.reader.sqlserverreader.SqlServerReaderErrorCode;
@@ -24,147 +25,142 @@ public class TableSplitUtil {
 
 	private TableSplitUtil() {
 	}
-	
+
 	// 任务切分
-		public static List<Configuration> doSplit(Configuration originReaderConfig,
-				int adviceNumber) {
-			List<Configuration> splittedConfigs = new ArrayList<Configuration>();
+	public static List<Configuration> doSplit(Configuration originReaderConfig,
+			int adviceNumber) {
+		List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
-			boolean isTableMode = originReaderConfig.getBool(Constants.TABLE_MODE);
+		boolean isTableMode = originReaderConfig.getBool(Constants.TABLE_MODE);
 
-			int eachTableShouldSplittedNumber = -1;
+		int eachTableShouldSplittedNumber = -1;
+		if (isTableMode) {
+			int tableCount = originReaderConfig.getInt(Constants.TABLE_NUMBER);
+			// warn: check this
+			eachTableShouldSplittedNumber = adviceNumber / tableCount;
+		}
+
+		String column = originReaderConfig.getString(Key.COLUMN);
+		String where = originReaderConfig.getString(Key.WHERE);
+
+		List<Object> conns = originReaderConfig.getList(Constants.CONNECTION,
+				Object.class);
+		String jdbcUrl;
+
+		for (int i = 0; i < conns.size(); i++) {
+			Configuration sliceConfig = originReaderConfig.clone();
+
+			Configuration connConf = Configuration
+					.from(conns.get(i).toString());
+
+			jdbcUrl = connConf.getString(Key.JDBC_URL);
+			sliceConfig.set(Key.JDBC_URL, jdbcUrl);
+
+			sliceConfig.remove(Constants.CONNECTION);
+
+			Configuration tempSlice;
 			if (isTableMode) {
-				int tableCount = originReaderConfig.getInt(Constants.TABLE_NUMBER);
-				// TODO check this
-				eachTableShouldSplittedNumber = tableCount / adviceNumber;
-			}
+				List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-			String column = originReaderConfig.getString(Key.COLUMN);
-			String where = originReaderConfig.getString(Key.WHERE);
+				if (null == tables || tables.isEmpty()) {
+					throw new DataXException(
+							SqlServerReaderErrorCode.CONF_ERROR,
+							"source table configed error");
+				}
 
-			List<Object> conns = originReaderConfig.getList(Constants.CONNECTION,
-					Object.class);
-			String jdbcUrl;
+				String splitPK = sliceConfig.getString(Key.SPLIT_PK);
+				boolean needSplitTable = eachTableShouldSplittedNumber > 1
+						&& StringUtils.isNotBlank(splitPK);
 
-			for (int i = 0; i < conns.size(); i++) {
-				Configuration sliceConfig = originReaderConfig.clone();
-
-				Configuration connConf = Configuration
-						.from(conns.get(i).toString());
-
-				jdbcUrl = connConf.getString(Key.JDBC_URL);
-				sliceConfig.set(Key.JDBC_URL, jdbcUrl);
-
-				sliceConfig.remove(Constants.CONNECTION);
-
-				Configuration tempSlice;
-				if (isTableMode) {
-					List<String> tables = connConf.getList(Key.TABLE, String.class);
-
-					if (null == tables || tables.isEmpty()) {
-						throw new DataXException(
-								SqlServerReaderErrorCode.CONF_ERROR,
-								"source table configed error");
-					}
-
-					String splitPK = sliceConfig.getString(Key.SPLIT_PK);
-					boolean needSplitTable = eachTableShouldSplittedNumber > 1
-							&& StringUtils.isNotBlank(splitPK);
-
-					if (needSplitTable) {
-						for (String table : tables) {
-							tempSlice = sliceConfig.clone();
-							tempSlice.set(Key.TABLE, table);
-//							List<Configuration> splittedSlices = TableSplitUtil
-//									.splitSingleTable(tempSlice,
-//											eachTableShouldSplittedNumber);
-							//warn : this should be adviceNumber
-							List<Configuration> splittedSlices = TableSplitUtil
-									.splitSingleTable(tempSlice,
-											adviceNumber);
-
-							for (Configuration splittedSlice : splittedSlices) {
-								splittedConfigs.add(splittedSlice);
-							}
-						}
-					} else {
-						for (String table : tables) {
-							tempSlice = sliceConfig.clone();
-							tempSlice.set(Key.QUERYSQL, TableSplitUtil
-									.buildQuerySql(column, table, where));
-							splittedConfigs.add(tempSlice);
-						}
-					}
-
-				} else {
-					// querySql mode
-					List<String> sqls = connConf
-							.getList(Key.QUERYSQL, String.class);
-
-					// TODO more than one querySql
-					for (String querySql : sqls) {
+				if (needSplitTable) {
+					for (String table : tables) {
 						tempSlice = sliceConfig.clone();
-						tempSlice.set(Key.QUERYSQL, querySql);
+						tempSlice.set(Key.TABLE, table);
+						// warn : this should be eachTableShouldSplittedNumber
+						List<Configuration> splittedSlices = TableSplitUtil
+								.splitSingleTable(tempSlice,
+										eachTableShouldSplittedNumber);
+
+						for (Configuration splittedSlice : splittedSlices) {
+							splittedConfigs.add(splittedSlice);
+						}
+					}
+				} else {
+					for (String table : tables) {
+						tempSlice = sliceConfig.clone();
+						tempSlice.set(Key.QUERYSQL, TableSplitUtil
+								.buildQuerySql(column, table, where));
 						splittedConfigs.add(tempSlice);
 					}
 				}
+
+			} else {
+				// querySql mode
+				List<String> sqls = connConf
+						.getList(Key.QUERYSQL, String.class);
+
+				// TODO more than one querySql
+				for (String querySql : sqls) {
+					tempSlice = sliceConfig.clone();
+					tempSlice.set(Key.QUERYSQL, querySql);
+					splittedConfigs.add(tempSlice);
+				}
 			}
-			return splittedConfigs;
 		}
+		return splittedConfigs;
+	}
 
 	public static List<Configuration> splitSingleTable(Configuration plugin,
 			int adviceNum) {
-		List<Long> minMaxPK = getPKRange(plugin);
-		List<Configuration> pluginParams = appendRangeSQL(plugin, minMaxPK,
-				adviceNum);
 
-		return pluginParams;
-	}
-
-	private static List<Configuration> appendRangeSQL(
-			Configuration pluginParam, List<Long> minMaxPK, int splitNumber) {
 		List<Configuration> pluginParams = new ArrayList<Configuration>();
-		if (2 == minMaxPK.size()) {
-			long min = minMaxPK.get(0);
-			long max = minMaxPK.get(1);
 
-			long step = Math.round((max - min + 1.0) / splitNumber);
-			String column = pluginParam.getString(Key.COLUMN);
-			String table = pluginParam.getString(Key.TABLE);
-			String splitPK = pluginParam.getString(Key.SPLIT_PK);
-			String where = pluginParam.getString(Key.WHERE, null);
+		List<Object> minMaxPK = getPKRange(plugin);
 
-			boolean hasWhere = StringUtils.isNotBlank(where);
-			//different rds is different
-			String template = "[%s] >= %s and [%s] < %s";
+		String splitPkName = plugin.getString(Key.SPLIT_PK);
+		String column = plugin.getString(Key.COLUMN);
+		String table = plugin.getString(Key.TABLE);
+		String where = plugin.getString(Key.WHERE, null);
+		boolean hasWhere = StringUtils.isNotBlank(where);
 
-			long lastIndex = min;
-			long currentIndex = min;
-			String tempSQL = null;
-			Configuration tempPlugin = null;
-			for (int i = 1; i < splitNumber; i++) {
-				currentIndex = lastIndex + step;
-				tempSQL = buildQuerySql(column, table, where)
-						+ (hasWhere ? " and " : " where ")
-						+ String.format(template, splitPK, lastIndex, splitPK,
-								currentIndex);
-				tempPlugin = pluginParam.clone();
-				tempPlugin.set(Key.QUERYSQL, tempSQL);
-				pluginParams.add(tempPlugin);
-				lastIndex = currentIndex;
-			}
-			// 处理lastIndex到max区间的值
-			String specialTemplate = "[%s] >= %s and [%s] <= %s";
-			tempSQL = buildQuerySql(column, table, where)
-					+ (hasWhere ? " and " : " where ")
-					+ String.format(specialTemplate, splitPK, lastIndex,
-							splitPK, max);
-			tempPlugin = pluginParam.clone();
-			tempPlugin.set(Key.QUERYSQL, tempSQL);
-			pluginParams.add(tempPlugin);
-		} else {
-			pluginParams.add(pluginParam);
+		boolean isStringType = false;
+		if (minMaxPK.get(0) instanceof String) {
+			isStringType = true;
 		}
+
+		// warn : no need to see if minMaxPK.length is 2 now
+		List<String> rangeList = null;
+		if (isStringType) {
+			String[] rangeResult = RangeSplitUtil.doAsciiStringSplit(
+					String.valueOf(minMaxPK.get(0)),
+					String.valueOf(minMaxPK.get(1)), adviceNum);
+			rangeList = RangeSplitUtil.doConditionWrap(rangeResult,
+					splitPkName, "");
+		} else {
+			long[] rangeResult = RangeSplitUtil.doLongSplit(
+					Long.parseLong(minMaxPK.get(0).toString()),
+					Long.parseLong(minMaxPK.get(1).toString()), adviceNum);
+			rangeList = RangeSplitUtil
+					.doConditionWrap(rangeResult, splitPkName);
+		}
+
+		String tempQuerySql = null;
+		if (null != rangeList) {
+			for (String range : rangeList) {
+				Configuration conf = plugin.clone();
+
+				//TODO
+				tempQuerySql = buildQuerySql(column, table, where)
+						+ (hasWhere ? " and " : " where ") + range;
+				conf.set(Key.QUERYSQL, tempQuerySql);
+				pluginParams.add(conf);
+
+				LOG.info("splitted tempQuerySql:" + tempQuerySql);
+			}
+		} else {
+			pluginParams.add(plugin);
+		}
+
 		return pluginParams;
 	}
 
@@ -173,8 +169,8 @@ public class TableSplitUtil {
 		String querySql = null;
 
 		if (StringUtils.isBlank(where)) {
-			querySql = String.format(Constants.QUERY_SQL_TEMPLATE_WHITOUT_WHERE,
-					column, table);
+			querySql = String.format(
+					Constants.QUERY_SQL_TEMPLATE_WHITOUT_WHERE, column, table);
 		} else {
 			querySql = String.format(Constants.QUERY_SQL_TEMPLATE, column,
 					table, where);
@@ -184,7 +180,7 @@ public class TableSplitUtil {
 	}
 
 	@SuppressWarnings("resource")
-	private static List<Long> getPKRange(Configuration plugin) {
+	private static List<Object> getPKRange(Configuration plugin) {
 		List<String> sqls = genPKRangeSQL(plugin);
 
 		String checkPKSQL = sqls.get(0);
@@ -193,18 +189,20 @@ public class TableSplitUtil {
 		String jdbcURL = plugin.getString(Key.JDBC_URL);
 		String username = plugin.getString(Key.USERNAME);
 		String password = plugin.getString(Key.PASSWORD);
-		
+
 		int fetchSize = plugin.getInt(Key.FETCH_SIZE, 32);
-		
+
 		Connection conn = null;
 		ResultSet rs = null;
-		List<Long> minMaxPK = new ArrayList<Long>();
+		List<Object> minMaxPK = new ArrayList<Object>();
 		try {
-			conn = DBUtil.getConnection("sqlserver", jdbcURL, username, password);
+			conn = DBUtil.getConnection("sqlserver", jdbcURL, username,
+					password);
 			rs = DBUtil.query(conn, checkPKSQL, fetchSize);
 			while (rs.next()) {
 				if (rs.getLong(1) > 0L) {
-					throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
+					throw new DataXException(
+							SqlServerReaderErrorCode.CONF_ERROR,
 							"Configed PK has null value!");
 				}
 			}
@@ -212,11 +210,11 @@ public class TableSplitUtil {
 			ResultSetMetaData rsMetaData = rs.getMetaData();
 			if (isPKTypeValid(rsMetaData)) {
 				while (rs.next()) {
-					minMaxPK.add(rs.getLong(1));
-					minMaxPK.add(rs.getLong(2));
+					minMaxPK.add(rs.getObject(1));
+					minMaxPK.add(rs.getObject(2));
 				}
 			} else {
-				LOG.warn("pk type not INTEGER nor BIGINT. split single table failed, use no-split strategy.");
+				LOG.warn("pk type not long or string. split single table failed, use no-split strategy.");
 			}
 		} catch (Exception e) {
 			if (LOG.isDebugEnabled()) {
@@ -235,13 +233,24 @@ public class TableSplitUtil {
 		try {
 			int minType = rsMetaData.getColumnType(1);
 			int maxType = rsMetaData.getColumnType(2);
-			if (minType == maxType
-					&& (minType == Types.BIGINT || minType == Types.INTEGER
-							|| minType == Types.SMALLINT || minType == Types.TINYINT)) {
+
+			boolean isNumberType = minType == Types.BIGINT
+					|| minType == Types.INTEGER || minType == Types.SMALLINT
+					|| minType == Types.TINYINT;
+
+			boolean isStringType = minType == Types.CHAR
+					|| minType == Types.NCHAR || minType == Types.VARCHAR
+					|| minType == Types.LONGVARCHAR
+					|| minType == Types.NVARCHAR;
+
+			if (minType == maxType && (isNumberType || isStringType)) {
 				ret = true;
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOG.error("error when get splitPk type");
+			throw new DataXException(
+					SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
+					"error when get splitPk type");
 		}
 		return ret;
 	}
