@@ -6,8 +6,11 @@ package com.alibaba.datax.plugin.reader.mysqlreader;
  */
 public final class Constant {
 	public static final int DEFAULT_FETCH_SIZE = 32;
+    public static final String PK_TYPE = "pkType";
+    public static final Object PK_TYPE_STRING = "pkTypeString";
+    public static final Object PK_TYPE_LONG = "pkTypeLong";
 
-	public static String CONN_MARK = "connection";
+    public static String CONN_MARK = "connection";
 
 	public static String TABLE_NUMBER_MARK = "tableNumber";
 

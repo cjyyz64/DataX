@@ -32,7 +32,7 @@
                     ],
                     "where": "modifyTime>'2014-08-08'?",
                     "splitPk": "onlyOnePkColumn?",
-                    "preCheckSql": "one sql must and only return 0 means its data is ok."
+                    "preSql": "one sql must and only return 0 means its data is ok."
                 }
             },
             "writer": {}
