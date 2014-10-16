@@ -7,7 +7,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.ConfigurationProducer;
@@ -39,7 +39,7 @@ public class MemoryChannelTest extends CaseInitializer {
 		Record record = null;
 		for (int i = 0; i < capacity; i++) {
 			record = RecordProducer.produceRecord();
-			record.setColumn(0, new NumberColumn(i));
+			record.setColumn(0, new LongColumn(i));
 			channel.push(record);
 		}
 
@@ -52,7 +52,7 @@ public class MemoryChannelTest extends CaseInitializer {
 		List<Record> records = new ArrayList<Record>(capacity);
 		for (int i = 0; i < capacity; i++) {
 			record = RecordProducer.produceRecord();
-			record.setColumn(0, new NumberColumn(i));
+			record.setColumn(0, new LongColumn(i));
 			records.add(record);
 		}
 		channel.pushAll(records);
@@ -83,7 +83,7 @@ public class MemoryChannelTest extends CaseInitializer {
 		List<Record> records = new ArrayList<Record>(capacity);
 		for (int i = 0; i < capacity; i++) {
 			Record record = RecordProducer.produceRecord();
-			record.setColumn(0, new NumberColumn(i));
+			record.setColumn(0, new LongColumn(i));
 			records.add(record);
 		}
 
@@ -121,7 +121,7 @@ public class MemoryChannelTest extends CaseInitializer {
 		List<Record> records = new ArrayList<Record>(capacity);
 		for (int i = 0; i < capacity; i++) {
 			Record record = RecordProducer.produceRecord();
-			record.setColumn(0, new NumberColumn(i));
+			record.setColumn(0, new LongColumn(i));
 			records.add(record);
 		}
 

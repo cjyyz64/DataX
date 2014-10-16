@@ -1,5 +1,7 @@
 package com.alibaba.datax.common.element;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
@@ -31,12 +33,6 @@ public class DateColumn extends Column {
 	}
 
 	@Override
-	public Double asDouble() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to Double .");
-	}
-
-	@Override
 	public String asString() {
 		return ColumnCast.date2String(this);
 	}
@@ -60,5 +56,23 @@ public class DateColumn extends Column {
 	public Boolean asBoolean() {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to Boolean .");
+	}
+
+	@Override
+	public Double asDouble() {
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				"Date cannot cast to Double .");
+	}
+
+	@Override
+	public BigInteger asBigInteger() {
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				"Date cannot cast to BigInteger .");
+	}
+
+	@Override
+	public BigDecimal asBigDecimal() {
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				"Date cannot cast to BigDecimal .");
 	}
 }

@@ -1,6 +1,25 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
-import com.alibaba.datax.common.element.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -9,14 +28,6 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.MysqlReaderSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.OriginalConfPretreatmentUtil;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class MysqlReader extends Reader {
 
@@ -193,19 +204,19 @@ public class MysqlReader extends Reader {
 					case Types.SMALLINT:
 					case Types.TINYINT:
 					case Types.INTEGER:
-						record.addColumn(new NumberColumn(rs.getInt(i)));
+						record.addColumn(new LongColumn(rs.getString(i)));
 						break;
 
 					case Types.BIGINT:
 					case Types.NUMERIC:
-						record.addColumn(new NumberColumn(rs.getLong(i)));
+						record.addColumn(new LongColumn(rs.getString(i)));
 						break;
 
 					case Types.DECIMAL:
 					case Types.FLOAT:
 					case Types.REAL:
 					case Types.DOUBLE:
-						record.addColumn(new NumberColumn(rs.getDouble(i)));
+						record.addColumn(new DoubleColumn(rs.getString(i)));
 						break;
 
 					case Types.TIME:

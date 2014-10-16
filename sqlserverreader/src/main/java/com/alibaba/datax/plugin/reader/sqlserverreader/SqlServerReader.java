@@ -13,7 +13,8 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.element.BoolColumn;
 import com.alibaba.datax.common.element.BytesColumn;
 import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
@@ -169,19 +170,19 @@ public class SqlServerReader {
 					case Types.TINYINT:
 					case Types.SMALLINT:
 					case Types.INTEGER:
-						record.addColumn(new NumberColumn(rs.getInt(i)));
+						record.addColumn(new LongColumn(rs.getInt(i)));
 						break;
 
 					case Types.BIGINT:
 					case Types.NUMERIC:
-						record.addColumn(new NumberColumn(rs.getLong(i)));
+						record.addColumn(new LongColumn(rs.getLong(i)));
 						break;
 
 					case Types.DECIMAL:
 					case Types.FLOAT:
 					case Types.REAL:
 					case Types.DOUBLE:
-						record.addColumn(new NumberColumn(rs.getDouble(i)));
+						record.addColumn(new DoubleColumn(rs.getDouble(i)));
 						break;
 
 					case Types.DATE:

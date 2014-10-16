@@ -22,267 +22,275 @@ import java.util.Map.Entry;
 
 public class MysqlWriter extends Writer {
 
-    public static class Master extends Writer.Master {
-        private static final Logger LOG = LoggerFactory
-                .getLogger(MysqlWriter.Master.class);
+	public static class Master extends Writer.Master {
+		private static final Logger LOG = LoggerFactory
+				.getLogger(MysqlWriter.Master.class);
 
-        private Configuration originalConfig = null;
+		private Configuration originalConfig = null;
 
-        @Override
-        public void init() {
-            LOG.info("init() begin ...");
-            this.originalConfig = getPluginJobConf();
-            OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
-            LOG.info("init() end ...");
-        }
+		@Override
+		public void init() {
+			LOG.info("init() begin ...");
+			this.originalConfig = getPluginJobConf();
+			OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
+			LOG.info("init() end ...");
+		}
 
-        // 一般来说，是需要推迟到 slave 中进行pre 的执行
-        @Override
-        public void prepare() {
-            LOG.info("prepare() begin ...");
-            LOG.info("prepare() end ...");
-        }
+		// 一般来说，是需要推迟到 slave 中进行pre 的执行
+		@Override
+		public void prepare() {
+			LOG.info("prepare() begin ...");
+			LOG.info("prepare() end ...");
+		}
 
-        @Override
-        public List<Configuration> split(int adviceNumber) {
-            return MysqlWriterSplitUtil.doSplit(this.originalConfig,
-                    adviceNumber);
-        }
+		@Override
+		public List<Configuration> split(int adviceNumber) {
+			return MysqlWriterSplitUtil.doSplit(this.originalConfig,
+					adviceNumber);
+		}
 
-        // 一般来说，是需要推迟到 slave 中进行post 的执行
-        @Override
-        public void post() {
-            LOG.info("post() begin ...");
-            LOG.info("post() end ...");
-        }
+		// 一般来说，是需要推迟到 slave 中进行post 的执行
+		@Override
+		public void post() {
+			LOG.info("post() begin ...");
+			LOG.info("post() end ...");
+		}
 
-        @Override
-        public void destroy() {
-            LOG.info("destroy() begin ...");
-            LOG.info("destroy() end ...");
-        }
+		@Override
+		public void destroy() {
+			LOG.info("destroy() begin ...");
+			LOG.info("destroy() end ...");
+		}
 
-    }
+	}
 
-    public static class Slave extends Writer.Slave {
-        private static final Logger LOG = LoggerFactory
-                .getLogger(MysqlWriter.Slave.class);
+	public static class Slave extends Writer.Slave {
+		private static final Logger LOG = LoggerFactory
+				.getLogger(MysqlWriter.Slave.class);
 
-        private final static boolean IS_DEBUG = LOG.isDebugEnabled();
+		private final static boolean IS_DEBUG = LOG.isDebugEnabled();
 
-        private Configuration writerSliceConfig;
-        private String username;
-        private String password;
-        private String jdbcUrl;
-        private String table;
-        private List<String> preSqls;
-        private List<String> postSqls;
-        private int batchSize;
+		private Configuration writerSliceConfig;
 
-        private Connection conn;
+		private String username;
 
-        private int columnNumber = 0;
+		private String password;
 
-        // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-        private static String BASIC_MESSAGE;
+		private String jdbcUrl;
 
-        private static String INSERT_OR_REPLACE_TEMPLATE;
+		private String table;
 
-        @Override
-        public void init() {
-            this.writerSliceConfig = getPluginJobConf();
-            this.username = this.writerSliceConfig.getString(Key.USERNAME);
-            this.password = this.writerSliceConfig.getString(Key.PASSWORD);
-            this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
-            this.table = this.writerSliceConfig.getString(Key.TABLE);
+		private List<String> preSqls;
 
-            this.columnNumber = this.writerSliceConfig
-                    .getInt(Constant.COLUMN_NUMBER_MARK);
+		private List<String> postSqls;
 
-            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL,
-                    String.class);
-            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL,
-                    String.class);
-            this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
+		private int batchSize;
 
-            this.conn = DBUtil.getConnection("mysql", this.jdbcUrl, username,
-                    password);
+		private Connection conn;
 
-            INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
-                    .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
+		private int columnNumber = 0;
 
-            BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
-                    this.jdbcUrl, this.table);
-        }
+		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
+		private static String BASIC_MESSAGE;
 
-        @Override
-        public void prepare() {
-            dealSessionConf(conn,
-                    this.writerSliceConfig.getMap(Key.SESSION, String.class));
+		private static String INSERT_OR_REPLACE_TEMPLATE;
 
-            executeSqls(this.conn, this.preSqls);
-        }
+		@Override
+		public void init() {
+			this.writerSliceConfig = getPluginJobConf();
+			this.username = this.writerSliceConfig.getString(Key.USERNAME);
+			this.password = this.writerSliceConfig.getString(Key.PASSWORD);
+			this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
+			this.table = this.writerSliceConfig.getString(Key.TABLE);
 
-        public void startWrite(RecordReceiver recordReceiver) {
-            List<Record> array = new ArrayList<Record>(this.batchSize);
-            try {
-                Record record = null;
-                while ((record = recordReceiver.getFromReader()) != null) {
-                    array.add(record);
-                    if (array.size() >= batchSize) {
-                        doBatchInsert(conn, table, array);
-                    }
-                }
-                if (0 != array.size()) {
-                    doBatchInsert(conn, table, array);
-                }
-            } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
-            }
+			this.columnNumber = this.writerSliceConfig
+					.getInt(Constant.COLUMN_NUMBER_MARK);
 
-        }
+			this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL,
+					String.class);
+			this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL,
+					String.class);
+			this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
 
-        @Override
-        public void post() {
-            executeSqls(this.conn, this.postSqls);
-        }
+			this.conn = DBUtil.getConnection("mysql", this.jdbcUrl, username,
+					password);
 
-        @Override
-        public void destroy() {
-            LOG.info("destroy() begin ...");
-            LOG.info("destroy() end ...");
-        }
+			INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
+					.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
 
-        private void executeSqls(Connection conn, List<String> sqls) {
-            Statement stmt;
-            try {
-                stmt = conn.createStatement();
-            } catch (SQLException e1) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e1);
-            }
+			BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
+					this.jdbcUrl, this.table);
+		}
 
-            for (String sql : sqls) {
-                try {
-                    DBUtil.executeSqlWithoutResultSet(stmt, sql);
-                } catch (SQLException e2) {
-                    LOG.error("execute sql:[{}] failed, {}.", sql,
-                            BASIC_MESSAGE);
-                    throw new DataXException(
-                            MysqlWriterErrorCode.UNKNOWN_ERROR, e2);
-                }
-            }
-        }
+		@Override
+		public void prepare() {
+			dealSessionConf(conn,
+					this.writerSliceConfig.getMap(Key.SESSION, String.class));
 
-        // TODO 类型转换的 review
-        private void doBatchInsert(Connection connection, String table,
-                                   List<Record> buffer) throws SQLException {
+			executeSqls(this.conn, this.preSqls);
+		}
 
-            PreparedStatement pstmt = null;
-            try {
-                connection.setAutoCommit(false);
-                pstmt = connection.prepareStatement(String.format(
-                        INSERT_OR_REPLACE_TEMPLATE, table));
+		public void startWrite(RecordReceiver recordReceiver) {
+			List<Record> array = new ArrayList<Record>(this.batchSize);
+			try {
+				Record record = null;
+				while ((record = recordReceiver.getFromReader()) != null) {
+					array.add(record);
+					if (array.size() >= batchSize) {
+						doBatchInsert(conn, table, array);
+					}
+				}
+				if (0 != array.size()) {
+					doBatchInsert(conn, table, array);
+				}
+			} catch (Exception e) {
+				throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+			}
 
-                for (Record record : buffer) {
-                    for (int i = 0; i < this.columnNumber; i++) {
-                        pstmt = buildPreparedStatement(record.getColumn(i),
-                                pstmt, i + 1);
-                    }
-                    pstmt.addBatch();
-                }
-                pstmt.executeBatch();
-                connection.commit();
-            } catch (Exception e) {
-                connection.rollback();
-                doBadInsert(connection, table, buffer);
-            } finally {
-                DBUtil.closeDBResources(pstmt, null);
-                buffer.clear();
-            }
-        }
+		}
 
-        // TODO 检查columnNumber 和 record.getColumnNumber() 大小
-        private void doBadInsert(Connection connection, String table,
-                                 List<Record> buffer) {
-            PreparedStatement pstmt = null;
-            try {
-                connection.setAutoCommit(true);
-                for (Record record : buffer) {
-                    try {
-                        pstmt = connection.prepareStatement(String.format(
-                                INSERT_OR_REPLACE_TEMPLATE, table));
-                        for (int i = 0; i < this.columnNumber; i++) {
-                            pstmt = buildPreparedStatement(record.getColumn(i),
-                                    pstmt, i + 1);
-                        }
+		@Override
+		public void post() {
+			executeSqls(this.conn, this.postSqls);
+		}
 
-                        pstmt.execute();
-                        pstmt.close();
-                    } catch (Exception e) {
-                        if (IS_DEBUG) {
-                            LOG.debug(e.toString());
-                        }
+		@Override
+		public void destroy() {
+			LOG.info("destroy() begin ...");
+			LOG.info("destroy() end ...");
+		}
 
-                        this.getSlavePluginCollector().collectDirtyRecord(
-                                record, e);
-                    } finally {
-                        DBUtil.closeDBResources(pstmt, null);
-                    }
-                }
-            } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
-            } finally {
-                DBUtil.closeDBResources(pstmt, null);
-                buffer.clear();
-            }
-        }
+		private void executeSqls(Connection conn, List<String> sqls) {
+			Statement stmt;
+			try {
+				stmt = conn.createStatement();
+			} catch (SQLException e1) {
+				throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e1);
+			}
 
-        private static String SESSION_TEMPLATE = "SET %s=%s;";
+			for (String sql : sqls) {
+				try {
+					DBUtil.executeSqlWithoutResultSet(stmt, sql);
+				} catch (SQLException e2) {
+					LOG.error("execute sql:[{}] failed, {}.", sql,
+							BASIC_MESSAGE);
+					throw new DataXException(
+							MysqlWriterErrorCode.UNKNOWN_ERROR, e2);
+				}
+			}
+		}
 
-        private static void dealSessionConf(Connection conn,
-                                            Map<String, String> sessionConfs) {
-            Statement stmt;
-            try {
-                stmt = conn.createStatement();
-            } catch (SQLException e) {
-                LOG.error("error while createStatement, {}.", BASIC_MESSAGE);
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
-            }
+		// TODO 类型转换的 review
+		private void doBatchInsert(Connection connection, String table,
+				List<Record> buffer) throws SQLException {
 
-            String sessionSql = null;
-            for (Entry<String, String> entry : sessionConfs.entrySet()) {
-                sessionSql = String.format(SESSION_TEMPLATE, entry.getKey(),
-                        entry.getValue());
+			PreparedStatement pstmt = null;
+			try {
+				connection.setAutoCommit(false);
+				pstmt = connection.prepareStatement(String.format(
+						INSERT_OR_REPLACE_TEMPLATE, table));
 
-                LOG.info("execute sql:[{}]", sessionSql);
-                try {
-                    DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
-                } catch (SQLException e) {
-                    LOG.error("execute sql:[{}] failed, {}.", sessionSql,
-                            BASIC_MESSAGE);
-                    throw new DataXException(
-                            MysqlWriterErrorCode.UNKNOWN_ERROR, e);
-                }
-            }
+				for (Record record : buffer) {
+					for (int i = 0; i < this.columnNumber; i++) {
+						pstmt = buildPreparedStatement(record.getColumn(i),
+								pstmt, i + 1);
+					}
+					pstmt.addBatch();
+				}
+				pstmt.executeBatch();
+				connection.commit();
+			} catch (Exception e) {
+				connection.rollback();
+				doBadInsert(connection, table, buffer);
+			} finally {
+				DBUtil.closeDBResources(pstmt, null);
+				buffer.clear();
+			}
+		}
 
-            DBUtil.closeDBResources(stmt, null);
-        }
+		// TODO 检查columnNumber 和 record.getColumnNumber() 大小
+		private void doBadInsert(Connection connection, String table,
+				List<Record> buffer) {
+			PreparedStatement pstmt = null;
+			try {
+				connection.setAutoCommit(true);
+				for (Record record : buffer) {
+					try {
+						pstmt = connection.prepareStatement(String.format(
+								INSERT_OR_REPLACE_TEMPLATE, table));
+						for (int i = 0; i < this.columnNumber; i++) {
+							pstmt = buildPreparedStatement(record.getColumn(i),
+									pstmt, i + 1);
+						}
 
-        private PreparedStatement buildPreparedStatement(Column tempColumn,
-                                                         PreparedStatement pstmt, int index) throws Exception {
-            if (tempColumn instanceof StringColumn
-                    || tempColumn instanceof NumberColumn) {
-                pstmt.setString(index, tempColumn.asString());
-            } else if (tempColumn instanceof BytesColumn) {
-                pstmt.setBytes(index, tempColumn.asBytes());
-            } else if (tempColumn instanceof DateColumn) {
-                pstmt.setObject(index, tempColumn.asDate());
-            } else if (tempColumn instanceof BoolColumn) {
-                pstmt.setBoolean(index, tempColumn.asBoolean());
-            }
-            return pstmt;
-        }
+						pstmt.execute();
+						pstmt.close();
+					} catch (Exception e) {
+						if (IS_DEBUG) {
+							LOG.debug(e.toString());
+						}
 
-    }
+						this.getSlavePluginCollector().collectDirtyRecord(
+								record, e);
+					} finally {
+						DBUtil.closeDBResources(pstmt, null);
+					}
+				}
+			} catch (Exception e) {
+				throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+			} finally {
+				DBUtil.closeDBResources(pstmt, null);
+				buffer.clear();
+			}
+		}
+
+		private static String SESSION_TEMPLATE = "SET %s=%s;";
+
+		private static void dealSessionConf(Connection conn,
+				Map<String, String> sessionConfs) {
+			Statement stmt;
+			try {
+				stmt = conn.createStatement();
+			} catch (SQLException e) {
+				LOG.error("error while createStatement, {}.", BASIC_MESSAGE);
+				throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+			}
+
+			String sessionSql = null;
+			for (Entry<String, String> entry : sessionConfs.entrySet()) {
+				sessionSql = String.format(SESSION_TEMPLATE, entry.getKey(),
+						entry.getValue());
+
+				LOG.info("execute sql:[{}]", sessionSql);
+				try {
+					DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
+				} catch (SQLException e) {
+					LOG.error("execute sql:[{}] failed, {}.", sessionSql,
+							BASIC_MESSAGE);
+					throw new DataXException(
+							MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+				}
+			}
+
+			DBUtil.closeDBResources(stmt, null);
+		}
+
+		private PreparedStatement buildPreparedStatement(Column tempColumn,
+				PreparedStatement pstmt, int index) throws Exception {
+			if (tempColumn instanceof StringColumn
+					|| tempColumn instanceof LongColumn
+					|| tempColumn instanceof DoubleColumn) {
+				pstmt.setString(index, tempColumn.asString());
+			} else if (tempColumn instanceof BytesColumn) {
+				pstmt.setBytes(index, tempColumn.asBytes());
+			} else if (tempColumn instanceof DateColumn) {
+				pstmt.setObject(index, tempColumn.asDate());
+			} else if (tempColumn instanceof BoolColumn) {
+				pstmt.setBoolean(index, tempColumn.asBoolean());
+			}
+			return pstmt;
+		}
+
+	}
 
 }

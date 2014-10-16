@@ -30,15 +30,10 @@ public final class ColumnCast {
 	}
 
 	public static void bind(final Configuration configuration) {
-		NumberCast.init(configuration);
 		StringCast.init(configuration);
 		DateCast.init(configuration);
 		BoolCast.init(configuration);
 		BytesCast.init(configuration);
-	}
-
-	public static Boolean number2Bool(final NumberColumn column) {
-		return NumberCast.asBool(column);
 	}
 
 	public static Date string2Date(final StringColumn column) {
@@ -67,36 +62,6 @@ public final class ColumnCast {
 
 	public static String bytes2String(final BytesColumn column) {
 		return BytesCast.asString(column);
-	}
-}
-
-final class NumberCast {
-	static Map<String, Boolean> Number2Bool = new HashMap<String, Boolean>();
-	static {
-		Number2Bool.put("0", false);
-		Number2Bool.put("!0", true);
-	}
-
-	static void init(final Configuration configuration) {
-		Map<String, Boolean> mapping = configuration.getMap(
-				"data.column.number.bool", Boolean.class);
-		Number2Bool.putAll(mapping);
-		return;
-	}
-
-	static Boolean asBool(final NumberColumn number) {
-		String s = number.asString();
-		if (null == s) {
-			return null;
-		}
-
-		s = s.toLowerCase();
-		if (Number2Bool.containsKey(s)) {
-			return Number2Bool.get(s);
-		}
-
-		String key = ColumnCast.findKeyPositive(Number2Bool);
-		return !Number2Bool.get(key);
 	}
 }
 

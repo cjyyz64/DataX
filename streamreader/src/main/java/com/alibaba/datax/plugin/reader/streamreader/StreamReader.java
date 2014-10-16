@@ -13,7 +13,8 @@ import com.alibaba.datax.common.element.BoolColumn;
 import com.alibaba.datax.common.element.BytesColumn;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
@@ -145,6 +146,7 @@ public class StreamReader extends Reader {
 			LOG.debug("destroy()");
 		}
 
+		// TODO: columnValue 只能以字符串的形式出现，不可能出现Long类型
 		private Column generateColumn(Configuration columnConfig) {
 			String columnType = columnConfig.getString(Key.TYPE);
 			Object columnValue = columnConfig.get(Key.VALUE);
@@ -152,13 +154,13 @@ public class StreamReader extends Reader {
 					|| "char".equalsIgnoreCase(columnType)) {
 				return new StringColumn((String) columnValue);
 			} else if ("long".equalsIgnoreCase(columnType)) {
-				return new NumberColumn((Long) columnValue);
+				return new LongColumn((Long) columnValue);
 			} else if ("int".equalsIgnoreCase(columnType)) {
-				return new NumberColumn((Integer) columnValue);
+				return new LongColumn((Integer) columnValue);
 			} else if ("float".equalsIgnoreCase(columnType)) {
-				return new NumberColumn((Float) columnValue);
+				return new DoubleColumn((Float) columnValue);
 			} else if ("double".equalsIgnoreCase(columnType)) {
-				return new NumberColumn((Double) columnValue);
+				return new DoubleColumn((Double) columnValue);
 			} else if ("bool".equalsIgnoreCase(columnType)) {
 				return new BoolColumn((Boolean) columnValue);
 			} else if ("date".equalsIgnoreCase(columnType)) {

@@ -1,5 +1,7 @@
 package com.alibaba.datax.common.element;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
@@ -29,7 +31,7 @@ public class BoolColumn extends Column {
 
 	@Override
 	public Long asLong() {
-		if (null == this.asBoolean()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
@@ -38,7 +40,7 @@ public class BoolColumn extends Column {
 
 	@Override
 	public Double asDouble() {
-		if (null == this.asBoolean()) {
+		if (null == this.getRawData()) {
 			return null;
 		}
 
@@ -48,6 +50,24 @@ public class BoolColumn extends Column {
 	@Override
 	public String asString() {
 		return ColumnCast.bool2String(this);
+	}
+
+	@Override
+	public BigInteger asBigInteger() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		return BigInteger.valueOf(this.asLong());
+	}
+
+	@Override
+	public BigDecimal asBigDecimal() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		return BigDecimal.valueOf(this.asLong());
 	}
 
 	@Override

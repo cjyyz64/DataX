@@ -10,7 +10,7 @@ public class RecordProducer {
 
 		try {
 			Record record = new DefaultRecord();
-			record.addColumn(ColumnProducer.produceNumberColumn(1));
+			record.addColumn(ColumnProducer.produceLongColumn(1));
 			record.addColumn(ColumnProducer.produceStringColumn("bazhen"));
 			record.addColumn(ColumnProducer.produceBoolColumn(true));
 			record.addColumn(ColumnProducer.produceDateColumn(System

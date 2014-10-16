@@ -85,7 +85,7 @@ public class RangeSplit {
 			final BigInteger end, final BigInteger step, int count) {
 		List<BigInteger> result = new ArrayList<BigInteger>();
 
-		for (BigInteger start = BigInteger.valueOf(begin.longValue()); start
+		for (BigInteger start = new BigInteger(begin.toString()); start
 				.compareTo(end) <= 0 && count-- >= 0; start = start.add(step)) {
 			result.add(start);
 		}
