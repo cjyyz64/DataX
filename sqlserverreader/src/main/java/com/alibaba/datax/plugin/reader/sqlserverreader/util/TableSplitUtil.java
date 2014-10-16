@@ -136,7 +136,7 @@ public class TableSplitUtil {
         List<String> rangeList = null;
         if (isStringType) {
             rangeList = RangeSplitUtil.splitAndWrap(String.valueOf(minMaxPK.getLeft()), String.valueOf(minMaxPK.getRight()),
-                    adviceNum, splitPkName, "'", DataBaseType.Oracle);
+                    adviceNum, splitPkName, "'", DataBaseType.SQLServer);
         } else {
             rangeList = RangeSplitUtil.splitAndWrap(Long.parseLong(minMaxPK.getLeft().toString()),
                     Long.parseLong(minMaxPK.getRight().toString()), adviceNum, splitPkName);
