@@ -1,6 +1,7 @@
 package com.alibaba.datax.common.element;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
@@ -31,16 +32,46 @@ public class StringColumn extends Column {
 	}
 
 	@Override
+	public BigInteger asBigInteger() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		try {
+			return new BigInteger(this.asString());
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"String convert to BigInteger failed, for "
+							+ e.getMessage());
+		}
+	}
+
+	@Override
 	public Long asLong() {
 		if (null == this.getRawData()) {
 			return null;
 		}
 
 		try {
-			return new BigDecimal(this.asString()).longValue();
+			return this.asBigInteger().longValue();
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					"String convert to Long failed, for " + e.getMessage());
+		}
+	}
+
+	@Override
+	public BigDecimal asBigDecimal() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		try {
+			return new BigDecimal(this.asString());
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"String convert to BigDecimal failed, for "
+							+ e.getMessage());
 		}
 	}
 
@@ -50,12 +81,7 @@ public class StringColumn extends Column {
 			return null;
 		}
 
-		try {
-			return new BigDecimal(this.asString()).doubleValue();
-		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"String convert to Double failed, for " + e.getMessage());
-		}
+		return this.asBigDecimal().doubleValue();
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package com.alibaba.datax.common.element;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -39,6 +41,18 @@ public class BytesColumn extends Column {
 	public Long asLong() {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Long .");
+	}
+
+	@Override
+	public BigDecimal asBigDecimal() {
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				"Bytes cannot cast to BigDecimal .");
+	}
+
+	@Override
+	public BigInteger asBigInteger() {
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				"Bytes cannot cast to BigInteger .");
 	}
 
 	@Override

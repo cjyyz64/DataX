@@ -32,9 +32,13 @@ public class TxtFileReader extends Reader {
 				.getLogger(TxtFileReader.Master.class);
 
 		private Configuration readerOriginConfig = null;
+
 		private String path = null;
+
 		private List<String> sourceFiles;
+
 		private Pattern pattern;
+
 		private boolean isRegexPath;
 
 		@Override
@@ -230,9 +234,13 @@ public class TxtFileReader extends Reader {
 				.getLogger(TxtFileReader.Slave.class);
 
 		private Configuration readerSliceConfig;
+
 		private List<Configuration> column;
+
 		private String charset;
+
 		private String fieldDelimiter;
+
 		private List<String> sourceFiles;
 
 		@Override
@@ -275,7 +283,7 @@ public class TxtFileReader extends Reader {
 			LOG.info("start startRead()");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
-				
+
 				try {
 					this.readFromFile(fileName, recordSender);
 					recordSender.flush();
@@ -399,13 +407,13 @@ public class TxtFileReader extends Reader {
 						|| "char".equalsIgnoreCase(columnType)) {
 					return new StringColumn(columnValue);
 				} else if ("long".equalsIgnoreCase(columnType)) {
-					return new NumberColumn(Long.parseLong(columnValue));
+					return new LongColumn(Long.parseLong(columnValue));
 				} else if ("int".equalsIgnoreCase(columnType)) {
-					return new NumberColumn(Integer.parseInt(columnValue));
+					return new LongColumn(Integer.parseInt(columnValue));
 				} else if ("float".equalsIgnoreCase(columnType)) {
-					return new NumberColumn(Float.parseFloat(columnValue));
+					return new DoubleColumn(Float.parseFloat(columnValue));
 				} else if ("double".equalsIgnoreCase(columnType)) {
-					return new NumberColumn(Double.parseDouble(columnValue));
+					return new DoubleColumn(Double.parseDouble(columnValue));
 				} else if ("bool".equalsIgnoreCase(columnType)) {
 					return new BoolColumn(Boolean.parseBoolean(columnValue));
 				} else if ("date".equalsIgnoreCase(columnType)) {

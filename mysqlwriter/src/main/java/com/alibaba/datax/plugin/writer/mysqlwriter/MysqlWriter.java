@@ -72,6 +72,7 @@ public class MysqlWriter extends Writer {
         private final static boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration writerSliceConfig;
+
         private String username;
         private String password;
         private String jdbcUrl;
@@ -79,9 +80,7 @@ public class MysqlWriter extends Writer {
         private List<String> preSqls;
         private List<String> postSqls;
         private int batchSize;
-
         private Connection conn;
-
         private int columnNumber = 0;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
@@ -100,11 +99,14 @@ public class MysqlWriter extends Writer {
             this.columnNumber = this.writerSliceConfig
                     .getInt(Constant.COLUMN_NUMBER_MARK);
 
-            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
-            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
+            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL,
+                    String.class);
+            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL,
+                    String.class);
             this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
 
-            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username, password);
+            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
 
             INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
                     .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
@@ -269,7 +271,8 @@ public class MysqlWriter extends Writer {
         private PreparedStatement buildPreparedStatement(Column tempColumn,
                                                          PreparedStatement pstmt, int index) throws Exception {
             if (tempColumn instanceof StringColumn
-                    || tempColumn instanceof NumberColumn) {
+                    || tempColumn instanceof LongColumn
+                    || tempColumn instanceof DoubleColumn) {
                 pstmt.setString(index, tempColumn.asString());
             } else if (tempColumn instanceof BytesColumn) {
                 pstmt.setBytes(index, tempColumn.asBytes());

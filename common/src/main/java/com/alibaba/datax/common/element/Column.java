@@ -1,5 +1,7 @@
 package com.alibaba.datax.common.element;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 import com.alibaba.fastjson.JSON;
@@ -59,12 +61,16 @@ public abstract class Column {
 
 	public abstract Boolean asBoolean();
 
+	public abstract BigDecimal asBigDecimal();
+
+	public abstract BigInteger asBigInteger();
+
 	@Override
 	public String toString() {
 		return JSON.toJSONString(this);
 	}
 
 	public enum Type {
-		NULL, STRING, NUMBER, BOOL, DATE, BYTES
+		NULL, STRING, LONG, DOUBLE, BOOL, DATE, BYTES, NUMBER
 	}
 }

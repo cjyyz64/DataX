@@ -1,6 +1,26 @@
 package com.alibaba.datax.plugin.reader.sqlserverreader;
 
+<<<<<<< HEAD
 import com.alibaba.datax.common.element.*;
+=======
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
+>>>>>>> 13de4399a087463ea60bc5384d52025e0605e742
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -65,11 +85,12 @@ public class SqlServerReader {
 		private Configuration readerSliceConfig;
 
 		private String jdbcUrl;
-		private String username;
-		private String password;
-		private int fetchSize;
 
-		private String _basicMessage;
+		private String username;
+
+		private String password;
+
+		private int fetchSize;
 
 		@Override
 		public void init() {
@@ -82,7 +103,6 @@ public class SqlServerReader {
 
 			this.fetchSize = this.readerSliceConfig.getInt(Key.FETCH_SIZE);
 
-			this._basicMessage = String.format("jdbcUrl: [%s]", this.jdbcUrl);
 		}
 
 		@Override
@@ -160,19 +180,19 @@ public class SqlServerReader {
 					case Types.TINYINT:
 					case Types.SMALLINT:
 					case Types.INTEGER:
-						record.addColumn(new NumberColumn(rs.getInt(i)));
-						break;
-
 					case Types.BIGINT:
-					case Types.NUMERIC:
-						record.addColumn(new NumberColumn(rs.getLong(i)));
+						record.addColumn(new LongColumn(rs.getInt(i)));
 						break;
 
+					case Types.NUMERIC:
 					case Types.DECIMAL:
+						record.addColumn(new DoubleColumn(rs.getString(i)));
+						break;
+
 					case Types.FLOAT:
 					case Types.REAL:
 					case Types.DOUBLE:
-						record.addColumn(new NumberColumn(rs.getDouble(i)));
+						record.addColumn(new DoubleColumn(rs.getDouble(i)));
 						break;
 
 					case Types.DATE:

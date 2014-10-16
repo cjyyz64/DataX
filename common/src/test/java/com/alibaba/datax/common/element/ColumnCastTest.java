@@ -13,29 +13,9 @@ public class ColumnCastTest {
 	private Configuration produce() throws IOException {
 		String path = ColumnCastTest.class.getClassLoader().getResource(".")
 				.getFile();
-		String content = FileUtils.readFileToString(new File(StringUtils.join(new String[] {
-				path, "all.json" }, File.separator)));
+		String content = FileUtils.readFileToString(new File(StringUtils.join(
+				new String[] { path, "all.json" }, File.separator)));
 		return Configuration.from(content);
-	}
-
-	@Test
-	public void test_number() throws IOException {
-		Configuration configuration = this.produce();
-		Assert.assertTrue(NumberCast.asBool(new NumberColumn(1L)));
-		Assert.assertTrue(NumberCast.asBool(new NumberColumn(Long.MAX_VALUE)));
-		Assert.assertFalse(NumberCast.asBool(new NumberColumn(0L)));
-
-		NumberCast.init(configuration);
-		Assert.assertTrue(NumberCast.asBool(new NumberColumn(1L)));
-		Assert.assertTrue(NumberCast.asBool(new NumberColumn(Long.MAX_VALUE)));
-		Assert.assertFalse(NumberCast.asBool(new NumberColumn(0L)));
-
-		configuration.set("data.column.number.bool.0", true);
-		configuration.set("data.column.number.bool.^0", false);
-		NumberCast.init(configuration);
-		Assert.assertFalse(NumberCast.asBool(new NumberColumn(1L)));
-		Assert.assertFalse(NumberCast.asBool(new NumberColumn(2L)));
-		Assert.assertTrue(NumberCast.asBool(new NumberColumn(0L)));
 	}
 
 	@Test
@@ -106,17 +86,19 @@ public class ColumnCastTest {
 				.equals("true"));
 		Assert.assertTrue(BoolCast.asString(new BoolColumn(false)).equals(
 				"false"));
-		
+
 		Configuration configuration = this.produce();
 		configuration.set("data.column.bool.number.true", Integer.MAX_VALUE);
 		configuration.set("data.column.bool.number.false", Integer.MIN_VALUE);
 		configuration.set("data.column.bool.string.true", "yes");
 		configuration.set("data.column.bool.string.false", "no");
 		BoolCast.init(configuration);
-		
+
 		Assert.assertTrue(BoolCast.asString(new BoolColumn(true)).equals("yes"));
 		Assert.assertTrue(BoolCast.asString(new BoolColumn(false)).equals("no"));
-		Assert.assertTrue(BoolCast.asInteger(new BoolColumn(true)).equals(Integer.MAX_VALUE));
-		Assert.assertTrue(BoolCast.asInteger(new BoolColumn(false)).equals(Integer.MIN_VALUE));
+		Assert.assertTrue(BoolCast.asInteger(new BoolColumn(true)).equals(
+				Integer.MAX_VALUE));
+		Assert.assertTrue(BoolCast.asInteger(new BoolColumn(false)).equals(
+				Integer.MIN_VALUE));
 	}
 }

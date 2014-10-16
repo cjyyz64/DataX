@@ -1,6 +1,21 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
-import com.alibaba.datax.common.element.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.Types;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -10,14 +25,6 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.MysqlReaderSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.OriginalConfPretreatmentUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Types;
-import java.util.List;
 
 public class MysqlReader extends Reader {
 
@@ -64,8 +71,11 @@ public class MysqlReader extends Reader {
                 .getLogger(MysqlReader.Slave.class);
 
         private Configuration readerSliceConfig;
+
         private String username;
+
         private String password;
+
         private String jdbcUrl;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
@@ -76,6 +86,7 @@ public class MysqlReader extends Reader {
             this.readerSliceConfig = getPluginJobConf();
 
 			/* for database connection */
+
             this.username = this.readerSliceConfig.getString(Key.USERNAME);
             this.password = this.readerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = this.readerSliceConfig.getString(Key.JDBC_URL);
@@ -96,9 +107,8 @@ public class MysqlReader extends Reader {
             LOG.info("\nSql [{}] \nTo jdbcUrl:[{}].",
                     null != formattedSql ? formattedSql : querySql, jdbcUrl);
 
-
-            Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl,
-                    username, password);
+            Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username,
+                    password);
 
             int columnNumber = 0;
             ResultSet rs = null;
@@ -113,7 +123,8 @@ public class MysqlReader extends Reader {
 
             } catch (Exception e) {
                 LOG.error("Origin cause:[{}].", e.getMessage());
-                throw new DataXException(MysqlReaderErrorCode.READ_RECORD_FAIL, e);
+                throw new DataXException(MysqlReaderErrorCode.READ_RECORD_FAIL,
+                        e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
@@ -141,19 +152,19 @@ public class MysqlReader extends Reader {
                         case Types.SMALLINT:
                         case Types.TINYINT:
                         case Types.INTEGER:
-                            record.addColumn(new NumberColumn(rs.getInt(i)));
-                            break;
-
                         case Types.BIGINT:
-                        case Types.NUMERIC:
-                            record.addColumn(new NumberColumn(rs.getLong(i)));
+                            record.addColumn(new LongColumn(rs.getLong(i)));
                             break;
 
+                        case Types.NUMERIC:
                         case Types.DECIMAL:
+                            record.addColumn(new DoubleColumn(rs.getString(i)));
+                            break;
+
                         case Types.FLOAT:
                         case Types.REAL:
                         case Types.DOUBLE:
-                            record.addColumn(new NumberColumn(rs.getDouble(i)));
+                            record.addColumn(new DoubleColumn(rs.getDouble(i)));
                             break;
 
                         case Types.TIME:
@@ -207,4 +218,5 @@ public class MysqlReader extends Reader {
         }
 
     }
+
 }

@@ -7,3 +7,7 @@ target
 *.iml
 out/
 hsf/
+.project
+.settings
+.classpath
+.gitignore

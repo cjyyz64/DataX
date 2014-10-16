@@ -4,17 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NumberColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.core.transport.record.DefaultRecord;
-import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
-import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;
-import com.alibaba.datax.test.simulator.junit.extend.log.TestLogger;
 
 @RunWith(LoggedRunner.class)
 public class MysqlWriterTest extends BasicWriterPluginTest {
@@ -43,8 +36,8 @@ public class MysqlWriterTest extends BasicWriterPluginTest {
 		String description = "只是个描述哈";
 		String tddlInfo = "{\"aa:bb\"}";
 
-		r.addColumn(new NumberColumn(dbId));
-		r.addColumn(new NumberColumn(dbType));
+		r.addColumn(new LongColumn(dbId));
+		r.addColumn(new LongColumn(dbType));
 		r.addColumn(new StringColumn(dbIp));
 		r.addColumn(new StringColumn(dbPort));
 		r.addColumn(new StringColumn(dbRole));

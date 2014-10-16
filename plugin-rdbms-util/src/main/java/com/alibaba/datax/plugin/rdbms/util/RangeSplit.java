@@ -1,10 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.lang3.math.NumberUtils;
 
 /**
  * 主要提供对范围的解析
@@ -85,7 +85,7 @@ public class RangeSplit {
 			final BigInteger end, final BigInteger step, int count) {
 		List<BigInteger> result = new ArrayList<BigInteger>();
 
-		for (BigInteger start = BigInteger.valueOf(begin.longValue()); start
+		for (BigInteger start = new BigInteger(begin.toString()); start
 				.compareTo(end) <= 0 && count-- >= 0; start = start.add(step)) {
 			result.add(start);
 		}
