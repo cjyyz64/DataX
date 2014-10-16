@@ -78,8 +78,6 @@ public class SqlServerReader {
 		private String password;
 		private int fetchSize;
 
-		private String _basicMessage;
-
 		@Override
 		public void init() {
 			LOG.info("init()");
@@ -91,7 +89,6 @@ public class SqlServerReader {
 
 			this.fetchSize = this.readerSliceConfig.getInt(Key.FETCH_SIZE);
 
-			this._basicMessage = String.format("jdbcUrl: [%s]", this.jdbcUrl);
 		}
 
 		@Override

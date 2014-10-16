@@ -12,7 +12,7 @@ public enum MysqlReaderErrorCode implements ErrorCode {
     READ_RECORD_FAIL("MysqlReader-14", "failed to read mysql record"),
 
 
-    CONF_ERROR("MysqlReader-00", "username/password not filled"),
+    CONF_ERROR("MysqlReader-00", "username/password not filled"),////////////////////////////////////need to change
     UNKNOWN_ERROR("MysqlReader-01", "todo"),
     NOT_RECOMMENDED("MysqlReader-02", "your config not recommended"),
     TABLE_QUERYSQL_MIXED("MysqlReader-03", "Can not config both table and querySql");

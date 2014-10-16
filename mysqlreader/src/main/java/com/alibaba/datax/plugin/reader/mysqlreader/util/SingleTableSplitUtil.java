@@ -7,6 +7,7 @@ import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
 import com.alibaba.datax.plugin.reader.mysqlreader.Key;
 import com.alibaba.datax.plugin.reader.mysqlreader.MysqlReaderErrorCode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,7 +161,10 @@ public class SingleTableSplitUtil {
                 ret = true;
             }
         } catch (Exception e) {
-            e.printStackTrace();
+        	LOG.error("error when get splitPk type");
+			throw new DataXException(
+					MysqlReaderErrorCode.CONF_ERROR,
+					"error when get splitPk type");
         }
         return ret;
     }
