@@ -1,47 +1,43 @@
 {
-    "content": [
-        {
-            "reader": {
-                "name": "mysqlreader",
-                "parameter": {
-                    "username": "root",
-                    "password": "root",
-                    "column": [
-                        "db_id",
-                        "db_type",
-                        "db_ip",
-                        "db_port",
-                        "db_role",
-                        "db_name",
-                        "db_username",
-                        "db_password",
-                        "db_modify_time",
-                        "db_modify_user",
-                        "db_description",
-                        "db_tddl_info",
-                        "on_line_flag"
-                    ],
-                    "where": "db_id = 2",
-                    "session": {
-                        "character_set_client": "utf8",
-                        "character_set_results": "utf8",
-                        "character_set_connection": "utf8"
-                    },
-                    "connection": [
-                        {
-                            "table": [
-                                "db_info",
-                                "db_info"
-                            ],
-                            "jdbcUrl": [
-                                "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
-                            ]
-                        }
-                    ]
-                }
-            },
-            "writer": {}
-        }
-    ]
-}
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port",
+                            "db_role",
+                            "db_name",
+                            "db_username",
+                            "db_password",
+                            "db_modify_time",
+                            "db_modify_user",
+                            "db_description",
+                            "db_tddl_info",
+                            "on_line_flag"
+                        ],
+                        "where": "db_id = 2",
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info",
+                                    "db_info"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
 }

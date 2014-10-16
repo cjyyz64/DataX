@@ -61,7 +61,7 @@ public abstract class BasicPluginTest {
                     .getConfiguration(CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
         } else {
             throw new DataXException(FrameworkErrorCode.PLUGIN_NOT_FOUND,
-                    "unsupport type:" + pluginType);
+                    "unsupported type:" + pluginType);
         }
 
         classLoaderSwapper.restoreCurrentThreadClassLoader();
@@ -105,7 +105,7 @@ public abstract class BasicPluginTest {
         String targetDir = new File(TESTCLASSES_PATH).getParent();
         if (StringUtils.isBlank(targetDir)) {
             throw new DataXException(FrameworkErrorCode.PLUGIN_NOT_FOUND,
-                    String.format("ge Plugin Dir Failed. testclass_path:[%s].",
+                    String.format("get Plugin Dir Failed. testclass_path:[%s].",
                             TESTCLASSES_PATH));
         }
 

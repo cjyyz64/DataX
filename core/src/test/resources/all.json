@@ -143,8 +143,8 @@
                 "byte": 104857600
             },
             "errorLimit": {
-                "record": 0,
-                "percentage": 0.02
+                "record": null,
+                "percentage": null
             }
         },
         "content": [

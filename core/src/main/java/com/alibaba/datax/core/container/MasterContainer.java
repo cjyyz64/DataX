@@ -72,8 +72,7 @@ public class MasterContainer extends AbstractContainer {
 	public MasterContainer(Configuration configuration) {
 		super(configuration);
 		super.setContainerCollector(ClassUtil.instantiate(
-				configuration
-						.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
+				configuration.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
 				AbstractContainerCollector.class, configuration));
         errorLimit = new ErrorRecordLimit(configuration);
 	}

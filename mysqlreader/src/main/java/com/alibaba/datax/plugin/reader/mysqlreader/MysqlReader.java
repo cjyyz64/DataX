@@ -3,12 +3,8 @@ package com.alibaba.datax.plugin.reader.mysqlreader;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,12 +85,9 @@ public class MysqlReader extends Reader {
 			this.readerSliceConfig = getPluginJobConf();
 
 			/* for database connection */
-			this.username = this.readerSliceConfig.getNecessaryValue(
-					Key.USERNAME, MysqlReaderErrorCode.REQUIRED_VALUE);
-			this.password = this.readerSliceConfig.getNecessaryValue(
-					Key.PASSWORD, MysqlReaderErrorCode.REQUIRED_VALUE);
-			this.jdbcUrl = this.readerSliceConfig.getNecessaryValue(
-					Key.JDBC_URL, MysqlReaderErrorCode.REQUIRED_VALUE);
+			this.username = this.readerSliceConfig.getString(Key.USERNAME);
+			this.password = this.readerSliceConfig.getString(Key.PASSWORD);
+			this.jdbcUrl = this.readerSliceConfig.getString(Key.JDBC_URL);
 
 			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
 		}
@@ -112,15 +105,11 @@ public class MysqlReader extends Reader {
 			LOG.info("\nSql [{}] \nTo jdbcUrl:[{}].",
 					null != formattedSql ? formattedSql : querySql, jdbcUrl);
 
-			ResultSet rs = null;
-
-			int columnNumber = 0;
 			Connection conn = DBUtil.getConnection("mysql", jdbcUrl, username,
 					password);
 
-			dealSessionConf(conn,
-					this.readerSliceConfig.getMap(Key.SESSION, String.class));
-
+			int columnNumber = 0;
+			ResultSet rs = null;
 			try {
 				rs = DBUtil.query(conn, querySql, Integer.MIN_VALUE);
 				ResultSetMetaData metaData = rs.getMetaData();
@@ -137,49 +126,6 @@ public class MysqlReader extends Reader {
 			} finally {
 				DBUtil.closeDBResources(null, conn);
 			}
-		}
-
-		private static String SESSION_TEMPLATE = "SET %s=%s;";
-
-		private static void dealSessionConf(Connection conn,
-				Map<String, String> sessionConfs) {
-
-			boolean hasNoSessionConfs = (null == sessionConfs || sessionConfs
-					.isEmpty());
-			if (hasNoSessionConfs) {
-				return;
-			}
-
-			Statement stmt;
-			try {
-				stmt = conn.createStatement();
-			} catch (SQLException e) {
-				LOG.error(
-						"Origin cause:[%s], failed to createStatement, from:[{}].",
-						e.getMessage(), BASIC_MESSAGE);
-				throw new DataXException(MysqlReaderErrorCode.SQL_EXECUTE_FAIL,
-						e);
-			}
-
-			String sessionSql = null;
-			for (Entry<String, String> entry : sessionConfs.entrySet()) {
-				sessionSql = String.format(SESSION_TEMPLATE, entry.getKey(),
-						entry.getValue());
-
-				LOG.info("execute sql:[{}], from:[{}].", sessionSql,
-						BASIC_MESSAGE);
-				try {
-					DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
-				} catch (SQLException e) {
-					LOG.error(String
-							.format("Origin cause:[%s], failed to execute sql:[%s], from:[%s].",
-									e.getMessage(), sessionSql, BASIC_MESSAGE));
-					throw new DataXException(
-							MysqlReaderErrorCode.SQL_EXECUTE_FAIL, e);
-				}
-			}
-
-			DBUtil.closeDBResources(stmt, null);
 		}
 
 		private void transportOneRecord(RecordSender recordSender,
@@ -204,19 +150,19 @@ public class MysqlReader extends Reader {
 					case Types.SMALLINT:
 					case Types.TINYINT:
 					case Types.INTEGER:
-						record.addColumn(new LongColumn(rs.getString(i)));
-						break;
-
 					case Types.BIGINT:
-					case Types.NUMERIC:
-						record.addColumn(new LongColumn(rs.getString(i)));
+						record.addColumn(new LongColumn(rs.getLong(i)));
 						break;
 
+					case Types.NUMERIC:
 					case Types.DECIMAL:
+						record.addColumn(new DoubleColumn(rs.getString(i)));
+						break;
+
 					case Types.FLOAT:
 					case Types.REAL:
 					case Types.DOUBLE:
-						record.addColumn(new DoubleColumn(rs.getString(i)));
+						record.addColumn(new DoubleColumn(rs.getDouble(i)));
 						break;
 
 					case Types.TIME:

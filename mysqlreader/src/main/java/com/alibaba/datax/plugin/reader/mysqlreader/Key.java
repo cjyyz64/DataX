@@ -21,5 +21,5 @@ public final class Key {
 
     public final static String QUERY_SQL = "querySql";
 
-    public final static String PRE_CHECK_SQL = "preCheckSql";
+    public final static String PRE_SQL = "preSql";
 }
