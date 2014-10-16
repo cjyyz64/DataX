@@ -31,7 +31,9 @@ public class SingleTableSplitUtil {
 
     public static List<Configuration> splitSingleTable(Configuration plugin,
                                                        int adviceNum) {
-        Pair<Object, Object> minMaxPK = getPKRange(plugin);
+    	List<Configuration> pluginParams = new ArrayList<Configuration>();
+    	
+    	Pair<Object, Object> minMaxPK = getPKRange(plugin);
 
         String splitPkName = plugin.getString(Key.SPLIT_PK);
         String column = plugin.getString(Key.COLUMN);
@@ -42,6 +44,15 @@ public class SingleTableSplitUtil {
 
         boolean isStringType = Constant.PK_TYPE_STRING.equals(plugin.getString(Constant.PK_TYPE));
         boolean isLongType = Constant.PK_TYPE_LONG.equals(plugin.getString(Constant.PK_TYPE));
+        
+        
+        if(null == minMaxPK.getLeft()){
+        	pluginParams.add(plugin);
+        	return pluginParams;
+        }
+        
+        
+        
         List<String> rangeList = null;
         if (isStringType) {
             rangeList = RangeSplitUtil.splitAndWrap(String.valueOf(minMaxPK.getLeft()), String.valueOf(minMaxPK.getRight()),
@@ -54,7 +65,7 @@ public class SingleTableSplitUtil {
             //error
         }
 
-        List<Configuration> pluginParams = new ArrayList<Configuration>();
+        
 
         String tempQuerySql = null;
         if (null != rangeList) {

@@ -127,11 +127,18 @@ public class TableSplitUtil {
         String where = plugin.getString(Key.WHERE, null);
         boolean hasWhere = StringUtils.isNotBlank(where);
 
+        if(null == minMaxPK.getLeft()){
+        	pluginParams.add(plugin);
+        	return pluginParams;
+        }
+        
+        
+        
         boolean isStringType = false;
         if (minMaxPK.getLeft() instanceof String) {
             isStringType = true;
         }
-
+        
         // warn : no need to see if minMaxPK.length is 2 now
         List<String> rangeList = null;
         if (isStringType) {
