@@ -75,8 +75,11 @@ public class SqlServerReader {
 		private Configuration readerSliceConfig;
 
 		private String jdbcUrl;
+
 		private String username;
+
 		private String password;
+
 		private int fetchSize;
 
 		@Override
@@ -167,15 +170,15 @@ public class SqlServerReader {
 					case Types.TINYINT:
 					case Types.SMALLINT:
 					case Types.INTEGER:
+					case Types.BIGINT:
 						record.addColumn(new LongColumn(rs.getInt(i)));
 						break;
 
-					case Types.BIGINT:
 					case Types.NUMERIC:
-						record.addColumn(new LongColumn(rs.getLong(i)));
+					case Types.DECIMAL:
+						record.addColumn(new DoubleColumn(rs.getString(i)));
 						break;
 
-					case Types.DECIMAL:
 					case Types.FLOAT:
 					case Types.REAL:
 					case Types.DOUBLE:
