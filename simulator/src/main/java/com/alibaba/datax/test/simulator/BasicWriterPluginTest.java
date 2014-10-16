@@ -99,7 +99,6 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
             /**
              * 设置slavePlugin的collector，用来处理脏数据和master/slave通信
              */
-            writerRunner.setSlavePluginCollector();
 //            writerRunner.setSlavePluginCollector(ClassUtil.instantiate(
 //                    slaveCollectorClass, AbstractSlavePluginCollector.class,
 //                    configuration, this.channel.getChannelMetric(),
