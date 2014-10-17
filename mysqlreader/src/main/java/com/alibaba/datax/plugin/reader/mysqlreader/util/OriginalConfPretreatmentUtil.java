@@ -64,8 +64,10 @@ public final class OriginalConfPretreatmentUtil {
             connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.REQUIRED_VALUE);
 
             List<String> jdbcUrls = connConf.getList(Key.JDBC_URL, String.class);
+            List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
-            String jdbcUrl = chooseJdbcUrl(jdbcUrls, username, password);
+
+            String jdbcUrl = chooseJdbcUrl(DataBaseType.MySql, jdbcUrls, username, password, preSql);
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
@@ -258,22 +260,43 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     //TODO： 添加多 presql 的校验
-    private static String chooseJdbcUrl(List<String> jdbcUrls, String username,
-                                        String password) {
+    private static String chooseJdbcUrl(DataBaseType dataBaseType, List<String> jdbcUrls, String username,
+                                        String password, List<String> preSql) {
+        if (null == jdbcUrls || jdbcUrls.isEmpty()) {
+            throw new DataXException(null, "jdbcURL can not be blank.");
+        }
+
         Connection conn = null;
-        for (String jdbcUrl : jdbcUrls) {
-            // TODO 需要修改其逻辑，不要直接报错
-            try {
-                conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-            } catch (Exception e) {
-                LOG.warn("jdbcUrl:[{}] not available.", jdbcUrl);
+        boolean connOK = false;
+        int maxTryTime = 3;
+        for (int tryTime = 0; tryTime < maxTryTime; tryTime++) {
+            for (String url : jdbcUrls) {
+                if (StringUtils.isNotBlank(url)) {
+                    url = url.trim();
+                    if (null != preSql && !preSql.isEmpty()) {
+                        connOK = DBUtil.testConnWithoutRetry(dataBaseType, url,
+                                username, password, preSql);
+                    } else {
+                        connOK = DBUtil.testConnWithoutRetry(dataBaseType, url,
+                                username, password);
+                    }
+                    if (connOK) {
+                        return url;
+                    }
+                }
             }
-            if (null != conn) {
-                return jdbcUrl;
+
+            // 指数时间等待，重试
+            if (tryTime < maxTryTime - 1) {
+                // 最后一次，不用sleep
+                try {
+                    Thread.sleep(1000L * (long) Math.pow(2, tryTime));
+                } catch (InterruptedException unused) {
+                }
             }
         }
 
-        throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, String.format(
-                "no available jdbc from:[%s].", jdbcUrls));
+        throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, "no available jdbcURL from : "
+                + jdbcUrls.toString());
     }
 }
