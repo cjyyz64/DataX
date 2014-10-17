@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,17 +18,6 @@ public final class DBUtil {
 
     private static final int MAX_TRY_TIMES = 4;
 
-    private static String getDriverClassName(DataBaseType dataBaseType) {
-        String driverClassName = dataBaseType.getDriverClassName();
-
-        if (!StringUtils.isBlank(driverClassName)) {
-            return driverClassName;
-        }
-
-        throw new IllegalArgumentException(String.format(
-                "Driver type [%s] not registered .", dataBaseType.getTypeName()));
-    }
-
     /**
      * Get direct JDBC connection
      * <p/>
@@ -42,8 +30,7 @@ public final class DBUtil {
         Exception saveException = null;
         for (int tryTime = 0; tryTime < MAX_TRY_TIMES; tryTime++) {
             try {
-                Connection connection = DBUtil.connect(
-                        DBUtil.getDriverClassName(dataBaseType), jdbcUrl, username, password);
+                Connection connection = DBUtil.connect(dataBaseType, jdbcUrl, username, password);
                 if (null != connection) {
                     return connection;
                 }
@@ -69,11 +56,10 @@ public final class DBUtil {
         throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, saveException);
     }
 
-    private static synchronized Connection connect(
-            final String driverClassName, final String url, final String user,
-            final String pass) {
+    private static synchronized Connection connect(DataBaseType dataBaseType, String url, String user,
+                                                   String pass) {
         try {
-            Class.forName(driverClassName);
+            Class.forName(dataBaseType.getDriverClassName());
             DriverManager.setLoginTimeout(TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
@@ -227,5 +213,73 @@ public final class DBUtil {
         int jdbcUrlEndIndex = -1 == tempEndIndex ? jdbcUrl.length()
                 : tempEndIndex;
         return jdbcUrl.substring(jdbcUrlBeginIndex, jdbcUrlEndIndex);
+    }
+
+
+    public static boolean testConnWithoutRetry(DataBaseType dataBaseType, String url, String user, String pass) {
+        try {
+            Connection connection = connect(dataBaseType, url, user, pass);
+            if (null != connection) {
+                return true;
+            }
+        } catch (Exception e) {
+            LOG.warn("test connection of [{}] failed, for {}.", url,
+                    e.getMessage());
+        }
+
+        return false;
+    }
+
+    public static boolean testConnWithoutRetry(DataBaseType dataBaseType, String url, String user,
+                                               String pass, List<String> preSql) {
+        try {
+            Connection connection = connect(dataBaseType, url, user, pass);
+            if (null != connection) {
+                for (String pre : preSql) {
+                    if (doPreCheck(connection, pre) == false) {
+                        LOG.warn("doPreCheck failed.");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        } catch (Exception e) {
+            LOG.warn("test connection of [{}] failed, for {}.", url,
+                    e.getMessage());
+        }
+
+        return false;
+    }
+
+    public static ResultSet query(Connection conn, String sql)
+            throws SQLException {
+        Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                ResultSet.CONCUR_READ_ONLY);
+        return query(stmt, sql);
+    }
+
+    private static boolean doPreCheck(Connection conn, String pre) {
+        try {
+            ResultSet rs = query(conn, pre);
+
+            int checkResult = -1;
+            if (rs.next()) {
+                checkResult = rs.getInt(1);
+                if (rs.next()) {
+                    LOG.warn("pre check failed. It should return one result:0, pre:[{}].", pre);
+                    return false;
+                }
+
+            }
+
+            if (0 == checkResult) {
+                return true;
+            }
+
+            LOG.warn("pre check failed. It should return one result:0, pre:[{}].", pre);
+        } catch (Exception e) {
+            LOG.warn("pre check failed. pre:[{}], errorMessage:[{}].", pre, e.getMessage());
+        }
+        return false;
     }
 }
