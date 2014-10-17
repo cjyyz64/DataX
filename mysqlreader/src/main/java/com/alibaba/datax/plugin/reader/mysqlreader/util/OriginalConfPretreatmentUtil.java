@@ -61,7 +61,7 @@ public final class OriginalConfPretreatmentUtil {
         for (int i = 0, len = conns.size(); i < len; i++) {
             Configuration connConf = Configuration.from(conns.get(i).toString());
 
-            connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.CONF_ERROR);
+            connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.REQUIRED_VALUE);
 
             List<String> jdbcUrls = connConf.getList(Key.JDBC_URL, String.class);
 
@@ -80,8 +80,8 @@ public final class OriginalConfPretreatmentUtil {
                         .expandTableConf(tables);
 
                 if (null == expandedTables || expandedTables.isEmpty()) {
-                    throw new DataXException(MysqlReaderErrorCode.CONF_ERROR,
-                            "read table configred error.");
+                    throw new DataXException(MysqlReaderErrorCode.ILLEGAL_VALUE,
+                            "read table configured error.");
                 }
 
                 tableNum += expandedTables.size();
@@ -139,7 +139,7 @@ public final class OriginalConfPretreatmentUtil {
                 for (String column : columns) {
                     if ("*".equals(column)) {
                         throw new DataXException(
-                                MysqlReaderErrorCode.CONF_ERROR,
+                                MysqlReaderErrorCode.ILLEGAL_VALUE,
                                 "no column named[*].");
                     }
 
