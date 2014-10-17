@@ -38,7 +38,7 @@ public class StringColumn extends Column {
 		}
 
 		try {
-			return new BigInteger(this.asString());
+			return this.asBigDecimal().toBigInteger();
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					"String convert to BigInteger failed, for "

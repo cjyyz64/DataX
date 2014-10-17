@@ -96,7 +96,7 @@ public class LongColumn extends Column {
 			return null;
 		}
 
-		return (double) (long) this.asLong();
+		return this.asBigDecimal().doubleValue();
 	}
 
 	@Override
