@@ -221,7 +221,7 @@ public class TableSplitUtil {
 			if (isPKTypeValid(rsMetaData)) {
 				while (rs.next()) {
 					minMaxPK = new ImmutablePair<Object, Object>(
-							rs.getString(1), rs.getString(2));
+							rs.getObject(1), rs.getObject(2));
 				}
 			} else {
 				LOG.warn("pk type not long or string. split single table failed, use no-split strategy.");
