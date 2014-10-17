@@ -77,7 +77,7 @@ def get_option_parser():
     parser.add_option('-d', '--delete', action="store_true", dest="delete", help='delete tmp job config file.')
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
-    op.add_option('-D', '--remotedebug', default="", help='use remote debug mode.')
+    parser.add_option('-D', '--remotedebug', default="", help='use remote debug mode.')
 
 
     return parser
