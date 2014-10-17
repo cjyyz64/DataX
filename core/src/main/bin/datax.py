@@ -29,6 +29,7 @@ import json
 import signal
 import subprocess
 import urllib2
+import socket
 from optparse import OptionParser
 from string import Template
 
@@ -51,6 +52,7 @@ YUNTI_JAVA_HOME = r"/home/yunti/java-current"
 TAOBAO_JAVA_HOME = r"/opt/taobao/java"
 ENGINE_COMMAND = "${JAVA_HOME}/bin/java -server ${jvm} -Ddatax.home=%s -classpath %s/lib/*:. ${params} com.alibaba.datax.core.Engine -job ${job}"%(DATAX_HOME, DATAX_HOME)
 
+DEBUG_JVM = "-Xms1024m -Xmx1024m  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/logs"%(DATAX_HOME)
 child_process = None
 
 ########## 函数 #############
@@ -62,12 +64,17 @@ def show_usage():
     print get_usage()
     sys.stdout.flush()
 
+def get_ip():
+    return socket.gethostbyname(socket.getfqdn(socket.gethostname()))
+
 def get_option_parser():
     parser = OptionParser(usage = get_usage())
     parser.add_option('-g', '--gen', action="store_true", dest="gen", help='generate job config file.')
     parser.add_option('-d', '--delete', action="store_true", dest="delete", help='delete tmp job config file.')
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
+    op.add_option('-rd', '--remotedebug', default="", help='use remote debug mode.')
+
 
     return parser
 
@@ -291,6 +298,13 @@ if __name__ == "__main__":
     options, args = get_option_parser().parse_args(sys.argv[1:])
     # 生成运行上文配置
     run_context = get_run_context(options)
+
+    # 判断是否为远程调试模式
+    if options.remotedebug:
+       import socket
+       DEFAULT_JVM = DEBUG_JVM
+       print 'ip: ',get_ip()
+
 
     # 没有给job参数，直接返回使用说明
     if len(args) == 0:
