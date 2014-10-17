@@ -67,14 +67,15 @@ public class MasterContainer extends AbstractContainer {
 
 	private int needChannelNumber;
 
-    private ErrorRecordLimit errorLimit;
+	private ErrorRecordLimit errorLimit;
 
 	public MasterContainer(Configuration configuration) {
 		super(configuration);
 		super.setContainerCollector(ClassUtil.instantiate(
-				configuration.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
+				configuration
+						.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
 				AbstractContainerCollector.class, configuration));
-        errorLimit = new ErrorRecordLimit(configuration);
+		errorLimit = new ErrorRecordLimit(configuration);
 	}
 
 	/**
@@ -193,9 +194,13 @@ public class MasterContainer extends AbstractContainer {
 			long globalLimitedSpeed = this.configuration
 					.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE,
 							10 * 1024 * 1024);
-			long channelLimitedSpeed = this.configuration.getInt(
+
+			// 在byte流控情况下，单个Channel流量最大值必须设置，否则报错！
+			this.configuration.getNecessaryValue(
 					CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
-					1024 * 1024);
+					FrameworkErrorCode.CONFIG_ERROR);
+			long channelLimitedSpeed = this.configuration
+					.getInt(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
 
 			this.needChannelNumber = (int) (globalLimitedSpeed / channelLimitedSpeed);
 
@@ -317,7 +322,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * reader master的初始化，返回Reader.Master
-	 *
+	 * 
 	 * @return
 	 */
 	private Reader.Master initReaderMaster(
@@ -343,7 +348,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * writer master的初始化，返回Writer.Master
-	 *
+	 * 
 	 * @return
 	 */
 	private Writer.Master initWriterMaster(
@@ -420,7 +425,7 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * 按顺序整合reader和writer的配置，这里的顺序不能乱！ 输入是reader、writer级别的配置，输出是一个完整slice的配置
-	 *
+	 * 
 	 * @param readerSlicesConfigs
 	 * @param writerSlicesConfigs
 	 * @return
@@ -472,7 +477,7 @@ public class MasterContainer extends AbstractContainer {
 	 * 处理：我们先将这负责4个channel的slaveContainer处理掉，逻辑是：
 	 * 先按平均为3个slices找4个channel，设置subJobId为0，
 	 * 接下来就像发牌一样轮询分配slice到剩下的包含平均channel数的slice中
-	 *
+	 * 
 	 * @param averSlicesPerChannel
 	 * @param channelNumber
 	 * @param channelsPerSlaveContainer
@@ -600,12 +605,12 @@ public class MasterContainer extends AbstractContainer {
 
 	/**
 	 * 检查最终结果是否超出阈值，如果阈值设定小于1，则表示百分数阈值，大于1表示条数阈值。
-	 *
+	 * 
 	 * @param
 	 */
 	private void checkLimit() {
 		Metric masterMetric = super.getContainerCollector().collect();
-        errorLimit.checkRecordLimit(masterMetric);
-        errorLimit.checkPercentageLimit(masterMetric);
+		errorLimit.checkRecordLimit(masterMetric);
+		errorLimit.checkPercentageLimit(masterMetric);
 	}
 }
