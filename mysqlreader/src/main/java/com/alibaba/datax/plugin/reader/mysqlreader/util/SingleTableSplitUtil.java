@@ -29,30 +29,33 @@ public class SingleTableSplitUtil {
     private SingleTableSplitUtil() {
     }
 
-    public static List<Configuration> splitSingleTable(Configuration plugin,
+    public static List<Configuration> splitSingleTable(Configuration configuration,
                                                        int adviceNum) {
         List<Configuration> pluginParams = new ArrayList<Configuration>();
 
-        Pair<Object, Object> minMaxPK = getPkRange(plugin);
+        Pair<Object, Object> minMaxPK = getPkRange(configuration);
 
         if (null == minMaxPK) {
             throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, "split by pk failed.");
         }
-        if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
-            //切分后获取到的start/end 有 Null 的情况
-            pluginParams.add(plugin);
-            return pluginParams;
-        }
 
-        String splitPkName = plugin.getString(Key.SPLIT_PK);
-        String column = plugin.getString(Key.COLUMN);
-        String table = plugin.getString(Key.TABLE);
-        String where = plugin.getString(Key.WHERE, null);
+        String splitPkName = configuration.getString(Key.SPLIT_PK);
+        String column = configuration.getString(Key.COLUMN);
+        String table = configuration.getString(Key.TABLE);
+        String where = configuration.getString(Key.WHERE, null);
 
         boolean hasWhere = StringUtils.isNotBlank(where);
 
-        boolean isStringType = Constant.PK_TYPE_STRING.equals(plugin.getString(Constant.PK_TYPE));
-        boolean isLongType = Constant.PK_TYPE_LONG.equals(plugin.getString(Constant.PK_TYPE));
+        configuration.set(Key.QUERY_SQL, buildQuerySql(column, table, where)
+                + (hasWhere ? " and " : " where "));
+        if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
+            //切分后获取到的start/end 有 Null 的情况
+            pluginParams.add(configuration);
+            return pluginParams;
+        }
+
+        boolean isStringType = Constant.PK_TYPE_STRING.equals(configuration.getString(Constant.PK_TYPE));
+        boolean isLongType = Constant.PK_TYPE_LONG.equals(configuration.getString(Constant.PK_TYPE));
 
 
         List<String> rangeList = null;
@@ -72,9 +75,8 @@ public class SingleTableSplitUtil {
         if (null != rangeList) {
             for (String range : rangeList) {
 
-                Configuration tempConfig = plugin.clone();
+                Configuration tempConfig = configuration.clone();
 
-                //注意 range前后的()
                 tempQuerySql = buildQuerySql(column, table, where)
                         + (hasWhere ? " and " : " where ") + range;
 
@@ -85,7 +87,7 @@ public class SingleTableSplitUtil {
 
             }
         } else {
-            pluginParams.add(plugin);
+            pluginParams.add(configuration);
         }
 
         return pluginParams;
