@@ -79,7 +79,7 @@ public final class OriginalConfPretreatmentUtil {
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
 
                 List<String> expandedTables = TableExpandUtil
-                        .expandTableConf(tables);
+                        .expandTableConf(DataBaseType.MySql, tables);
 
                 if (null == expandedTables || expandedTables.isEmpty()) {
                     throw new DataXException(MysqlReaderErrorCode.ILLEGAL_VALUE,
@@ -147,7 +147,7 @@ public final class OriginalConfPretreatmentUtil {
 
                     if (allColumns.contains(column)) {
                         quotedColumns.add(TableExpandUtil
-                                .quoteTableOrColumnName(column));
+                                .quoteTableOrColumnName(DataBaseType.MySql, column));
                     } else {
                         // 可能是由于用户填写为函数，或者自己对字段进行了`处理
                         quotedColumns.add(column);
@@ -167,7 +167,8 @@ public final class OriginalConfPretreatmentUtil {
                                 String.format("no pk column named:[%s].", splitPk));
                     }
 
-                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteTableOrColumnName(pureSplitPk));
+                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteTableOrColumnName(
+                            DataBaseType.MySql, pureSplitPk));
                 }
 
             }

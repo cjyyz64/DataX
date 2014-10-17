@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.alibaba.datax.common.exception.DataXException;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -7,74 +9,80 @@ import java.util.regex.Pattern;
 
 public final class TableExpandUtil {
 
-	private static Pattern pattern = Pattern
-			.compile("(\\w+)\\[(\\d+)-(\\d+)\\](.*)");
+    private static Pattern pattern = Pattern
+            .compile("(\\w+)\\[(\\d+)-(\\d+)\\](.*)");
 
-	private TableExpandUtil() {
-	}
+    private TableExpandUtil() {
+    }
 
-	public static String quoteTableOrColumnName(String name) {
-		return "`" + name.replace("`", "``") + "`";
-	}
+    public static String quoteTableOrColumnName(DataBaseType dataBaseType, String name) {
+        switch (dataBaseType) {
+            case MySql:
+            case Oracle:
+                return "`" + name.replace("`", "``") + "`";
+            case SQLServer:
+                return "[" + name + "]";
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported databasetype");
+        }
 
-	/**
-	 * Split the table string(Usually contains names of some tables) to a List
-	 * that is formated. example: table[0-32] will be splitted into `table0`,
-	 * `table1`, `table2`, ... ,`table32` in {@link List}
-	 * 
-	 * @param tables
-	 *            a string contains table name(one or many).
-	 * 
-	 * @return a split result of table name.
-	 * 
-	 */
-	public static List<String> splitTables(String tables) {
-		List<String> splittedTables = new ArrayList<String>();
+    }
 
-		String[] tableArrays = tables.split(",");
+    /**
+     * Split the table string(Usually contains names of some tables) to a List
+     * that is formated. example: table[0-32] will be splitted into `table0`,
+     * `table1`, `table2`, ... ,`table32` in {@link List}
+     *
+     * @param tables a string contains table name(one or many).
+     * @return a split result of table name.
+     */
+    public static List<String> splitTables(DataBaseType dataBaseType, String tables) {
+        List<String> splittedTables = new ArrayList<String>();
 
-		String tableName = null;
-		for (String tableArray : tableArrays) {
-			Matcher matcher = pattern.matcher(tableArray.trim());
-			if (!matcher.matches()) {
-				tableName = tableArray.trim();
-				splittedTables.add(quoteTableOrColumnName(tableName));
-			} else {
-				String start = matcher.group(2).trim();
-				String end = matcher.group(3).trim();
-				String tmp = "";
-				if (Integer.valueOf(start) > Integer.valueOf(end)) {
-					tmp = start;
-					start = end;
-					end = tmp;
-				}
-				int len = start.length();
-				for (int k = Integer.valueOf(start); k <= Integer.valueOf(end); k++) {
-					if (start.startsWith("0")) {
-						tableName = matcher.group(1).trim()
-								+ String.format("%0" + len + "d", k)
-								+ matcher.group(4).trim();
-						splittedTables.add(quoteTableOrColumnName(tableName));
-					} else {
-						tableName = matcher.group(1).trim()
-								+ String.format("%d", k)
-								+ matcher.group(4).trim();
-						splittedTables.add(quoteTableOrColumnName(tableName));
-					}
-				}
-			}
-		}
-		return splittedTables;
-	}
+        String[] tableArrays = tables.split(",");
 
-	public static List<String> expandTableConf(List<String> tables) {
-		List<String> parsedTables = new ArrayList<String>();
-		for (String table : tables) {
-			List<String> splittedTables = splitTables(table);
-			parsedTables.addAll(splittedTables);
-		}
+        String tableName = null;
+        for (String tableArray : tableArrays) {
+            Matcher matcher = pattern.matcher(tableArray.trim());
+            if (!matcher.matches()) {
+                tableName = tableArray.trim();
+                splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+            } else {
+                String start = matcher.group(2).trim();
+                String end = matcher.group(3).trim();
+                String tmp = "";
+                if (Integer.valueOf(start) > Integer.valueOf(end)) {
+                    tmp = start;
+                    start = end;
+                    end = tmp;
+                }
+                int len = start.length();
+                for (int k = Integer.valueOf(start); k <= Integer.valueOf(end); k++) {
+                    if (start.startsWith("0")) {
+                        tableName = matcher.group(1).trim()
+                                + String.format("%0" + len + "d", k)
+                                + matcher.group(4).trim();
+                        splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+                    } else {
+                        tableName = matcher.group(1).trim()
+                                + String.format("%d", k)
+                                + matcher.group(4).trim();
+                        splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+                    }
+                }
+            }
+        }
+        return splittedTables;
+    }
 
-		return parsedTables;
-	}
+    public static List<String> expandTableConf(DataBaseType dataBaseType, List<String> tables) {
+        List<String> parsedTables = new ArrayList<String>();
+        for (String table : tables) {
+            List<String> splittedTables = splitTables(dataBaseType,table);
+            parsedTables.addAll(splittedTables);
+        }
+
+        return parsedTables;
+    }
 
 }
