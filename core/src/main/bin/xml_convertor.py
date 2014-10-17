@@ -86,10 +86,30 @@ class XmlConvertor:
         speed_dict["byte"] = 1048576 * int(concurrency)
 
     def set_error_limit(self):
+        '''
+        新版0表示不允许脏数据，旧版是1。
+        新版record和percentage都是null表示不限制，旧版是0。
+        浮点情况下语意是一致的。
+        :return:
+        '''
         error_limit = self.get_value_from_xml(self.writer, "error-limit")
         if not error_limit:
-            error_limit = 0
-        self.job_setting["errorLimit"] = error_limit
+            self.job_setting["errorLimit"] = {
+                'record': None,
+                'percentage': None
+            }
+        elif error_limit.isdigit():
+            record = int(error_limit) - 1
+            self.job_setting["errorLimit"] = {
+                'record': None if record < 0 else record,
+                'percentage': None
+            }
+        else:
+            self.job_setting["errorLimit"] = {
+                'record': None,
+                'percentage': float(error_limit)
+            }
+
 
     def get_value_from_xml(self, node_root, key):
         value = None
