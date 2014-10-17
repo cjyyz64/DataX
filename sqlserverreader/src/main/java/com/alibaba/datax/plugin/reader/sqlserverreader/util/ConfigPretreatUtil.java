@@ -4,9 +4,11 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Constants;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Key;
 import com.alibaba.datax.plugin.reader.sqlserverreader.SqlServerReaderErrorCode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,8 +151,8 @@ public class ConfigPretreatUtil {
 			if (isTableMode) {
 				List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-				List<String> expandedTables = TableExpandUtil
-						.expandTableConf(tables);
+				List<String> expandedTables = TableExpandUtil.expandTableConf(
+						DataBaseType.SQLServer, tables);
 				if (null == expandedTables || expandedTables.isEmpty()) {
 					throw new DataXException(
 							SqlServerReaderErrorCode.CONF_ERROR,
@@ -215,9 +217,9 @@ public class ConfigPretreatUtil {
 					}
 
 					if (allColumns.contains(column)) {
-						// quotedColumns.add(TableExpandUtil
-						// .quoteTableOrColumnName(column));
-						quotedColumns.add(column);
+						quotedColumns.add(TableExpandUtil
+								.quoteTableOrColumnName(DataBaseType.SQLServer,
+										column));
 					} else {
 						// function
 						quotedColumns.add(column);
