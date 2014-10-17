@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Constants;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Key;
 import com.alibaba.datax.plugin.reader.sqlserverreader.SqlServerReaderErrorCode;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -255,9 +257,11 @@ public class TableSplitUtil {
 
 			if (minType == maxType && (isNumberType || isStringType)) {
 				ret = true;
+			} else {
+				throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
+						"unsupport splitPk type");
 			}
-		} catch (Exception e) {
-			LOG.error("error when get splitPk type");
+		} catch (SQLException e) {
 			throw new DataXException(
 					SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
 					"error when get splitPk type");
