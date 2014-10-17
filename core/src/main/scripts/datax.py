@@ -51,9 +51,9 @@ YUNTI_JAVA_BIN = YUNTI_JAVA_HOME + r'/bin/java'
 
 dataXHome = "."
 
-engineCmd='''java -Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/taobao/datax/logs ${jvm} -Djava.ext.dirs=${libs} -Djava.library.path=${shared} ${params} -jar ${jar} -conf ${conf} -job ${job}'''
+engineCmd='''java ${debug} -Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/taobao/datax/logs ${jvm} -Djava.ext.dirs=${libs} -Djava.library.path=${shared} ${params} -jar ${jar} -conf ${conf} -job ${job}'''
 
-#engineCmd='''java -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address="9800" -Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/home/taobao/datax/logs ${jvm} -Djava.ext.dirs=${libs} -Djava.library.path=${shared} ${params} -jar ${jar} -conf ${conf} -job ${job}'''
+debug_config = '''-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address="9999"'''
 
 genCmd='''java -Djava.ext.dirs=${libs} -jar ${jar} -edit'''
 
@@ -65,8 +65,8 @@ childProcess = None
 
 def getCopyRight(core):
     copyright = """
-DataX V 2.0, Build %s. From Taobao
-Copyright (C) 2010-2013, Alibaba Group. All Rights Reserved.
+DataX V 3.0, Build %s. From Alibaba
+Copyright (C) 2010-2014, Alibaba Group. All Rights Reserved.
 """
     return copyright % (getBuildVersion(core))
 
@@ -94,11 +94,13 @@ def showUsage():
 
 def getOptionParser():
     op = OptionParser()
-    op.add_option('-g', '--gen', action="store_true", dest="gen", help='generate job config file .')
-    op.add_option('-e', '--edit', action="store_true", dest="gen", help='generate job config file .')
-    op.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters .')
-    op.add_option('-c', '--conf', dest="conf", help='set DataX core configuration .')
-    op.add_option('-p', '--params', default="", help='add DataX runtime parameters .')
+    op.add_option('-g', '--gen', action="store_true", dest="gen", help='generate job config file.')
+    op.add_option('-e', '--edit', action="store_true", dest="gen", help='generate job config file.')
+    op.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
+    op.add_option('-c', '--conf', dest="conf", help='set DataX core configuration.')
+    op.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
+    op.add_option('-d', '--debug', default="", help='use remote debug mode.')
+
     op.set_usage(getUsage())
     return op
 
@@ -273,6 +275,10 @@ def getJobParams(options):
         return options.params
     return ""
 
+def getDebug(options):
+    if options.debug:
+        return options.debug
+    return ""
 
 def getSharedLibraryPath():
     path = os.pathsep.join([dataXHome + "/libs", \
@@ -478,6 +484,7 @@ if __name__ == '__main__':
     ctxt['jvm'] = getJvmParams(options)
     ctxt['libs'] = getExtLibs('libs')
     ctxt['shared'] = getSharedLibraryPath()
+    ctxt['debug'] = getDebug()
 
     showCopyRight(ctxt['conf'])
 
@@ -502,6 +509,7 @@ if __name__ == '__main__':
         sys.exit(RET_FAIL_IN_RETRY)
 
     ctxt['job'] = job
+
     if jvmOptionInJobXML is not None:
         ctxt['jvm'] = jvmOptionInJobXML
 
