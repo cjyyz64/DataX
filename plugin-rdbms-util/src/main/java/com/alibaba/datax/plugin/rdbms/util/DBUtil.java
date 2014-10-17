@@ -1,12 +1,14 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.RetryHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public final class DBUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
@@ -14,9 +16,24 @@ public final class DBUtil {
     private DBUtil() {
     }
 
-    private static final int TIMEOUT_SECONDS = 3;
+    static class ConnectionOwner implements Callable<Connection> {
+        private DataBaseType dataBaseType;
+        private String jdbcUrl;
+        private String username;
+        private String password;
 
-    private static final int MAX_TRY_TIMES = 4;
+        ConnectionOwner(DataBaseType dataBaseType, String jdbcUrl, String username, String password) {
+            this.dataBaseType = dataBaseType;
+            this.jdbcUrl = jdbcUrl;
+            this.username = username;
+            this.password = password;
+        }
+
+        @Override
+        public Connection call() throws Exception {
+            return DBUtil.connect(dataBaseType, jdbcUrl, username, password);
+        }
+    }
 
     /**
      * Get direct JDBC connection
@@ -27,40 +44,23 @@ public final class DBUtil {
      */
     public static Connection getConnection(DataBaseType dataBaseType, String jdbcUrl,
                                            String username, String password) {
-        Exception saveException = null;
-        for (int tryTime = 0; tryTime < MAX_TRY_TIMES; tryTime++) {
-            try {
-                Connection connection = DBUtil.connect(dataBaseType, jdbcUrl, username, password);
-                if (null != connection) {
-                    return connection;
-                }
-            } catch (Exception e) {
-                LOG.warn("Connect to {} failed, for {}.", jdbcUrl, e.getMessage());
-                saveException = e;
-                try {
-                    Thread.sleep(1000L * (long) Math.pow(2, tryTime));
-                } catch (InterruptedException unused) {
-                }
-                continue;
-            }
+
+        try {
+            return RetryHelper.executeWithRetry(new ConnectionOwner(dataBaseType, jdbcUrl,
+                    username, password), Constant.MAX_TRY_TIMES, 1000L, true);
+        } catch (Exception e) {
+            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,
+                    String.format("get jdbc connection failed, connection detail is [\n%s\n].",
+                            jdbcUrl), e);
         }
 
-        if (saveException == null) {
-            throw new DataXException(
-                    DBUtilErrorCode.CONN_DB_ERROR,
-                    String.format(
-                            "get jdbc connection failed, connection detail is [\n%s\n].",
-                            jdbcUrl));
-        }
-
-        throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, saveException);
     }
 
     private static synchronized Connection connect(DataBaseType dataBaseType, String url, String user,
                                                    String pass) {
         try {
             Class.forName(dataBaseType.getDriverClassName());
-            DriverManager.setLoginTimeout(TIMEOUT_SECONDS);
+            DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
             throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, e);

@@ -99,8 +99,8 @@ public class MysqlReader extends Reader {
             LOG.info("\nSql [{}] \nTo jdbcUrl:[{}].",
                     null != formattedSql ? formattedSql : querySql, jdbcUrl);
 
-            Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username,
-                    password);
+            Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl,
+                    username, password);
 
             int columnNumber = 0;
             ResultSet rs = null;

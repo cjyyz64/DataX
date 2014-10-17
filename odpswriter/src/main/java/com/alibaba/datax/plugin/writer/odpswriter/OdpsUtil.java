@@ -97,9 +97,9 @@ public class OdpsUtil {
             throw new DataXException(null, e);
         }
         if (null == partitionKeys || partitionKeys.isEmpty()) {
-            LOG.info("Table [{}] has no partition .", tab);
+            LOG.info("Table [{}] has no partition .", tab.getName());
         } else {
-            LOG.info("Table [{}] has partition [{}] .", tab, partitionKeys.toString());
+            LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
             String addPart = getAddPartitionDdl(tab);
             runSqlTask(odpsProject, addPart);
         }

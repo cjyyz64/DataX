@@ -175,11 +175,14 @@ public class OdpsWriter extends Writer {
                     .getMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE);
 
             for (String context : salveWroteBlockIds) {
-
                 String[] blockIdStrs = context.split(",");
                 for (int i = 0, len = blockIdStrs.length; i < len; i++) {
                     blocks.add(Long.parseLong(blockIdStrs[i]));
                 }
+            }
+
+            if (IS_DEBUG) {
+                LOG.debug("salveWroteBlockIds:[{}].", StringUtils.join(salveWroteBlockIds, ","));
             }
 
             int count = 0;
