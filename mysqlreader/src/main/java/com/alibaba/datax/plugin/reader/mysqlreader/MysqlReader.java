@@ -1,23 +1,8 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Types;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -25,6 +10,13 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.MysqlReaderSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.util.OriginalConfPretreatmentUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.util.List;
 
 public class MysqlReader extends Reader {
 
@@ -117,8 +109,10 @@ public class MysqlReader extends Reader {
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = rs.getMetaData().getColumnCount();
 
+                SlavePluginCollector slavePluginCollector = this.getSlavePluginCollector();
                 while (rs.next()) {
-                    transportOneRecord(recordSender, rs, metaData, columnNumber);
+                    MysqlReaderProxy.transportOneRecord(recordSender, rs, metaData, columnNumber,
+                            slavePluginCollector);
                 }
 
             } catch (Exception e) {
@@ -127,85 +121,6 @@ public class MysqlReader extends Reader {
                         e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
-            }
-        }
-
-        private void transportOneRecord(RecordSender recordSender,
-                                        ResultSet rs, ResultSetMetaData metaData, int columnNumber) {
-            Record record = recordSender.createRecord();
-
-            try {
-                for (int i = 1; i <= columnNumber; i++) {
-                    switch (metaData.getColumnType(i)) {
-
-                        case Types.CHAR:
-                        case Types.NCHAR:
-                        case Types.CLOB:
-                        case Types.NCLOB:
-                        case Types.VARCHAR:
-                        case Types.LONGVARCHAR:
-                        case Types.NVARCHAR:
-                        case Types.LONGNVARCHAR:
-                            record.addColumn(new StringColumn(rs.getString(i)));
-                            break;
-
-                        case Types.SMALLINT:
-                        case Types.TINYINT:
-                        case Types.INTEGER:
-                        case Types.BIGINT:
-                            record.addColumn(new LongColumn(rs.getLong(i)));
-                            break;
-
-                        case Types.NUMERIC:
-                        case Types.DECIMAL:
-                            record.addColumn(new DoubleColumn(rs.getString(i)));
-                            break;
-
-                        case Types.FLOAT:
-                        case Types.REAL:
-                        case Types.DOUBLE:
-                            record.addColumn(new DoubleColumn(rs.getDouble(i)));
-                            break;
-
-                        case Types.TIME:
-                            record.addColumn(new DateColumn(rs.getTime(i)));
-                            break;
-
-                        case Types.DATE:
-                            record.addColumn(new DateColumn(rs.getDate(i)));
-                            break;
-
-                        case Types.TIMESTAMP:
-                            record.addColumn(new DateColumn(rs.getTimestamp(i)));
-                            break;
-
-                        case Types.BINARY:
-                        case Types.VARBINARY:
-                        case Types.BLOB:
-                        case Types.LONGVARBINARY:
-                            record.addColumn(new BytesColumn(rs.getBytes(i)));
-                            break;
-
-                        // TODO  可能要把 bit 删除
-                        case Types.BOOLEAN:
-                        case Types.BIT:
-                            record.addColumn(new BoolColumn(rs.getBoolean(i)));
-                            break;
-
-                        // TODO 添加BASIC_MESSAGE
-                        default:
-                            throw new Exception(
-                                    String.format(
-                                            "Unsupported Mysql Data Type. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
-                                            metaData.getColumnName(i),
-                                            metaData.getColumnType(i),
-                                            metaData.getColumnClassName(i)));
-                    }
-
-                }
-                recordSender.sendToWriter(record);
-            } catch (Exception e) {
-                this.getSlavePluginCollector().collectDirtyRecord(record, e);
             }
         }
 

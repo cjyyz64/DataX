@@ -8,11 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-/**
- * TODO 常量字符串：mysql，oracle等，采用 Enum 管理
- */
 public final class DBUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
 
@@ -23,10 +19,8 @@ public final class DBUtil {
 
     private static final int MAX_TRY_TIMES = 4;
 
-    private static Map<String, String> CONNECTION_TYPE = DataBaseType.getTypeAndDriverMap();
-
     private static String getDriverClassName(DataBaseType dataBaseType) {
-        String driverClassName = CONNECTION_TYPE.get(dataBaseType.getTypeName());
+        String driverClassName = dataBaseType.getDriverClassName();
 
         if (!StringUtils.isBlank(driverClassName)) {
             return driverClassName;
@@ -39,22 +33,22 @@ public final class DBUtil {
     /**
      * Get direct JDBC connection
      * <p/>
-     * if connecting failed, try to connect for 3 times
+     * if connecting failed, try to connect for MAX_TRY_TIMES times
      * <p/>
      * NOTE: In DataX, we don't need connection pool in fact
      */
-    public static Connection getConnection(DataBaseType dataBaseType, String url,
-                                           String user, String pass) {
+    public static Connection getConnection(DataBaseType dataBaseType, String jdbcUrl,
+                                           String username, String password) {
         Exception saveException = null;
         for (int tryTime = 0; tryTime < MAX_TRY_TIMES; tryTime++) {
             try {
                 Connection connection = DBUtil.connect(
-                        DBUtil.getDriverClassName(dataBaseType), url, user, pass);
+                        DBUtil.getDriverClassName(dataBaseType), jdbcUrl, username, password);
                 if (null != connection) {
                     return connection;
                 }
             } catch (Exception e) {
-                LOG.warn("Connect to {} failed, for {}.", url, e.getMessage());
+                LOG.warn("Connect to {} failed, for {}.", jdbcUrl, e.getMessage());
                 saveException = e;
                 try {
                     Thread.sleep(1000L * (long) Math.pow(2, tryTime));
@@ -69,7 +63,7 @@ public final class DBUtil {
                     DBUtilErrorCode.CONN_DB_ERROR,
                     String.format(
                             "get jdbc connection failed, connection detail is [\n%s\n].",
-                            url));
+                            jdbcUrl));
         }
 
         throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, saveException);

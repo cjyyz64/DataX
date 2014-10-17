@@ -31,9 +31,18 @@ public class SingleTableSplitUtil {
 
     public static List<Configuration> splitSingleTable(Configuration plugin,
                                                        int adviceNum) {
-    	List<Configuration> pluginParams = new ArrayList<Configuration>();
-    	
-    	Pair<Object, Object> minMaxPK = getPKRange(plugin);
+        List<Configuration> pluginParams = new ArrayList<Configuration>();
+
+        Pair<Object, Object> minMaxPK = getPkRange(plugin);
+
+        if (null == minMaxPK) {
+            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, "split by pk failed.");
+        }
+        if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
+            //切分后获取到的start/end 有 Null 的情况
+            pluginParams.add(plugin);
+            return pluginParams;
+        }
 
         String splitPkName = plugin.getString(Key.SPLIT_PK);
         String column = plugin.getString(Key.COLUMN);
@@ -44,15 +53,8 @@ public class SingleTableSplitUtil {
 
         boolean isStringType = Constant.PK_TYPE_STRING.equals(plugin.getString(Constant.PK_TYPE));
         boolean isLongType = Constant.PK_TYPE_LONG.equals(plugin.getString(Constant.PK_TYPE));
-        
-        
-        if(null == minMaxPK.getLeft()){
-        	pluginParams.add(plugin);
-        	return pluginParams;
-        }
-        
-        
-        
+
+
         List<String> rangeList = null;
         if (isStringType) {
             rangeList = RangeSplitUtil.splitAndWrap(String.valueOf(minMaxPK.getLeft()), String.valueOf(minMaxPK.getRight()),
@@ -65,14 +67,14 @@ public class SingleTableSplitUtil {
             //error
         }
 
-        
 
         String tempQuerySql = null;
         if (null != rangeList) {
             for (String range : rangeList) {
 
                 Configuration tempConfig = plugin.clone();
-                //TODO 考虑 range前后的()
+
+                //注意 range前后的()
                 tempQuerySql = buildQuerySql(column, table, where)
                         + (hasWhere ? " and " : " where ") + range;
 
@@ -104,15 +106,15 @@ public class SingleTableSplitUtil {
         return querySql;
     }
 
-    private static Pair<Object, Object> getPKRange(Configuration plugin) {
-        List<String> sqls = genPKRangeSQL(plugin);
+    private static Pair<Object, Object> getPkRange(Configuration configuration) {
+        List<String> sqls = genPKRangeSQL(configuration);
 
         String checkPKSQL = sqls.get(0);
         String pkRangeSQL = sqls.get(1);
 
-        String jdbcURL = plugin.getString(Key.JDBC_URL);
-        String username = plugin.getString(Key.USERNAME);
-        String password = plugin.getString(Key.PASSWORD);
+        String jdbcURL = configuration.getString(Key.JDBC_URL);
+        String username = configuration.getString(Key.USERNAME);
+        String password = configuration.getString(Key.PASSWORD);
 
         Connection conn = null;
         ResultSet rs = null;
@@ -121,8 +123,9 @@ public class SingleTableSplitUtil {
             conn = DBUtil.getConnection(DataBaseType.MySql, jdbcURL, username, password);
             rs = DBUtil.query(conn, checkPKSQL, Integer.MIN_VALUE);
             while (rs.next()) {
+                //要求主键对应值非空
                 if (rs.getLong(1) > 0L) {
-                    throw new DataXException(MysqlReaderErrorCode.CONF_ERROR,
+                    throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
                             "Configured PK has null value!");
                 }
             }
@@ -130,12 +133,12 @@ public class SingleTableSplitUtil {
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
                 if (isStringType(rsMetaData.getColumnType(1))) {
-                    plugin.set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
+                    configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
                     while (rs.next()) {
                         minMaxPK = new ImmutablePair<Object, Object>(rs.getString(1), rs.getString(2));
                     }
                 } else if (isLongType(rsMetaData.getColumnType(1))) {
-                    plugin.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
+                    configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
 
                     while (rs.next()) {
                         minMaxPK = new ImmutablePair<Object, Object>(rs.getString(1), rs.getString(2));
@@ -172,10 +175,10 @@ public class SingleTableSplitUtil {
                 ret = true;
             }
         } catch (Exception e) {
-        	LOG.error("error when get splitPk type");
-			throw new DataXException(
-					MysqlReaderErrorCode.CONF_ERROR,
-					"error when get splitPk type");
+            LOG.error("error when get splitPk type");
+            throw new DataXException(
+                    MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+                    "error when get splitPk type");
         }
         return ret;
     }
@@ -191,7 +194,6 @@ public class SingleTableSplitUtil {
                 type == Types.NVARCHAR;
     }
 
-    // TODO where 条件上添加()
     private static List<String> genPKRangeSQL(Configuration plugin) {
         List<String> sqls = new ArrayList<String>();
 
@@ -199,10 +201,10 @@ public class SingleTableSplitUtil {
         String table = plugin.getString(Key.TABLE).trim();
         String where = plugin.getString(Key.WHERE, null);
 
-        String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE `%s` IS NULL";
+        String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE %s IS NULL";
         String checkPKSQL = String.format(checkPKTemplate, table, splitPK);
 
-        String minMaxTemplate = "SELECT MIN(`%s`),MAX(`%s`) FROM %s";
+        String minMaxTemplate = "SELECT MIN(%s),MAX(%s) FROM %s";
         String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
                 table);
         if (StringUtils.isNotBlank(where)) {

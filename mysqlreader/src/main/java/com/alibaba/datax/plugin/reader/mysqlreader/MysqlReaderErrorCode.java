@@ -7,15 +7,12 @@ public enum MysqlReaderErrorCode implements ErrorCode {
     REQUIRED_VALUE("MysqlReader-01", "lost necessary value"),
     ILLEGAL_KEY("MysqlReader-02", "illegal key"),
     ILLEGAL_VALUE("MysqlReader-03", "illegal value"),
-
-    SQL_EXECUTE_FAIL("MysqlReader-13", "failed to execute mysql sql"),
-    READ_RECORD_FAIL("MysqlReader-14", "failed to read mysql record"),
-
-
-    CONF_ERROR("MysqlReader-00", "username/password not filled"),////////////////////////////////////need to change
-    UNKNOWN_ERROR("MysqlReader-01", "todo"),
-    NOT_RECOMMENDED("MysqlReader-02", "your config not recommended"),
-    TABLE_QUERYSQL_MIXED("MysqlReader-03", "Can not config both table and querySql");
+    ILLEGAL_SPLIT_PK("MysqlReader-04", "illegal split pk value"),
+    NOT_RECOMMENDED("MysqlReader-05", "your config not recommended"),
+    SQL_EXECUTE_FAIL("MysqlReader-06", "failed to execute mysql sql"),
+    READ_RECORD_FAIL("MysqlReader-07", "failed to read mysql record"),
+    TABLE_QUERYSQL_MIXED("MysqlReader-08", "Can not config both table and querySql"),
+    TABLE_QUERYSQL_MISSING("MysqlReader-09", "table and querySql should configured one item."),;
 
     private final String code;
     private final String description;

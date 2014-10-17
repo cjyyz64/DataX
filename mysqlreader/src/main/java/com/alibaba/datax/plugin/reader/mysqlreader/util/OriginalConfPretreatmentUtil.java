@@ -26,10 +26,8 @@ public final class OriginalConfPretreatmentUtil {
 
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
-        originalConfig.getNecessaryValue(Key.USERNAME,
-                MysqlReaderErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.PASSWORD,
-                MysqlReaderErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.USERNAME, MysqlReaderErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.PASSWORD, MysqlReaderErrorCode.REQUIRED_VALUE);
 
         simplifyConf(originalConfig);
     }
@@ -44,7 +42,7 @@ public final class OriginalConfPretreatmentUtil {
      */
     private static void simplifyConf(Configuration originalConfig) {
         boolean isTableMode = recognizeTableOrQuerySqlMode(originalConfig);
-        originalConfig.set(Constant.TABLE_MODE, isTableMode);
+        originalConfig.set(Constant.IS_TABLE_MODE, isTableMode);
 
         dealJdbcAndTable(originalConfig);
 
@@ -54,21 +52,18 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealJdbcAndTable(Configuration originalConfig) {
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
-        boolean isTableMode = originalConfig.getBool(Constant.TABLE_MODE);
+        boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
         int tableNum = 0;
 
         for (int i = 0, len = conns.size(); i < len; i++) {
-            Configuration connConf = Configuration
-                    .from(conns.get(i).toString());
+            Configuration connConf = Configuration.from(conns.get(i).toString());
 
-            connConf.getNecessaryValue(Key.JDBC_URL,
-                    MysqlReaderErrorCode.CONF_ERROR);
+            connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.CONF_ERROR);
 
-            List<String> jdbcUrls = connConf
-                    .getList(Key.JDBC_URL, String.class);
+            List<String> jdbcUrls = connConf.getList(Key.JDBC_URL, String.class);
 
             String jdbcUrl = chooseJdbcUrl(jdbcUrls, username, password);
 
@@ -103,19 +98,17 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     private static void dealColumnConf(Configuration originalConfig) {
-        boolean isTableMode = originalConfig.getBool(Constant.TABLE_MODE);
+        boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
 
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
 
         if (isTableMode) {
             if (null == columns || columns.isEmpty()) {
                 String businessMessage = "Lost column config.";
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
+                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(MysqlReaderErrorCode.REQUIRED_KEY,
-                        businessMessage);
+                throw new DataXException(MysqlReaderErrorCode.REQUIRED_KEY, businessMessage);
             } else if (1 == columns.size() && "*".equals(columns.get(0))) {
                 LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
                         + "because column configured as * may not work when you changed your table structure.");
@@ -127,14 +120,14 @@ public final class OriginalConfPretreatmentUtil {
                 String jdbcUrl = originalConfig.getString(String.format(
                         "%s[0].%s", Constant.CONN_MARK, Key.JDBC_URL));
 
-                String user = originalConfig.getString(Key.USERNAME);
-                String pass = originalConfig.getString(Key.PASSWORD);
+                String username = originalConfig.getString(Key.USERNAME);
+                String password = originalConfig.getString(Key.PASSWORD);
 
                 String tableName = originalConfig.getString(String.format(
                         "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
                 List<String> allColumns = DBUtil.getMysqlTableColumns(jdbcUrl,
-                        user, pass, tableName);
+                        username, password, tableName);
                 if (IS_DEBUG) {
                     LOG.debug("table:[{}] has columns:[{}].", tableName,
                             StringUtils.join(allColumns, ","));
@@ -142,7 +135,7 @@ public final class OriginalConfPretreatmentUtil {
 
                 List<String> quotedColumns = new ArrayList<String>();
 
-                // 注意大小写还需要处理
+                // TODO 注意大小写还需要处理
                 for (String column : columns) {
                     if ("*".equals(column)) {
                         throw new DataXException(
@@ -159,8 +152,22 @@ public final class OriginalConfPretreatmentUtil {
                     }
                 }
 
-                originalConfig.set(Key.COLUMN,
-                        StringUtils.join(quotedColumns, ","));
+                originalConfig.set(Key.COLUMN, StringUtils.join(quotedColumns, ","));
+                String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
+                if (StringUtils.isNotBlank(splitPk)) {
+                    String pureSplitPk = splitPk;
+                    if (splitPk.startsWith("`") && splitPk.endsWith("`")) {
+                        pureSplitPk = splitPk.substring(1, splitPk.length() - 1);
+                    }
+
+                    if (!allColumns.contains(pureSplitPk)) {
+                        throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+                                String.format("no pk column named:[%s].", splitPk));
+                    }
+
+                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteTableOrColumnName(pureSplitPk));
+                }
+
             }
         } else {
             // querySql模式，不希望配制 column，那样是混淆不清晰的
@@ -177,53 +184,60 @@ public final class OriginalConfPretreatmentUtil {
                         + "because you have configured querySql, no need to config where.");
                 originalConfig.remove(Key.WHERE);
             }
+
+            // querySql模式，不希望配制 splitPk，那样是混淆不清晰的
+            String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
+            if (StringUtils.isNotBlank(splitPk)) {
+                LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                        + "because you have configured querySql, no need to config splitPk.");
+                originalConfig.remove(Key.SPLIT_PK);
+            }
         }
 
     }
 
+
     private static boolean recognizeTableOrQuerySqlMode(
             Configuration originalConfig) {
-        List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
-                Object.class);
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
 
-        List<Boolean> tableModeFlag = new ArrayList<Boolean>();
-        List<Boolean> querySqlModeFlag = new ArrayList<Boolean>();
+        List<Boolean> tableModeFlags = new ArrayList<Boolean>();
+        List<Boolean> querySqlModeFlags = new ArrayList<Boolean>();
 
         String table = null;
         String querySql = null;
+
+        boolean isTableMode = false;
+        boolean isQuerySqlMode = false;
         for (int i = 0, len = conns.size(); i < len; i++) {
-            Configuration connConf = Configuration
-                    .from(conns.get(i).toString());
+            Configuration connConf = Configuration.from(conns.get(i).toString());
             table = connConf.getString(Key.TABLE, null);
             querySql = connConf.getString(Key.QUERY_SQL, null);
 
-            tableModeFlag.add(StringUtils.isNotBlank(table));
-            querySqlModeFlag.add(StringUtils.isNotBlank(querySql));
+            isTableMode = StringUtils.isNotBlank(table);
+            tableModeFlags.add(isTableMode);
 
-            // table 和 querySql 二者均未配制或者均配置
-            boolean illlegalMode = tableModeFlag.get(i).booleanValue() == querySqlModeFlag
-                    .get(i).booleanValue();
+            isQuerySqlMode = StringUtils.isNotBlank(querySql);
+            querySqlModeFlags.add(isQuerySqlMode);
 
-            if (illlegalMode && tableModeFlag.get(i).booleanValue() == false) {
-                throw new DataXException(
-                        MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
-                        "table and querySql can only have one.");
-            } else if (illlegalMode
-                    && tableModeFlag.get(i).booleanValue() == true) {
-                throw new DataXException(
-                        MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
+            if (false == isTableMode && false == isQuerySqlMode) {
+                // table 和 querySql 二者均未配制
+                throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MISSING,
+                        "table and querySql should configured one item.");
+            } else if (true == isTableMode && true == isQuerySqlMode) {
+                // table 和 querySql 二者均配置
+                throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
                         "table and querySql can not mixed.");
             }
         }
 
         // 混合配制 table 和 querySql
-        if (!isListValueSame(tableModeFlag)
-                || !isListValueSame(querySqlModeFlag)) {
+        if (!isListValueSame(tableModeFlags) || !isListValueSame(querySqlModeFlags)) {
             throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
                     "table and querySql can not mixed.");
         }
 
-        return tableModeFlag.get(0);
+        return tableModeFlags.get(0);
     }
 
     private static boolean isListValueSame(List<Boolean> flags) {
@@ -243,6 +257,7 @@ public final class OriginalConfPretreatmentUtil {
         return isSame;
     }
 
+    //TODO： 添加多 presql 的校验
     private static String chooseJdbcUrl(List<String> jdbcUrls, String username,
                                         String password) {
         Connection conn = null;
@@ -258,7 +273,7 @@ public final class OriginalConfPretreatmentUtil {
             }
         }
 
-        throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,
-                "no available jdbc.");
+        throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, String.format(
+                "no available jdbc from:[%s].", jdbcUrls));
     }
 }

@@ -17,7 +17,7 @@ public final class Constant {
 
 	public static String TABLE_NUMBER_MARK = "tableNumber";
 
-	public static String TABLE_MODE = "tableMode";
+	public static String IS_TABLE_MODE = "isTableMode";
 
 	public final static String FETCH_SIZE = "fetchSize";
 
