@@ -73,7 +73,7 @@ def get_option_parser():
     parser.add_option('-d', '--delete', action="store_true", dest="delete", help='delete tmp job config file.')
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
-    op.add_option('-rd', '--remotedebug', default="", help='use remote debug mode.')
+    op.add_option('-D', '--remotedebug', default="", help='use remote debug mode.')
 
 
     return parser
@@ -301,7 +301,6 @@ if __name__ == "__main__":
 
     # 判断是否为远程调试模式
     if options.remotedebug:
-       import socket
        DEFAULT_JVM = DEBUG_JVM
        print 'ip: ',get_ip()
 
