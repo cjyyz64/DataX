@@ -82,8 +82,8 @@ public class RangeSplitUtilTest {
     }
 
 
-    private boolean doCheck(long[] result, long left,
-                            long right) {
+    @SuppressWarnings("unused")
+	private boolean doCheck(long[] result, long left, long right) {
         return doCheck(result, left, right, -1);
     }
 
