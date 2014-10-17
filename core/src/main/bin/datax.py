@@ -65,7 +65,11 @@ def show_usage():
     sys.stdout.flush()
 
 def get_ip():
-    return socket.gethostbyname(socket.getfqdn(socket.gethostname()))
+    try:
+        return socket.gethostbyname(socket.getfqdn(socket.gethostname()))
+    except:
+        return "Unknown"
+
 
 def get_option_parser():
     parser = OptionParser(usage = get_usage())
