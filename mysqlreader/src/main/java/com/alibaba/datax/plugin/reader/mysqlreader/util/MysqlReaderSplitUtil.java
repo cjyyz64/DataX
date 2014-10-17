@@ -116,23 +116,6 @@ public final class MysqlReaderSplitUtil {
         }
     }
 
-    private static boolean isListValueSame(List<Boolean> flags) {
-        if (flags.size() == 1) {
-            return true;
-        }
-
-        boolean isSame = true;
-        boolean preValue = flags.get(0);
-
-        for (int i = 1, len = flags.size(); i < len; i++) {
-            if (preValue != flags.get(i)) {
-                isSame = false;
-                break;
-            }
-        }
-        return isSame;
-    }
-
     private static int calculateEachTableShouldSplittedNumber(int adviceNumber,
                                                               int tableNumber) {
         double tempNum = 1.0 * adviceNumber / tableNumber;
