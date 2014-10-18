@@ -1,8 +1,11 @@
-package com.alibaba.datax.plugin.writer.odpswriter;
+package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryHelper;
+import com.alibaba.datax.plugin.writer.odpswriter.Constant;
+import com.alibaba.datax.plugin.writer.odpswriter.Key;
+import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
 import com.alibaba.odps.tunnel.Account;
 import com.alibaba.odps.tunnel.DataTunnel;
 import com.alibaba.odps.tunnel.Upload;
@@ -17,12 +20,16 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
+
+    public static int MAX_RETRY_TIME = 4;
 
     public static String formatPartition(String partitionString) {
         if (null == partitionString) {
@@ -144,56 +151,65 @@ public class OdpsUtil {
     }
 
 
-    public static Upload createMasterTunnelUpload(DataTunnel tunnel, String project, String table, String partition) {
-        Upload masterUpload = null;
-        int count = 0;
-        while (true) {
-            count++;
-            try {
-                LOG.info("Try to create tunnel Upload for {} times .", count);
-                masterUpload = tunnel.createUpload(project, table, partition);
-                LOG.info("Try to create tunnel Upload OK.");
-                break;
-            } catch (Exception e) {
-                if (count > Constant.MAX_RETRY_TIME)
-                    throw new DataXException(null, "Error when create upload." + e);
-                else {
-                    try {
-                        Thread.sleep(2 * count * 1000);
-                    } catch (InterruptedException unused) {
-
-                    }
-                    continue;
-                }
-            }
+    public static Upload createMasterTunnelUpload(DataTunnel tunnel, String project,
+                                                  String table, String partition) {
+        try {
+            return RetryHelper.executeWithRetry(new MasterTunnelUploadCreator(tunnel, project,
+                    table, partition), MAX_RETRY_TIME, 1000L, true);
+        } catch (Exception e) {
+            throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
         }
-        return masterUpload;
     }
 
-    public static Upload getSlaveTunnelUpload(DataTunnel tunnel, String project, String table, String partition, String uploadId) {
-        Upload slaveUpload = null;
-        int count = 0;
-        while (true) {
-            count++;
-            try {
-                LOG.info("Try to create tunnel Upload for {} times .", count);
-                slaveUpload = tunnel.createUpload(project, table, partition, uploadId);
-                LOG.info("Try to create tunnel Upload OK.");
-                break;
-            } catch (Exception e) {
-                if (count > Constant.MAX_RETRY_TIME)
-                    throw new DataXException(null, "Error when create upload." + e);
-                else {
-                    try {
-                        Thread.sleep(2 * count * 1000);
-                    } catch (InterruptedException unused) {
+    static class MasterTunnelUploadCreator implements Callable<Upload> {
+        private DataTunnel tunnel;
+        private String project;
+        private String table;
+        private String partition;
 
-                    }
-                    continue;
-                }
-            }
+        MasterTunnelUploadCreator(DataTunnel tunnel, String project, String table,
+                                  String partition) {
+            this.tunnel = tunnel;
+            this.project = project;
+            this.table = table;
+            this.partition = partition;
         }
-        return slaveUpload;
+
+        @Override
+        public Upload call() throws Exception {
+            return this.tunnel.createUpload(this.project, this.table, this.partition);
+        }
+    }
+
+    public static Upload getSlaveTunnelUpload(DataTunnel tunnel, String project, String table,
+                                              String partition, String uploadId) {
+        try {
+            return RetryHelper.executeWithRetry(new SlaveTunnelUploadCreator(tunnel, project,
+                    table, partition, uploadId), MAX_RETRY_TIME, 1000L, true);
+        } catch (Exception e) {
+            throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
+        }
+    }
+
+    static class SlaveTunnelUploadCreator implements Callable<Upload> {
+        private DataTunnel tunnel;
+        private String project;
+        private String table;
+        private String partition;
+        private String uploadId;
+
+        SlaveTunnelUploadCreator(DataTunnel tunnel, String project, String table, String partition, String uploadId) {
+            this.tunnel = tunnel;
+            this.project = project;
+            this.table = table;
+            this.partition = partition;
+            this.uploadId = uploadId;
+        }
+
+        @Override
+        public Upload call() throws Exception {
+            return this.tunnel.createUpload(this.project, this.table, this.partition, this.uploadId);
+        }
     }
 
     private static void dropPart(Project odpsProject, String table, String partition) {
@@ -348,8 +364,22 @@ public class OdpsUtil {
     }
 
     public static void masterCompleteBlocks(Upload masterUpload, Long[] blocks) {
-        RetryHelper.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
-                Constant.MAX_RETRY_TIME, 1000L, true);
+        try {
+            RetryHelper.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
+                    MAX_RETRY_TIME, 1000L, true);
+        } catch (Exception e) {
+            throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
+        }
+    }
+
+    public static void slaveWriteOneBlock(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
+                                          long blockId) {
+        try {
+            RetryHelper.executeWithRetry(new WriteBlockWorker(slaveUpload, byteArrayOutputStream, blockId),
+                    MAX_RETRY_TIME, 1000L, true);
+        } catch (Exception e) {
+            throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
+        }
     }
 
     static class CompleteBlockWorker implements Callable<Void> {
@@ -365,6 +395,28 @@ public class OdpsUtil {
         @Override
         public Void call() throws Exception {
             this.masterUpload.complete(this.blocks);
+            return null;
+        }
+    }
+
+    static class WriteBlockWorker implements Callable<Void> {
+
+        private Upload slaveUpload;
+        private ByteArrayOutputStream byteArrayOutputStream;
+        private long blockId;
+
+        WriteBlockWorker(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
+                         long blockId) {
+            this.slaveUpload = slaveUpload;
+            this.byteArrayOutputStream = byteArrayOutputStream;
+            this.blockId = blockId;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            OutputStream hpout = this.slaveUpload.openOutputStream(this.blockId);
+            byteArrayOutputStream.writeTo(hpout);
+            hpout.close();
             return null;
         }
     }

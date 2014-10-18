@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.datax.plugin.writer.odpswriter;
+package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.writer.odpswriter.Constant;
+import com.alibaba.datax.plugin.writer.odpswriter.Key;
+import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

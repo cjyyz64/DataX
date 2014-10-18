@@ -5,6 +5,8 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
+import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
+import com.alibaba.datax.plugin.writer.odpswriter.util.SecurityChecker;
 import com.alibaba.odps.tunnel.Column;
 import com.alibaba.odps.tunnel.DataTunnel;
 import com.alibaba.odps.tunnel.RecordSchema;
@@ -17,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -175,11 +176,8 @@ public class OdpsWriter extends Writer {
                 LOG.debug("salveWroteBlockIds:[{}].", StringUtils.join(salveWroteBlockIds, ","));
             }
 
-            try {
-                OdpsUtil.masterCompleteBlocks(this.masterUpload, blocks.toArray(new Long[0]));
-            } catch (Exception e) {
-                throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
-            }
+            LOG.info("Master begin to commit blocks:[\n{}\n].", StringUtils.join(blocks, ","));
+            OdpsUtil.masterCompleteBlocks(this.masterUpload, blocks.toArray(new Long[0]));
         }
 
         @Override
@@ -189,7 +187,7 @@ public class OdpsWriter extends Writer {
 
         private void dealMaxRetryTime(Configuration originalConfig) {
             int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
-                    Constant.MAX_RETRY_TIME);
+                    OdpsUtil.MAX_RETRY_TIME);
             if (maxRetryTime < 1) {
                 String bussinessMessage = "maxRetryTime should >=1.";
                 String message = StrUtil.buildOriginalCauseMessage(
@@ -200,7 +198,7 @@ public class OdpsWriter extends Writer {
                         bussinessMessage);
             }
 
-            originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
+            OdpsUtil.MAX_RETRY_TIME = maxRetryTime;
         }
 
     }
@@ -220,7 +218,7 @@ public class OdpsWriter extends Writer {
         private String partition;
         private Upload slaveUpload;
 
-        private ByteArrayOutputStream out = new ByteArrayOutputStream(
+        private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
                 70 * 1024 * 1024);
         private ProtobufRecordWriter protobufRecordWriter = null;
         private String uploadId = null;
@@ -257,19 +255,21 @@ public class OdpsWriter extends Writer {
             com.alibaba.datax.common.element.Record dataxRecord = null;
 
             try {
-                protobufRecordWriter = new ProtobufRecordWriter(schema, out);
+                protobufRecordWriter = new ProtobufRecordWriter(schema, byteArrayOutputStream);
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
                     Record r = line2Record(dataxRecord, schema);
                     if (null != r) {
                         protobufRecordWriter.write(r);
                     }
 
-                    if (out.size() >= max_buffer_length) {
+                    if (byteArrayOutputStream.size() >= max_buffer_length) {
                         protobufRecordWriter.close();
-                        writeBlock(this.slaveUpload, blockId);
+                        OdpsUtil.slaveWriteOneBlock(this.slaveUpload, this.byteArrayOutputStream, blockId);
+                        LOG.info("write block {} ok.", blockId);
+
                         blocks.add(blockId);
-                        out.reset();
-                        protobufRecordWriter = new ProtobufRecordWriter(schema, out);
+                        byteArrayOutputStream.reset();
+                        protobufRecordWriter = new ProtobufRecordWriter(schema, byteArrayOutputStream);
 
                         blockId += this.sliceConfig
                                 .getInt(Constant.INTERVAL_STEP);
@@ -277,45 +277,20 @@ public class OdpsWriter extends Writer {
                 }
                 // complete protobuf stream, then write to http
                 protobufRecordWriter.close();
-                if (out.size() != 0) {
-                    writeBlock(this.slaveUpload, blockId);
+                if (byteArrayOutputStream.size() != 0) {
+                    OdpsUtil.slaveWriteOneBlock(this.slaveUpload, this.byteArrayOutputStream, blockId);
+                    LOG.info("write block {} ok.", blockId);
+
                     blocks.add(blockId);
                     // reset the buffer for next block
-                    out.reset();
+                    byteArrayOutputStream.reset();
                 }
 
                 super.getSlavePluginCollector().collectMessage(
                         Constant.SLAVE_WROTE_BLOCK_MESSAGE,
                         StringUtils.join(blockId, ","));
             } catch (Exception e) {
-                throw new DataXException(null,
-                        "Error when upload data to odps dataTunnel" + e);
-            }
-        }
-
-        private void writeBlock(Upload slaveUpload, long blockId) {
-            int count = 0;
-            while (true) {
-                count++;
-                try {
-                    OutputStream hpout = slaveUpload.openOutputStream(blockId);
-                    LOG.info("Start to write block {}, UploadId is {}.",
-                            blockId, this.uploadId);
-                    out.writeTo(hpout);
-                    hpout.close();
-                    break;
-                } catch (Exception e) {
-                    if (count > Constant.MAX_RETRY_TIME)
-                        throw new DataXException(null,
-                                "Error when upload data to odps dataTunnel" + e);
-                    else {
-                        try {
-                            Thread.sleep(2 * count * 1000);
-                        } catch (InterruptedException e1) {
-                        }
-                        continue;
-                    }
-                }
+                throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
             }
         }
 

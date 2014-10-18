@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.datax.plugin.writer.odpswriter;
+package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

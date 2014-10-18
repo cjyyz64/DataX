@@ -13,8 +13,8 @@ public enum OdpsWriterErrorCode implements ErrorCode {
 
     UNSUPPORTED_TABLE_TYPE("OdpsWriterXXXXXXXX", "unsupported table type"),
 
-    CREATE_MASTER_SESSION_FAIL("OdpsWriter-07", "failed to create master session"),
-    GET_SLAVE_SESSION_FAIL("OdpsWriter-08", "failed to get slave session"),
+    CREATE_MASTER_UPLOAD_FAIL("OdpsWriter-07", "failed to create master upload"),
+    GET_SLAVE_UPLOAD_FAIL("OdpsWriter-08", "failed to get slave upload"),
     GET_SESSION_STATUS_FAIL("OdpsWriter-09", "failed to get session status"),
 
     GET_PARTITION_FAIL("OdpsWriter-10", "failed to get table all partitions"),
@@ -23,8 +23,9 @@ public enum OdpsWriterErrorCode implements ErrorCode {
     CREATE_PARTITION_FAIL("OdpsWriter-12", "failed to create partition"),
     TRUNCATE_TABLE_FAIL("OdpsWriter-13", "failed to truncate table"),
     WRITER_RECORD_FAIL("OdpsWriter-14", "failed to write odps record"),
+    WRITER_BLOCK_FAIL("OdpsWriter-15", "failed to write odps block"),
 
-    COMMIT_BLOCK_FAIL("OdpsWriter-15", "failed to commit block"),
+    COMMIT_BLOCK_FAIL("OdpsWriter-16", "failed to commit block"),
 
     TEMP("TEMP", "Todo"),;
 

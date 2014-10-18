@@ -22,8 +22,6 @@ public class Constant {
 
     public static final String TAOBAO_ACCOUNT_TYPE_ALGORITHM = "rsa";
 
-    public static final int MAX_RETRY_TIME = 3;
-
     public static final String INTERVAL_STEP = "intervalStep";
     public static final String SLAVE_WROTE_BLOCK_MESSAGE = "slaveWroteBlockId";
 }
