@@ -1,5 +1,8 @@
 package com.alibaba.datax.common.util;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+
 import java.util.concurrent.Callable;
 
 public final class RetryHelper {
@@ -50,10 +53,10 @@ public final class RetryHelper {
             }
         }
         if (saveException == null) {
-            throw new RuntimeException("executeWithRetry failed.");
+            throw new DataXException(CommonErrorCode.RETRY_FAIL, "retry to execute some method failed.");
         }
 
-        throw new RuntimeException(saveException);
+        throw new DataXException(CommonErrorCode.RETRY_FAIL, saveException);
     }
 
 }

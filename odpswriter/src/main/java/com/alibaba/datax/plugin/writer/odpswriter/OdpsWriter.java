@@ -31,23 +31,14 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration originalConfig;
-
         private String project;
-
         private String table;
-
         private String partition;
-
         private String accountType;
-
         private boolean truncate;
-
         private DataTunnel dataTunnel;
-
         private Project odpsProject;
-
         private String uploadId;
-
         private Upload masterUpload;
 
         @Override
@@ -71,7 +62,7 @@ public class OdpsWriter extends Writer {
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
             if (IS_DEBUG) {
-                LOG.debug("after init, job config: [\n{}\n] .",
+                LOG.debug("After init, job config now is: [\n{}\n] .",
                         this.originalConfig.toJSON());
             }
         }
@@ -118,15 +109,14 @@ public class OdpsWriter extends Writer {
             this.odpsProject = OdpsUtil.initOpdsProject(this.originalConfig);
 
             if (this.truncate) {
-                LOG.info("Try to clean {}:{} .", this.table, this.partition);
                 if (StringUtils.isBlank(this.partition)) {
-                    LOG.info("Try to clean {}.", this.table);
+                    LOG.info("Try to truncate table:[{}].", this.table);
                     OdpsUtil.truncateTable(this.originalConfig,
                             this.odpsProject);
                 } else {
                     LOG.info("Try to clean partition:[{}] in table:[{}].",
                             this.partition, this.table);
-                    OdpsUtil.truncatePart(this.odpsProject, this.table,
+                    OdpsUtil.truncatePartition(this.odpsProject, this.table,
                             this.partition);
                 }
             } else {
@@ -185,24 +175,10 @@ public class OdpsWriter extends Writer {
                 LOG.debug("salveWroteBlockIds:[{}].", StringUtils.join(salveWroteBlockIds, ","));
             }
 
-            int count = 0;
-            while (true) {
-                count++;
-                try {
-                    this.masterUpload.complete(blocks.toArray(new Long[0]));
-                    break;
-                } catch (Exception e) {
-                    if (count > Constant.MAX_RETRY_TIME)
-                        throw new DataXException(null,
-                                "Error when complete upload." + e);
-                    else {
-                        try {
-                            Thread.sleep(2 * count * 1000);
-                        } catch (InterruptedException e1) {
-                        }
-                        continue;
-                    }
-                }
+            try {
+                OdpsUtil.masterCompleteBlocks(this.masterUpload, blocks.toArray(new Long[0]));
+            } catch (Exception e) {
+                throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
             }
         }
 
@@ -237,23 +213,16 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration sliceConfig;
-
         private DataTunnel dataTunnel;
-
         private RecordSchema schema;
-
         private String project;
-
         private String table;
-
         private String partition;
-
         private Upload slaveUpload;
 
         private ByteArrayOutputStream out = new ByteArrayOutputStream(
                 70 * 1024 * 1024);
-
-        private ProtobufRecordWriter pwriter = null;
+        private ProtobufRecordWriter protobufRecordWriter = null;
         private String uploadId = null;
 
         @Override
@@ -288,26 +257,26 @@ public class OdpsWriter extends Writer {
             com.alibaba.datax.common.element.Record dataxRecord = null;
 
             try {
-                pwriter = new ProtobufRecordWriter(schema, out);
+                protobufRecordWriter = new ProtobufRecordWriter(schema, out);
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
                     Record r = line2Record(dataxRecord, schema);
                     if (null != r) {
-                        pwriter.write(r);
+                        protobufRecordWriter.write(r);
                     }
 
                     if (out.size() >= max_buffer_length) {
-                        pwriter.close();
+                        protobufRecordWriter.close();
                         writeBlock(this.slaveUpload, blockId);
                         blocks.add(blockId);
                         out.reset();
-                        pwriter = new ProtobufRecordWriter(schema, out);
+                        protobufRecordWriter = new ProtobufRecordWriter(schema, out);
 
                         blockId += this.sliceConfig
                                 .getInt(Constant.INTERVAL_STEP);
                     }
                 }
                 // complete protobuf stream, then write to http
-                pwriter.close();
+                protobufRecordWriter.close();
                 if (out.size() != 0) {
                     writeBlock(this.slaveUpload, blockId);
                     blocks.add(blockId);

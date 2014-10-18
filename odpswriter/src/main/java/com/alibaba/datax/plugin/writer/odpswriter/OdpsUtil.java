@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryHelper;
 import com.alibaba.odps.tunnel.Account;
 import com.alibaba.odps.tunnel.DataTunnel;
 import com.alibaba.odps.tunnel.Upload;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 public class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
@@ -105,7 +107,7 @@ public class OdpsUtil {
         }
     }
 
-    public static void truncatePart(Project odpsProject, String table, String partition) {
+    public static void truncatePartition(Project odpsProject, String table, String partition) {
         if (isPartExists(odpsProject, table, partition)) {
             dropPart(odpsProject, table, partition);
         }
@@ -342,6 +344,28 @@ public class OdpsUtil {
             LOG.info("Failed to run the query due to an error from ODPS."
                     + "Reason: " + e.getMessage());
             throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when truncate table." + e);
+        }
+    }
+
+    public static void masterCompleteBlocks(Upload masterUpload, Long[] blocks) {
+        RetryHelper.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
+                Constant.MAX_RETRY_TIME, 1000L, true);
+    }
+
+    static class CompleteBlockWorker implements Callable<Void> {
+
+        private Upload masterUpload;
+        private Long[] blocks;
+
+        CompleteBlockWorker(Upload masterUpload, Long[] blocks) {
+            this.masterUpload = masterUpload;
+            this.blocks = blocks;
+        }
+
+        @Override
+        public Void call() throws Exception {
+            this.masterUpload.complete(this.blocks);
+            return null;
         }
     }
 }
