@@ -56,7 +56,7 @@ public final class RetryHelper {
             throw new DataXException(CommonErrorCode.RETRY_FAIL, "retry to execute some method failed.");
         }
 
-        throw new DataXException(CommonErrorCode.RETRY_FAIL, saveException);
+        throw new DataXException(CommonErrorCode.RETRY_FAIL, saveException.getMessage(), saveException);
     }
 
 }

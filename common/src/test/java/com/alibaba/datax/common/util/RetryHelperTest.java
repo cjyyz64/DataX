@@ -1,5 +1,7 @@
 package com.alibaba.datax.common.util;
 
+import com.alibaba.datax.common.exception.DataXException;
+import org.hamcrest.core.StringContains;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -85,8 +87,8 @@ public class RetryHelperTest {
 
     @Test(timeout = 3000L)
     public void test5() {
-        expectedEx.expect(RuntimeException.class);
-        expectedEx.expectMessage(BAD);
+        expectedEx.expect(DataXException.class);
+        expectedEx.expectMessage(StringContains.containsString(BAD));
 
         RetryHelper.executeWithRetry(new SomeService(), 2, 100L, false);
     }
