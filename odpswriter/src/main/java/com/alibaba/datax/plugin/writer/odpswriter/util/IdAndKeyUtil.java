@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class SecurityChecker {
-    private static Logger LOG = LoggerFactory.getLogger(SecurityChecker.class);
+public class IdAndKeyUtil {
+    private static Logger LOG = LoggerFactory.getLogger(IdAndKeyUtil.class);
 
     public static Configuration parseAccessIdAndKey(Configuration originalConfig) {
         String accessId = originalConfig.getString(Key.ACCESS_ID);
@@ -36,7 +36,7 @@ public class SecurityChecker {
 
         // 只要 accessId,accessKey 二者配置了一个，就理解为是用户本意是要直接手动配置其 accessid/accessKey
         if (StringUtils.isNotBlank(accessId) || StringUtils.isNotBlank(accessKey)) {
-            LOG.info("try to get accessId/accessKey from user config.");
+            LOG.info("Try to get accessId/accessKey from your config.");
             //通过如下语句，进行检查是否确实配置了
             accessId = originalConfig.getNecessaryValue(Key.ACCESS_ID, OdpsWriterErrorCode.REQUIRED_VALUE);
             accessKey = originalConfig.getNecessaryValue(Key.ACCESS_KEY, OdpsWriterErrorCode.REQUIRED_VALUE);
@@ -50,7 +50,6 @@ public class SecurityChecker {
 
     private static Configuration getAccessIdAndKeyFromEnv(Configuration originalConfig,
                                                           Map<String, String> envProp) {
-
         String accessId = null;
         String accessKey = null;
 
@@ -64,24 +63,24 @@ public class SecurityChecker {
              * 则使用其值作为odps的accessId/accessKey(会解密)
              */
 
-            LOG.info("Try to get accessId/accessKey from skynet-env.");
+            LOG.info("Try to get accessId/accessKey from environment.");
             accessId = skynetAccessID;
             accessKey = DESCipher.decrypt(skynetAccessKey);
             if (StringUtils.isNotBlank(accessKey)) {
                 originalConfig.set(Key.ACCESS_ID, accessId);
                 originalConfig.set(Key.ACCESS_KEY, accessKey);
-                LOG.info("Get accessId/accessKey from skynet-env successfully.");
+                LOG.info("Get accessId/accessKey from environment variables successfully.");
             } else {
-                String errMsg = String.format("Get accessId/accessKey from skynet-env failed, which access_id=[%s]",
+                String errMsg = String.format("Get accessId/accessKey from environment variables failed, which access_id=[%s]",
                         accessId);
                 LOG.error(errMsg);
-                throw new DataXException(null, errMsg);
+                throw new DataXException(OdpsWriterErrorCode.TEMP, errMsg);
             }
         } else {
             // 无处获取（既没有配置在作业中，也没用在环境变量中）
             String errMsg = "No place to get accessId/accessKey.";
             LOG.error(errMsg);
-            throw new DataXException(null, errMsg);
+            throw new DataXException(OdpsWriterErrorCode.TEMP, errMsg);
         }
 
         return originalConfig;
