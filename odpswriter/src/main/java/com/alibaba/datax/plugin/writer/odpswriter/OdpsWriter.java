@@ -90,11 +90,11 @@ public class OdpsWriter extends Writer {
             // init odps config
             this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
-            if (this.truncate) {
-                String table = this.originalConfig.getString(Key.TABLE);
-                Table tab = new Table(odpsProject, table);
-                boolean isPartitionedTable = OdpsUtil.isPartitionedTable(tab);
+            String table = this.originalConfig.getString(Key.TABLE);
+            Table tab = new Table(odpsProject, table);
+            boolean isPartitionedTable = OdpsUtil.isPartitionedTable(tab);
 
+            if (this.truncate) {
                 if (isPartitionedTable) {
                     //分区表
                     if (StringUtils.isBlank(this.partition)) {
@@ -114,14 +114,26 @@ public class OdpsWriter extends Writer {
                     }
                 }
             } else {
-                boolean isPartitionExists = OdpsUtil.isPartitionExists(this.odpsProject, this.table,
-                        this.partition);
-
-                // add part if not exists
-                if (StringUtils.isNotBlank(this.partition) && !isPartitionExists) {
-                    LOG.info("Try to add partition:[{}] in table:[{}].", this.partition, this.table);
-                    OdpsUtil.addPart(this.odpsProject, this.table, this.partition);
+                //不需要 truncate
+                if (isPartitionedTable) {
+                    if (StringUtils.isBlank(this.partition)) {
+                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to partitioned table without assign partition.");
+                    } else {
+                        boolean isPartitionExists = OdpsUtil.isPartitionExists(this.odpsProject, this.table, this.partition);
+                        if (isPartitionedTable) {
+                            OdpsUtil.truncatePartition(this.odpsProject, this.table, this.partition);
+                            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to partitioned table without assign partition.");
+                        } else {
+                            LOG.info("Try to add partition:[{}] in table:[{}].", this.partition, this.table);
+                            OdpsUtil.addPart(this.odpsProject, this.table, this.partition);
+                        }
+                    }
+                } else {
+                    if (StringUtils.isNotBlank(this.partition)) {
+                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to not partitioned table with assign partition.");
+                    }
                 }
+
             }
         }
 
