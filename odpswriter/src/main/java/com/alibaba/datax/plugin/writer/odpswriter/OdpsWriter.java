@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.DataTunnel;
@@ -20,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-//TODO: 换行符：System.getProperties("line.separator")方式获取
 public class OdpsWriter extends Writer {
 
     public static class Master extends Writer.Master {
@@ -35,8 +35,6 @@ public class OdpsWriter extends Writer {
         private String partition;
         private String accountType;
         private boolean truncate;
-        private DataTunnel dataTunnel;
-        private Project odpsProject;
         private String uploadId;
         private Upload masterUpload;
 
@@ -56,6 +54,17 @@ public class OdpsWriter extends Writer {
 
             this.accountType = this.originalConfig.getString(Key.ACCOUNT_TYPE,
                     Constant.DEFAULT_ACCOUNT_TYPE);
+            if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
+                    !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
+                String bussinessMessage = String.format("unsupported account type=[%s].",
+                        this.accountType);
+                String message = StrUtil.buildOriginalCauseMessage(
+                        bussinessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
+                        bussinessMessage);
+            }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
@@ -84,57 +93,13 @@ public class OdpsWriter extends Writer {
                 LOG.info("accessId:[{}] .", accessId);
             }
 
-            // init dataTunnel config
-            this.dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
 
             // init odps config
-            this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
+            Project odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
             String table = this.originalConfig.getString(Key.TABLE);
             Table tab = new Table(odpsProject, table);
-            boolean isPartitionedTable = OdpsUtil.isPartitionedTable(tab);
-
-            if (this.truncate) {
-                if (isPartitionedTable) {
-                    //分区表
-                    if (StringUtils.isBlank(this.partition)) {
-                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table without assign partition.");
-                    } else {
-                        LOG.info("Try to clean partition:[{}] in table:[{}].",
-                                this.partition, this.table);
-                        OdpsUtil.truncatePartition(this.odpsProject, this.table,
-                                this.partition);
-                    }
-                } else {
-                    if (StringUtils.isNotBlank(this.partition)) {
-                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate non partitioned table with assign partition.");
-                    } else {
-                        LOG.info("Try to truncate table:[{}].", this.table);
-                        OdpsUtil.truncateTable(tab);
-                    }
-                }
-            } else {
-                //不需要 truncate
-                if (isPartitionedTable) {
-                    if (StringUtils.isBlank(this.partition)) {
-                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to partitioned table without assign partition.");
-                    } else {
-                        boolean isPartitionExists = OdpsUtil.isPartitionExists(this.odpsProject, this.table, this.partition);
-                        if (isPartitionedTable) {
-                            OdpsUtil.truncatePartition(this.odpsProject, this.table, this.partition);
-                            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to partitioned table without assign partition.");
-                        } else {
-                            LOG.info("Try to add partition:[{}] in table:[{}].", this.partition, this.table);
-                            OdpsUtil.addPart(this.odpsProject, this.table, this.partition);
-                        }
-                    }
-                } else {
-                    if (StringUtils.isNotBlank(this.partition)) {
-                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not write to not partitioned table with assign partition.");
-                    }
-                }
-
-            }
+            OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
         }
 
         /**
@@ -146,12 +111,14 @@ public class OdpsWriter extends Writer {
         public List<Configuration> split(int mandatoryNumber) {
             List<Configuration> configurations = new ArrayList<Configuration>();
 
+            // init dataTunnel config
+            DataTunnel dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
+
             this.masterUpload = OdpsUtil.createMasterTunnelUpload(
-                    this.dataTunnel, this.project, this.table, this.partition);
+                    dataTunnel, this.project, this.table, this.partition);
             this.uploadId = this.masterUpload.getUploadId();
             LOG.info("uploadId:[{}].", this.uploadId);
 
-            //TODO log it
             RecordSchema schema = this.masterUpload.getSchema();
             List<String> allColumns = OdpsUtil.getAllColumns(schema);
             LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
@@ -169,7 +136,7 @@ public class OdpsWriter extends Writer {
             }
 
             if (IS_DEBUG) {
-                LOG.debug("After split, the job config now is:[\n{}\n].", this.originalConfig);
+                LOG.debug("After master split, the job config now is:[\n{}\n].", this.originalConfig);
             }
 
             return configurations;
@@ -181,10 +148,10 @@ public class OdpsWriter extends Writer {
                 userConfiguredColumns = allColumns;
                 originalConfig.set(Key.COLUMN, allColumns);
             } else {
-                //检查列是否重复（所有写入，都是不允许写入段的列重复的）
+                //检查列是否重复，大小写不敏感（所有写入，都是不允许写入段的列重复的）
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
-                //检查列是否存在
+                //检查列是否存在，大小写不敏感
                 ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
             }
 
@@ -205,10 +172,6 @@ public class OdpsWriter extends Writer {
                 }
             }
 
-            if (IS_DEBUG) {
-                LOG.debug("salveWroteBlockIds:[{}].", StringUtils.join(salveWroteBlockIds, ","));
-            }
-
             LOG.info("Master begin to commit blocks:[\n{}\n].", StringUtils.join(blocks, ","));
             OdpsUtil.masterCompleteBlocks(this.masterUpload, blocks.toArray(new Long[0]));
         }
@@ -216,8 +179,8 @@ public class OdpsWriter extends Writer {
         @Override
         public void destroy() {
         }
-
     }
+
 
     public static class Slave extends Writer.Slave {
         private static final Logger LOG = LoggerFactory
@@ -250,6 +213,10 @@ public class OdpsWriter extends Writer {
             this.slaveUpload = OdpsUtil.getSlaveTunnelUpload(this.dataTunnel, this.project,
                     this.table, this.partition, uploadId);
 
+            if (IS_DEBUG) {
+                LOG.debug("After init in slave, sliceConfig now is:[\n{}\n].", this.sliceConfig);
+            }
+
         }
 
         @Override
@@ -262,8 +229,6 @@ public class OdpsWriter extends Writer {
             long blockId = this.sliceConfig.getLong(Constant.BLOCK_ID);
             int intervalStep = this.sliceConfig.getInt(Constant.INTERVAL_STEP);
             List<Long> blocks = new ArrayList<Long>();
-            com.alibaba.datax.common.element.Record dataxRecord = null;
-
             List<Integer> columnPositions = this.sliceConfig.getList(Constant.COLUMN_POSITION,
                     Integer.class);
 
@@ -272,6 +237,8 @@ public class OdpsWriter extends Writer {
 
                 OdpsWriterProxy proxy = new OdpsWriterProxy(this.slaveUpload, blockId, intervalStep,
                         columnPositions);
+
+                com.alibaba.datax.common.element.Record dataxRecord = null;
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
                     try {
                         proxy.writeOneRecord(dataxRecord, blocks);
@@ -279,7 +246,7 @@ public class OdpsWriter extends Writer {
                         throw e1;
                     } catch (Exception e2) {
                         slavePluginCollector.collectDirtyRecord(dataxRecord,
-                                "Bad record for: " + e2.getMessage());
+                                "Write the record failed, because: " + e2.getMessage());
                     }
                 }
 
@@ -288,7 +255,12 @@ public class OdpsWriter extends Writer {
                 slavePluginCollector.collectMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE,
                         StringUtils.join(blocks, ","));
             } catch (Exception e) {
-                throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
+                String bussinessMessage = "Write record failed. detail:" + e.getMessage();
+                String message = StrUtil.buildOriginalCauseMessage(
+                        bussinessMessage, null);
+                LOG.error(message);
+
+                throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
             }
         }
 
