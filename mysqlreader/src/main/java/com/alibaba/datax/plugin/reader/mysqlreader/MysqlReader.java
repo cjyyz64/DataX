@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
@@ -35,7 +36,7 @@ public class MysqlReader extends Reader {
             OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
 
             if (IS_DEBUG) {
-                LOG.debug("After init(), the originalConfig now is:[\n{}\n]",
+                LOG.debug("After master init, job config now is:[\n{}\n]",
                         this.originalConfig.toJSON());
             }
         }
@@ -63,11 +64,8 @@ public class MysqlReader extends Reader {
                 .getLogger(MysqlReader.Slave.class);
 
         private Configuration readerSliceConfig;
-
         private String username;
-
         private String password;
-
         private String jdbcUrl;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
@@ -116,9 +114,12 @@ public class MysqlReader extends Reader {
                 }
 
             } catch (Exception e) {
-                LOG.error("Origin cause:[{}].", e.getMessage());
-                throw new DataXException(MysqlReaderErrorCode.READ_RECORD_FAIL,
-                        e);
+                String bussinessMessage = String.format("Read record failed, %s, detail:[%s]",
+                        BASIC_MESSAGE, e.getMessage());
+                String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, e);
+                LOG.error(message);
+
+                throw new DataXException(MysqlReaderErrorCode.READ_RECORD_FAIL, e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }

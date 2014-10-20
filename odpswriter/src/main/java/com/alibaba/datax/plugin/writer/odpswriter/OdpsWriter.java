@@ -99,6 +99,19 @@ public class OdpsWriter extends Writer {
 
             String table = this.originalConfig.getString(Key.TABLE);
             Table tab = new Table(odpsProject, table);
+
+            //检查表等配置是否正确
+            try {
+                tab.load();
+            } catch (Exception e) {
+                String bussinessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
+                        tab.getName(), e.getMessage());
+                String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                LOG.error(message);
+
+                throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
+            }
+
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
         }
 

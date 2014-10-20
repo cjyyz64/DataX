@@ -51,9 +51,9 @@ public class RangeSplitUtilTest {
 //        String left = "adde";
 //        String right = "xyz";
 //        int expectSliceNumber = 4;
-        String left = "a中";
-        String right = "baa";
-        int expectSliceNumber = 16;
+        String left = "a";
+        String right = "z";
+        int expectSliceNumber = 3;
 
         String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
         System.out.println(ToStringBuilder.reflectionToString(result, ToStringStyle.SIMPLE_STYLE));
@@ -83,7 +83,7 @@ public class RangeSplitUtilTest {
 
 
     @SuppressWarnings("unused")
-	private boolean doCheck(long[] result, long left, long right) {
+    private boolean doCheck(long[] result, long left, long right) {
         return doCheck(result, left, right, -1);
     }
 

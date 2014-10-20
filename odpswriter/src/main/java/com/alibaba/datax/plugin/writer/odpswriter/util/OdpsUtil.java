@@ -158,17 +158,6 @@ public class OdpsUtil {
 
 
     public static void truncateTable(Table tab) {
-        try {
-            tab.load();
-        } catch (Exception e) {
-            String bussinessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
-                    tab.getName(), e.getMessage());
-            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
-            LOG.error(message);
-
-            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
-        }
-
         String dropDdl = "drop table IF EXISTS " + tab.getName() + ";";
         String ddl = OdpsUtil.getTableDdl(tab);
 
