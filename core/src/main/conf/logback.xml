@@ -4,20 +4,12 @@
 
     <!-- 控制台输出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator>
-                <expression>logger.endsWith("MasterContainerCollector") || null != throwable || level > INFO</expression>
-            </evaluator>
-            <OnMatch>ACCEPT</OnMatch>
-            <OnMismatch>DENY</OnMismatch>
-        </filter>
         <Encoding>UTF-8</Encoding>
         <layout class="ch.qos.logback.classic.PatternLayout">
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
             </pattern>
         </layout>
     </appender>
-
 
     <!-- 按照每天生成日志文件(给用户查看进度使用的) -->
     <appender name="USER_FILE"

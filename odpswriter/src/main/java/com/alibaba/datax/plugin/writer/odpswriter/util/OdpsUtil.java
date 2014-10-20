@@ -151,10 +151,6 @@ public class OdpsUtil {
 
         runSqlTask(odpsProject, dropDdl);
         runSqlTask(odpsProject, ddl);
-
-        LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
-        String addPart = getAddPartitionDdl(tab);
-        runSqlTask(odpsProject, addPart);
     }
 
     public static void truncatePartition(Project odpsProject, String table, String partition) {
