@@ -35,7 +35,7 @@ public final class RetryUtil {
             } catch (Exception e) {
                 saveException = e;
                 if (i + 1 < retryTimes) {
-                    if (sleepTimeInMilliSecond < 0) {
+                    if (sleepTimeInMilliSecond <= 0) {
                         continue;
                     } else {
                         long timeToSleep = 0;

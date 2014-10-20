@@ -20,16 +20,12 @@ public final class ListUtil {
             throw new IllegalArgumentException("Parameter aList can not be null nor empty.");
         }
 
-        if (1 == aList.size()) {
-            return false;
-        } else {
-            try {
-                makeSureNoValueDuplicate(aList, caseSensitive);
-            } catch (Exception e) {
-                return true;
-            }
-            return false;
+        try {
+            makeSureNoValueDuplicate(aList, caseSensitive);
+        } catch (Exception e) {
+            return true;
         }
+        return false;
     }
 
     public static void makeSureNoValueDuplicate(List<String> aList, boolean caseSensitive) {

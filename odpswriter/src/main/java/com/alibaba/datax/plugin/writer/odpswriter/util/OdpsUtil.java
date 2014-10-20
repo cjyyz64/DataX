@@ -45,14 +45,23 @@ public class OdpsUtil {
 
         if (null == originalConfig.getList(Key.COLUMN) ||
                 originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
-            throw new DataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
-                    "column configured error.");
+            String bussinessMessage = "Lost config Key:column.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, bussinessMessage);
         }
 
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
         Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
         if (null == truncate) {
-            throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "Lost config:truncate.");
+            String bussinessMessage = "Lost config Key:truncate.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, bussinessMessage);
         }
     }
 
@@ -193,66 +202,35 @@ public class OdpsUtil {
     }
 
 
-    public static Upload createMasterTunnelUpload(DataTunnel tunnel, String project,
-                                                  String table, String partition) {
+    public static Upload createMasterTunnelUpload(final DataTunnel tunnel, final String project,
+                                                  final String table, final String partition) {
         try {
-            return RetryUtil.executeWithRetry(new MasterTunnelUploadCreator(tunnel, project,
-                    table, partition), MAX_RETRY_TIME, 1000L, true);
+            return RetryUtil.executeWithRetry(new Callable<Upload>() {
+                @Override
+                public Upload call() throws Exception {
+                    return tunnel.createUpload(project, table, partition);
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
         }
     }
 
-    static class MasterTunnelUploadCreator implements Callable<Upload> {
-        private DataTunnel tunnel;
-        private String project;
-        private String table;
-        private String partition;
-
-        MasterTunnelUploadCreator(DataTunnel tunnel, String project, String table,
-                                  String partition) {
-            this.tunnel = tunnel;
-            this.project = project;
-            this.table = table;
-            this.partition = partition;
-        }
-
-        @Override
-        public Upload call() throws Exception {
-            return this.tunnel.createUpload(this.project, this.table, this.partition);
-        }
-    }
-
-    public static Upload getSlaveTunnelUpload(DataTunnel tunnel, String project, String table,
-                                              String partition, String uploadId) {
+    public static Upload getSlaveTunnelUpload(final DataTunnel tunnel, final String project, final String table,
+                                              final String partition, final String uploadId) {
         try {
-            return RetryUtil.executeWithRetry(new SlaveTunnelUploadCreator(tunnel, project,
-                    table, partition, uploadId), MAX_RETRY_TIME, 1000L, true);
+            return RetryUtil.executeWithRetry(new Callable<Upload>() {
+                @Override
+                public Upload call() throws Exception {
+                    return tunnel.createUpload(project, table, partition, uploadId);
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
+
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
         }
     }
 
-    static class SlaveTunnelUploadCreator implements Callable<Upload> {
-        private DataTunnel tunnel;
-        private String project;
-        private String table;
-        private String partition;
-        private String uploadId;
-
-        SlaveTunnelUploadCreator(DataTunnel tunnel, String project, String table, String partition, String uploadId) {
-            this.tunnel = tunnel;
-            this.project = project;
-            this.table = table;
-            this.partition = partition;
-            this.uploadId = uploadId;
-        }
-
-        @Override
-        public Upload call() throws Exception {
-            return this.tunnel.createUpload(this.project, this.table, this.partition, this.uploadId);
-        }
-    }
 
     private static void dropPart(Project odpsProject, String table, String partition) {
         String partSpec = getPartSpec(partition);
@@ -405,62 +383,36 @@ public class OdpsUtil {
         }
     }
 
-    public static void masterCompleteBlocks(Upload masterUpload, Long[] blocks) {
+    public static void masterCompleteBlocks(final Upload masterUpload, final Long[] blocks) {
         try {
-            RetryUtil.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
-                    MAX_RETRY_TIME, 1000L, true);
+            RetryUtil.executeWithRetry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    masterUpload.complete(blocks);
+                    return null;
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
         }
     }
 
-    public static void slaveWriteOneBlock(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
-                                          long blockId) {
+    public static void slaveWriteOneBlock(final Upload slaveUpload, final ByteArrayOutputStream byteArrayOutputStream,
+                                          final long blockId) {
         try {
-            RetryUtil.executeWithRetry(new WriteBlockWorker(slaveUpload, byteArrayOutputStream, blockId),
-                    MAX_RETRY_TIME, 1000L, true);
+            RetryUtil.executeWithRetry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    OutputStream hpout = slaveUpload.openOutputStream(blockId);
+                    byteArrayOutputStream.writeTo(hpout);
+                    hpout.close();
+                    return null;
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
         }
-    }
 
-    static class CompleteBlockWorker implements Callable<Void> {
-
-        private Upload masterUpload;
-        private Long[] blocks;
-
-        CompleteBlockWorker(Upload masterUpload, Long[] blocks) {
-            this.masterUpload = masterUpload;
-            this.blocks = blocks;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            this.masterUpload.complete(this.blocks);
-            return null;
-        }
-    }
-
-    static class WriteBlockWorker implements Callable<Void> {
-
-        private Upload slaveUpload;
-        private ByteArrayOutputStream byteArrayOutputStream;
-        private long blockId;
-
-        WriteBlockWorker(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
-                         long blockId) {
-            this.slaveUpload = slaveUpload;
-            this.byteArrayOutputStream = byteArrayOutputStream;
-            this.blockId = blockId;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            OutputStream hpout = this.slaveUpload.openOutputStream(this.blockId);
-            byteArrayOutputStream.writeTo(hpout);
-            hpout.close();
-            return null;
-        }
     }
 
     /**

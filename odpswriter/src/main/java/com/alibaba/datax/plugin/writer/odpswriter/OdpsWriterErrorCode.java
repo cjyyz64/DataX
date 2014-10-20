@@ -3,8 +3,7 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum OdpsWriterErrorCode implements ErrorCode {
-    REQUIRED_KEY("OdpsWriter-00", "lost necessary key"),
-    REQUIRED_VALUE("OdpsWriter-01", "lost necessary value"),
+    REQUIRED_VALUE("OdpsWriter-00", "lost necessary value"),
     ILLEGAL_VALUE("OdpsWriter-03", "illegal value"),
 
     CHECK_TABLE_FAIL("OdpsWriter-04", "check table fail."),

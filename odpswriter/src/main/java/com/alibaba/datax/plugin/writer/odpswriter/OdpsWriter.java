@@ -255,7 +255,7 @@ public class OdpsWriter extends Writer {
                         throw e1;
                     } catch (Exception e2) {
                         slavePluginCollector.collectDirtyRecord(dataxRecord,
-                                "Unsupported type: " + e2.getMessage());
+                                "Bad record for: " + e2.getMessage());
                     }
                 }
 

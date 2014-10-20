@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.mysqlreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
@@ -235,29 +236,12 @@ public final class OriginalConfPretreatmentUtil {
         }
 
         // 混合配制 table 和 querySql
-        if (!isListValueSame(tableModeFlags) || !isListValueSame(querySqlModeFlags)) {
+        if (!ListUtil.checkIfValueSame(tableModeFlags) || !ListUtil.checkIfValueSame(tableModeFlags)) {
             throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED,
                     "table and querySql can not mixed.");
         }
 
         return tableModeFlags.get(0);
-    }
-
-    private static boolean isListValueSame(List<Boolean> flags) {
-        if (flags.size() == 1) {
-            return true;
-        }
-
-        boolean isSame = true;
-        boolean preValue = flags.get(0);
-
-        for (int i = 1, len = flags.size(); i < len; i++) {
-            if (preValue != flags.get(i)) {
-                isSame = false;
-                break;
-            }
-        }
-        return isSame;
     }
 
     //TODO： 添加多 presql 的校验
