@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.RetryHelper;
+import com.alibaba.datax.common.util.RetryUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public final class DBUtil {
                                            String username, String password) {
 
         try {
-            return RetryHelper.executeWithRetry(new ConnectionOwner(dataBaseType, jdbcUrl,
+            return RetryUtil.executeWithRetry(new ConnectionOwner(dataBaseType, jdbcUrl,
                     username, password), Constant.MAX_TRY_TIMES, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,

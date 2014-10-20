@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.DataTunnel;
@@ -31,7 +32,6 @@ public class OdpsWriter extends Writer {
         private String project;
         private String table;
         private String partition;
-        private List<String> column;
         private String accountType;
         private boolean truncate;
         private DataTunnel dataTunnel;
@@ -53,8 +53,6 @@ public class OdpsWriter extends Writer {
                     .getString(Key.PARTITION, ""));
             this.originalConfig.set(Key.PARTITION, this.partition);
 
-            this.column = this.originalConfig.getList(Key.COLUMN, String.class);
-
             this.accountType = this.originalConfig.getString(Key.ACCOUNT_TYPE,
                     Constant.DEFAULT_ACCOUNT_TYPE);
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
@@ -69,7 +67,6 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void prepare() {
-            // TODO 更正其行为。以前是优先环境变量获取 id,key 。现在需要校正为：优先使用用户配置的 id,key
             String accessId = null;
             String accessKey = null;
 
@@ -93,7 +90,6 @@ public class OdpsWriter extends Writer {
             this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
             if (this.truncate) {
-                //TODO 必须要是非分区表才能 truncate 整个表
                 if (StringUtils.isBlank(this.partition)) {
                     LOG.info("Try to truncate table:[{}].", this.table);
                     OdpsUtil.truncateTable(this.originalConfig,
@@ -161,15 +157,11 @@ public class OdpsWriter extends Writer {
                 userConfiguredColumns = allColumns;
                 originalConfig.set(Key.COLUMN, allColumns);
             } else {
-                //TODO 检查列是否重复（所有写入，都是不允许写入段的列重复的，需要抽取 Common util 方法）
+                //检查列是否重复（所有写入，都是不允许写入段的列重复的）
+                ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
-
-                //检查列是否存在  TODO 需要抽取 Common util 方法）
-                for (String column : userConfiguredColumns) {
-                    if (!allColumns.contains(column.toLowerCase())) {
-                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Unknown column name:" + column.toLowerCase());
-                    }
-                }
+                //检查列是否存在
+                ListUtil.makeSureBInA(allColumns, userConfiguredColumns, false);
             }
 
             List<Integer> columnPositions = OdpsUtil.parsePosition(allColumns, userConfiguredColumns);
@@ -203,7 +195,6 @@ public class OdpsWriter extends Writer {
 
     }
 
-    // TODO 重构：odpswriterProxy 进行写入的操作。
     public static class Slave extends Writer.Slave {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OdpsWriter.Slave.class);

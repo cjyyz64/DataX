@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.RetryHelper;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
@@ -127,11 +127,12 @@ public class OdpsUtil {
 
         Table tab = new Table(odpsProject, table);
 
+        //必须要是非分区表才能 truncate 整个表
         List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
         try {
             partitionKeys = tab.getPartitionKeys();
         } catch (Exception e) {
-            throw new DataXException(null, e);
+            throw new DataXException(OdpsWriterErrorCode.TEMP, e);
         }
 
         if (null != partitionKeys && !partitionKeys.isEmpty()) {
@@ -196,7 +197,7 @@ public class OdpsUtil {
     public static Upload createMasterTunnelUpload(DataTunnel tunnel, String project,
                                                   String table, String partition) {
         try {
-            return RetryHelper.executeWithRetry(new MasterTunnelUploadCreator(tunnel, project,
+            return RetryUtil.executeWithRetry(new MasterTunnelUploadCreator(tunnel, project,
                     table, partition), MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
@@ -226,7 +227,7 @@ public class OdpsUtil {
     public static Upload getSlaveTunnelUpload(DataTunnel tunnel, String project, String table,
                                               String partition, String uploadId) {
         try {
-            return RetryHelper.executeWithRetry(new SlaveTunnelUploadCreator(tunnel, project,
+            return RetryUtil.executeWithRetry(new SlaveTunnelUploadCreator(tunnel, project,
                     table, partition, uploadId), MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
@@ -407,7 +408,7 @@ public class OdpsUtil {
 
     public static void masterCompleteBlocks(Upload masterUpload, Long[] blocks) {
         try {
-            RetryHelper.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
+            RetryUtil.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
                     MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
@@ -417,7 +418,7 @@ public class OdpsUtil {
     public static void slaveWriteOneBlock(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
                                           long blockId) {
         try {
-            RetryHelper.executeWithRetry(new WriteBlockWorker(slaveUpload, byteArrayOutputStream, blockId),
+            RetryUtil.executeWithRetry(new WriteBlockWorker(slaveUpload, byteArrayOutputStream, blockId),
                     MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
@@ -482,7 +483,7 @@ public class OdpsUtil {
             }
             if (!hasColumn) {
                 throw new DataXException(OdpsWriterErrorCode.TEMP,
-                        String.format("no column named [%s] !", col));
+                        String.format("No column named [%s] !", col));
             }
         }
         return retList;

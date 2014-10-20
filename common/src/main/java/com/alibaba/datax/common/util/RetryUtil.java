@@ -5,7 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 
 import java.util.concurrent.Callable;
 
-public final class RetryHelper {
+public final class RetryUtil {
 
     /**
      * 重试次数工具方法.
