@@ -13,6 +13,7 @@ import com.aliyun.openservices.odps.Project;
 import com.aliyun.openservices.odps.jobs.*;
 import com.aliyun.openservices.odps.jobs.TaskStatus.Status;
 import com.aliyun.openservices.odps.tables.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -93,7 +94,7 @@ public class OdpsUtil {
         return new DataTunnel(tunnelConfig);
     }
 
-    public static Project initOpdsProject(Configuration originalConfig) {
+    public static Project initOdpsProject(Configuration originalConfig) {
         String accountType = originalConfig.getString(Key.ACCOUNT_TYPE);
         String accessId = originalConfig.getString(Key.ACCESS_ID);
         String accessKey = originalConfig.getString(Key.ACCESS_KEY);
@@ -125,6 +126,20 @@ public class OdpsUtil {
         String table = originalConfig.getString(Key.TABLE);
 
         Table tab = new Table(odpsProject, table);
+
+        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
+        try {
+            partitionKeys = tab.getPartitionKeys();
+        } catch (Exception e) {
+            throw new DataXException(null, e);
+        }
+
+        if (null != partitionKeys && !partitionKeys.isEmpty()) {
+            LOG.error("Can not truncate partitioned table. detail: table [{}] has partition:[{}].",
+                    tab.getName(), StringUtils.join(partitionKeys, ","));
+            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table");
+        }
+
         try {
             tab.load();
         } catch (Exception e) {
@@ -136,19 +151,9 @@ public class OdpsUtil {
         runSqlTask(odpsProject, dropDdl);
         runSqlTask(odpsProject, ddl);
 
-        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
-        try {
-            partitionKeys = tab.getPartitionKeys();
-        } catch (Exception e) {
-            throw new DataXException(null, e);
-        }
-        if (null == partitionKeys || partitionKeys.isEmpty()) {
-            LOG.info("Table [{}] has no partition .", tab.getName());
-        } else {
-            LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
-            String addPart = getAddPartitionDdl(tab);
-            runSqlTask(odpsProject, addPart);
-        }
+        LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
+        String addPart = getAddPartitionDdl(tab);
+        runSqlTask(odpsProject, addPart);
     }
 
     public static void truncatePartition(Project odpsProject, String table, String partition) {

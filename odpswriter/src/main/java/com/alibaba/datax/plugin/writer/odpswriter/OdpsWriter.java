@@ -90,9 +90,10 @@ public class OdpsWriter extends Writer {
             this.dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
 
             // init odps config
-            this.odpsProject = OdpsUtil.initOpdsProject(this.originalConfig);
+            this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
             if (this.truncate) {
+                //TODO 必须要是非分区表才能 truncate 整个表
                 if (StringUtils.isBlank(this.partition)) {
                     LOG.info("Try to truncate table:[{}].", this.table);
                     OdpsUtil.truncateTable(this.originalConfig,
@@ -259,14 +260,11 @@ public class OdpsWriter extends Writer {
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
                     try {
                         proxy.writeOneRecord(dataxRecord, blocks);
-                    } catch (Exception e) {
-                        if (e instanceof DataXException) {
-                            throw e;
-                        } else {
-                            LOG.error("BAD RECORD: " + e.toString());
-                            slavePluginCollector.collectDirtyRecord(dataxRecord,
-                                    "Unsupported type: " + e.getMessage());
-                        }
+                    } catch (DataXException e1) {
+                        throw e1;
+                    } catch (Exception e2) {
+                        slavePluginCollector.collectDirtyRecord(dataxRecord,
+                                "Unsupported type: " + e2.getMessage());
                     }
                 }
 

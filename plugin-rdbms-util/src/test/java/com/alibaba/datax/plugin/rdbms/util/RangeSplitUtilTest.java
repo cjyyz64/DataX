@@ -51,9 +51,9 @@ public class RangeSplitUtilTest {
 //        String left = "adde";
 //        String right = "xyz";
 //        int expectSliceNumber = 4;
-        String left = "ad'de";
-        String right = "xy\\z";
-        int expectSliceNumber = 4;
+        String left = "a中";
+        String right = "baa";
+        int expectSliceNumber = 16;
 
         String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
         System.out.println(ToStringBuilder.reflectionToString(result, ToStringStyle.SIMPLE_STYLE));

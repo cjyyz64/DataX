@@ -6,6 +6,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.math.BigInteger;
 import java.util.*;
 
+/**
+ * TODO modify it radix  = 128
+ */
 public final class RangeSplitUtil {
 
     public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
@@ -45,8 +48,9 @@ public final class RangeSplitUtil {
 
         //处理第一个字符串（因为：在转换为数字，再还原的时候，如果首字符刚好是 basic,则不知道应该添加多少个 basic）
         result[0] = left;
+        result[tempResult.length - 1] = right;
 
-        for (int i = 1, len = tempResult.length; i < len; i++) {
+        for (int i = 1, len = tempResult.length - 1; i < len; i++) {
             result[i] = bigIntegerToString(tempResult[i], radix, basic);
         }
 
