@@ -50,7 +50,10 @@ public class OdpsUtil {
         }
 
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
-        originalConfig.getBool(Key.TRUNCATE);
+        Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
+        if (null == truncate) {
+            throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "Lost config:truncate.");
+        }
     }
 
     public static void dealMaxRetryTime(Configuration originalConfig) {
