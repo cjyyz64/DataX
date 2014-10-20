@@ -12,6 +12,7 @@ import com.alibaba.odps.tunnel.DataTunnel;
 import com.alibaba.odps.tunnel.RecordSchema;
 import com.alibaba.odps.tunnel.Upload;
 import com.aliyun.openservices.odps.Project;
+import com.aliyun.openservices.odps.tables.Table;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,25 +91,36 @@ public class OdpsWriter extends Writer {
             this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
             if (this.truncate) {
-                if (StringUtils.isBlank(this.partition)) {
-                    LOG.info("Try to truncate table:[{}].", this.table);
-                    OdpsUtil.truncateTable(this.originalConfig,
-                            this.odpsProject);
+                String table = this.originalConfig.getString(Key.TABLE);
+                Table tab = new Table(odpsProject, table);
+                boolean isPartitionedTable = OdpsUtil.isPartitionedTable(tab);
+
+                if (isPartitionedTable) {
+                    //分区表
+                    if (StringUtils.isBlank(this.partition)) {
+                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table without assign partition.");
+                    } else {
+                        LOG.info("Try to clean partition:[{}] in table:[{}].",
+                                this.partition, this.table);
+                        OdpsUtil.truncatePartition(this.odpsProject, this.table,
+                                this.partition);
+                    }
                 } else {
-                    LOG.info("Try to clean partition:[{}] in table:[{}].",
-                            this.partition, this.table);
-                    OdpsUtil.truncatePartition(this.odpsProject, this.table,
-                            this.partition);
+                    if (StringUtils.isNotBlank(this.partition)) {
+                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate non partitioned table with assign partition.");
+                    } else {
+                        LOG.info("Try to truncate table:[{}].", this.table);
+                        OdpsUtil.truncateTable(tab);
+                    }
                 }
             } else {
+                boolean isPartitionExists = OdpsUtil.isPartitionExists(this.odpsProject, this.table,
+                        this.partition);
+
                 // add part if not exists
-                if (StringUtils.isNotBlank(this.partition)
-                        && !OdpsUtil.isPartitionExists(this.odpsProject, this.table,
-                        this.partition)) {
-                    LOG.info("Try to add partition:[{}] in table:[{}].",
-                            this.partition, this.table);
-                    OdpsUtil.addPart(this.odpsProject, this.table,
-                            this.partition);
+                if (StringUtils.isNotBlank(this.partition) && !isPartitionExists) {
+                    LOG.info("Try to add partition:[{}] in table:[{}].", this.partition, this.table);
+                    OdpsUtil.addPart(this.odpsProject, this.table, this.partition);
                 }
             }
         }

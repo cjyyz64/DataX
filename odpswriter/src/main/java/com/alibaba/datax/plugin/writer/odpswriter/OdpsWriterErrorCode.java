@@ -6,7 +6,7 @@ public enum OdpsWriterErrorCode implements ErrorCode {
     REQUIRED_VALUE("OdpsWriter-00", "lost necessary value"),
     ILLEGAL_VALUE("OdpsWriter-03", "illegal value"),
 
-    CHECK_TABLE_FAIL("OdpsWriter-04", "check table fail."),
+    TABLE_TRUNCATE_ERROR("OdpsWriter-04", "error while truncate table."),
     UNSUPPORTED_ACCOUNT_TYPE("OdpsWriter-05", "unsupported account type"),
     UNSUPPORTED_COLUMN_TYPE("OdpsWriter-06", "unsupported column type"),
 
@@ -26,6 +26,8 @@ public enum OdpsWriterErrorCode implements ErrorCode {
 
     COMMIT_BLOCK_FAIL("OdpsWriter-16", "failed to commit block"),
     COLUMN_CONFIGURED_ERROR("OdpsWriter-17", "column configured error."),
+    ADD_PARTITION_FAILED("OdpsWriter-17", "add partition failed."),
+    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-17", "Check if partitioned table failed."),
 
     TEMP("TEMP", "Todo"),;
 

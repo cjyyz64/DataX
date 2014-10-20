@@ -24,7 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public class OdpsUtil {
@@ -133,12 +133,27 @@ public class OdpsUtil {
         return parts;
     }
 
+    public static boolean isPartitionedTable(Table table) {
+        //必须要是非分区表才能 truncate 整个表
+        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
+        try {
+            partitionKeys = table.getPartitionKeys();
+            if (null != partitionKeys && !partitionKeys.isEmpty()) {
+                return true;
+            }
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Check if partitioned table failed. detail: table=[%s].",
+                    table.getName());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
 
-    public static void truncateTable(Configuration originalConfig, Project odpsProject) {
-        String table = originalConfig.getString(Key.TABLE);
+            throw new DataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
+        }
+        return false;
+    }
 
-        Table tab = new Table(odpsProject, table);
 
+    public static void truncateTable(Table tab) {
         //必须要是非分区表才能 truncate 整个表
         List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
         try {
@@ -148,21 +163,39 @@ public class OdpsUtil {
         }
 
         if (null != partitionKeys && !partitionKeys.isEmpty()) {
-            LOG.error("Can not truncate partitioned table. detail: table [{}] has partition:[{}].",
+            String bussinessMessage = String.format("Can not truncate partitioned table. detail: table=[%s] has partition=[%s].",
                     tab.getName(), StringUtils.join(partitionKeys, ","));
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table");
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, bussinessMessage);
         }
 
         try {
             tab.load();
         } catch (Exception e) {
-            throw new DataXException(null, "Error when truncate table." + e);
+            String bussinessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
+                    tab.getName(), e.getMessage());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
         }
-        String dropDdl = "drop table IF EXISTS " + table + ";";
+
+        String dropDdl = "drop table IF EXISTS " + tab.getName() + ";";
         String ddl = OdpsUtil.getTableDdl(tab);
 
-        runSqlTask(odpsProject, dropDdl);
-        runSqlTask(odpsProject, ddl);
+        try {
+            runSqlTask(tab.getProject(), dropDdl);
+            runSqlTask(tab.getProject(), ddl);
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Truncate table:[%s] failed. detail:[%s].",
+                    tab.getName(), e.getMessage());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
+        }
     }
 
     public static void truncatePartition(Project odpsProject, String table, String partition) {
@@ -198,7 +231,16 @@ public class OdpsUtil {
         StringBuilder addPart = new StringBuilder();
         addPart.append("alter table ").append(table).append(" add IF NOT EXISTS partition(")
                 .append(partSpec).append(");");
-        runSqlTask(odpsProject, addPart.toString());
+        try {
+            runSqlTask(odpsProject, addPart.toString());
+        } catch (Exception e) {
+            String bussinessMessage = String.format("addPartition failed. detail:project=[%s], table=[%s],partition=[%s]."
+                    , odpsProject.getName(), table, partition);
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, bussinessMessage);
+        }
     }
 
 
@@ -238,7 +280,16 @@ public class OdpsUtil {
         dropPart.append("alter table ").append(table)
                 .append(" drop IF EXISTS partition(").append(partSpec)
                 .append(");");
-        runSqlTask(odpsProject, dropPart.toString());
+        try {
+            runSqlTask(odpsProject, dropPart.toString());
+        } catch (Exception e) {
+            String bussinessMessage = String.format("dropPartition failed. detail:project=[%s], table=[%s],partition=[%s]."
+                    , odpsProject.getName(), table, partition);
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, bussinessMessage);
+        }
     }
 
     private static String getPartSpec(String partition) {
@@ -247,8 +298,9 @@ public class OdpsUtil {
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
             String[] kv = part.split("=");
-            if (kv.length != 2)
+            if (kv.length != 2) {
                 throw new DataXException(null, "Wrong partition Spec: " + partition);
+            }
             partSpec.append(kv[0]).append("=");
             partSpec.append("'").append(kv[1].replace("'", "")).append("'");
             if (i != parts.length - 1)
@@ -357,29 +409,23 @@ public class OdpsUtil {
         return addPartitionBuilder.toString();
     }
 
-    private static void runSqlTask(Project project, String query) {
-        if (null == query || "".endsWith(query))
+    private static void runSqlTask(Project project, String query) throws Exception {
+        if (StringUtils.isBlank(query)) {
             return;
-        LOG.info("ODPSWriter try to execute :[{}] .", query);
-        Task task = new SqlTask("datax_odpstunnel_writer_trunacte", query);
-        JobInstance instance = null;
-        try {
-            instance = Job.run(project, task);
-            instance.waitForCompletion();
-            TaskStatus status = instance.getTaskStatus().get(
-                    "datax_odpstunnel_writer_trunacte");
-            LOG.info(String.format("ODPSWriter execute query result :%s .",
-                    status.getStatus()));
-            if (status.getStatus().equals(Status.FAILED)) {
-                Map<String, String> result = null;
-                result = instance.getResult();
-                throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when Execute query. "
-                        + result.get(task.getName()));
-            }
-        } catch (Exception e) {
-            LOG.info("Failed to run the query due to an error from ODPS."
-                    + "Reason: " + e.getMessage());
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when truncate table." + e);
+        }
+
+        String taskName = "datax_odpswriter_trunacte_" + UUID.randomUUID();
+
+        LOG.info("Try to start sqlTtask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
+        Task task = new SqlTask(taskName, query);
+        JobInstance instance = Job.run(project, task);
+        instance.waitForCompletion();
+        TaskStatus status = instance.getTaskStatus().get(taskName);
+
+        if (!Status.SUCCESS.equals(status.getStatus())) {
+            String message = String.format("Run odps sql task not success. detail:result=[%s].",
+                    instance.getResult().get(taskName));
+            throw new Exception(message);
         }
     }
 
