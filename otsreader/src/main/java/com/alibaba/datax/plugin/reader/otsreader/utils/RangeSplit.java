@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSPrimaryKeyColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.aliyun.openservices.ots.model.PrimaryKeyType;
@@ -140,6 +139,28 @@ public class RangeSplit {
 
         return results;
     }
+    
+    /**
+     * begin 一定要小于 end
+     * @param begin
+     * @param end
+     * @param count
+     * @return
+     */
+    private static List<Long> splitIntegerRange(BigInteger bigBegin, BigInteger bigEnd, BigInteger bigCount) {
+        List<Long> is = new ArrayList<Long>();
+        
+        BigInteger interval = (bigEnd.subtract(bigBegin)).divide(bigCount);
+        BigInteger cur = bigBegin;
+        BigInteger i = BigInteger.ZERO;
+        while (cur.compareTo(bigEnd) < 0 && i.compareTo(bigCount) < 0) {
+            is.add(cur.longValue());
+            cur = cur.add(interval);
+            i = i.add(BigInteger.ONE);
+        }
+        is.add(bigEnd.longValue());
+        return is;
+    }
 
     /**
      * 切分数值类型 注意： 当begin和end相等时，函数将返回空的List
@@ -154,15 +175,14 @@ public class RangeSplit {
         if (count <= 1) {
             throw new IllegalArgumentException("Input count <= 1 .");
         }
+        List<Long> is = new ArrayList<Long>();
 
         BigInteger bigBegin = BigInteger.valueOf(begin);
         BigInteger bigEnd = BigInteger.valueOf(end);
         BigInteger bigCount = BigInteger.valueOf(count);
 
         BigInteger abs = (bigEnd.subtract(bigBegin)).abs();
-
-        List<Long> is = new ArrayList<Long>();
-
+        
         if (abs.compareTo(BigInteger.ZERO) == 0) { // partition key 相等的情况
             return is;
         }
@@ -170,17 +190,21 @@ public class RangeSplit {
         if (bigCount.compareTo(abs) > 0) {
             bigCount = abs;
         }
-
-        BigInteger interval = (bigEnd.subtract(bigBegin)).divide(bigCount);
-        BigInteger cur = bigBegin;
-        int i = 0;
-        while (cur.compareTo(bigEnd) < 0 && i < count) {
-            is.add(cur.longValue());
-            cur = cur.add(interval);
-            i++;
+        
+        if (bigEnd.subtract(bigBegin).compareTo(BigInteger.ZERO) > 0) { // 正向
+            return splitIntegerRange(bigBegin, bigEnd, bigCount);
+        } else { // 逆向
+            List<Long> tmp = splitIntegerRange(bigEnd, bigBegin, bigCount);
+            
+            Comparator<Long> comparator = new Comparator<Long>(){
+                public int compare(Long arg0, Long arg1) {
+                    return arg0.compareTo(arg1);
+                }
+            };
+            
+            Collections.sort(tmp,Collections.reverseOrder(comparator));
+            return tmp;
         }
-        is.add(end);
-        return is;
     }
 
     public static List<PrimaryKeyValue> splitRangeByPrimaryKeyType(
@@ -319,15 +343,15 @@ public class RangeSplit {
         return result;
     }
 
-    public static List<OTSRange> rangeSplitByPoint(TableMeta meta,
-            OTSConf conf, RowPrimaryKey beginPK, RowPrimaryKey endPK,
+    public static List<OTSRange> rangeSplitByPoint(TableMeta meta, RowPrimaryKey beginPK, RowPrimaryKey endPK,
             List<PrimaryKeyValue> splits) {
         List<OTSRange> results = new ArrayList<OTSRange>();
 
         int pkCount = meta.getPrimaryKey().size();
 
-        PrimaryKeyValue begin = conf.getRangeBegin().get(0);
-        PrimaryKeyValue end = conf.getRangeEnd().get(0);
+        String partName = Common.getPartitionKey(meta).getName();
+        PrimaryKeyValue begin = beginPK.getPrimaryKey().get(partName);
+        PrimaryKeyValue end = endPK.getPrimaryKey().get(partName);
 
         List<PrimaryKeyValue> newSplits = getSplitPoint(begin, end, splits);
 

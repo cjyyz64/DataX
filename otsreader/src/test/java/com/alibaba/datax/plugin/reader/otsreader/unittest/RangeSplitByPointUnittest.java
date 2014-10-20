@@ -59,7 +59,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromLong(2000));
             splits.add(PrimaryKeyValue.fromLong(-1211));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(0, ranges.size());
         }
@@ -90,7 +90,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("sdfsdf"));
             splits.add(PrimaryKeyValue.fromString("sdfsfsdhear撒事实上"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(0, ranges.size());
         }
@@ -126,7 +126,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromLong(2000));
             splits.add(PrimaryKeyValue.fromLong(-1211));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(4, ranges.size());
             
@@ -193,7 +193,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("2"));
             splits.add(PrimaryKeyValue.fromString("3"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(1, ranges.size());
             
@@ -249,7 +249,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("2"));
             splits.add(PrimaryKeyValue.fromString("3"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(4, ranges.size());
             
@@ -334,7 +334,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("2"));
             splits.add(PrimaryKeyValue.fromString("3"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(1, ranges.size());
             
@@ -362,7 +362,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("BBBB"));
             splits.add(PrimaryKeyValue.fromString("CCCC"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(3, ranges.size());
             
@@ -407,7 +407,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("ZZZZ"));
             splits.add(PrimaryKeyValue.fromString("zzzz"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(4, ranges.size());
             
@@ -458,7 +458,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("CCCC"));
             splits.add(PrimaryKeyValue.fromString("ZZZZ"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(3, ranges.size());
             
@@ -531,7 +531,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("数据验证符合预期"));
             splits.add(PrimaryKeyValue.fromString("!!!!!!!!!!!!!"));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(3, ranges.size());
             
@@ -606,7 +606,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromString("爱国和公安嘎斯噶的方式噶风格"));
             splits.add(PrimaryKeyValue.INF_MAX);
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(3, ranges.size());
             
@@ -689,7 +689,7 @@ public class RangeSplitByPointUnittest {
             splits.add(PrimaryKeyValue.fromLong(535333L));
             splits.add(PrimaryKeyValue.fromLong(Long.MAX_VALUE));
             
-            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), splits);
+            List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), splits);
             
             assertEquals(10, ranges.size());
             

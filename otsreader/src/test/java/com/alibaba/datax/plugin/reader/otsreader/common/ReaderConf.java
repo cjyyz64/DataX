@@ -137,13 +137,6 @@ public class ReaderConf {
         
         lines.add(String.format("\t\"%s\":{\n%s\t}",Key.RANGE, rangeToString(conf.getRangeBegin(), conf.getRangeEnd(), conf.getRangeSplit())));
         
-        if (conf.getRetry() > 0) {
-            lines.add(String.format("\t\"%s\":%d", Key.RETRY, conf.getRetry()));
-        }
-        if (conf.getSleepInMilliSecond() > 0) {
-            lines.add(String.format("\t\"%s\":%d", Key.SLEEP_IN_MILLI_SECOND, conf.getSleepInMilliSecond()));
-        }
-        
         return "{"+ linesToString(lines) +"}";
     }
 }

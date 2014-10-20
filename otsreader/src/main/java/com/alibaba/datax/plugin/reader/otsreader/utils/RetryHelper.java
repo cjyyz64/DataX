@@ -21,11 +21,15 @@ public class RetryHelper {
             } catch (Exception e) {
                 remainingRetryTimes = getRetryTimes(e, remainingRetryTimes);
                 if (remainingRetryTimes > 0) {  
-                    try {   
+                    try {
                         Thread.sleep(sleepInMilliSecond);
-                        sleepInMilliSecond += sleepInMilliSecond;
+                        if (sleepInMilliSecond >= 30000) {
+                            sleepInMilliSecond = 30000;
+                        } else {
+                            sleepInMilliSecond += sleepInMilliSecond;
+                        }
                     } catch (InterruptedException ee) { 
-                        LOG.warn(ee.getMessage());  
+                        LOG.warn(ee.getMessage());
                     }
                 } else {    
                     LOG.error("Retry times more than limition", e); 
@@ -71,7 +75,7 @@ public class RetryHelper {
         case 403:
             if (e.getErrorCode().equals(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT) || 
                 e.getErrorCode().equals(OTSErrorCode.QUOTA_EXHAUSTED) ) {
-                return remainingRetryTimes;
+                return --remainingRetryTimes;
             } else {
                 throw e;
             }

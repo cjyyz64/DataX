@@ -125,7 +125,7 @@ public class Utils {
                         sb.append(String.format("%s(%s)", key, "N/A"));
                     } else {
                         if (v.getType() == ColumnType.STRING) {
-                            sb.append(String.format("%s(%s)", key, "N/A"));
+                            sb.append(String.format("%s(%s)", key, v.asString()));
                         } else if (v.getType() == ColumnType.INTEGER) {
                             sb.append(String.format("%s(%d)", key, v.asLong()));
                         } else if (v.getType() == ColumnType.DOUBLE) {
@@ -303,7 +303,8 @@ public class Utils {
             } else {
                 switch (c.getType()) {
                 case STRING:  sb.append(c.asString() + "(STRING), "); break;
-                case NUMBER:  sb.append(c.asDouble() + "(NUMBER), "); break;
+                case LONG:  sb.append(c.asLong() + "(LONG), "); break;
+                case DOUBLE:  sb.append(c.asDouble() + "(DOUBLE), "); break;
                 case BOOL:  sb.append(c.asBoolean() + "(BOOL), "); break;
                 case BYTES: sb.append("(BYTES), "); ; break;
                 default:
@@ -318,7 +319,6 @@ public class Utils {
     private static Map<String, Record> getMapping (List<Record> records) {
         Map<String, Record> mapping = new LinkedHashMap<String, Record>();
         for (Record r: records) {
-            //System.out.println(Utils.getRecordString(r));
             StringBuilder key = new StringBuilder();
             key.append(r.getColumn(0).asString() + "_");
             mapping.put(key.toString(), r);
@@ -398,25 +398,40 @@ public class Utils {
                     LOG.error("Type 1 not match type 2, {}, {}", c1.getType(), c2.getType());
                     return false;
                 }
-                boolean flag = true;
                 switch (c1.getType()) {
                 case NULL: break;
-                case STRING: flag = c1.asString().equals(c2.asString());          break;
-                case NUMBER:
-                    try {
-                        flag = c1.asLong().longValue() == c2.asLong().longValue();
-                    } catch (Exception e){
-                        flag = c1.asDouble().doubleValue() == c2.asDouble().doubleValue();
+                case STRING: 
+                    if (!(c1.asString().equals(c2.asString()))) {
+                        LOG.error("not equal. {} != {}", c1.asString(), c2.asString());
+                        return false;
                     }
                     break;
-                case BOOL:   flag = c1.asBoolean().booleanValue() == c2.asBoolean().booleanValue();        break;
-                case BYTES:  flag = (compareBytes(c1.asBytes(), c2.asBytes()) == 0 ? true : false) ; break;
+                case LONG:
+                    if (!(c1.asLong().longValue() == c2.asLong().longValue())) {
+                        LOG.error("not equal. {} != {}", c1.asLong(), c2.asLong());
+                        return false;
+                    }
+                    break;
+                case DOUBLE:
+                    if (!(c1.asDouble().doubleValue() == c2.asDouble().doubleValue())) {
+                        LOG.error("not equal. {} != {}", c1.asDouble(), c2.asDouble());
+                        return false;
+                    }
+                    break;
+                case BOOL:
+                    if (!(c1.asBoolean().booleanValue() == c2.asBoolean().booleanValue())) {
+                        LOG.error("not equal. {} != {}", c1.asBoolean(), c2.asBoolean());
+                        return false;
+                    }
+                    break;
+                case BYTES:  
+                    if (!(compareBytes(c1.asBytes(), c2.asBytes()) == 0)) {
+                        LOG.error("not equal bytes.");
+                        return false;
+                    }
+                    break;
                 default:
                     throw new RuntimeException("Unsupport the type.");
-                }
-                if (!flag) {
-                    LOG.error("not equal.");
-                    return false;
                 }
             }
         }

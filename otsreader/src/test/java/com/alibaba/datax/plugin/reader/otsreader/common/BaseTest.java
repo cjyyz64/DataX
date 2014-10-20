@@ -25,7 +25,7 @@ public class BaseTest{
         this.tableName = tableName;
     }
     
-    public void prepareData(List<PrimaryKeyType> pkType, int rowCount, double nullPercent) {
+    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) {
         List<ColumnType> attriTypes = new ArrayList<ColumnType>();
         attriTypes.add(ColumnType.STRING);
         attriTypes.add(ColumnType.INTEGER);
@@ -40,7 +40,7 @@ public class BaseTest{
         
         Table t = new Table(ots, tableName, pkType, attriTypes, nullPercent);
         t.create();
-        t.insertData(rowCount);
+        t.insertData(begin, rowCount);
     }
     
     public OTSConf getConf (
@@ -78,6 +78,10 @@ public class BaseTest{
         for (int i = 0; i < attrCount; i++) {
             columns.add(OTSColumn.fromNormalColumn("attr_" + i));
         }
+        
+        List<OTSColumn> newColumns = new ArrayList<OTSColumn>();
+        Random r = new Random();
+        newColumns.add(columns.remove(0));
 
         for (int i = 0; i < constTimes; i++) {
             columns.add(OTSColumn.fromConstStringColumn(""));
@@ -91,10 +95,8 @@ public class BaseTest{
             columns.add(OTSColumn.fromConstBytesColumn(Person.toByte(person)));
         }
         
-        List<OTSColumn> newColumns = new ArrayList<OTSColumn>();
-        newColumns.add(columns.remove(0));
         while (!columns.isEmpty()) {
-            Random r = new Random();
+            r = new Random();
             newColumns.add(columns.remove(r.nextInt(columns.size())));
         }
         

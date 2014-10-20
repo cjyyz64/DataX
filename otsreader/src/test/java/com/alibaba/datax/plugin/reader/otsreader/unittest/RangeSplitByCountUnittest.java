@@ -108,6 +108,20 @@ public class RangeSplitByCountUnittest {
         assertEquals(555, points.get(5).longValue());
         assertEquals(1000, points.get(9).longValue());
     }
+    
+    /**
+     * 基础Integer逆序测试，测试切分功能正常，切分的范围符合预期
+     */
+    @Test
+    public void testReverseSplitIntegerRangeBase() {
+        List<Long> points = RangeSplit.splitIntegerRange(9, 0, 9);
+        assertEquals(10, points.size());
+
+        assertEquals(9, points.get(0).longValue());
+        assertEquals(6, points.get(3).longValue());
+        assertEquals(4, points.get(5).longValue());
+        assertEquals(0, points.get(9).longValue());
+    }
 
     /**
      * 基础测试，测试数值型不够切

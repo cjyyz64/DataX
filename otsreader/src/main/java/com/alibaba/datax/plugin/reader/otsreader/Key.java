@@ -46,11 +46,5 @@ public final class Key {
     public final static String RANGE_END = "end";
     
     public final static String RANGE_SPLIT = "split";
-    
-    //Option
-    
-    public final static String RETRY = "maxRetryTime"; // maxRetryTime
-    
-    public final static String SLEEP_IN_MILLI_SECOND = "retrySleepInMillionSecond";
 
 }

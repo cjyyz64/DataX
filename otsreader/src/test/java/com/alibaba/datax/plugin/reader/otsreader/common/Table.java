@@ -62,8 +62,8 @@ public class Table {
         }
     }
     
-    public void insertData(long rowCount) {
-        for (long i = 0; i < rowCount; i++) {
+    public void insertData(long begin, long rowCount) {
+        for (long i = begin; i < (begin + rowCount); i++) {
             RowPutChange rowChange = new RowPutChange(tableName);
             RowPrimaryKey primaryKey = new RowPrimaryKey();
             for (int j = 0; j < this.pkTypes.size(); j++) {
@@ -79,9 +79,9 @@ public class Table {
             rowChange.setPrimaryKey(primaryKey);
             
             for (int j = 0; j < this.attriTypes.size(); j++) {
+
                 String name = String.format("attr_%d", j);
                 ColumnType type = attriTypes.get(j);
-                
                 switch(type) {
                 case INTEGER: double r0 = Math.random(); if (r0 >= nullPercent){rowChange.addAttributeColumn(name, ColumnValue.fromLong(i));} break;
                 case DOUBLE: double r1 = Math.random(); if (r1 >= nullPercent){rowChange.addAttributeColumn(name, ColumnValue.fromDouble(i));} break;
@@ -90,7 +90,6 @@ public class Table {
                 case BINARY: double r4 = Math.random(); if (r4 >= nullPercent){rowChange.addAttributeColumn(name, ColumnValue.fromBinary(String.format("%d", i).getBytes()));} break;
                 }
             }
-            
             PutRowRequest putRowRequest = new PutRowRequest();
             putRowRequest.setRowChange(rowChange);
             ots.putRow(putRowRequest);

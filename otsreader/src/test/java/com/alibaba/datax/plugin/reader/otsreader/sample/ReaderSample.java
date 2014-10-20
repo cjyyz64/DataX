@@ -51,7 +51,7 @@ public class ReaderSample {
         attriTypes.add(ColumnType.STRING);
         Table t = new Table(ots, tableName, pkType, attriTypes, 0.5);
         t.create();
-        t.insertData(200);
+        t.insertData(0, 200);
         t.close();
     }
     
@@ -76,17 +76,17 @@ public class ReaderSample {
         conf.setColumns(columns);
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("0"));
-        rangeBegin.add(PrimaryKeyValue.INF_MIN);
-        rangeBegin.add(PrimaryKeyValue.INF_MIN);
-        rangeBegin.add(PrimaryKeyValue.INF_MIN);
+//        rangeBegin.add(PrimaryKeyValue.fromString("0"));
+//        rangeBegin.add(PrimaryKeyValue.INF_MIN);
+//        rangeBegin.add(PrimaryKeyValue.INF_MIN);
+//        rangeBegin.add(PrimaryKeyValue.INF_MIN);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("中"));
-        rangeEnd.add(PrimaryKeyValue.INF_MAX);
-        rangeEnd.add(PrimaryKeyValue.INF_MAX);
-        rangeEnd.add(PrimaryKeyValue.INF_MAX);
+//        rangeEnd.add(PrimaryKeyValue.fromString("中"));
+//        rangeEnd.add(PrimaryKeyValue.INF_MAX);
+//        rangeEnd.add(PrimaryKeyValue.INF_MAX);
+//        rangeEnd.add(PrimaryKeyValue.INF_MAX);
         conf.setRangeEnd(rangeEnd);
         
         List<PrimaryKeyValue> splits = new ArrayList<PrimaryKeyValue>();

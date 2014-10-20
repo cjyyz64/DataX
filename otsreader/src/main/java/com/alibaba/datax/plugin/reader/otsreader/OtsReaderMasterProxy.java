@@ -57,9 +57,9 @@ public class OtsReaderMasterProxy {
     public void init(Configuration param) throws Exception {        
         LOG.info("OTSReader master parameter : {}", param.toJSON());
         // 默认参数
-        // 基于默认值Sleep时间，第12次重试时，前面共计的时间6.82分钟，能覆盖OTS的Failover时间，5分钟
-        conf.setRetry(param.getInt(Key.RETRY, 12));
-        conf.setSleepInMilliSecond(param.getInt(Key.SLEEP_IN_MILLI_SECOND, 100));
+        // 每次重试的时间都是上一次的一倍，当sleep时间大于30秒时，Sleep重试时间不在增长。17次能覆盖OTS的Failover时间5分钟
+        conf.setRetry(17);
+        conf.setSleepInMilliSecond(100);
         
         // 必选参数
         conf.setEndpoint(ParamChecker.checkStringAndGet(param, Key.OTS_ENDPOINT)); 
@@ -213,7 +213,7 @@ public class OtsReaderMasterProxy {
     }
 
     private List<OTSRange> userDefinedRangeSplit(TableMeta meta, OTSRange range, List<PrimaryKeyValue> points) {
-        List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, conf, range.getBegin(), range.getEnd(), points);
+        List<OTSRange> ranges = RangeSplit.rangeSplitByPoint(meta, range.getBegin(), range.getEnd(), points);
         if (ranges.isEmpty()) { // 当PartitionKey相等时，工具内部不会切分Range
             ranges.add(range);
         }

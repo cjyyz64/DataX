@@ -55,7 +55,7 @@ public class ReaderModelParser {
     }
     
     public static OTSColumn parseOTSColumn(Map<String, Object> item) {
-        if (item.containsKey(OTSConst.NAME)) {
+        if (item.containsKey(OTSConst.NAME) && item.size() == 1) {
             Object name = item.get(OTSConst.NAME);
             if (name instanceof String) {
                 String nameStr = (String) name;
@@ -63,7 +63,7 @@ public class ReaderModelParser {
             } else {
                 throw new IllegalArgumentException("Can not parse map to 'OTSColumn', the value is not a string.");
             }
-        } else if (item.containsKey(OTSConst.TYPE) && item.containsKey(OTSConst.VALUE)) {
+        } else if (item.containsKey(OTSConst.TYPE) && item.containsKey(OTSConst.VALUE) && item.size() == 2) {
             Object type = item.get(OTSConst.TYPE);
             Object value = item.get(OTSConst.VALUE);
             if (type instanceof String && value instanceof String) {
@@ -75,7 +75,7 @@ public class ReaderModelParser {
             }
         } else {
             throw new IllegalArgumentException(
-                    "Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'. ");
+                    "Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'.");
         }
     }
     
@@ -123,7 +123,7 @@ public class ReaderModelParser {
     }
     
     public static PrimaryKeyValue parsePrimaryKeyValue(Map<String, Object> item) {
-        if (item.containsKey(OTSConst.TYPE) && item.containsKey(OTSConst.VALUE)) {
+        if (item.containsKey(OTSConst.TYPE) && item.containsKey(OTSConst.VALUE) && item.size() == 2) {
             Object type = item.get(OTSConst.TYPE);
             Object value = item.get(OTSConst.VALUE);
             if (type instanceof String && value instanceof String) {

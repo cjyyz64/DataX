@@ -22,7 +22,7 @@ public class RetryHelperUnittest {
                 assertEquals(10, RetryHelper.getRetryTimes(e, remainingRetryTimes));
 
                 e = new OTSException("", null, OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "", 403);
-                assertEquals(10, RetryHelper.getRetryTimes(e, remainingRetryTimes));
+                assertEquals(9, RetryHelper.getRetryTimes(e, remainingRetryTimes));
 
                 e = new OTSException("", null, OTSErrorCode.TABLE_NOT_READY, "", 404);
                 assertEquals(10, RetryHelper.getRetryTimes(e, remainingRetryTimes));

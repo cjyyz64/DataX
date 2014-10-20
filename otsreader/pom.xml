@@ -84,7 +84,7 @@
                 <version>2.5</version>
                 <configuration>
                     <includes>
-                        <include>**/*test.java</include>
+                        <include>**/*Unittest.java</include>
                     </includes>
                     <excludes>
                         <exclude>**/*Sample*.java</exclude>
