@@ -15,7 +15,6 @@ import com.alibaba.datax.plugin.reader.otsreader.utils.RangeSplit;
  *
  */
 public class RangeSplitByCountUnittest {
-
     /**
      * 基础String测试，测试切分功能正常，切分的范围符合预期
      */

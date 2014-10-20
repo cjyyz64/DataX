@@ -24,7 +24,6 @@ import com.aliyun.openservices.ots.model.TableMeta;
  *
  */
 public class RangeSplitByPointUnittest {
-
     /**
      * 基础测试，测试切分功能正常，切分的范围符合预期
      */

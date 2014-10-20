@@ -345,6 +345,7 @@ public class RangeSplit {
 
     public static List<OTSRange> rangeSplitByPoint(TableMeta meta, RowPrimaryKey beginPK, RowPrimaryKey endPK,
             List<PrimaryKeyValue> splits) {
+        
         List<OTSRange> results = new ArrayList<OTSRange>();
 
         int pkCount = meta.getPrimaryKey().size();
