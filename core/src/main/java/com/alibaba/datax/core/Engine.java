@@ -1,9 +1,12 @@
 package com.alibaba.datax.core;
 
-import java.io.File;
-import java.util.Set;
-import java.util.UUID;
-
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
+import com.alibaba.datax.common.element.ColumnCast;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.container.AbstractContainer;
+import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.util.*;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -13,19 +16,9 @@ import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-
-import com.alibaba.datax.common.element.ColumnCast;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.AbstractContainer;
-import com.alibaba.datax.core.container.util.LoadUtil;
-import com.alibaba.datax.core.util.ClassUtil;
-import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.ConfigurationValidate;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.ExceptionTracker;
-import com.alibaba.datax.core.util.Status;
+import java.io.File;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * Engine是DataX入口类，该类负责初始化Master或者Slave的运行容器，并运行插件的Master或者Slave逻辑

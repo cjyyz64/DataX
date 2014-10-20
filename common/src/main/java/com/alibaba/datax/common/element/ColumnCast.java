@@ -1,5 +1,10 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
+import org.apache.commons.lang3.time.DateUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -8,12 +13,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang3.time.DateUtils;
-
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.util.Configuration;
 
 public final class ColumnCast {
 
@@ -76,6 +75,8 @@ final class StringCast {
 
 	static {
 		String2Bool.put("true", true);
+
+        //TODO fix regex
 		String2Bool.put("!true", false);
 	}
 

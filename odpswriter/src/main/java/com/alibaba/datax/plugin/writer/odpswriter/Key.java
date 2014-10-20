@@ -17,6 +17,8 @@ public final class Key {
 
     public final static String PARTITION = "partition";
 
+    public final static String COLUMN = "column";
+
     public final static String TRUNCATE = "truncate";
 
     public final static String MAX_RETRY_TIME = "maxRetryTime";

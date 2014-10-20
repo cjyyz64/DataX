@@ -3,17 +3,17 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryHelper;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
-import com.alibaba.odps.tunnel.Account;
-import com.alibaba.odps.tunnel.DataTunnel;
-import com.alibaba.odps.tunnel.Upload;
+import com.alibaba.odps.tunnel.*;
 import com.aliyun.openservices.odps.ODPSConnection;
 import com.aliyun.openservices.odps.Project;
 import com.aliyun.openservices.odps.jobs.*;
 import com.aliyun.openservices.odps.jobs.TaskStatus.Status;
 import com.aliyun.openservices.odps.tables.Table;
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -30,6 +31,43 @@ public class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
 
     public static int MAX_RETRY_TIME = 4;
+
+    public static void checkNecessaryConfig(Configuration originalConfig) {
+        originalConfig.getNecessaryValue(Key.ODPS_SERVER,
+                OdpsWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.TUNNEL_SERVER,
+                OdpsWriterErrorCode.REQUIRED_VALUE);
+
+        originalConfig.getNecessaryValue(Key.PROJECT,
+                OdpsWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.TABLE,
+                OdpsWriterErrorCode.REQUIRED_VALUE);
+
+        if (null == originalConfig.getList(Key.COLUMN) ||
+                originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
+            throw new DataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
+                    "column configured error.");
+        }
+
+        // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
+        originalConfig.getBool(Key.TRUNCATE);
+    }
+
+    public static void dealMaxRetryTime(Configuration originalConfig) {
+        int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
+                OdpsUtil.MAX_RETRY_TIME);
+        if (maxRetryTime < 1) {
+            String bussinessMessage = "maxRetryTime should >=1.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+
+            LOG.error(message);
+            throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                    bussinessMessage);
+        }
+
+        MAX_RETRY_TIME = maxRetryTime;
+    }
 
     public static String formatPartition(String partitionString) {
         if (null == partitionString) {
@@ -56,7 +94,7 @@ public class OdpsUtil {
         return new DataTunnel(tunnelConfig);
     }
 
-    public static Project initOpdsProject(Configuration originalConfig) {
+    public static Project initOdpsProject(Configuration originalConfig) {
         String accountType = originalConfig.getString(Key.ACCOUNT_TYPE);
         String accessId = originalConfig.getString(Key.ACCESS_ID);
         String accessKey = originalConfig.getString(Key.ACCESS_KEY);
@@ -88,6 +126,20 @@ public class OdpsUtil {
         String table = originalConfig.getString(Key.TABLE);
 
         Table tab = new Table(odpsProject, table);
+
+        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
+        try {
+            partitionKeys = tab.getPartitionKeys();
+        } catch (Exception e) {
+            throw new DataXException(null, e);
+        }
+
+        if (null != partitionKeys && !partitionKeys.isEmpty()) {
+            LOG.error("Can not truncate partitioned table. detail: table [{}] has partition:[{}].",
+                    tab.getName(), StringUtils.join(partitionKeys, ","));
+            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table");
+        }
+
         try {
             tab.load();
         } catch (Exception e) {
@@ -99,29 +151,19 @@ public class OdpsUtil {
         runSqlTask(odpsProject, dropDdl);
         runSqlTask(odpsProject, ddl);
 
-        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
-        try {
-            partitionKeys = tab.getPartitionKeys();
-        } catch (Exception e) {
-            throw new DataXException(null, e);
-        }
-        if (null == partitionKeys || partitionKeys.isEmpty()) {
-            LOG.info("Table [{}] has no partition .", tab.getName());
-        } else {
-            LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
-            String addPart = getAddPartitionDdl(tab);
-            runSqlTask(odpsProject, addPart);
-        }
+        LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
+        String addPart = getAddPartitionDdl(tab);
+        runSqlTask(odpsProject, addPart);
     }
 
     public static void truncatePartition(Project odpsProject, String table, String partition) {
-        if (isPartExists(odpsProject, table, partition)) {
+        if (isPartitionExists(odpsProject, table, partition)) {
             dropPart(odpsProject, table, partition);
         }
         addPart(odpsProject, table, partition);
     }
 
-    public static boolean isPartExists(Project odpsProject, String table, String partition) {
+    public static boolean isPartitionExists(Project odpsProject, String table, String partition) {
         Table tbl = new Table(odpsProject, table);
         // check if exist partition
         List<String> odpsParts = OdpsUtil.listOdpsPartitions(tbl);
@@ -419,5 +461,60 @@ public class OdpsUtil {
             hpout.close();
             return null;
         }
+    }
+
+    /**
+     * 与 OdpsReader 中代码一样
+     */
+    public static List<Integer> parsePosition(List<String> allColumnList,
+                                              List<String> userConfiguredColumns) {
+        List<Integer> retList = new ArrayList<Integer>();
+
+        boolean hasColumn = false;
+        for (String col : userConfiguredColumns) {
+            hasColumn = false;
+            for (int i = 0, len = allColumnList.size(); i < len; i++) {
+                if (allColumnList.get(i).equalsIgnoreCase(col)) {
+                    retList.add(i);
+                    hasColumn = true;
+                    break;
+                }
+            }
+            if (!hasColumn) {
+                throw new DataXException(OdpsWriterErrorCode.TEMP,
+                        String.format("no column named [%s] !", col));
+            }
+        }
+        return retList;
+    }
+
+    /**
+     * 转为小写(对类型进行了是否支持的判断)
+     */
+    public static List<String> getAllColumns(RecordSchema schema) {
+        if (null == schema) {
+            throw new IllegalArgumentException("parameter schema can not be null.");
+        }
+
+        List<String> allColumns = new ArrayList<String>();
+        Column.Type type = null;
+        for (int i = 0, columnCount = schema.getColumnCount(); i < columnCount; i++) {
+            allColumns.add(schema.getColumnName(i).toLowerCase());
+            type = schema.getColumnType(i);
+            if (type == Column.Type.ODPS_ARRAY || type == Column.Type.ODPS_MAP) {
+                throw new DataXException(OdpsWriterErrorCode.TEMP, "Unsupported data type:" + type);
+            }
+        }
+        return allColumns;
+    }
+
+    public static List<Column.Type> getTableOriginalColumnTypeList(RecordSchema schema) {
+        List<Column.Type> tableOriginalColumnTypeList = new ArrayList<Column.Type>();
+
+        for (int i = 0, columnCount = schema.getColumnCount(); i < columnCount; i++) {
+            tableOriginalColumnTypeList.add(schema.getColumnType(i));
+        }
+
+        return tableOriginalColumnTypeList;
     }
 }

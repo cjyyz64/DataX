@@ -26,6 +26,7 @@ public enum OdpsWriterErrorCode implements ErrorCode {
     WRITER_BLOCK_FAIL("OdpsWriter-15", "failed to write odps block"),
 
     COMMIT_BLOCK_FAIL("OdpsWriter-16", "failed to commit block"),
+    COLUMN_CONFIGURED_ERROR("OdpsWriter-17", "column configured error."),
 
     TEMP("TEMP", "Todo"),;
 

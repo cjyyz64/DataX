@@ -2,23 +2,19 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.StrUtil;
+import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
-import com.alibaba.datax.plugin.writer.odpswriter.util.SecurityChecker;
-import com.alibaba.odps.tunnel.Column;
 import com.alibaba.odps.tunnel.DataTunnel;
 import com.alibaba.odps.tunnel.RecordSchema;
 import com.alibaba.odps.tunnel.Upload;
-import com.alibaba.odps.tunnel.io.ProtobufRecordWriter;
-import com.alibaba.odps.tunnel.io.Record;
 import com.aliyun.openservices.odps.Project;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +31,7 @@ public class OdpsWriter extends Writer {
         private String project;
         private String table;
         private String partition;
+        private List<String> column;
         private String accountType;
         private boolean truncate;
         private DataTunnel dataTunnel;
@@ -46,7 +43,8 @@ public class OdpsWriter extends Writer {
         public void init() {
             this.originalConfig = super.getPluginJobConf();
 
-            checkNecessaryConfig(this.originalConfig);
+            OdpsUtil.checkNecessaryConfig(this.originalConfig);
+            OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
             this.project = this.originalConfig.getString(Key.PROJECT);
             this.table = this.originalConfig.getString(Key.TABLE);
@@ -55,10 +53,11 @@ public class OdpsWriter extends Writer {
                     .getString(Key.PARTITION, ""));
             this.originalConfig.set(Key.PARTITION, this.partition);
 
+            this.column = this.originalConfig.getList(Key.COLUMN, String.class);
+
             this.accountType = this.originalConfig.getString(Key.ACCOUNT_TYPE,
                     Constant.DEFAULT_ACCOUNT_TYPE);
-            this.originalConfig.set(Key.ACCOUNT_TYPE,
-                    Constant.DEFAULT_ACCOUNT_TYPE);
+            this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
@@ -66,21 +65,6 @@ public class OdpsWriter extends Writer {
                 LOG.debug("After init, job config now is: [\n{}\n] .",
                         this.originalConfig.toJSON());
             }
-        }
-
-        private void checkNecessaryConfig(Configuration originalConfig) {
-            originalConfig.getNecessaryValue(Key.ODPS_SERVER,
-                    OdpsWriterErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TUNNEL_SERVER,
-                    OdpsWriterErrorCode.REQUIRED_VALUE);
-
-            originalConfig.getNecessaryValue(Key.PROJECT,
-                    OdpsWriterErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TABLE,
-                    OdpsWriterErrorCode.REQUIRED_VALUE);
-
-            // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
-            originalConfig.getBool(Key.TRUNCATE);
         }
 
         @Override
@@ -91,8 +75,7 @@ public class OdpsWriter extends Writer {
 
             if (Constant.DEFAULT_ACCOUNT_TYPE
                     .equalsIgnoreCase(this.accountType)) {
-                this.originalConfig = SecurityChecker
-                        .parseAccessIdAndKey(this.originalConfig);
+                this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
                 accessId = this.originalConfig.getString(Key.ACCESS_ID);
                 accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
                 if (IS_DEBUG) {
@@ -107,9 +90,10 @@ public class OdpsWriter extends Writer {
             this.dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
 
             // init odps config
-            this.odpsProject = OdpsUtil.initOpdsProject(this.originalConfig);
+            this.odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
 
             if (this.truncate) {
+                //TODO 必须要是非分区表才能 truncate 整个表
                 if (StringUtils.isBlank(this.partition)) {
                     LOG.info("Try to truncate table:[{}].", this.table);
                     OdpsUtil.truncateTable(this.originalConfig,
@@ -123,7 +107,7 @@ public class OdpsWriter extends Writer {
             } else {
                 // add part if not exists
                 if (StringUtils.isNotBlank(this.partition)
-                        && !OdpsUtil.isPartExists(this.odpsProject, this.table,
+                        && !OdpsUtil.isPartitionExists(this.odpsProject, this.table,
                         this.partition)) {
                     LOG.info("Try to add partition:[{}] in table:[{}].",
                             this.partition, this.table);
@@ -140,12 +124,19 @@ public class OdpsWriter extends Writer {
          */
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            List<Configuration> splittedConfigs = new ArrayList<Configuration>();
+            List<Configuration> configurations = new ArrayList<Configuration>();
 
             this.masterUpload = OdpsUtil.createMasterTunnelUpload(
                     this.dataTunnel, this.project, this.table, this.partition);
             this.uploadId = this.masterUpload.getUploadId();
             LOG.info("uploadId:[{}].", this.uploadId);
+
+            //TODO log it
+            RecordSchema schema = this.masterUpload.getSchema();
+            List<String> allColumns = OdpsUtil.getAllColumns(schema);
+            LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
+
+            dealColumn(this.originalConfig, allColumns);
 
             for (int i = 0; i < mandatoryNumber; i++) {
                 Configuration tempConfig = this.originalConfig.clone();
@@ -154,9 +145,35 @@ public class OdpsWriter extends Writer {
                 tempConfig.set(Constant.BLOCK_ID, String.valueOf(i));
                 tempConfig.set(Constant.INTERVAL_STEP, mandatoryNumber);
 
-                splittedConfigs.add(tempConfig);
+                configurations.add(tempConfig);
             }
-            return splittedConfigs;
+
+            if (IS_DEBUG) {
+                LOG.debug("After split, the job config now is:[\n{}\n].", this.originalConfig);
+            }
+
+            return configurations;
+        }
+
+        private void dealColumn(Configuration originalConfig, List<String> allColumns) {
+            List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
+            if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
+                userConfiguredColumns = allColumns;
+                originalConfig.set(Key.COLUMN, allColumns);
+            } else {
+                //TODO 检查列是否重复（所有写入，都是不允许写入段的列重复的，需要抽取 Common util 方法）
+
+
+                //检查列是否存在  TODO 需要抽取 Common util 方法）
+                for (String column : userConfiguredColumns) {
+                    if (!allColumns.contains(column.toLowerCase())) {
+                        throw new DataXException(OdpsWriterErrorCode.TEMP, "Unknown column name:" + column.toLowerCase());
+                    }
+                }
+            }
+
+            List<Integer> columnPositions = OdpsUtil.parsePosition(allColumns, userConfiguredColumns);
+            originalConfig.set(Constant.COLUMN_POSITION, columnPositions);
         }
 
         @Override
@@ -182,23 +199,6 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
-        }
-
-        private void dealMaxRetryTime(Configuration originalConfig) {
-            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
-                    OdpsUtil.MAX_RETRY_TIME);
-            if (maxRetryTime < 1) {
-                String bussinessMessage = "maxRetryTime should >=1.";
-                String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
-
-                LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        bussinessMessage);
-            }
-
-            OdpsUtil.MAX_RETRY_TIME = maxRetryTime;
         }
 
     }
@@ -212,15 +212,11 @@ public class OdpsWriter extends Writer {
 
         private Configuration sliceConfig;
         private DataTunnel dataTunnel;
-        private RecordSchema schema;
         private String project;
         private String table;
         private String partition;
         private Upload slaveUpload;
 
-        private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
-                70 * 1024 * 1024);
-        private ProtobufRecordWriter protobufRecordWriter = null;
         private String uploadId = null;
 
         @Override
@@ -231,146 +227,62 @@ public class OdpsWriter extends Writer {
             this.table = this.sliceConfig.getString(Key.TABLE);
             this.partition = OdpsUtil.formatPartition(this.sliceConfig
                     .getString(Key.PARTITION, ""));
+            this.sliceConfig.set(Key.PARTITION, this.partition);
 
             this.dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
 
             uploadId = this.sliceConfig.getString(Constant.UPLOAD_ID);
-            this.slaveUpload = OdpsUtil.getSlaveTunnelUpload(this.dataTunnel,
-                    this.project, this.table, this.partition, uploadId);
-            this.schema = this.slaveUpload.getSchema();
+            this.slaveUpload = OdpsUtil.getSlaveTunnelUpload(this.dataTunnel, this.project,
+                    this.table, this.partition, uploadId);
+
         }
 
         @Override
         public void prepare() {
-            LOG.info("prepare()");
         }
-
-        private int max_buffer_length = 64 * 1024 * 1024;
 
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
             // blockId 的开始值，master在 split 的时候已经准备好
             long blockId = this.sliceConfig.getLong(Constant.BLOCK_ID);
+            int intervalStep = this.sliceConfig.getInt(Constant.INTERVAL_STEP);
             List<Long> blocks = new ArrayList<Long>();
             com.alibaba.datax.common.element.Record dataxRecord = null;
 
+            List<Integer> columnPositions = this.sliceConfig.getList(Constant.COLUMN_POSITION,
+                    Integer.class);
+
             try {
-                protobufRecordWriter = new ProtobufRecordWriter(schema, byteArrayOutputStream);
+                SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
+
+                OdpsWriterProxy proxy = new OdpsWriterProxy(this.slaveUpload, blockId, intervalStep,
+                        columnPositions);
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
-                    Record r = line2Record(dataxRecord, schema);
-                    if (null != r) {
-                        protobufRecordWriter.write(r);
-                    }
-
-                    if (byteArrayOutputStream.size() >= max_buffer_length) {
-                        protobufRecordWriter.close();
-                        OdpsUtil.slaveWriteOneBlock(this.slaveUpload, this.byteArrayOutputStream, blockId);
-                        LOG.info("write block {} ok.", blockId);
-
-                        blocks.add(blockId);
-                        byteArrayOutputStream.reset();
-                        protobufRecordWriter = new ProtobufRecordWriter(schema, byteArrayOutputStream);
-
-                        blockId += this.sliceConfig
-                                .getInt(Constant.INTERVAL_STEP);
+                    try {
+                        proxy.writeOneRecord(dataxRecord, blocks);
+                    } catch (DataXException e1) {
+                        throw e1;
+                    } catch (Exception e2) {
+                        slavePluginCollector.collectDirtyRecord(dataxRecord,
+                                "Unsupported type: " + e2.getMessage());
                     }
                 }
-                // complete protobuf stream, then write to http
-                protobufRecordWriter.close();
-                if (byteArrayOutputStream.size() != 0) {
-                    OdpsUtil.slaveWriteOneBlock(this.slaveUpload, this.byteArrayOutputStream, blockId);
-                    LOG.info("write block {} ok.", blockId);
 
-                    blocks.add(blockId);
-                    // reset the buffer for next block
-                    byteArrayOutputStream.reset();
-                }
+                proxy.writeRemainingRecord(blocks);
 
-                super.getSlavePluginCollector().collectMessage(
-                        Constant.SLAVE_WROTE_BLOCK_MESSAGE,
-                        StringUtils.join(blockId, ","));
+                slavePluginCollector.collectMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE,
+                        StringUtils.join(blocks, ","));
             } catch (Exception e) {
                 throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
             }
         }
 
-        private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
-
-        private volatile boolean is_compatible = true;// TODO tunnelConfig or
-        // delete it
-
-        public Record line2Record(
-                com.alibaba.datax.common.element.Record dataxRecord,
-                RecordSchema schema) {
-            int destColumnCount = schema.getColumnCount();
-            int sourceColumnCount = dataxRecord.getColumnNumber();
-            Record r = new Record(schema.getColumnCount());
-
-            if (sourceColumnCount > destColumnCount) {
-                super.getSlavePluginCollector().collectDirtyRecord(dataxRecord,
-                        "source column number bigger than dest column num. ");
-                return null;
-            } else if (sourceColumnCount < destColumnCount) {
-                if (printColumnLess) {
-                    printColumnLess = false;
-                    LOG.warn(
-                            "source column={} is less than dest column={}, fill dest column with null !",
-                            dataxRecord.getColumnNumber(), destColumnCount);
-                }
-            }
-
-            for (int i = 0; i < sourceColumnCount; i++) {
-                com.alibaba.datax.common.element.Column v = dataxRecord
-                        .getColumn(i);
-                if (null == v)
-                    continue;
-                // for compatible dt lib, "" as null ?? TODO
-                if (is_compatible && "".equals(v)) {
-                    continue;
-                }
-                Column.Type type = schema.getColumnType(i);
-                try {
-                    switch (type) {
-                        case ODPS_BIGINT:
-                            r.setBigint(i, v.asLong());
-                            break;
-                        case ODPS_DOUBLE:
-                            r.setDouble(i, v.asDouble());
-                            break;
-                        case ODPS_DATETIME:
-                            r.setDatetime(i, v.asDate());
-                            break;
-                        case ODPS_BOOLEAN:
-                            r.setBoolean(i, v.asBoolean());
-                            break;
-                        case ODPS_STRING:
-                            r.setString(i, v.asString());
-                            break;
-                        default:
-                            throw new DataXException(
-                                    OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                                    String.format("Unsupported Type: [%s] .",
-                                            type.toString()));
-                    }
-                } catch (Exception e) {
-                    LOG.warn("BAD TYPE: " + e.toString());
-                    super.getSlavePluginCollector().collectDirtyRecord(
-                            dataxRecord, "Unsupported type: " + e.getMessage());
-                    return null;
-                }
-            }
-            return r;
-        }
-
         @Override
         public void post() {
-            LOG.info("post()");
-
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
         }
 
     }
