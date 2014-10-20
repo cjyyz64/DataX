@@ -66,7 +66,8 @@ public class Engine {
 		java.util.Calendar c = java.util.Calendar.getInstance();
 		java.text.SimpleDateFormat f = new java.text.SimpleDateFormat(
 				"yyyyMMddHHmmss");
-		System.setProperty("log.file", jobId + "." + f.format(c.getTime()));
+        String logFile = String.format("%s.%s", jobId, f.format(c.getTime()));
+		System.setProperty("log.file", logFile);
 
 		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
 		LoggerContext loggerContext = (LoggerContext) loggerFactory;
@@ -75,6 +76,7 @@ public class Engine {
 		configurator.setContext(loggerContext);
 		configurator.doConfigure(new File(CoreConstant.DATAX_CONF_LOG_PATH)
 				.toURI().toURL());
+        LOG.info(String.format("log file : %s", logFile));
 	}
 
 	private static String copyRight() {

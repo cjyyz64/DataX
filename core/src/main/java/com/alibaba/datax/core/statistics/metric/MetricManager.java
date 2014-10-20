@@ -196,7 +196,7 @@ public final class MetricManager {
 				/ sec;
 		now.setByteSpeed(bytes);
 		now.setRecordSpeed(records);
-		now.setPercentage(now.getStage() / totalStage);
+		now.setPercentage(now.getStage() / (double)totalStage);
 		return now;
 	}
 }

@@ -153,6 +153,7 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
+        job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
         is_resaved_json = True
 
     if is_job_from_http:
@@ -161,8 +162,8 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
+        job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
         is_resaved_json = True
-    job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
 
     return job_path, is_resaved_json
 
