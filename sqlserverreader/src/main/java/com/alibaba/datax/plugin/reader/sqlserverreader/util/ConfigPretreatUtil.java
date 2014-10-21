@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.reader.sqlserverreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.ListUtil;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
@@ -29,14 +31,14 @@ public class ConfigPretreatUtil {
 	 * */
 	public static void validate(Configuration originReaderConfig) {
 		originReaderConfig.getNecessaryValue(Key.USERNAME,
-				SqlServerReaderErrorCode.CONF_ERROR);
+				SqlServerReaderErrorCode.REQUIRED_VALUE);
 		originReaderConfig.getNecessaryValue(Key.PASSWORD,
-				SqlServerReaderErrorCode.CONF_ERROR);
+				SqlServerReaderErrorCode.REQUIRED_VALUE);
 
 		int fetchSize = originReaderConfig.getInt(Key.FETCH_SIZE,
 				Constants.DEFAULT_FETCH_SIZE);
 		if (fetchSize < 1) {
-			throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
+			throw new DataXException(SqlServerReaderErrorCode.REQUIRED_VALUE,
 					"fetchSize can not less than 1.");
 		}
 		originReaderConfig.set(Key.FETCH_SIZE, fetchSize);
@@ -47,7 +49,7 @@ public class ConfigPretreatUtil {
 
 		// warn:to sql server ,connect part array size must be 1
 		if (null == conns || 1 != conns.size()) {
-			throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
+			throw new DataXException(SqlServerReaderErrorCode.ILLEGAL_VALUE,
 					"connection configuration part invalid, shall have one and only one element");
 		}
 
@@ -84,41 +86,42 @@ public class ConfigPretreatUtil {
 			// both false
 			if (!tableModeFlag.get(i).booleanValue()
 					&& !querySqlModeFlag.get(i)) {
+
+				String bussinessMessage = "table and querySql should configured one item.";
+				String message = StrUtil.buildOriginalCauseMessage(
+						bussinessMessage, null);
+				LOG.error(message);
+
 				throw new DataXException(
-						SqlServerReaderErrorCode.TABLE_QUERYSQL_MIXED,
-						"table and querySql must have one.");
+						SqlServerReaderErrorCode.TABLE_QUERYSQL_MISSING,
+						bussinessMessage);
 			}
 			// warn:both true
 			if (tableModeFlag.get(i).booleanValue() && querySqlModeFlag.get(i)) {
+				String bussinessMessage = "table and querySql can not mixed.";
+				String message = StrUtil.buildOriginalCauseMessage(
+						bussinessMessage, null);
+				LOG.error(message);
+
 				throw new DataXException(
 						SqlServerReaderErrorCode.TABLE_QUERYSQL_MIXED,
-						"table and querySql can only have one.");
+						bussinessMessage);
 			}
 		}
 
-		if (!isListValueSame(tableModeFlag)
-				|| !isListValueSame(querySqlModeFlag)) {
+		if (!ListUtil.checkIfValueSame(tableModeFlag)
+				|| !ListUtil.checkIfValueSame(querySqlModeFlag)) {
+			String bussinessMessage = "table and querySql can not mixed.";
+			String message = StrUtil.buildOriginalCauseMessage(
+					bussinessMessage, null);
+			LOG.error(message);
+
 			throw new DataXException(
 					SqlServerReaderErrorCode.TABLE_QUERYSQL_MIXED,
-					"table and querySql can not mixed.");
+					bussinessMessage);
 		}
 
 		return tableModeFlag.get(0);
-	}
-
-	private static boolean isListValueSame(List<Boolean> flags) {
-		if (1 == flags.size()) {
-			return true;
-		}
-
-		boolean preValue = flags.get(0);
-		for (int i = 1; i < flags.size(); i++) {
-			if (preValue != flags.get(i)) {
-				return false;
-			}
-			preValue = flags.get(i);
-		}
-		return true;
 	}
 
 	// warn : 虽然sqlserver没有分库分表，但是配置也要和其他rds一致
@@ -138,11 +141,13 @@ public class ConfigPretreatUtil {
 					.from(conns.get(i).toString());
 
 			connConf.getNecessaryValue(Key.JDBC_URL,
-					SqlServerReaderErrorCode.CONF_ERROR);
+					SqlServerReaderErrorCode.REQUIRED_VALUE);
 
 			List<String> jdbcUrls = connConf
 					.getList(Key.JDBC_URL, String.class);
-			String jdbcUrl = checkJdbcUrl(jdbcUrls, username, password);
+
+			String jdbcUrl = DBUtil.chooseJdbcUrl(DataBaseType.SQLServer,
+					jdbcUrls, username, password, null);
 
 			// warn : path 写回到配置
 			originReaderConfig.set(String.format("%s[%d].%s",
@@ -155,7 +160,7 @@ public class ConfigPretreatUtil {
 						DataBaseType.SQLServer, tables);
 				if (null == expandedTables || expandedTables.isEmpty()) {
 					throw new DataXException(
-							SqlServerReaderErrorCode.CONF_ERROR,
+							SqlServerReaderErrorCode.ILLEGAL_VALUE,
 							"sql server read table config error.");
 				}
 
@@ -181,11 +186,13 @@ public class ConfigPretreatUtil {
 		if (isTableMode) {
 			// don't have a column config, default all columns
 			if (null == columns || 0 == columns.size()) {
-				originReaderConfig.set(Key.COLUMN, "*");
-				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
-						+ ": because column configed as empty may not work when you changed your table structure.");
-				throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
-						"columns could not be empty or blank.");
+				String businessMessage = "Lost column config.";
+				String message = StrUtil.buildOriginalCauseMessage(
+						businessMessage, null);
+
+				LOG.error(message);
+				throw new DataXException(SqlServerReaderErrorCode.REQUIRED_KEY,
+						businessMessage);
 			} else if (1 == columns.size() && "*".equals(columns.get(0))) {
 				LOG.warn(SqlServerReaderErrorCode.NOT_RECOMMENDED.toString()
 						+ ": because column configed as * may not work when you changed your table structure.");
@@ -212,7 +219,7 @@ public class ConfigPretreatUtil {
 				for (String column : columns) {
 					if ("*".equals(column)) {
 						throw new DataXException(
-								SqlServerReaderErrorCode.CONF_ERROR,
+								SqlServerReaderErrorCode.ILLEGAL_VALUE,
 								"no column named [*].");
 					}
 
@@ -248,24 +255,6 @@ public class ConfigPretreatUtil {
 			}
 		}
 
-	}
-
-	private static String checkJdbcUrl(List<String> jdbcUrls, String username,
-			String password) {
-		Connection conn = null;
-		for (String jdbcUrl : jdbcUrls) {
-			try {
-				conn = DBUtil.getConnection(DataBaseType.SQLServer, jdbcUrl,
-						username, password);
-			} catch (Exception e) {
-				LOG.warn("jdbcUrl:[{}] not available.", jdbcUrl);
-			}
-			if (null != conn) {
-				return jdbcUrl;
-			}
-		}
-		throw new DataXException(SqlServerReaderErrorCode.CONN_DB_ERROR,
-				"can not connect to");
 	}
 
 }

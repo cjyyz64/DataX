@@ -37,7 +37,7 @@ public class SingleTableSplitUtil {
 
         if (null == minMaxPK) {
             throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
-                    "split by pk failed.");
+                    "split table with splitPk failed.");
         }
 
         String splitPkName = configuration.getString(Key.SPLIT_PK);
