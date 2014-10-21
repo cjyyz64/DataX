@@ -27,7 +27,7 @@ public class StreamReader extends Reader {
             if (null == sliceRecordCount) {
                 throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE, "Lost config sliceRecordCount.");
             } else if (sliceRecordCount < 1) {
-                throw new DataXException(StreamReaderErrorCode.TEMP, "sliceRecordCount can not <1.");
+                throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE, "sliceRecordCount can not <1.");
             }
 
         }
@@ -41,7 +41,7 @@ public class StreamReader extends Reader {
             List<String> dealedColumns = new ArrayList<String>();
             for (JSONObject eachColumn : columns) {
                 Configuration eachColumnConfig = Configuration.from(eachColumn);
-                eachColumnConfig.getNecessaryValue(Constant.VALUE, StreamReaderErrorCode.TEMP);
+                eachColumnConfig.getNecessaryValue(Constant.VALUE, StreamReaderErrorCode.REQUIRED_VALUE);
                 String typeName = eachColumnConfig.getString(Constant.TYPE);
                 if (StringUtils.isBlank(typeName)) {
                     // empty typeName will be set to default type: string
@@ -55,7 +55,8 @@ public class StreamReader extends Reader {
                         }
                     }
                     if (!Type.isTypeIllegal(typeName)) {
-                        throw new DataXException(StreamReaderErrorCode.TEMP, "Unsupported type:" + typeName);
+                        throw new DataXException(StreamReaderErrorCode.NOT_SUPPORT_TYPE,
+                                "Unsupported type:" + typeName);
                     }
                 }
                 dealedColumns.add(eachColumnConfig.toJSON());
@@ -138,7 +139,7 @@ public class StreamReader extends Reader {
             try {
                 for (String eachColumn : columns) {
                     Configuration eachColumnConfig = Configuration.from(eachColumn);
-                    String columnValue = eachColumnConfig.getNecessaryValue(Constant.VALUE, StreamReaderErrorCode.TEMP);
+                    String columnValue = eachColumnConfig.getString(Constant.VALUE);
                     Type columnType = Type.valueOf(eachColumnConfig.getString(Constant.TYPE).toUpperCase());
                     switch (columnType) {
                         case STRING:
@@ -162,11 +163,12 @@ public class StreamReader extends Reader {
                             record.addColumn(new BytesColumn(columnValue.getBytes()));
                             break;
                         default:
-                            throw new DataXException(StreamReaderErrorCode.TEMP, "Unsupported type:" + columnType.name());
+                            //in fact,never to be here
+                            throw new Exception("Unsupported type:" + columnType.name());
                     }
                 }
             } catch (Exception e) {
-                throw new DataXException(StreamReaderErrorCode.TEMP, "Construct one record failed.", e);
+                throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE, "Construct one record failed.", e);
             }
 
             return record;

@@ -3,11 +3,9 @@ package com.alibaba.datax.plugin.reader.streamreader;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum StreamReaderErrorCode implements ErrorCode {
-    RUNTIME_EXCEPTION("StreamReader-00", "run time exception"),
     NOT_SUPPORT_TYPE("StreamReader-01", "not supported column type"),
-    REQUIRED_VALUE("StreamReader-01", "lost necessary value"),
-    TEMP("StreamReader-01", "lost necessary value"),
-    CAST_VALUE_TYPE_ERROR("StreamReader-02", "can not cast value to pointed type");
+    REQUIRED_VALUE("StreamReader-02", "lost necessary value"),
+    ILLEGAL_VALUE("StreamReader-03", "illegal value"),;
 
     private final String code;
     private final String description;
