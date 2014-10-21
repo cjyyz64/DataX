@@ -39,8 +39,8 @@ cd ${OLDPWD}/../
 #(cd datax-engine/src/main/configs; cat core.alisa.xml | sed "s/{version}/`date +%Y%m%d`/g" > core.alisa.new; mv core.alisa.new core.alisa.xml)
 #(cd datax-engine/src/main/configs; cat core.alisa.p2p.xml | sed "s/{version}/`date +%Y%m%d`/g" > core.alisa.p2p.new; mv core.alisa.p2p.new core.alisa.p2p.xml)
 
-#/home/ads/tools/apache-maven-3.0.3/bin/mvn clean package assembly:assembly -DskipTests=true
-mvn clean package assembly:assembly -DskipTests=true
+/home/ads/tools/apache-maven-3.0.3/bin/mvn clean package assembly:assembly -DskipTests=true
+#mvn clean package assembly:assembly -DskipTests=true
 
 #(cd datax-common; /home/ads/tools/apache-maven-3.0.3/bin/mvn install -U -Dmaven.test.skip=true)
 #(cd datax-official-router; /home/ads/tools/apache-maven-3.0.3/bin/mvn install -U -Dmaven.test.skip=true)
