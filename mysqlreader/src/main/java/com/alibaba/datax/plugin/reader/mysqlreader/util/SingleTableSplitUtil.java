@@ -66,7 +66,6 @@ public class SingleTableSplitUtil {
                     String.valueOf(minMaxPK.getRight()), adviceNum,
                     splitPkName, "'", DataBaseType.MySql);
         } else if (isLongType) {
-
             rangeList = RangeSplitUtil.splitAndWrap(
                     Long.parseLong(minMaxPK.getLeft().toString()),
                     Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
@@ -78,9 +77,7 @@ public class SingleTableSplitUtil {
         String tempQuerySql = null;
         if (null != rangeList) {
             for (String range : rangeList) {
-
                 Configuration tempConfig = configuration.clone();
-
                 tempQuerySql = buildQuerySql(column, table, where)
                         + (hasWhere ? " and " : " where ") + range;
 
@@ -88,11 +85,20 @@ public class SingleTableSplitUtil {
 
                 tempConfig.set(Key.QUERY_SQL, tempQuerySql);
                 pluginParams.add(tempConfig);
-
             }
         } else {
             pluginParams.add(configuration);
         }
+
+        //deal pk is null
+        Configuration tempConfig = configuration.clone();
+        tempQuerySql = buildQuerySql(column, table, where)
+                + (hasWhere ? " and " : " where ") + String.format(" %s IS NULL", splitPkName);
+
+        LOG.info("After split, tempQuerySql:" + tempQuerySql);
+
+        tempConfig.set(Key.QUERY_SQL, tempQuerySql);
+        pluginParams.add(tempConfig);
 
         return pluginParams;
     }
@@ -113,10 +119,7 @@ public class SingleTableSplitUtil {
     }
 
     private static Pair<Object, Object> getPkRange(Configuration configuration) {
-        List<String> sqls = genPKRangeSQL(configuration);
-
-        String checkPKSQL = sqls.get(0);
-        String pkRangeSQL = sqls.get(1);
+        String pkRangeSQL = genPKRangeSQL(configuration);
 
         String jdbcURL = configuration.getString(Key.JDBC_URL);
         String username = configuration.getString(Key.USERNAME);
@@ -128,21 +131,12 @@ public class SingleTableSplitUtil {
         try {
             conn = DBUtil.getConnection(DataBaseType.MySql, jdbcURL, username,
                     password);
-            rs = DBUtil.query(conn, checkPKSQL, Integer.MIN_VALUE);
-            while (rs.next()) {
-                // 要求主键对应值非空
-                if (rs.getLong(1) > 0L) {
-                    throw new DataXException(
-                            MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
-                            "Configured PK has null value!");
-                }
-            }
+
             rs = DBUtil.query(conn, pkRangeSQL, Integer.MIN_VALUE);
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
                 if (isStringType(rsMetaData.getColumnType(1))) {
-                    configuration
-                            .set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
+                    configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
                     while (rs.next()) {
                         minMaxPK = new ImmutablePair<Object, Object>(
                                 rs.getString(1), rs.getString(2));
@@ -207,26 +201,21 @@ public class SingleTableSplitUtil {
                 || type == Types.NVARCHAR;
     }
 
-    private static List<String> genPKRangeSQL(Configuration plugin) {
-        List<String> sqls = new ArrayList<String>();
 
-        String splitPK = plugin.getString(Key.SPLIT_PK).trim();
-        String table = plugin.getString(Key.TABLE).trim();
-        String where = plugin.getString(Key.WHERE, null);
+    private static String genPKRangeSQL(Configuration configuration) {
 
-        String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE %s IS NULL";
-        String checkPKSQL = String.format(checkPKTemplate, table, splitPK);
+        String splitPK = configuration.getString(Key.SPLIT_PK).trim();
+        String table = configuration.getString(Key.TABLE).trim();
+        String where = configuration.getString(Key.WHERE, null);
 
         String minMaxTemplate = "SELECT MIN(%s),MAX(%s) FROM %s";
-        String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
-                table);
+        String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK, table);
         if (StringUtils.isNotBlank(where)) {
-            pkRangeSQL += " WHERE " + where;
+            pkRangeSQL = String.format("%s WHERE (%s AND %s IS NOT NULL)", pkRangeSQL,
+                    where, splitPK);
         }
 
-        sqls.add(checkPKSQL);
-        sqls.add(pkRangeSQL);
-        return sqls;
+        return pkRangeSQL;
     }
 
 }
