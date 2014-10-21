@@ -15,8 +15,10 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSConst;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
+import com.alibaba.datax.plugin.reader.otsreader.utils.DefaultRetryStrategy;
 import com.alibaba.datax.plugin.reader.otsreader.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClientAsync;
+import com.aliyun.openservices.ots.OTSServiceConfiguration;
 import com.aliyun.openservices.ots.model.Direction;
 import com.aliyun.openservices.ots.model.GetRangeRequest;
 import com.aliyun.openservices.ots.model.GetRangeResult;
@@ -89,11 +91,18 @@ public class OtsReaderSlaveProxy {
         OTSConf conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         OTSRange range = GsonParser.jsonToRange(configuration.getString(OTSConst.OTS_RANGE));
         Direction direction = GsonParser.jsonToDirection(configuration.getString(OTSConst.OTS_DIRECTION));
+        
+        OTSServiceConfiguration configure = new OTSServiceConfiguration();
+        configure.setRetryStrategy(new DefaultRetryStrategy());
+        
         OTSClientAsync ots = new OTSClientAsync(
                 conf.getEndpoint(),
                 conf.getAccessId(),
                 conf.getAccesskey(),
-                conf.getInstanceName());
+                conf.getInstanceName(),
+                null,
+                configure,
+                null);
         
         RowPrimaryKey token = range.getBegin();
         List<String> columns = Common.getNormalColumnNameList(conf.getColumns());

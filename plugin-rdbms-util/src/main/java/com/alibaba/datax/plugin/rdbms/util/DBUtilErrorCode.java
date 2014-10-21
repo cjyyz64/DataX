@@ -4,7 +4,8 @@ import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum DBUtilErrorCode implements ErrorCode {
     CONN_DB_ERROR("DBUtilErrorCode-00", "Connect to DataBase failed."),
-    UNSUPPORTED_TYPE("DBUtilErrorCode-01", "unsupported database type."),
+    JDBC_CONTAINS_BLANK_ERROR("DBUtilErrorCode-01", "Some blank in jdbcUrl."),
+    UNSUPPORTED_TYPE("DBUtilErrorCode-02", "unsupported database type."),
     COLUMN_SPLIT_ERROR(
             "DBUtilErrorCode-10", "Column split failed ."),;
 

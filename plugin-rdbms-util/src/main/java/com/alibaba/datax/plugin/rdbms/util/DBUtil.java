@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.common.util.StrUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,24 +18,55 @@ public final class DBUtil {
     private DBUtil() {
     }
 
-    static class ConnectionOwner implements Callable<Connection> {
-        private DataBaseType dataBaseType;
-        private String jdbcUrl;
-        private String username;
-        private String password;
+    public static String chooseJdbcUrl(final DataBaseType dataBaseType, final List<String> jdbcUrls,
+                                       final String username, final String password,
+                                       final List<String> preSql) {
+        if (null == jdbcUrls || jdbcUrls.isEmpty()) {
+            String bussinessMessage = String.format("jdbcURL in [%s] can not be blank.",
+                    StringUtils.join(jdbcUrls, ","));
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
 
-        ConnectionOwner(DataBaseType dataBaseType, String jdbcUrl, String username, String password) {
-            this.dataBaseType = dataBaseType;
-            this.jdbcUrl = jdbcUrl;
-            this.username = username;
-            this.password = password;
+            LOG.error(message);
+            throw new DataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, bussinessMessage);
         }
 
-        @Override
-        public Connection call() throws Exception {
-            return DBUtil.connect(dataBaseType, jdbcUrl, username, password);
+        try {
+            return RetryUtil.executeWithRetry(new Callable<String>() {
+
+                @Override
+                public String call() throws Exception {
+                    boolean connOK = false;
+                    for (String url : jdbcUrls) {
+                        if (StringUtils.isNotBlank(url)) {
+                            url = url.trim();
+                            if (null != preSql && !preSql.isEmpty()) {
+                                connOK = testConnWithoutRetry(dataBaseType, url,
+                                        username, password, preSql);
+                            } else {
+                                connOK = testConnWithoutRetry(dataBaseType, url,
+                                        username, password);
+                            }
+                            if (connOK) {
+                                return url;
+                            }
+                        }
+                    }
+                    throw new Exception("No available jdbcURL yet.");
+                }
+            }, 3, 1000L, true);
+        } catch (Exception e) {
+            String bussinessMessage = String.format("No available jdbcURL from [%s].",
+                    StringUtils.join(jdbcUrls, ","));
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, bussinessMessage, e);
         }
+
     }
+
 
     /**
      * Get direct JDBC connection
@@ -42,12 +75,16 @@ public final class DBUtil {
      * <p/>
      * NOTE: In DataX, we don't need connection pool in fact
      */
-    public static Connection getConnection(DataBaseType dataBaseType, String jdbcUrl,
-                                           String username, String password) {
+    public static Connection getConnection(final DataBaseType dataBaseType, final String jdbcUrl,
+                                           final String username, final String password) {
 
         try {
-            return RetryUtil.executeWithRetry(new ConnectionOwner(dataBaseType, jdbcUrl,
-                    username, password), Constant.MAX_TRY_TIMES, 1000L, true);
+            return RetryUtil.executeWithRetry(new Callable<Connection>() {
+                @Override
+                public Connection call() throws Exception {
+                    return DBUtil.connect(dataBaseType, jdbcUrl, username, password);
+                }
+            }, Constant.MAX_TRY_TIMES, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,
                     String.format("get jdbc connection failed, connection detail is [\n%s\n].",
