@@ -2,9 +2,6 @@ package com.alibaba.datax.plugin.reader.streamreader;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-/**
- * Created by jingxing on 14-9-4.
- */
 public enum StreamReaderErrorCode implements ErrorCode {
     RUNTIME_EXCEPTION("StreamReader-00", "run time exception"),
     NOT_SUPPORT_TYPE("StreamReader-01", "not supported column type"),

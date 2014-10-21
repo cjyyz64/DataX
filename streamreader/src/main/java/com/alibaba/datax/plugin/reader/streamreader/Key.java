@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.reader.streamreader;
 
-/**
- * Created by jingxing on 14-9-4.
- */
 public class Key {
 
     public static final String COLUMN = "column";
