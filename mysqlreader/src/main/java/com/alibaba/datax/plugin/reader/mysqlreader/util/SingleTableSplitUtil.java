@@ -2,13 +2,13 @@ package com.alibaba.datax.plugin.reader.mysqlreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
 import com.alibaba.datax.plugin.reader.mysqlreader.Key;
 import com.alibaba.datax.plugin.reader.mysqlreader.MysqlReaderErrorCode;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -71,7 +71,12 @@ public class SingleTableSplitUtil {
                     Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
                     splitPkName);
         } else {
-            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, "unsupported splitPk type.");
+            String bussinessMessage = "Unsupported splitPk type.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+
+            LOG.error(message);
+            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, bussinessMessage);
         }
 
         String tempQuerySql = null;
