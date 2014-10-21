@@ -93,22 +93,18 @@ class XmlConvertor:
         :return:
         '''
         error_limit = self.get_value_from_xml(self.writer, "error-limit")
-        if not error_limit:
-            self.job_setting["errorLimit"] = {
-                'record': None,
-                'percentage': None
-            }
-        elif error_limit.isdigit():
-            record = int(error_limit) - 1
-            self.job_setting["errorLimit"] = {
-                'record': None if record < 0 else record,
-                'percentage': None
-            }
-        else:
-            self.job_setting["errorLimit"] = {
-                'record': None,
-                'percentage': float(error_limit)
-            }
+        if error_limit:
+            if error_limit.isdigit():
+                record = int(error_limit) - 1
+                self.job_setting["errorLimit"] = {
+                    'record': None if record < 0 else record
+                }
+            elif error_limit.find(".") > -1:
+                self.job_setting["errorLimit"] = {
+                    'percentage': 1.0 if float(error_limit) > 1 else float(error_limit)
+                }
+            else:
+                print >>sys.stderr, "can not change[%s] to error limit number, use no limit defaultly"%(error_limit)
 
 
     def get_value_from_xml(self, node_root, key):
@@ -217,16 +213,13 @@ class XmlConvertor:
         self.reader_parameter["username"] = self.get_value_from_xml(self.reader, "username")
         self.reader_parameter["password"] = self.get_value_from_xml(self.reader, "password")
 
-        ## session maybe no use
+        jdbc_url_list = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
         encoding = self.get_value_from_xml(self.reader, "encoding")
         if encoding:
-            session_dict = {}
-            self.reader_parameter["session"] = session_dict
-            session_dict["character_set_client"] = encoding
-            session_dict["character_set_results"] = encoding
-            session_dict["character_set_connection"] = encoding
-
-        jdbc_url_list = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
+            for index in range(len(jdbc_url_list)):
+                jdbc_url = jdbc_url_list[index]
+                if jdbc_url.find("characterEncoding") < 0:
+                    jdbc_url_list[index] = "%s?useUnicode=true&characterEncoding=%s"%(jdbc_url, encoding)
         connection_list = []
         self.reader_parameter["connection"] = connection_list
 
@@ -246,7 +239,9 @@ class XmlConvertor:
                 connection_list.append(connection_dict)
                 connection_dict["table"] = table_list[i].split(",")
                 connection_dict["jdbcUrl"] = jdbc_url_list[i].split(",")
-            self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
+            where = self.get_value_from_xml(self.reader, "where")
+            if where:
+                self.reader_parameter["where"] = where
             self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
 
         return True
@@ -263,13 +258,6 @@ class XmlConvertor:
         else:
             replace = "replace"
         self.writer_parameter["insertOrReplace"] = replace
-        encoding =  self.get_value_from_xml(self.writer, "encoding")
-        if encoding:
-            session = {}
-            self.writer_parameter["session"] = session
-            session["character_set_client"] = encoding
-            session["character_set_results"] = encoding
-            session["character_set_connection"] = encoding
         self.writer_parameter["column"] = self.parse_column(self.get_value_from_xml(self.writer, "column"))
 
         jdbc_url = self.get_value_from_xml(self.writer, "jdbc-url")
@@ -307,6 +295,7 @@ class XmlConvertor:
         self.reader_parameter["table"] = self.get_value_from_xml(self.reader, "table")
         self.reader_parameter["partition"] = self.get_value_from_xml(self.reader, "partition")
         self.reader_parameter["odpsServer"] = self.get_value_from_xml(self.reader, "odps-server")
+        self.reader_parameter["tunnelServer"] = self.get_value_from_xml(self.reader, "tunnel-server")
 
         self.reader_parameter["column"] = self.parse_map_column(self.get_value_from_xml(self.reader, "column"))
 
@@ -319,6 +308,7 @@ class XmlConvertor:
         self.writer_parameter["table"] = self.get_value_from_xml(self.writer, "table")
         self.writer_parameter["partition"] = self.get_value_from_xml(self.writer, "partition")
         self.writer_parameter["odpsServer"] = self.get_value_from_xml(self.writer, "odps-server")
+        self.writer_parameter["tunnelServer"] = self.get_value_from_xml(self.writer, "tunnel-server")
 
         is_truncate = True
         truncate = self.get_value_from_xml(self.writer, "truncate")
@@ -346,7 +336,9 @@ class XmlConvertor:
             connection_dict["querySql"] = pointed_sql
         else:
             self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
-            self.reader_parameter["where"] = self.get_value_from_xml(self.reader, "where")
+            where = self.get_value_from_xml(self.reader, "where")
+            if where:
+                self.reader_parameter["where"] = where
             tables = self.get_value_from_xml(self.reader, "table")
             connection_dict["table"] = tables.split("|")
 

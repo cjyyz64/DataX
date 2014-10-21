@@ -51,7 +51,6 @@ DEFAULT_JVM = "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpP
 YUNTI_JAVA_HOME = r"/home/yunti/java-current"
 TAOBAO_JAVA_HOME = r"/opt/taobao/java"
 ENGINE_COMMAND = "${JAVA_HOME}/bin/java -server ${jvm} -Ddatax.home=%s -classpath %s/lib/*:. ${params} com.alibaba.datax.core.Engine -job ${job}"%(DATAX_HOME, DATAX_HOME)
-
 DEBUG_JVM = "-Xms1024m -Xmx1024m  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/logs"%(DATAX_HOME)
 child_process = None
 
@@ -84,7 +83,6 @@ def get_option_parser():
 
 def get_run_context(options):
     context = {}
-
     context["params"] = options.params if options.params else ""
     context["jvm"] = options.jvm if options.jvm else ""
 
@@ -308,7 +306,6 @@ if __name__ == "__main__":
     if options.remotedebug:
        DEFAULT_JVM = DEBUG_JVM
        print 'ip: ',get_ip()
-
 
     # 没有给job参数，直接返回使用说明
     if len(args) == 0:
