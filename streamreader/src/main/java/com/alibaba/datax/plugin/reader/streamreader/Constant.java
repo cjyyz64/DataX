@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.reader.streamreader;
 
-/**
- * Created by hjc on 14-10-22.
- */
 public class Constant {
 
     public static final String TYPE = "type";
