@@ -372,10 +372,10 @@ public class Utils {
             }
         } while (token != null);
         if (results.size() != output.size()) {
+            LOG.error("Results size({}) not equal Output size({})", results.size(), output.size());
             return false;
         }
         Map<String, Record> m = getMapping(output);
-        
         for (int i = 0; i < results.size(); i++) {
             Record r1 = results.get(i);
             Record r2 = getRecord(m, r1);

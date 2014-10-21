@@ -21,7 +21,7 @@ public class GetRangeCallable implements Callable<GetRangeResult> {
     }
     
     @Override
-    public GetRangeResult call() throws Exception {        
+    public GetRangeResult call() throws Exception {
         try {
             return future.get();
         } catch (Exception e) {

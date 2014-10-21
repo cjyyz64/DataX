@@ -57,8 +57,8 @@ public class OtsReaderMasterProxy {
     public void init(Configuration param) throws Exception {        
         LOG.info("OTSReader master parameter : {}", param.toJSON());
         // 默认参数
-        // 每次重试的时间都是上一次的一倍，当sleep时间大于30秒时，Sleep重试时间不在增长。17次能覆盖OTS的Failover时间5分钟
-        conf.setRetry(17);
+        // 每次重试的时间都是上一次的一倍，当sleep时间大于30秒时，Sleep重试时间不在增长。18次能覆盖OTS的Failover时间5分钟
+        conf.setRetry(18);
         conf.setSleepInMilliSecond(100);
         
         // 必选参数

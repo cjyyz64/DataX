@@ -19,6 +19,7 @@ public class RetryHelper {
             try {
                 return callable.call();
             } catch (Exception e) {
+                LOG.warn("RemainingRetryTimes: {}, {}",  remainingRetryTimes, e.getMessage() );
                 remainingRetryTimes = getRetryTimes(e, remainingRetryTimes);
                 if (remainingRetryTimes > 0) {  
                     try {

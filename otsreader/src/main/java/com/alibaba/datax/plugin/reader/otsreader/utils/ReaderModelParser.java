@@ -131,7 +131,7 @@ public class ReaderModelParser {
                 String valueStr = (String) value;
                 return parsePrimaryKeyValue(typeStr, valueStr);
             } else {
-                throw new IllegalArgumentException("The 'type' and 'value only support string.'");
+                throw new IllegalArgumentException("The 'type' and 'value‘ only support string.");
             }
         } else {
             throw new IllegalArgumentException("The map must include 'type' and 'value'.");
