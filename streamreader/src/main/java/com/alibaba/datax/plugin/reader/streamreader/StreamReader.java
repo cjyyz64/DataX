@@ -1,185 +1,195 @@
 package com.alibaba.datax.plugin.reader.streamreader;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.google.common.base.Splitter;
+import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.lang3.StringUtils;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class StreamReader extends Reader {
-	public static class Master extends Reader.Master {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(StreamReader.Master.class);
 
-		@Override
-		public void init() {
-			LOG.debug("init()");
-		}
+    public static class Master extends Reader.Master {
 
-		@Override
-		public void prepare() {
-			LOG.debug("prepare()");
-		}
+        private Configuration originalConfig;
 
-		@Override
-		public List<Configuration> split(int adviceNumber) {
-			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
+        @Override
+        public void init() {
+            this.originalConfig = super.getPluginJobConf();
+            dealColumn(this.originalConfig);
 
-			for (int i = 0; i < adviceNumber; i++) {
-				readerSplitConfigs.add(getPluginJobConf());
-			}
-			return readerSplitConfigs;
-		}
+            Long sliceRecordCount = this.originalConfig.getLong(Key.SLICE_RECORD_COUNT);
+            if (null == sliceRecordCount) {
+                throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE, "Lost config sliceRecordCount.");
+            } else if (sliceRecordCount < 1) {
+                throw new DataXException(StreamReaderErrorCode.TEMP, "sliceRecordCount can not <1.");
+            }
 
-		@Override
-		public void post() {
-			LOG.debug("post()");
-		}
+        }
 
-		@Override
-		public void destroy() {
-			LOG.debug("destroy()");
-		}
-	}
+        private void dealColumn(Configuration originalConfig) {
+            List<JSONObject> columns = originalConfig.getList(Key.COLUMN, JSONObject.class);
+            if (null == columns || columns.isEmpty()) {
+                throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE, "Lost config column.");
+            }
 
-	public static class Slave extends Reader.Slave {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(StreamReader.Slave.class);
+            List<String> dealedColumns = new ArrayList<String>();
+            for (JSONObject eachColumn : columns) {
+                Configuration eachColumnConfig = Configuration.from(eachColumn);
+                eachColumnConfig.getNecessaryValue(Constant.VALUE, StreamReaderErrorCode.TEMP);
+                String typeName = eachColumnConfig.getString(Constant.TYPE);
+                if (StringUtils.isBlank(typeName)) {
+                    // empty typeName will be set to default type: string
+                    eachColumnConfig.set(Constant.TYPE, Type.STRING);
+                } else {
+                    if (Type.DATE.name().equalsIgnoreCase(typeName)) {
+                        boolean notAssignDateFormat = StringUtils.isBlank(eachColumnConfig.getString(
+                                Constant.DATE_FORMAT_MARK));
+                        if (notAssignDateFormat) {
+                            eachColumnConfig.set(Constant.DATE_FORMAT_MARK, Constant.DEFAULT_DATE_FORMAT);
+                        }
+                    }
+                    if (!Type.isTypeIllegal(typeName)) {
+                        throw new DataXException(StreamReaderErrorCode.TEMP, "Unsupported type:" + typeName);
+                    }
+                }
+                dealedColumns.add(eachColumnConfig.toJSON());
+            }
 
-		private List<Configuration> columns;
+            originalConfig.set(Key.COLUMN, dealedColumns);
+        }
 
-		private long sliceRecordCount = 100L;
+        @Override
+        public void prepare() {
+        }
 
-		private String fieldDelimiter = ",";
+        @Override
+        public List<Configuration> split(int adviceNumber) {
+            List<Configuration> configurations = new ArrayList<Configuration>();
 
-		@Override
-		public void init() {
-			Configuration readerSliceConfig = getPluginJobConf();
-			this.columns = readerSliceConfig.getListConfiguration(Key.COLUMN);
-			this.fieldDelimiter = readerSliceConfig.getString(
-					Key.FIELD_DELIMITER, this.fieldDelimiter);
-			this.sliceRecordCount = readerSliceConfig.getLong(
-					Key.SLICE_RECORD_COUNT, this.sliceRecordCount);
-		}
+            for (int i = 0; i < adviceNumber; i++) {
+                configurations.add(this.originalConfig.clone());
+            }
+            return configurations;
+        }
 
-		@Override
-		public void prepare() {
-			LOG.debug("prepare()");
-		}
+        @Override
+        public void post() {
+        }
 
-		@Override
-		public void startRead(RecordSender recordSender) {
-			Splitter fieldSplitter = Splitter.on(this.fieldDelimiter);
+        @Override
+        public void destroy() {
+        }
 
-			/**
-			 * 没有配置column，标准输入
-			 */
-			if (this.columns == null) {
-				String fetchLine;
-				BufferedReader reader = null;
-				try {
-					reader = new BufferedReader(
-							new InputStreamReader(System.in));
-					Record record;
-					while ((fetchLine = reader.readLine()) != null) {
-						record = recordSender.createRecord();
-						Iterable<String> is = fieldSplitter.split(fetchLine);
-						for (String field : is) {
-							record.addColumn(new StringColumn(field));
-						}
-						recordSender.sendToWriter(record);
-					}
-					recordSender.flush();
-				} catch (Exception e) {
-					throw new DataXException(
-							StreamReaderErrorCode.RUNTIME_EXCEPTION, e);
-				} finally {
-					try {
-						reader.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			} else {
-				if (this.sliceRecordCount > 0) {
-					Record record = recordSender.createRecord();
-					for (Configuration columnConfig : this.columns) {
-						Column column = generateColumn(columnConfig);
-						record.addColumn(column);
-					}
+    }
 
-					long lineCounter = 0l;
-					while (lineCounter++ < this.sliceRecordCount) {
-						recordSender.sendToWriter(record);
-					}
-				}
-			}
-		}
+    public static class Slave extends Reader.Slave {
 
-		@Override
-		public void post() {
-			LOG.debug("post()");
-		}
+        private Configuration readerSliceConfig;
+        private List<String> columns;
+        private long sliceRecordCount;
 
-		@Override
-		public void destroy() {
-			LOG.debug("destroy()");
-		}
 
-		// TODO: columnValue 只能以字符串的形式出现，不可能出现Long类型
-		private Column generateColumn(Configuration columnConfig) {
-			String columnType = columnConfig.getString(Key.TYPE);
-			Object columnValue = columnConfig.get(Key.VALUE);
-			if ("string".equalsIgnoreCase(columnType)
-					|| "char".equalsIgnoreCase(columnType)) {
-				return new StringColumn((String) columnValue);
-			} else if ("long".equalsIgnoreCase(columnType)) {
-				return new LongColumn((Long) columnValue);
-			} else if ("int".equalsIgnoreCase(columnType)) {
-				return new LongColumn((Integer) columnValue);
-			} else if ("float".equalsIgnoreCase(columnType)) {
-				return new DoubleColumn((Float) columnValue);
-			} else if ("double".equalsIgnoreCase(columnType)) {
-				return new DoubleColumn((Double) columnValue);
-			} else if ("bool".equalsIgnoreCase(columnType)) {
-				return new BoolColumn((Boolean) columnValue);
-			} else if ("date".equalsIgnoreCase(columnType)) {
-				if (columnValue instanceof Integer) {
-					return new DateColumn((Integer) columnValue);
-				} else if (columnValue instanceof Long) {
-					return new DateColumn((Long) columnValue);
-				} else {
-					throw new DataXException(
-							StreamReaderErrorCode.CAST_VALUE_TYPE_ERROR,
-							String.format("can not cast[%s] to type[%s]",
-									columnValue, columnType));
-				}
-			} else if ("byte".equalsIgnoreCase(columnType)) {
-				return new BytesColumn(((String) columnValue).getBytes());
-			} else {
-				String errorMessage = String.format(
-						"not support column type [%s]", columnType);
-				LOG.error(errorMessage);
-				throw new DataXException(
-						StreamReaderErrorCode.NOT_SUPPORT_TYPE, errorMessage);
-			}
-		}
-	}
+        @Override
+        public void init() {
+            this.readerSliceConfig = super.getPluginJobConf();
+            this.columns = this.readerSliceConfig.getList(Key.COLUMN, String.class);
+
+            this.sliceRecordCount = this.readerSliceConfig.getLong(Key.SLICE_RECORD_COUNT);
+        }
+
+        @Override
+        public void prepare() {
+        }
+
+        @Override
+        public void startRead(RecordSender recordSender) {
+            Record oneRecord = buildOneRecord(recordSender, this.columns);
+
+            while (this.sliceRecordCount > 0) {
+                recordSender.sendToWriter(oneRecord);
+                this.sliceRecordCount--;
+            }
+        }
+
+        @Override
+        public void post() {
+        }
+
+        @Override
+        public void destroy() {
+        }
+
+        private Record buildOneRecord(RecordSender recordSender, List<String> columns) {
+            if (null == recordSender) {
+                throw new IllegalArgumentException("Parameter recordSender can not be null.");
+            }
+
+            if (null == columns || columns.isEmpty()) {
+                throw new IllegalArgumentException("Parameter columns can not be null nor empty.");
+            }
+
+            Record record = recordSender.createRecord();
+            try {
+                for (String eachColumn : columns) {
+                    Configuration eachColumnConfig = Configuration.from(eachColumn);
+                    String columnValue = eachColumnConfig.getNecessaryValue(Constant.VALUE, StreamReaderErrorCode.TEMP);
+                    Type columnType = Type.valueOf(eachColumnConfig.getString(Constant.TYPE).toUpperCase());
+                    switch (columnType) {
+                        case STRING:
+                            record.addColumn(new StringColumn(columnValue));
+                            break;
+                        case INT:
+                            record.addColumn(new LongColumn(columnValue));
+                            break;
+                        case DOUBLE:
+                            record.addColumn(new DoubleColumn(columnValue));
+                            break;
+                        case DATE:
+                            SimpleDateFormat format = new SimpleDateFormat(
+                                    eachColumnConfig.getString(Constant.DATE_FORMAT_MARK));
+                            record.addColumn(new DateColumn(format.parse(columnValue)));
+                            break;
+                        case BOOLEAN:
+                            record.addColumn(new BoolColumn("true".equalsIgnoreCase(columnValue) ? true : false));
+                            break;
+                        case BYTES:
+                            record.addColumn(new BytesColumn(columnValue.getBytes()));
+                            break;
+                        default:
+                            throw new DataXException(StreamReaderErrorCode.TEMP, "Unsupported type:" + columnType.name());
+                    }
+                }
+            } catch (Exception e) {
+                throw new DataXException(StreamReaderErrorCode.TEMP, "Construct one record failed.", e);
+            }
+
+            return record;
+        }
+    }
+
+    private enum Type {
+        STRING,
+        INT,
+        BOOLEAN,
+        DOUBLE,
+        DATE,
+        BYTES,;
+
+        private static boolean isTypeIllegal(String typeString) {
+            try {
+                Type.valueOf(typeString.toUpperCase());
+            } catch (Exception e) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
 }
