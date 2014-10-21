@@ -8,7 +8,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.fastjson.JSON;
 
-public class FastJSONTester {
+public class SerializeTester {
 	@Test
 	public void test_exception() {
 		Exception exception = new DataXException(
