@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.sqlserverreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
@@ -67,9 +68,14 @@ public class TableSplitUtil {
 				List<String> tables = connConf.getList(Key.TABLE, String.class);
 
 				if (null == tables || tables.isEmpty()) {
+					String bussinessMessage = "source table configed error.";
+					String message = StrUtil.buildOriginalCauseMessage(
+							bussinessMessage, null);
+					LOG.error(message);
+
 					throw new DataXException(
-							SqlServerReaderErrorCode.CONF_ERROR,
-							"source table configed error");
+							SqlServerReaderErrorCode.ILLEGAL_VALUE,
+							bussinessMessage);
 				}
 
 				String splitPK = sliceConfig.getString(Key.SPLIT_PK);
@@ -122,7 +128,7 @@ public class TableSplitUtil {
 		Pair<Object, Object> minMaxPK = getPKRange(plugin);
 
 		if (null == minMaxPK) {
-			throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
+			throw new DataXException(SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
 					"split table with splitPk failed");
 		}
 
@@ -193,10 +199,7 @@ public class TableSplitUtil {
 	}
 
 	private static Pair<Object, Object> getPKRange(Configuration plugin) {
-		List<String> sqls = genPKRangeSQL(plugin);
-
-		String checkPKSQL = sqls.get(0);
-		String pkRangeSQL = sqls.get(1);
+		String pkRangeSQL = genPKRangeSQL(plugin);
 
 		String jdbcURL = plugin.getString(Key.JDBC_URL);
 		String username = plugin.getString(Key.USERNAME);
@@ -210,14 +213,6 @@ public class TableSplitUtil {
 		try {
 			conn = DBUtil.getConnection(DataBaseType.SQLServer, jdbcURL,
 					username, password);
-			rs = DBUtil.query(conn, checkPKSQL, fetchSize);
-			while (rs.next()) {
-				if (rs.getLong(1) > 0L) {
-					throw new DataXException(
-							SqlServerReaderErrorCode.CONF_ERROR,
-							"Configed PK has null value!");
-				}
-			}
 			rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
 			ResultSetMetaData rsMetaData = rs.getMetaData();
 			if (isPKTypeValid(rsMetaData)) {
@@ -226,13 +221,15 @@ public class TableSplitUtil {
 							rs.getObject(1), rs.getObject(2));
 				}
 			} else {
-				LOG.warn("pk type not long or string. split single table failed, use no-split strategy.");
+				// LOG.warn("pk type not long or string. split single table failed, use no-split strategy.");
+				throw new DataXException(
+						SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
+						"unsupported splitPk type，pk type not long nor string");
 			}
 		} catch (Exception e) {
-			if (LOG.isDebugEnabled()) {
-				LOG.error(e.getMessage(), e);
-			}
-			LOG.warn("split single table failed, use no-split strategy.");
+			throw new DataXException(
+					SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
+					"unsupported splitPk type，pk type not long nor string");
 		} finally {
 			DBUtil.closeDBResources(rs, null, conn);
 		}
@@ -258,38 +255,32 @@ public class TableSplitUtil {
 			if (minType == maxType && (isNumberType || isStringType)) {
 				ret = true;
 			} else {
-				throw new DataXException(SqlServerReaderErrorCode.CONF_ERROR,
-						"unsupport splitPk type");
+				throw new DataXException(
+						SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
+						"unsupported splitPk type，pk type not long nor string");
 			}
 		} catch (SQLException e) {
-			throw new DataXException(
-					SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
-					"error when get splitPk type");
+			throw new DataXException(SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
+					"unsupported splitPk type，pk type not long nor string");
 		}
 		return ret;
 	}
 
-	// TOOD where 条件上添加()
-	private static List<String> genPKRangeSQL(Configuration plugin) {
-		List<String> sqls = new ArrayList<String>();
+	private static String genPKRangeSQL(Configuration configuration) {
 
-		String splitPK = plugin.getString(Key.SPLIT_PK).trim();
-		String table = plugin.getString(Key.TABLE).trim();
-		String where = plugin.getString(Key.WHERE, null);
+		String splitPK = configuration.getString(Key.SPLIT_PK).trim();
+		String table = configuration.getString(Key.TABLE).trim();
+		String where = configuration.getString(Key.WHERE, null);
 
-		String checkPKTemplate = "SELECT COUNT(1) FROM %s WHERE [%s] IS NULL";
-		String checkPKSQL = String.format(checkPKTemplate, table, splitPK);
-
-		String minMaxTemplate = "SELECT MIN([%s]),MAX([%s]) FROM %s";
+		String minMaxTemplate = "SELECT MIN(%s),MAX(%s) FROM %s";
 		String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
 				table);
 		if (StringUtils.isNotBlank(where)) {
-			pkRangeSQL += " WHERE " + where;
+			pkRangeSQL = String.format("%s WHERE (%s AND %s IS NOT NULL)",
+					pkRangeSQL, where, splitPK);
 		}
 
-		sqls.add(checkPKSQL);
-		sqls.add(pkRangeSQL);
-		return sqls;
+		return pkRangeSQL;
 	}
 
 }

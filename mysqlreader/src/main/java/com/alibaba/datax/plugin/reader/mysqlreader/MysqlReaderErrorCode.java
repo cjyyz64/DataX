@@ -11,7 +11,7 @@ public enum MysqlReaderErrorCode implements ErrorCode {
     NOT_RECOMMENDED("MysqlReader-05", "your config not recommended"),
     SQL_EXECUTE_FAIL("MysqlReader-06", "failed to execute mysql sql"),
     READ_RECORD_FAIL("MysqlReader-07", "failed to read mysql record"),
-    TABLE_QUERYSQL_MIXED("MysqlReader-08", "Can not config both table and querySql"),
+    TABLE_QUERYSQL_MIXED("MysqlReader-08", "can not config both table and querySql"),
     TABLE_QUERYSQL_MISSING("MysqlReader-09", "table and querySql should configured one item."),;
 
     private final String code;

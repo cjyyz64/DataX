@@ -23,9 +23,6 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.google.common.base.Splitter;
 
-/**
- * Created by jingxing on 14-9-4.
- */
 public class StreamReader extends Reader {
 	public static class Master extends Reader.Master {
 		private static final Logger LOG = LoggerFactory

@@ -109,68 +109,73 @@ public final class OriginalConfPretreatmentUtil {
 
                 LOG.error(message);
                 throw new DataXException(MysqlReaderErrorCode.REQUIRED_KEY, businessMessage);
-            } else if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
-                LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
-                        + "because column configured as * may not work when you changed your table structure.");
-
-                // 回填其值，需要以 String 的方式转角后续处理
-                originalConfig.set(Key.COLUMN, "*");
             } else {
-                String jdbcUrl = originalConfig.getString(String.format(
-                        "%s[0].%s", Constant.CONN_MARK, Key.JDBC_URL));
-
-                String username = originalConfig.getString(Key.USERNAME);
-                String password = originalConfig.getString(Key.PASSWORD);
-
-                String tableName = originalConfig.getString(String.format(
-                        "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
-
-                List<String> allColumns = DBUtil.getMysqlTableColumns(jdbcUrl,
-                        username, password, tableName);
-                if (IS_DEBUG) {
-                    LOG.debug("table:[{}] has userConfiguredColumns:[{}].", tableName,
-                            StringUtils.join(allColumns, ","));
-                }
-
-                List<String> quotedColumns = new ArrayList<String>();
-
-                allColumns = ListUtil.valueToLowerCase(allColumns);
-                for (String column : userConfiguredColumns) {
-                    if ("*".equals(column)) {
-                        throw new DataXException(
-                                MysqlReaderErrorCode.ILLEGAL_VALUE,
-                                "no column named[*].");
-                    }
-
-                    if (allColumns.contains(column.toLowerCase())) {
-                        quotedColumns.add(TableExpandUtil
-                                .quoteTableOrColumnName(DataBaseType.MySql, column));
-                    } else {
-                        // 可能是由于用户填写为函数，或者自己对字段进行了`处理
-                        quotedColumns.add(column);
-                    }
-                }
-
-                originalConfig.set(Key.COLUMN, StringUtils.join(quotedColumns, ","));
+                // deal split pk quote
                 String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
-                if (StringUtils.isNotBlank(splitPk)) {
-                    String pureSplitPk = splitPk.toLowerCase();
+                if (StringUtils.isNoneBlank(splitPk)) {
                     if (splitPk.startsWith("`") && splitPk.endsWith("`")) {
-                        pureSplitPk = splitPk.substring(1, splitPk.length() - 1);
+                        splitPk = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
                     }
-
-                    if (!allColumns.contains(pureSplitPk)) {
-                        String bussinessMessage = String.format("No pk column named:[%s].", splitPk);
-                        String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
-                        LOG.error(message);
-
-                        throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, bussinessMessage);
-                    }
-
                     originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteTableOrColumnName(
-                            DataBaseType.MySql, pureSplitPk));
+                            DataBaseType.MySql, splitPk));
                 }
 
+                if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
+                    LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                            + "because column configured as * may not work when you changed your table structure.");
+
+                    // 回填其值，需要以 String 的方式转交后续处理
+                    originalConfig.set(Key.COLUMN, "*");
+                } else {
+                    String jdbcUrl = originalConfig.getString(String.format(
+                            "%s[0].%s", Constant.CONN_MARK, Key.JDBC_URL));
+
+                    String username = originalConfig.getString(Key.USERNAME);
+                    String password = originalConfig.getString(Key.PASSWORD);
+
+                    String tableName = originalConfig.getString(String.format(
+                            "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
+
+                    List<String> allColumns = DBUtil.getMysqlTableColumns(jdbcUrl,
+                            username, password, tableName);
+                    allColumns = ListUtil.valueToLowerCase(allColumns);
+
+                    if (IS_DEBUG) {
+                        LOG.debug("table:[{}] has userConfiguredColumns:[{}].", tableName,
+                                StringUtils.join(allColumns, ","));
+                    }
+
+                    List<String> quotedColumns = new ArrayList<String>();
+
+                    for (String column : userConfiguredColumns) {
+                        if ("*".equals(column)) {
+                            throw new DataXException(
+                                    MysqlReaderErrorCode.ILLEGAL_VALUE,
+                                    "no column named[*].");
+                        }
+
+                        if (allColumns.contains(column.toLowerCase())) {
+                            quotedColumns.add(TableExpandUtil
+                                    .quoteTableOrColumnName(DataBaseType.MySql, column));
+                        } else {
+                            // 可能是由于用户填写为函数，或者自己对字段进行了`处理
+                            quotedColumns.add(column);
+                        }
+                    }
+
+                    originalConfig.set(Key.COLUMN, StringUtils.join(quotedColumns, ","));
+                    if (StringUtils.isNotBlank(splitPk)) {
+
+                        if (!allColumns.contains(splitPk)) {
+                            String bussinessMessage = String.format("No pk column named:[%s].", splitPk);
+                            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                            LOG.error(message);
+
+                            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, bussinessMessage);
+                        }
+                    }
+
+                }
             }
         } else {
             // querySql模式，不希望配制 column，那样是混淆不清晰的
@@ -198,6 +203,7 @@ public final class OriginalConfPretreatmentUtil {
         }
 
     }
+
 
     private static boolean recognizeTableOrQuerySqlMode(
             Configuration originalConfig) {

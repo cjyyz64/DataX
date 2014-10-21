@@ -1,13 +1,19 @@
 package com.alibaba.datax.plugin.writer.mysqlwriter;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
+import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
+import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;
+import com.alibaba.datax.test.simulator.junit.extend.log.TestLogger;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @RunWith(LoggedRunner.class)
 public class MysqlWriterTest extends BasicWriterPluginTest {

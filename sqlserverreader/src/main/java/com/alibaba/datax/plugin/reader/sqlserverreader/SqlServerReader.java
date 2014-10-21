@@ -5,15 +5,21 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.util.ConfigPretreatUtil;
 import com.alibaba.datax.plugin.reader.sqlserverreader.util.TableSplitUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.List;
 
 /**
@@ -74,6 +80,9 @@ public class SqlServerReader {
 
 		private int fetchSize;
 
+		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
+		private static String BASIC_MESSAGE;
+
 		@Override
 		public void init() {
 			LOG.info("init()");
@@ -84,6 +93,8 @@ public class SqlServerReader {
 			this.jdbcUrl = this.readerSliceConfig.getString(Key.JDBC_URL);
 
 			this.fetchSize = this.readerSliceConfig.getInt(Key.FETCH_SIZE);
+
+			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
 
 		}
 
@@ -130,8 +141,15 @@ public class SqlServerReader {
 					this.transformOneRecord(recordSender, rs);
 				}
 			} catch (SQLException e) {
+				String bussinessMessage = String.format(
+						"Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
+						e.getMessage());
+				String message = StrUtil.buildOriginalCauseMessage(
+						bussinessMessage, e);
+				LOG.error(message);
+
 				throw new DataXException(
-						SqlServerReaderErrorCode.RUNTIME_EXCEPTION, e);
+						SqlServerReaderErrorCode.READ_RECORD_FAIL, e);
 			} finally {
 				DBUtil.closeDBResources(rs, null, conn);
 			}
@@ -216,6 +234,13 @@ public class SqlServerReader {
 
 			} catch (SQLException e) {
 				// 此异常不是脏数据
+				String bussinessMessage = String.format(
+						"Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
+						e.getMessage());
+				String message = StrUtil.buildOriginalCauseMessage(
+						bussinessMessage, e);
+				LOG.error(message);
+
 				throw new DataXException(
 						SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
 						"unable to get meta data.");

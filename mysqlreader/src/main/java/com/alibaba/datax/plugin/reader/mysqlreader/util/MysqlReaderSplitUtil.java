@@ -63,10 +63,7 @@ public final class MysqlReaderSplitUtil {
                 boolean needSplitTable = eachTableShouldSplittedNumber > 1
                         && StringUtils.isNotBlank(splitPk);
 
-
                 if (needSplitTable) {
-                    //TODO check splitPk 是否存在
-
                     // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
