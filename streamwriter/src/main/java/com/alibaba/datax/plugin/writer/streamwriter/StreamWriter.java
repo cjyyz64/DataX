@@ -16,27 +16,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by jingxing on 14-9-4.
+ * TODO:\n 换行符，可以考虑全局跨操作系统，从系统中获取
  */
 public class StreamWriter extends Writer {
     public static class Master extends Writer.Master {
         private static final Logger LOG = LoggerFactory
                 .getLogger(StreamWriter.Master.class);
 
+        private Configuration originalConfig;
+
         @Override
         public void init() {
-            LOG.debug("init()");
+            this.originalConfig = super.getPluginJobConf();
+            Boolean print = this.originalConfig.getBool(Key.PRINT);
+            if (null == print) {
+                throw new DataXException(StreamWriterErrorCode.REQUIRED_VALUE, "Lost config print.");
+            }
         }
 
         @Override
         public void prepare() {
-            LOG.debug("prepare()");
         }
 
         @Override
-        public List<Configuration> split(int readerSplitNumber) {
+        public List<Configuration> split(int mandatoryNumber) {
             List<Configuration> writerSplitConfigs = new ArrayList<Configuration>();
-            for(int i=0; i<readerSplitNumber; i++) {
+            for (int i = 0; i < mandatoryNumber; i++) {
                 writerSplitConfigs.add(getPluginJobConf());
             }
 
@@ -45,12 +50,10 @@ public class StreamWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.debug("destroy()");
         }
     }
 
@@ -58,39 +61,36 @@ public class StreamWriter extends Writer {
         private static final Logger LOG = LoggerFactory
                 .getLogger(StreamWriter.Slave.class);
 
-        private String fieldDelimiter = "\t";
-        private String encoding = "UTF-8";
-        private boolean visible = false;
+        private Configuration writerSliceConfig;
+
+        private String fieldDelimiter;
+        private boolean print;
 
         @Override
         public void init() {
-            Configuration writerSliceConfig = getPluginJobConf();
+            this.writerSliceConfig = getPluginJobConf();
 
-            this.fieldDelimiter = writerSliceConfig.getString(
-                    Key.FIELD_DELIMITER, this.fieldDelimiter);
-            this.encoding = writerSliceConfig.getString(
-                    Key.ENCODING, this.encoding);
-            this.visible = writerSliceConfig.getBool(
-                    Key.VISIBLE, this.visible);
+            this.fieldDelimiter = this.writerSliceConfig.getString(
+                    Key.FIELD_DELIMITER, "\t");
+            this.print = this.writerSliceConfig.getBool(Key.PRINT);
         }
 
         @Override
         public void prepare() {
-            LOG.debug("prepare()");
         }
 
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
             try {
                 BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(System.out, this.encoding));
+                        new OutputStreamWriter(System.out, "UTF-8"));
 
                 Record record;
                 while ((record = recordReceiver.getFromReader()) != null) {
-                    if (this.visible) {
+                    if (this.print) {
                         writer.write(makeVisual(record));
                     } else {
-						/* do nothing */
+                        /* do nothing */
                     }
                 }
                 writer.flush();
@@ -101,32 +101,26 @@ public class StreamWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.debug("destroy()");
         }
 
         private String makeVisual(Record record) {
             int recordLength = record.getColumnNumber();
-            if (record == null || recordLength == 0) {
+            if (null == record || 0 == recordLength) {
                 return "\n";
             }
 
-            Column column ;
+            Column column;
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < recordLength; i++) {
                 column = record.getColumn(i);
-                sb.append(column.toString());
-
-                if (i != recordLength-1) {
-                    sb.append(fieldDelimiter);
-                } else {
-                    sb.append('\n');
-                }
+                sb.append(column.asString()).append(fieldDelimiter);
             }
+            sb.setLength(sb.length() - 1);
+            sb.append("\n");
 
             return sb.toString();
         }

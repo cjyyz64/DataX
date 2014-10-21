@@ -3,9 +3,10 @@ package com.alibaba.datax.plugin.reader.streamreader;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum StreamReaderErrorCode implements ErrorCode {
-    NOT_SUPPORT_TYPE("StreamReader-01", "not supported column type"),
-    REQUIRED_VALUE("StreamReader-02", "lost necessary value"),
-    ILLEGAL_VALUE("StreamReader-03", "illegal value"),;
+    REQUIRED_VALUE("StreamReader-00", "lost necessary value"),
+    ILLEGAL_VALUE("StreamReader-01", "illegal value"),
+    NOT_SUPPORT_TYPE("StreamReader-02", "not supported column type"),;
+
 
     private final String code;
     private final String description;
