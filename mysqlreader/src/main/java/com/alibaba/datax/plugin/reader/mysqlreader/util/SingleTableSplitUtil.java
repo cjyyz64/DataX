@@ -83,10 +83,11 @@ public class SingleTableSplitUtil {
         if (null != rangeList) {
             for (String range : rangeList) {
                 Configuration tempConfig = configuration.clone();
+
                 tempQuerySql = buildQuerySql(column, table, where)
                         + (hasWhere ? " and " : " where ") + range;
 
-                LOG.info("After split, tempQuerySql:" + tempQuerySql);
+                LOG.info("After split, tempQuerySql=[\n{}\n].", tempQuerySql);
 
                 tempConfig.set(Key.QUERY_SQL, tempQuerySql);
                 pluginParams.add(tempConfig);
@@ -100,7 +101,7 @@ public class SingleTableSplitUtil {
         tempQuerySql = buildQuerySql(column, table, where)
                 + (hasWhere ? " and " : " where ") + String.format(" %s IS NULL", splitPkName);
 
-        LOG.info("After split, tempQuerySql:" + tempQuerySql);
+        LOG.info("After split, tempQuerySql=[\n{}\n].", tempQuerySql);
 
         tempConfig.set(Key.QUERY_SQL, tempQuerySql);
         pluginParams.add(tempConfig);
