@@ -5,7 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 
 import java.util.concurrent.Callable;
 
-public final class RetryHelper {
+public final class RetryUtil {
 
     /**
      * 重试次数工具方法.
@@ -35,7 +35,7 @@ public final class RetryHelper {
             } catch (Exception e) {
                 saveException = e;
                 if (i + 1 < retryTimes) {
-                    if (sleepTimeInMilliSecond < 0) {
+                    if (sleepTimeInMilliSecond <= 0) {
                         continue;
                     } else {
                         long timeToSleep = 0;

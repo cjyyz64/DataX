@@ -6,9 +6,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.math.BigInteger;
 import java.util.*;
 
-/**
- * TODO modify it radix  = 128
- */
 public final class RangeSplitUtil {
 
     public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
@@ -29,21 +26,10 @@ public final class RangeSplitUtil {
 
 
     public static String[] doAsciiStringSplit(String left, String right, int expectSliceNumber) {
-        Pair<Character, Character> leftMinMax = getMinAndMaxCharacter(left);
-        Pair<Character, Character> rightMinMax = getMinAndMaxCharacter(right);
+        int radix = 128;
 
-        List<Character> aList = new ArrayList<Character>();
-        aList.add(leftMinMax.getLeft());
-        aList.add(leftMinMax.getRight());
-
-        aList.add(rightMinMax.getLeft());
-        aList.add(rightMinMax.getRight());
-
-        int basic = Collections.min(aList).charValue();
-        int radix = Collections.max(aList).charValue() - basic + 1;
-
-        BigInteger[] tempResult = doBigIntegerSplit(stringToBigInteger(left, radix, basic),
-                stringToBigInteger(right, radix, basic), expectSliceNumber);
+        BigInteger[] tempResult = doBigIntegerSplit(stringToBigInteger(left, radix),
+                stringToBigInteger(right, radix), expectSliceNumber);
         String[] result = new String[tempResult.length];
 
         //处理第一个字符串（因为：在转换为数字，再还原的时候，如果首字符刚好是 basic,则不知道应该添加多少个 basic）
@@ -51,7 +37,7 @@ public final class RangeSplitUtil {
         result[tempResult.length - 1] = right;
 
         for (int i = 1, len = tempResult.length - 1; i < len; i++) {
-            result[i] = bigIntegerToString(tempResult[i], radix, basic);
+            result[i] = bigIntegerToString(tempResult[i], radix);
         }
 
         return result;
@@ -128,7 +114,7 @@ public final class RangeSplitUtil {
     /**
      * 由于只支持 ascii 码对应字符，所以radix 范围为[1,128]
      */
-    public static BigInteger stringToBigInteger(String aString, int radix, int basic) {
+    public static BigInteger stringToBigInteger(String aString, int radix) {
         if (null == aString) {
             throw new IllegalArgumentException("parameter aString can not be null.");
         }
@@ -146,10 +132,6 @@ public final class RangeSplitUtil {
             if (tempChar >= 128) {
                 throw new IllegalArgumentException("parameter aString can not contains Non-Ascii character.");
             }
-            tempChar -= basic;
-            if (tempChar < 0) {
-                throw new IllegalArgumentException("parameter basic can not bigger than aString character.");
-            }
             result = result.add(BigInteger.valueOf(tempChar).multiply(radixBigInteger.pow(k)));
             k++;
         }
@@ -160,14 +142,12 @@ public final class RangeSplitUtil {
     /**
      * 把BigInteger 转换为 String.注意：radix 和 basic 范围都为[1,128], radix + basic 的范围也必须在[1,128].
      */
-    private static String bigIntegerToString(BigInteger bigInteger, int radix, int basic) {
+    private static String bigIntegerToString(BigInteger bigInteger, int radix) {
         if (null == bigInteger) {
             throw new IllegalArgumentException("parameter bigInteger can not be null.");
         }
 
         checkIfBetweenRange(radix, 1, 128);
-        checkIfBetweenRange(basic, 1, 128);
-        checkIfBetweenRange(radix + basic, 1, 128);
 
         StringBuilder resultStringBuilder = new StringBuilder();
 
@@ -189,7 +169,7 @@ public final class RangeSplitUtil {
 
         Map<Integer, Character> map = new HashMap<Integer, Character>();
         for (int i = 0; i < radix; i++) {
-            map.put(i, (char) (i + basic));
+            map.put(i, (char) (i));
         }
 
 //        String msg = String.format("%s 转为 %s 进制，结果为：%s", bigInteger.longValue(), radix, list);

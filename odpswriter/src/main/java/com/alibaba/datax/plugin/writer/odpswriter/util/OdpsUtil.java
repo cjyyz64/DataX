@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.RetryHelper;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
@@ -15,7 +15,6 @@ import com.aliyun.openservices.odps.jobs.TaskStatus.Status;
 import com.aliyun.openservices.odps.tables.Table;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 
 public class OdpsUtil {
@@ -45,12 +44,24 @@ public class OdpsUtil {
 
         if (null == originalConfig.getList(Key.COLUMN) ||
                 originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
-            throw new DataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
-                    "column configured error.");
+            String bussinessMessage = "Lost config Key:column.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, bussinessMessage);
         }
 
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
-        originalConfig.getBool(Key.TRUNCATE);
+        Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
+        if (null == truncate) {
+            String bussinessMessage = "Lost config Key:truncate.";
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, bussinessMessage);
+        }
     }
 
     public static void dealMaxRetryTime(Configuration originalConfig) {
@@ -90,7 +101,8 @@ public class OdpsUtil {
             tunnelAccount.setAlgorithm(Constant.TAOBAO_ACCOUNT_TYPE_ALGORITHM);
         }
 
-        com.alibaba.odps.tunnel.Configuration tunnelConfig = new com.alibaba.odps.tunnel.Configuration(tunnelAccount, tunnelServer);
+        com.alibaba.odps.tunnel.Configuration tunnelConfig =
+                new com.alibaba.odps.tunnel.Configuration(tunnelAccount, tunnelServer);
         return new DataTunnel(tunnelConfig);
     }
 
@@ -116,57 +128,62 @@ public class OdpsUtil {
         try {
             parts = table.listPartitions();
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when list table partitions." + e);
+            String bussinessMessage = String.format("Failed to get table=[%s] all partitions.", table.getName());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, e);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
         }
         return parts;
     }
 
-
-    public static void truncateTable(Configuration originalConfig, Project odpsProject) {
-        String table = originalConfig.getString(Key.TABLE);
-
-        Table tab = new Table(odpsProject, table);
-
+    public static boolean isPartitionedTable(Table table) {
+        //必须要是非分区表才能 truncate 整个表
         List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
         try {
-            partitionKeys = tab.getPartitionKeys();
+            partitionKeys = table.getPartitionKeys();
+            if (null != partitionKeys && !partitionKeys.isEmpty()) {
+                return true;
+            }
         } catch (Exception e) {
-            throw new DataXException(null, e);
-        }
+            String bussinessMessage = String.format("Check if partitioned table failed. detail: table=[%s].",
+                    table.getName());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
 
-        if (null != partitionKeys && !partitionKeys.isEmpty()) {
-            LOG.error("Can not truncate partitioned table. detail: table [{}] has partition:[{}].",
-                    tab.getName(), StringUtils.join(partitionKeys, ","));
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "Can not truncate partitioned table");
+            throw new DataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
         }
+        return false;
+    }
 
-        try {
-            tab.load();
-        } catch (Exception e) {
-            throw new DataXException(null, "Error when truncate table." + e);
-        }
-        String dropDdl = "drop table IF EXISTS " + table + ";";
+
+    public static void truncateTable(Table tab) {
+        String dropDdl = "drop table IF EXISTS " + tab.getName() + ";";
         String ddl = OdpsUtil.getTableDdl(tab);
 
-        runSqlTask(odpsProject, dropDdl);
-        runSqlTask(odpsProject, ddl);
+        try {
+            runSqlTask(tab.getProject(), dropDdl);
+            runSqlTask(tab.getProject(), ddl);
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Truncate table:[%s] failed. detail:[%s].",
+                    tab.getName(), e.getMessage());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
 
-        LOG.info("Table [{}] has partition [{}] .", tab.getName(), partitionKeys.toString());
-        String addPart = getAddPartitionDdl(tab);
-        runSqlTask(odpsProject, addPart);
-    }
-
-    public static void truncatePartition(Project odpsProject, String table, String partition) {
-        if (isPartitionExists(odpsProject, table, partition)) {
-            dropPart(odpsProject, table, partition);
+            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
         }
-        addPart(odpsProject, table, partition);
     }
 
-    public static boolean isPartitionExists(Project odpsProject, String table, String partition) {
-        Table tbl = new Table(odpsProject, table);
+    public static void truncatePartition(Table table, String partition) {
+        if (isPartitionExist(table, partition)) {
+            dropPart(table, partition);
+        }
+        addPart(table, partition);
+    }
+
+    private static boolean isPartitionExist(Table table, String partition) {
         // check if exist partition
-        List<String> odpsParts = OdpsUtil.listOdpsPartitions(tbl);
+        List<String> odpsParts = OdpsUtil.listOdpsPartitions(table);
         if (null == odpsParts) {
             throw new DataXException(null, "Error when list table partitions.");
         }
@@ -183,84 +200,71 @@ public class OdpsUtil {
         return true;
     }
 
-    public static void addPart(Project odpsProject, String table, String partition) {
+    public static void addPart(Table table, String partition) {
         String partSpec = getPartSpec(partition);
         // add if not exists partition
         StringBuilder addPart = new StringBuilder();
-        addPart.append("alter table ").append(table).append(" add IF NOT EXISTS partition(")
+        addPart.append("alter table ").append(table.getName()).append(" add IF NOT EXISTS partition(")
                 .append(partSpec).append(");");
-        runSqlTask(odpsProject, addPart.toString());
+        try {
+            runSqlTask(table.getProject(), addPart.toString());
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Add partition failed. detail:project=[%s], table=[%s],partition=[%s]."
+                    , table.getProject().getName(), table.getName(), partition);
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, bussinessMessage);
+        }
     }
 
 
-    public static Upload createMasterTunnelUpload(DataTunnel tunnel, String project,
-                                                  String table, String partition) {
+    public static Upload createMasterTunnelUpload(final DataTunnel tunnel, final String project,
+                                                  final String table, final String partition) {
         try {
-            return RetryHelper.executeWithRetry(new MasterTunnelUploadCreator(tunnel, project,
-                    table, partition), MAX_RETRY_TIME, 1000L, true);
+            return RetryUtil.executeWithRetry(new Callable<Upload>() {
+                @Override
+                public Upload call() throws Exception {
+                    return tunnel.createUpload(project, table, partition);
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
         }
     }
 
-    static class MasterTunnelUploadCreator implements Callable<Upload> {
-        private DataTunnel tunnel;
-        private String project;
-        private String table;
-        private String partition;
-
-        MasterTunnelUploadCreator(DataTunnel tunnel, String project, String table,
-                                  String partition) {
-            this.tunnel = tunnel;
-            this.project = project;
-            this.table = table;
-            this.partition = partition;
-        }
-
-        @Override
-        public Upload call() throws Exception {
-            return this.tunnel.createUpload(this.project, this.table, this.partition);
-        }
-    }
-
-    public static Upload getSlaveTunnelUpload(DataTunnel tunnel, String project, String table,
-                                              String partition, String uploadId) {
+    public static Upload getSlaveTunnelUpload(final DataTunnel tunnel, final String project, final String table,
+                                              final String partition, final String uploadId) {
         try {
-            return RetryHelper.executeWithRetry(new SlaveTunnelUploadCreator(tunnel, project,
-                    table, partition, uploadId), MAX_RETRY_TIME, 1000L, true);
+            return RetryUtil.executeWithRetry(new Callable<Upload>() {
+                @Override
+                public Upload call() throws Exception {
+                    return tunnel.createUpload(project, table, partition, uploadId);
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
+
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
         }
     }
 
-    static class SlaveTunnelUploadCreator implements Callable<Upload> {
-        private DataTunnel tunnel;
-        private String project;
-        private String table;
-        private String partition;
-        private String uploadId;
 
-        SlaveTunnelUploadCreator(DataTunnel tunnel, String project, String table, String partition, String uploadId) {
-            this.tunnel = tunnel;
-            this.project = project;
-            this.table = table;
-            this.partition = partition;
-            this.uploadId = uploadId;
-        }
-
-        @Override
-        public Upload call() throws Exception {
-            return this.tunnel.createUpload(this.project, this.table, this.partition, this.uploadId);
-        }
-    }
-
-    private static void dropPart(Project odpsProject, String table, String partition) {
+    private static void dropPart(Table table, String partition) {
         String partSpec = getPartSpec(partition);
         StringBuilder dropPart = new StringBuilder();
-        dropPart.append("alter table ").append(table)
+        dropPart.append("alter table ").append(table.getName())
                 .append(" drop IF EXISTS partition(").append(partSpec)
                 .append(");");
-        runSqlTask(odpsProject, dropPart.toString());
+        try {
+            runSqlTask(table.getProject(), dropPart.toString());
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Drop partition failed. detail:project=[%s], table=[%s],partition=[%s]."
+                    , table.getProject().getName(), table.getName(), partition);
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, bussinessMessage);
+        }
     }
 
     private static String getPartSpec(String partition) {
@@ -269,12 +273,19 @@ public class OdpsUtil {
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
             String[] kv = part.split("=");
-            if (kv.length != 2)
-                throw new DataXException(null, "Wrong partition Spec: " + partition);
+            if (kv.length != 2) {
+                String bussinessMessage = String.format("Wrong partition Spec=[%s].", partition);
+                String message = StrUtil.buildOriginalCauseMessage(
+                        bussinessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, bussinessMessage);
+            }
             partSpec.append(kv[0]).append("=");
             partSpec.append("'").append(kv[1].replace("'", "")).append("'");
-            if (i != parts.length - 1)
+            if (i != parts.length - 1) {
                 partSpec.append(",");
+            }
         }
         return partSpec.toString();
     }
@@ -332,7 +343,6 @@ public class OdpsUtil {
                     }
 
                     sqlBuilder.append(" comment \"" + comment + "\"");
-
                 }
 
                 if (i < jaPartitionKeys.length() - 1) {
@@ -343,124 +353,68 @@ public class OdpsUtil {
                 sqlBuilder.append(")");
             }
 
-        } catch (JSONException e) {
-            throw new DataXException(OdpsWriterErrorCode.TEMP, e);
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Failed to get table=[%s] ddl sql.", table.getName());
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.GET_TABLE_DDL_FAIL, e);
         }
         sqlBuilder.append(";\r\n");
         return sqlBuilder.toString();
     }
 
-    private static String getAddPartitionDdl(Table table) {
-
-        List<String> partionSpecList = null;
-        try {
-            partionSpecList = table.listPartitions();
-        } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.TEMP, e);
-        }
-
-        StringBuilder addPartitionBuilder = new StringBuilder();
-        for (String partionSpec : partionSpecList) {
-
-            if (partionSpec.indexOf("__HIVE_DEFAULT_PARTITION__") >= 0
-                    || partionSpec.indexOf("''20120529''") >= 0) {
-                addPartitionBuilder.append("--alter table ")
-                        .append(table.getName())
-                        .append(" add IF NOT EXISTS partition(")
-                        .append(partionSpec.replace(":", "=")).append(");\r\n");
-            } else {
-                addPartitionBuilder.append("alter table ")
-                        .append(table.getName())
-                        .append(" add IF NOT EXISTS partition(")
-                        .append(partionSpec.replace(":", "=")).append(");\r\n");
-            }
-        }
-
-        return addPartitionBuilder.toString();
-    }
-
-    private static void runSqlTask(Project project, String query) {
-        if (null == query || "".endsWith(query))
+    private static void runSqlTask(Project project, String query) throws Exception {
+        if (StringUtils.isBlank(query)) {
             return;
-        LOG.info("ODPSWriter try to execute :[{}] .", query);
-        Task task = new SqlTask("datax_odpstunnel_writer_trunacte", query);
-        JobInstance instance = null;
-        try {
-            instance = Job.run(project, task);
-            instance.waitForCompletion();
-            TaskStatus status = instance.getTaskStatus().get(
-                    "datax_odpstunnel_writer_trunacte");
-            LOG.info(String.format("ODPSWriter execute query result :%s .",
-                    status.getStatus()));
-            if (status.getStatus().equals(Status.FAILED)) {
-                Map<String, String> result = null;
-                result = instance.getResult();
-                throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when Execute query. "
-                        + result.get(task.getName()));
-            }
-        } catch (Exception e) {
-            LOG.info("Failed to run the query due to an error from ODPS."
-                    + "Reason: " + e.getMessage());
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "Error when truncate table." + e);
+        }
+
+        String taskName = "datax_odpswriter_trunacte_" + UUID.randomUUID().toString().replace('-', '_');
+
+        LOG.info("Try to start sqlTtask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
+        Task task = new SqlTask(taskName, query);
+        JobInstance instance = Job.run(project, task);
+        instance.waitForCompletion();
+        TaskStatus status = instance.getTaskStatus().get(taskName);
+
+        if (!Status.SUCCESS.equals(status.getStatus())) {
+            String message = String.format("Run odps sql task not success. detail:result=[%s].",
+                    instance.getResult().get(taskName));
+            throw new Exception(message);
         }
     }
 
-    public static void masterCompleteBlocks(Upload masterUpload, Long[] blocks) {
+    public static void masterCompleteBlocks(final Upload masterUpload, final Long[] blocks) {
         try {
-            RetryHelper.executeWithRetry(new CompleteBlockWorker(masterUpload, blocks),
-                    MAX_RETRY_TIME, 1000L, true);
+            RetryUtil.executeWithRetry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    masterUpload.complete(blocks);
+                    return null;
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
         }
     }
 
-    public static void slaveWriteOneBlock(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
-                                          long blockId) {
+    public static void slaveWriteOneBlock(final Upload slaveUpload, final ByteArrayOutputStream byteArrayOutputStream,
+                                          final long blockId) {
         try {
-            RetryHelper.executeWithRetry(new WriteBlockWorker(slaveUpload, byteArrayOutputStream, blockId),
-                    MAX_RETRY_TIME, 1000L, true);
+            RetryUtil.executeWithRetry(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                    OutputStream hpout = slaveUpload.openOutputStream(blockId);
+                    byteArrayOutputStream.writeTo(hpout);
+                    hpout.close();
+                    return null;
+                }
+            }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
         }
-    }
 
-    static class CompleteBlockWorker implements Callable<Void> {
-
-        private Upload masterUpload;
-        private Long[] blocks;
-
-        CompleteBlockWorker(Upload masterUpload, Long[] blocks) {
-            this.masterUpload = masterUpload;
-            this.blocks = blocks;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            this.masterUpload.complete(this.blocks);
-            return null;
-        }
-    }
-
-    static class WriteBlockWorker implements Callable<Void> {
-
-        private Upload slaveUpload;
-        private ByteArrayOutputStream byteArrayOutputStream;
-        private long blockId;
-
-        WriteBlockWorker(Upload slaveUpload, ByteArrayOutputStream byteArrayOutputStream,
-                         long blockId) {
-            this.slaveUpload = slaveUpload;
-            this.byteArrayOutputStream = byteArrayOutputStream;
-            this.blockId = blockId;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            OutputStream hpout = this.slaveUpload.openOutputStream(this.blockId);
-            byteArrayOutputStream.writeTo(hpout);
-            hpout.close();
-            return null;
-        }
     }
 
     /**
@@ -481,16 +435,18 @@ public class OdpsUtil {
                 }
             }
             if (!hasColumn) {
-                throw new DataXException(OdpsWriterErrorCode.TEMP,
-                        String.format("no column named [%s] !", col));
+                String bussinessMessage = String.format("No column named [%s] !", col);
+                String message = StrUtil.buildOriginalCauseMessage(
+                        bussinessMessage, null);
+                LOG.error(message);
+
+                throw new DataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
+                        bussinessMessage);
             }
         }
         return retList;
     }
 
-    /**
-     * 转为小写(对类型进行了是否支持的判断)
-     */
     public static List<String> getAllColumns(RecordSchema schema) {
         if (null == schema) {
             throw new IllegalArgumentException("parameter schema can not be null.");
@@ -499,10 +455,16 @@ public class OdpsUtil {
         List<String> allColumns = new ArrayList<String>();
         Column.Type type = null;
         for (int i = 0, columnCount = schema.getColumnCount(); i < columnCount; i++) {
-            allColumns.add(schema.getColumnName(i).toLowerCase());
+            allColumns.add(schema.getColumnName(i));
             type = schema.getColumnType(i);
             if (type == Column.Type.ODPS_ARRAY || type == Column.Type.ODPS_MAP) {
-                throw new DataXException(OdpsWriterErrorCode.TEMP, "Unsupported data type:" + type);
+                String bussinessMessage = String.format("Unsupported column type:[%s].", type);
+                String message = StrUtil.buildOriginalCauseMessage(
+                        bussinessMessage, null);
+
+                LOG.error(message);
+                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
+                        bussinessMessage);
             }
         }
         return allColumns;
@@ -516,5 +478,106 @@ public class OdpsUtil {
         }
 
         return tableOriginalColumnTypeList;
+    }
+
+    public static void dealTruncate(Table table, String partition, boolean truncate) {
+        boolean isPartitionedTable = OdpsUtil.isPartitionedTable(table);
+
+        if (truncate) {
+            //需要 truncate
+            if (isPartitionedTable) {
+                //分区表
+                if (StringUtils.isBlank(partition)) {
+                    String bussinessMessage = String.format("Can not truncate partitioned table=[%s] without assigning partition.",
+                            table.getName());
+                    String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, bussinessMessage);
+                } else {
+                    LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
+                    OdpsUtil.truncatePartition(table, partition);
+                }
+            } else {
+                //非分区表
+                if (StringUtils.isNotBlank(partition)) {
+                    String bussinessMessage = String.format(
+                            "Can not truncate non partitioned table=[%s] with assigning partition.", table.getName());
+                    String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+
+                    LOG.error(message);
+                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, bussinessMessage);
+                } else {
+                    LOG.info("Try to truncate table:[{}].", table.getName());
+                    OdpsUtil.truncateTable(table);
+                }
+            }
+        } else {
+            //不需要 truncate
+            if (isPartitionedTable) {
+                //分区表
+                if (StringUtils.isBlank(partition)) {
+                    String bussinessMessage = String.format(
+                            "Can not write to partitioned table=[%s] without assigning partition.", table.getName());
+                    String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                    LOG.error(message);
+
+                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, bussinessMessage);
+                } else {
+                    boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
+                    if (!isPartitionExists) {
+                        LOG.info("Try to add partition:[{}] in table:[{}] by drop it and then add it..", partition,
+                                table.getName());
+                        OdpsUtil.dropPart(table, partition);
+                        OdpsUtil.addPart(table, partition);
+                    }
+                }
+            } else {
+                //非分区表
+                if (StringUtils.isNotBlank(partition)) {
+                    String bussinessMessage = String.format(
+                            "Can not write to not partitioned table=[%s] with assigning partition.", table.getName());
+                    String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                    LOG.error(message);
+
+                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, bussinessMessage);
+                }
+            }
+        }
+    }
+
+    /**
+     * 为什么？ TODO 暂时不解
+     */
+    private static String getAddPartitionDdl(Table table) {
+        List<String> partionSpecList = null;
+        try {
+            partionSpecList = table.listPartitions();
+        } catch (Exception e) {
+            String bussinessMessage = String.format("Failed to get table=[%s] all partitions.", table.getName());
+            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, e);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
+        }
+
+        StringBuilder addPartitionBuilder = new StringBuilder();
+        for (String partionSpec : partionSpecList) {
+
+            if (partionSpec.indexOf("__HIVE_DEFAULT_PARTITION__") >= 0
+                    || partionSpec.indexOf("''20120529''") >= 0) {
+                addPartitionBuilder.append("--alter table ")
+                        .append(table.getName())
+                        .append(" add IF NOT EXISTS partition(")
+                        .append(partionSpec.replace(":", "=")).append(");\r\n");
+            } else {
+                addPartitionBuilder.append("alter table ")
+                        .append(table.getName())
+                        .append(" add IF NOT EXISTS partition(")
+                        .append(partionSpec.replace(":", "=")).append(");\r\n");
+            }
+        }
+
+        return addPartitionBuilder.toString();
     }
 }

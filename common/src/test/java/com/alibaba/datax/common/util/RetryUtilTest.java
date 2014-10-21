@@ -9,7 +9,7 @@ import org.junit.rules.ExpectedException;
 
 import java.util.concurrent.Callable;
 
-public class RetryHelperTest {
+public class RetryUtilTest {
 
     private static String OK = "I am ok now.";
     private static String BAD = "I am bad now.";
@@ -35,7 +35,7 @@ public class RetryHelperTest {
     @Test(timeout = 3000L)
     public void test1() {
         long startTime = System.currentTimeMillis();
-        String result = RetryHelper.executeWithRetry(new SomeService(), 3, 1000L, false);
+        String result = RetryUtil.executeWithRetry(new SomeService(), 3, 1000L, false);
         long endTime = System.currentTimeMillis();
         Assert.assertEquals(result, OK);
         long executeTime = endTime - startTime;
@@ -47,7 +47,7 @@ public class RetryHelperTest {
     @Test(timeout = 3000L)
     public void test2() {
         long startTime = System.currentTimeMillis();
-        String result = RetryHelper.executeWithRetry(new SomeService(), 4, 1000L, false);
+        String result = RetryUtil.executeWithRetry(new SomeService(), 4, 1000L, false);
         long endTime = System.currentTimeMillis();
         Assert.assertEquals(result, OK);
         long executeTime = endTime - startTime;
@@ -59,7 +59,7 @@ public class RetryHelperTest {
     @Test(timeout = 3000L)
     public void test3() {
         long startTime = System.currentTimeMillis();
-        String result = RetryHelper.executeWithRetry(new SomeService(), 40, 1000L, false);
+        String result = RetryUtil.executeWithRetry(new SomeService(), 40, 1000L, false);
         long endTime = System.currentTimeMillis();
         Assert.assertEquals(result, OK);
         long executeTime = endTime - startTime;
@@ -71,7 +71,7 @@ public class RetryHelperTest {
     @Test(timeout = 4000L)
     public void test4() {
         long startTime = System.currentTimeMillis();
-        String result = RetryHelper.executeWithRetry(new SomeService(), 40, 1000L, true);
+        String result = RetryUtil.executeWithRetry(new SomeService(), 40, 1000L, true);
         long endTime = System.currentTimeMillis();
         Assert.assertEquals(result, OK);
         long executeTime = endTime - startTime;
@@ -90,6 +90,6 @@ public class RetryHelperTest {
         expectedEx.expect(DataXException.class);
         expectedEx.expectMessage(StringContains.containsString(BAD));
 
-        RetryHelper.executeWithRetry(new SomeService(), 2, 100L, false);
+        RetryUtil.executeWithRetry(new SomeService(), 2, 100L, false);
     }
 }

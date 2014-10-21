@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.Column;
 import com.alibaba.odps.tunnel.RecordSchema;
@@ -90,14 +91,21 @@ public class OdpsWriterProxy {
         int destColumnCount = schema.getColumnCount();
         Record odpsRecord = new Record(destColumnCount);
 
-        if (sourceColumnCount > this.columnPositions.size()) {
-            throw new DataXException(OdpsWriterErrorCode.TEMP, "source column number bigger than destination column num.");
-        } else if (sourceColumnCount < this.columnPositions.size()) {
+        int userConfiguredColumnNumber = this.columnPositions.size();
+
+        if (sourceColumnCount > userConfiguredColumnNumber) {
+            String bussinessMessage = String.format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
+                    sourceColumnCount, userConfiguredColumnNumber);
+            String message = StrUtil.buildOriginalCauseMessage(
+                    bussinessMessage, null);
+            LOG.error(message);
+
+            throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR, bussinessMessage);
+        } else if (sourceColumnCount < userConfiguredColumnNumber) {
             if (printColumnLess) {
                 printColumnLess = false;
-                LOG.warn(
-                        "source column={} is less than dest column={}, fill destination column with null !",
-                        dataXRecord.getColumnNumber(), destColumnCount);
+                LOG.warn("source columnNumber={} is less than configured destination columnNumber={}, DataX will fill some column with null.",
+                        dataXRecord.getColumnNumber(), userConfiguredColumnNumber);
             }
         }
 
@@ -127,8 +135,13 @@ public class OdpsWriterProxy {
                             .asDouble());
                     break;
                 default:
+                    String bussinessMessage = String.format("Unsupported column type:[%s].", type);
+                    String message = StrUtil.buildOriginalCauseMessage(
+                            bussinessMessage, null);
+
+                    LOG.error(message);
                     throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                            String.format("Unsupported column type:[%s].", type));
+                            bussinessMessage);
             }
         }
 
