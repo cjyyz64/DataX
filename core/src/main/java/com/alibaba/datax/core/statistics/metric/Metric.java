@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.statistics.metric;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,14 +68,22 @@ public class Metric extends BaseObject implements Cloneable {
 
 	private Map<String, List<String>> message;
 
+	private static String IP = "UNKNOWN";
+
+	static {
+		try {
+			Metric.IP = InetAddress.getLocalHost().getHostAddress().toString();
+		} catch (UnknownHostException unused) {
+			Metric.IP = "UNKNOWN";
+		}
+
+	}
+
 	private void init() {
 		this.stage = 0;
 		this.timeStamp = 0;
-		try {
-			this.ip = InetAddress.getLocalHost().getHostAddress().toString();
-		} catch (Exception e) {
-			this.ip = "UNKNOWN";
-		}
+	
+		this.ip = Metric.IP;
 
 		this.status = Status.RUN;
 
