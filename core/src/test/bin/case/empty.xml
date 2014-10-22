@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+    <job>
+        <reader>
+            <plugin>${READER_TYPE}</plugin>
+            <param key="project" value="xxxx-proj"/>
+            <!--<param key="table" value="the_dst_table"/>-->
+            <!--<param key="partition" value="ds=xxx"/>-->
+            <!--<param key="column" value="a,b,c,d"/>-->
+            <!--<param key="tunnel-server" value="http://tunel.server.com"/>-->
+            <!--<param key="odps-server" value="http://odps.server.com"/>-->
+            <!--<param key="access-id" value=""/>-->
+            <!--<param key="access-key" value=""/>-->
+            <!--<param key="concurrency" value="3"/>-->
+        </reader>
+        <writer>
+            <plugin>${WRITER_TYPE}</plugin>
+            <!--<param key="jdbc-url" value="jdbc:mysql://0.0.0.0:3306/the_src_db"/>-->
+            <!--<param key="table" value="the_src_table"/>-->
+            <!--<param key="column" value="x,y,z"/>-->
+            <!--<param key="username" value="src_user"/>-->
+            <!--<param key="password" value="src_password"/>-->
+            <!--<param key="replace" value="true"/>-->
+            <!--<param key="pre" value="delete from the_src_table"/>-->
+            <!--<param key="post" value=""/>-->
+            <!--<param key="concurrency" value="3"/>-->
+            <!--<param key="error-limit" value="1"/>-->
+            <!--<param key="encoding" value="gbk"/>-->
+            <!--<param key="ip" value="0"/>-->
+            <!--<param key="database" value="0"/>-->
+        </writer>
+        <config>
+            <param key="core.jvm.option" value=""/>
+        </config>
+    </job>
+</jobs>

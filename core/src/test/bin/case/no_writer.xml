@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jobs>
+    <job>
+        <reader>
+            <plugin>odpsreader</plugin>
+            <param key="project" value="xxxx-proj"/>
+            <param key="table" value="the_dst_table"/>
+            <param key="partition" value="ds=${bizdate}"/>
+            <param key="column" value="a,b,c,d"/>
+            <param key="tunnel-server" value="http://tunel.server.com"/>
+            <param key="odps-server" value="http://odps.server.com"/>
+            <param key="access-id" value=""/>
+            <param key="access-key" value=""/>
+            <param key="concurrency" value="3"/>
+        </reader>
+        <config>
+            <param key="core.jvm.option" value=""/>
+        </config>
+    </job>
+</jobs>

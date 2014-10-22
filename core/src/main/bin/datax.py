@@ -142,8 +142,8 @@ def get_json_job_path(job_path):
         string_type = get_string_type(job_content)
         convertor = None
         if string_type == STRING_TYPE.XML:
-            from xml_convertor import XmlConvertor
-            convertor = XmlConvertor(job_content)
+            from xml_convertor import XmlConverter
+            convertor = XmlConverter(job_content)
         else:
             print >>sys.stderr, "not support string type[%s]"%(string_type)
             sys.exit(RET_STATE["FAIL"])
