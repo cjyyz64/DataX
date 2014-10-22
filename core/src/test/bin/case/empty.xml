@@ -3,7 +3,7 @@
     <job>
         <reader>
             <plugin>${READER_TYPE}</plugin>
-            <!--<param key="project" value="xxxx-proj"/>-->
+            <param key="project" value="xxxx-proj"/>
             <!--<param key="table" value="the_dst_table"/>-->
             <!--<param key="partition" value="ds=xxx"/>-->
             <!--<param key="column" value="a,b,c,d"/>-->

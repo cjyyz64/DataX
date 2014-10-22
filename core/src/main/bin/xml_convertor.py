@@ -105,7 +105,10 @@ class XmlConverter:
         concurrency = self.get_value_from_xml(self.reader, "concurrency")
         if not concurrency:
             concurrency = "1"
-        self.job_setting["speed"] = {"byte": 1024 * 1024 * int(concurrency)}
+        concurrency = int(concurrency)
+        self.job_setting["speed"] = {
+            "byte": 1024 * 1024 * (1 if concurrency < 1 else concurrency)
+        }
 
     def set_error_limit(self):
         """
@@ -140,7 +143,8 @@ class XmlConverter:
         print >>sys.stderr, "invalid error limit value: " + error_limit
         return False
 
-    def get_value_from_xml(self, node_root, key):
+    @staticmethod
+    def get_value_from_xml(node_root, key):
         value = None
         try:
             for item in node_root.getiterator(tag="param"):
@@ -150,7 +154,8 @@ class XmlConverter:
         finally:
             return value
 
-    def parse_map_column(self, columns):
+    @staticmethod
+    def parse_map_column(columns, is_map=True):
         if not columns or not columns.strip() or columns == "*":
             return ["*"]
 
@@ -161,10 +166,10 @@ class XmlConverter:
         begin = 0
         for i, ch in enumerate(columns):
             if i == len(columns)-1:
-                column_array.append({"name":columns[begin:]})
+                column_array.append({"name": columns[begin:]} if is_map else columns[begin:])
             elif ch == ",":
-                if bracket_count == 0 and quote_count%2 == 0:
-                    column_array.append({"name":columns[begin:i]})
+                if bracket_count == 0 and quote_count % 2 == 0:
+                    column_array.append({"name": columns[begin:i]} if is_map else columns[begin:i])
                     begin = i+1
             elif ch == "'" or ch == "\"":
                 quote_count += 1
@@ -175,30 +180,9 @@ class XmlConverter:
 
         return column_array
 
-    def parse_column(self, columns):
-        if not columns or not columns.strip() or columns == "*":
-            return ["*"]
-
-        columns = columns.strip().strip(",")
-        column_array = []
-        bracket_count = 0
-        quote_count = 0
-        begin = 0
-        for i, ch in enumerate(columns):
-            if i == len(columns)-1:
-                column_array.append(columns[begin:])
-            elif ch == ",":
-                if bracket_count == 0 and quote_count%2 == 0:
-                    column_array.append(columns[begin:i])
-                    begin = i+1
-            elif ch == "'" or ch == "\"":
-                quote_count += 1
-            elif ch == "(":
-                bracket_count += 1
-            elif ch == ")":
-                bracket_count -= 1
-
-        return column_array
+    @staticmethod
+    def parse_column(columns):
+        return XmlConverter.parse_map_column(columns, is_map=False)
 
     ############ stream #############
     def parse_streamreader(self):
@@ -388,8 +372,8 @@ class XmlConverter:
 
     ############ txtfile #############
     def parse_txtfilewriter(self):
-        self.writer_parameter["path"] = self.get_value_from_xml(self.writer,"path");
-        self.writer_parameter["concurrency"] = self.get_value_from_xml(self.writer,"concurrency")
+        self.writer_parameter["path"] = self.get_value_from_xml(self.writer, "path")
+        self.writer_parameter["concurrency"] = self.get_value_from_xml(self.writer, "concurrency")
 
         return True
 

@@ -9,6 +9,12 @@ from string import Template
 from xml_convertor import XmlConverter
 
 
+try:
+    from xml.etree import ElementTree as XmlTree
+except:
+    import elementtree.ElementTree as XmlTree
+
+
 class XmlConverterTest(unittest.TestCase):
     def test_invalid_xml(self):
         self.assertRaises(Exception, XmlConverter, "")
@@ -39,11 +45,20 @@ class XmlConverterTest(unittest.TestCase):
             self.assertFalse(c.parse_reader())
             self.assertFalse(c.parse_writer())
 
-    def test_convert_speed(self):
+    def test_set_run_speed(self):
         with open('./case/ok.xml') as f:
             c = XmlConverter(f.read())
+            c.get_value_from_xml = lambda x, y: '3'
             c.set_run_speed()
             self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 3)
+
+            c.get_value_from_xml = lambda x, y: '-2'
+            c.set_run_speed()
+            self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 1)
+
+            c.get_value_from_xml = lambda x, y: ''
+            c.set_run_speed()
+            self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 1)
 
     def test_error_limit(self):
         with open('./case/ok.xml') as f:
@@ -83,6 +98,27 @@ class XmlConverterTest(unittest.TestCase):
             self.assertTrue(c.set_error_limit())
             self.assertIsNone(c.job_setting.get('errorLimit'))
 
+    def test_get_value_from_xml(self):
+        with open('./case/empty.xml') as f:
+            c = XmlConverter(f.read())
+            value = c.get_value_from_xml(c.reader, 'project')
+            self.assertEqual(value, 'xxxx-proj')
 
+            value = c.get_value_from_xml(c.reader, 'what_is_up')
+            self.assertIsNone(value)
+
+    def test_parse_column(self):
+        self.assertEqual(XmlConverter.parse_column(''), ['*'])
+        self.assertEqual(XmlConverter.parse_column('*'), ['*'])
+        self.assertEqual(XmlConverter.parse_column(' * '), ['*'])
+        for item in [['a', 'b', 'c'],
+                     ['a', 'b()', 'c'],
+                     ['"a"', 'b()', 'c'],
+                     ['a', 'b("", x, \'s\')', 'c'],
+                     ['count(distinct(a))', 'b("", x, \'(\')', 'c']
+                     ['a(\'"),\')', 'c', 'd']
+                     ]:
+            s = ','.join(item)
+            self.assertEqual(XmlConverter.parse_column(s), item)
 
 
