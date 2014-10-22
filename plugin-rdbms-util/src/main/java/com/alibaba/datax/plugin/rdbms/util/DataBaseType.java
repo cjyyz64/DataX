@@ -22,71 +22,89 @@ public enum DataBaseType {
         this.driverClassName = driverClassName;
     }
 
-    public String getTypeName() {
-        return this.typeName;
-    }
-
     public String getDriverClassName() {
         return this.driverClassName;
     }
 
     public String appendJDBCSuffix(String jdbc) {
+        String result = jdbc;
         switch (this) {
             case MySql:
                 String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
                 if (jdbc.contains("?")) {
-                    return jdbc + "&" + suffix;
+                    result = jdbc + "&" + suffix;
                 } else {
-                    return jdbc + "?" + suffix;
+                    result = jdbc + "?" + suffix;
                 }
+                break;
             case Oracle:
-                return jdbc;
+                break;
             case SQLServer:
-                return jdbc;
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
+
+        return result;
     }
 
     public String formatPk(String splitPk) {
+        String result = splitPk;
+
         switch (this) {
             case MySql:
             case Oracle:
                 if (splitPk.length() >= 2 && splitPk.startsWith("`") && splitPk.endsWith("`")) {
-                    return splitPk.substring(1, splitPk.length() - 1).toLowerCase();
+                    result = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
                 }
+                break;
             case SQLServer:
                 if (splitPk.length() >= 2 && splitPk.startsWith("[") && splitPk.endsWith("]")) {
-                    return splitPk.substring(1, splitPk.length() - 1).toLowerCase();
+                    result = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
                 }
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
+
+        return result;
     }
 
 
     public String quoteColumnName(String columnName) {
+        String result = columnName;
+
         switch (this) {
             case MySql:
             case Oracle:
-                return "`" + columnName.replace("`", "``") + "`";
+                result = "`" + columnName.replace("`", "``") + "`";
+                break;
             case SQLServer:
-                return "[" + columnName + "]";
+                result = "[" + columnName + "]";
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
+
+        return result;
     }
 
     public String quoteTableName(String tableName) {
+        String result = tableName;
+
         switch (this) {
             case MySql:
             case Oracle:
-                return "`" + tableName.replace("`", "``") + "`";
+                result = "`" + tableName.replace("`", "``") + "`";
+                break;
             case SQLServer:
-                return tableName;
+                result = tableName;
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
+
+        return result;
     }
 
 }
