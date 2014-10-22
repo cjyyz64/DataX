@@ -72,24 +72,24 @@ public class IdAndKeyUtil {
                 originalConfig.set(Key.ACCESS_KEY, accessKey);
                 LOG.info("Get accessId/accessKey from environment variables successfully.");
             } else {
-                String bussinessMessage = String.format(
+                String businessMessage = String.format(
                         "Get accessId/accessKey from environment variables failed, detail: accessId=[%s]", accessId);
                 String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
+                        businessMessage, null);
 
                 LOG.error(message);
                 throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
-                        bussinessMessage);
+                        businessMessage);
             }
         } else {
             // 无处获取（既没有配置在作业中，也没用在环境变量中）
-            String bussinessMessage = "accessId/accessKey not in config nor in environment variables.";
+            String businessMessage = "accessId/accessKey not in config nor in environment variables.";
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
 
             LOG.error(message);
             throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
-                    bussinessMessage);
+                    businessMessage);
         }
 
         return originalConfig;

@@ -1,15 +1,15 @@
-package com.alibaba.datax.plugin.reader.mysqlreader.util;
+package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.common.util.StrUtil;
+import com.alibaba.datax.plugin.rdbms.reader.Constant;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
-import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
-import com.alibaba.datax.plugin.reader.mysqlreader.Key;
-import com.alibaba.datax.plugin.reader.mysqlreader.MysqlReaderErrorCode;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,10 +23,12 @@ public final class OriginalConfPretreatmentUtil {
 
     private static boolean IS_DEBUG = LOG.isDebugEnabled();
 
+    public static DataBaseType DATABASE_TYPE;
+
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
-        originalConfig.getNecessaryValue(Key.USERNAME, MysqlReaderErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.PASSWORD, MysqlReaderErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.USERNAME, DBUtilErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.PASSWORD, DBUtilErrorCode.REQUIRED_VALUE);
 
         simplifyConf(originalConfig);
     }
@@ -60,13 +62,13 @@ public final class OriginalConfPretreatmentUtil {
         for (int i = 0, len = conns.size(); i < len; i++) {
             Configuration connConf = Configuration.from(conns.get(i).toString());
 
-            connConf.getNecessaryValue(Key.JDBC_URL, MysqlReaderErrorCode.REQUIRED_VALUE);
+            connConf.getNecessaryValue(Key.JDBC_URL, DBUtilErrorCode.REQUIRED_VALUE);
 
             List<String> jdbcUrls = connConf.getList(Key.JDBC_URL, String.class);
             List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
 
-            String jdbcUrl = DBUtil.chooseJdbcUrl(DataBaseType.MySql, jdbcUrls, username, password, preSql);
+            String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls, username, password, preSql);
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
@@ -78,10 +80,10 @@ public final class OriginalConfPretreatmentUtil {
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
 
                 List<String> expandedTables = TableExpandUtil
-                        .expandTableConf(DataBaseType.MySql, tables);
+                        .expandTableConf(DATABASE_TYPE, tables);
 
                 if (null == expandedTables || expandedTables.isEmpty()) {
-                    throw new DataXException(MysqlReaderErrorCode.ILLEGAL_VALUE,
+                    throw new DataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                             "read table configured error.");
                 }
 
@@ -90,7 +92,7 @@ public final class OriginalConfPretreatmentUtil {
                 originalConfig.set(String.format("%s[%d].%s",
                         Constant.CONN_MARK, i, Key.TABLE), expandedTables);
             } else {
-                // 说明是配置的 querySql 方式 doNothgin
+                // 说明是配置的 querySql 方式，不做处理.
             }
         }
 
@@ -108,7 +110,7 @@ public final class OriginalConfPretreatmentUtil {
                 String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(MysqlReaderErrorCode.REQUIRED_KEY, businessMessage);
+                throw new DataXException(DBUtilErrorCode.REQUIRED_KEY, businessMessage);
             } else {
                 // deal split pk quote
                 String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
@@ -116,12 +118,12 @@ public final class OriginalConfPretreatmentUtil {
                     if (splitPk.startsWith("`") && splitPk.endsWith("`")) {
                         splitPk = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
                     }
-                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteTableOrColumnName(
-                            DataBaseType.MySql, splitPk));
+                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteColumnName(
+                            DATABASE_TYPE, splitPk));
                 }
 
                 if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
-                    LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                    LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
                             + "because column configured as * may not work when you changed your table structure.");
 
                     // 回填其值，需要以 String 的方式转交后续处理
@@ -136,7 +138,7 @@ public final class OriginalConfPretreatmentUtil {
                     String tableName = originalConfig.getString(String.format(
                             "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
-                    List<String> allColumns = DBUtil.getMysqlTableColumns(jdbcUrl,
+                    List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl,
                             username, password, tableName);
                     allColumns = ListUtil.valueToLowerCase(allColumns);
 
@@ -150,13 +152,13 @@ public final class OriginalConfPretreatmentUtil {
                     for (String column : userConfiguredColumns) {
                         if ("*".equals(column)) {
                             throw new DataXException(
-                                    MysqlReaderErrorCode.ILLEGAL_VALUE,
+                                    DBUtilErrorCode.ILLEGAL_VALUE,
                                     "no column named[*].");
                         }
 
                         if (allColumns.contains(column.toLowerCase())) {
                             quotedColumns.add(TableExpandUtil
-                                    .quoteTableOrColumnName(DataBaseType.MySql, column));
+                                    .quoteColumnName(DATABASE_TYPE, column));
                         } else {
                             // 可能是由于用户填写为函数，或者自己对字段进行了`处理
                             quotedColumns.add(column);
@@ -167,11 +169,11 @@ public final class OriginalConfPretreatmentUtil {
                     if (StringUtils.isNotBlank(splitPk)) {
 
                         if (!allColumns.contains(splitPk)) {
-                            String bussinessMessage = String.format("No pk column named:[%s].", splitPk);
-                            String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                            String businessMessage = String.format("No pk column named:[%s].", splitPk);
+                            String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
                             LOG.error(message);
 
-                            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, bussinessMessage);
+                            throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, businessMessage);
                         }
                     }
 
@@ -180,7 +182,7 @@ public final class OriginalConfPretreatmentUtil {
         } else {
             // querySql模式，不希望配制 column，那样是混淆不清晰的
             if (null != userConfiguredColumns && userConfiguredColumns.size() > 0) {
-                LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
                         + "because you have configured querySql, no need to config column.");
                 originalConfig.remove(Key.COLUMN);
             }
@@ -188,7 +190,7 @@ public final class OriginalConfPretreatmentUtil {
             // querySql模式，不希望配制 where，那样是混淆不清晰的
             String where = originalConfig.getString(Key.WHERE, null);
             if (StringUtils.isNotBlank(where)) {
-                LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
                         + "because you have configured querySql, no need to config where.");
                 originalConfig.remove(Key.WHERE);
             }
@@ -196,7 +198,7 @@ public final class OriginalConfPretreatmentUtil {
             // querySql模式，不希望配制 splitPk，那样是混淆不清晰的
             String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
             if (StringUtils.isNotBlank(splitPk)) {
-                LOG.warn(MysqlReaderErrorCode.NOT_RECOMMENDED.toString()
+                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
                         + "because you have configured querySql, no need to config splitPk.");
                 originalConfig.remove(Key.SPLIT_PK);
             }
@@ -230,32 +232,32 @@ public final class OriginalConfPretreatmentUtil {
 
             if (false == isTableMode && false == isQuerySqlMode) {
                 // table 和 querySql 二者均未配制
-                String bussinessMessage = "table and querySql should configured one item.";
+                String businessMessage = "table and querySql should configured one item.";
                 String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
+                        businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MISSING,
-                        bussinessMessage);
+                throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MISSING,
+                        businessMessage);
             } else if (true == isTableMode && true == isQuerySqlMode) {
                 // table 和 querySql 二者均配置
-                String bussinessMessage = "table and querySql can not mixed.";
+                String businessMessage = "table and querySql can not mixed.";
                 String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
+                        businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED, bussinessMessage);
+                throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED, businessMessage);
             }
         }
 
         // 混合配制 table 和 querySql
         if (!ListUtil.checkIfValueSame(tableModeFlags) || !ListUtil.checkIfValueSame(tableModeFlags)) {
-            String bussinessMessage = "table and querySql can not mixed.";
+            String businessMessage = "table and querySql can not mixed.";
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(MysqlReaderErrorCode.TABLE_QUERYSQL_MIXED, bussinessMessage);
+            throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED, businessMessage);
         }
 
         return tableModeFlags.get(0);

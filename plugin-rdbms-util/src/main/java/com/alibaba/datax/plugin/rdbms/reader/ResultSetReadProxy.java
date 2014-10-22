@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.mysqlreader;
+package com.alibaba.datax.plugin.rdbms.reader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -8,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 
-public class MysqlReaderProxy {
+public class ResultSetReadProxy {
 
     public static void transportOneRecord(RecordSender recordSender, ResultSet rs,
                                           ResultSetMetaData metaData, int columnNumber,

@@ -94,13 +94,13 @@ public class OdpsWriterProxy {
         int userConfiguredColumnNumber = this.columnPositions.size();
 
         if (sourceColumnCount > userConfiguredColumnNumber) {
-            String bussinessMessage = String.format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
+            String businessMessage = String.format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
                     sourceColumnCount, userConfiguredColumnNumber);
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR, bussinessMessage);
+            throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR, businessMessage);
         } else if (sourceColumnCount < userConfiguredColumnNumber) {
             if (printColumnLess) {
                 printColumnLess = false;
@@ -135,13 +135,13 @@ public class OdpsWriterProxy {
                             .asDouble());
                     break;
                 default:
-                    String bussinessMessage = String.format("Unsupported column type:[%s].", type);
+                    String businessMessage = String.format("Unsupported column type:[%s].", type);
                     String message = StrUtil.buildOriginalCauseMessage(
-                            bussinessMessage, null);
+                            businessMessage, null);
 
                     LOG.error(message);
                     throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                            bussinessMessage);
+                            businessMessage);
             }
         }
 

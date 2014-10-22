@@ -22,13 +22,13 @@ public final class DBUtil {
                                        final String username, final String password,
                                        final List<String> preSql) {
         if (null == jdbcUrls || jdbcUrls.isEmpty()) {
-            String bussinessMessage = String.format("jdbcURL in [%s] can not be blank.",
+            String businessMessage = String.format("jdbcURL in [%s] can not be blank.",
                     StringUtils.join(jdbcUrls, ","));
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
 
             LOG.error(message);
-            throw new DataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, bussinessMessage);
+            throw new DataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, businessMessage);
         }
 
         try {
@@ -56,13 +56,13 @@ public final class DBUtil {
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
-            String bussinessMessage = String.format("No available jdbcURL from [%s].",
+            String businessMessage = String.format("No available jdbcURL from [%s].",
                     StringUtils.join(jdbcUrls, ","));
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, bussinessMessage, e);
+            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, businessMessage, e);
         }
 
     }
@@ -189,31 +189,6 @@ public final class DBUtil {
         closeDBResources(null, stmt, conn);
     }
 
-    public static List<String> getMysqlTableColumns(String jdbcUrl,
-                                                    String user, String pass, String tableName) {
-        List<String> columns = new ArrayList<String>();
-        Connection conn = getConnection(DataBaseType.MySql, jdbcUrl, user, pass);
-        try {
-            DatabaseMetaData databaseMetaData = conn.getMetaData();
-            String dbName = getDBNameFromJdbcUrl(jdbcUrl);
-
-            ResultSet rs = databaseMetaData.getColumns(dbName, null, tableName,
-                    "%");
-
-            String tempColumn = null;
-            while (rs.next()) {
-                tempColumn = rs.getString("COLUMN_NAME");
-
-                columns.add(tempColumn);
-            }
-
-        } catch (SQLException e) {
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
-        }
-        return columns;
-
-    }
-
     public static List<String> getTableColumns(DataBaseType dataBaseType, String jdbcUrl,
                                                String user, String pass, String tableName) {
         List<String> columns = new ArrayList<String>();
@@ -238,20 +213,6 @@ public final class DBUtil {
         return columns;
 
     }
-
-    private static String getDBNameFromJdbcUrl(String jdbcUrl) {
-        // warn：如果是sql server，此方法有问题
-        // if(jdbcUrl.trim().startsWith("jdbc:sqlserver:")){
-        //
-        // }
-        // 如果是mysql
-        int jdbcUrlBeginIndex = jdbcUrl.lastIndexOf("/") + 1;
-        int tempEndIndex = jdbcUrl.indexOf("?");
-        int jdbcUrlEndIndex = -1 == tempEndIndex ? jdbcUrl.length()
-                : tempEndIndex;
-        return jdbcUrl.substring(jdbcUrlBeginIndex, jdbcUrlEndIndex);
-    }
-
 
     public static boolean testConnWithoutRetry(DataBaseType dataBaseType, String url, String user, String pass) {
         try {

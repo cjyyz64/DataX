@@ -56,14 +56,14 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                String bussinessMessage = String.format("unsupported account type=[%s].",
+                String businessMessage = String.format("unsupported account type=[%s].",
                         this.accountType);
                 String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
+                        businessMessage, null);
 
                 LOG.error(message);
                 throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
-                        bussinessMessage);
+                        businessMessage);
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
@@ -104,9 +104,9 @@ public class OdpsWriter extends Writer {
             try {
                 tab.load();
             } catch (Exception e) {
-                String bussinessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
+                String businessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
                         tab.getName(), e.getMessage());
-                String message = StrUtil.buildOriginalCauseMessage(bussinessMessage, null);
+                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
                 LOG.error(message);
 
                 throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
@@ -268,9 +268,9 @@ public class OdpsWriter extends Writer {
                 slavePluginCollector.collectMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE,
                         StringUtils.join(blocks, ","));
             } catch (Exception e) {
-                String bussinessMessage = "Write record failed. detail:" + e.getMessage();
+                String businessMessage = "Write record failed. detail:" + e.getMessage();
                 String message = StrUtil.buildOriginalCauseMessage(
-                        bussinessMessage, null);
+                        businessMessage, null);
                 LOG.error(message);
 
                 throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);

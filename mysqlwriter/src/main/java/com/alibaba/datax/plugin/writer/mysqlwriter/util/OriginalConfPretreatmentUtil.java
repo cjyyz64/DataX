@@ -18,6 +18,8 @@ import java.util.List;
 
 public final class OriginalConfPretreatmentUtil {
 
+    public static DataBaseType DATABASE_TYPE;
+
     private static final Logger LOG = LoggerFactory
             .getLogger(OriginalConfPretreatmentUtil.class);
 
@@ -109,7 +111,7 @@ public final class OriginalConfPretreatmentUtil {
         String tableName = originalConfig.getString(String.format(
                 "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
-        List<String> allColumns = DBUtil.getMysqlTableColumns(jdbcUrl, user,
+        List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl, user,
                 pass, tableName);
         if (IS_DEBUG) {
             LOG.debug("table:[{}] has columns:[{}].", tableName,
@@ -119,7 +121,7 @@ public final class OriginalConfPretreatmentUtil {
         List<String> retColumns = new ArrayList<String>();
         for (String column : columns) {
             if (allColumns.contains(column)) {
-                retColumns.add(TableExpandUtil.quoteTableOrColumnName(DataBaseType.MySql, column));
+                retColumns.add(TableExpandUtil.quoteColumnName(DataBaseType.MySql, column));
             } else {
                 throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                         String.format("all columns:[%s],no column:[%s]",

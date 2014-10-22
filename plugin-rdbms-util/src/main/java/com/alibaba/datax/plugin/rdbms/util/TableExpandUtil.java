@@ -15,17 +15,28 @@ public final class TableExpandUtil {
     private TableExpandUtil() {
     }
 
-    public static String quoteTableOrColumnName(DataBaseType dataBaseType, String name) {
+    public static String quoteTableName(DataBaseType dataBaseType, String tableName) {
         switch (dataBaseType) {
             case MySql:
             case Oracle:
-                return "`" + name.replace("`", "``") + "`";
+                return "`" + tableName.replace("`", "``") + "`";
             case SQLServer:
-                return "[" + name + "]";
+                return tableName;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported databasetype");
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
+    }
 
+    public static String quoteColumnName(DataBaseType dataBaseType, String columnName) {
+        switch (dataBaseType) {
+            case MySql:
+            case Oracle:
+                return "`" + columnName.replace("`", "``") + "`";
+            case SQLServer:
+                return "[" + columnName + "]";
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+        }
     }
 
     /**
@@ -46,7 +57,7 @@ public final class TableExpandUtil {
             Matcher matcher = pattern.matcher(tableArray.trim());
             if (!matcher.matches()) {
                 tableName = tableArray.trim();
-                splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+                splittedTables.add(quoteTableName(dataBaseType, tableName));
             } else {
                 String start = matcher.group(2).trim();
                 String end = matcher.group(3).trim();
@@ -62,12 +73,12 @@ public final class TableExpandUtil {
                         tableName = matcher.group(1).trim()
                                 + String.format("%0" + len + "d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+                        splittedTables.add(quoteTableName(dataBaseType, tableName));
                     } else {
                         tableName = matcher.group(1).trim()
                                 + String.format("%d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(quoteTableOrColumnName(dataBaseType, tableName));
+                        splittedTables.add(quoteTableName(dataBaseType, tableName));
                     }
                 }
             }
@@ -78,7 +89,7 @@ public final class TableExpandUtil {
     public static List<String> expandTableConf(DataBaseType dataBaseType, List<String> tables) {
         List<String> parsedTables = new ArrayList<String>();
         for (String table : tables) {
-            List<String> splittedTables = splitTables(dataBaseType,table);
+            List<String> splittedTables = splitTables(dataBaseType, table);
             parsedTables.addAll(splittedTables);
         }
 

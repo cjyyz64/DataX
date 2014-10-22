@@ -1,255 +1,87 @@
 package com.alibaba.datax.plugin.reader.sqlserverreader;
 
-import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.StrUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
-import com.alibaba.datax.plugin.reader.sqlserverreader.util.ConfigPretreatUtil;
-import com.alibaba.datax.plugin.reader.sqlserverreader.util.TableSplitUtil;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Types;
 import java.util.List;
 
-/**
- * Created by haiwei.luo on 14-9-17.
- */
-public class SqlServerReader {
-	public static class Master extends Reader.Master {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(SqlServerReader.Master.class);
+public class SqlServerReader extends Reader {
 
-		private Configuration readerOriginConfig;
+    private static final DataBaseType DATABASE_TYPE = DataBaseType.SQLServer;
 
-		@Override
-		public void init() {
-			LOG.info("init() begin ...");
-			this.readerOriginConfig = this.getPluginJobConf();
-			ConfigPretreatUtil.validate(this.readerOriginConfig);
-			LOG.info("init() end ...");
-		}
+    public static class Master extends Reader.Master {
 
-		@Override
-		public void prepare() {
-			LOG.info("prepare()");
-		}
+        private Configuration originalConfig = null;
+        private CommonRdbmsReader.Master commonRdbmsReaderMaster;
 
-		@Override
-		public void post() {
-			LOG.info("post()");
-		}
+        @Override
+        public void init() {
 
-		@Override
-		public void destroy() {
-			LOG.info("destroy()");
-		}
+            this.originalConfig = super.getPluginJobConf();
+            int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+                    Constant.DEFAULT_FETCH_SIZE);
+            if (fetchSize < 1) {
+                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE,
+                        "fetchSize can not less than 1.");
+            }
+            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
-		@Override
-		public List<Configuration> split(int adviceNumber) {
-			LOG.info("split() begin...");
-			List<Configuration> splitedConfigs = TableSplitUtil.doSplit(
-					this.readerOriginConfig, adviceNumber);
-			LOG.info("split() end...");
-			return splitedConfigs;
-		}
+            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
+            this.commonRdbmsReaderMaster.init(this.originalConfig);
+        }
 
-	}
+        @Override
+        public List<Configuration> split(int adviceNumber) {
+            return this.commonRdbmsReaderMaster.split(this.originalConfig, adviceNumber);
+        }
 
-	public static class Slave extends Reader.Slave {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(SqlServerReader.Slave.class);
+        @Override
+        public void post() {
+            this.commonRdbmsReaderMaster.post(this.originalConfig);
+        }
 
-		private Configuration readerSliceConfig;
+        @Override
+        public void destroy() {
+            this.commonRdbmsReaderMaster.destroy(this.originalConfig);
+        }
 
-		private String jdbcUrl;
+    }
 
-		private String username;
+    public static class Slave extends Reader.Slave {
 
-		private String password;
+        private Configuration readerSliceConfig;
+        private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
 
-		private int fetchSize;
+        @Override
+        public void init() {
+            this.readerSliceConfig = super.getPluginJobConf();
+            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(DATABASE_TYPE);
+            this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
+        }
 
-		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-		private static String BASIC_MESSAGE;
+        @Override
+        public void startRead(RecordSender recordSender) {
+            int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
-		@Override
-		public void init() {
-			LOG.info("init()");
-			this.readerSliceConfig = this.getPluginJobConf();
+            this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
+                    super.getSlavePluginCollector(), fetchSize);
+        }
 
-			this.username = this.readerSliceConfig.getString(Key.USERNAME);
-			this.password = this.readerSliceConfig.getString(Key.PASSWORD);
-			this.jdbcUrl = this.readerSliceConfig.getString(Key.JDBC_URL);
+        @Override
+        public void post() {
+            this.commonRdbmsReaderSlave.post(this.readerSliceConfig);
+        }
 
-			this.fetchSize = this.readerSliceConfig.getInt(Key.FETCH_SIZE);
+        @Override
+        public void destroy() {
+            this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
+        }
 
-			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
-
-		}
-
-		@Override
-		public void prepare() {
-			LOG.info("prepare()");
-		}
-
-		@Override
-		public void post() {
-			LOG.info("post()");
-		}
-
-		@Override
-		public void destroy() {
-			LOG.info("destroy()");
-		}
-
-		@Override
-		public void startRead(RecordSender recordSender) {
-
-			String sql = this.readerSliceConfig.getString(Key.QUERYSQL);
-			String formatedSql = null;
-
-			try {
-				formatedSql = SqlFormatUtil.format(sql);
-			} catch (Exception unused) {
-				// ignore it
-				LOG.warn(String.format("SQL [%s] format error:[%s]", sql,
-						unused.getMessage()));
-			}
-
-			LOG.info("do query \n[{}\n]\n, from jdbc-url:\n[{}]\n",
-					null != formatedSql ? formatedSql : sql, this.jdbcUrl);
-
-			ResultSet rs = null;
-			Connection conn = DBUtil.getConnection(DataBaseType.SQLServer,
-					this.jdbcUrl, this.username, this.password);
-
-			try {
-				rs = DBUtil.query(conn, sql, this.fetchSize);
-
-				while (rs.next()) {
-					this.transformOneRecord(recordSender, rs);
-				}
-			} catch (SQLException e) {
-				String bussinessMessage = String.format(
-						"Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
-						e.getMessage());
-				String message = StrUtil.buildOriginalCauseMessage(
-						bussinessMessage, e);
-				LOG.error(message);
-
-				throw new DataXException(
-						SqlServerReaderErrorCode.READ_RECORD_FAIL, e);
-			} finally {
-				DBUtil.closeDBResources(rs, null, conn);
-			}
-
-		}
-
-		private void transformOneRecord(RecordSender recordSender, ResultSet rs) {
-			ResultSetMetaData metaData;
-			int columnNumber;
-			Record record = recordSender.createRecord();
-			try {
-				metaData = rs.getMetaData();
-				columnNumber = metaData.getColumnCount();
-
-				// warn:begin from 1
-				for (int i = 1; i <= columnNumber; i++) {
-					switch (metaData.getColumnType(i)) {
-
-					case Types.CHAR:
-					case Types.NCHAR:
-					case Types.CLOB:
-					case Types.NCLOB:
-					case Types.VARCHAR:
-					case Types.LONGVARCHAR:
-					case Types.NVARCHAR:
-					case Types.LONGNVARCHAR:
-						record.addColumn(new StringColumn(rs.getString(i)));
-						break;
-
-					case Types.TINYINT:
-					case Types.SMALLINT:
-					case Types.INTEGER:
-					case Types.BIGINT:
-						record.addColumn(new LongColumn(rs.getInt(i)));
-						break;
-
-					case Types.NUMERIC:
-					case Types.DECIMAL:
-						record.addColumn(new DoubleColumn(rs.getString(i)));
-						break;
-
-					case Types.FLOAT:
-					case Types.REAL:
-					case Types.DOUBLE:
-						record.addColumn(new DoubleColumn(rs.getDouble(i)));
-						break;
-
-					case Types.DATE:
-						record.addColumn(new DateColumn(rs.getDate(i)));
-						break;
-					case Types.TIMESTAMP:
-						record.addColumn(new DateColumn(rs.getTimestamp(i)));
-						break;
-					case Types.TIME:
-						record.addColumn(new DateColumn(rs.getTime(i)));
-						break;
-
-					case Types.BINARY:
-					case Types.VARBINARY:
-					case Types.LONGVARBINARY:
-					case Types.BLOB:
-						record.addColumn(new BytesColumn(rs.getBytes(i)));
-						break;
-
-					// warn:BIT
-					case Types.BIT:
-					case Types.BOOLEAN:
-						record.addColumn(new BoolColumn(rs.getBoolean(i)));
-						break;
-
-					default:
-						throw new Exception(
-								String.format(
-										"unsupport SqlServer Data Type. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
-										metaData.getColumnName(i),
-										metaData.getColumnType(i),
-										metaData.getColumnClassName(i)));
-					}
-				}
-
-				recordSender.sendToWriter(record);
-
-			} catch (SQLException e) {
-				// 此异常不是脏数据
-				String bussinessMessage = String.format(
-						"Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
-						e.getMessage());
-				String message = StrUtil.buildOriginalCauseMessage(
-						bussinessMessage, e);
-				LOG.error(message);
-
-				throw new DataXException(
-						SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
-						"unable to get meta data.");
-			} catch (Exception e) {
-				// TODO 脏数据处理
-				this.getSlavePluginCollector().collectDirtyRecord(record,
-						e.getMessage());
-			}
-		}
-	}
+    }
 
 }

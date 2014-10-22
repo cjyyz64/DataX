@@ -1,8 +1,8 @@
-package com.alibaba.datax.plugin.reader.mysqlreader.util;
+package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
-import com.alibaba.datax.plugin.reader.mysqlreader.Key;
+import com.alibaba.datax.plugin.rdbms.reader.Constant;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -11,28 +11,25 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class MysqlReaderSplitUtil {
+public final class ReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MysqlReaderSplitUtil.class);
+            .getLogger(ReaderSplitUtil.class);
 
     public static List<Configuration> doSplit(
             Configuration originalSliceConfig, int adviceNumber) {
         Configuration simplifiedConf = originalSliceConfig;
 
-        boolean isTableMode = simplifiedConf.getBool(Constant.IS_TABLE_MODE)
-                .booleanValue();
+        boolean isTableMode = simplifiedConf.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int eachTableShouldSplittedNumber = -1;
         if (isTableMode) {
             eachTableShouldSplittedNumber = calculateEachTableShouldSplittedNumber(
-                    adviceNumber,
-                    simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK));
+                    adviceNumber, simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK));
         }
 
         String column = simplifiedConf.getString(Key.COLUMN);
         String where = simplifiedConf.getString(Key.WHERE, null);
 
-        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK,
-                Object.class);
+        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK, Object.class);
 
         String jdbcUrl = null;
         List<Configuration> splittedConfigs = new ArrayList<Configuration>();

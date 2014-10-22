@@ -1,14 +1,14 @@
-package com.alibaba.datax.plugin.reader.mysqlreader.util;
+package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
+import com.alibaba.datax.plugin.rdbms.reader.Constant;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
-import com.alibaba.datax.plugin.reader.mysqlreader.Constant;
-import com.alibaba.datax.plugin.reader.mysqlreader.Key;
-import com.alibaba.datax.plugin.reader.mysqlreader.MysqlReaderErrorCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -26,6 +26,8 @@ public class SingleTableSplitUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(SingleTableSplitUtil.class);
 
+    public static DataBaseType DATABASE_TYPE;
+
     private SingleTableSplitUtil() {
     }
 
@@ -36,7 +38,7 @@ public class SingleTableSplitUtil {
         Pair<Object, Object> minMaxPK = getPkRange(configuration);
 
         if (null == minMaxPK) {
-            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+            throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "split table with splitPk failed.");
         }
 
@@ -64,19 +66,19 @@ public class SingleTableSplitUtil {
             rangeList = RangeSplitUtil.splitAndWrap(
                     String.valueOf(minMaxPK.getLeft()),
                     String.valueOf(minMaxPK.getRight()), adviceNum,
-                    splitPkName, "'", DataBaseType.MySql);
+                    splitPkName, "'", DATABASE_TYPE);
         } else if (isLongType) {
             rangeList = RangeSplitUtil.splitAndWrap(
                     Long.parseLong(minMaxPK.getLeft().toString()),
                     Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
                     splitPkName);
         } else {
-            String bussinessMessage = "Unsupported splitPk type.";
+            String businessMessage = "Unsupported splitPk type.";
             String message = StrUtil.buildOriginalCauseMessage(
-                    bussinessMessage, null);
+                    businessMessage, null);
 
             LOG.error(message);
-            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, bussinessMessage);
+            throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, businessMessage);
         }
 
         String tempQuerySql = null;
@@ -127,6 +129,8 @@ public class SingleTableSplitUtil {
     private static Pair<Object, Object> getPkRange(Configuration configuration) {
         String pkRangeSQL = genPKRangeSQL(configuration);
 
+        int fetchSize = configuration.getInt(Constant.FETCH_SIZE);
+
         String jdbcURL = configuration.getString(Key.JDBC_URL);
         String username = configuration.getString(Key.USERNAME);
         String password = configuration.getString(Key.PASSWORD);
@@ -135,10 +139,10 @@ public class SingleTableSplitUtil {
         ResultSet rs = null;
         Pair<Object, Object> minMaxPK = null;
         try {
-            conn = DBUtil.getConnection(DataBaseType.MySql, jdbcURL, username,
+            conn = DBUtil.getConnection(DATABASE_TYPE, jdbcURL, username,
                     password);
 
-            rs = DBUtil.query(conn, pkRangeSQL, Integer.MIN_VALUE);
+            rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
                 if (isStringType(rsMetaData.getColumnType(1))) {
@@ -155,11 +159,11 @@ public class SingleTableSplitUtil {
                                 rs.getString(1), rs.getString(2));
                     }
                 } else {
-                    throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+                    throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                             "unsupported splitPk type，pk type not long nor string");
                 }
             } else {
-                throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+                throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                         "unsupported splitPk type，pk type not long nor string");
             }
         } catch (Exception e) {
@@ -167,7 +171,7 @@ public class SingleTableSplitUtil {
                 LOG.error(e.getMessage(), e);
             }
 
-            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK, e);
+            throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, e);
         } finally {
             DBUtil.closeDBResources(rs, null, conn);
         }
@@ -190,7 +194,7 @@ public class SingleTableSplitUtil {
             }
         } catch (Exception e) {
             LOG.error("error when get splitPk type");
-            throw new DataXException(MysqlReaderErrorCode.ILLEGAL_SPLIT_PK,
+            throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "error when get splitPk type");
         }
         return ret;
