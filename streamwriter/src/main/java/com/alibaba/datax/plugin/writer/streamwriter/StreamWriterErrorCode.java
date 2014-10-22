@@ -3,10 +3,7 @@ package com.alibaba.datax.plugin.writer.streamwriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum StreamWriterErrorCode implements ErrorCode {
-    REQUIRED_VALUE("StreamWriter-00", "lost necessary value"),
-    ILLEGAL_VALUE("StreamWriter-01", "illegal value"),
-    NOT_SUPPORT_TYPE("StreamWriter-02", "not supported column type"),
-    RUNTIME_EXCEPTION("StreamWriter-03", "runtime exception"),;
+    RUNTIME_EXCEPTION("StreamWriter-00", "runtime exception"),;
 
 
     private final String code;
