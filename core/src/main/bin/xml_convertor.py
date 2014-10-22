@@ -12,7 +12,24 @@ try:
 except:
     import elementtree.ElementTree as XmlTree
 
-class XmlConvertor:
+
+def str_is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
+def str_is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+class XmlConverter:
     def __init__(self, job_string):
         self.root = XmlTree.fromstring(job_string)
         self.reader = self.root.find("job/reader")
@@ -22,9 +39,9 @@ class XmlConvertor:
 
         self.job_setting = {}
         self.reader_parameter = {}
-        self.reader_dict = {"parameter":self.reader_parameter}
+        self.reader_dict = {"parameter": self.reader_parameter}
         self.writer_parameter = {}
-        self.writer_dict = {"parameter":self.writer_parameter}
+        self.writer_dict = {"parameter": self.writer_parameter}
 
     # 返回json字符串
     def parse_to_json(self):
@@ -36,9 +53,15 @@ class XmlConvertor:
             print >>sys.stderr, "parse writer error"
             return None
 
-        job_json = {}
-        job_json["setting"] = self.job_setting
-        job_json["content"] = [{"reader": self.reader_dict, "writer": self.writer_dict}]
+        job_json = {
+            "setting": self.job_setting,
+            "content": [
+                {
+                    "reader": self.reader_dict,
+                    "writer": self.writer_dict
+                }
+            ]
+        }
 
         return json.dumps({"job": job_json}, sort_keys=True, indent=4)
 
@@ -56,13 +79,14 @@ class XmlConvertor:
         elif reader_plugin == "sqlserverreader":
             return self.parse_sqlserverreader()
         else:
-            print >>sys.stderr, "not suppotted reader plugin[%s]"%(reader_plugin)
+            print >>sys.stderr, "unsupported reader plugin[%s]"%(reader_plugin)
             return False
 
     def parse_writer(self):
         writer_plugin = self.writer.find("plugin").text
         self.writer_dict["name"] = writer_plugin
-        self.set_error_limit()
+        if not self.set_error_limit():
+            return False
 
         if writer_plugin == "streamwriter":
             return self.parse_streamwriter()
@@ -73,7 +97,7 @@ class XmlConvertor:
         elif writer_plugin == "txtfilewriter":
             return self.parse_txtfilewriter()
         else:
-            print >>sys.stderr, "not suppotted writer plugin[%s]"%(writer_plugin)
+            print >>sys.stderr, "unsupported writer plugin[%s]" % writer_plugin
             return False
 
     def set_run_speed(self):
@@ -81,31 +105,40 @@ class XmlConvertor:
         concurrency = self.get_value_from_xml(self.reader, "concurrency")
         if not concurrency:
             concurrency = "1"
-        speed_dict = {}
-        self.job_setting["speed"] = speed_dict
-        speed_dict["byte"] = 1048576 * int(concurrency)
+        self.job_setting["speed"] = {"byte": 1024 * 1024 * int(concurrency)}
 
     def set_error_limit(self):
-        '''
+        """
         新版0表示不允许脏数据，旧版是1。
         新版record和percentage都是null表示不限制，旧版是0。
         浮点情况下语意是一致的。
         :return:
-        '''
+        """
         error_limit = self.get_value_from_xml(self.writer, "error-limit")
-        if error_limit:
-            if error_limit.isdigit():
-                record = int(error_limit) - 1
-                self.job_setting["errorLimit"] = {
-                    'record': None if record < 0 else record
-                }
-            elif error_limit.find(".") > -1:
-                self.job_setting["errorLimit"] = {
-                    'percentage': 1.0 if float(error_limit) > 1 else float(error_limit)
-                }
-            else:
-                print >>sys.stderr, "can not change[%s] to error limit number, use no limit defaultly"%(error_limit)
+        if not error_limit:
+            # TODO 没设置认为不限制？需要确认dataX默认值
+            return True
 
+        if str_is_int(error_limit):
+            record = int(error_limit) - 1
+            self.job_setting["errorLimit"] = {
+                'record': None if record < 0 else record
+            }
+            return True
+
+        if str_is_float(error_limit):
+            limit_val = float(error_limit)
+            if limit_val <= 0 or limit_val >= 1:
+                print >>sys.stderr, "invalid error limit value: " + error_limit
+                return False
+            else:
+                self.job_setting["errorLimit"] = {
+                    'percentage': limit_val
+                }
+                return True
+
+        print >>sys.stderr, "invalid error limit value: " + error_limit
+        return False
 
     def get_value_from_xml(self, node_root, key):
         value = None
@@ -225,8 +258,10 @@ class XmlConvertor:
 
         pointed_sql = self.get_value_from_xml(self.reader, "sql")
         if pointed_sql:
-            connection_dict = {"jdbcUrl":jdbc_url_list}
-            connection_dict["querySql"] = pointed_sql
+            connection_dict = {
+                "jdbcUrl": jdbc_url_list,
+                "querySql": pointed_sql
+            }
             connection_list.append(connection_dict)
         else:
             tables = self.get_value_from_xml(self.reader, "table")
@@ -312,9 +347,8 @@ class XmlConvertor:
 
         is_truncate = True
         truncate = self.get_value_from_xml(self.writer, "truncate")
-        if truncate:
-            if truncate.lower() == "false":
-                is_truncate = False
+        if truncate and truncate.lower() == "false":
+            is_truncate = False
         self.writer_parameter["truncate"] = is_truncate
 
         account_provider = self.get_value_from_xml(self.writer, "account-provider")
@@ -360,9 +394,14 @@ class XmlConvertor:
         return True
 
 if __name__ == "__main__":
-    file = open("job.xml")
-    context = file.read()
-    file.close()
+    f = open("job.xml")
+    context = f.read()
+    f.close()
 
-    convertor = XmlConvertor(context)
-    print convertor.parse_to_json()
+    converter = XmlConverter(context)
+    print converter.parse_to_json()
+
+
+# TODO 转换java option
+# TODO 列为NULL的时候给None
+# TODO concurrency以reader为准还是writer为准
