@@ -178,7 +178,7 @@ class XmlConverter:
             elif ch == ")":
                 bracket_count -= 1
 
-        return column_array
+        return [None if i.strip().lower() == 'null' else i for i in column_array]
 
     @staticmethod
     def parse_column(columns):
