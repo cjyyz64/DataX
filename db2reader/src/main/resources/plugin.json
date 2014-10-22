@@ -1,0 +1,6 @@
+{
+    "name": "db2reader",
+    "class": "com.alibaba.datax.plugin.reader.db2reader.DB2Reader",
+    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute select sql, retrieve data from the ResultSet. warn: The more you know about the database, the less problems you encounter.",
+    "developer": "chinan.hjc, bug reported to : chinan.hjc@alibaba-inc.com"
+}

@@ -1,0 +1,31 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "db2reader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type"
+                        ],
+                        "where": "",
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:db2://127.0.0.1:50000/SAMPLE"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

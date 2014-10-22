@@ -41,6 +41,8 @@ public enum DataBaseType {
                 break;
             case SQLServer:
                 break;
+            case DB2:
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
@@ -63,6 +65,8 @@ public enum DataBaseType {
                     result = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
                 }
                 break;
+            case DB2:
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
@@ -82,6 +86,8 @@ public enum DataBaseType {
             case SQLServer:
                 result = "[" + columnName + "]";
                 break;
+            case DB2:
+                break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
@@ -98,7 +104,8 @@ public enum DataBaseType {
                 result = "`" + tableName.replace("`", "``") + "`";
                 break;
             case SQLServer:
-                result = tableName;
+                break;
+            case DB2:
                 break;
             default:
                 throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
