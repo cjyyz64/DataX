@@ -296,7 +296,6 @@ class XmlConvertor:
         self.reader_parameter["partition"] = self.get_value_from_xml(self.reader, "partition")
         self.reader_parameter["odpsServer"] = self.get_value_from_xml(self.reader, "odps-server")
         self.reader_parameter["tunnelServer"] = self.get_value_from_xml(self.reader, "tunnel-server")
-
         self.reader_parameter["column"] = self.parse_map_column(self.get_value_from_xml(self.reader, "column"))
 
         return True
@@ -309,6 +308,7 @@ class XmlConvertor:
         self.writer_parameter["partition"] = self.get_value_from_xml(self.writer, "partition")
         self.writer_parameter["odpsServer"] = self.get_value_from_xml(self.writer, "odps-server")
         self.writer_parameter["tunnelServer"] = self.get_value_from_xml(self.writer, "tunnel-server")
+        self.writer_parameter["column"] = self.parse_map_column(self.get_value_from_xml(self.writer, "column"))
 
         is_truncate = True
         truncate = self.get_value_from_xml(self.writer, "truncate")
