@@ -1,10 +1,11 @@
 package com.alibaba.datax.plugin.reader.db2reader;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
-import com.alibaba.datax.plugin.rdbms.reader.Constant;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 import java.util.List;
@@ -40,8 +41,13 @@ public class DB2Reader extends Reader {
         public void init() {
 
             this.originalConfig = super.getPluginJobConf();
-            int fetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE, Integer.MIN_VALUE);
-            this.originalConfig.set(Constant.FETCH_SIZE, fetchSize);
+            int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+                    Constant.DEFAULT_FETCH_SIZE);
+            if (fetchSize < 1) {
+                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE,
+                        "fetchSize can not less than 1.");
+            }
+            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
             this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
@@ -79,7 +85,7 @@ public class DB2Reader extends Reader {
 
         @Override
         public void startRead(RecordSender recordSender) {
-            int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
+            int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
                     super.getSlavePluginCollector(), fetchSize);
