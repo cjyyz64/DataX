@@ -140,6 +140,7 @@ public final class OriginalConfPretreatmentUtil {
 
                     List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl,
                             username, password, tableName);
+                    //warn:注意mysql表名区分大小写
                     allColumns = ListUtil.valueToLowerCase(allColumns);
 
                     if (IS_DEBUG) {

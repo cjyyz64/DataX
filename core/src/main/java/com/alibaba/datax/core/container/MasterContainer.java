@@ -314,10 +314,12 @@ public class MasterContainer extends AbstractContainer {
 				"Average line speed",
 				String.valueOf(masterMetric.getReadSucceedRecords()
 						/ transferCosts)
-						+ "rec/s", "Total transferred records",
-				String.valueOf(masterMetric.getReadSucceedRecords()),
+						+ "rec/s",
+				"Total transferred records",
+				String.valueOf(masterMetric.getTotalReadRecords()),
 				"Total error records",
-				String.valueOf(masterMetric.getWriteFailedRecords())));
+				String.valueOf(masterMetric.getTotalReadRecords()
+						- masterMetric.getWriteSucceedRecords())));
 	}
 
 	/**

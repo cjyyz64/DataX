@@ -197,7 +197,11 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
     else:
         tmp_file_path = os.path.basename(job_path)
 
-    tmp_file_path = os.sep.join([DATAX_HOME, "jobs", tmp_file_path + ".json"])
+    run_day_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+    tmp_dir = os.path.join(DATAX_HOME, "jobs", run_day_time)
+    if not os.path.exists(tmp_dir):
+        os.mkdir(tmp_dir)
+    tmp_file_path = os.path.join(tmp_dir, tmp_file_path + ".json")
     file = open(tmp_file_path, "w")
     try:
         file.write(job_json_content)
