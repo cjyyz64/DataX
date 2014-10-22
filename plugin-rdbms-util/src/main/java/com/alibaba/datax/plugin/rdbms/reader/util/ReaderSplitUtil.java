@@ -17,27 +17,25 @@ public final class ReaderSplitUtil {
 
     public static List<Configuration> doSplit(
             Configuration originalSliceConfig, int adviceNumber) {
-        Configuration simplifiedConf = originalSliceConfig;
-
-        boolean isTableMode = simplifiedConf.getBool(Constant.IS_TABLE_MODE).booleanValue();
+        boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int eachTableShouldSplittedNumber = -1;
         if (isTableMode) {
             eachTableShouldSplittedNumber = calculateEachTableShouldSplittedNumber(
-                    adviceNumber, simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK));
+                    adviceNumber, originalSliceConfig.getInt(Constant.TABLE_NUMBER_MARK));
         }
 
-        String column = simplifiedConf.getString(Key.COLUMN);
-        String where = simplifiedConf.getString(Key.WHERE, null);
+        String column = originalSliceConfig.getString(Key.COLUMN);
+        String where = originalSliceConfig.getString(Key.WHERE, null);
 
-        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK, Object.class);
+        List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
         List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
         for (int i = 0, len = conns.size(); i < len; i++) {
-            Configuration sliceConfig = simplifiedConf.clone();
+            Configuration sliceConfig = originalSliceConfig.clone();
 
             Configuration connConf = Configuration.from(conns.get(i).toString());
-
+            sliceConfig.set(Key.JDBC_URL, connConf.getString(Key.JDBC_URL));
             sliceConfig.remove(Constant.CONN_MARK);
 
             Configuration tempSlice;
@@ -50,7 +48,7 @@ public final class ReaderSplitUtil {
                 Validate.isTrue(null != tables && !tables.isEmpty(),
                         "source table configured error.");
 
-                String splitPk = simplifiedConf.getString(Key.SPLIT_PK, null);
+                String splitPk = originalSliceConfig.getString(Key.SPLIT_PK, null);
 
                 //最终切分份数不一定等于 eachTableShouldSplittedNumber
                 boolean needSplitTable = eachTableShouldSplittedNumber > 1
