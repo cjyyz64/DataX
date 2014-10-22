@@ -1,0 +1,34 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "oraclereader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type"
+                        ],
+                        "where": "",
+                        "session": {
+
+                        },
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:oracle:thin:@//hostIp:port/dbName"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
