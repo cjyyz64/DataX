@@ -1,7 +1,5 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
-import com.alibaba.datax.common.exception.DataXException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -13,30 +11,6 @@ public final class TableExpandUtil {
             .compile("(\\w+)\\[(\\d+)-(\\d+)\\](.*)");
 
     private TableExpandUtil() {
-    }
-
-    public static String quoteTableName(DataBaseType dataBaseType, String tableName) {
-        switch (dataBaseType) {
-            case MySql:
-            case Oracle:
-                return "`" + tableName.replace("`", "``") + "`";
-            case SQLServer:
-                return tableName;
-            default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
-        }
-    }
-
-    public static String quoteColumnName(DataBaseType dataBaseType, String columnName) {
-        switch (dataBaseType) {
-            case MySql:
-            case Oracle:
-                return "`" + columnName.replace("`", "``") + "`";
-            case SQLServer:
-                return "[" + columnName + "]";
-            default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
-        }
     }
 
     /**
@@ -57,7 +31,7 @@ public final class TableExpandUtil {
             Matcher matcher = pattern.matcher(tableArray.trim());
             if (!matcher.matches()) {
                 tableName = tableArray.trim();
-                splittedTables.add(quoteTableName(dataBaseType, tableName));
+                splittedTables.add(dataBaseType.quoteTableName(tableName));
             } else {
                 String start = matcher.group(2).trim();
                 String end = matcher.group(3).trim();
@@ -73,12 +47,12 @@ public final class TableExpandUtil {
                         tableName = matcher.group(1).trim()
                                 + String.format("%0" + len + "d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(quoteTableName(dataBaseType, tableName));
+                        splittedTables.add(dataBaseType.quoteTableName(tableName));
                     } else {
                         tableName = matcher.group(1).trim()
                                 + String.format("%d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(quoteTableName(dataBaseType, tableName));
+                        splittedTables.add(dataBaseType.quoteTableName(tableName));
                     }
                 }
             }

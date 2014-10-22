@@ -31,16 +31,12 @@ public final class ReaderSplitUtil {
 
         List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK, Object.class);
 
-        String jdbcUrl = null;
         List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
         for (int i = 0, len = conns.size(); i < len; i++) {
             Configuration sliceConfig = simplifiedConf.clone();
 
-            Configuration connConf = Configuration
-                    .from(conns.get(i).toString());
-            jdbcUrl = connConf.getString(Key.JDBC_URL);
-            sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
+            Configuration connConf = Configuration.from(conns.get(i).toString());
 
             sliceConfig.remove(Constant.CONN_MARK);
 
@@ -97,17 +93,6 @@ public final class ReaderSplitUtil {
         }
 
         return splittedConfigs;
-    }
-
-    // TODO 是否允许用户自定义该配置？
-    private static String appendJDBCSuffix(String jdbc) {
-        String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
-
-        if (jdbc.contains("?")) {
-            return jdbc + "&" + suffix;
-        } else {
-            return jdbc + "?" + suffix;
-        }
     }
 
     private static int calculateEachTableShouldSplittedNumber(int adviceNumber,

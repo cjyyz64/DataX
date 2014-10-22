@@ -70,6 +70,8 @@ public final class OriginalConfPretreatmentUtil {
 
             String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls, username, password, preSql);
 
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffix(jdbcUrl);
+
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.JDBC_URL), jdbcUrl);
@@ -112,14 +114,13 @@ public final class OriginalConfPretreatmentUtil {
                 LOG.error(message);
                 throw new DataXException(DBUtilErrorCode.REQUIRED_KEY, businessMessage);
             } else {
-                // deal split pk quote
+                // TODO deal mysql split pk quote   //sqlserver 可能不是这样的
                 String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
-                if (StringUtils.isNoneBlank(splitPk)) {
-                    if (splitPk.startsWith("`") && splitPk.endsWith("`")) {
-                        splitPk = splitPk.substring(1, splitPk.length() - 1).toLowerCase();
-                    }
-                    originalConfig.set(Key.SPLIT_PK, TableExpandUtil.quoteColumnName(
-                            DATABASE_TYPE, splitPk));
+
+
+                if (StringUtils.isNotBlank(splitPk)) {
+                    splitPk = DATABASE_TYPE.formatPk(splitPk);
+                    originalConfig.set(Key.SPLIT_PK, DATABASE_TYPE.quoteColumnName(splitPk));
                 }
 
                 if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
@@ -157,12 +158,15 @@ public final class OriginalConfPretreatmentUtil {
                                     "no column named[*].");
                         }
 
-                        if (allColumns.contains(column.toLowerCase())) {
-                            quotedColumns.add(TableExpandUtil
-                                    .quoteColumnName(DATABASE_TYPE, column));
+                        if (null == column) {
+                            quotedColumns.add(null);
                         } else {
-                            // 可能是由于用户填写为函数，或者自己对字段进行了`处理
-                            quotedColumns.add(column);
+                            if (allColumns.contains(column.toLowerCase())) {
+                                quotedColumns.add(DATABASE_TYPE.quoteColumnName(column));
+                            } else {
+                                // 可能是由于用户填写为函数，或者自己对字段进行了`处理或者常量
+                                quotedColumns.add(column);
+                            }
                         }
                     }
 

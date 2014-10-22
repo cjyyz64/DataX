@@ -1,12 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * refer:http://blog.csdn.net/ring0hx/article/details/6152528
  * <p/>
- * 是否需要添加版本信息？
  */
 public enum DataBaseType {
     MySql("mysql", "com.mysql.jdbc.Driver"),
@@ -32,13 +30,63 @@ public enum DataBaseType {
         return this.driverClassName;
     }
 
-    public static Map<String, String> getTypeAndDriverMap() {
-        Map<String, String> result = new HashMap<String, String>();
-
-        DataBaseType[] values = DataBaseType.values();
-        for (DataBaseType each : values) {
-            result.put(each.getTypeName(), each.getDriverClassName());
+    public String appendJDBCSuffix(String jdbc) {
+        switch (this) {
+            case MySql:
+                String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
+                if (jdbc.contains("?")) {
+                    return jdbc + "&" + suffix;
+                } else {
+                    return jdbc + "?" + suffix;
+                }
+            case Oracle:
+                return jdbc;
+            case SQLServer:
+                return jdbc;
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
-        return result;
     }
+
+    public String formatPk(String splitPk) {
+        switch (this) {
+            case MySql:
+            case Oracle:
+                if (splitPk.length() >= 2 && splitPk.startsWith("`") && splitPk.endsWith("`")) {
+                    return splitPk.substring(1, splitPk.length() - 1).toLowerCase();
+                }
+            case SQLServer:
+                if (splitPk.length() >= 2 && splitPk.startsWith("[") && splitPk.endsWith("]")) {
+                    return splitPk.substring(1, splitPk.length() - 1).toLowerCase();
+                }
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+        }
+    }
+
+
+    public String quoteColumnName(String columnName) {
+        switch (this) {
+            case MySql:
+            case Oracle:
+                return "`" + columnName.replace("`", "``") + "`";
+            case SQLServer:
+                return "[" + columnName + "]";
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+        }
+    }
+
+    public String quoteTableName(String tableName) {
+        switch (this) {
+            case MySql:
+            case Oracle:
+                return "`" + tableName.replace("`", "``") + "`";
+            case SQLServer:
+                return tableName;
+            default:
+                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+        }
+    }
+
 }

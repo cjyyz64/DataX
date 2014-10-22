@@ -121,7 +121,7 @@ public final class OriginalConfPretreatmentUtil {
         List<String> retColumns = new ArrayList<String>();
         for (String column : columns) {
             if (allColumns.contains(column)) {
-                retColumns.add(TableExpandUtil.quoteColumnName(DataBaseType.MySql, column));
+                retColumns.add(DataBaseType.MySql.quoteColumnName(column));
             } else {
                 throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                         String.format("all columns:[%s],no column:[%s]",
