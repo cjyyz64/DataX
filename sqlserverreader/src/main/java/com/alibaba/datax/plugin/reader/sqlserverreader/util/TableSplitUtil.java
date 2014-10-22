@@ -6,7 +6,7 @@ import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
-import com.alibaba.datax.plugin.reader.sqlserverreader.Constants;
+import com.alibaba.datax.plugin.reader.sqlserverreader.Constant;
 import com.alibaba.datax.plugin.reader.sqlserverreader.Key;
 import com.alibaba.datax.plugin.reader.sqlserverreader.SqlServerReaderErrorCode;
 
@@ -24,6 +24,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+@Deprecated
 public class TableSplitUtil {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(TableSplitUtil.class);
@@ -32,28 +33,29 @@ public class TableSplitUtil {
 	}
 
 	// 任务切分
-	public static List<Configuration> doSplit(Configuration originReaderConfig,
+	public static List<Configuration> doSplit(Configuration readerSliceConfig,
 			int adviceNumber) {
 		List<Configuration> splittedConfigs = new ArrayList<Configuration>();
 
-		boolean isTableMode = originReaderConfig.getBool(Constants.TABLE_MODE);
+		boolean isTableMode = readerSliceConfig.getBool(Constant.IS_TABLE_MODE);
 
 		int eachTableShouldSplittedNumber = -1;
 		if (isTableMode) {
-			int tableCount = originReaderConfig.getInt(Constants.TABLE_NUMBER);
+			int tableCount = readerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
 			// warn: check this
-			eachTableShouldSplittedNumber = adviceNumber / tableCount;
+			eachTableShouldSplittedNumber = (int) Math.ceil(1.0 * adviceNumber
+					/ tableCount);
 		}
 
-		String column = originReaderConfig.getString(Key.COLUMN);
-		String where = originReaderConfig.getString(Key.WHERE);
+		String column = readerSliceConfig.getString(Key.COLUMN);
+		String where = readerSliceConfig.getString(Key.WHERE);
 
-		List<Object> conns = originReaderConfig.getList(Constants.CONNECTION,
+		List<Object> conns = readerSliceConfig.getList(Constant.CONN_MARK,
 				Object.class);
 		String jdbcUrl;
 
 		for (int i = 0; i < conns.size(); i++) {
-			Configuration sliceConfig = originReaderConfig.clone();
+			Configuration sliceConfig = readerSliceConfig.clone();
 
 			Configuration connConf = Configuration
 					.from(conns.get(i).toString());
@@ -61,7 +63,7 @@ public class TableSplitUtil {
 			jdbcUrl = connConf.getString(Key.JDBC_URL);
 			sliceConfig.set(Key.JDBC_URL, jdbcUrl);
 
-			sliceConfig.remove(Constants.CONNECTION);
+			sliceConfig.remove(Constant.CONN_MARK);
 
 			Configuration tempSlice;
 			if (isTableMode) {
@@ -98,7 +100,7 @@ public class TableSplitUtil {
 				} else {
 					for (String table : tables) {
 						tempSlice = sliceConfig.clone();
-						tempSlice.set(Key.QUERYSQL, TableSplitUtil
+						tempSlice.set(Key.QUERY_SQL, TableSplitUtil
 								.buildQuerySql(column, table, where));
 						splittedConfigs.add(tempSlice);
 					}
@@ -106,13 +108,13 @@ public class TableSplitUtil {
 
 			} else {
 				// querySql mode
-				List<String> sqls = connConf
-						.getList(Key.QUERYSQL, String.class);
+				List<String> sqls = connConf.getList(Key.QUERY_SQL,
+						String.class);
 
 				// TODO more than one querySql
 				for (String querySql : sqls) {
 					tempSlice = sliceConfig.clone();
-					tempSlice.set(Key.QUERYSQL, querySql);
+					tempSlice.set(Key.QUERY_SQL, querySql);
 					splittedConfigs.add(tempSlice);
 				}
 			}
@@ -120,28 +122,28 @@ public class TableSplitUtil {
 		return splittedConfigs;
 	}
 
-	public static List<Configuration> splitSingleTable(Configuration plugin,
+	public static List<Configuration> splitSingleTable(Configuration configuration,
 			int adviceNum) {
 
 		List<Configuration> pluginParams = new ArrayList<Configuration>();
 
-		Pair<Object, Object> minMaxPK = getPKRange(plugin);
+		Pair<Object, Object> minMaxPK = getPKRange(configuration);
 
 		if (null == minMaxPK) {
 			throw new DataXException(SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
 					"split table with splitPk failed");
 		}
 
-		String splitPkName = plugin.getString(Key.SPLIT_PK);
-		String column = plugin.getString(Key.COLUMN);
-		String table = plugin.getString(Key.TABLE);
-		String where = plugin.getString(Key.WHERE, null);
+		String splitPkName = configuration.getString(Key.SPLIT_PK);
+		String column = configuration.getString(Key.COLUMN);
+		String table = configuration.getString(Key.TABLE);
+		String where = configuration.getString(Key.WHERE, null);
 		boolean hasWhere = StringUtils.isNotBlank(where);
 
-		plugin.set(Key.QUERYSQL, buildQuerySql(column, table, where));
+		configuration.set(Key.QUERY_SQL, buildQuerySql(column, table, where));
 
 		if (null == minMaxPK.getLeft() || null == minMaxPK.getRight()) {
-			pluginParams.add(plugin);
+			pluginParams.add(configuration);
 			return pluginParams;
 		}
 
@@ -167,18 +169,28 @@ public class TableSplitUtil {
 		String tempQuerySql = null;
 		if (null != rangeList) {
 			for (String range : rangeList) {
-				Configuration conf = plugin.clone();
+				Configuration conf = configuration.clone();
 
 				tempQuerySql = buildQuerySql(column, table, where)
 						+ (hasWhere ? " and " : " where ") + range;
-				conf.set(Key.QUERYSQL, tempQuerySql);
+				conf.set(Key.QUERY_SQL, tempQuerySql);
 				pluginParams.add(conf);
 
 				LOG.info("splitted tempQuerySql:" + tempQuerySql);
 			}
 		} else {
-			pluginParams.add(plugin);
+			pluginParams.add(configuration);
 		}
+		
+		//deal pk is null
+        Configuration tempConfig = configuration.clone();
+        tempQuerySql = buildQuerySql(column, table, where)
+                + (hasWhere ? " and " : " where ") + String.format(" %s IS NULL", splitPkName);
+
+        LOG.info("After split, tempQuerySql=[\n{}\n].", tempQuerySql);
+
+        tempConfig.set(Key.QUERY_SQL, tempQuerySql);
+        pluginParams.add(tempConfig);
 
 		return pluginParams;
 	}
@@ -188,10 +200,10 @@ public class TableSplitUtil {
 		String querySql = null;
 
 		if (StringUtils.isBlank(where)) {
-			querySql = String.format(
-					Constants.QUERY_SQL_TEMPLATE_WHITOUT_WHERE, column, table);
+			querySql = String.format(Constant.QUERY_SQL_TEMPLATE_WHITOUT_WHERE,
+					column, table);
 		} else {
-			querySql = String.format(Constants.QUERY_SQL_TEMPLATE, column,
+			querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
 					table, where);
 		}
 
@@ -204,8 +216,8 @@ public class TableSplitUtil {
 		String jdbcURL = plugin.getString(Key.JDBC_URL);
 		String username = plugin.getString(Key.USERNAME);
 		String password = plugin.getString(Key.PASSWORD);
-
-		int fetchSize = plugin.getInt(Key.FETCH_SIZE, 32);
+		int fetchSize = plugin.getInt(Key.FETCH_SIZE,
+				Constant.DEFAULT_FETCH_SIZE);
 
 		Connection conn = null;
 		ResultSet rs = null;
@@ -227,8 +239,7 @@ public class TableSplitUtil {
 						"unsupported splitPk type，pk type not long nor string");
 			}
 		} catch (Exception e) {
-			throw new DataXException(
-					SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
+			throw new DataXException(SqlServerReaderErrorCode.ILLEGAL_SPLIT_PK,
 					"unsupported splitPk type，pk type not long nor string");
 		} finally {
 			DBUtil.closeDBResources(rs, null, conn);

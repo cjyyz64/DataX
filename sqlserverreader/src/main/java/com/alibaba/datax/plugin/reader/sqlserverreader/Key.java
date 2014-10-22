@@ -27,7 +27,9 @@ public class Key {
 	public static final String WHERE = "where";
 
 	// not must, default nothing
-	public static final String QUERYSQL = "querySql";
+	public static final String QUERY_SQL = "querySql";
 	
-	public static final String FETCH_SIZE = "fetchSize";
+	public static final  String FETCH_SIZE = "fetchSize";
+	
+	public final static String PRE_SQL = "preSql";
 }

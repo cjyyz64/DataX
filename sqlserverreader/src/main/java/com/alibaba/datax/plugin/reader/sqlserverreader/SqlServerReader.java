@@ -9,8 +9,8 @@ import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
-import com.alibaba.datax.plugin.reader.sqlserverreader.util.ConfigPretreatUtil;
-import com.alibaba.datax.plugin.reader.sqlserverreader.util.TableSplitUtil;
+import com.alibaba.datax.plugin.reader.sqlserverreader.util.ConfigPretreatmentUtil;
+import com.alibaba.datax.plugin.reader.sqlserverreader.util.SqlServerReaderSplitUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ public class SqlServerReader {
 		public void init() {
 			LOG.info("init() begin ...");
 			this.readerOriginConfig = this.getPluginJobConf();
-			ConfigPretreatUtil.validate(this.readerOriginConfig);
+			ConfigPretreatmentUtil.doPretreatment(this.readerOriginConfig);
 			LOG.info("init() end ...");
 		}
 
@@ -58,8 +58,10 @@ public class SqlServerReader {
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			LOG.info("split() begin...");
-			List<Configuration> splitedConfigs = TableSplitUtil.doSplit(
-					this.readerOriginConfig, adviceNumber);
+			// List<Configuration> splitedConfigs = TableSplitUtil.doSplit(
+			// this.readerOriginConfig, adviceNumber);
+			List<Configuration> splitedConfigs = SqlServerReaderSplitUtil
+					.doSplit(this.readerOriginConfig, adviceNumber);
 			LOG.info("split() end...");
 			return splitedConfigs;
 		}
@@ -116,7 +118,7 @@ public class SqlServerReader {
 		@Override
 		public void startRead(RecordSender recordSender) {
 
-			String sql = this.readerSliceConfig.getString(Key.QUERYSQL);
+			String sql = this.readerSliceConfig.getString(Key.QUERY_SQL);
 			String formatedSql = null;
 
 			try {
@@ -245,9 +247,14 @@ public class SqlServerReader {
 						SqlServerReaderErrorCode.RUNTIME_EXCEPTION,
 						"unable to get meta data.");
 			} catch (Exception e) {
-				// TODO 脏数据处理
-				this.getSlavePluginCollector().collectDirtyRecord(record,
+				String bussinessMessage = String.format(
+						"Get dirty data, %s, detail:[%s]", BASIC_MESSAGE,
 						e.getMessage());
+				String message = StrUtil.buildOriginalCauseMessage(
+						bussinessMessage, e);
+				LOG.error(message);
+
+				this.getSlavePluginCollector().collectDirtyRecord(record, e);
 			}
 		}
 	}
