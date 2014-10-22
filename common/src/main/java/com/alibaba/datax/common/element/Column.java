@@ -9,7 +9,6 @@ import com.alibaba.fastjson.JSON;
 /**
  * Created by jingxing on 14-8-24.
  * <p/>
- * 暂时不支持
  */
 public abstract class Column {
 
@@ -71,6 +70,6 @@ public abstract class Column {
 	}
 
 	public enum Type {
-		NULL, STRING, LONG, DOUBLE, BOOL, DATE, BYTES, NUMBER
+		BAD, NULL, LONG, DOUBLE, STRING, BOOL, DATE, BYTES
 	}
 }

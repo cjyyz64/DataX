@@ -4,12 +4,16 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.statistics.collector.plugin.slave.util.DirtyRecord;
 import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.fastjson.JSON;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -34,11 +38,18 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 
 	private String formatDirty(final Record dirty, final Throwable t,
 			final String msg) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(dirty == null ? "" : "Bad Record: " + dirty.toString() + "\n");
-		sb.append(t == null ? "" : "Java Exception: " + t.getMessage() + "\n");
-		sb.append(StringUtils.isBlank(msg) ? "" : "Error Tip: " + msg);
-		return sb.toString();
+		Map<String, Object> msgGroup = new HashMap<String, Object>();
+		if (StringUtils.isNotBlank(msg)) {
+			msgGroup.put("message", msg);
+		}
+		if (null != t && StringUtils.isNotBlank(t.getMessage())) {
+			msgGroup.put("exception", t.getMessage());
+		}
+		if (null != dirty) {
+			msgGroup.put("record", DirtyRecord.asDirtyRecord(dirty)
+					.getColumns());
+		}
+		return JSON.toJSONString(msgGroup);
 	}
 
 	@Override
@@ -48,7 +59,8 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 
 		currentLogNum.incrementAndGet();
 		if (currentLogNum.intValue() < maxLogNum.intValue()) {
-			LOG.error("\n" + this.formatDirty(dirtyRecord, t, errorMessage));
+			LOG.error("Dirty Record: \n"
+					+ this.formatDirty(dirtyRecord, t, errorMessage));
 		}
 	}
 }
