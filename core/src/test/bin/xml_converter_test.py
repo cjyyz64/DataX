@@ -111,6 +111,7 @@ class XmlConverterTest(unittest.TestCase):
         self.assertEqual(XmlConverter.parse_column(''), ['*'])
         self.assertEqual(XmlConverter.parse_column('*'), ['*'])
         self.assertEqual(XmlConverter.parse_column(' * '), ['*'])
+        self.assertEqual(XmlConverter.parse_column('a,1,Null, null, NULL'), ['a', '1', None, None, None])
         for item in [['a', 'b', 'c'],
                      ['a', 'b()', 'c'],
                      ['"a"', 'b()', 'c'],

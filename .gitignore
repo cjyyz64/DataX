@@ -11,3 +11,4 @@ hsf/
 .settings
 .classpath
 .gitignore
+*.pyc
