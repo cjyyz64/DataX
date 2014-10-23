@@ -975,6 +975,6 @@ public class Configuration {
 	}
 
 	private static String toJSONString(final Object object) {
-		return JSON.toJSONString(object, SerializerFeature.BrowserCompatible);
+		return JSON.toJSONString(object);
 	}
 }
