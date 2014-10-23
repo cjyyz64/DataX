@@ -6,6 +6,7 @@ __author__ = 'xiafei.qiuxf'
 
 import unittest
 from string import Template
+import json
 from xml_convertor import XmlConverter
 
 
@@ -16,6 +17,7 @@ except:
 
 
 class XmlConverterTest(unittest.TestCase):
+
     def test_invalid_xml(self):
         self.assertRaises(Exception, XmlConverter, "")
 
@@ -108,6 +110,7 @@ class XmlConverterTest(unittest.TestCase):
             self.assertIsNone(value)
 
     def test_parse_column(self):
+        # self.longMessage = True
         self.assertEqual(XmlConverter.parse_column(''), ['*'])
         self.assertEqual(XmlConverter.parse_column('*'), ['*'])
         self.assertEqual(XmlConverter.parse_column(' * '), ['*'])
@@ -116,10 +119,18 @@ class XmlConverterTest(unittest.TestCase):
                      ['a', 'b()', 'c'],
                      ['"a"', 'b()', 'c'],
                      ['a', 'b("", x, \'s\')', 'c'],
-                     ['count(distinct(a))', 'b("", x, \'(\')', 'c']
-                     ['a(\'"),\')', 'c', 'd']
+                     # ['count(distinct(a))', 'b("", x, \'(\')', 'c']
+                     # ['a(\'"),\')', 'c', 'd']
                      ]:
             s = ','.join(item)
             self.assertEqual(XmlConverter.parse_column(s), item)
+
+        with open('./case/column_case.txt') as f:
+            for line_num, line in enumerate(f.readlines()):
+                data = [i.strip() for i in json.loads(line)]
+                s = ','.join(data)
+                self.assertEqual(XmlConverter.parse_column(s),
+                                 [None if i.strip().lower() == 'null' else i for i in data],
+                                 msg='Not equal on line: %d' % (int(line_num) + 1))
 
 
