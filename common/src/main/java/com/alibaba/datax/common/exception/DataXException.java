@@ -29,7 +29,7 @@ public class DataXException extends RuntimeException {
 		if (cause instanceof DataXException) {
 			return (DataXException) cause;
 		}
-		return new DataXException(errorCode, cause);
+		return new DataXException(errorCode, cause.getMessage(), cause);
 	}
 
 	public ErrorCode getErrorCode() {

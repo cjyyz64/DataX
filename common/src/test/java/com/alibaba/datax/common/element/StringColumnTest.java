@@ -11,14 +11,21 @@ public class StringColumnTest extends BaseTest {
 
 	@Test
 	public void test_double() {
-		StringColumn string = new StringColumn("3.14");
-		Assert.assertTrue(string.asString().equals("3.14"));
-		Assert.assertTrue(string.asDouble().equals(3.14d));
-		Assert.assertTrue(string.asBoolean().equals(false));
-		Assert.assertTrue(string.asLong().equals(3L));
+		DoubleColumn real = new DoubleColumn("3.14");
+		Assert.assertTrue(real.asString().equals("3.14"));
+		Assert.assertTrue(real.asDouble().equals(3.14d));
+		Assert.assertTrue(real.asLong().equals(3L));
 
 		try {
-			string.asDate();
+			real.asBoolean();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(e instanceof DataXException);
+		}
+
+		try {
+			real.asDate();
+			Assert.assertTrue(false);
 		} catch (Exception e) {
 			Assert.assertTrue(e instanceof DataXException);
 		}
@@ -26,16 +33,12 @@ public class StringColumnTest extends BaseTest {
 
 	@Test
 	public void test_int() {
-		StringColumn string = new StringColumn("3");
-		Assert.assertTrue(string.asString().equals("3"));
-		Assert.assertTrue(string.asDouble().equals(3.0d));
-		Assert.assertTrue(string.asBoolean().equals(false));
-		Assert.assertTrue(string.asLong().equals(3L));
-		try {
-			string.asDate();
-		} catch (Exception e) {
-			Assert.assertTrue(e instanceof DataXException);
-		}
+		LongColumn integer = new LongColumn("3");
+		Assert.assertTrue(integer.asString().equals("3"));
+		Assert.assertTrue(integer.asDouble().equals(3.0d));
+		Assert.assertTrue(integer.asBoolean().equals(true));
+		Assert.assertTrue(integer.asLong().equals(3L));
+		System.out.println(integer.asDate());
 	}
 
 	@Test
@@ -44,16 +47,22 @@ public class StringColumnTest extends BaseTest {
 		Assert.assertTrue(string.asString().equals("bazhen"));
 		try {
 			string.asLong();
+			Assert.assertTrue(false);
+
 		} catch (Exception e) {
 			Assert.assertTrue(e instanceof DataXException);
 		}
 		try {
 			string.asDouble();
+			Assert.assertTrue(false);
+
 		} catch (Exception e) {
 			Assert.assertTrue(e instanceof DataXException);
 		}
 		try {
 			string.asDate();
+			Assert.assertTrue(false);
+
 		} catch (Exception e) {
 			Assert.assertTrue(e instanceof DataXException);
 		}
@@ -86,13 +95,6 @@ public class StringColumnTest extends BaseTest {
 			Assert.assertTrue(e instanceof DataXException);
 		}
 	}
-
-    @Test
-    public void test_bool_temp() {
-        StringColumn string = new StringColumn("fasle");
-
-        System.out.println(string.asBoolean());
-    }
 
 	@Test
 	public void test_null() throws UnsupportedEncodingException {

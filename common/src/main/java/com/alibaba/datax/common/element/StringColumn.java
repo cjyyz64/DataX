@@ -96,6 +96,20 @@ public class StringColumn extends Column {
 
 	@Override
 	public Boolean asBoolean() {
-		return ColumnCast.string2Bool(this);
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		if ("true".equals(this.asString())) {
+			return true;
+		}
+
+		if ("false".equals(this.asString())) {
+			return false;
+		}
+
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				String.format("String [%s] convert to Boolean failed .",
+						this.asString()));
 	}
 }

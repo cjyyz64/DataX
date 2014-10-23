@@ -52,12 +52,14 @@ public final class RetryUtil {
                 }
             }
         }
+        
         if (saveException == null) {
             throw new DataXException(CommonErrorCode.RETRY_FAIL, "retry to execute some method failed.");
         }
 
 
-        throw DataXException.asDataXException(CommonErrorCode.RETRY_FAIL,saveException);
-    }
+		throw DataXException.asDataXException(CommonErrorCode.RETRY_FAIL,
+				saveException);
+	}
 
 }

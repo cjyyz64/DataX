@@ -49,7 +49,11 @@ public class BoolColumn extends Column {
 
 	@Override
 	public String asString() {
-		return ColumnCast.bool2String(this);
+		if (null == super.getRawData()) {
+			return null;
+		}
+
+		return this.asBoolean() ? "true" : "false";
 	}
 
 	@Override
