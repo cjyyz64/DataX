@@ -97,7 +97,7 @@ public class CommonRdbmsReader {
             } catch (Exception unused) {
                 // ignore it
             }
-            LOG.info("\nbegin to read record by Sql [{}] \n {}.",
+            LOG.info("\nbegin to read record by Sql [{}\n] {}.",
                     null != formattedSql ? formattedSql : querySql, BASIC_MESSAGE);
 
             Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl,

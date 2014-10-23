@@ -249,18 +249,11 @@ public class OdpsWriter extends Writer {
                 SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
 
                 OdpsWriterProxy proxy = new OdpsWriterProxy(this.slaveUpload, blockId, intervalStep,
-                        columnPositions);
+                        columnPositions, slavePluginCollector);
 
                 com.alibaba.datax.common.element.Record dataxRecord = null;
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {
-                    try {
-                        proxy.writeOneRecord(dataxRecord, blocks);
-                    } catch (DataXException e1) {
-                        throw e1;
-                    } catch (Exception e2) {
-                        slavePluginCollector.collectDirtyRecord(dataxRecord,
-                                "Write the record failed, because: " + e2.getMessage());
-                    }
+                    proxy.writeOneRecord(dataxRecord, blocks);
                 }
 
                 proxy.writeRemainingRecord(blocks);
