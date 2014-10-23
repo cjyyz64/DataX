@@ -1,18 +1,17 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
+
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
-
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 
 public final class ColumnCast {
 
@@ -90,9 +89,10 @@ final class StringCast {
 
 		Map<String, Boolean> string2Bool = configuration.getMap(
 				"data.column.string.bool", Boolean.class);
-		StringCast.String2Bool.putAll(string2Bool);
-
-		return;
+        if(string2Bool!=null && string2Bool.size()>1) {
+            StringCast.String2Bool.clear();
+            StringCast.String2Bool.putAll(string2Bool);
+        }
 	}
 
 	static Date asDate(final StringColumn column) {
