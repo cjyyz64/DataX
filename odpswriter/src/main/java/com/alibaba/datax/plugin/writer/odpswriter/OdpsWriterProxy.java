@@ -26,8 +26,6 @@ public class OdpsWriterProxy {
 
 	private Upload slaveUpload;
 
-	private com.alibaba.datax.common.element.Record dataxRecord;
-
 	private RecordSchema schema;
 
 	private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
@@ -68,9 +66,11 @@ public class OdpsWriterProxy {
 
 		Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
 
-		if (null != record) {
-			protobufRecordWriter.write(record);
+		if (null == record) {
+			return;
 		}
+
+		protobufRecordWriter.write(record);
 
 		if (byteArrayOutputStream.size() >= max_buffer_length) {
 			protobufRecordWriter.close();
@@ -162,14 +162,17 @@ public class OdpsWriterProxy {
 					break;
 				}
 			}
+
+			return odpsRecord;
 		} catch (Exception e) {
 			String message = String.format(
 					"Dirty record detail:sourceIndex=[%s], value=[%s].",
-					sourceIndex, dataxRecord.getColumn(sourceColumnCount));
+					sourceIndex, dataXRecord.getColumn(sourceColumnCount));
 			this.slavePluginCollector.collectDirtyRecord(dataXRecord, e,
 					message);
+
+			return null;
 		}
 
-		return odpsRecord;
 	}
 }

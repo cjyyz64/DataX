@@ -34,7 +34,17 @@ public class BytesColumn extends Column {
 
 	@Override
 	public String asString() {
-		return ColumnCast.bytes2String(this);
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		try {
+			return ColumnCast.bytes2String(this);
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("Bytes[%s] convert to String failed .",
+							this.toString()));
+		}
 	}
 
 	@Override

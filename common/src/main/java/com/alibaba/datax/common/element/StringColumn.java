@@ -41,8 +41,8 @@ public class StringColumn extends Column {
 			return this.asBigDecimal().toBigInteger();
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"String convert to BigInteger failed, for "
-							+ e.getMessage());
+					String.format("String[%s] convert to BigInteger failed",
+							this.asString()));
 		}
 	}
 
@@ -56,7 +56,8 @@ public class StringColumn extends Column {
 			return this.asBigInteger().longValue();
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"String convert to Long failed, for " + e.getMessage());
+					String.format("String[%s] convert to Long failed",
+							this.asString()));
 		}
 	}
 
@@ -70,28 +71,9 @@ public class StringColumn extends Column {
 			return new BigDecimal(this.asString());
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"String convert to BigDecimal failed, for "
-							+ e.getMessage());
+					String.format("String[%s] convert to BigDecimal failed",
+							this.asString()));
 		}
-	}
-
-	@Override
-	public Double asDouble() {
-		if (null == this.getRawData()) {
-			return null;
-		}
-
-		return this.asBigDecimal().doubleValue();
-	}
-
-	@Override
-	public Date asDate() {
-		return ColumnCast.string2Date(this);
-	}
-
-	@Override
-	public byte[] asBytes() {
-		return ColumnCast.string2Bytes(this);
 	}
 
 	@Override
@@ -109,7 +91,38 @@ public class StringColumn extends Column {
 		}
 
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				String.format("String [%s] convert to Boolean failed .",
+				String.format("String[%s] convert to Boolean failed .",
 						this.asString()));
+	}
+
+	@Override
+	public Double asDouble() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		return this.asBigDecimal().doubleValue();
+	}
+
+	@Override
+	public Date asDate() {
+		try {
+			return ColumnCast.string2Date(this);
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s] convert to Date failed .",
+							this.asString()));
+		}
+	}
+
+	@Override
+	public byte[] asBytes() {
+		try {
+			return ColumnCast.string2Bytes(this);
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s] convert to Bytes failed .",
+							this.asString()));
+		}
 	}
 }

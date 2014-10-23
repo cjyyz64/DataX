@@ -34,7 +34,13 @@ public class DateColumn extends Column {
 
 	@Override
 	public String asString() {
-		return ColumnCast.date2String(this);
+		try {
+			return ColumnCast.date2String(this);
+		} catch (Exception e) {
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("Date[%d] format to String failed .",
+							this.toString()));
+		}
 	}
 
 	@Override
