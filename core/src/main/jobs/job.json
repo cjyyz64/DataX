@@ -16,15 +16,15 @@
                     "parameter": {
                         "column" : [
                             {
-                                "value": "filed0",
+                                "value": "DataX",
                                 "type": "string"
                             },
                             {
-                                "value": 100,
-                                "type": "int"
+                                "value": 1989,
+                                "type": "long"
                             },
                             {
-                                "value": 1411036763,
+                                "value": "1989-06-04 00:00:00",
                                 "type": "date"
                             },
                             {
@@ -33,7 +33,7 @@
                             },
                             {
                                 "value": "test",
-                                "type": "byte"
+                                "type": "bytes"
                             }
                         ],
                         "sliceRecordCount": 100000
@@ -42,7 +42,7 @@
                 "writer": {
                     "name": "streamwriter",
                     "parameter": {
-                        "visible": false,
+                        "print": false,
                         "encoding": "UTF-8"
                     }
                 }
