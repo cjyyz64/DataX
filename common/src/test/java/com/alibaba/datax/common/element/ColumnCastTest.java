@@ -41,8 +41,9 @@ public class ColumnCastTest {
 		Assert.assertFalse(StringCast.asBoolean(new StringColumn("False"))
 				.booleanValue());
 
+        configuration.remove("data.column.string.bool");
 		configuration.set("data.column.string.bool.yes", true);
-		configuration.set("data.column.string.bool.^yes", false);
+		configuration.set("data.column.string.bool.!yes", false);
 		StringCast.init(configuration);
 
 		Assert.assertTrue(StringCast.asBoolean(new StringColumn("yes"))
@@ -53,6 +54,10 @@ public class ColumnCastTest {
 				.booleanValue());
 		Assert.assertFalse(StringCast.asBoolean(new StringColumn("NO"))
 				.booleanValue());
+        Assert.assertFalse(StringCast.asBoolean(new StringColumn("true"))
+                .booleanValue());
+        Assert.assertFalse(StringCast.asBoolean(new StringColumn("False"))
+                .booleanValue());
 
 		Assert.assertTrue(StringCast.asDate(
 				new StringColumn("2014-09-18 16:00:00")).getTime() == 1411027200000L);

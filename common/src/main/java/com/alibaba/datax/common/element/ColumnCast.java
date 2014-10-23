@@ -90,9 +90,10 @@ final class StringCast {
 
 		Map<String, Boolean> string2Bool = configuration.getMap(
 				"data.column.string.bool", Boolean.class);
-		StringCast.String2Bool.putAll(string2Bool);
-
-		return;
+        if(string2Bool!=null && string2Bool.size()>1) {
+            StringCast.String2Bool.clear();
+            StringCast.String2Bool.putAll(string2Bool);
+        }
 	}
 
 	static Date asDate(final StringColumn column) {
