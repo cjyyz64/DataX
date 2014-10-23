@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 
 public class ConfigurationTest {
 
@@ -580,4 +581,18 @@ public class ConfigurationTest {
 				.get("a")));
 
 	}
+
+	@Test
+	public void test_serialize() {
+		StringBuilder sb = new StringBuilder();
+		for (int i = 1; i < 128; i++) {
+			sb.append((char) i);
+		}
+
+		Configuration configuration = Configuration.newDefault();
+		configuration.set("a", sb.toString());
+		Configuration another = Configuration.from(configuration.toJSON());
+		Assert.assertTrue(another.getString("a").equals(configuration.get("a")));
+	}
+
 }
