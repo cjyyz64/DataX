@@ -1,8 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.reader;
 
 import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -73,6 +75,10 @@ public class ResultSetReadProxy {
                         record.addColumn(new BoolColumn(rs.getBoolean(i)));
                         break;
 
+                    case Types.NULL:
+                        record.addColumn(new NullColumn(rs.getObject(i)));
+                        break;
+
                     // TODO 添加BASIC_MESSAGE
                     default:
                         throw new Exception(
@@ -86,7 +92,7 @@ public class ResultSetReadProxy {
             }
             recordSender.sendToWriter(record);
         } catch (Exception e) {
-            slavePluginCollector.collectDirtyRecord(record, e);
+            throw new DataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
         }
     }
 }

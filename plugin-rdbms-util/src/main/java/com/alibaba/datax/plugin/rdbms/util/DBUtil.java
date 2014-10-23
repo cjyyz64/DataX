@@ -194,17 +194,12 @@ public final class DBUtil {
         List<String> columns = new ArrayList<String>();
         Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
         try {
-            DatabaseMetaData databaseMetaData = conn.getMetaData();
-            // String dbName = getDBNameFromJdbcUrl(jdbcUrl);
-            String dbName = conn.getCatalog(); // 获取数据库名databaseName
-            ResultSet rs = databaseMetaData.getColumns(dbName, null, tableName,
-                    "%");
-
-            String tempColumn = null;
-            while (rs.next()) {
-                tempColumn = rs.getString("COLUMN_NAME");
-
-                columns.add(tempColumn);
+            Statement statement = conn.createStatement();
+            String queryColumnSql = String.format("select * from %s where 1=2", tableName);
+            ResultSet rs = statement.executeQuery(queryColumnSql);
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
+                columns.add(rsMetaData.getColumnName(i + 1));
             }
 
         } catch (SQLException e) {

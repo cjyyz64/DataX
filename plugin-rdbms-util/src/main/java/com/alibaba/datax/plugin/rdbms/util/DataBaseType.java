@@ -80,8 +80,9 @@ public enum DataBaseType {
 
         switch (this) {
             case MySql:
-            case Oracle:
                 result = "`" + columnName.replace("`", "``") + "`";
+                break;
+            case Oracle:
                 break;
             case SQLServer:
                 result = "[" + columnName + "]";
@@ -100,8 +101,9 @@ public enum DataBaseType {
 
         switch (this) {
             case MySql:
-            case Oracle:
                 result = "`" + tableName.replace("`", "``") + "`";
+                break;
+            case Oracle:
                 break;
             case SQLServer:
                 break;
