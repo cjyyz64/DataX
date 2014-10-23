@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.Column;
@@ -16,14 +17,11 @@ import java.io.IOException;
 import java.util.List;
 
 public class OdpsWriterProxy {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(OdpsWriterProxy.class);
-
-    private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+    private static final Logger LOG = LoggerFactory.getLogger(OdpsWriterProxy.class);
 
     private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
-    private volatile boolean is_compatible = true;// TODO tunnelConfig or
-    // delete it
+
+    private SlavePluginCollector slavePluginCollector;
 
 
     private Upload slaveUpload;
@@ -38,7 +36,8 @@ public class OdpsWriterProxy {
     private List<Integer> columnPositions;
     private List<Column.Type> tableOriginalColumnTypeList;
 
-    public OdpsWriterProxy(Upload slaveUpload, long blockId, int intervalStep, List<Integer> columnPositions)
+    public OdpsWriterProxy(Upload slaveUpload, long blockId, int intervalStep,
+                           List<Integer> columnPositions, SlavePluginCollector slavePluginCollector)
             throws IOException {
         this.slaveUpload = slaveUpload;
         this.schema = this.slaveUpload.getSchema();
@@ -49,14 +48,17 @@ public class OdpsWriterProxy {
         this.blockId = blockId;
         this.intervalStep = intervalStep;
         this.columnPositions = columnPositions;
+        this.slavePluginCollector = slavePluginCollector;
 
     }
 
-    public void writeOneRecord(com.alibaba.datax.common.element.Record dataxRecord, List<Long> blocks)
+    public void writeOneRecord(com.alibaba.datax.common.element.Record dataXRecord, List<Long> blocks)
             throws Exception {
-        Record r = dataxRecordToOdpsRecord(dataxRecord, schema);
-        if (null != r) {
-            protobufRecordWriter.write(r);
+
+        Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
+
+        if (null != record) {
+            protobufRecordWriter.write(record);
         }
 
         if (byteArrayOutputStream.size() >= max_buffer_length) {
@@ -86,7 +88,8 @@ public class OdpsWriterProxy {
     }
 
     public Record dataxRecordToOdpsRecord(com.alibaba.datax.common.element.Record dataXRecord,
-                                          RecordSchema schema) throws Exception {
+                                          RecordSchema schema)
+            throws Exception {
         int sourceColumnCount = dataXRecord.getColumnNumber();
         int destColumnCount = schema.getColumnCount();
         Record odpsRecord = new Record(destColumnCount);
@@ -110,47 +113,35 @@ public class OdpsWriterProxy {
         }
 
         int currentIndex = -1;
-        for (int i = 0, len = sourceColumnCount; i < len; i++) {
-            currentIndex = columnPositions.get(i);
-            Column.Type type = this.tableOriginalColumnTypeList.get(currentIndex);
-            switch (type) {
-                case ODPS_STRING:
-                    odpsRecord.setString(currentIndex, dataXRecord.getColumn(i)
-                            .asString());
-                    break;
-                case ODPS_BIGINT:
-                    odpsRecord.setBigint(currentIndex, dataXRecord.getColumn(i)
-                            .asLong());
-                    break;
-                case ODPS_BOOLEAN:
-                    odpsRecord.setBoolean(currentIndex, dataXRecord.getColumn(i)
-                            .asBoolean());
-                    break;
-                case ODPS_DATETIME:
-                    odpsRecord.setDatetime(currentIndex, dataXRecord.getColumn(i)
-                            .asDate());
-                    break;
-                case ODPS_DOUBLE:
-                    odpsRecord.setDouble(currentIndex, dataXRecord.getColumn(i)
-                            .asDouble());
-                    break;
-                default:
-                    String businessMessage = String.format("Unsupported column type:[%s].", type);
-                    String message = StrUtil.buildOriginalCauseMessage(
-                            businessMessage, null);
-
-                    LOG.error(message);
-                    throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                            businessMessage);
+        int sourceIndex = 0;
+        try {
+            for (int len = sourceColumnCount; sourceIndex < len; sourceIndex++) {
+                currentIndex = columnPositions.get(sourceIndex);
+                Column.Type type = this.tableOriginalColumnTypeList.get(currentIndex);
+                switch (type) {
+                    case ODPS_STRING:
+                        odpsRecord.setString(currentIndex, dataXRecord.getColumn(sourceIndex).asString());
+                        break;
+                    case ODPS_BIGINT:
+                        odpsRecord.setBigint(currentIndex, dataXRecord.getColumn(sourceIndex).asLong());
+                        break;
+                    case ODPS_BOOLEAN:
+                        odpsRecord.setBoolean(currentIndex, dataXRecord.getColumn(sourceIndex).asBoolean());
+                        break;
+                    case ODPS_DATETIME:
+                        odpsRecord.setDatetime(currentIndex, dataXRecord.getColumn(sourceIndex).asDate());
+                        break;
+                    case ODPS_DOUBLE:
+                        odpsRecord.setDouble(currentIndex, dataXRecord.getColumn(sourceIndex).asDouble());
+                        break;
+                    default:
+                        break;
+                }
             }
-        }
-
-        //对只写入不分列的情况，需要对不存在的列补空
-        String nullString = null;
-        for (int i = 0; i < destColumnCount; i++) {
-            if (null == odpsRecord.get(i)) {
-                odpsRecord.setString(i, nullString);
-            }
+        } catch (Exception e) {
+            String message = String.format("Dirty record detail:sourceIndex=[%s], value=[%s].", sourceIndex,
+                    dataxRecord.getColumn(sourceColumnCount));
+            this.slavePluginCollector.collectDirtyRecord(dataXRecord, e, message);
         }
 
         return odpsRecord;
