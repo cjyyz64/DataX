@@ -1,13 +1,12 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang3.math.NumberUtils;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-
-import org.apache.commons.lang3.math.NumberUtils;
-
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
 
 public class LongColumn extends Column {
 
@@ -120,4 +119,5 @@ public class LongColumn extends Column {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Long cannot cast to Bytes .");
 	}
+
 }

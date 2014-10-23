@@ -1,21 +1,20 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.test.simulator.BasicReaderPluginTest;
+import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;
+import com.alibaba.datax.test.simulator.junit.extend.log.TestLogger;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.test.simulator.BasicReaderPluginTest;
-import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;
-import com.alibaba.datax.test.simulator.junit.extend.log.TestLogger;
 
 @RunWith(LoggedRunner.class)
 public class MysqlReaderTest extends BasicReaderPluginTest {
@@ -115,6 +114,19 @@ public class MysqlReaderTest extends BasicReaderPluginTest {
 			System.out.println(r);
 		}
 	}
+
+    @TestLogger(log = "测试case6_null.json，配置5个分表进行验证，但是框架建议切分为8份，用户配置splitPk，所以切分。但是切分总数是（8/5向上取整）*5 = 10")
+    @Test
+    public void testCase6_null() {
+        List<Record> noteRecordForTest = new ArrayList<Record>();
+        int adviceSplitNumber = 8;
+
+        List<Configuration> subjobs = super.doReaderTest("case6_null.json",
+                adviceSplitNumber, noteRecordForTest);
+        for (Record r : noteRecordForTest) {
+            System.out.println(r);
+        }
+    }
 	
 
 	@Override

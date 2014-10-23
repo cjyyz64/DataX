@@ -1,12 +1,11 @@
 package com.alibaba.datax.common.element;
 
-import java.io.UnsupportedEncodingException;
-
+import com.alibaba.datax.common.base.BaseTest;
+import com.alibaba.datax.common.exception.DataXException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.datax.common.base.BaseTest;
-import com.alibaba.datax.common.exception.DataXException;
+import java.io.UnsupportedEncodingException;
 
 public class StringColumnTest extends BaseTest {
 
@@ -87,6 +86,13 @@ public class StringColumnTest extends BaseTest {
 			Assert.assertTrue(e instanceof DataXException);
 		}
 	}
+
+    @Test
+    public void test_bool_temp() {
+        StringColumn string = new StringColumn("fasle");
+
+        System.out.println(string.asBoolean());
+    }
 
 	@Test
 	public void test_null() throws UnsupportedEncodingException {
