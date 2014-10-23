@@ -31,17 +31,13 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void init() {
-            LOG.info("init() begin ...");
             this.originalConfig = getPluginJobConf();
             OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
-            LOG.info("init() end ...");
         }
 
         // 一般来说，是需要推迟到 slave 中进行pre 的执行
         @Override
         public void prepare() {
-            LOG.info("prepare() begin ...");
-            LOG.info("prepare() end ...");
         }
 
         @Override
@@ -53,14 +49,10 @@ public class MysqlWriter extends Writer {
         // 一般来说，是需要推迟到 slave 中进行post 的执行
         @Override
         public void post() {
-            LOG.info("post() begin ...");
-            LOG.info("post() end ...");
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy() begin ...");
-            LOG.info("destroy() end ...");
         }
 
     }
@@ -88,6 +80,8 @@ public class MysqlWriter extends Writer {
 
         private static String INSERT_OR_REPLACE_TEMPLATE;
 
+        private String writeRecordSql;
+
         @Override
         public void init() {
             this.writerSliceConfig = getPluginJobConf();
@@ -96,13 +90,10 @@ public class MysqlWriter extends Writer {
             this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
             this.table = this.writerSliceConfig.getString(Key.TABLE);
 
-            this.columnNumber = this.writerSliceConfig
-                    .getInt(Constant.COLUMN_NUMBER_MARK);
+            this.columnNumber = this.writerSliceConfig.getInt(Constant.COLUMN_NUMBER_MARK);
 
-            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL,
-                    String.class);
-            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL,
-                    String.class);
+            this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
+            this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
 
             this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
@@ -110,6 +101,8 @@ public class MysqlWriter extends Writer {
 
             INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
                     .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
+
+            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
                     this.jdbcUrl, this.table);
@@ -130,11 +123,11 @@ public class MysqlWriter extends Writer {
                 while ((record = recordReceiver.getFromReader()) != null) {
                     array.add(record);
                     if (array.size() >= batchSize) {
-                        doBatchInsert(conn, table, array);
+                        doBatchInsert(conn, array);
                     }
                 }
                 if (0 != array.size()) {
-                    doBatchInsert(conn, table, array);
+                    doBatchInsert(conn, array);
                 }
             } catch (Exception e) {
                 throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
@@ -149,8 +142,6 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void destroy() {
-            LOG.info("destroy() begin ...");
-            LOG.info("destroy() end ...");
         }
 
         private void executeSqls(Connection conn, List<String> sqls) {
@@ -174,14 +165,12 @@ public class MysqlWriter extends Writer {
         }
 
         // TODO 类型转换的 review
-        private void doBatchInsert(Connection connection, String table,
-                                   List<Record> buffer) throws SQLException {
+        private void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
 
             PreparedStatement pstmt = null;
             try {
                 connection.setAutoCommit(false);
-                pstmt = connection.prepareStatement(String.format(
-                        INSERT_OR_REPLACE_TEMPLATE, table));
+                pstmt = connection.prepareStatement(this.writeRecordSql);
 
                 for (Record record : buffer) {
                     for (int i = 0; i < this.columnNumber; i++) {
@@ -194,7 +183,7 @@ public class MysqlWriter extends Writer {
                 connection.commit();
             } catch (Exception e) {
                 connection.rollback();
-                doBadInsert(connection, table, buffer);
+                doBadInsert(connection, buffer);
             } finally {
                 DBUtil.closeDBResources(pstmt, null);
                 buffer.clear();
@@ -202,15 +191,13 @@ public class MysqlWriter extends Writer {
         }
 
         // TODO 检查columnNumber 和 record.getColumnNumber() 大小
-        private void doBadInsert(Connection connection, String table,
-                                 List<Record> buffer) {
+        private void doBadInsert(Connection connection, List<Record> buffer) {
             PreparedStatement pstmt = null;
             try {
                 connection.setAutoCommit(true);
                 for (Record record : buffer) {
                     try {
-                        pstmt = connection.prepareStatement(String.format(
-                                INSERT_OR_REPLACE_TEMPLATE, table));
+                        pstmt = connection.prepareStatement(this.writeRecordSql);
                         for (int i = 0; i < this.columnNumber; i++) {
                             pstmt = buildPreparedStatement(record.getColumn(i),
                                     pstmt, i + 1);
@@ -223,8 +210,7 @@ public class MysqlWriter extends Writer {
                             LOG.debug(e.toString());
                         }
 
-                        this.getSlavePluginCollector().collectDirtyRecord(
-                                record, e);
+                        this.getSlavePluginCollector().collectDirtyRecord(record, e);
                     } finally {
                         DBUtil.closeDBResources(pstmt, null);
                     }
@@ -268,8 +254,8 @@ public class MysqlWriter extends Writer {
             DBUtil.closeDBResources(stmt, null);
         }
 
-        private PreparedStatement buildPreparedStatement(Column tempColumn,
-                                                         PreparedStatement pstmt, int index) throws Exception {
+        private PreparedStatement buildPreparedStatement(Column tempColumn, PreparedStatement pstmt,
+                                                         int index) throws Exception {
             if (tempColumn instanceof StringColumn
                     || tempColumn instanceof LongColumn
                     || tempColumn instanceof DoubleColumn) {
