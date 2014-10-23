@@ -97,8 +97,8 @@ public class CommonRdbmsReader {
             } catch (Exception unused) {
                 // ignore it
             }
-            LOG.info("\nSql [{}] \nTo jdbcUrl:[{}].",
-                    null != formattedSql ? formattedSql : querySql, jdbcUrl);
+            LOG.info("\nbegin to read record by Sql [{}] \n {}.",
+                    null != formattedSql ? formattedSql : querySql, BASIC_MESSAGE);
 
             Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl,
                     username, password);
@@ -108,7 +108,7 @@ public class CommonRdbmsReader {
             try {
                 rs = DBUtil.query(conn, querySql, fetchSize);
                 ResultSetMetaData metaData = rs.getMetaData();
-                columnNumber = rs.getMetaData().getColumnCount();
+                columnNumber = metaData.getColumnCount();
 
                 while (rs.next()) {
                     ResultSetReadProxy.transportOneRecord(recordSender, rs, metaData, columnNumber,
