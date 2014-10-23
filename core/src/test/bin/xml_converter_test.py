@@ -119,6 +119,7 @@ class XmlConverterTest(unittest.TestCase):
                      ['a', 'b()', 'c'],
                      ['"a"', 'b()', 'c'],
                      ['a', 'b("", x, \'s\')', 'c'],
+                     # 这两个case暂时没有遇到...可以不做处理
                      # ['count(distinct(a))', 'b("", x, \'(\')', 'c']
                      # ['a(\'"),\')', 'c', 'd']
                      ]:
@@ -134,3 +135,7 @@ class XmlConverterTest(unittest.TestCase):
                                  msg='Not equal on line: %d' % (int(line_num) + 1))
 
 
+
+
+if __name__ == '__main__':
+    unittest.main()
