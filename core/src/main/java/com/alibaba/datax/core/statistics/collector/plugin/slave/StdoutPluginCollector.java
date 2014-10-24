@@ -39,6 +39,8 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 	private String formatDirty(final Record dirty, final Throwable t,
 			final String msg) {
 		Map<String, Object> msgGroup = new HashMap<String, Object>();
+
+		msgGroup.put("type", super.getPluginType().toString());
 		if (StringUtils.isNotBlank(msg)) {
 			msgGroup.put("message", msg);
 		}
@@ -56,7 +58,7 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 	public void collectDirtyRecord(Record dirtyRecord, Throwable t,
 			String errorMessage) {
 		currentLogNum.incrementAndGet();
-		if (currentLogNum.intValue() < maxLogNum.intValue()) {
+		if (maxLogNum.intValue() < 0 || currentLogNum.intValue() < maxLogNum.intValue()) {
 			LOG.error("Dirty Record: \n"
 					+ this.formatDirty(dirtyRecord, t, errorMessage));
 		}
