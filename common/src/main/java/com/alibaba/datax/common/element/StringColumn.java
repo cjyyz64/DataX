@@ -82,11 +82,11 @@ public class StringColumn extends Column {
 			return null;
 		}
 
-		if ("true".equals(this.asString())) {
+		if ("true".equalsIgnoreCase(this.asString())) {
 			return true;
 		}
 
-		if ("false".equals(this.asString())) {
+		if ("false".equalsIgnoreCase(this.asString())) {
 			return false;
 		}
 
