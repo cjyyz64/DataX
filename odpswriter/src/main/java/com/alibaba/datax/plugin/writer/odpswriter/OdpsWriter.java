@@ -69,6 +69,12 @@ public class OdpsWriter extends Writer {
 
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
+            boolean emptyAsNull = this.originalConfig.getBool(Key.EMPTY_AS_NULL, false);
+            if (emptyAsNull) {
+                LOG.warn("As your job configured emptyAsNull=true, so when write to odps,empty string \"\" will be treated as null.");
+            }
+
+
             if (IS_DEBUG) {
                 LOG.debug("After init, job config now is: [\n{}\n] .",
                         this.originalConfig.toJSON());
@@ -206,6 +212,8 @@ public class OdpsWriter extends Writer {
         private String project;
         private String table;
         private String partition;
+        private boolean emptyAsNull;
+
         private Upload slaveUpload;
 
         private String uploadId = null;
@@ -219,6 +227,8 @@ public class OdpsWriter extends Writer {
             this.partition = OdpsUtil.formatPartition(this.sliceConfig
                     .getString(Key.PARTITION, ""));
             this.sliceConfig.set(Key.PARTITION, this.partition);
+
+            this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL, false);
 
             this.dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
 
@@ -249,7 +259,7 @@ public class OdpsWriter extends Writer {
                 SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
 
                 OdpsWriterProxy proxy = new OdpsWriterProxy(this.slaveUpload, blockId, intervalStep,
-                        columnPositions, slavePluginCollector);
+                        columnPositions, slavePluginCollector, this.emptyAsNull);
 
                 com.alibaba.datax.common.element.Record dataxRecord = null;
                 while ((dataxRecord = recordReceiver.getFromReader()) != null) {

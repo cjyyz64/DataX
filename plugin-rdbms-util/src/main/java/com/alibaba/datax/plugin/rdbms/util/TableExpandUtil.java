@@ -31,7 +31,7 @@ public final class TableExpandUtil {
             Matcher matcher = pattern.matcher(tableArray.trim());
             if (!matcher.matches()) {
                 tableName = tableArray.trim();
-                splittedTables.add(dataBaseType.quoteTableName(tableName));
+                splittedTables.add(tableName);
             } else {
                 String start = matcher.group(2).trim();
                 String end = matcher.group(3).trim();
@@ -47,12 +47,12 @@ public final class TableExpandUtil {
                         tableName = matcher.group(1).trim()
                                 + String.format("%0" + len + "d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(dataBaseType.quoteTableName(tableName));
+                        splittedTables.add(tableName);
                     } else {
                         tableName = matcher.group(1).trim()
                                 + String.format("%d", k)
                                 + matcher.group(4).trim();
-                        splittedTables.add(dataBaseType.quoteTableName(tableName));
+                        splittedTables.add(tableName);
                     }
                 }
             }

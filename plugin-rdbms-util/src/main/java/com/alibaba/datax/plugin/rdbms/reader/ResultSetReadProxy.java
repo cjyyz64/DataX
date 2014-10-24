@@ -47,7 +47,7 @@ public class ResultSetReadProxy {
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                        record.addColumn(new DoubleColumn(rs.getDouble(i)));
+                        record.addColumn(new DoubleColumn(rs.getString(i)));
                         break;
 
                     case Types.TIME:

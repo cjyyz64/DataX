@@ -17,162 +17,167 @@ import java.io.IOException;
 import java.util.List;
 
 public class OdpsWriterProxy {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(OdpsWriterProxy.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(OdpsWriterProxy.class);
 
-	private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
+    private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
 
-	private SlavePluginCollector slavePluginCollector;
+    private SlavePluginCollector slavePluginCollector;
 
-	private Upload slaveUpload;
+    private Upload slaveUpload;
 
-	private RecordSchema schema;
+    private RecordSchema schema;
 
-	private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
-			70 * 1024 * 1024);
+    private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
+            70 * 1024 * 1024);
 
-	private int max_buffer_length = 64 * 1024 * 1024;
+    private int max_buffer_length = 64 * 1024 * 1024;
 
-	private ProtobufRecordWriter protobufRecordWriter = null;
+    private ProtobufRecordWriter protobufRecordWriter = null;
 
-	private long blockId;
+    private long blockId;
 
-	private int intervalStep;
+    private int intervalStep;
 
-	private List<Integer> columnPositions;
+    private List<Integer> columnPositions;
 
-	private List<Column.Type> tableOriginalColumnTypeList;
+    private List<Column.Type> tableOriginalColumnTypeList;
 
-	public OdpsWriterProxy(Upload slaveUpload, long blockId, int intervalStep,
-			List<Integer> columnPositions,
-			SlavePluginCollector slavePluginCollector) throws IOException {
-		this.slaveUpload = slaveUpload;
-		this.schema = this.slaveUpload.getSchema();
-		this.tableOriginalColumnTypeList = OdpsUtil
-				.getTableOriginalColumnTypeList(this.schema);
+    private boolean emptyAsNull;
 
-		this.protobufRecordWriter = new ProtobufRecordWriter(schema,
-				byteArrayOutputStream);
-		this.blockId = blockId;
-		this.intervalStep = intervalStep;
-		this.columnPositions = columnPositions;
-		this.slavePluginCollector = slavePluginCollector;
+    public OdpsWriterProxy(Upload slaveUpload, long blockId, int intervalStep,
+                           List<Integer> columnPositions,
+                           SlavePluginCollector slavePluginCollector, boolean emptyAsNull) throws IOException {
+        this.slaveUpload = slaveUpload;
+        this.schema = this.slaveUpload.getSchema();
+        this.tableOriginalColumnTypeList = OdpsUtil
+                .getTableOriginalColumnTypeList(this.schema);
 
-	}
+        this.protobufRecordWriter = new ProtobufRecordWriter(schema,
+                byteArrayOutputStream);
+        this.blockId = blockId;
+        this.intervalStep = intervalStep;
+        this.columnPositions = columnPositions;
+        this.slavePluginCollector = slavePluginCollector;
+        this.emptyAsNull = emptyAsNull;
 
-	public void writeOneRecord(
-			com.alibaba.datax.common.element.Record dataXRecord,
-			List<Long> blocks) throws Exception {
+    }
 
-		Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
+    public void writeOneRecord(
+            com.alibaba.datax.common.element.Record dataXRecord,
+            List<Long> blocks) throws Exception {
 
-		if (null == record) {
-			return;
-		}
+        Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
 
-		protobufRecordWriter.write(record);
+        if (null == record) {
+            return;
+        }
 
-		if (byteArrayOutputStream.size() >= max_buffer_length) {
-			protobufRecordWriter.close();
-			OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-					this.byteArrayOutputStream, blockId);
-			LOG.info("write block {} ok.", blockId);
+        protobufRecordWriter.write(record);
 
-			blocks.add(blockId);
-			byteArrayOutputStream.reset();
-			protobufRecordWriter = new ProtobufRecordWriter(schema,
-					byteArrayOutputStream);
+        if (byteArrayOutputStream.size() >= max_buffer_length) {
+            protobufRecordWriter.close();
+            OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
+                    this.byteArrayOutputStream, blockId);
+            LOG.info("write block {} ok.", blockId);
 
-			blockId += this.intervalStep;
-		}
-	}
+            blocks.add(blockId);
+            byteArrayOutputStream.reset();
+            protobufRecordWriter = new ProtobufRecordWriter(schema,
+                    byteArrayOutputStream);
 
-	public void writeRemainingRecord(List<Long> blocks) throws Exception {
-		// complete protobuf stream, then write to http
-		protobufRecordWriter.close();
-		if (byteArrayOutputStream.size() != 0) {
-			OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-					this.byteArrayOutputStream, blockId);
-			LOG.info("write block {} ok.", blockId);
+            blockId += this.intervalStep;
+        }
+    }
 
-			blocks.add(blockId);
-			// reset the buffer for next block
-			byteArrayOutputStream.reset();
-		}
-	}
+    public void writeRemainingRecord(List<Long> blocks) throws Exception {
+        // complete protobuf stream, then write to http
+        protobufRecordWriter.close();
+        if (byteArrayOutputStream.size() != 0) {
+            OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
+                    this.byteArrayOutputStream, blockId);
+            LOG.info("write block {} ok.", blockId);
 
-	public Record dataxRecordToOdpsRecord(
-			com.alibaba.datax.common.element.Record dataXRecord,
-			RecordSchema schema) throws Exception {
-		int sourceColumnCount = dataXRecord.getColumnNumber();
-		int destColumnCount = schema.getColumnCount();
-		Record odpsRecord = new Record(destColumnCount);
+            blocks.add(blockId);
+            // reset the buffer for next block
+            byteArrayOutputStream.reset();
+        }
+    }
 
-		int userConfiguredColumnNumber = this.columnPositions.size();
+    public Record dataxRecordToOdpsRecord(
+            com.alibaba.datax.common.element.Record dataXRecord,
+            RecordSchema schema) throws Exception {
+        int sourceColumnCount = dataXRecord.getColumnNumber();
+        int destColumnCount = schema.getColumnCount();
+        Record odpsRecord = new Record(destColumnCount);
 
-		if (sourceColumnCount > userConfiguredColumnNumber) {
-			String businessMessage = String
-					.format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
-							sourceColumnCount, userConfiguredColumnNumber);
-			String message = StrUtil.buildOriginalCauseMessage(businessMessage,
-					null);
-			LOG.error(message);
+        int userConfiguredColumnNumber = this.columnPositions.size();
 
-			throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
-					businessMessage);
-		} else if (sourceColumnCount < userConfiguredColumnNumber) {
-			if (printColumnLess) {
-				printColumnLess = false;
-				LOG.warn(
-						"source columnNumber={} is less than configured destination columnNumber={}, DataX will fill some column with null.",
-						dataXRecord.getColumnNumber(),
-						userConfiguredColumnNumber);
-			}
-		}
+        if (sourceColumnCount > userConfiguredColumnNumber) {
+            String businessMessage = String
+                    .format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
+                            sourceColumnCount, userConfiguredColumnNumber);
+            String message = StrUtil.buildOriginalCauseMessage(businessMessage,
+                    null);
+            LOG.error(message);
 
-		int currentIndex = -1;
-		int sourceIndex = 0;
-		try {
-			for (int len = sourceColumnCount; sourceIndex < len; sourceIndex++) {
-				currentIndex = columnPositions.get(sourceIndex);
-				Column.Type type = this.tableOriginalColumnTypeList
-						.get(currentIndex);
-				switch (type) {
-				case ODPS_STRING:
-					odpsRecord.setString(currentIndex,
-							dataXRecord.getColumn(sourceIndex).asString());
-					break;
-				case ODPS_BIGINT:
-					odpsRecord.setBigint(currentIndex,
-							dataXRecord.getColumn(sourceIndex).asLong());
-					break;
-				case ODPS_BOOLEAN:
-					odpsRecord.setBoolean(currentIndex,
-							dataXRecord.getColumn(sourceIndex).asBoolean());
-					break;
-				case ODPS_DATETIME:
-					odpsRecord.setDatetime(currentIndex,
-							dataXRecord.getColumn(sourceIndex).asDate());
-					break;
-				case ODPS_DOUBLE:
-					odpsRecord.setDouble(currentIndex,
-							dataXRecord.getColumn(sourceIndex).asDouble());
-					break;
-				default:
-					break;
-				}
-			}
+            throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
+                    businessMessage);
+        } else if (sourceColumnCount < userConfiguredColumnNumber) {
+            if (printColumnLess) {
+                printColumnLess = false;
+                LOG.warn(
+                        "source columnNumber={} is less than configured destination columnNumber={}, DataX will fill some column with null.",
+                        dataXRecord.getColumnNumber(),
+                        userConfiguredColumnNumber);
+            }
+        }
 
-			return odpsRecord;
-		} catch (Exception e) {
-			String message = String.format(
-					"Dirty record detail:sourceIndex=[%s], value=[%s].",
-					sourceIndex, dataXRecord.getColumn(sourceColumnCount));
-			this.slavePluginCollector.collectDirtyRecord(dataXRecord, e,
-					message);
+        int currentIndex = -1;
+        int sourceIndex = 0;
+        com.alibaba.datax.common.element.Column columnValue = null;
+        try {
+            for (int len = sourceColumnCount; sourceIndex < len; sourceIndex++) {
+                currentIndex = columnPositions.get(sourceIndex);
+                Column.Type type = this.tableOriginalColumnTypeList
+                        .get(currentIndex);
+                columnValue = dataXRecord.getColumn(sourceIndex);
 
-			return null;
-		}
+                switch (type) {
+                    case ODPS_STRING:
+                        if (this.emptyAsNull && "".equals(columnValue.asString())) {
+                            break;
+                        } else {
+                            odpsRecord.setString(currentIndex, columnValue.asString());
+                        }
+                        break;
+                    case ODPS_BIGINT:
+                        odpsRecord.setBigint(currentIndex, columnValue.asLong());
+                        break;
+                    case ODPS_BOOLEAN:
+                        odpsRecord.setBoolean(currentIndex, columnValue.asBoolean());
+                        break;
+                    case ODPS_DATETIME:
+                        odpsRecord.setDatetime(currentIndex, columnValue.asDate());
+                        break;
+                    case ODPS_DOUBLE:
+                        odpsRecord.setDouble(currentIndex, columnValue.asDouble());
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-	}
+            return odpsRecord;
+        } catch (Exception e) {
+            String message = String.format(
+                    "Dirty record detail:sourceIndex=[%s], value=[%s].",
+                    sourceIndex, dataXRecord.getColumn(sourceColumnCount));
+            this.slavePluginCollector.collectDirtyRecord(dataXRecord, e,
+                    message);
+
+            return null;
+        }
+
+    }
 }

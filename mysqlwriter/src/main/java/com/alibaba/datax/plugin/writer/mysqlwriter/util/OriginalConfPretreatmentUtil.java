@@ -114,7 +114,7 @@ public final class OriginalConfPretreatmentUtil {
         List<String> retColumns = new ArrayList<String>();
         for (String column : columns) {
             if (lowerColumns.contains(column.toLowerCase())) {
-                retColumns.add(DataBaseType.MySql.quoteColumnName(column));
+                retColumns.add(column);
             } else {
                 throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                         String.format("no column:[%s].", column));
