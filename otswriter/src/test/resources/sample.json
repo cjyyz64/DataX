@@ -1,0 +1,16 @@
+{
+
+                        "endpoint":"http://10.101.168.117",
+                        "accessId":"dataxaccessid",
+                        "accessKey":"dataxaccesskey",
+                        "instanceName":"dataxtest",
+                        "table":"ots_writer_test_master",
+                        "primaryKey" : [
+                            {"name":"pk_0", "type":"string"}
+                        ],
+                        "column" : [
+                            {"name":"attr_0", "type":"string"}
+                        ], 
+                        "writeMode" : "putrow"
+
+}

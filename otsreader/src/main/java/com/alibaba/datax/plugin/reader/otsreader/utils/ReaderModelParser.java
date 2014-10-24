@@ -50,7 +50,7 @@ public class ReaderModelParser {
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_BINARY)) {
             return OTSColumn.fromConstBytesColumn(Base64.decodeBase64(value));
         } else {
-            throw new IllegalArgumentException("Can not parse map to 'OTSColumn', input type:" + type + ", value:" + value + ".");
+            throw new IllegalArgumentException("Invalid 'column', Can not parse map to 'OTSColumn', input type:" + type + ", value:" + value + ".");
         }
     }
     
@@ -61,7 +61,7 @@ public class ReaderModelParser {
                 String nameStr = (String) name;
                 return OTSColumn.fromNormalColumn(nameStr);
             } else {
-                throw new IllegalArgumentException("Can not parse map to 'OTSColumn', the value is not a string.");
+                throw new IllegalArgumentException("Invalid 'column', Can not parse map to 'OTSColumn', the value is not a string.");
             }
         } else if (item.containsKey(OTSConst.TYPE) && item.containsKey(OTSConst.VALUE) && item.size() == 2) {
             Object type = item.get(OTSConst.TYPE);
@@ -71,11 +71,11 @@ public class ReaderModelParser {
                 String valueStr = (String) value;
                 return parseConstColumn(typeStr, valueStr);
             } else {
-                throw new IllegalArgumentException("Can not parse map to 'OTSColumn', the value is not a string.");
+                throw new IllegalArgumentException("Invalid 'column', Can not parse map to 'OTSColumn', the value is not a string.");
             }
         } else {
             throw new IllegalArgumentException(
-                    "Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'.");
+                    "Invalid 'column', Can not parse map to 'OTSColumn', valid format: '{\"name\":\"\"}' or '{\"type\":\"\", \"value\":\"\"}'.");
         }
     }
     
@@ -90,7 +90,7 @@ public class ReaderModelParser {
 
     public static List<OTSColumn> parseOTSColumnList(List<Object> input) {
         if (input.isEmpty()) {
-            throw new IllegalArgumentException("Input count of column is zero.");
+            throw new IllegalArgumentException("Input count of 'column' is zero.");
         }
         
         List<OTSColumn> columns = new ArrayList<OTSColumn>(input.size());
@@ -101,7 +101,7 @@ public class ReaderModelParser {
                 Map<String, Object> column = (Map<String, Object>) item;
                 columns.add(parseOTSColumn(column));
             } else {
-                throw new IllegalArgumentException("Can not parse Object to 'OTSColumn', item of list is not a map.");
+                throw new IllegalArgumentException("Invalid 'column', Can not parse Object to 'OTSColumn', item of list is not a map.");
             }
         }
         checkIsAllConstColumn(columns);
@@ -114,6 +114,16 @@ public class ReaderModelParser {
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
             return PrimaryKeyValue.fromLong(getLongValue(value));
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
+            throw new IllegalArgumentException("Format error, the " + OTSConst.TYPE_INF_MIN + " only support {\"type\":\"" + OTSConst.TYPE_INF_MIN + "\"}.");
+        } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
+            throw new IllegalArgumentException("Format error, the " + OTSConst.TYPE_INF_MAX + " only support {\"type\":\"" + OTSConst.TYPE_INF_MAX + "\"}.");
+        } else {
+            throw new IllegalArgumentException("Not supprot parsing type: "+ type +" for PrimaryKeyValue.");
+        }
+    }
+    
+    public static PrimaryKeyValue parsePrimaryKeyValue(String type) {
+        if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MIN)) {
             return PrimaryKeyValue.INF_MIN;
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_INF_MAX)) {
             return PrimaryKeyValue.INF_MAX;
@@ -133,8 +143,16 @@ public class ReaderModelParser {
             } else {
                 throw new IllegalArgumentException("The 'type' and 'value‘ only support string.");
             }
+        } else if (item.containsKey(OTSConst.TYPE) && item.size() == 1) {
+            Object type = item.get(OTSConst.TYPE);
+            if (type instanceof String) {
+                String typeStr = (String) type;
+                return parsePrimaryKeyValue(typeStr);
+            } else {
+                throw new IllegalArgumentException("The 'type' only support string.");
+            }
         } else {
-            throw new IllegalArgumentException("The map must include 'type' and 'value'.");
+            throw new IllegalArgumentException("The map must consist of 'type' and 'value'.");
         }
     }
 

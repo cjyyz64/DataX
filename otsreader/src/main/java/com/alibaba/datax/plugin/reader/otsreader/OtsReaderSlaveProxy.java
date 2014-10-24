@@ -15,7 +15,7 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSConst;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
-import com.alibaba.datax.plugin.reader.otsreader.utils.DefaultRetryStrategy;
+import com.alibaba.datax.plugin.reader.otsreader.utils.DefaultNoRetry;
 import com.alibaba.datax.plugin.reader.otsreader.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClientAsync;
 import com.aliyun.openservices.ots.OTSServiceConfiguration;
@@ -93,7 +93,7 @@ public class OtsReaderSlaveProxy {
         Direction direction = GsonParser.jsonToDirection(configuration.getString(OTSConst.OTS_DIRECTION));
         
         OTSServiceConfiguration configure = new OTSServiceConfiguration();
-        configure.setRetryStrategy(new DefaultRetryStrategy());
+        configure.setRetryStrategy(new DefaultNoRetry());
         
         OTSClientAsync ots = new OTSClientAsync(
                 conf.getEndpoint(),
