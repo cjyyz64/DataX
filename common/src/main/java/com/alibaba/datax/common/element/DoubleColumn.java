@@ -105,7 +105,6 @@ public class DoubleColumn extends Column {
 		if (null == data) {
 			return;
 		}
-
 		try {
 			new BigDecimal(data);
 		} catch (Exception e) {
