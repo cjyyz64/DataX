@@ -23,7 +23,7 @@ public final class Key {
 
     public final static String MAX_RETRY_TIME = "maxRetryTime";
 
-    //boolean ÀàÐÍ£¬default:false
+    //boolean ç±»åž‹ï¼Œdefault:false
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 
     public final static String ACCOUNT_TYPE = "accountType";
