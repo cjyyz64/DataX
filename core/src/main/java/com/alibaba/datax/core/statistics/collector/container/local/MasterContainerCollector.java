@@ -23,20 +23,20 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 	@SuppressWarnings("unused")
 	private long masterId;
 
-	private String masterReportAddress;
+	private String clusterManagerAddress;
 
-	private int timeout;
+	private int clusterManagertimeout;
 
 	public MasterContainerCollector(Configuration configuration) {
 		super(configuration);
 		this.masterId = configuration
 				.getLong(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID);
-		this.masterReportAddress = configuration
-				.getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERREPORTADDRESS);
-		this.timeout = configuration
-				.getInt(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_REPORTTIMEOUT,
-						1000);
-		Validate.isTrue(StringUtils.isNotBlank(this.masterReportAddress),
+		this.clusterManagerAddress = configuration
+				.getString(CoreConstant.DATAX_CORE_CLUSTERMANAGER_ADDRESS);
+		this.clusterManagertimeout = configuration
+				.getInt(CoreConstant.DATAX_CORE_CLUSTERMANAGER_TIMEOUT,
+						3000);
+		Validate.isTrue(StringUtils.isNotBlank(this.clusterManagerAddress),
 				"master report address can not be blank for local container collector");
 	}
 
@@ -46,9 +46,8 @@ public class MasterContainerCollector extends AbstractContainerCollector {
         LOG.info(MetricStringify.getSnapshot(nowMetric));
 
 		try {
-			// TODO 这里可能需要组装masterId到address里面来
-			String result = Request.Put(this.masterReportAddress)
-					.connectTimeout(this.timeout).socketTimeout(this.timeout)
+			String result = Request.Put(String.format("%s/job/%d/status", this.clusterManagerAddress, masterId))
+					.connectTimeout(this.clusterManagertimeout).socketTimeout(this.clusterManagertimeout)
 					.bodyString(message, ContentType.APPLICATION_JSON)
 					.execute().returnContent().asString();
 			LOG.debug(result);

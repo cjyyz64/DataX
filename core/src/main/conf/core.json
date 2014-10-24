@@ -48,6 +48,10 @@
         }
     },
     "core": {
+        "clusterManager": {
+            "address": "http://localhost:7001/api",
+            "timeout": 3000
+         },
         "transport": {
             "channel": {
                 "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
@@ -76,10 +80,7 @@
             "collector": {
                 "container": {
                     "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterContainerCollector",
-                    "masterReportAddress": "http://localhost:7001/cdp",
-                    "reportTimeout": 1000,
-                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector",
-                    "slaveReportAddress": "http://localhost:7001/cdp"
+                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector"
                 },
                 "plugin": {
                     "slaveClass": "com.alibaba.datax.core.statistics.collector.plugin.slave.StdoutPluginCollector",

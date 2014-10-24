@@ -133,6 +133,7 @@ def get_json_job_path(job_path):
             sys.exit(RET_STATE["FAIL"])
 
     is_resaved_json = False
+    job_new_path = job_path
     job_json_content = None
     # 将非json配置转为json
     try:
@@ -151,7 +152,7 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
-        job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
+        job_new_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
         is_resaved_json = True
 
     if is_job_from_http:
@@ -160,25 +161,28 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
-        job_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
+        job_new_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
         is_resaved_json = True
 
-    return job_path, is_resaved_json
+    return job_new_path, is_resaved_json
 
 def add_core_config_for_http(job_json_content, job_path):
-    m = re.match(r"^http[s]?://\S+/(\d+)\w*", job_path)
-    if m:
-        job_id = m.group(1)
+    job_id = get_masterId_from_http(job_path)
+    if job_id:
         job_json_content = json.loads(job_json_content)
         job_json_content["core"] = {"container":{"master":{"id":job_id}}}
-        if job_path.endswith("/config"):
-            job_path = job_path[0:-7]
-        job_json_content["core"]["statistics"] = {"collector":{"container":{"masterReportAddress":"%s/status"%(job_path)}}}
     else:
-        print >>sys.stderr, "can not get job id from url[%s]"%(job_path)
         return None
 
     return json.dumps(job_json_content, sort_keys=True, indent=4)
+
+def get_masterId_from_http(job_path):
+    m = re.match(r"^http[s]?://\S+/(\d+)\w*", job_path)
+    if m:
+        return m.group(1)
+    else:
+        print >>sys.stderr, "can not get job id from url[%s]"%(job_path)
+        return None
 
 # 根据job配置字符串判断其类型
 def get_string_type(job_content):
@@ -193,7 +197,9 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
 
     tmp_file_path = None
     if is_job_from_http:
-        tmp_file_path = job_path.strip().split('/')[-2].strip()
+        tmp_file_path = get_masterId_from_http(job_path)
+        if not tmp_file_path:
+            sys.exit(RET_STATE["FAIL"])
     else:
         tmp_file_path = os.path.basename(job_path)
 

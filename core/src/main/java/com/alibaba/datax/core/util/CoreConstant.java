@@ -29,6 +29,10 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_SLAVE_REPORTINTERVAL = "core.container.slave.reportInterval";
 
+    public static final String DATAX_CORE_CLUSTERMANAGER_ADDRESS = "core.clusterManager.address";
+
+    public static final String DATAX_CORE_CLUSTERMANAGER_TIMEOUT = "core.clusterManager.timeout";
+
 	public static final String DATAX_CORE_SCHEDULER_CLASS = "core.scheduler.class";
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CLASS = "core.transport.channel.class";
@@ -47,13 +51,7 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS = "core.statistics.collector.container.masterClass";
 
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERREPORTADDRESS = "core.statistics.collector.container.masterReportAddress";
-
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_REPORTTIMEOUT = "core.statistics.collector.container.reportTimeout";
-
 	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVECLASS = "core.statistics.collector.container.slaveClass";
-
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVEREPORTADDRESS = "core.statistics.collector.container.slaveReportAddress";
 
 	public static final String DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_SLAVECLASS = "core.statistics.collector.plugin.slaveClass";
 
