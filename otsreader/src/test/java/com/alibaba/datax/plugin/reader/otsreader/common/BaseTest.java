@@ -11,6 +11,8 @@ import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.ColumnType;
 import com.aliyun.openservices.ots.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.model.PrimaryKeyValue;
+import com.aliyun.openservices.ots.model.ReservedThroughputChange;
+import com.aliyun.openservices.ots.model.UpdateTableRequest;
 
 public class BaseTest{
     private String tableName;
@@ -107,6 +109,17 @@ public class BaseTest{
         conf.setRangeSplit(rangeSplit);
         return conf;
     }
+    
+    public void updateCU(int readCU, int wirteCU) {
+        ReservedThroughputChange reservedThroughputChange = new ReservedThroughputChange();
+        reservedThroughputChange.setReadCapacityUnit(readCU);
+        reservedThroughputChange.setWriteCapacityUnit(wirteCU);
+        
+        UpdateTableRequest updateTableRequest = new UpdateTableRequest();
+        updateTableRequest.setTableName(tableName);
+        updateTableRequest.setReservedThroughputChange(reservedThroughputChange);
+        ots.updateTable(updateTableRequest);
+    }
 
     public String getTableName() {
         return tableName;
@@ -130,6 +143,10 @@ public class BaseTest{
 
     public void setOts(OTSClient ots) {
         this.ots = ots;
+    }
+    
+    public void close() {
+        this.ots.shutdown();
     }
 
 }
