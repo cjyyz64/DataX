@@ -281,6 +281,10 @@ public class Metric extends BaseObject implements Cloneable {
 				- this.writeFailedBytes.longValue();
 	}
 
+    public synchronized long getErrorRecords() {
+        return this.getReadFailedRecords() + this.getWriteFailedRecords();
+    }
+
 	public void incrReadSucceedRecords(long delta) {
 		this.readSucceedRecords.getAndAdd(delta);
 	}

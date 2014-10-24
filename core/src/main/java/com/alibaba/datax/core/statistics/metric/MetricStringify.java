@@ -11,13 +11,11 @@ public class MetricStringify {
 	private final static DecimalFormat df = new DecimalFormat("0.00");
 
 	public static String getTotalBytes(Metric statistics) {
-		return String.format("%d bytes", statistics.getReadFailedBytes()
-				+ statistics.getReadSucceedBytes());
+		return String.format("%d bytes", statistics.getTotalReadBytes());
 	}
 
 	public static String getTotalRecords(Metric statistics) {
-		return String.format("%d records", statistics.getReadFailedRecords()
-				+ statistics.getReadSucceedRecords());
+		return String.format("%d records", statistics.getTotalReadRecords());
 	}
 
 	public static String getSpeed(Metric now) {
@@ -26,8 +24,7 @@ public class MetricStringify {
 	}
 
 	public static String getErrorRecord(Metric metric) {
-		return String.format("%d records", metric.getReadFailedRecords()
-				+ metric.getWriteFailedRecords());
+		return String.format("%d records", metric.getErrorRecords());
 	}
 
 	public static String getSnapshot(Metric now) {

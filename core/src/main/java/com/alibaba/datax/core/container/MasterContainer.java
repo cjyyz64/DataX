@@ -318,8 +318,7 @@ public class MasterContainer extends AbstractContainer {
 				"Total transferred records",
 				String.valueOf(masterMetric.getTotalReadRecords()),
 				"Total error records",
-				String.valueOf(masterMetric.getTotalReadRecords()
-						- masterMetric.getWriteSucceedRecords())));
+				String.valueOf(masterMetric.getErrorRecords())));
 	}
 
 	/**

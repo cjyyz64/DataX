@@ -55,9 +55,7 @@ public class ErrorRecordLimit {
             return;
         }
 
-        long errorNumber = metric.getTotalReadRecords()
-                - metric.getWriteSucceedRecords();
-
+        long errorNumber = metric.getErrorRecords();
         if (recordLimit < errorNumber) {
             LOG.debug(String.format(
                     "Error-limit set to %d, error count check .",
@@ -79,7 +77,7 @@ public class ErrorRecordLimit {
                 "Error-limit set to %f, error percent check .", percentageLimit));
 
         long total = masterMetric.getTotalReadRecords();
-        long error = total - masterMetric.getWriteSucceedRecords();
+        long error = masterMetric.getErrorRecords();
 
         if (total > 0 && ((double) error / (double) total) > percentageLimit) {
             throw new DataXException(

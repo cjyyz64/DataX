@@ -12,13 +12,11 @@ import java.util.Map;
  */
 public class MetricJsonify {
 	private static Pair<String, Long> getTotalBytes(final Metric metric) {
-		return new Pair<String, Long>("totalBytes",
-				metric.getWriteSucceedBytes());
+		return new Pair<String, Long>("totalBytes", metric.getTotalReadBytes());
 	}
 
 	private static Pair<String, Long> getTotalRecords(final Metric metric) {
-		return new Pair<String, Long>("totalRecords",
-				metric.getWriteSucceedRecords());
+		return new Pair<String, Long>("totalRecords", metric.getTotalReadRecords());
 	}
 
 	private static Pair<String, Long> getSpeedByte(final Metric metric) {
@@ -30,8 +28,7 @@ public class MetricJsonify {
 	}
 
 	private static Pair<String, Long> getErrorRecords(final Metric metric) {
-		return new Pair<String, Long>("errorRecords",
-				metric.getTotalReadRecords() - metric.getWriteSucceedRecords());
+		return new Pair<String, Long>("errorRecords", metric.getErrorRecords());
 	}
 
 	private static Pair<String, Double> getStage(final Metric metric) {
