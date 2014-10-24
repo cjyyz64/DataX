@@ -30,7 +30,7 @@ public class LongColumn extends Column {
 			super.setByteSize(rawData.bitLength() / 8);
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"Data: " + data + " is not legal Long format .");
+					String.format("String[%s] cannot conver to Long .", data));
 		}
 	}
 
