@@ -39,6 +39,8 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 	private String formatDirty(final Record dirty, final Throwable t,
 			final String msg) {
 		Map<String, Object> msgGroup = new HashMap<String, Object>();
+
+		msgGroup.put("type", super.getPluginType().toString());
 		if (StringUtils.isNotBlank(msg)) {
 			msgGroup.put("message", msg);
 		}
