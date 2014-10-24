@@ -11,6 +11,7 @@ public class DoubleColumn extends Column {
 
 	public DoubleColumn(final String data) {
 		this(data, null == data ? 0 : data.length());
+		this.validate(data);
 	}
 
 	public DoubleColumn(double data) {
@@ -100,4 +101,17 @@ public class DoubleColumn extends Column {
 				"Double cannot cast to Bytes .");
 	}
 
+	private void validate(final String data) {
+		if (null == data) {
+			return;
+		}
+
+		try {
+			new BigDecimal(data);
+		} catch (Exception e) {
+			throw new DataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s] cannot convert to Double .", data));
+		}
+	}
 }

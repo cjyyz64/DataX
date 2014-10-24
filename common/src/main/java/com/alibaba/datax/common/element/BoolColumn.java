@@ -16,6 +16,14 @@ public class BoolColumn extends Column {
 		super(bool, Column.Type.BOOL, 1);
 	}
 
+	public BoolColumn(final String data) {
+		this();
+
+		this.validate(data);
+		super.setRawData(Boolean.valueOf(data));
+		return;
+	}
+
 	public BoolColumn() {
 		super(null, Column.Type.BOOL, 1);
 	}
@@ -86,4 +94,16 @@ public class BoolColumn extends Column {
 				"Boolean cannot cast to Bytes .");
 	}
 
+	private void validate(final String data) {
+		if (null == data) {
+			return;
+		}
+
+		if ("true".equalsIgnoreCase(data) || "false".equalsIgnoreCase(data)) {
+			return;
+		}
+
+		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+				String.format("String[%s] cannot convert to Bool .", data));
+	}
 }
