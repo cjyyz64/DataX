@@ -110,11 +110,11 @@ class XmlConverterTest(unittest.TestCase):
             self.assertIsNone(value)
 
     def test_parse_column(self):
-        # self.longMessage = True
+        self.longMessage = True
         self.assertEqual(XmlConverter.parse_column(''), ['*'])
         self.assertEqual(XmlConverter.parse_column('*'), ['*'])
         self.assertEqual(XmlConverter.parse_column(' * '), ['*'])
-        self.assertEqual(XmlConverter.parse_column('a,1,Null, null, NULL'), ['a', '1', None, None, None])
+        self.assertEqual(XmlConverter.parse_column('a,1,Null, null, NULL'), ['a', '1', 'Null', 'null', 'NULL'])
         for item in [['a', 'b', 'c'],
                      ['a', 'b()', 'c'],
                      ['"a"', 'b()', 'c'],
@@ -131,7 +131,7 @@ class XmlConverterTest(unittest.TestCase):
                 data = [i.strip() for i in json.loads(line)]
                 s = ','.join(data)
                 self.assertEqual(XmlConverter.parse_column(s),
-                                 [None if i.strip().lower() == 'null' else i for i in data],
+                                 data,
                                  msg='Not equal on line: %d' % (int(line_num) + 1))
 
 
