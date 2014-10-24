@@ -178,7 +178,7 @@ class XmlConverter:
             elif ch == ")":
                 bracket_count -= 1
 
-        return [None if i.strip().lower() == 'null' else i.strip() for i in column_array]
+        return [i.strip() for i in column_array]
 
     @staticmethod
     def parse_column(columns):
@@ -387,5 +387,4 @@ if __name__ == "__main__":
 
 
 # TODO 转换java option
-# TODO 列为NULL的时候给None
 # TODO concurrency以reader为准还是writer为准
