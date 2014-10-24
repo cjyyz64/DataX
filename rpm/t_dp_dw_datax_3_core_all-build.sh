@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH=/home/tops/bin/:${PATH}
 export temppath=$1
 cd $temppath/rpm
 sed -i  "s/^Release:.*$/Release: "$4"/" $2.spec
