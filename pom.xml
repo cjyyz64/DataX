@@ -46,6 +46,7 @@
         <module>odpswriter</module>
         <module>txtfilewriter</module>
         <module>streamwriter</module>
+        <module>otswriter</module>
 
         <!-- some support module -->
         <module>plugin-rdbms-util</module>

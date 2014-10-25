@@ -24,11 +24,11 @@ public class RetryHelper {
                 if (remainingRetryTimes > 0) {  
                     try {
                         Thread.sleep(sleepInMilliSecond);
+                        
+                        sleepInMilliSecond += sleepInMilliSecond;
                         if (sleepInMilliSecond >= 30000) {
                             sleepInMilliSecond = 30000;
-                        } else {
-                            sleepInMilliSecond += sleepInMilliSecond;
-                        }
+                        } 
                     } catch (InterruptedException ee) { 
                         LOG.warn(ee.getMessage());
                     }
@@ -62,14 +62,10 @@ public class RetryHelper {
         switch (e.getHttpStatus()) {
         case 503:
         case 500:
-            if (e.getErrorCode().equals(OTSErrorCode.SERVER_BUSY)) {
-                return remainingRetryTimes;
-            } else {
-                return --remainingRetryTimes;
-            }
+            return --remainingRetryTimes;
         case 404:
             if (e.getErrorCode().equals(OTSErrorCode.TABLE_NOT_READY)) {
-                return remainingRetryTimes;
+                return --remainingRetryTimes;
             } else {
                 throw e;
             }

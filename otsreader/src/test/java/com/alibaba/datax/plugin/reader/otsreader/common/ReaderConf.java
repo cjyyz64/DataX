@@ -65,9 +65,9 @@ public class ReaderConf {
         List<String> lines = new ArrayList<String>();
         for (PrimaryKeyValue col: columns) {
             if (col == PrimaryKeyValue.INF_MAX) {
-                lines.add("\t\t{\"type\":\"INF_MAX\", \"value\":\"\"}");
+                lines.add("\t\t{\"type\":\"INF_MAX\"}");
             } else if (col == PrimaryKeyValue.INF_MIN) {
-                lines.add("\t\t{\"type\":\"INF_MIN\", \"value\":\"\"}");
+                lines.add("\t\t{\"type\":\"INF_MIN\"}");
             } else {
                 if (col.getType() == PrimaryKeyType.INTEGER) {
                     lines.add(String.format("\t\t{\"type\":\"INT\", \"value\":\"%d\"}", col.asLong()));

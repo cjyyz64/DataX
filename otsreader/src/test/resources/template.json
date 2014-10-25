@@ -62,13 +62,7 @@
                                 {"type":"STRING", "value":"5"},
                                 {"type":"INF_MAX", "value":""}
                             ]
-                        },
-                        /* ----------- 选填 --------------*/
-                        // 出现异常时，可以重复的次数
-                        "maxRetryTime":12,
-                        
-                        // 每次重试的时候，Sleep的时间，单位为毫秒
-                        "retrySleepInMillionSecond":100
+                        }
                     }
                 },
                 "writer": {}
