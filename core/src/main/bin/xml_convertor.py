@@ -34,6 +34,7 @@ class XmlConverter:
         self.root = XmlTree.fromstring(job_string)
         self.reader = self.root.find("job/reader")
         self.writer = self.root.find("job/writer")
+        self.config = self.root.find("job/config")
         if self.reader is None or self.writer is None:
             raise Exception("reader or writer can not be none")
 
@@ -42,6 +43,7 @@ class XmlConverter:
         self.reader_dict = {"parameter": self.reader_parameter}
         self.writer_parameter = {}
         self.writer_dict = {"parameter": self.writer_parameter}
+        self.entry_dict = {}
 
     # 返回json字符串
     def parse_to_json(self):
@@ -51,6 +53,10 @@ class XmlConverter:
 
         if not self.parse_writer():
             print >>sys.stderr, "parse writer error"
+            return None
+
+        if not self.parse_entry():
+            print >>sys.stderr, "parse config error"
             return None
 
         job_json = {
@@ -63,7 +69,12 @@ class XmlConverter:
             ]
         }
 
-        return json.dumps({"job": job_json}, sort_keys=True, indent=4)
+        return json.dumps({
+                              "entry": self.entry_dict,
+                               "job": job_json
+                          },
+                          sort_keys=True,
+                          indent=4)
 
     def parse_reader(self):
         reader_plugin = self.reader.find("plugin").text
@@ -99,6 +110,12 @@ class XmlConverter:
         else:
             print >>sys.stderr, "unsupported writer plugin[%s]" % writer_plugin
             return False
+
+    def parse_entry(self):
+        jvm_opt = self.get_value_from_xml(self.config, 'core.jvm.option')
+        if jvm_opt:
+            self.entry_dict['jvm'] = jvm_opt
+        return True
 
     def set_run_speed(self):
         # 速度是原reader的concurrency * 1M
@@ -166,10 +183,12 @@ class XmlConverter:
         begin = 0
         for i, ch in enumerate(columns):
             if i == len(columns)-1:
-                column_array.append({"name": columns[begin:]} if is_map else columns[begin:])
+                col = columns[begin:].strip()
+                column_array.append({"name": col} if is_map else col)
             elif ch == ",":
                 if bracket_count == 0 and quote_count % 2 == 0:
-                    column_array.append({"name": columns[begin:i]} if is_map else columns[begin:i])
+                    col = columns[begin:i].strip()
+                    column_array.append({"name": col} if is_map else col)
                     begin = i+1
             elif ch == "'" or ch == "\"":
                 quote_count += 1
@@ -178,7 +197,7 @@ class XmlConverter:
             elif ch == ")":
                 bracket_count -= 1
 
-        return [i.strip() for i in column_array]
+        return column_array
 
     @staticmethod
     def parse_column(columns):
@@ -386,5 +405,4 @@ if __name__ == "__main__":
     print converter.parse_to_json()
 
 
-# TODO 转换java option
 # TODO concurrency以reader为准还是writer为准

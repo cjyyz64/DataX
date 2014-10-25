@@ -27,7 +27,7 @@ class XmlConverterTest(unittest.TestCase):
         with open('./case/no_writer.xml') as f:
             self.assertRaisesRegexp(Exception, 'reader or writer can not be none', XmlConverter, f.read())
 
-    def test_reader_dispatch(self):
+    def test_reader_writer_dispatch(self):
         with open('./case/empty.xml') as f:
             t = Template(f.read())
             for plugin in ['mysqlreader', 'sqlserverreader', 'odpsreader', 'streamreader']:
@@ -46,6 +46,12 @@ class XmlConverterTest(unittest.TestCase):
             c = XmlConverter(s)
             self.assertFalse(c.parse_reader())
             self.assertFalse(c.parse_writer())
+
+    def test_parse_entry(self):
+        with open('./case/ok.xml') as f:
+            c = XmlConverter(f.read())
+            res = c.parse_to_json()
+            self.assertEqual(json.loads(res)['entry']['jvm'], '-Xmx3G')
 
     def test_set_run_speed(self):
         with open('./case/ok.xml') as f:
