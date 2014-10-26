@@ -188,7 +188,7 @@ public class MasterContainer extends AbstractContainer {
 
 	private void adjustChannelNumber() {
 		boolean isByteLimit = (this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, -1) != -1);
+				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 0) > 0);
 		if (isByteLimit) {
 
 			long globalLimitedSpeed = this.configuration
@@ -211,7 +211,7 @@ public class MasterContainer extends AbstractContainer {
 		}
 
 		boolean isChannelLimit = (this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, -1) != -1);
+				CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, 0) > 0);
 		if (isChannelLimit) {
 			this.needChannelNumber = this.configuration
 					.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);
