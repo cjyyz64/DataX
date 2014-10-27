@@ -282,10 +282,14 @@ public class MasterContainer extends AbstractContainer {
 	}
 
 	private void destroy() {
-		if (this.writerMaster != null)
+		if (this.writerMaster != null) {
 			this.writerMaster.destroy();
-		if (this.readerMaster != null)
+			this.writerMaster = null;
+		}
+		if (this.readerMaster != null) {
 			this.readerMaster.destroy();
+			this.readerMaster = null;
+		}
 	}
 
 	private void logStatistics() {
