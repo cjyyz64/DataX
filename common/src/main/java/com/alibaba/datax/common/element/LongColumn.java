@@ -65,11 +65,26 @@ public class LongColumn extends Column {
 
 	@Override
 	public Long asLong() {
+		BigInteger rawData = (BigInteger) this.getRawData();
+		if (null == rawData) {
+			return null;
+		}
+
+		OverFlowUtil.validateLongNotOverFlow(rawData);
+
+		return rawData.longValue();
+	}
+
+	@Override
+	public Double asDouble() {
 		if (null == this.getRawData()) {
 			return null;
 		}
 
-		return this.asBigInteger().longValue();
+		BigDecimal decimal = this.asBigDecimal();
+		OverFlowUtil.validateDoubleNotOverFlow(decimal);
+
+		return decimal.doubleValue();
 	}
 
 	@Override
@@ -77,7 +92,9 @@ public class LongColumn extends Column {
 		if (null == this.getRawData()) {
 			return null;
 		}
-		return this.asLong() != 0 ? true : false;
+
+		return this.asBigInteger().compareTo(BigInteger.ZERO) != 0 ? true
+				: false;
 	}
 
 	@Override
@@ -87,15 +104,6 @@ public class LongColumn extends Column {
 		}
 
 		return new BigDecimal(this.asBigInteger());
-	}
-
-	@Override
-	public Double asDouble() {
-		if (null == this.getRawData()) {
-			return null;
-		}
-
-		return this.asBigDecimal().doubleValue();
 	}
 
 	@Override

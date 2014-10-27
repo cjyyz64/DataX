@@ -53,7 +53,9 @@ public class StringColumn extends Column {
 		}
 
 		try {
-			return this.asBigInteger().longValue();
+			BigInteger integer = this.asBigInteger();
+			OverFlowUtil.validateLongNotOverFlow(integer);
+			return integer.longValue();
 		} catch (Exception e) {
 			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to Long failed",
@@ -77,6 +79,18 @@ public class StringColumn extends Column {
 	}
 
 	@Override
+	public Double asDouble() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		BigDecimal decimal = this.asBigDecimal();
+		OverFlowUtil.validateDoubleNotOverFlow(decimal);
+
+		return decimal.doubleValue();
+	}
+
+	@Override
 	public Boolean asBoolean() {
 		if (null == this.getRawData()) {
 			return null;
@@ -93,15 +107,6 @@ public class StringColumn extends Column {
 		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				String.format("String[%s] convert to Boolean failed .",
 						this.asString()));
-	}
-
-	@Override
-	public Double asDouble() {
-		if (null == this.getRawData()) {
-			return null;
-		}
-
-		return this.asBigDecimal().doubleValue();
 	}
 
 	@Override

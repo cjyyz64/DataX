@@ -104,19 +104,15 @@ public class MasterContainer extends AbstractContainer {
 			LOG.info("DataX masterId [{}] completed successfully.",
 					this.masterId);
 		} catch (Throwable e) {
-            if(e instanceof OutOfMemoryError) {
-                try {
-                    Thread.sleep(30000);
-                } catch (InterruptedException unused) {
-                    Thread.currentThread().interrupt();
-                }
-                System.gc();
-            }
+			if (e instanceof OutOfMemoryError) {
+				this.destroy();
+				System.gc();
+			}
 
-            Metric masterMetric = super.getContainerCollector().collect();
-            masterMetric.setStatus(Status.FAIL);
-            masterMetric.setError(e);
-            super.getContainerCollector().report(masterMetric);
+			Metric masterMetric = super.getContainerCollector().collect();
+			masterMetric.setStatus(Status.FAIL);
+			masterMetric.setError(e);
+			super.getContainerCollector().report(masterMetric);
 
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR, e);
@@ -324,8 +320,7 @@ public class MasterContainer extends AbstractContainer {
 				"Average line speed",
 				String.valueOf(masterMetric.getReadSucceedRecords()
 						/ transferCosts)
-						+ "rec/s",
-				"Total transferred records",
+						+ "rec/s", "Total transferred records",
 				String.valueOf(masterMetric.getTotalReadRecords()),
 				"Total error records",
 				String.valueOf(masterMetric.getErrorRecords())));

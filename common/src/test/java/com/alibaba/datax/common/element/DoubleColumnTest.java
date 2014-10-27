@@ -1,6 +1,7 @@
 package com.alibaba.datax.common.element;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -153,6 +154,48 @@ public class DoubleColumnTest {
 			Assert.assertTrue(column.asBytes() == null);
 			Assert.assertTrue(false);
 		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+	}
+
+	@Test
+	public void test_overflow() {
+		DoubleColumn column = new DoubleColumn(new BigDecimal("1E-1000"));
+
+		System.out.println(column.asString());
+
+		Assert.assertTrue(column.asBigDecimal().equals(
+				new BigDecimal("1E-1000")));
+
+		Assert.assertTrue(column.asBigInteger().compareTo(BigInteger.ZERO) == 0);
+		Assert.assertTrue(column.asLong().equals(0L));
+
+		try {
+			column.asDouble();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+
+		column = new DoubleColumn(new BigDecimal("1E1000"));
+		Assert.assertTrue(column.asBigDecimal().compareTo(
+				new BigDecimal("1E1000")) == 0);
+		Assert.assertTrue(column.asBigInteger().compareTo(
+				new BigDecimal("1E1000").toBigInteger()) == 0);
+		try {
+			column.asDouble();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+		
+		try {
+			column.asLong();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
 	}

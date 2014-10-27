@@ -7,8 +7,9 @@ import com.alibaba.datax.common.spi.ErrorCode;
  */
 public enum CommonErrorCode implements ErrorCode {
 
-	CONVERT_NOT_SUPPORT("Common-00", "Element convert failed ."), CONFIG_ERROR(
-			"Common-01", "Configuration error."), RETRY_FAIL("Common-02",
+	CONFIG_ERROR("Common-00", "Configuration error."), CONVERT_NOT_SUPPORT(
+			"Common-01", "Element convert failed ."), CONVERT_OVER_FLOW(
+			"Common-02", "Element convert overflow ."), RETRY_FAIL("Common-10",
 			"Retry to execute some method failed."), ;
 
 	private final String code;
