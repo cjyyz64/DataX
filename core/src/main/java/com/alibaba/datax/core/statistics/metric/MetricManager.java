@@ -53,6 +53,7 @@ public final class MetricManager {
 
 	public static synchronized Metric getMasterMetric() {
 		Metric masterMetric = new Metric();
+        masterMetric.setStatus(Status.SUCCESS);
 
 		for (long slaveId : SLAVE_METRICS.keySet()) {
 			masterMetric.mergeFrom(SLAVE_METRICS.get(slaveId));
@@ -68,6 +69,7 @@ public final class MetricManager {
 
 	public static synchronized Metric getSlaveMetricBySlaveId(long slaveId) {
 		Metric slaveMetric = new Metric();
+        slaveMetric.setStatus(Status.SUCCESS);
 
 		Map<Long, Metric> slaveStatics = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveStatics) {

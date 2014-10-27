@@ -110,9 +110,7 @@ public class SlaveContainer extends AbstractContainer {
 			while (true) {
 				List<AbstractRunner> runnerList = RunnerManager
 						.getRunners(this.slaveId);
-
 				if (null != runnerList) {
-
 					for (AbstractRunner runner : runnerList) {
 						if (runner.getRunnerStatus().isFail()) {
 							Metric nowMetric = super.getContainerCollector()
