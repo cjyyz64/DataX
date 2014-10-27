@@ -12,7 +12,7 @@ public class Key {
 
 	public static final String FIELD_DELIMITER = "fieldDelimiter";
 
-	// public static final String LINE_DELIMITER = "lineDelimiter";
+	public static final String SKIP_HEADER = "skipHeader";
 
 	public static final String TYPE = "type";
 

@@ -1,11 +1,9 @@
 package com.alibaba.datax.core.container.runner;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.Status;
 
 /**
@@ -27,8 +25,10 @@ public abstract class AbstractRunner {
 	}
 
 	public void destroy() {
-		this.plugin.destroy();
-		this.plugin = null;
+		if (this.plugin != null) {
+			this.plugin.destroy();
+			this.plugin = null;
+		}
 	}
 
 	public AbstractSlavePlugin getPlugin() {
@@ -70,8 +70,8 @@ public abstract class AbstractRunner {
 		MetricManager.getChannelMetric(this.getSlaveId(), this.getChannelId())
 				.setError(throwable);
 
-		throw DataXException.asDataXException(
-				FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
+		// throw DataXException.asDataXException(
+		// FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
 	}
 
 	public RunnerStatus getRunnerStatus() {

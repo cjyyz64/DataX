@@ -54,7 +54,22 @@ public class DoubleColumn extends Column {
 			return null;
 		}
 
-		return this.asBigDecimal().doubleValue();
+		BigDecimal result = this.asBigDecimal();
+		OverFlowUtil.validateDoubleNotOverFlow(result);
+
+		return result.doubleValue();
+	}
+
+	@Override
+	public Long asLong() {
+		if (null == this.getRawData()) {
+			return null;
+		}
+
+		BigDecimal result = this.asBigDecimal();
+		OverFlowUtil.validateLongNotOverFlow(result.toBigInteger());
+
+		return result.longValue();
 	}
 
 	@Override
@@ -64,15 +79,6 @@ public class DoubleColumn extends Column {
 		}
 
 		return this.asBigDecimal().toBigInteger();
-	}
-
-	@Override
-	public Long asLong() {
-		if (null == this.getRawData()) {
-			return null;
-		}
-
-		return this.asBigInteger().longValue();
 	}
 
 	@Override
@@ -113,4 +119,5 @@ public class DoubleColumn extends Column {
 					String.format("String[%s] cannot convert to Double .", data));
 		}
 	}
+
 }

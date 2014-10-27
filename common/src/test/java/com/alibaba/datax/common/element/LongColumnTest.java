@@ -175,4 +175,44 @@ public class LongColumnTest {
 			Assert.assertTrue(true);
 		}
 	}
+
+	@Test
+	public void test_overflow() {
+		LongColumn column = new LongColumn(String.valueOf(Long.MAX_VALUE)
+				+ "000");
+
+		Assert.assertTrue(column.asBoolean().equals(true));
+		Assert.assertTrue(column.asBigDecimal().equals(
+				new BigDecimal(String.valueOf(Long.MAX_VALUE) + "000")));
+		Assert.assertTrue(column.asString().equals(
+				String.valueOf(Long.MAX_VALUE) + "000"));
+		Assert.assertTrue(column.asBigInteger().equals(
+				new BigInteger(String.valueOf(Long.MAX_VALUE) + "000")));
+
+		try {
+			column.asLong();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+
+		column = new LongColumn(String.valueOf(Long.MIN_VALUE) + "000");
+
+		Assert.assertTrue(column.asBoolean().equals(true));
+		Assert.assertTrue(column.asBigDecimal().equals(
+				new BigDecimal(String.valueOf(Long.MIN_VALUE) + "000")));
+		Assert.assertTrue(column.asString().equals(
+				String.valueOf(Long.MIN_VALUE) + "000"));
+		Assert.assertTrue(column.asBigInteger().equals(
+				new BigInteger(String.valueOf(Long.MIN_VALUE) + "000")));
+
+		try {
+			column.asLong();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+	}
 }

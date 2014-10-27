@@ -12,5 +12,7 @@ public class Constants {
 
 	public static final int MAX_FILE_READ = 1000000;
 
+	public static final boolean DEFAULT_SKIP_HEADER = false;
+
 	// public static final String DEFAULT_LINE_DELIMITER = "\n";
 }

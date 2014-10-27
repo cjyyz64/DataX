@@ -30,7 +30,7 @@
             <param key="database" value="0"/>
         </writer>
         <config>
-            <param key="core.jvm.option" value=""/>
+            <param key="core.jvm.option" value="-Xmx3G"/>
         </config>
     </job>
 </jobs>

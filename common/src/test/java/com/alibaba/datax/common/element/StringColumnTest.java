@@ -2,10 +2,13 @@ package com.alibaba.datax.common.element;
 
 import com.alibaba.datax.common.base.BaseTest;
 import com.alibaba.datax.common.exception.DataXException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class StringColumnTest extends BaseTest {
 
@@ -104,6 +107,69 @@ public class StringColumnTest extends BaseTest {
 		Assert.assertTrue(string.asDouble() == null);
 		Assert.assertTrue(string.asDate() == null);
 		Assert.assertTrue(string.asBytes() == null);
+	}
 
+	@Test
+	public void test_overflow() {
+		StringColumn column = new StringColumn(
+				new BigDecimal("1E-1000").toPlainString());
+
+		System.out.println(column.asString());
+
+		Assert.assertTrue(column.asBigDecimal().equals(
+				new BigDecimal("1E-1000")));
+
+		Assert.assertTrue(column.asBigInteger().compareTo(BigInteger.ZERO) == 0);
+		Assert.assertTrue(column.asLong().equals(0L));
+
+		try {
+			column.asDouble();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+
+		column = new StringColumn(new BigDecimal("1E1000").toPlainString());
+		Assert.assertTrue(column.asBigDecimal().compareTo(
+				new BigDecimal("1E1000")) == 0);
+		Assert.assertTrue(column.asBigInteger().compareTo(
+				new BigDecimal("1E1000").toBigInteger()) == 0);
+		try {
+			column.asDouble();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+		
+		try {
+			column.asLong();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+		
+		column = new StringColumn(new BigDecimal("-1E1000").toPlainString());
+		Assert.assertTrue(column.asBigDecimal().compareTo(
+				new BigDecimal("-1E1000")) == 0);
+		Assert.assertTrue(column.asBigInteger().compareTo(
+				new BigDecimal("-1E1000").toBigInteger()) == 0);
+		try {
+			column.asDouble();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
+		
+		try {
+			column.asLong();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			e.printStackTrace();
+			Assert.assertTrue(true);
+		}
 	}
 }

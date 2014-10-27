@@ -1,0 +1,113 @@
+package com.alibaba.datax.plugin.writer.otswriter.adaptor;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
+import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
+import com.aliyun.openservices.ots.model.PrimaryKeyType;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
+public class OTSConfAdaptor implements JsonDeserializer<OTSConf>, JsonSerializer<OTSConf>{
+    private final static String ENDPOINT = "endpoint";
+    private final static String ACCESS_ID = "accessId";
+    private final static String ACCESS_KEY = "accessKey";
+    private final static String INSTANCE_NAME = "instanceName";
+    private final static String TABLE_NAME = "table";
+    private final static String PRIMARY_KEY = "primaryKey";
+    private final static String ATTRIBUTE = "column";
+    private final static String OPERATION = "operation";
+    
+    @Override
+    public JsonElement serialize(OTSConf src, Type typeOfSrc,
+            JsonSerializationContext context) {
+        JsonObject json = new JsonObject();
+        json.add(ENDPOINT, new JsonPrimitive(src.getEndpoint()));
+        json.add(ACCESS_ID, new JsonPrimitive(src.getAccessId()));
+        json.add(ACCESS_KEY, new JsonPrimitive(src.getAccessKey()));
+        json.add(INSTANCE_NAME, new JsonPrimitive(src.getInstanceName()));
+        json.add(TABLE_NAME, new JsonPrimitive(src.getTableName()));
+        
+        JsonArray jsonPrimaryKeyArray = new JsonArray();
+        for (OTSPKColumn column : src.getPrimaryKeyColumn()) {
+            jsonPrimaryKeyArray.add(context.serialize(column));
+        }
+        json.add(PRIMARY_KEY, jsonPrimaryKeyArray);
+        
+        JsonArray jsonAttributeArray = new JsonArray();
+        for (OTSAttrColumn column : src.getAttributeColumn()) {
+            jsonAttributeArray.add(context.serialize(column));
+        }
+        json.add(ATTRIBUTE, jsonAttributeArray);
+        
+        json.add(OPERATION, new JsonPrimitive(src.getOperation() == OTSOpType.PUT_ROW ? OTSConst.OTS_OP_TYPE_PUT : OTSConst.OTS_OP_TYPE_UPDATE));
+        return json;
+    }
+
+    @Override
+    public OTSConf deserialize(JsonElement json, Type typeOfT,
+            JsonDeserializationContext context) throws JsonParseException {
+        JsonObject obj = json.getAsJsonObject();
+        OTSConf conf = new OTSConf();
+        conf.setEndpoint(obj.getAsJsonPrimitive(ENDPOINT).getAsString());
+        conf.setAccessId(obj.getAsJsonPrimitive(ACCESS_ID).getAsString());
+        conf.setAccessKey(obj.getAsJsonPrimitive(ACCESS_KEY).getAsString());
+        conf.setInstanceName(obj.getAsJsonPrimitive(INSTANCE_NAME).getAsString());
+        conf.setTableName(obj.getAsJsonPrimitive(TABLE_NAME).getAsString());
+        
+        JsonArray primaryKey = obj.getAsJsonArray(PRIMARY_KEY);
+        List<OTSPKColumn> primaryKeyColumn = new ArrayList<OTSPKColumn>();
+        for (Iterator<JsonElement> iter = primaryKey.iterator(); iter.hasNext();) {
+            OTSPKColumn pk = (OTSPKColumn) context.deserialize(iter.next(), OTSPKColumn.class);
+            primaryKeyColumn.add(pk);
+        }
+        conf.setPrimaryKeyColumn(primaryKeyColumn);
+        
+        JsonArray attribute = obj.getAsJsonArray(ATTRIBUTE);
+        List<OTSAttrColumn> attributeColumn = new ArrayList<OTSAttrColumn>();
+        for (Iterator<JsonElement> iter = attribute.iterator(); iter.hasNext();) {
+            OTSAttrColumn attr = (OTSAttrColumn) context.deserialize(iter.next(), OTSAttrColumn.class);
+            attributeColumn.add(attr);
+        }
+        conf.setAttributeColumn(attributeColumn);
+        String op = obj.getAsJsonPrimitive(OPERATION).getAsString();
+        if (op.equalsIgnoreCase(OTSConst.OTS_OP_TYPE_PUT)) {
+            conf.setOperation(OTSOpType.PUT_ROW);
+        } else {
+            conf.setOperation(OTSOpType.UPDATE_ROW);
+        }
+        return conf;
+    }
+    
+    public static void main(String [] args) {
+        OTSConf conf = new OTSConf();
+        conf.setEndpoint("www.hello.com");
+        conf.setAccessId("xxxxxxxxxxxxxxx");
+        List<OTSPKColumn> pk = new ArrayList<OTSPKColumn>();
+        pk.add(new OTSPKColumn("userid", PrimaryKeyType.STRING));
+        pk.add(new OTSPKColumn("groupid", PrimaryKeyType.INTEGER));
+        conf.setPrimaryKeyColumn(pk);
+        
+        String json = GsonParser.confToJson(conf);
+        System.out.println(json);
+        
+        OTSConf newConf = GsonParser.jsonToConf(json);
+        System.out.println(newConf.getEndpoint());
+        System.out.println(newConf.getPrimaryKeyColumn().get(0).getName());
+        System.out.println(newConf.getPrimaryKeyColumn().get(0).getType());
+    }
+}

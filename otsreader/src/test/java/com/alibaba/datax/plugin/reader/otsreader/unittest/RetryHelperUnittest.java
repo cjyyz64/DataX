@@ -14,18 +14,18 @@ public class RetryHelperUnittest {
     @Test
     public void testGetRetryTimesOTSException() {
         OTSException e = null;
-        // 无限重试
+        // 有限重试
         {
             try {
                 int remainingRetryTimes = 10;
                 e = new OTSException("", null, OTSErrorCode.SERVER_BUSY, "", 503);
-                assertEquals(10, RetryHelper.getRetryTimes(e, remainingRetryTimes));
+                assertEquals(9, RetryHelper.getRetryTimes(e, remainingRetryTimes));
 
                 e = new OTSException("", null, OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "", 403);
                 assertEquals(9, RetryHelper.getRetryTimes(e, remainingRetryTimes));
 
                 e = new OTSException("", null, OTSErrorCode.TABLE_NOT_READY, "", 404);
-                assertEquals(10, RetryHelper.getRetryTimes(e, remainingRetryTimes));
+                assertEquals(9, RetryHelper.getRetryTimes(e, remainingRetryTimes));
             } catch (Exception ee) {
                 assertTrue(false);
             }

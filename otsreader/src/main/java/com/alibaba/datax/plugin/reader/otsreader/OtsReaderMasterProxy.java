@@ -112,6 +112,10 @@ public class OtsReaderMasterProxy {
             LOG.info("End defaultRangeSplit");
         }
 
+        // 解决大量的Split Point序列化消耗内存的问题
+        // 因为slave中不会使用这个配置，所以置为空
+        this.conf.setRangeSplit(null);
+        
         for (OTSRange item : ranges) {
             Configuration configuration = Configuration.newDefault();
             configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(this.conf));

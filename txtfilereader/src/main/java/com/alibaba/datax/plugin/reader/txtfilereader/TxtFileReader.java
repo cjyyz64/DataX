@@ -20,6 +20,7 @@ import com.alibaba.datax.common.spi.Reader;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +44,10 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void init() {
-			LOG.info("init() begin...");
+			LOG.debug("init() begin...");
 			this.readerOriginConfig = this.getPluginJobConf();
 			this.validate();
-			LOG.info("init() ok and end...");
+			LOG.debug("init() ok and end...");
 		}
 
 		// TODO 文件 权限
@@ -72,7 +73,7 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void prepare() {
-			LOG.info("prepare()");
+			LOG.debug("prepare()");
 			// warn:make sure this regex string
 			String regexString = this.path.replace("*", ".*")
 					.replace("?", ".?");
@@ -82,18 +83,18 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void post() {
-			LOG.info("post()");
+			LOG.debug("post()");
 		}
 
 		@Override
 		public void destroy() {
-			LOG.info("destroy()");
+			LOG.debug("destroy()");
 		}
 
 		// TODO 如果源目录为空，这时候出错
 		@Override
 		public List<Configuration> split(int adviceNumber) {
-			LOG.info("split() begin...");
+			LOG.debug("split() begin...");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
@@ -103,7 +104,7 @@ public class TxtFileReader extends Reader {
 				splitedConfig.set(Constants.SOURCE_FILES, files);
 				readerSplitConfigs.add(splitedConfig);
 			}
-			LOG.info("split() ok and end...");
+			LOG.debug("split() ok and end...");
 			return readerSplitConfigs;
 		}
 
@@ -241,21 +242,25 @@ public class TxtFileReader extends Reader {
 
 		private String fieldDelimiter;
 
+		private boolean skipHeader;
+
 		private List<String> sourceFiles;
 
 		@Override
 		public void init() {
-			LOG.info("init()");
+			LOG.debug("init()");
 
 			this.readerSliceConfig = this.getPluginJobConf();
 
 			this.column = this.readerSliceConfig
 					.getListConfiguration(Key.COLUMN);
 
-			charset = this.readerSliceConfig.getString(Key.CHARSET,
+			this.charset = this.readerSliceConfig.getString(Key.CHARSET,
 					Constants.DEFAULT_CHARSET);
-			fieldDelimiter = this.readerSliceConfig.getString(
+			this.fieldDelimiter = this.readerSliceConfig.getString(
 					Key.FIELD_DELIMITER, Constants.DEFAULT_FIELD_DELIMITER);
+			this.skipHeader = this.readerSliceConfig.getBool(Key.SKIP_HEADER,
+					Constants.DEFAULT_SKIP_HEADER);
 			this.sourceFiles = this.readerSliceConfig.getList(
 					Constants.SOURCE_FILES, String.class);
 
@@ -263,24 +268,24 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void prepare() {
-			LOG.info("prepare()");
+			LOG.debug("prepare()");
 		}
 
 		@Override
 		public void post() {
-			LOG.info("post()");
+			LOG.debug("post()");
 		}
 
 		@Override
 		public void destroy() {
-			LOG.info("destroy()");
+			LOG.debug("destroy()");
 		}
 
 		// TODO sock 文件无法read
 		// TODO check print exception stack
 		@Override
 		public void startRead(RecordSender recordSender) {
-			LOG.info("start startRead()");
+			LOG.debug("start startRead()");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
 
@@ -293,7 +298,7 @@ public class TxtFileReader extends Reader {
 							fileName));
 				}
 			}
-			LOG.info("end startRead()");
+			LOG.debug("end startRead()");
 		}
 
 		// TODO readLine lineDelimiter 字符 or 字符串
@@ -302,9 +307,21 @@ public class TxtFileReader extends Reader {
 			try {
 				reader = new BufferedReader(new InputStreamReader(
 						new FileInputStream(fileName), this.charset));
+
+				boolean isHeader = true;
+
 				String fetchLine = null;
 				while ((fetchLine = reader.readLine()) != null) {
-					String[] sourceLine = fetchLine.split(this.fieldDelimiter);
+
+					if (isHeader) {
+						isHeader = false;
+						if (this.skipHeader) {
+							continue;
+						}
+					}
+
+					String[] sourceLine = StringUtils.split(fetchLine,
+							this.fieldDelimiter);
 					// 未配置column 全为String
 					if (null == this.column || 0 == this.column.size()) {
 						this.generateAndSendStringRecord(recordSender,
