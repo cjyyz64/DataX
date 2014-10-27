@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 已修改为：每个 slave 各自创建自己的 upload,拥有自己的 uploadId，并在 slave 中完成对对应 block 的提交。
@@ -242,7 +243,8 @@ public class OdpsWriter extends Writer {
         public void startWrite(RecordReceiver recordReceiver) {
             blocks = new ArrayList<Long>();
 
-            long blockId = 0;
+            AtomicLong blockId = new AtomicLong(0);
+
             List<Integer> columnPositions = this.sliceConfig.getList(Constant.COLUMN_POSITION,
                     Integer.class);
 

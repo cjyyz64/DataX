@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class OdpsWriterProxy {
     private static final Logger LOG = LoggerFactory
@@ -35,7 +36,7 @@ public class OdpsWriterProxy {
 
     private ProtobufRecordWriter protobufRecordWriter = null;
 
-    private long blockId;
+    private AtomicLong blockId;
 
     private List<Integer> columnPositions;
 
@@ -43,7 +44,7 @@ public class OdpsWriterProxy {
 
     private boolean emptyAsNull;
 
-    public OdpsWriterProxy(Upload slaveUpload, long blockId, List<Integer> columnPositions,
+    public OdpsWriterProxy(Upload slaveUpload, AtomicLong blockId, List<Integer> columnPositions,
                            SlavePluginCollector slavePluginCollector, boolean emptyAsNull) throws IOException {
         this.slaveUpload = slaveUpload;
         this.schema = this.slaveUpload.getSchema();
@@ -74,15 +75,15 @@ public class OdpsWriterProxy {
         if (byteArrayOutputStream.size() >= max_buffer_length) {
             protobufRecordWriter.close();
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    this.byteArrayOutputStream, blockId);
-            LOG.info("write block {} ok.", blockId);
+                    this.byteArrayOutputStream, blockId.get());
+            LOG.info("write block {} ok.", blockId.get());
 
-            blocks.add(blockId);
+            blocks.add(blockId.get());
             byteArrayOutputStream.reset();
             protobufRecordWriter = new ProtobufRecordWriter(schema,
                     byteArrayOutputStream);
 
-            blockId += 1;
+            this.blockId.incrementAndGet();
         }
     }
 
@@ -91,10 +92,10 @@ public class OdpsWriterProxy {
         protobufRecordWriter.close();
         if (byteArrayOutputStream.size() != 0) {
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    this.byteArrayOutputStream, blockId);
-            LOG.info("write block {} ok.", blockId);
+                    this.byteArrayOutputStream, blockId.get());
+            LOG.info("write block {} ok.", blockId.get());
 
-            blocks.add(blockId);
+            blocks.add(blockId.get());
             // reset the buffer for next block
             byteArrayOutputStream.reset();
         }
