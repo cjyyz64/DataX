@@ -18,6 +18,7 @@ import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.Status;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,16 +103,21 @@ public class MasterContainer extends AbstractContainer {
 
 			LOG.info("DataX masterId [{}] completed successfully.",
 					this.masterId);
-		} catch (OutOfMemoryError oomException) {
-			try {
-				Thread.sleep(30000);
-			} catch (InterruptedException unused) {
-				Thread.currentThread().interrupt();
-			}
-			System.gc();
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-					"DataX caught OutOfMemoryError excaption", oomException);
 		} catch (Throwable e) {
+            if(e instanceof OutOfMemoryError) {
+                try {
+                    Thread.sleep(30000);
+                } catch (InterruptedException unused) {
+                    Thread.currentThread().interrupt();
+                }
+                System.gc();
+            }
+
+            Metric masterMetric = super.getContainerCollector().collect();
+            masterMetric.setStatus(Status.FAIL);
+            masterMetric.setError(e);
+            super.getContainerCollector().report(masterMetric);
+
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR, e);
 		} finally {
@@ -188,7 +194,7 @@ public class MasterContainer extends AbstractContainer {
 
 	private void adjustChannelNumber() {
 		boolean isByteLimit = (this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, -1) != -1);
+				CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 0) > 0);
 		if (isByteLimit) {
 
 			long globalLimitedSpeed = this.configuration
@@ -211,7 +217,7 @@ public class MasterContainer extends AbstractContainer {
 		}
 
 		boolean isChannelLimit = (this.configuration.getInt(
-				CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, -1) != -1);
+				CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, 0) > 0);
 		if (isChannelLimit) {
 			this.needChannelNumber = this.configuration
 					.getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);

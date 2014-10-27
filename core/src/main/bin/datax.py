@@ -260,9 +260,11 @@ def process_entry(json_path, run_context):
         run_context["jvm"] = DEFAULT_JVM
 
     # JAVA_HOME处理，没有指定
-    if "JAVA_HOME" not in entry_json["environment"].keys():
+    if not entry_json.has_key("environment") or "JAVA_HOME" not in entry_json["environment"].keys():
         default_java_home =  get_default_java_home()
         run_context["JAVA_HOME"] = default_java_home
+        if not entry_json.has_key("environment"):
+            entry_json["environment"] = {}
         entry_json["environment"]["JAVA_HOME"] = default_java_home
     else:
         java_home = entry_json["environment"]["JAVA_HOME"]

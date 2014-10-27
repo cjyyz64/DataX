@@ -354,6 +354,13 @@ public class Metric extends BaseObject implements Cloneable {
 
 		this.stage += metric.getStage();
 
+        // merge status
+        if(this.getStatus()==Status.FAIL || metric.getStatus()==Status.FAIL) {
+            this.setStatus(Status.FAIL);
+        } else if (this.getStatus()==Status.RUN || metric.getStatus()==Status.RUN) {
+            this.setStatus(Status.RUN);
+        }
+
 		this.throwable = (this.throwable != null ? this.throwable : metric
 				.getError());
 

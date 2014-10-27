@@ -3,6 +3,7 @@ package com.alibaba.datax.core.container;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.datax.core.util.*;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,10 +22,6 @@ import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
-import com.alibaba.datax.core.util.ClassUtil;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.Status;
 import com.alibaba.fastjson.JSON;
 
 /**
@@ -120,13 +117,18 @@ public class SlaveContainer extends AbstractContainer {
 						if (runner.getRunnerStatus().isFail()) {
 							Metric nowMetric = super.getContainerCollector()
 									.collect();
-							nowMetric.setError(nowMetric.getError());
+                            Throwable throwable = nowMetric.getError();
+                            if(throwable instanceof OutOfMemoryError) {
+                                // 释放plugin空间，且可以将OOM状态汇报上去
+                                runner.destroy();
+                            }
+							nowMetric.setError(throwable);
 							nowMetric.setStatus(Status.FAIL);
 							super.getContainerCollector().report(nowMetric);
 
 							throw DataXException.asDataXException(
 									FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-									nowMetric.getError());
+                                    throwable);
 						}
 					}
 				}

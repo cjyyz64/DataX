@@ -27,8 +27,10 @@ public abstract class AbstractRunner {
 	}
 
 	public void destroy() {
-		this.plugin.destroy();
-		this.plugin = null;
+        if(this.plugin != null) {
+            this.plugin.destroy();
+            this.plugin = null;
+        }
 	}
 
 	public AbstractSlavePlugin getPlugin() {
@@ -70,8 +72,8 @@ public abstract class AbstractRunner {
 		MetricManager.getChannelMetric(this.getSlaveId(), this.getChannelId())
 				.setError(throwable);
 
-		throw DataXException.asDataXException(
-				FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
+//		throw DataXException.asDataXException(
+//				FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
 	}
 
 	public RunnerStatus getRunnerStatus() {
