@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 已修改为：每个 slave 各自创建自己的 upload,拥有自己的 uploadId，并在 slave 中完成对对应 block 的提交。
+ */
 public class OdpsWriter extends Writer {
 
     public static class Master extends Writer.Master {
@@ -130,13 +133,13 @@ public class OdpsWriter extends Writer {
         public List<Configuration> split(int mandatoryNumber) {
             List<Configuration> configurations = new ArrayList<Configuration>();
 
-            // init dataTunnel config
+            // 此处获取到 masterUpload 只是为了拿到 RecordSchema,以完成对 column 的处理
             DataTunnel dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
 
             this.masterUpload = OdpsUtil.createMasterTunnelUpload(
                     dataTunnel, this.project, this.table, this.partition);
             this.uploadId = this.masterUpload.getUploadId();
-            LOG.info("uploadId:[{}].", this.uploadId);
+            LOG.info("Master uploadId:[{}].", this.uploadId);
 
             RecordSchema schema = this.masterUpload.getSchema();
             List<String> allColumns = OdpsUtil.getAllColumns(schema);
@@ -147,16 +150,14 @@ public class OdpsWriter extends Writer {
             for (int i = 0; i < mandatoryNumber; i++) {
                 Configuration tempConfig = this.originalConfig.clone();
 
-                tempConfig.set(Constant.UPLOAD_ID, this.uploadId);
-                tempConfig.set(Constant.BLOCK_ID, String.valueOf(i));
-                tempConfig.set(Constant.INTERVAL_STEP, mandatoryNumber);
-
                 configurations.add(tempConfig);
             }
 
             if (IS_DEBUG) {
                 LOG.debug("After master split, the job config now is:[\n{}\n].", this.originalConfig);
             }
+
+            this.masterUpload = null;
 
             return configurations;
         }
@@ -180,19 +181,6 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            List<Long> blocks = new ArrayList<Long>();
-            List<String> salveWroteBlockIds = super.getMasterPluginCollector()
-                    .getMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE);
-
-            for (String context : salveWroteBlockIds) {
-                String[] blockIdStrs = context.split(",");
-                for (int i = 0, len = blockIdStrs.length; i < len; i++) {
-                    blocks.add(Long.parseLong(blockIdStrs[i]));
-                }
-            }
-
-            LOG.info("Master begin to commit blocks:[\n{}\n].", StringUtils.join(blocks, ","));
-            OdpsUtil.masterCompleteBlocks(this.masterUpload, blocks.toArray(new Long[0]));
         }
 
         @Override
@@ -208,15 +196,17 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration sliceConfig;
-        private DataTunnel dataTunnel;
         private String project;
         private String table;
         private String partition;
         private boolean emptyAsNull;
 
-        private Upload slaveUpload;
+        private Upload managerUpload;
+        private Upload workerUpload;
 
         private String uploadId = null;
+        private List<Long> blocks;
+
 
         @Override
         public void init() {
@@ -230,12 +220,6 @@ public class OdpsWriter extends Writer {
 
             this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL, false);
 
-            this.dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
-
-            uploadId = this.sliceConfig.getString(Constant.UPLOAD_ID);
-            this.slaveUpload = OdpsUtil.getSlaveTunnelUpload(this.dataTunnel, this.project,
-                    this.table, this.partition, uploadId);
-
             if (IS_DEBUG) {
                 LOG.debug("After init in slave, sliceConfig now is:[\n{}\n].", this.sliceConfig);
             }
@@ -244,32 +228,36 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void prepare() {
+            DataTunnel dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
+            this.managerUpload = OdpsUtil.createMasterTunnelUpload(dataTunnel, this.project,
+                    this.table, this.partition);
+            this.uploadId = this.managerUpload.getUploadId();
+            LOG.info("slave uploadId:[{}].", this.uploadId);
+
+            this.workerUpload = OdpsUtil.getSlaveTunnelUpload(dataTunnel, this.project,
+                    this.table, this.partition, uploadId);
         }
 
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
-            // blockId 的开始值，master在 split 的时候已经准备好
-            long blockId = this.sliceConfig.getLong(Constant.BLOCK_ID);
-            int intervalStep = this.sliceConfig.getInt(Constant.INTERVAL_STEP);
-            List<Long> blocks = new ArrayList<Long>();
+            blocks = new ArrayList<Long>();
+
+            long blockId = 0;
             List<Integer> columnPositions = this.sliceConfig.getList(Constant.COLUMN_POSITION,
                     Integer.class);
 
             try {
                 SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
 
-                OdpsWriterProxy proxy = new OdpsWriterProxy(this.slaveUpload, blockId, intervalStep,
+                OdpsWriterProxy proxy = new OdpsWriterProxy(this.workerUpload, blockId,
                         columnPositions, slavePluginCollector, this.emptyAsNull);
 
-                com.alibaba.datax.common.element.Record dataxRecord = null;
-                while ((dataxRecord = recordReceiver.getFromReader()) != null) {
-                    proxy.writeOneRecord(dataxRecord, blocks);
+                com.alibaba.datax.common.element.Record dataXRecord = null;
+                while ((dataXRecord = recordReceiver.getFromReader()) != null) {
+                    proxy.writeOneRecord(dataXRecord, blocks);
                 }
 
                 proxy.writeRemainingRecord(blocks);
-
-                slavePluginCollector.collectMessage(Constant.SLAVE_WROTE_BLOCK_MESSAGE,
-                        StringUtils.join(blocks, ","));
             } catch (Exception e) {
                 String businessMessage = "Write record failed. detail:" + e.getMessage();
                 String message = StrUtil.buildOriginalCauseMessage(
@@ -282,6 +270,10 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
+            LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
+                    StringUtils.join(blocks, ","));
+            OdpsUtil.masterCompleteBlocks(this.managerUpload, blocks.toArray(new Long[0]));
+            LOG.info("Slave which uploadId=[{}] commit blocks ok.", this.uploadId);
         }
 
         @Override

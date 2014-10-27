@@ -37,16 +37,13 @@ public class OdpsWriterProxy {
 
     private long blockId;
 
-    private int intervalStep;
-
     private List<Integer> columnPositions;
 
     private List<Column.Type> tableOriginalColumnTypeList;
 
     private boolean emptyAsNull;
 
-    public OdpsWriterProxy(Upload slaveUpload, long blockId, int intervalStep,
-                           List<Integer> columnPositions,
+    public OdpsWriterProxy(Upload slaveUpload, long blockId, List<Integer> columnPositions,
                            SlavePluginCollector slavePluginCollector, boolean emptyAsNull) throws IOException {
         this.slaveUpload = slaveUpload;
         this.schema = this.slaveUpload.getSchema();
@@ -56,7 +53,6 @@ public class OdpsWriterProxy {
         this.protobufRecordWriter = new ProtobufRecordWriter(schema,
                 byteArrayOutputStream);
         this.blockId = blockId;
-        this.intervalStep = intervalStep;
         this.columnPositions = columnPositions;
         this.slavePluginCollector = slavePluginCollector;
         this.emptyAsNull = emptyAsNull;
@@ -86,7 +82,7 @@ public class OdpsWriterProxy {
             protobufRecordWriter = new ProtobufRecordWriter(schema,
                     byteArrayOutputStream);
 
-            blockId += this.intervalStep;
+            blockId += 1;
         }
     }
 
