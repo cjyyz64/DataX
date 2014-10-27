@@ -58,7 +58,6 @@ public final class MetricManager {
 			masterMetric.mergeFrom(SLAVE_METRICS.get(slaveId));
 		}
 
-		masterMetric.setStatus(getMasterStatus());
 		return masterMetric;
 	}
 
@@ -125,34 +124,27 @@ public final class MetricManager {
 	}
 
 	private static synchronized Status getMasterStatus() {
-		for (Entry<Long, Map<Long, Metric>> entry : CHANNEL_METRICS.entrySet()) {
-			long slaveId = entry.getKey();
-			Map<Long, Metric> slaveMetricMap = entry.getValue();
-			for (Entry<Long, Metric> innerEntry : slaveMetricMap.entrySet()) {
-				long channelId = innerEntry.getKey();
-				Metric channelMetric = innerEntry.getValue();
-				if (channelMetric.getStatus() == Status.FAIL) {
-					LOG.error(String.format(
-							"slaveId[%d] channelId[%d] failed, reason: %s",
-							slaveId, channelId, channelMetric.getErrorMessage()));
-					return Status.FAIL;
-				}
-			}
-		}
+        for(Entry<Long, Metric> entry : SLAVE_METRICS.entrySet()) {
+            long slaveId = entry.getKey();
+            Metric slaveMetric = entry.getValue();
+            if(slaveMetric.getStatus() == Status.FAIL) {
+                LOG.error(String.format(
+                        "slaveId[%d] failed, reason: %s",
+                        slaveId, slaveMetric.getErrorMessage()));
+                return Status.FAIL;
+            }
+        }
 
-		for (Entry<Long, Map<Long, Metric>> entry : CHANNEL_METRICS.entrySet()) {
-			Map<Long, Metric> slaveMetricMap = entry.getValue();
-			for (Entry<Long, Metric> innerEntry : slaveMetricMap.entrySet()) {
-				Metric channelMetric = innerEntry.getValue();
-				Status status = channelMetric.getStatus();
-				switch (status) {
-				case RUN:
-					return Status.RUN;
-				default:
-					break;
-				}
-			}
-		}
+        for(Entry<Long, Metric> entry : SLAVE_METRICS.entrySet()) {
+            long slaveId = entry.getKey();
+            Metric slaveMetric = entry.getValue();
+            if(slaveMetric.getStatus() == Status.RUN) {
+                LOG.debug(String.format(
+                        "slaveId[%d] running, reason: %s",
+                        slaveId, slaveMetric.getErrorMessage()));
+                return Status.RUN;
+            }
+        }
 
 		return Status.SUCCESS;
 	}
