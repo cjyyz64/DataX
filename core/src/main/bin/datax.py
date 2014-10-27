@@ -152,8 +152,9 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
-        job_new_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
-        is_resaved_json = True
+        if not is_job_from_http:
+            job_new_path = save_to_tmp_file(job_path, False, job_json_content)
+            is_resaved_json = True
 
     if is_job_from_http:
         # 把masterId 和 reportAddress写入配置中
@@ -161,7 +162,7 @@ def get_json_job_path(job_path):
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
-        job_new_path = save_to_tmp_file(job_path, is_job_from_http, job_json_content)
+        job_new_path = save_to_tmp_file(job_path, True, job_json_content)
         is_resaved_json = True
 
     return job_new_path, is_resaved_json

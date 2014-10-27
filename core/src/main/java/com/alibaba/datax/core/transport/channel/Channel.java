@@ -142,8 +142,7 @@ public abstract class Channel {
 		Metric metric = this.getChannelMetric();
 		metric.setReadSucceedRecords(metric.getReadSucceedRecords() - 1);
 		metric.setWriteReceivedRecords(metric.getWriteReceivedRecords() - 1);
-		metric.setStage(1);
-		metric.setStatus(Status.SUCCESS);
+		metric.setStage(metric.getStage() + 1);
 	}
 
 	protected abstract void doPush(Record r);
