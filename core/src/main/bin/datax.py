@@ -47,11 +47,11 @@ def enum(**enums):
 STRING_TYPE = enum(JSON="json", XML="xml", YAML="yaml")
 
 DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_JVM = "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/logs"%(DATAX_HOME)
+DEFAULT_JVM = "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log"%(DATAX_HOME)
 YUNTI_JAVA_HOME = r"/home/yunti/java-current"
 TAOBAO_JAVA_HOME = r"/opt/taobao/java"
 ENGINE_COMMAND = "${JAVA_HOME}/bin/java -server ${jvm} -Ddatax.home=%s -classpath %s/lib/*:. ${params} com.alibaba.datax.core.Engine -job ${job}"%(DATAX_HOME, DATAX_HOME)
-DEBUG_JVM = "-Xms1024m -Xmx1024m  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/logs"%(DATAX_HOME)
+DEBUG_JVM = "-Xms1024m -Xmx1024m  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log"%(DATAX_HOME)
 child_process = None
 
 ########## 函数 #############
@@ -205,7 +205,7 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
         tmp_file_path = os.path.basename(job_path)
 
     run_day_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-    tmp_dir = os.path.join(DATAX_HOME, "jobs", run_day_time)
+    tmp_dir = os.path.join(DATAX_HOME, "job", run_day_time)
     if not os.path.exists(tmp_dir):
         os.mkdir(tmp_dir)
     tmp_file_path = os.path.join(tmp_dir, tmp_file_path + ".json")
