@@ -14,17 +14,20 @@
             <includes>
                 <include>*.*</include>
             </includes>
+            <excludes>
+                <exclude>*.pyc</exclude>
+            </excludes>
             <directoryMode>775</directoryMode>
             <outputDirectory>/bin</outputDirectory>
         </fileSet>
         <!-- for scripts -->
         <fileSet>
-            <directory>src/main/scripts</directory>
+            <directory>src/main/script</directory>
             <includes>
                 <include>*.*</include>
             </includes>
             <directoryMode>775</directoryMode>
-            <outputDirectory>/scripts</outputDirectory>
+            <outputDirectory>/script</outputDirectory>
         </fileSet>
         <!-- for configs -->
         <fileSet>
@@ -44,19 +47,19 @@
         </fileSet>
 
         <fileSet>
-            <directory>src/main/logs</directory>
+            <directory>src/main/log/</directory>
             <includes>
                 <include>*.log</include>
             </includes>
-            <outputDirectory>/logs</outputDirectory>
+            <outputDirectory>/log</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>src/main/jobs/</directory>
+            <directory>src/main/job/</directory>
             <includes>
                 <include>*.json</include>
             </includes>
-            <outputDirectory>/jobs</outputDirectory>
+            <outputDirectory>/job</outputDirectory>
         </fileSet>
 
         <fileSet>
