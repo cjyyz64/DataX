@@ -148,7 +148,7 @@ public class OdpsUtil {
         } catch (Exception e) {
             String businessMessage = String.format("Check if partitioned table failed. detail: table=[%s].",
                     table.getName());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
             throw new DataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
@@ -167,7 +167,7 @@ public class OdpsUtil {
         } catch (Exception e) {
             String businessMessage = String.format("Truncate table:[%s] failed. detail:[%s].",
                     tab.getName(), e.getMessage());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
             throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
@@ -185,7 +185,7 @@ public class OdpsUtil {
         // check if exist partition
         List<String> odpsParts = OdpsUtil.listOdpsPartitions(table);
         if (null == odpsParts) {
-            throw new DataXException(null, "Error when list table partitions.");
+            throw new DataXException(OdpsWriterErrorCode.LIST_PARTITION_FAILED, "Error when list table partitions.");
         }
         int j = 0;
         for (j = 0; j < odpsParts.size(); j++) {
@@ -211,7 +211,7 @@ public class OdpsUtil {
         } catch (Exception e) {
             String businessMessage = String.format("Add partition failed. detail:project=[%s], table=[%s],partition=[%s]."
                     , table.getProject().getName(), table.getName(), partition);
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
             throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, businessMessage);
