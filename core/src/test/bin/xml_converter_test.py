@@ -58,15 +58,15 @@ class XmlConverterTest(unittest.TestCase):
             c = XmlConverter(f.read())
             c.get_value_from_xml = lambda x, y: '3'
             c.set_run_speed()
-            self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 3)
+            self.assertEqual(c.job_setting['speed']['byte'], 5 * 1024 * 1024 * 3)
 
             c.get_value_from_xml = lambda x, y: '-2'
             c.set_run_speed()
-            self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 1)
+            self.assertEqual(c.job_setting['speed']['byte'], 5 * 1024 * 1024 * 1)
 
             c.get_value_from_xml = lambda x, y: ''
             c.set_run_speed()
-            self.assertEqual(c.job_setting['speed']['byte'], 1024 * 1024 * 1)
+            self.assertEqual(c.job_setting['speed']['byte'], 5 * 1024 * 1024 * 1)
 
     def test_error_limit(self):
         with open('./case/ok.xml') as f:
