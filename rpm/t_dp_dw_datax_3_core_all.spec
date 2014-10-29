@@ -48,7 +48,7 @@ chmod -R 0757 %{_prefix}/job
 chmod -R 0757 %{_prefix}/lib
 chmod -R 0757 %{_prefix}/log
 chmod -R 0757 %{_prefix}/plugin
-chmod -R 0757 %{_prefix}/scripts
+chmod -R 0757 %{_prefix}/script
 
 
 %files
