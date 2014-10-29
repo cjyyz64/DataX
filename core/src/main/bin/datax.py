@@ -25,6 +25,7 @@ import os
 import sys 
 import time
 import re
+import errno
 import json
 import signal
 import subprocess
@@ -207,7 +208,11 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
     run_day_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
     tmp_dir = os.path.join(DATAX_HOME, "job", run_day_time)
     if not os.path.exists(tmp_dir):
-        os.mkdir(tmp_dir)
+        try:
+            os.mkdir(tmp_dir)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
     tmp_file_path = os.path.join(tmp_dir, tmp_file_path + ".json")
     file = open(tmp_file_path, "w")
     try:

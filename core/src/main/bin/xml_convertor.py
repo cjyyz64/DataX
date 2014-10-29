@@ -124,7 +124,7 @@ class XmlConverter:
             concurrency = "1"
         concurrency = int(concurrency)
         self.job_setting["speed"] = {
-            "byte": 1024 * 1024 * (1 if concurrency < 1 else concurrency)
+            "byte": 5 * 1024 * 1024 * (1 if concurrency < 1 else concurrency)
         }
 
     def set_error_limit(self):
