@@ -13,7 +13,7 @@
                         "sliceRecordCount": 10,
                         "column": [
                             {
-                                "type": "int",
+                                "type": "long",
                                 "value": "10"
                             },
                             {
@@ -29,11 +29,11 @@
                                 "value": "image"
                             },
                             {
-                                "type": "boolean",
+                                "type": "bool",
                                 "value": "true"
                             },
                             {
-                                "type": "boolean",
+                                "type": "bool",
                                 "value": "5678true"
                             },
                             {

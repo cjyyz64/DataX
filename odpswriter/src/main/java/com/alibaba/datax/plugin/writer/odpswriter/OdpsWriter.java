@@ -263,7 +263,7 @@ public class OdpsWriter extends Writer {
             } catch (Exception e) {
                 String businessMessage = "Write record failed. detail:" + e.getMessage();
                 String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
+                        businessMessage, e);
                 LOG.error(message);
 
                 throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);

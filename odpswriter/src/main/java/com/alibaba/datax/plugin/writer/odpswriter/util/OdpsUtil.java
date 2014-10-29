@@ -260,10 +260,10 @@ public class OdpsUtil {
         } catch (Exception e) {
             String businessMessage = String.format("Drop partition failed. detail:project=[%s], table=[%s],partition=[%s]."
                     , table.getProject().getName(), table.getName(), partition);
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
+            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, businessMessage);
+            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, e);
         }
     }
 
@@ -356,7 +356,7 @@ public class OdpsUtil {
         } catch (Exception e) {
             String businessMessage = String.format("Failed to get table=[%s] ddl sql.", table.getName());
             String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
+                    businessMessage, e);
             LOG.error(message);
 
             throw new DataXException(OdpsWriterErrorCode.GET_TABLE_DDL_FAIL, e);
