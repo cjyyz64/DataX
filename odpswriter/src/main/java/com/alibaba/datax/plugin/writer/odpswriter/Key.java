@@ -23,6 +23,8 @@ public final class Key {
 
     public final static String MAX_RETRY_TIME = "maxRetryTime";
 
+    public final static String BLOCK_SIZE_IN_MB = "blockSizeInMB";
+
     //boolean 类型，default:false
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 

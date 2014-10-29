@@ -41,6 +41,7 @@ public class OdpsWriter extends Writer {
         private boolean truncate;
         private String uploadId;
         private Upload masterUpload;
+        private int blockSizeInMB;
 
         @Override
         public void init() {
@@ -74,10 +75,14 @@ public class OdpsWriter extends Writer {
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
             boolean emptyAsNull = this.originalConfig.getBool(Key.EMPTY_AS_NULL, false);
+            this.originalConfig.set(Key.EMPTY_AS_NULL, emptyAsNull);
             if (emptyAsNull) {
                 LOG.warn("As your job configured emptyAsNull=true, so when write to odps,empty string \"\" will be treated as null.");
             }
 
+            this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 32);
+            this.originalConfig.set(Key.BLOCK_SIZE_IN_MB, this.blockSizeInMB);
+            LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 
             if (IS_DEBUG) {
                 LOG.debug("After init, job config now is: [\n{}\n] .",
@@ -207,6 +212,7 @@ public class OdpsWriter extends Writer {
 
         private String uploadId = null;
         private List<Long> blocks;
+        private int blockSizeInMB;
 
 
         @Override
@@ -219,7 +225,12 @@ public class OdpsWriter extends Writer {
                     .getString(Key.PARTITION, ""));
             this.sliceConfig.set(Key.PARTITION, this.partition);
 
-            this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL, false);
+            this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL);
+            this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
+            if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
+                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "blockSizeInMB should in range:[1,512], but you configured value="
+                        + this.blockSizeInMB);
+            }
 
             if (IS_DEBUG) {
                 LOG.debug("After init in slave, sliceConfig now is:[\n{}\n].", this.sliceConfig);
@@ -251,7 +262,7 @@ public class OdpsWriter extends Writer {
             try {
                 SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
 
-                OdpsWriterProxy proxy = new OdpsWriterProxy(this.workerUpload, blockId,
+                OdpsWriterProxy proxy = new OdpsWriterProxy(this.workerUpload, this.blockSizeInMB, blockId,
                         columnPositions, slavePluginCollector, this.emptyAsNull);
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
