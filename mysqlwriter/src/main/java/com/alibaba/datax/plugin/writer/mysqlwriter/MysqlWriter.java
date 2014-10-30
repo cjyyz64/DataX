@@ -18,8 +18,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class MysqlWriter extends Writer {
 
@@ -90,11 +88,11 @@ public class MysqlWriter extends Writer {
             this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
             this.table = this.writerSliceConfig.getString(Key.TABLE);
 
-            this.columnNumber = this.writerSliceConfig.getInt(Constant.COLUMN_NUMBER_MARK);
+            this.columnNumber = this.writerSliceConfig.getList(Key.COLUMN, String.class).size();
 
             this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
-            this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, 32);
+            this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
 
             this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
                     password);
@@ -111,28 +109,31 @@ public class MysqlWriter extends Writer {
         @Override
         public void prepare() {
             dealSessionConf(conn,
-                    this.writerSliceConfig.getMap(Key.SESSION, String.class));
+                    this.writerSliceConfig.getList(Key.SESSION, String.class));
 
             executeSqls(this.conn, this.preSqls);
         }
 
         public void startWrite(RecordReceiver recordReceiver) {
-            List<Record> array = new ArrayList<Record>(this.batchSize);
+            List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             try {
                 Record record = null;
                 while ((record = recordReceiver.getFromReader()) != null) {
-                    array.add(record);
-                    if (array.size() >= batchSize) {
-                        doBatchInsert(conn, array);
+                    writeBuffer.add(record);
+                    if (writeBuffer.size() >= batchSize) {
+                        doBatchInsert(conn, writeBuffer);
+                        writeBuffer.clear();
                     }
                 }
-                if (0 != array.size()) {
-                    doBatchInsert(conn, array);
+                if (writeBuffer.size() != 0) {
+                    doBatchInsert(conn, writeBuffer);
+                    writeBuffer.clear();
                 }
             } catch (Exception e) {
                 throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+            } finally {
+                writeBuffer.clear();
             }
-
         }
 
         @Override
@@ -164,9 +165,7 @@ public class MysqlWriter extends Writer {
             }
         }
 
-        // TODO 类型转换的 review
         private void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
-
             PreparedStatement pstmt = null;
             try {
                 connection.setAutoCommit(false);
@@ -186,11 +185,9 @@ public class MysqlWriter extends Writer {
                 doBadInsert(connection, buffer);
             } finally {
                 DBUtil.closeDBResources(pstmt, null);
-                buffer.clear();
             }
         }
 
-        // TODO 检查columnNumber 和 record.getColumnNumber() 大小
         private void doBadInsert(Connection connection, List<Record> buffer) {
             PreparedStatement pstmt = null;
             try {
@@ -219,14 +216,14 @@ public class MysqlWriter extends Writer {
                 throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
             } finally {
                 DBUtil.closeDBResources(pstmt, null);
-                buffer.clear();
             }
         }
 
-        private static String SESSION_TEMPLATE = "SET %s=%s;";
+        private static void dealSessionConf(Connection conn, List<String> sessionConfs) {
+            if (null == sessionConfs || sessionConfs.isEmpty()) {
+                return;
+            }
 
-        private static void dealSessionConf(Connection conn,
-                                            Map<String, String> sessionConfs) {
             Statement stmt;
             try {
                 stmt = conn.createStatement();
@@ -235,11 +232,7 @@ public class MysqlWriter extends Writer {
                 throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
             }
 
-            String sessionSql = null;
-            for (Entry<String, String> entry : sessionConfs.entrySet()) {
-                sessionSql = String.format(SESSION_TEMPLATE, entry.getKey(),
-                        entry.getValue());
-
+            for (String sessionSql : sessionConfs) {
                 LOG.info("execute sql:[{}]", sessionSql);
                 try {
                     DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
@@ -247,7 +240,7 @@ public class MysqlWriter extends Writer {
                     LOG.error("execute sql:[{}] failed, {}.", sessionSql,
                             BASIC_MESSAGE);
                     throw new DataXException(
-                            MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+                            MysqlWriterErrorCode.SESSION_ERROR, e);
                 }
             }
 

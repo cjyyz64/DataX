@@ -3,10 +3,7 @@ package com.alibaba.datax.plugin.writer.mysqlwriter.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
-import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
+import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
 import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
@@ -14,12 +11,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public final class OriginalConfPretreatmentUtil {
-
-    public static DataBaseType DATABASE_TYPE;
 
     private static final Logger LOG = LoggerFactory
             .getLogger(OriginalConfPretreatmentUtil.class);
@@ -43,8 +37,7 @@ public final class OriginalConfPretreatmentUtil {
         simplifyConf(originalConfig);
 
         dealColumnConf(originalConfig);
-        dealInsertOrReplaceConf(originalConfig);
-
+        dealWriteMode(originalConfig);
     }
 
     private static void simplifyConf(Configuration originalConfig) {
@@ -65,20 +58,24 @@ public final class OriginalConfPretreatmentUtil {
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-            if (null == tables || 0 == tables.size()) {
+            if (null == tables || tables.isEmpty()) {
                 throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                         "lost table config.");
             }
 
-            // 对每一个connection 上配置的table 项进行解析(已对表名称进行了 ` 处理的)
+            // 对每一个connection 上配置的table 项进行解析
             List<String> expandedTables = TableExpandUtil
                     .expandTableConf(DataBaseType.MySql, tables);
+
+            if (null == expandedTables || expandedTables.isEmpty()) {
+                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+                        "write table configured error.");
+            }
 
             tableNum += expandedTables.size();
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.TABLE), expandedTables);
-
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
@@ -88,68 +85,70 @@ public final class OriginalConfPretreatmentUtil {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == columns || 0 == columns.size()) {
             throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be blank.");
-        } else if (1 == columns.size() && "*".equals(columns.get(0))) {
+        } else {
+            String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
+                    Constant.CONN_MARK, Key.JDBC_URL));
+
+            String username = originalConfig.getString(Key.USERNAME);
+            String password = originalConfig.getString(Key.PASSWORD);
+            String oneTable = originalConfig.getString(String.format(
+                    "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
+
+            List<String> allColumns = DBUtil.getTableColumns(DataBaseType.MySql, jdbcUrl, username, password, oneTable);
+
+
+            LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
+                    StringUtils.join(allColumns, ","));
+
+            if (1 == columns.size() && "*".equals(columns.get(0))) {
+                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
+                        + "because column configured as * may not work when you changed your table structure.");
+
+                // 回填其值，需要以 String 的方式转交后续处理
+                originalConfig.set(Key.COLUMN, allColumns);
+            } else if (columns.size() < allColumns.size()) {
+                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column exceed table all columns.");
+            } else {
+                // 确保用户配置的 column 不重复
+                ListUtil.makeSureNoValueDuplicate(columns, false);
+            }
+        }
+
+        if (1 == columns.size() && "*".equals(columns.get(0))) {
             throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be *.");
         } else {
             // 确保用户配置的 column 不重复
             ListUtil.makeSureNoValueDuplicate(columns, false);
-
         }
 
-        String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
-                Constant.CONN_MARK, Key.JDBC_URL));
 
-        String user = originalConfig.getString(Key.USERNAME);
-        String pass = originalConfig.getString(Key.PASSWORD);
-
-        String tableName = originalConfig.getString(String.format(
-                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
-
-        List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl, user, pass, tableName);
-
-        LOG.info("table:[{}] original all columns:[\n{}\n].", tableName,
-                StringUtils.join(allColumns, ","));
-
-        List<String> lowerColumns = ListUtil.valueToLowerCase(allColumns);
-        List<String> retColumns = new ArrayList<String>();
-        for (String column : columns) {
-            if (lowerColumns.contains(column.toLowerCase())) {
-                retColumns.add(column);
-            } else {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
-                        String.format("no column:[%s].", column));
-            }
-        }
-
-        originalConfig.set(Constant.COLUMN_NUMBER_MARK, retColumns.size());
-        originalConfig.set(Key.COLUMN, retColumns);
     }
 
-    private static void dealInsertOrReplaceConf(Configuration originalConfig) {
+    private static void dealWriteMode(Configuration originalConfig) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL, String.class));
 
         // 默认为：insert 方式
-        String insertOrReplace = originalConfig.getString(Key.INSERT_OR_REPLACE, "INSERT");
+        String writeMode = originalConfig.getString(Key.WRITE_MODE, "INSERT");
 
-        String sqlTemplate = insertOrReplace + " INTO %s ("
-                + StringUtils.join(columns, ",") + ") VALUES("
-                + getValueHolder(columns) + ")";
+        String writeDataSqlTemplate = new StringBuilder().append(writeMode).append(" INTO %s (")
+                .append(StringUtils.join(columns, ",")).append(") VALUES(")
+                .append(getValueHolder(columns)).append(")").toString();
 
         String formattedSql = null;
 
         try {
-            formattedSql = SqlFormatUtil.format(sqlTemplate);
+            formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
         } catch (Exception unused) {
             // ignore it
         }
-        LOG.info("do write data [\n{}\n], which jdbcUurl:[{}]",
-                null != formattedSql ? formattedSql : sqlTemplate, jdbcUrl);
+        LOG.info("do write data [\n{}\n], which jdbcUrl:[{}]",
+                null != formattedSql ? formattedSql : writeDataSqlTemplate, jdbcUrl);
 
         originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK,
-                sqlTemplate);
+                writeDataSqlTemplate);
     }
 
     private static String getValueHolder(List<String> columns) {

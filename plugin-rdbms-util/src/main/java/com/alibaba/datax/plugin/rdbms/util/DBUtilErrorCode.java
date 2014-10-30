@@ -14,7 +14,7 @@ public enum DBUtilErrorCode implements ErrorCode {
     ILLEGAL_KEY("DBUtilErrorCode-02", "Illegal key: Please correct your key !"),
     ILLEGAL_VALUE("DBUtilErrorCode-03", "Illegal value: Please correct your value !"),
     ILLEGAL_SPLIT_PK("DBUtilErrorCode-04", "Illegal splitPk value: SplitPk must be PrimaryKey in table and column type must be integer or string ."),
-    NOT_RECOMMENDED("DBUtilErrorCode-05", "Your config not recommended: Please read DataX manual and correct your configuration ."),
+    NOT_RECOMMENDED("DBUtilErrorCode-05", "Your config not recommended: Please read DataX manual and modify your configuration ."),
     SQL_EXECUTE_FAIL("DBUtilErrorCode-06", "Failed to execute mysql sql: Please check your Column/Table/Where/querySql !"),
     READ_RECORD_FAIL("DBUtilErrorCode-07", "Failed to read mysql record: Please check your Column/Table/Where/querySql !"),
     TABLE_QUERYSQL_MIXED("DBUtilErrorCode-08", "Can not config both table and querySql: Please keep just ONE of them !"),

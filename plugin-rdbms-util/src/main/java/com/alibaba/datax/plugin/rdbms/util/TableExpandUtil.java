@@ -20,6 +20,8 @@ public final class TableExpandUtil {
      *
      * @param tables a string contains table name(one or many).
      * @return a split result of table name.
+     * <p/>
+     * TODO 删除参数 DataBaseType
      */
     public static List<String> splitTables(DataBaseType dataBaseType, String tables) {
         List<String> splittedTables = new ArrayList<String>();
