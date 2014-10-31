@@ -9,7 +9,7 @@
                 "writer": {
                     "name": "mysqlwriter",
                     "parameter": {
-                        "insertOrReplace": "replace",
+                        "writeMode": "replace",
                         "username": "root",
                         "password": "root",
                         "column": [
@@ -26,41 +26,25 @@
                             "db_description",
                             "db_tddl_info"
                         ],
-                        "session": {
-                            "character_set_client": "utf8",
-                            "character_set_results": "utf8",
-                            "character_set_connection": "utf8"
-                        },
                         "connection": [
                             {
-                                "jdbcUrl": "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db",
-                                "unit": [
-                                    {
-                                        "table": "db_info_for_writer_01",
-                                        "preSql": [
-                                            "delete from db_info_for_writer_01 where db_id = -1;",
-                                            "delete from db_info_for_writer_01 where db_id = -2;"
-                                        ],
-                                        "postSql": [
-                                            "update db_info_for_writer_01 set db_modify_time = now() where db_id = 1;",
-                                            "update db_info_for_writer_01 set db_modify_time = now() where db_id = 2;",
-                                            "update db_info_for_writer_01 set db_modify_time = now() where db_id = 3;"
-                                        ]
-                                    },
-                                    {
-                                        "table": "db_info_for_writer_02",
-                                        "preSql": [
-                                            "delete from db_info_for_writer_02 where db_id = -1;",
-                                            "delete from db_info_for_writer_02 where db_id = -2;"
-                                        ],
-                                        "postSql": [
-                                            "update db_info_for_writer_02 set db_modify_time = now() where db_id = 1;",
-                                            "update db_info_for_writer_02 set db_modify_time = now() where db_id = 2;",
-                                            "update db_info_for_writer_02 set db_modify_time = now() where db_id = 3;"
-                                        ]
-                                    }
-                                ]
+                                "table": [
+                                    "db_info_for_writer_00", "db_info_for_writer_0[1-6]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
+                            },
+                            {
+                                "table": [
+                                    "db_info_for_writer_10", "db_info_for_writer_1[1-6]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db_02"
                             }
+                        ],
+                        "preSql": [
+                            "delete from ${`tableNamePlaceholder`} where db_id = -1;"
+                        ],
+                        "postSql": [
+                            "update ${`tableNamePlaceholder`} set db_modify_time = now() where db_id = 1;"
                         ]
                     }
                 }

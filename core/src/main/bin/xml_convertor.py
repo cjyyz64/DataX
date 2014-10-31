@@ -215,10 +215,10 @@ class XmlConverter:
             columns = []
             self.reader_parameter["column"] = columns
             columns.append({"value":"filed", "type":"string"})
-            columns.append({"value":100, "type":"int"})
+            columns.append({"value":100, "type":"long"})
             columns.append({"value":int(time.time()), "type":"date"})
             columns.append({"value":True, "type":"bool"})
-            columns.append({"value":"byte string", "type":"byte"})
+            columns.append({"value":"byte string", "type":"bytes"})
         else:
             field_delimiter = self.get_value_from_xml(self.reader, "field-delimiter")
             if not field_delimiter:

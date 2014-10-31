@@ -6,11 +6,11 @@ package com.alibaba.datax.plugin.writer.mysqlwriter;
 public final class Constant {
     public static final int DEFAULT_BATCH_SIZE = 32;
 
+    public static String TABLE_NAME_PLACEHOLDER = "@table";
+
     public static String CONN_MARK = "connection";
 
     public static String TABLE_NUMBER_MARK = "tableNumber";
-
-    public static String COLUMN_NUMBER_MARK = "columnNumber";
 
     public static String INSERT_OR_REPLACE_TEMPLATE_MARK = "insertOrReplaceTemplate";
 

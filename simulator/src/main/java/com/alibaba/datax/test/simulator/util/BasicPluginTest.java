@@ -9,11 +9,16 @@ import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class BasicPluginTest {
     protected static String PLUGIN_PATH = null;
@@ -21,6 +26,34 @@ public abstract class BasicPluginTest {
     protected static Configuration PLUGIN_CONF = null;
 
     protected static String TESTCLASSES_PATH = null;
+
+    @BeforeClass
+    public static void mvnCompile() {
+        TESTCLASSES_PATH = Thread.currentThread().getClass().getResource("/")
+                .getPath();
+
+        ProcessBuilder pb = new ProcessBuilder();
+        List<String> commands = new ArrayList<String>();
+        commands.add("mvn");
+        commands.add("install");
+        commands.add("-Dmaven.test.skip=true");
+        pb.command(commands);
+
+        pb.directory(new File(TESTCLASSES_PATH).getParentFile().getParentFile());
+
+        try {
+            Process p2 = pb.start();
+            p2.waitFor();
+
+            String result = IOUtils.toString(p2.getInputStream(), Charset.forName("utf8"));
+            System.out.println(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        System.out.println("mvn install ok.");
+    }
 
     // 其实在这里测试的时候，不要swapper 也可以。
     private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper

@@ -27,14 +27,15 @@ public class OdpsWriterProxy {
 
     private Upload slaveUpload;
 
+    private int blockSizeInMB;
+
     private RecordSchema schema;
 
-    private ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(
-            70 * 1024 * 1024);
+    private ByteArrayOutputStream byteArrayOutputStream;
 
-    private int max_buffer_length = 64 * 1024 * 1024;
+    private int max_buffer_length;
 
-    private ProtobufRecordWriter protobufRecordWriter = null;
+    private ProtobufRecordWriter protobufRecordWriter;
 
     private AtomicLong blockId;
 
@@ -44,9 +45,10 @@ public class OdpsWriterProxy {
 
     private boolean emptyAsNull;
 
-    public OdpsWriterProxy(Upload slaveUpload, AtomicLong blockId, List<Integer> columnPositions,
+    public OdpsWriterProxy(Upload slaveUpload, int blockSizeInMB, AtomicLong blockId, List<Integer> columnPositions,
                            SlavePluginCollector slavePluginCollector, boolean emptyAsNull) throws IOException {
         this.slaveUpload = slaveUpload;
+        this.blockSizeInMB = blockSizeInMB;
         this.schema = this.slaveUpload.getSchema();
         this.tableOriginalColumnTypeList = OdpsUtil
                 .getTableOriginalColumnTypeList(this.schema);
@@ -58,6 +60,10 @@ public class OdpsWriterProxy {
         this.slavePluginCollector = slavePluginCollector;
         this.emptyAsNull = emptyAsNull;
 
+        //初始化与 buffer 区相关的值
+
+        this.max_buffer_length = this.blockSizeInMB * 1024 * 1024;
+        this.byteArrayOutputStream = new ByteArrayOutputStream((this.blockSizeInMB + 1) * 1024 * 1024);
     }
 
     public void writeOneRecord(

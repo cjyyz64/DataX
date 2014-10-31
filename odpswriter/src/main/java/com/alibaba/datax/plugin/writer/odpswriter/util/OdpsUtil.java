@@ -14,8 +14,6 @@ import com.aliyun.openservices.odps.jobs.*;
 import com.aliyun.openservices.odps.jobs.TaskStatus.Status;
 import com.aliyun.openservices.odps.tables.Table;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -157,13 +155,11 @@ public class OdpsUtil {
     }
 
 
-    public static void truncateTable(Table tab) {
-        String dropDdl = "drop table IF EXISTS " + tab.getName() + ";";
-        String ddl = OdpsUtil.getTableDdl(tab);
+    public static void truncateNonPartitionedTable(Table tab) {
+        String truncateNonPartitionedTableSql = "truncate table " + tab.getName() + ";";
 
         try {
-            runSqlTask(tab.getProject(), dropDdl);
-            runSqlTask(tab.getProject(), ddl);
+            runSqlTask(tab.getProject(), truncateNonPartitionedTableSql);
         } catch (Exception e) {
             String businessMessage = String.format("Truncate table:[%s] failed. detail:[%s].",
                     tab.getName(), e.getMessage());
@@ -290,80 +286,6 @@ public class OdpsUtil {
         return partSpec.toString();
     }
 
-    private static String getTableDdl(Table table) {
-        String jsonStr = table.getSchema().toJson();
-        StringBuilder sqlBuilder = new StringBuilder(1024);
-        try {
-            JSONObject js = new JSONObject(jsonStr);
-            JSONArray jaColumns = js.getJSONArray("columns");
-
-            sqlBuilder.append("create table IF NOT EXISTS ")
-                    .append(table.getName()).append("(");
-            for (int i = 0; i < jaColumns.length(); i++) {
-                JSONObject jsColumn = jaColumns.getJSONObject(i);
-
-                String name = jsColumn.getString("name");
-                String type = jsColumn.getString("type");
-
-                sqlBuilder.append("`" + name + "`").append(" ").append(type);
-
-                if (jsColumn.has("comment")) {
-                    String comment = jsColumn.getString("comment");
-
-                    // 把双引号转意
-                    if (comment.indexOf("\"") > 0) {
-                        comment = comment.replaceAll("\"", "\\\\\"");
-                    }
-                    sqlBuilder.append(" comment \"" + comment + "\"");
-                }
-
-                if (i < jaColumns.length() - 1) {
-                    sqlBuilder.append(", ");
-                }
-            }
-            sqlBuilder.append(")");
-
-            JSONArray jaPartitionKeys = js.getJSONArray("partitionKeys");
-            if (jaPartitionKeys.length() > 0) {
-                sqlBuilder.append(" partitioned by(");
-            }
-
-            for (int i = 0; i < jaPartitionKeys.length(); i++) {
-                JSONObject jsPartionKey = jaPartitionKeys.getJSONObject(i);
-
-                String name = jsPartionKey.getString("name");
-                String type = jsPartionKey.getString("type");
-
-                sqlBuilder.append(name).append(" ").append(type);
-
-                if (jsPartionKey.has("comment")) {
-                    String comment = jsPartionKey.getString("comment");
-                    if (comment.indexOf("\"") > 0) {
-                        comment = comment.replaceAll("\"", "\\\\\"");
-                    }
-
-                    sqlBuilder.append(" comment \"" + comment + "\"");
-                }
-
-                if (i < jaPartitionKeys.length() - 1) {
-                    sqlBuilder.append(", ");
-                }
-            }
-            if (jaPartitionKeys.length() > 0) {
-                sqlBuilder.append(")");
-            }
-
-        } catch (Exception e) {
-            String businessMessage = String.format("Failed to get table=[%s] ddl sql.", table.getName());
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, e);
-            LOG.error(message);
-
-            throw new DataXException(OdpsWriterErrorCode.GET_TABLE_DDL_FAIL, e);
-        }
-        sqlBuilder.append(";\r\n");
-        return sqlBuilder.toString();
-    }
 
     private static void runSqlTask(Project project, String query) throws Exception {
         if (StringUtils.isBlank(query)) {
@@ -509,7 +431,7 @@ public class OdpsUtil {
                     throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
-                    OdpsUtil.truncateTable(table);
+                    OdpsUtil.truncateNonPartitionedTable(table);
                 }
             }
         } else {
@@ -546,38 +468,4 @@ public class OdpsUtil {
         }
     }
 
-    /**
-     * 为什么？ TODO 暂时不解
-     */
-    private static String getAddPartitionDdl(Table table) {
-        List<String> partionSpecList = null;
-        try {
-            partionSpecList = table.listPartitions();
-        } catch (Exception e) {
-            String businessMessage = String.format("Failed to get table=[%s] all partitions.", table.getName());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
-        }
-
-        StringBuilder addPartitionBuilder = new StringBuilder();
-        for (String partionSpec : partionSpecList) {
-
-            if (partionSpec.indexOf("__HIVE_DEFAULT_PARTITION__") >= 0
-                    || partionSpec.indexOf("''20120529''") >= 0) {
-                addPartitionBuilder.append("--alter table ")
-                        .append(table.getName())
-                        .append(" add IF NOT EXISTS partition(")
-                        .append(partionSpec.replace(":", "=")).append(");\r\n");
-            } else {
-                addPartitionBuilder.append("alter table ")
-                        .append(table.getName())
-                        .append(" add IF NOT EXISTS partition(")
-                        .append(partionSpec.replace(":", "=")).append(");\r\n");
-            }
-        }
-
-        return addPartitionBuilder.toString();
-    }
 }

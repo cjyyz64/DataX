@@ -1,84 +1,109 @@
 package com.alibaba.datax.plugin.writer.mysqlwriter.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
 import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class MysqlWriterSplitUtil {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(MysqlWriterSplitUtil.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(MysqlWriterSplitUtil.class);
 
-	// TODO 是否要求，所有表上，要么都有presql, 要么都有postSql ???
-	// TODO 参数需要在 init 中进行校验
-	public static List<Configuration> doSplit(Configuration simplifiedConf,
-			int adviceNumber) {
+    private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
-		List<Configuration> splittedConfigs = new ArrayList<Configuration>();
+    public static List<Configuration> doSplit(Configuration simplifiedConf,
+                                              int adviceNumber) {
 
-		int tableNumber = simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK)
-				.intValue();
-		if (tableNumber != adviceNumber) {
-			throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR,
-					String.format("tableNumber:[%s], but adviceNumb:[%s]",
-							tableNumber, adviceNumber));
-		}
+        List<Configuration> splitResultConfigs = new ArrayList<Configuration>();
 
-		String jdbcUrl = null;
-		List<String> preSqls = null;
-		List<String> postSqls = null;
+        int tableNumber = simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK)
+                .intValue();
 
-		List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK,
-				Object.class);
-		for (int i = 0, len = conns.size(); i < len; i++) {
-			Configuration sliceConfig = simplifiedConf.clone();
+        if (tableNumber != adviceNumber && tableNumber != 1) {
+            throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR,
+                    String.format("tableNumber:[%s], but adviceNumb:[%s]",
+                            tableNumber, adviceNumber));
+        }
 
-			Configuration connConf = Configuration
-					.from(conns.get(i).toString());
-			jdbcUrl = connConf.getString(Key.JDBC_URL);
-			preSqls = connConf.getList(Key.PRE_SQL, String.class);
-			postSqls = connConf.getList(Key.POST_SQL, String.class);
+        String jdbcUrl = null;
+        List<String> preSqls = simplifiedConf.getList(Key.PRE_SQL, String.class);
+        List<String> postSqls = simplifiedConf.getList(Key.POST_SQL, String.class);
 
-			sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
-			sliceConfig.set(Key.PRE_SQL, preSqls);
-			sliceConfig.set(Key.POST_SQL, postSqls);
+        List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK,
+                Object.class);
 
-			sliceConfig.remove(Constant.CONN_MARK);
+        for (int i = 0, len = conns.size(); i < len; i++) {
+            Configuration sliceConfig = simplifiedConf.clone();
 
-			// 已在之前进行了扩展和`处理，可以直接使用了！
-			List<String> tables = connConf.getList(Key.TABLE, String.class);
-			Validate.isTrue(null != tables && !tables.isEmpty(),
-					"dest table configed error.");
+            Configuration connConf = Configuration.from(conns.get(i).toString());
+            jdbcUrl = connConf.getString(Key.JDBC_URL);
 
-			// 尝试对每个表，切分为eachTableShouldSplittedNumber 份
-			for (String table : tables) {
-				Configuration tempSlice = sliceConfig.clone();
-				tempSlice.set(Key.TABLE, table);
+            sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
 
-				splittedConfigs.add(tempSlice);
-			}
+            sliceConfig.remove(Constant.CONN_MARK);
 
-		}
+            List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-		return splittedConfigs;
-	}
+            if (tableNumber == 1) {
+                String table = tables.get(0);
 
-	private static String appendJDBCSuffix(String jdbc) {
-		String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&useCursorFetch=true";
+                Configuration tempSlice = sliceConfig.clone();
+                tempSlice.set(Key.TABLE, table);
+                tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
+                tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
 
-		if (jdbc.contains("?")) {
-			return jdbc + "&" + suffix;
-		} else {
-			return jdbc + "?" + suffix;
-		}
-	}
+                for (int j = 0; j < adviceNumber; j++) {
+                    splitResultConfigs.add(tempSlice.clone());
+                }
+            } else {
+                for (String table : tables) {
+                    Configuration tempSlice = sliceConfig.clone();
+                    tempSlice.set(Key.TABLE, table);
+                    tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
+                    tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
+
+                    splitResultConfigs.add(tempSlice);
+                }
+            }
+
+        }
+
+        if (IS_DEBUG) {
+            LOG.debug("splitResultConfigs:[\n{}\n].", splitResultConfigs);
+        }
+
+        return splitResultConfigs;
+    }
+
+
+    private static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, String tableName) {
+        if (null == preOrPostSqls) {
+            return Collections.emptyList();
+        }
+
+        List<String> renderedSqls = new ArrayList<String>();
+        for (String sql : preOrPostSqls) {
+            renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+        }
+
+        return renderedSqls;
+    }
+
+    private static String appendJDBCSuffix(String jdbc) {
+        String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
+
+        if (jdbc.contains("?")) {
+            return jdbc + "&" + suffix;
+        } else {
+            return jdbc + "?" + suffix;
+        }
+    }
 
 }
