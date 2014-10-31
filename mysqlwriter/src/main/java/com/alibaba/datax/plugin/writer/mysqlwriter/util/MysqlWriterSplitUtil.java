@@ -27,7 +27,7 @@ public final class MysqlWriterSplitUtil {
                 .intValue();
 
         if (tableNumber != adviceNumber && tableNumber != 1) {
-            throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR,
+            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                     String.format("tableNumber:[%s], but adviceNumb:[%s]",
                             tableNumber, adviceNumber));
         }

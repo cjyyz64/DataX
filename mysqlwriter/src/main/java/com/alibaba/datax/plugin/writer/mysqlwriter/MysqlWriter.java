@@ -130,7 +130,7 @@ public class MysqlWriter extends Writer {
                     writeBuffer.clear();
                 }
             } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+                throw new DataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
             }
@@ -149,18 +149,18 @@ public class MysqlWriter extends Writer {
             Statement stmt;
             try {
                 stmt = conn.createStatement();
-            } catch (SQLException e1) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e1);
+            } catch (SQLException e) {
+                throw new DataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
             }
 
             for (String sql : sqls) {
                 try {
                     DBUtil.executeSqlWithoutResultSet(stmt, sql);
-                } catch (SQLException e2) {
+                } catch (SQLException e) {
                     LOG.error("execute sql:[{}] failed, {}.", sql,
                             BASIC_MESSAGE);
                     throw new DataXException(
-                            MysqlWriterErrorCode.UNKNOWN_ERROR, e2);
+                            MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
                 }
             }
         }
@@ -213,7 +213,7 @@ public class MysqlWriter extends Writer {
                     }
                 }
             } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+                throw new DataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 DBUtil.closeDBResources(pstmt, null);
             }
@@ -229,7 +229,7 @@ public class MysqlWriter extends Writer {
                 stmt = conn.createStatement();
             } catch (SQLException e) {
                 LOG.error("error while createStatement, {}.", BASIC_MESSAGE);
-                throw new DataXException(MysqlWriterErrorCode.UNKNOWN_ERROR, e);
+                throw new DataXException(MysqlWriterErrorCode.SESSION_ERROR, e);
             }
 
             for (String sessionSql : sessionConfs) {

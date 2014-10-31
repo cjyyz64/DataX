@@ -39,7 +39,7 @@
                             {
                                 "type": "date",
                                 "value": "2014-10-10",
-                                "dateFormat": "yyyy-mm-dd"
+                                "dateFormat": "yyyy-MM-dd"
                             }
                         ]
                     }

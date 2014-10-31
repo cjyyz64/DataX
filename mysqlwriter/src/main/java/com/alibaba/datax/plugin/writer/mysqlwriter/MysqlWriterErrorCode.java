@@ -2,15 +2,12 @@ package com.alibaba.datax.plugin.writer.mysqlwriter;
 
 import com.alibaba.datax.common.spi.ErrorCode;
 
-/**
- * Created by jingxing on 14-9-4.
- */
 public enum MysqlWriterErrorCode implements ErrorCode {
     CONF_ERROR("MysqlWriter-00", "username/password not filled."),
-    UNKNOWN_ERROR("MysqlWriter-01", "todo"),
-    NOT_RECOMMENDED("MysqlReader-02", "your config not recommended."),
-    SESSION_ERROR("MysqlReader-03", "deal session failed."),
-    TABLE_QUERYSQL_MIXED("MysqlWriter-04", "your config has both table and querySql, error.");
+    WRITE_DATA_ERROR("MysqlWriter-01", "write data failed."),
+    EXECUTE_SQL_ERROR("MysqlWriter-02", "execute sql failed."),
+    NOT_RECOMMENDED("MysqlReader-03", "your config not recommended."),
+    SESSION_ERROR("MysqlReader-04", "deal session failed."),;
 
     private final String code;
     private final String describe;

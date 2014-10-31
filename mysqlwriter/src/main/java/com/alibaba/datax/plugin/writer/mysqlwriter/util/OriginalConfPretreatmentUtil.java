@@ -113,15 +113,6 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(columns, false);
             }
         }
-
-        if (1 == columns.size() && "*".equals(columns.get(0))) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be *.");
-        } else {
-            // 确保用户配置的 column 不重复
-            ListUtil.makeSureNoValueDuplicate(columns, false);
-        }
-
-
     }
 
     private static void dealWriteMode(Configuration originalConfig) {
@@ -132,6 +123,14 @@ public final class OriginalConfPretreatmentUtil {
 
         // 默认为：insert 方式
         String writeMode = originalConfig.getString(Key.WRITE_MODE, "INSERT");
+
+        boolean isWriteModeLegal = writeMode.toLowerCase().startsWith("insert")
+                || writeMode.toLowerCase().startsWith("replace");
+
+        if (!isWriteModeLegal) {
+            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "Unsupported write mode=" + writeMode);
+        }
+
 
         String writeDataSqlTemplate = new StringBuilder().append(writeMode).append(" INTO %s (")
                 .append(StringUtils.join(columns, ",")).append(") VALUES(")
