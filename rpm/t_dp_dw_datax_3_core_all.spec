@@ -1,9 +1,9 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
 <<<<<<< HEAD
-Version:201411031557
+Version:201411031617
 =======
-Version:201411031557
+Version:201411031617
 >>>>>>> 5f806e5cb16cb9fa656dd82f8415fe86082c5a9e
 Release: %(echo $RELEASE)%{?dist}
 
