@@ -80,7 +80,7 @@ public class OdpsWriter extends Writer {
                 LOG.warn("As your job configured emptyAsNull=true, so when write to odps,empty string \"\" will be treated as null.");
             }
 
-            this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 32);
+            this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
             this.originalConfig.set(Key.BLOCK_SIZE_IN_MB, this.blockSizeInMB);
             LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 
