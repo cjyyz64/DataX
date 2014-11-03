@@ -85,7 +85,7 @@ public class OdpsReader extends Reader {
          * </ol>
          */
         private void dealPartition(Configuration originalConfig, Table table) {
-            List<String> userConfigedPartitions = originalConfig.getList(
+            List<String> userConfiguredPartitions = originalConfig.getList(
                     Key.PARTITION, String.class);
 
             boolean isPartitionedTable = originalConfig
@@ -93,8 +93,8 @@ public class OdpsReader extends Reader {
 
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
-                if (null == userConfigedPartitions
-                        || userConfigedPartitions.isEmpty()) {
+                if (null == userConfiguredPartitions
+                        || userConfiguredPartitions.isEmpty()) {
                     throw new DataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
@@ -112,7 +112,7 @@ public class OdpsReader extends Reader {
                     }
 
                     List<String> parsedPartitions = expandUserConfigedPartition(
-                            allPartitions, userConfigedPartitions);
+                            allPartitions, userConfiguredPartitions);
 
                     if (null == parsedPartitions || parsedPartitions.isEmpty()) {
                         throw new DataXException(
@@ -121,14 +121,14 @@ public class OdpsReader extends Reader {
                                         "Can not find matched partition. all partitions:[\n%s\n], you configed partition:[\n%s\n].",
                                         StringUtils.join(allPartitions, "\n"),
                                         StringUtils.join(
-                                                userConfigedPartitions, "\n")));
+                                                userConfiguredPartitions, "\n")));
                     }
                     originalConfig.set(Key.PARTITION, parsedPartitions);
                 }
             } else {
                 // 非分区表，则不能配置分区
-                if (null != userConfigedPartitions
-                        && !userConfigedPartitions.isEmpty()) {
+                if (null != userConfiguredPartitions
+                        && !userConfiguredPartitions.isEmpty()) {
                     throw new DataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
