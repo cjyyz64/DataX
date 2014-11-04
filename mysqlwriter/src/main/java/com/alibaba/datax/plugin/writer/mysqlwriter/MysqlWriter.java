@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.MysqlWriterUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.OriginalConfPretreatmentUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,9 +62,13 @@ public class MysqlWriter extends Writer {
                 List<String> renderedPreSqls = MysqlWriterUtil.renderPreOrPostSqls(preSqls, table);
 
                 this.originalConfig.remove(Constant.CONN_MARK);
-                this.originalConfig.remove(Key.PRE_SQL);
                 if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+                    //说明有 preSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.PRE_SQL);
+
                     Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                    LOG.info("Begin to execute preSqls:[{}].", StringUtils.join(renderedPreSqls, ";"));
+
                     MysqlWriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
                     DBUtil.closeDBResources(null, null, conn);
                 }
@@ -97,9 +102,13 @@ public class MysqlWriter extends Writer {
                 List<String> postSqls = this.originalConfig.getList(Key.POST_SQL, String.class);
                 List<String> renderedPostSqls = MysqlWriterUtil.renderPreOrPostSqls(postSqls, table);
 
-                this.originalConfig.remove(Key.POST_SQL);
                 if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+                    //说明有 postSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.POST_SQL);
+
                     Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+
+                    LOG.info("Begin to execute postSqls:[{}].", StringUtils.join(renderedPostSqls, ";"));
                     MysqlWriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
                     DBUtil.closeDBResources(null, null, conn);
                 }
@@ -127,7 +136,6 @@ public class MysqlWriter extends Writer {
         private List<String> preSqls;
         private List<String> postSqls;
         private int batchSize;
-        private Connection conn;
         private int columnNumber = 0;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
@@ -162,17 +170,24 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void prepare() {
-            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
                     password);
 
-            dealSessionConf(this.conn,
-                    this.writerSliceConfig.getList(Key.SESSION, String.class));
+            dealSessionConf(connection, this.writerSliceConfig.getList(Key.SESSION, String.class));
 
-            MysqlWriterUtil.executeSqls(this.conn, this.preSqls, BASIC_MESSAGE);
+            int tableNumber = this.writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber != 1) {
+                LOG.info("Begin to execute preSqls:[{}].", StringUtils.join(this.preSqls, ";"));
+                MysqlWriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
+            }
+            DBUtil.closeDBResources(null, null, connection);
         }
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             try {
                 Record record = null;
@@ -180,24 +195,33 @@ public class MysqlWriter extends Writer {
                     writeBuffer.add(record);
 
                     if (writeBuffer.size() >= batchSize) {
-                        doBatchInsert(conn, writeBuffer);
+                        doBatchInsert(connection, writeBuffer);
                         writeBuffer.clear();
                     }
                 }
                 if (!writeBuffer.isEmpty()) {
-                    doBatchInsert(conn, writeBuffer);
+                    doBatchInsert(connection, writeBuffer);
                     writeBuffer.clear();
                 }
             } catch (Exception e) {
                 throw new DataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
+                DBUtil.closeDBResources(null, null, connection);
             }
         }
 
         @Override
         public void post() {
-            MysqlWriterUtil.executeSqls(this.conn, this.postSqls, BASIC_MESSAGE);
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
+            int tableNumber = this.writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber != 1) {
+                LOG.info("Begin to execute postSqls:[{}].", StringUtils.join(this.preSqls, ";"));
+                MysqlWriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
+            }
+            DBUtil.closeDBResources(null, null, connection);
         }
 
         @Override

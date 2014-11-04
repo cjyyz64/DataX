@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,8 +19,6 @@ public final class MysqlWriterUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(MysqlWriterUtil.class);
 
-    private static final boolean IS_DEBUG = LOG.isDebugEnabled();
-
     public static List<Configuration> doSplit(Configuration simplifiedConf,
                                               int adviceNumber) {
 
@@ -30,7 +27,17 @@ public final class MysqlWriterUtil {
         int tableNumber = simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK)
                 .intValue();
 
-        if (tableNumber != adviceNumber && tableNumber != 1) {
+        //处理单表的情况
+        if (tableNumber == 1) {
+            //由于在之前的  master prepare 中已经把 table,jdbcUrl 提取出来，所以这里处理十分简单
+            for (int j = 0; j < adviceNumber; j++) {
+                splitResultConfigs.add(simplifiedConf.clone());
+            }
+
+            return splitResultConfigs;
+        }
+
+        if (tableNumber != adviceNumber) {
             throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
                     String.format("tableNumber:[%s], but adviceNumb:[%s]",
                             tableNumber, adviceNumber));
@@ -48,41 +55,21 @@ public final class MysqlWriterUtil {
 
             Configuration connConf = Configuration.from(conns.get(i).toString());
             jdbcUrl = connConf.getString(Key.JDBC_URL);
-
             sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
 
             sliceConfig.remove(Constant.CONN_MARK);
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-            if (tableNumber == 1) {
-                String table = tables.get(0);
-
+            for (String table : tables) {
                 Configuration tempSlice = sliceConfig.clone();
                 tempSlice.set(Key.TABLE, table);
-
-                //delete it
                 tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
                 tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
 
-                for (int j = 0; j < adviceNumber; j++) {
-                    splitResultConfigs.add(tempSlice.clone());
-                }
-            } else {
-                for (String table : tables) {
-                    Configuration tempSlice = sliceConfig.clone();
-                    tempSlice.set(Key.TABLE, table);
-                    tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
-                    tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
-
-                    splitResultConfigs.add(tempSlice);
-                }
+                splitResultConfigs.add(tempSlice);
             }
 
-        }
-
-        if (IS_DEBUG) {
-            LOG.debug("after split(), splitResultConfigs:[\n{}\n].", splitResultConfigs);
         }
 
         return splitResultConfigs;
@@ -115,27 +102,20 @@ public final class MysqlWriterUtil {
 
     public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
         Statement stmt = null;
+        String currentSql = null;
         try {
             stmt = conn.createStatement();
-        } catch (SQLException e) {
-            throw new DataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+            for (String sql : sqls) {
+                currentSql = sql;
+                DBUtil.executeSqlWithoutResultSet(stmt, sql);
+            }
+        } catch (Exception e) {
+            LOG.error("execute sql:[{}] failed, {}.", currentSql,
+                    basicMessage);
+            throw DataXException.asDataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }
-
-        for (String sql : sqls) {
-            try {
-                DBUtil.executeSqlWithoutResultSet(stmt, sql);
-            } catch (SQLException e) {
-                LOG.error("execute sql:[{}] failed, {}.", sql,
-                        basicMessage);
-                throw new DataXException(
-                        MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
-            } finally {
-                DBUtil.closeDBResources(null, stmt, null);
-            }
-        }
-
     }
 
 }
