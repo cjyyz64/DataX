@@ -1,3 +1,4 @@
+
 {
     "entry": {
         "jvm": "-Xms1G -Xmx1G",
@@ -6,46 +7,13 @@
             "DATAX_HOME": "/home/admin"
         }
     },
-    "data": {
+    "common": {
         "column": {
-            "number": {
-                "bool": {
-                    "0": false,
-                    "^0": true
-                }
-            },
-            "string": {
-                "date": {
-                    "timeFormat": "yyyy-MM-dd HH:mm:ss",
-                    "timeZone": "GMT+8"
-                },
-                "bool": {
-                    "true": true,
-                    "^true": false
-                },
-                "bytes": {
-                    "encoding": "utf-8"
-                }
-            },
-            "date": {
-                "string": {
-                    "timeFormat": "yyyy-MM-dd hh:mm:ss",
-                    "timeZone": "GMT+8"
-                }
-            },
-            "bool": {
-                "number": {
-                    "true": 1,
-                    "false": 0
-                },
-                "string": {
-                    "true": "true",
-                    "false": "false"
-                }
-            },
-            "bytes": {
-                "encoding": "utf-8"
-            }
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
         }
     },
     "core": {
@@ -96,7 +64,7 @@
                 "description": {
                     "useScene": "only for performance test.",
                     "mechanism": "Produce Record from memory.",
-                    "warn": "Never use it in your real job.",
+                    "warn": "Never use it in your real job."
                 },
                 "developer": "someBody,bug reported to : someBody@someSite"
             },
@@ -106,7 +74,7 @@
                 "description": {
                     "useScene": "only for performance test.",
                     "mechanism": "Produce Record from memory.",
-                    "warn": "Never use it in your real job.",
+                    "warn": "Never use it in your real job."
                 },
                 "developer": "someBody,bug reported to : someBody@someSite"
             },
@@ -116,10 +84,10 @@
                 "description": {
                     "useScene": "only for performance test.",
                     "mechanism": "Produce Record from memory.",
-                    "warn": "Never use it in your real job.",
+                    "warn": "Never use it in your real job."
                 },
                 "developer": "someBody,bug reported to : someBody@someSite"
-            },
+            }
         },
         "writer": {
             "fakewriter": {
@@ -128,14 +96,14 @@
                 "description": {
                     "useScene": "only for performance test.",
                     "mechanism": "Produce Record from memory.",
-                    "warn": "Never use it in your real job.",
+                    "warn": "Never use it in your real job."
                 },
                 "developer": "someBody,bug reported to : someBody@someSite"
             }
         },
         "transformer": {
             "groovyTranformer": {}
-        },
+        }
     },
     "job": {
         "setting": {
