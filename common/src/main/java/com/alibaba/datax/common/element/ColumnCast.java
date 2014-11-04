@@ -7,6 +7,8 @@ import java.util.Date;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 
 public final class ColumnCast {
@@ -38,19 +40,25 @@ public final class ColumnCast {
 }
 
 class StringCast {
-	static String timeFormat = "yyyy-MM-dd HH:mm:ss";
+	static String datetimeFormat = "yyyy-MM-dd HH:mm:ss";
+
+	static String dateFormat = "yyyy-MM-dd";
+
+	static String timeFormat = "HH:mm:ss";
 
 	static String timeZone = "GMT+8";
 
 	static String encoding = "UTF-8";
 
 	static void init(final Configuration configuration) {
+		StringCast.datetimeFormat = configuration
+				.getString("common.column.datetimeFormat");
+		StringCast.dateFormat = configuration
+				.getString("common.column.dateFormat");
 		StringCast.timeFormat = configuration
-				.getString("data.column.string.date.timeFormat");
-		StringCast.timeZone = configuration
-				.getString("data.column.string.date.timeZone");
-		StringCast.encoding = configuration
-				.getString("data.column.string.bytes.encoding");
+				.getString("common.column.timeFormat");
+		StringCast.timeZone = configuration.getString("common.column.timeZone");
+		StringCast.encoding = configuration.getString("common.column.encoding");
 	}
 
 	static Date asDate(final StringColumn column) throws ParseException {
@@ -58,7 +66,20 @@ class StringCast {
 			return null;
 		}
 
+		try {
+			return DateUtils.parseDate(column.asString(),
+					StringCast.datetimeFormat);
+		} catch (Exception unused) {
+		}
+
+		try {
+			return DateUtils
+					.parseDate(column.asString(), StringCast.dateFormat);
+		} catch (Exception unused) {
+		}
+
 		return DateUtils.parseDate(column.asString(), StringCast.timeFormat);
+
 	}
 
 	static byte[] asBytes(final StringColumn column)
@@ -77,22 +98,42 @@ class StringCast {
  * 迟南已经修复了该问题，但是为了维护性，还是直接使用apache的内置函数
  */
 class DateCast {
-	static String timeFormat = "yyyy-MM-dd HH:mm:ss";
+
+	static String datetimeFormat = "yyyy-MM-dd HH:mm:ss";
+
+	static String dateFormat = "yyyy-MM-dd";
+
+	static String timeFormat = "HH:mm:ss";
 
 	static String timeZone = "GMT+8";
 
 	static void init(final Configuration configuration) {
+		DateCast.datetimeFormat = configuration
+				.getString("common.column.datetimeFormat");
 		DateCast.timeFormat = configuration
-				.getString("data.column.date.string.timeFormat");
-		DateCast.timeZone = configuration
-				.getString("data.column.date.string.timeZone");
+				.getString("common.column.timeFormat");
+		DateCast.dateFormat = configuration
+				.getString("common.column.dateFormat");
+		DateCast.timeZone = configuration.getString("common.column.timeZone");
 	}
 
 	static String asString(final DateColumn column) {
 		if (null == column.asDate()) {
 			return null;
 		}
-		return DateFormatUtils.format(column.asDate(), DateCast.timeFormat);
+
+		switch (column.getSubType()) {
+		case DATE:
+			return DateFormatUtils.format(column.asDate(), DateCast.dateFormat);
+		case TIME:
+			return DateFormatUtils.format(column.asDate(), DateCast.timeFormat);
+		case DATETIME:
+			return DateFormatUtils.format(column.asDate(),
+					DateCast.datetimeFormat);
+		default:
+			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+					"Date type error, only support DATE/TIME/DATETIME .");
+		}
 	}
 }
 
@@ -100,8 +141,7 @@ class BytesCast {
 	static String encoding = "utf-8";
 
 	static void init(final Configuration configuration) {
-		BytesCast.encoding = configuration
-				.getString("data.column.bytes.encoding");
+		BytesCast.encoding = configuration.getString("common.column.encoding");
 		return;
 	}
 
