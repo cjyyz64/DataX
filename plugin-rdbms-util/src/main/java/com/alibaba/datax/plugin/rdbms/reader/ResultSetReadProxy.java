@@ -83,7 +83,7 @@ public class ResultSetReadProxy {
                     default:
                         throw new Exception(
                                 String.format(
-                                        "Unsupported Mysql Data Type. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+                                        "Unsupported Database Data Type. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
                                         metaData.getColumnName(i),
                                         metaData.getColumnType(i),
                                         metaData.getColumnClassName(i)));

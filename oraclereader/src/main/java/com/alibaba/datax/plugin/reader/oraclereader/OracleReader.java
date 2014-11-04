@@ -31,6 +31,7 @@ public class OracleReader extends Reader {
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
+			
             this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
