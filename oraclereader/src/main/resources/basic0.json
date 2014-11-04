@@ -1,0 +1,38 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "oraclereader",
+                    "parameter": {
+                        "username": "username",
+                        "password": "password",
+                        "column": [
+                            "*"
+                        ],
+                        "splitPk": "id",
+                        "session": {
+                            "NLS_DATE_FORMAT": "'yyyy-mm-dd hh24:mi:ss'"
+                        },
+                        "connection": [
+                            {
+                                "table": [
+                                    "bvt_case"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:oracle:thin:@[HOST_NAME]:1521/[DATABASE_NAME]"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
