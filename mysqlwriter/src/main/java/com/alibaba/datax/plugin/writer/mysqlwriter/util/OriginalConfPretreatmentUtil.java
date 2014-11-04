@@ -18,8 +18,6 @@ public final class OriginalConfPretreatmentUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(OriginalConfPretreatmentUtil.class);
 
-    private static boolean IS_DEBUG = LOG.isDebugEnabled();
-
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
         originalConfig.getNecessaryValue(Key.USERNAME, MysqlWriterErrorCode.CONF_ERROR);
@@ -83,7 +81,7 @@ public final class OriginalConfPretreatmentUtil {
 
     private static void dealColumnConf(Configuration originalConfig) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
-        if (null == columns || 0 == columns.size()) {
+        if (null == columns || columns.isEmpty()) {
             throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be blank.");
         } else {
             String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
@@ -106,8 +104,10 @@ public final class OriginalConfPretreatmentUtil {
 
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
-            } else if (columns.size() < allColumns.size()) {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column exceed table all columns.");
+            } else if (columns.size() > allColumns.size()) {
+                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+                        String.format("configured column number=[%s] can not bigger than table's all column number=[%s].",
+                                columns.size(), allColumns.size()));
             } else {
                 // 确保用户配置的 column 不重复
                 ListUtil.makeSureNoValueDuplicate(columns, false);
@@ -128,7 +128,7 @@ public final class OriginalConfPretreatmentUtil {
                 || writeMode.toLowerCase().startsWith("replace");
 
         if (!isWriteModeLegal) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "Unsupported write mode=" + writeMode);
+            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, String.format("Unsupported write mode=[%s].", writeMode));
         }
 
 

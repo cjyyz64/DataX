@@ -25,17 +25,33 @@ public class MysqlWriter extends Writer {
         private static final Logger LOG = LoggerFactory
                 .getLogger(MysqlWriter.Master.class);
 
+        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+
         private Configuration originalConfig = null;
 
         @Override
         public void init() {
             this.originalConfig = getPluginJobConf();
             OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
+            if (IS_DEBUG) {
+                LOG.debug("after master init(), originalConfig now is:[\n{}\n]",
+                        this.originalConfig.toJSON());
+            }
         }
 
-        // 一般来说，是需要推迟到 slave 中进行pre 的执行
+        // 一般来说，是需要推迟到 slave 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
+            int tableNumber = this.originalConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber == 1) {
+                String username = this.originalConfig.getString(Key.USERNAME);
+                String password = this.originalConfig.getString(Key.PASSWORD);
+                String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
+                List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL, String.class);
+
+                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                MysqlWriterSplitUtil.executeSqls(conn, preSqls, jdbcUrl);
+            }
         }
 
         @Override
@@ -44,9 +60,19 @@ public class MysqlWriter extends Writer {
                     adviceNumber);
         }
 
-        // 一般来说，是需要推迟到 slave 中进行post 的执行
+        // 一般来说，是需要推迟到 slave 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
+            int tableNumber = this.originalConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber == 1) {
+                String username = this.originalConfig.getString(Key.USERNAME);
+                String password = this.originalConfig.getString(Key.PASSWORD);
+                String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
+                List<String> postSqls = this.originalConfig.getList(Key.POST_SQL, String.class);
+
+                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                MysqlWriterSplitUtil.executeSqls(conn, postSqls, jdbcUrl);
+            }
         }
 
         @Override
@@ -111,7 +137,7 @@ public class MysqlWriter extends Writer {
             dealSessionConf(conn,
                     this.writerSliceConfig.getList(Key.SESSION, String.class));
 
-            executeSqls(this.conn, this.preSqls);
+            MysqlWriterSplitUtil.executeSqls(this.conn, this.preSqls, BASIC_MESSAGE);
         }
 
         public void startWrite(RecordReceiver recordReceiver) {
@@ -138,32 +164,13 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void post() {
-            executeSqls(this.conn, this.postSqls);
+            MysqlWriterSplitUtil.executeSqls(this.conn, this.postSqls, BASIC_MESSAGE);
         }
 
         @Override
         public void destroy() {
         }
 
-        private void executeSqls(Connection conn, List<String> sqls) {
-            Statement stmt;
-            try {
-                stmt = conn.createStatement();
-            } catch (SQLException e) {
-                throw new DataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
-            }
-
-            for (String sql : sqls) {
-                try {
-                    DBUtil.executeSqlWithoutResultSet(stmt, sql);
-                } catch (SQLException e) {
-                    LOG.error("execute sql:[{}] failed, {}.", sql,
-                            BASIC_MESSAGE);
-                    throw new DataXException(
-                            MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
-                }
-            }
-        }
 
         private void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
             PreparedStatement pstmt = null;

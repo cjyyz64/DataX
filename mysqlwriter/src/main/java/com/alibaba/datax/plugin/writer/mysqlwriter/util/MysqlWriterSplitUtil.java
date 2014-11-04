@@ -2,12 +2,16 @@ package com.alibaba.datax.plugin.writer.mysqlwriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
 import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -76,7 +80,7 @@ public final class MysqlWriterSplitUtil {
         }
 
         if (IS_DEBUG) {
-            LOG.debug("splitResultConfigs:[\n{}\n].", splitResultConfigs);
+            LOG.debug("after split(), splitResultConfigs:[\n{}\n].", splitResultConfigs);
         }
 
         return splitResultConfigs;
@@ -103,6 +107,27 @@ public final class MysqlWriterSplitUtil {
             return jdbc + "&" + suffix;
         } else {
             return jdbc + "?" + suffix;
+        }
+    }
+
+
+    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
+        Statement stmt;
+        try {
+            stmt = conn.createStatement();
+        } catch (SQLException e) {
+            throw new DataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+        }
+
+        for (String sql : sqls) {
+            try {
+                DBUtil.executeSqlWithoutResultSet(stmt, sql);
+            } catch (SQLException e) {
+                LOG.error("execute sql:[{}] failed, {}.", sql,
+                        basicMessage);
+                throw new DataXException(
+                        MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+            }
         }
     }
 
