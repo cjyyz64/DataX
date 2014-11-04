@@ -67,7 +67,8 @@ public class MysqlWriter extends Writer {
                     this.originalConfig.remove(Key.PRE_SQL);
 
                     Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-                    LOG.info("Begin to execute preSqls:[{}].", StringUtils.join(renderedPreSqls, ";"));
+                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls, ";"),
+                            jdbcUrl);
 
                     MysqlWriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
                     DBUtil.closeDBResources(null, null, conn);
@@ -108,7 +109,8 @@ public class MysqlWriter extends Writer {
 
                     Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
 
-                    LOG.info("Begin to execute postSqls:[{}].", StringUtils.join(renderedPostSqls, ";"));
+                    LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls, ";"),
+                            jdbcUrl);
                     MysqlWriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
                     DBUtil.closeDBResources(null, null, conn);
                 }
@@ -177,7 +179,8 @@ public class MysqlWriter extends Writer {
 
             int tableNumber = this.writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
             if (tableNumber != 1) {
-                LOG.info("Begin to execute preSqls:[{}].", StringUtils.join(this.preSqls, ";"));
+                LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+                        BASIC_MESSAGE);
                 MysqlWriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
             }
             DBUtil.closeDBResources(null, null, connection);
@@ -218,7 +221,8 @@ public class MysqlWriter extends Writer {
 
             int tableNumber = this.writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
             if (tableNumber != 1) {
-                LOG.info("Begin to execute postSqls:[{}].", StringUtils.join(this.preSqls, ";"));
+                LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+                        BASIC_MESSAGE);
                 MysqlWriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
             }
             DBUtil.closeDBResources(null, null, connection);
