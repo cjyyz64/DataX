@@ -53,6 +53,7 @@ public class OdpsWriterProxy {
         this.tableOriginalColumnTypeList = OdpsUtil
                 .getTableOriginalColumnTypeList(this.schema);
 
+        this.byteArrayOutputStream = new ByteArrayOutputStream((this.blockSizeInMB + 1) * 1024 * 1024);
         this.protobufRecordWriter = new ProtobufRecordWriter(schema,
                 byteArrayOutputStream);
         this.blockId = blockId;
@@ -63,7 +64,6 @@ public class OdpsWriterProxy {
         //初始化与 buffer 区相关的值
 
         this.max_buffer_length = this.blockSizeInMB * 1024 * 1024;
-        this.byteArrayOutputStream = new ByteArrayOutputStream((this.blockSizeInMB + 1) * 1024 * 1024);
     }
 
     public void writeOneRecord(
