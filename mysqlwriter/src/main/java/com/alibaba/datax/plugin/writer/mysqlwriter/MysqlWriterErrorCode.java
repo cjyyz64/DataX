@@ -5,9 +5,10 @@ import com.alibaba.datax.common.spi.ErrorCode;
 public enum MysqlWriterErrorCode implements ErrorCode {
     CONF_ERROR("MysqlWriter-00", "username/password not filled."),
     WRITE_DATA_ERROR("MysqlWriter-01", "write data failed."),
-    EXECUTE_SQL_ERROR("MysqlWriter-02", "execute sql failed."),
-    NOT_RECOMMENDED("MysqlReader-03", "your config not recommended."),
-    SESSION_ERROR("MysqlReader-04", "deal session failed."),;
+    UNSUPPORTED_DATA_TYPE("MysqlWriter-02", "unsupported data type."),
+    EXECUTE_SQL_ERROR("MysqlWriter-03", "execute sql failed."),
+    NOT_RECOMMENDED("MysqlReader-04", "your config not recommended."),
+    SESSION_ERROR("MysqlReader-05", "deal session failed."),;
 
     private final String code;
     private final String describe;

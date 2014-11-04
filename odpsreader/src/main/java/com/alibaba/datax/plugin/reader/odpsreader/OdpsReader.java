@@ -70,7 +70,7 @@ public class OdpsReader extends Reader {
             int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, 3);
             if (maxRetryTime < 1) {
                 throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        "maxRetryTime should >=1.");
+                        "maxRetryTime can not < 1.");
             }
             this.originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
         }

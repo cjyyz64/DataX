@@ -124,8 +124,8 @@ public final class OriginalConfPretreatmentUtil {
         // 默认为：insert 方式
         String writeMode = originalConfig.getString(Key.WRITE_MODE, "INSERT");
 
-        boolean isWriteModeLegal = writeMode.toLowerCase().startsWith("insert")
-                || writeMode.toLowerCase().startsWith("replace");
+        boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
+                || writeMode.trim().toLowerCase().startsWith("replace");
 
         if (!isWriteModeLegal) {
             throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, String.format("Unsupported write mode=[%s].", writeMode));

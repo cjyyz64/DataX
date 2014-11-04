@@ -7,7 +7,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.writer.mysqlwriter.util.MysqlWriterSplitUtil;
+import com.alibaba.datax.plugin.writer.mysqlwriter.util.MysqlWriterUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.OriginalConfPretreatmentUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,7 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void init() {
-            this.originalConfig = getPluginJobConf();
+            this.originalConfig = super.getPluginJobConf();
             OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
             if (IS_DEBUG) {
                 LOG.debug("after master init(), originalConfig now is:[\n{}\n]",
@@ -46,17 +46,38 @@ public class MysqlWriter extends Writer {
             if (tableNumber == 1) {
                 String username = this.originalConfig.getString(Key.USERNAME);
                 String password = this.originalConfig.getString(Key.PASSWORD);
-                String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
-                List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL, String.class);
 
-                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-                MysqlWriterSplitUtil.executeSqls(conn, preSqls, jdbcUrl);
+                List<Object> conns = this.originalConfig.getList(Constant.CONN_MARK,
+                        Object.class);
+                Configuration connConf = Configuration.from(conns.get(0).toString());
+                String jdbcUrl = connConf.getString(Key.JDBC_URL);
+                jdbcUrl = MysqlWriterUtil.appendJDBCSuffix(jdbcUrl);
+                this.originalConfig.set(Key.JDBC_URL, jdbcUrl);
+
+                String table = connConf.getList(Key.TABLE, String.class).get(0);
+                this.originalConfig.set(Key.TABLE, table);
+
+                List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL, String.class);
+                List<String> renderedPreSqls = MysqlWriterUtil.renderPreOrPostSqls(preSqls, table);
+
+                this.originalConfig.remove(Constant.CONN_MARK);
+                this.originalConfig.remove(Key.PRE_SQL);
+                if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+                    Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                    MysqlWriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
+                    DBUtil.closeDBResources(null, null, conn);
+                }
+            }
+
+            if (IS_DEBUG) {
+                LOG.debug("after master prepare(), originalConfig now is:[\n{}\n]",
+                        this.originalConfig.toJSON());
             }
         }
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            return MysqlWriterSplitUtil.doSplit(this.originalConfig,
+            return MysqlWriterUtil.doSplit(this.originalConfig,
                     adviceNumber);
         }
 
@@ -67,11 +88,21 @@ public class MysqlWriter extends Writer {
             if (tableNumber == 1) {
                 String username = this.originalConfig.getString(Key.USERNAME);
                 String password = this.originalConfig.getString(Key.PASSWORD);
-                String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
-                List<String> postSqls = this.originalConfig.getList(Key.POST_SQL, String.class);
 
-                Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-                MysqlWriterSplitUtil.executeSqls(conn, postSqls, jdbcUrl);
+                //已经由 prepare 进行了appendJDBCSuffix处理
+                String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
+
+                String table = this.originalConfig.getString(Key.TABLE);
+
+                List<String> postSqls = this.originalConfig.getList(Key.POST_SQL, String.class);
+                List<String> renderedPostSqls = MysqlWriterUtil.renderPreOrPostSqls(postSqls, table);
+
+                this.originalConfig.remove(Key.POST_SQL);
+                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+                    Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                    MysqlWriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
+                    DBUtil.closeDBResources(null, null, conn);
+                }
             }
         }
 
@@ -108,7 +139,7 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void init() {
-            this.writerSliceConfig = getPluginJobConf();
+            this.writerSliceConfig = super.getPluginJobConf();
             this.username = this.writerSliceConfig.getString(Key.USERNAME);
             this.password = this.writerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
@@ -119,9 +150,6 @@ public class MysqlWriter extends Writer {
             this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = this.writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
-
-            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
-                    password);
 
             INSERT_OR_REPLACE_TEMPLATE = this.writerSliceConfig
                     .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
@@ -134,24 +162,29 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void prepare() {
-            dealSessionConf(conn,
+            this.conn = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
+            dealSessionConf(this.conn,
                     this.writerSliceConfig.getList(Key.SESSION, String.class));
 
-            MysqlWriterSplitUtil.executeSqls(this.conn, this.preSqls, BASIC_MESSAGE);
+            MysqlWriterUtil.executeSqls(this.conn, this.preSqls, BASIC_MESSAGE);
         }
 
+        //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             try {
                 Record record = null;
                 while ((record = recordReceiver.getFromReader()) != null) {
                     writeBuffer.add(record);
+
                     if (writeBuffer.size() >= batchSize) {
                         doBatchInsert(conn, writeBuffer);
                         writeBuffer.clear();
                     }
                 }
-                if (writeBuffer.size() != 0) {
+                if (!writeBuffer.isEmpty()) {
                     doBatchInsert(conn, writeBuffer);
                     writeBuffer.clear();
                 }
@@ -164,7 +197,7 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void post() {
-            MysqlWriterSplitUtil.executeSqls(this.conn, this.postSqls, BASIC_MESSAGE);
+            MysqlWriterUtil.executeSqls(this.conn, this.postSqls, BASIC_MESSAGE);
         }
 
         @Override
@@ -173,61 +206,63 @@ public class MysqlWriter extends Writer {
 
 
         private void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
-            PreparedStatement pstmt = null;
+            PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(false);
-                pstmt = connection.prepareStatement(this.writeRecordSql);
+                preparedStatement = connection.prepareStatement(this.writeRecordSql);
 
                 for (Record record : buffer) {
                     for (int i = 0; i < this.columnNumber; i++) {
-                        pstmt = buildPreparedStatement(record.getColumn(i),
-                                pstmt, i + 1);
+                        preparedStatement = buildPreparedStatement(preparedStatement, record.getColumn(i),
+                                i + 1);
                     }
-                    pstmt.addBatch();
+                    preparedStatement.addBatch();
                 }
-                pstmt.executeBatch();
+                preparedStatement.executeBatch();
                 connection.commit();
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 connection.rollback();
-                doBadInsert(connection, buffer);
+                doOneInsert(connection, buffer);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
-                DBUtil.closeDBResources(pstmt, null);
+                DBUtil.closeDBResources(preparedStatement, null);
             }
         }
 
-        private void doBadInsert(Connection connection, List<Record> buffer) {
-            PreparedStatement pstmt = null;
+        private void doOneInsert(Connection connection, List<Record> buffer) {
+            PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(true);
+                preparedStatement = connection.prepareStatement(this.writeRecordSql);
+
                 for (Record record : buffer) {
                     try {
-                        pstmt = connection.prepareStatement(this.writeRecordSql);
                         for (int i = 0; i < this.columnNumber; i++) {
-                            pstmt = buildPreparedStatement(record.getColumn(i),
-                                    pstmt, i + 1);
+                            preparedStatement = buildPreparedStatement(preparedStatement, record.getColumn(i),
+                                    i + 1);
                         }
 
-                        pstmt.execute();
-                        pstmt.close();
-                    } catch (Exception e) {
+                        preparedStatement.execute();
+                    } catch (SQLException e) {
                         if (IS_DEBUG) {
                             LOG.debug(e.toString());
                         }
 
                         this.getSlavePluginCollector().collectDirtyRecord(record, e);
                     } finally {
-                        DBUtil.closeDBResources(pstmt, null);
+                        preparedStatement.close();
                     }
                 }
             } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
+                throw DataXException.asDataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
-                DBUtil.closeDBResources(pstmt, null);
+                DBUtil.closeDBResources(preparedStatement, null);
             }
         }
 
-        private static void dealSessionConf(Connection conn, List<String> sessionConfs) {
-            if (null == sessionConfs || sessionConfs.isEmpty()) {
+        private static void dealSessionConf(Connection conn, List<String> sessions) {
+            if (null == sessions || sessions.isEmpty()) {
                 return;
             }
 
@@ -239,7 +274,7 @@ public class MysqlWriter extends Writer {
                 throw new DataXException(MysqlWriterErrorCode.SESSION_ERROR, e);
             }
 
-            for (String sessionSql : sessionConfs) {
+            for (String sessionSql : sessions) {
                 LOG.info("execute sql:[{}]", sessionSql);
                 try {
                     DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
@@ -254,20 +289,41 @@ public class MysqlWriter extends Writer {
             DBUtil.closeDBResources(stmt, null);
         }
 
-        private PreparedStatement buildPreparedStatement(Column tempColumn, PreparedStatement pstmt,
-                                                         int index) throws Exception {
-            if (tempColumn instanceof StringColumn
-                    || tempColumn instanceof LongColumn
-                    || tempColumn instanceof DoubleColumn) {
-                pstmt.setString(index, tempColumn.asString());
-            } else if (tempColumn instanceof BytesColumn) {
-                pstmt.setBytes(index, tempColumn.asBytes());
-            } else if (tempColumn instanceof DateColumn) {
-                pstmt.setObject(index, tempColumn.asDate());
-            } else if (tempColumn instanceof BoolColumn) {
-                pstmt.setBoolean(index, tempColumn.asBoolean());
-            }
-            return pstmt;
+        private PreparedStatement buildPreparedStatement(PreparedStatement preparedStatement, Column tempColumn,
+                                                         int index) throws SQLException {
+
+            preparedStatement.setString(index, tempColumn.asString());
+
+            return preparedStatement;
+
+//            Column.Type type = tempColumn.getType();
+//            switch (type) {
+//                case STRING:
+//                case LONG:
+//                case DOUBLE:
+//                    preparedStatement.setString(index, tempColumn.asString());
+//                    break;
+//
+//                case DATE:
+//                    preparedStatement.setObject(index, tempColumn.asDate());
+//                    break;
+//
+//                case BYTES:
+//                    preparedStatement.setBytes(index, tempColumn.asBytes());
+//                    break;
+//
+//                case BOOL:
+//                    preparedStatement.setBoolean(index, tempColumn.asBoolean());
+//                    break;
+//                case NULL:
+//                    preparedStatement.setObject(index, null);
+//                    break;
+//                default:
+//                    throw new DataXException(MysqlWriterErrorCode.UNSUPPORTED_DATA_TYPE,
+//                            String.format("Unsupported data type=[%s].", type));
+//            }
+//
+//            return preparedStatement;
         }
 
     }

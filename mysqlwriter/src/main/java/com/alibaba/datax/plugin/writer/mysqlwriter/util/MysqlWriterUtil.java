@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class MysqlWriterSplitUtil {
+public final class MysqlWriterUtil {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MysqlWriterSplitUtil.class);
+            .getLogger(MysqlWriterUtil.class);
 
     private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -60,6 +60,8 @@ public final class MysqlWriterSplitUtil {
 
                 Configuration tempSlice = sliceConfig.clone();
                 tempSlice.set(Key.TABLE, table);
+
+                //delete it
                 tempSlice.set(Key.PRE_SQL, renderPreOrPostSqls(preSqls, table));
                 tempSlice.set(Key.POST_SQL, renderPreOrPostSqls(postSqls, table));
 
@@ -87,7 +89,7 @@ public final class MysqlWriterSplitUtil {
     }
 
 
-    private static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, String tableName) {
+    public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, String tableName) {
         if (null == preOrPostSqls) {
             return Collections.emptyList();
         }
@@ -100,7 +102,7 @@ public final class MysqlWriterSplitUtil {
         return renderedSqls;
     }
 
-    private static String appendJDBCSuffix(String jdbc) {
+    public static String appendJDBCSuffix(String jdbc) {
         String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
 
         if (jdbc.contains("?")) {
@@ -112,11 +114,13 @@ public final class MysqlWriterSplitUtil {
 
 
     public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
-        Statement stmt;
+        Statement stmt = null;
         try {
             stmt = conn.createStatement();
         } catch (SQLException e) {
             throw new DataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+        } finally {
+            DBUtil.closeDBResources(null, stmt, null);
         }
 
         for (String sql : sqls) {
@@ -127,8 +131,11 @@ public final class MysqlWriterSplitUtil {
                         basicMessage);
                 throw new DataXException(
                         MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(null, stmt, null);
             }
         }
+
     }
 
 }
