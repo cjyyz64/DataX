@@ -218,11 +218,20 @@ public class SingleTableSplitUtil {
 	}
 
 	// warn: Types.NUMERIC is used for oracle! because oracle use NUMBER to
-	// store INT, SMALLINT, INTEGER .etc
+	// store INT, SMALLINT, INTEGER etc, and only oracle need to concern
+	// Types.NUMERIC
 	private static boolean isLongType(int type) {
-		return type == Types.BIGINT || type == Types.INTEGER
-				|| type == Types.SMALLINT || type == Types.TINYINT
-				|| type == Types.NUMERIC;
+		boolean isValidLongType = type == Types.BIGINT || type == Types.INTEGER
+				|| type == Types.SMALLINT || type == Types.TINYINT;
+
+		switch (SingleTableSplitUtil.DATABASE_TYPE) {
+		case Oracle:
+			isValidLongType |= type == Types.NUMERIC;
+			break;
+		default:
+			break;
+		}
+		return isValidLongType;
 	}
 
 	private static boolean isStringType(int type) {
