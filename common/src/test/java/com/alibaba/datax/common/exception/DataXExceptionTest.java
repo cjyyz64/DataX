@@ -13,7 +13,7 @@ public class DataXExceptionTest {
 	public void basicTest() {
 		ErrorCode errorCode = FakeErrorCode.FAKE_ERROR_CODE_ONLY_FOR_TEST_00;
 		String errorMsg = "basicTest";
-		dataXException = new DataXException(errorCode, errorMsg);
+		dataXException = DataXException.asDataXException(errorCode, errorMsg);
 		Assert.assertEquals(errorCode.toString() + " - " + errorMsg,
 				dataXException.getMessage());
 	}
@@ -22,7 +22,7 @@ public class DataXExceptionTest {
 	public void basicTest_中文() {
 		ErrorCode errorCode = FakeErrorCode.FAKE_ERROR_CODE_ONLY_FOR_TEST_01;
 		String errorMsg = "basicTest中文";
-		dataXException = new DataXException(errorCode, errorMsg);
+		dataXException = DataXException.asDataXException(errorCode, errorMsg);
 		Assert.assertEquals(errorCode.toString() + " - " + errorMsg,
 				dataXException.getMessage());
 	}

@@ -78,7 +78,7 @@ public class IdAndKeyUtil {
                         businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
                         businessMessage);
             }
         } else {
@@ -88,7 +88,7 @@ public class IdAndKeyUtil {
                     businessMessage, null);
 
             LOG.error(message);
-            throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
                     businessMessage);
         }
 

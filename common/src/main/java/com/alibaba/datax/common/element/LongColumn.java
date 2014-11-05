@@ -29,7 +29,7 @@ public class LongColumn extends Column {
 			super.setRawData(rawData);
 			super.setByteSize(rawData.bitLength() / 8);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] cannot conver to Long .", data));
 		}
 	}
@@ -124,7 +124,7 @@ public class LongColumn extends Column {
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Long cannot cast to Bytes .");
 	}
 

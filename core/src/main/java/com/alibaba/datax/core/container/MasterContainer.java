@@ -142,7 +142,7 @@ public class MasterContainer extends AbstractContainer {
 						CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID,
 						this.masterId);
 			} else {
-				throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+				throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 						"Lost master id in Local/Distribute model .");
 			}
 		}
@@ -224,7 +224,7 @@ public class MasterContainer extends AbstractContainer {
 			return;
 		}
 
-		throw new DataXException(FrameworkErrorCode.CONFIG_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
 				"Job speed must be set !");
 	}
 
@@ -403,7 +403,7 @@ public class MasterContainer extends AbstractContainer {
 		List<Configuration> readerSlicesConfigs = this.readerMaster
 				.split(adviceNumber);
 		if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
-			throw new DataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
+			throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
 					"reader split slices number can not be null or less than 0");
 		}
 		LOG.info("DataX Reader.Master [{}] splits to [{}] slices.",
@@ -419,7 +419,7 @@ public class MasterContainer extends AbstractContainer {
 		List<Configuration> writerSlicesConfigs = this.writerMaster
 				.split(readerSlicesNumber);
 		if (writerSlicesConfigs == null || writerSlicesConfigs.size() <= 0) {
-			throw new DataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
+			throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
 					"writer split slices number can not be null or less than 0");
 		}
 		LOG.info("DataX Writer [{}] splits to [{}] slices.",
@@ -440,7 +440,7 @@ public class MasterContainer extends AbstractContainer {
 			List<Configuration> readerSlicesConfigs,
 			List<Configuration> writerSlicesConfigs) {
 		if (readerSlicesConfigs.size() != writerSlicesConfigs.size()) {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
 					String.format(
 							"Reader split slices number: [%d] is not equal to writer split slices number: [%d] .",

@@ -47,7 +47,7 @@ public final class ListUtil {
 
             for (int i = 0, len = aList.size() - 1; i < len; i++) {
                 if (list.get(i).equals(list.get(i + 1))) {
-                    throw new DataXException(CommonErrorCode.CONFIG_ERROR, String.format(
+                    throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR, String.format(
                             "String:[%s] duplicated in List:[%s].", aList.get(i), StringUtils.join(aList, ",")));
                 }
             }
@@ -86,7 +86,7 @@ public final class ListUtil {
 
         for (String oneValue : part) {
             if (!all.contains(oneValue)) {
-                throw new DataXException(CommonErrorCode.CONFIG_ERROR, String.format(
+                throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR, String.format(
                         "String:[%s] not in List:[%s].", oneValue, StringUtils.join(aList, ",")));
             }
         }

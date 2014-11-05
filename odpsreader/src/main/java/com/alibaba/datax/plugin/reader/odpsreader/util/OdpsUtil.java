@@ -42,7 +42,7 @@ public final class OdpsUtil {
         } else if (accountType.equalsIgnoreCase("taobao")) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
-            throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                     String.format("Unsupport account type:[%s].", accountType));
         }
 
@@ -77,7 +77,7 @@ public final class OdpsUtil {
                     LOG.warn("try to list odps partitions for {} times.", i + 1);
                     continue;
                 } else {
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             OdpsReaderErrorCode.RUNTIME_EXCEPTION, e);
                 }
             }
@@ -140,14 +140,14 @@ public final class OdpsUtil {
                         String.valueOf(e.getValue()));
             }
         } catch (Exception e) {
-            throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
+            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
         }
         return propsMap;
     }
 
     public static String formatPartition(String partition) {
         if (StringUtils.isBlank(partition)) {
-            throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                     "bad partition which is blank.");
         } else {
             return partition.trim().replaceAll(" *= *", "=")
@@ -198,7 +198,7 @@ public final class OdpsUtil {
                 }
             }
             if (!hasColumn) {
-                throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                         String.format("no column named [%s] !", col));
             }
         }

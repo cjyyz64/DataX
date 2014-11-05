@@ -207,7 +207,7 @@ public class MysqlWriter extends Writer {
                     writeBuffer.clear();
                 }
             } catch (Exception e) {
-                throw new DataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
+                throw DataXException.asDataXException(MysqlWriterErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
                 DBUtil.closeDBResources(null, null, connection);
@@ -299,7 +299,7 @@ public class MysqlWriter extends Writer {
                 stmt = conn.createStatement();
             } catch (SQLException e) {
                 LOG.error("error while createStatement, {}.", BASIC_MESSAGE);
-                throw new DataXException(MysqlWriterErrorCode.SESSION_ERROR, e);
+                throw DataXException.asDataXException(MysqlWriterErrorCode.SESSION_ERROR, e);
             }
 
             for (String sessionSql : sessions) {
@@ -309,7 +309,7 @@ public class MysqlWriter extends Writer {
                 } catch (SQLException e) {
                     LOG.error("execute sql:[{}] failed, {}.", sessionSql,
                             BASIC_MESSAGE);
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             MysqlWriterErrorCode.SESSION_ERROR, e);
                 }
             }
@@ -347,7 +347,7 @@ public class MysqlWriter extends Writer {
 //                    preparedStatement.setObject(index, null);
 //                    break;
 //                default:
-//                    throw new DataXException(MysqlWriterErrorCode.UNSUPPORTED_DATA_TYPE,
+//                    throw DataXException.asDataXException(MysqlWriterErrorCode.UNSUPPORTED_DATA_TYPE,
 //                            String.format("Unsupported data type=[%s].", type));
 //            }
 //

@@ -99,7 +99,7 @@ public class ReaderProxy {
 			break;
 		}
 		default:
-			throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
 					String.format("Unknown column type:[%s].", type));
 		}
 	}

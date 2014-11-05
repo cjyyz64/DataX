@@ -26,7 +26,7 @@ public final class OriginalConfPretreatmentUtil {
         // 检查batchSize 配置（选填，如果未填写，则设置为默认值）
         int batchSize = originalConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
         if (batchSize < 1) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
                     "batchSize can not less than 1.");
         }
 
@@ -49,7 +49,7 @@ public final class OriginalConfPretreatmentUtil {
 
             String jdbcUrl = connConf.getString(Key.JDBC_URL);
             if (StringUtils.isBlank(jdbcUrl)) {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "lost jdbcUrl config.");
+                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, "lost jdbcUrl config.");
             }
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL), jdbcUrl);
@@ -57,7 +57,7 @@ public final class OriginalConfPretreatmentUtil {
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
             if (null == tables || tables.isEmpty()) {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
                         "lost table config.");
             }
 
@@ -66,7 +66,7 @@ public final class OriginalConfPretreatmentUtil {
                     .expandTableConf(DataBaseType.MySql, tables);
 
             if (null == expandedTables || expandedTables.isEmpty()) {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
                         "write table configured error.");
             }
 
@@ -82,7 +82,7 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealColumnConf(Configuration originalConfig) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == columns || columns.isEmpty()) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be blank.");
+            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, "column can not be blank.");
         } else {
             String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                     Constant.CONN_MARK, Key.JDBC_URL));
@@ -105,7 +105,7 @@ public final class OriginalConfPretreatmentUtil {
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
             } else if (columns.size() > allColumns.size()) {
-                throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
                         String.format("configured column number=[%s] can not bigger than table's all column number=[%s].",
                                 columns.size(), allColumns.size()));
             } else {
@@ -128,7 +128,7 @@ public final class OriginalConfPretreatmentUtil {
                 || writeMode.trim().toLowerCase().startsWith("replace");
 
         if (!isWriteModeLegal) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR, String.format("Unsupported write mode=[%s].", writeMode));
+            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, String.format("Unsupported write mode=[%s].", writeMode));
         }
 
 

@@ -134,7 +134,7 @@ public class CommonRdbmsReader {
 						businessMessage, e);
 				LOG.error(message);
 
-				throw new DataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
+				throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
 			} finally {
 				DBUtil.closeDBResources(null, conn);
 			}
@@ -189,7 +189,7 @@ public class CommonRdbmsReader {
 						businessMessage, e);
 				LOG.error(message);
 
-				throw new DataXException(DBUtilErrorCode.SET_SESSION_ERROR, e);
+				throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, e);
 			} finally {
 				DBUtil.closeDBResources(null, stmt, null);
 			}

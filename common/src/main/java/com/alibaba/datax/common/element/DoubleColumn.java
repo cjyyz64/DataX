@@ -91,19 +91,19 @@ public class DoubleColumn extends Column {
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Double cannot cast to Boolean .");
 	}
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Double cannot cast to Date .");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Double cannot cast to Bytes .");
 	}
 
@@ -114,7 +114,7 @@ public class DoubleColumn extends Column {
 		try {
 			new BigDecimal(data);
 		} catch (Exception e) {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] cannot convert to Double .", data));
 		}

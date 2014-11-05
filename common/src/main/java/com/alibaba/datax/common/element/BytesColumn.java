@@ -1,13 +1,12 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-
-import org.apache.commons.lang3.ArrayUtils;
-
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -41,7 +40,7 @@ public class BytesColumn extends Column {
 		try {
 			return ColumnCast.bytes2String(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("Bytes[%s] convert to String failed .",
 							this.toString()));
 		}
@@ -49,37 +48,37 @@ public class BytesColumn extends Column {
 
 	@Override
 	public Long asLong() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Long .");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to BigDecimal .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to BigInteger .");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Long .");
 	}
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Date .");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Bytes cannot cast to Boolean .");
 	}
 }

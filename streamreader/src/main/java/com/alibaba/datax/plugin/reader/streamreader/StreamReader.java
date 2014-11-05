@@ -26,10 +26,10 @@ public class StreamReader extends Reader {
 			Long sliceRecordCount = this.originalConfig
 					.getLong(Key.SLICE_RECORD_COUNT);
 			if (null == sliceRecordCount) {
-				throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE,
+				throw DataXException.asDataXException(StreamReaderErrorCode.REQUIRED_VALUE,
 						"Lost config sliceRecordCount.");
 			} else if (sliceRecordCount < 1) {
-				throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
+				throw DataXException.asDataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
 						"sliceRecordCount can not <1.");
 			}
 
@@ -39,7 +39,7 @@ public class StreamReader extends Reader {
 			List<JSONObject> columns = originalConfig.getList(Key.COLUMN,
 					JSONObject.class);
 			if (null == columns || columns.isEmpty()) {
-				throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE,
+				throw DataXException.asDataXException(StreamReaderErrorCode.REQUIRED_VALUE,
 						"Lost config column.");
 			}
 
@@ -63,7 +63,7 @@ public class StreamReader extends Reader {
 						}
 					}
 					if (!Type.isTypeIllegal(typeName)) {
-						throw new DataXException(
+						throw DataXException.asDataXException(
 								StreamReaderErrorCode.NOT_SUPPORT_TYPE,
 								"Unsupported type:" + typeName);
 					}
@@ -190,7 +190,7 @@ public class StreamReader extends Reader {
 					}
 				}
 			} catch (Exception e) {
-				throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
+				throw DataXException.asDataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
 						"Construct one record failed.", e);
 			}
 

@@ -64,7 +64,7 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 			this.metric.incrWriteFailedRecords(1L);
 			this.metric.incrWriteFailedBytes(dirtyRecord.getByteSize());
 		} else {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR,
 					String.format("Unknown plugin type [%s] .", this.pluginType));
 		}

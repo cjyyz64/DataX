@@ -38,7 +38,7 @@ public final class MysqlWriterUtil {
         }
 
         if (tableNumber != adviceNumber) {
-            throw new DataXException(MysqlWriterErrorCode.CONF_ERROR,
+            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
                     String.format("tableNumber:[%s], but adviceNumb:[%s]",
                             tableNumber, adviceNumber));
         }

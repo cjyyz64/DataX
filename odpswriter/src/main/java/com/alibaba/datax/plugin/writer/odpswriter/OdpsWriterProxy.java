@@ -124,7 +124,7 @@ public class OdpsWriterProxy {
                     null);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
+            throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
                     businessMessage);
         } else if (sourceColumnCount < userConfiguredColumnNumber) {
             if (printColumnLess) {

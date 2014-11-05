@@ -39,7 +39,7 @@ public class SingleTableSplitUtil {
 		Pair<Object, Object> minMaxPK = getPkRange(configuration);
 
 		if (null == minMaxPK) {
-			throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 					"split table with splitPk failed.");
 		}
 
@@ -79,7 +79,7 @@ public class SingleTableSplitUtil {
 					null);
 
 			LOG.error(message);
-			throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 					businessMessage);
 		}
 
@@ -170,17 +170,17 @@ public class SingleTableSplitUtil {
 						// check: string shouldn't contain '.', for oracle
 						String minMax = rs.getString(1) + rs.getString(2);
 						if (StringUtils.contains(minMax, '.')) {
-							throw new DataXException(
+							throw DataXException.asDataXException(
 									DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 									"unsupported splitPk type, pk type not long nor string");
 						}
 					}
 				} else {
-					throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+					throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 							"unsupported splitPk type, pk type not long nor string");
 				}
 			} else {
-				throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+				throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 						"unsupported splitPk type, pk type not long nor string");
 			}
 		} catch (Exception e) {
@@ -188,7 +188,7 @@ public class SingleTableSplitUtil {
 				LOG.error(e.getMessage(), e);
 			}
 
-			throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, e);
+			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, e);
 		} finally {
 			DBUtil.closeDBResources(rs, null, conn);
 		}
@@ -211,7 +211,7 @@ public class SingleTableSplitUtil {
 			}
 		} catch (Exception e) {
 			LOG.error("error when get splitPk type");
-			throw new DataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
 					"error when get splitPk type");
 		}
 		return ret;

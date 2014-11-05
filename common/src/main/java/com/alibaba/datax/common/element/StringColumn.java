@@ -40,7 +40,7 @@ public class StringColumn extends Column {
 		try {
 			return this.asBigDecimal().toBigInteger();
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to BigInteger failed",
 							this.asString()));
 		}
@@ -57,7 +57,7 @@ public class StringColumn extends Column {
 			OverFlowUtil.validateLongNotOverFlow(integer);
 			return integer.longValue();
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to Long failed",
 							this.asString()));
 		}
@@ -72,7 +72,7 @@ public class StringColumn extends Column {
 		try {
 			return new BigDecimal(this.asString());
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to BigDecimal failed",
 							this.asString()));
 		}
@@ -104,7 +104,7 @@ public class StringColumn extends Column {
 			return false;
 		}
 
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				String.format("String[%s] convert to Boolean failed .",
 						this.asString()));
 	}
@@ -114,7 +114,7 @@ public class StringColumn extends Column {
 		try {
 			return ColumnCast.string2Date(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to Date failed .",
 							this.asString()));
 		}
@@ -125,7 +125,7 @@ public class StringColumn extends Column {
 		try {
 			return ColumnCast.string2Bytes(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s] convert to Bytes failed .",
 							this.asString()));
 		}

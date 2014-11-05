@@ -73,7 +73,7 @@ public final class MetricManager {
 
 		Map<Long, Metric> slaveStatics = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveStatics) {
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+			throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 					String.format(
 							"Can not get unregistered metric for slaveId:[%d]",
 							slaveId));
@@ -106,7 +106,7 @@ public final class MetricManager {
 
 		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR,
 					String.format(
 							"Can not get unregistered metric for slaveId:[%d] .",
@@ -115,7 +115,7 @@ public final class MetricManager {
 
 		Metric channelMetric = slaveMetricMap.get(channelId);
 		if (null == channelMetric) {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR,
 					String.format(
 							"Can not get unregistered metric for slaveId:[%d] channelId:[%d] .",

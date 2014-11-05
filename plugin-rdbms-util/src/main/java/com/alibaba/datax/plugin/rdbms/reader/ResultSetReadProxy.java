@@ -92,7 +92,7 @@ public class ResultSetReadProxy {
             }
             recordSender.sendToWriter(record);
         } catch (Exception e) {
-            throw new DataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
         }
     }
 }

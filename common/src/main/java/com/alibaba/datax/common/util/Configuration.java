@@ -128,7 +128,7 @@ public class Configuration {
 	public String getNecessaryValue(String key, ErrorCode errorCode) {
 		String value = this.getString(key, null);
 		if (StringUtils.isBlank(value)) {
-			throw new DataXException(errorCode, String.format(
+			throw DataXException.asDataXException(errorCode, String.format(
 					"Key:[%s] cannot be blank .", key));
 		}
 

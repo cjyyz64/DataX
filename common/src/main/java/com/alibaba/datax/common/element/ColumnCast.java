@@ -1,15 +1,14 @@
 package com.alibaba.datax.common.element;
 
-import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.util.Date;
-
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
-
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
+
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.util.Date;
 
 public final class ColumnCast {
 
@@ -131,7 +130,7 @@ class DateCast {
 			return DateFormatUtils.format(column.asDate(),
 					DateCast.datetimeFormat);
 		default:
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					"Date type error, only support DATE/TIME/DATETIME .");
 		}
 	}

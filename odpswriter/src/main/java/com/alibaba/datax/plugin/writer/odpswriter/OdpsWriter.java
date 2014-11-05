@@ -67,7 +67,7 @@ public class OdpsWriter extends Writer {
                         businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
                         businessMessage);
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
@@ -124,7 +124,7 @@ public class OdpsWriter extends Writer {
                 String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
             }
 
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
@@ -228,7 +228,7 @@ public class OdpsWriter extends Writer {
             this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL);
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
-                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "blockSizeInMB should in range:[1,512], but you configured value="
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "blockSizeInMB should in range:[1,512], but you configured value="
                         + this.blockSizeInMB);
             }
 
@@ -277,7 +277,7 @@ public class OdpsWriter extends Writer {
                         businessMessage, e);
                 LOG.error(message);
 
-                throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
             }
         }
 

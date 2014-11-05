@@ -59,7 +59,7 @@ public class FakeWriter extends Writer {
 			while ((record = lineReceiver.getFromReader()) != null) {
 				this.getSlavePluginCollector().collectDirtyRecord(
 						record,
-						new DataXException(FrameworkErrorCode.INNER_ERROR,
+						DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 								"TEST"), "TEST");
 			}
 

@@ -90,7 +90,7 @@ public final class OriginalConfPretreatmentUtil {
                         DATABASE_TYPE, tables);
 
                 if (null == expandedTables || expandedTables.isEmpty()) {
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             DBUtilErrorCode.ILLEGAL_VALUE,
                             "Read table configured error: table cannot be empty ! Ask your administrator for help !");
                 }
@@ -121,7 +121,7 @@ public final class OriginalConfPretreatmentUtil {
                         businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(DBUtilErrorCode.REQUIRED_KEY,
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_KEY,
                         businessMessage);
             } else {
                 String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
@@ -158,7 +158,7 @@ public final class OriginalConfPretreatmentUtil {
 
                     for (String column : userConfiguredColumns) {
                         if ("*".equals(column)) {
-                            throw new DataXException(
+                            throw DataXException.asDataXException(
                                     DBUtilErrorCode.ILLEGAL_VALUE,
                                     "No column named[*].");
                         }
@@ -186,7 +186,7 @@ public final class OriginalConfPretreatmentUtil {
                                     businessMessage, null);
                             LOG.error(message);
 
-                            throw new DataXException(
+                            throw DataXException.asDataXException(
                                     DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                                     businessMessage);
                         }
@@ -254,7 +254,7 @@ public final class OriginalConfPretreatmentUtil {
                         businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(
+                throw DataXException.asDataXException(
                         DBUtilErrorCode.TABLE_QUERYSQL_MISSING, businessMessage);
             } else if (true == isTableMode && true == isQuerySqlMode) {
                 // table 和 querySql 二者均配置
@@ -263,7 +263,7 @@ public final class OriginalConfPretreatmentUtil {
                         businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
+                throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
                         businessMessage);
             }
         }
@@ -276,7 +276,7 @@ public final class OriginalConfPretreatmentUtil {
                     null);
             LOG.error(message);
 
-            throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
+            throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
                     businessMessage);
         }
 

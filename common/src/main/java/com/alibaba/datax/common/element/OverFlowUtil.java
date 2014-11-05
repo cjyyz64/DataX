@@ -29,7 +29,7 @@ public final class OverFlowUtil {
 		boolean isOverFlow = OverFlowUtil.isLongOverflow(integer);
 
 		if (isOverFlow) {
-			throw new DataXException(CommonErrorCode.CONVERT_OVER_FLOW,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_OVER_FLOW,
 					String.format("Value [%s] convert to long overflow !",
 							integer.toString()));
 		}
@@ -53,7 +53,7 @@ public final class OverFlowUtil {
 	public static void validateDoubleNotOverFlow(final BigDecimal decimal) {
 		boolean isOverFlow = OverFlowUtil.isDoubleOverFlow(decimal);
 		if (isOverFlow) {
-			throw new DataXException(CommonErrorCode.CONVERT_OVER_FLOW,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_OVER_FLOW,
 					String.format("Value [%s] convert to double overflow !",
 							decimal.toPlainString()));
 		}

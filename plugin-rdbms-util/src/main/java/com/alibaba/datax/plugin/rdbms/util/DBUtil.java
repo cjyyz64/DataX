@@ -28,7 +28,7 @@ public final class DBUtil {
                     businessMessage, null);
 
             LOG.error(message);
-            throw new DataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, businessMessage);
+            throw DataXException.asDataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, businessMessage);
         }
 
         try {
@@ -62,7 +62,7 @@ public final class DBUtil {
                     businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, businessMessage, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, businessMessage, e);
         }
 
     }
@@ -86,7 +86,7 @@ public final class DBUtil {
                 }
             }, Constant.MAX_TRY_TIMES, 1000L, true);
         } catch (Exception e) {
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR,
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,
                     String.format("get jdbc connection failed, connection detail is [\n%s\n].",
                             jdbcUrl), e);
         }
@@ -100,7 +100,7 @@ public final class DBUtil {
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
         }
     }
 
@@ -203,7 +203,7 @@ public final class DBUtil {
             }
 
         } catch (SQLException e) {
-            throw new DataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
         }
         return columns;
 

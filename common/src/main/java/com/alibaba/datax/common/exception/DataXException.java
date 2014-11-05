@@ -4,35 +4,57 @@ import com.alibaba.datax.common.spi.ErrorCode;
 
 public class DataXException extends RuntimeException {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	private ErrorCode errorCode;
+    private ErrorCode errorCode;
 
-	public DataXException(ErrorCode errorCode, String errorMessage) {
-		super(errorCode.toString() + " - " + errorMessage);
-		this.errorCode = errorCode;
-	}
+    private DataXException(ErrorCode errorCode, String errorMessage) {
+        super(errorCode.toString() + " - " + errorMessage);
+        this.errorCode = errorCode;
+    }
 
-	public DataXException(ErrorCode errorCode, Throwable cause) {
-		super(errorCode.toString(), cause);
-		this.errorCode = errorCode;
-	}
+    private DataXException(ErrorCode errorCode, String errorMessage,
+                           Throwable cause) {
+        super(errorCode.toString() + " - " + getMessage(errorMessage)
+                + " - " + getMessage(cause), cause);
 
-	public DataXException(ErrorCode errorCode, String errorMessage,
-			Throwable cause) {
-		super(errorCode.toString() + " - " + errorMessage, cause);
-		this.errorCode = errorCode;
-	}
+        this.errorCode = errorCode;
+    }
 
-	public static DataXException asDataXException(ErrorCode errorCode,
-			Throwable cause) {
-		if (cause instanceof DataXException) {
-			return (DataXException) cause;
-		}
-		return new DataXException(errorCode, cause.getMessage(), cause);
-	}
+    public static DataXException asDataXException(ErrorCode errorCode, String message) {
+        return new DataXException(errorCode, message);
+    }
 
-	public ErrorCode getErrorCode() {
-		return this.errorCode;
-	}
+    public static DataXException asDataXException(ErrorCode errorCode, String message,
+                                                  Throwable cause) {
+        if (cause instanceof DataXException) {
+            return (DataXException) cause;
+        }
+        return new DataXException(errorCode, message, cause);
+    }
+
+    public static DataXException asDataXException(ErrorCode errorCode,
+                                                  Throwable cause) {
+        if (cause instanceof DataXException) {
+            return (DataXException) cause;
+        }
+        return new DataXException(errorCode, getMessage(cause), cause);
+    }
+
+    public ErrorCode getErrorCode() {
+        return this.errorCode;
+    }
+
+
+    private static String getMessage(Object obj) {
+        if (obj == null) {
+            return "";
+        }
+
+        if (obj instanceof Throwable) {
+            return ((Throwable) obj).getMessage();
+        } else {
+            return obj.toString();
+        }
+    }
 }

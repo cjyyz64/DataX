@@ -44,7 +44,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
 
         return result;
@@ -68,7 +68,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
 
         return result;
@@ -90,7 +90,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
 
         return result;
@@ -110,7 +110,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
 
         return result;

@@ -47,13 +47,13 @@ public class OdpsReader extends Reader {
                 this.originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                         OdpsUtil.isPartitionedTable(table));
             } catch (Exception e) {
-                throw new DataXException(OdpsReaderErrorCode.RUNTIME_EXCEPTION,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.RUNTIME_EXCEPTION,
                         e);
             }
 
             boolean isVirtualView = table.isVirtualView();
             if (isVirtualView) {
-                throw new DataXException(
+                throw DataXException.asDataXException(
                         OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                         String.format(
                                 "Table:[%s] is Virtual View, DataX not support to read data from it.",
@@ -69,7 +69,7 @@ public class OdpsReader extends Reader {
         private void dealMaxRetryTime(Configuration originalConfig) {
             int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, 3);
             if (maxRetryTime < 1) {
-                throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                         "maxRetryTime can not < 1.");
             }
             this.originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
@@ -95,7 +95,7 @@ public class OdpsReader extends Reader {
                 // 分区表，需要配置分区
                 if (null == userConfiguredPartitions
                         || userConfiguredPartitions.isEmpty()) {
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
                                     "Lost partition config, table:[%s] is partitioned.",
@@ -107,7 +107,7 @@ public class OdpsReader extends Reader {
                                     originalConfig.getInt(Key.MAX_RETRY_TIME));
 
                     if (null == allPartitions || allPartitions.isEmpty()) {
-                        throw new DataXException(OdpsReaderErrorCode.RUNTIME_EXCEPTION,
+                        throw DataXException.asDataXException(OdpsReaderErrorCode.RUNTIME_EXCEPTION,
                                 String.format("Table:[%s] partitions are empty.", table.getName()));
                     }
 
@@ -115,7 +115,7 @@ public class OdpsReader extends Reader {
                             allPartitions, userConfiguredPartitions);
 
                     if (null == parsedPartitions || parsedPartitions.isEmpty()) {
-                        throw new DataXException(
+                        throw DataXException.asDataXException(
                                 OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                                 String.format(
                                         "Can not find matched partition. all partitions:[\n%s\n], you configed partition:[\n%s\n].",
@@ -129,7 +129,7 @@ public class OdpsReader extends Reader {
                 // 非分区表，则不能配置分区
                 if (null != userConfiguredPartitions
                         && !userConfiguredPartitions.isEmpty()) {
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
                                     "Can not config partition, Table:[%s] is not partitioned, ",
@@ -152,7 +152,7 @@ public class OdpsReader extends Reader {
 
             if (userConfigedPartitions.indexOf("*") > 0) {
                 // *要么分区只配置一个*，表示全表拖取；不允许在其他位置单独配置一个*
-                throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                         "* means read the whole table. you can not read one table[%s] >1 times.");
             }
 
@@ -171,7 +171,7 @@ public class OdpsReader extends Reader {
                 for (int i = 0, len = tempCheckPartitions.size(); i < len - 1; i++) {
                     if (tempCheckPartitions.get(i).equalsIgnoreCase(
                             tempCheckPartitions.get(i + 1))) {
-                        throw new DataXException(
+                        throw DataXException.asDataXException(
                                 OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                                 String.format(
                                         "Partition:[%s] choose more than one time.",
@@ -295,7 +295,7 @@ public class OdpsReader extends Reader {
                     LOG.info("Session status:[{}]", downloadSession.getStatus()
                             .toString());
                 } catch (Exception e) {
-                    throw new DataXException(
+                    throw DataXException.asDataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
                 }
             } else {
@@ -317,7 +317,7 @@ public class OdpsReader extends Reader {
                         .format("table:[%s],partition:[%s],start=count:[%s]. no need to read it.",
                                 this.table, partition, start));
             } else {
-                throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                         "count should >=0.");
             }
 

@@ -60,7 +60,7 @@ public class ErrorRecordLimit {
             LOG.debug(String.format(
                     "Error-limit set to %d, error count check .",
                     recordLimit));
-            throw new DataXException(
+            throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
                     String.format(
                             "Error-limit check failed, limit %d but %d reached in fact .",
@@ -80,7 +80,7 @@ public class ErrorRecordLimit {
         long error = masterMetric.getErrorRecords();
 
         if (total > 0 && ((double) error / (double) total) > percentageLimit) {
-            throw new DataXException(
+            throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
                     String.format(
                             "Error-limit check failed, limit %f but %f reached in fact .",

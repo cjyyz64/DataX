@@ -36,25 +36,25 @@ public class DirtyRecord implements Record {
 
 	@Override
 	public void setColumn(int i, Column column) {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"this method NOT support !");
 	}
 
 	@Override
 	public Column getColumn(int i) {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"this method NOT support !");
 	}
 
 	@Override
 	public int getColumnNumber() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"this method NOT support !");
 	}
 
 	@Override
 	public int getByteSize() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"this method NOT support !");
 	}
 
@@ -91,49 +91,49 @@ class DirtyColumn extends Column {
 
 	@Override
 	public Long asLong() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public String asString() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+		throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
 				"This method NOT support !");
 	}
 

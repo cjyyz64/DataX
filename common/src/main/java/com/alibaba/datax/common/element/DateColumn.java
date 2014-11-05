@@ -77,7 +77,7 @@ public class DateColumn extends Column {
 		try {
 			return ColumnCast.date2String(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("Date[%d] format to String failed .",
 							this.toString()));
 		}
@@ -94,31 +94,31 @@ public class DateColumn extends Column {
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to Bytes .");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to Boolean .");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to Double .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to BigInteger .");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
 				"Date cannot cast to BigDecimal .");
 	}
 

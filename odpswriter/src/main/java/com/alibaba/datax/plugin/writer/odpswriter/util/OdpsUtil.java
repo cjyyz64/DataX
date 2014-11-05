@@ -47,7 +47,7 @@ public class OdpsUtil {
                     businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
         }
 
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
@@ -58,7 +58,7 @@ public class OdpsUtil {
                     businessMessage, null);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.REQUIRED_VALUE, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, businessMessage);
         }
     }
 
@@ -71,7 +71,7 @@ public class OdpsUtil {
                     businessMessage, null);
 
             LOG.error(message);
-            throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                     businessMessage);
         }
 
@@ -130,7 +130,7 @@ public class OdpsUtil {
             String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
         }
         return parts;
     }
@@ -149,7 +149,7 @@ public class OdpsUtil {
             String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
         }
         return false;
     }
@@ -166,7 +166,7 @@ public class OdpsUtil {
             String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
         }
     }
 
@@ -181,7 +181,7 @@ public class OdpsUtil {
         // check if exist partition
         List<String> odpsParts = OdpsUtil.listOdpsPartitions(table);
         if (null == odpsParts) {
-            throw new DataXException(OdpsWriterErrorCode.LIST_PARTITION_FAILED, "Error when list table partitions.");
+            throw DataXException.asDataXException(OdpsWriterErrorCode.LIST_PARTITION_FAILED, "Error when list table partitions.");
         }
         int j = 0;
         for (j = 0; j < odpsParts.size(); j++) {
@@ -210,7 +210,7 @@ public class OdpsUtil {
             String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, businessMessage);
         }
     }
 
@@ -225,7 +225,7 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
         }
     }
 
@@ -240,7 +240,7 @@ public class OdpsUtil {
             }, MAX_RETRY_TIME, 1000L, true);
 
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
         }
     }
 
@@ -259,7 +259,7 @@ public class OdpsUtil {
             String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
             LOG.error(message);
 
-            throw new DataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, e);
         }
     }
 
@@ -275,7 +275,7 @@ public class OdpsUtil {
                         businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
             }
             partSpec.append(kv[0]).append("=");
             partSpec.append("'").append(kv[1].replace("'", "")).append("'");
@@ -317,7 +317,7 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
         }
     }
 
@@ -334,7 +334,7 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw new DataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
         }
 
     }
@@ -362,7 +362,7 @@ public class OdpsUtil {
                         businessMessage, null);
                 LOG.error(message);
 
-                throw new DataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
                         businessMessage);
             }
         }
@@ -385,7 +385,7 @@ public class OdpsUtil {
                         businessMessage, null);
 
                 LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
                         businessMessage);
             }
         }
@@ -415,7 +415,7 @@ public class OdpsUtil {
                     String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
 
                     LOG.error(message);
-                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
                 } else {
                     LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
                     OdpsUtil.truncatePartition(table, partition);
@@ -428,7 +428,7 @@ public class OdpsUtil {
                     String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
 
                     LOG.error(message);
-                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
                     OdpsUtil.truncateNonPartitionedTable(table);
@@ -444,7 +444,7 @@ public class OdpsUtil {
                     String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
                     LOG.error(message);
 
-                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
                     if (!isPartitionExists) {
@@ -462,7 +462,7 @@ public class OdpsUtil {
                     String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
                     LOG.error(message);
 
-                    throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
                 }
             }
         }

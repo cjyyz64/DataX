@@ -1,28 +1,21 @@
 package com.alibaba.datax.plugin.reader.txtfilereader;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
-
+import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by haiwei.luo on 14-9-20.
@@ -60,11 +53,11 @@ public class TxtFileReader extends Reader {
 			try {
 				Charsets.toCharset(charset);
 			} catch (UnsupportedCharsetException uce) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
 						uce.getMessage(), uce);
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
 						e.getMessage(), e);
 			}
@@ -144,14 +137,14 @@ public class TxtFileReader extends Reader {
 							"the directory does not exist : [%s]",
 							parentDirectory);
 					LOG.error(message);
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileReaderErrorCode.FILE_EXCEPTION, message);
 				}
 			} catch (SecurityException se) {
 				String message = String.format(
 						"do not have permission to : [%s]", parentDirectory);
 				LOG.error(message);
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.SECURITY_EXCEPTION, message);
 			}
 
@@ -172,7 +165,7 @@ public class TxtFileReader extends Reader {
 							parentDirectory));
 					// 文件数量限制
 					if (result.size() > Constants.MAX_FILE_READ) {
-						throw new DataXException(
+						throw DataXException.asDataXException(
 								TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
 								String.format("too much files to read > [%d]",
 										Constants.MAX_FILE_READ));
@@ -333,18 +326,18 @@ public class TxtFileReader extends Reader {
 					}
 				}
 			} catch (UnsupportedEncodingException uee) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
+				throw DataXException.asDataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
 						String.format("could not use charset : [%]",
 								this.charset), uee);
 			} catch (FileNotFoundException fnfe) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
+				throw DataXException.asDataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
 						String.format("could not find file : [%s]", fileName),
 						fnfe);
 			} catch (IOException ioe) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
+				throw DataXException.asDataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
 						String.format("read file error : [%s]", fileName), ioe);
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
 						e.getMessage(), e);
 			} finally {
@@ -398,7 +391,7 @@ public class TxtFileReader extends Reader {
 				return record;
 
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
 						e.getMessage());
 			}
@@ -441,17 +434,17 @@ public class TxtFileReader extends Reader {
 					String errorMessage = String.format(
 							"not support column type :[%s]", columnType);
 					LOG.error(errorMessage);
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileReaderErrorCode.NOT_SUPPORT_TYPE,
 							errorMessage);
 				}
 			} catch (IndexOutOfBoundsException ioe) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
 						String.format("index [%s] is out of bounds",
 								columnIndex));
 			} catch (NumberFormatException nfe) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CAST_VALUE_TYPE_ERROR,
 						nfe.getMessage(), nfe);
 			}

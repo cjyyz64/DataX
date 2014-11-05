@@ -44,7 +44,7 @@ public final class OdpsSplitUtil {
 
 		// TODO
 		if (null == partitions || partitions.isEmpty()) {
-			throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
 					"no partition to read.");
 		}
 
@@ -166,7 +166,7 @@ public final class OdpsSplitUtil {
 			downloadSession = tunnel.createDownloadSession(
 					odps.getDefaultProject(), tableName);
 		} catch (TunnelException e) {
-			throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
+			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
 		}
 
 		return downloadSession;
@@ -189,7 +189,7 @@ public final class OdpsSplitUtil {
 			downloadSession = tunnel.createDownloadSession(
 					odps.getDefaultProject(), tableName, partitionSpec);
 		} catch (TunnelException e) {
-			throw new DataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
+			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
 		}
 
 		return downloadSession;
