@@ -10,12 +10,10 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
 import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
-import com.aliyun.odps.tunnel.TunnelException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -34,7 +32,7 @@ public class OdpsReader extends Reader {
             this.originalConfig = this.getPluginJobConf();
 
             // 最大尝试次数校验，默认值为3
-            dealMaxRetryTime(this.originalConfig);
+            OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
             Odps odps = OdpsUtil.initOdps(this.originalConfig);
 
@@ -62,17 +60,7 @@ public class OdpsReader extends Reader {
 
             dealPartition(this.originalConfig, table);
 
-            dealColumn(originalConfig, table);
-
-        }
-
-        private void dealMaxRetryTime(Configuration originalConfig) {
-            int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, 3);
-            if (maxRetryTime < 1) {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        "maxRetryTime can not < 1.");
-            }
-            this.originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
+            dealColumn(this.originalConfig, table);
         }
 
         /**
@@ -98,7 +86,7 @@ public class OdpsReader extends Reader {
                     throw DataXException.asDataXException(
                             OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
                             String.format(
-                                    "Lost partition config, table:[%s] is partitioned.",
+                                    "Table:[%s] is partitioned, so you need config its partition.",
                                     table.getName()));
                 } else {
                     // TODO 考虑把MAX_RETRY_TIME 设置到OdpsUtil中
@@ -108,10 +96,10 @@ public class OdpsReader extends Reader {
 
                     if (null == allPartitions || allPartitions.isEmpty()) {
                         throw DataXException.asDataXException(OdpsReaderErrorCode.RUNTIME_EXCEPTION,
-                                String.format("Table:[%s] partitions are empty.", table.getName()));
+                                String.format("Table:[%s] is partitioned, but partition value is empty.", table.getName()));
                     }
 
-                    List<String> parsedPartitions = expandUserConfigedPartition(
+                    List<String> parsedPartitions = expandUserConfiguredPartition(
                             allPartitions, userConfiguredPartitions);
 
                     if (null == parsedPartitions || parsedPartitions.isEmpty()) {
@@ -139,31 +127,30 @@ public class OdpsReader extends Reader {
 
         }
 
-        // TODO 对于用户配置的分区，不允许解析后出现重复的情况？
-        private List<String> expandUserConfigedPartition(
-                List<String> allPartitions, List<String> userConfigedPartitions) {
+        private List<String> expandUserConfiguredPartition(
+                List<String> allPartitions, List<String> userConfiguredPartitions) {
             // 对odps 本身的所有分区进行特殊字符的处理
             List<String> allStandardPartitions = OdpsUtil
                     .formatPartitions(allPartitions);
 
             // 对用户自身配置的所有分区进行特殊字符的处理
-            List<String> allStandardUserConfigedPartitions = OdpsUtil
-                    .formatPartitions(userConfigedPartitions);
+            List<String> allStandardUserConfiguredPartitions = OdpsUtil
+                    .formatPartitions(userConfiguredPartitions);
 
-            if (userConfigedPartitions.indexOf("*") > 0) {
+            if (userConfiguredPartitions.indexOf("*") > 0) {
                 // *要么分区只配置一个*，表示全表拖取；不允许在其他位置单独配置一个*
                 throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        "* means read the whole table. you can not read one table[%s] >1 times.");
+                        "* means read the whole table. you can not read one table >1 times.");
             }
 
             // 处理配置为*的情况，代表全表拖取，直接返回表所有分区即可（当然，是处理了分区中的特殊字符之后的）
-            if (1 == userConfigedPartitions.size()
-                    && "*".equals(userConfigedPartitions.get(0))) {
+            if (1 == userConfiguredPartitions.size()
+                    && "*".equals(userConfiguredPartitions.get(0))) {
                 return allStandardPartitions;
             } else {
                 List<String> retPartitions = FilterUtil.filterByRegulars(
                         allStandardPartitions,
-                        allStandardUserConfigedPartitions);
+                        allStandardUserConfiguredPartitions);
 
                 List<String> tempCheckPartitions = new ArrayList<String>(
                         retPartitions);
@@ -185,24 +172,24 @@ public class OdpsReader extends Reader {
         //TODO 对列格式进行调整
         private void dealColumn(Configuration originalConfig, Table table) {
             // 用户配置的 column
-            List<String> userConfigedColumns = this.originalConfig.getList(
+            List<String> userConfiguredColumns = this.originalConfig.getList(
                     Key.COLUMN, String.class);
 
             List<Column> allColumns = OdpsUtil.getTableAllColumns(table);
             List<String> tableOriginalColumnNameList = OdpsUtil
                     .getTableOriginalColumnNameList(allColumns);
 
-            if (IS_DEBUG) {
-                LOG.debug("Table:[{}] all columns:[{}]", table.getName(),
-                        StringUtils.join(tableOriginalColumnNameList, ","));
-            }
+            LOG.info("Table:[{}] all columns:[{}]", table.getName(),
+                    StringUtils.join(tableOriginalColumnNameList, ","));
 
-            if (null == userConfigedColumns || userConfigedColumns.isEmpty()) {
-                LOG.warn("column blank is not recommended.");
+            if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
+                LOG.warn("column configured to be blank is not recommended. " +
+                        "Because it may not work when you changed your table structure.");
                 originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
-            } else if (1 == userConfigedColumns.size()
-                    && "*".equals(userConfigedColumns.get(0))) {
-                LOG.warn("column * is not recommended.");
+            } else if (1 == userConfiguredColumns.size()
+                    && "*".equals(userConfiguredColumns.get(0))) {
+                LOG.warn("column * is not recommended. " +
+                        "Because it may not work when you changed your table structure.");
                 originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
             }
 
@@ -216,7 +203,7 @@ public class OdpsReader extends Reader {
                             firstParsedColumns);
 
             if (IS_DEBUG) {
-                LOG.debug("allColumnList: {} .", allColumnParsedWithConstant);
+                LOG.debug("allColumnParsedWithConstant: {} .", allColumnParsedWithConstant);
             }
             List<Integer> columnPositions = OdpsUtil.parsePosition(
                     allColumnParsedWithConstant, firstParsedColumns);
@@ -231,7 +218,6 @@ public class OdpsReader extends Reader {
 
         @Override
         public void prepare() {
-            LOG.info("prepare()");
         }
 
         @Override
@@ -242,12 +228,10 @@ public class OdpsReader extends Reader {
 
         @Override
         public void post() {
-            LOG.info("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
         }
     }
 
@@ -278,7 +262,6 @@ public class OdpsReader extends Reader {
 
         @Override
         public void prepare() {
-            LOG.info("prepare()");
         }
 
         @Override
@@ -287,17 +270,9 @@ public class OdpsReader extends Reader {
             String partition = this.readerSliceConf.getString(Key.PARTITION);
 
             if (this.isPartitionedTable) {
-                try {
-                    downloadSession = OdpsSplitUtil
-                            .getSessionForPartitionedTable(this.odps,
-                                    this.tunnelServer, this.table, partition);
-
-                    LOG.info("Session status:[{}]", downloadSession.getStatus()
-                            .toString());
-                } catch (Exception e) {
-                    throw DataXException.asDataXException(
-                            OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
-                }
+                downloadSession = OdpsSplitUtil
+                        .getSessionForPartitionedTable(this.odps,
+                                this.tunnelServer, this.table, partition);
             } else {
                 downloadSession = OdpsSplitUtil
                         .getSessionForNonPartitionedTable(this.odps,
@@ -310,15 +285,16 @@ public class OdpsReader extends Reader {
 
             if (count > 0) {
                 LOG.info(String.format(
-                        "table:[%s],partition:[%s],start:[%s],count:[%s].",
+                        "Table:[%s],partition:[%s],start:[%s],totalCount:[%s].",
                         this.table, partition, start, count));
             } else if (0 == count) {
                 LOG.warn(String
-                        .format("table:[%s],partition:[%s],start=count:[%s]. no need to read it.",
+                        .format("Table:[%s],partition:[%s],totalCount:[%s]. no need to read it.",
                                 this.table, partition, start));
+                return;
             } else {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        "count should >=0.");
+                throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
+                        "TotalCount should >= 0.");
             }
 
             TableSchema tableSchema = downloadSession.getSchema();
@@ -334,24 +310,18 @@ public class OdpsReader extends Reader {
                         this.readerSliceConf, tableOriginalColumnTypeList);
 
                 readerProxy.doRead();
-            } catch (TunnelException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (Exception e) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL, e);
             }
 
         }
 
         @Override
         public void post() {
-            LOG.info("post()");
         }
 
         @Override
         public void destroy() {
-            LOG.info("destroy()");
         }
 
     }

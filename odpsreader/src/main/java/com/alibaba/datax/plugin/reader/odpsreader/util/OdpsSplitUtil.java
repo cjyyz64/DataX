@@ -1,10 +1,5 @@
 package com.alibaba.datax.plugin.reader.odpsreader.util;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.odpsreader.Constant;
@@ -16,6 +11,10 @@ import com.aliyun.odps.Table;
 import com.aliyun.odps.tunnel.TableTunnel;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 import com.aliyun.odps.tunnel.TunnelException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class OdpsSplitUtil {
 
@@ -166,7 +165,7 @@ public final class OdpsSplitUtil {
 			downloadSession = tunnel.createDownloadSession(
 					odps.getDefaultProject(), tableName);
 		} catch (TunnelException e) {
-			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
+			throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
 		}
 
 		return downloadSession;
@@ -189,7 +188,7 @@ public final class OdpsSplitUtil {
 			downloadSession = tunnel.createDownloadSession(
 					odps.getDefaultProject(), tableName, partitionSpec);
 		} catch (TunnelException e) {
-			throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
+			throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
 		}
 
 		return downloadSession;

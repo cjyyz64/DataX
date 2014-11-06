@@ -19,6 +19,8 @@ public class Constant {
     // 常量字段用COLUMN_CONSTANT_FLAG 首尾包住即可
     public final static String COLUMN_CONSTANT_FLAG = "'";
 
+    public final static int DEFAULT_RETRY_TIME = 3;
+
     /**
      * 以下是获取accesskey id 需要用到的常量值
      */

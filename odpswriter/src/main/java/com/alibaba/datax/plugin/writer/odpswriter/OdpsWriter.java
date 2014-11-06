@@ -85,7 +85,7 @@ public class OdpsWriter extends Writer {
             LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 
             if (IS_DEBUG) {
-                LOG.debug("After init, job config now is: [\n{}\n] .",
+                LOG.debug("After master init(), job config now is: [\n{}\n] .",
                         this.originalConfig.toJSON());
             }
         }

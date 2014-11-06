@@ -204,4 +204,13 @@ public final class OdpsUtil {
         }
         return retList;
     }
+
+    public static void dealMaxRetryTime(Configuration originalConfig) {
+        int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, Constant.DEFAULT_RETRY_TIME);
+        if (maxRetryTime < 1) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                    "maxRetryTime can not < 1.");
+        }
+        originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
+    }
 }
