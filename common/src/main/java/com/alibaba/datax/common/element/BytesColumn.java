@@ -42,7 +42,7 @@ public class BytesColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Bytes[%s] 类型不能转为String .", this.toString()));
+					String.format("Bytes[%s]不能转为String .", this.toString()));
 		}
 	}
 
@@ -54,16 +54,14 @@ public class BytesColumn extends Column {
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw DataXException
-				.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-						"Bytes类型不能转为BigDecimal .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为BigDecimal .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw DataXException
-				.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-						"Bytes类型不能转为BigInteger .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为BigInteger .");
 	}
 
 	@Override

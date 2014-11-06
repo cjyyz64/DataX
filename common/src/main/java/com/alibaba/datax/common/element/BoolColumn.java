@@ -105,6 +105,6 @@ public class BoolColumn extends Column {
 
 		throw DataXException.asDataXException(
 				CommonErrorCode.CONVERT_NOT_SUPPORT,
-				String.format("String[%s]类型不能转为Bool .", data));
+				String.format("String[%s]不能转为Bool .", data));
 	}
 }

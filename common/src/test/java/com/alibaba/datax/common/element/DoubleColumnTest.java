@@ -202,8 +202,32 @@ public class DoubleColumnTest {
 
 	@Test
 	public void test_NaN() {
-		System.out.println(Double.valueOf("NaN"));
-		System.out.println(Double.POSITIVE_INFINITY);
+		DoubleColumn column = new DoubleColumn(String.valueOf(Double.NaN));
+		Assert.assertTrue(column.asString().equals("NaN"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		column = new DoubleColumn(String.valueOf(Double.POSITIVE_INFINITY));
+		Assert.assertTrue(column.asString().equals("Infinity"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		column = new DoubleColumn(String.valueOf(Double.NEGATIVE_INFINITY));
+		Assert.assertTrue(column.asString().equals("-Infinity"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
 
 	}
 }

@@ -137,7 +137,7 @@ public class DoubleColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("字符串[%s] 无法转为Double类型 .", data));
+					String.format("String[%s]无法转为Double类型 .", data));
 		}
 	}
 

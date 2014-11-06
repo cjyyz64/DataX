@@ -55,7 +55,7 @@ public final class OverFlowUtil {
 		if (isOverFlow) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_OVER_FLOW,
-					String.format("[%s] 转为Double类型出现溢出 .",
+					String.format("[%s]转为Double类型出现溢出 .",
 							decimal.toPlainString()));
 		}
 	}

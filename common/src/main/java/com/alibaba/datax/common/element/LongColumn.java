@@ -30,7 +30,7 @@ public class LongColumn extends Column {
 			super.setByteSize(rawData.bitLength() / 8);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s]类型不能转为Long .", data));
+					String.format("String[%s]不能转为Long .", data));
 		}
 	}
 
