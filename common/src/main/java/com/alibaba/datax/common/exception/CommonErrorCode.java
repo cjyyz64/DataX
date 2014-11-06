@@ -7,10 +7,10 @@ import com.alibaba.datax.common.spi.ErrorCode;
  */
 public enum CommonErrorCode implements ErrorCode {
 
-	CONFIG_ERROR("Common-00", "Configuration error."), CONVERT_NOT_SUPPORT(
-			"Common-01", "Element convert failed ."), CONVERT_OVER_FLOW(
-			"Common-02", "Element convert overflow ."), RETRY_FAIL("Common-10",
-			"Retry to execute some method failed."), ;
+	CONFIG_ERROR("Common-00", "配置错误，请检查您的作业或框架配置 ."), CONVERT_NOT_SUPPORT(
+			"Common-01", "传输数据过程中发现类型转换失败 ."), CONVERT_OVER_FLOW("Common-02",
+			"数据转换出现溢出，数据传输失真，请检查您的传输数据 ."), RETRY_FAIL("Common-10",
+			"调用方法重试多次仍然失败."), ;
 
 	private final String code;
 

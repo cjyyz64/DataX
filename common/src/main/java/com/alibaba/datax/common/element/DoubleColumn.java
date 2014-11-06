@@ -45,13 +45,28 @@ public class DoubleColumn extends Column {
 			return null;
 		}
 
-		return new BigDecimal((String) this.getRawData());
+		try {
+			return new BigDecimal((String) this.getRawData());
+		} catch (NumberFormatException e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s] 无法转换为Double类型 .",
+							(String) this.getRawData()));
+		}
 	}
 
 	@Override
 	public Double asDouble() {
 		if (null == this.getRawData()) {
 			return null;
+		}
+
+		String string = (String) this.getRawData();
+
+		boolean isDoubleSpecific = string.equals("NaN")
+				|| string.equals("-Infinity") || string.equals("+Infinity");
+		if (isDoubleSpecific) {
+			return Double.valueOf(string);
 		}
 
 		BigDecimal result = this.asBigDecimal();
@@ -91,32 +106,38 @@ public class DoubleColumn extends Column {
 
 	@Override
 	public Boolean asBoolean() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Boolean .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Bool .");
 	}
 
 	@Override
 	public Date asDate() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Date .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Date类型 .");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Bytes .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Bytes类型 .");
 	}
 
 	private void validate(final String data) {
 		if (null == data) {
 			return;
 		}
+
+		if (data.equalsIgnoreCase("NaN") || data.equalsIgnoreCase("-Infinity")
+				|| data.equalsIgnoreCase("Infinity")) {
+			return;
+		}
+
 		try {
 			new BigDecimal(data);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] cannot convert to Double .", data));
+					String.format("字符串[%s] 无法转为Double类型 .", data));
 		}
 	}
 

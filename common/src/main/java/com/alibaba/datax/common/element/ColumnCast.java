@@ -1,14 +1,16 @@
 package com.alibaba.datax.common.element;
 
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
-
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.TimeZone;
+
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
+
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
 
 public final class ColumnCast {
 
@@ -47,17 +49,36 @@ class StringCast {
 
 	static String timeZone = "GMT+8";
 
+	static FastDateFormat dateFormatter;
+
+	static FastDateFormat timeFormatter;
+
+	static FastDateFormat datetimeFormatter;
+
+	static TimeZone timeZoner;
+
 	static String encoding = "UTF-8";
 
 	static void init(final Configuration configuration) {
-		StringCast.datetimeFormat = configuration
-				.getString("common.column.datetimeFormat");
-		StringCast.dateFormat = configuration
-				.getString("common.column.dateFormat");
-		StringCast.timeFormat = configuration
-				.getString("common.column.timeFormat");
-		StringCast.timeZone = configuration.getString("common.column.timeZone");
-		StringCast.encoding = configuration.getString("common.column.encoding");
+		StringCast.datetimeFormat = configuration.getString(
+				"common.column.datetimeFormat", StringCast.datetimeFormat);
+		StringCast.dateFormat = configuration.getString(
+				"common.column.dateFormat", StringCast.dateFormat);
+		StringCast.timeFormat = configuration.getString(
+				"common.column.timeFormat", StringCast.timeFormat);
+		StringCast.timeZone = configuration.getString("common.column.timeZone",
+				StringCast.timeFormat);
+		StringCast.timeZoner = TimeZone.getTimeZone(StringCast.timeZone);
+
+		StringCast.datetimeFormatter = FastDateFormat.getInstance(
+				StringCast.datetimeFormat, StringCast.timeZoner);
+		StringCast.dateFormatter = FastDateFormat.getInstance(
+				StringCast.dateFormat, StringCast.timeZoner);
+		StringCast.timeFormatter = FastDateFormat.getInstance(
+				StringCast.timeFormat, StringCast.timeZoner);
+
+		StringCast.encoding = configuration.getString("common.column.encoding",
+				StringCast.encoding);
 	}
 
 	static Date asDate(final StringColumn column) throws ParseException {
@@ -66,19 +87,16 @@ class StringCast {
 		}
 
 		try {
-			return DateUtils.parseDate(column.asString(),
-					StringCast.datetimeFormat);
+			return StringCast.datetimeFormatter.parse(column.asString());
 		} catch (Exception unused) {
 		}
 
 		try {
-			return DateUtils
-					.parseDate(column.asString(), StringCast.dateFormat);
+			return StringCast.dateFormatter.parse(column.asString());
 		} catch (Exception unused) {
 		}
 
-		return DateUtils.parseDate(column.asString(), StringCast.timeFormat);
-
+		return StringCast.timeFormatter.parse(column.asString());
 	}
 
 	static byte[] asBytes(final StringColumn column)
@@ -106,14 +124,19 @@ class DateCast {
 
 	static String timeZone = "GMT+8";
 
+	static TimeZone timeZoner = TimeZone.getTimeZone(DateCast.timeZone);
+
 	static void init(final Configuration configuration) {
-		DateCast.datetimeFormat = configuration
-				.getString("common.column.datetimeFormat");
-		DateCast.timeFormat = configuration
-				.getString("common.column.timeFormat");
-		DateCast.dateFormat = configuration
-				.getString("common.column.dateFormat");
-		DateCast.timeZone = configuration.getString("common.column.timeZone");
+		DateCast.datetimeFormat = configuration.getString(
+				"common.column.datetimeFormat", datetimeFormat);
+		DateCast.timeFormat = configuration.getString(
+				"common.column.timeFormat", timeFormat);
+		DateCast.dateFormat = configuration.getString(
+				"common.column.dateFormat", dateFormat);
+		DateCast.timeZone = configuration.getString("common.column.timeZone",
+				DateCast.timeZone);
+		DateCast.timeZoner = TimeZone.getTimeZone(DateCast.timeZone);
+		return;
 	}
 
 	static String asString(final DateColumn column) {
@@ -123,15 +146,18 @@ class DateCast {
 
 		switch (column.getSubType()) {
 		case DATE:
-			return DateFormatUtils.format(column.asDate(), DateCast.dateFormat);
+			return DateFormatUtils.format(column.asDate(), DateCast.dateFormat,
+					DateCast.timeZoner);
 		case TIME:
-			return DateFormatUtils.format(column.asDate(), DateCast.timeFormat);
+			return DateFormatUtils.format(column.asDate(), DateCast.timeFormat,
+					DateCast.timeZoner);
 		case DATETIME:
 			return DateFormatUtils.format(column.asDate(),
-					DateCast.datetimeFormat);
+					DateCast.datetimeFormat, DateCast.timeZoner);
 		default:
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					"Date type error, only support DATE/TIME/DATETIME .");
+			throw DataXException
+					.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+							"时间类型出现不支持类型，目前仅支持DATE/TIME/DATETIME。该类型属于编程错误，请反馈给DataX开发团队 .");
 		}
 	}
 }
@@ -140,7 +166,8 @@ class BytesCast {
 	static String encoding = "utf-8";
 
 	static void init(final Configuration configuration) {
-		BytesCast.encoding = configuration.getString("common.column.encoding");
+		BytesCast.encoding = configuration.getString("common.column.encoding",
+				BytesCast.encoding);
 		return;
 	}
 

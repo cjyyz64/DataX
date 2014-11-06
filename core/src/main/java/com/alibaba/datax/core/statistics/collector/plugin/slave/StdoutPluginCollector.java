@@ -23,6 +23,8 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(StdoutPluginCollector.class);
 
+	private static final int DEFAULT_MAX_DIRTYNUM = 128;
+
 	private AtomicInteger maxLogNum = new AtomicInteger(0);
 
 	private AtomicInteger currentLogNum = new AtomicInteger(0);
@@ -33,7 +35,7 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 		maxLogNum = new AtomicInteger(
 				configuration
 						.getInt(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_MAXDIRTYNUM,
-								100));
+								DEFAULT_MAX_DIRTYNUM));
 	}
 
 	private String formatDirty(final Record dirty, final Throwable t,

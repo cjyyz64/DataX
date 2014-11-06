@@ -78,7 +78,7 @@ public class DateColumn extends Column {
 			return ColumnCast.date2String(this);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Date[%d] format to String failed .",
+					String.format("Date[%d]类型不能转为String .",
 							this.toString()));
 		}
 	}
@@ -95,31 +95,31 @@ public class DateColumn extends Column {
 	@Override
 	public byte[] asBytes() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to Bytes .");
+				"Date类型不能转为Bytes .");
 	}
 
 	@Override
 	public Boolean asBoolean() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to Boolean .");
+				"Date类型不能转为Boolean .");
 	}
 
 	@Override
 	public Double asDouble() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to Double .");
+				"Date类型不能转为Double .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to BigInteger .");
+				"Date类型不能转为BigInteger .");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date cannot cast to BigDecimal .");
+				"Date类型不能转为BigDecimal .");
 	}
 
 	public DateType getSubType() {
