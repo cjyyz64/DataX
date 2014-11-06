@@ -37,12 +37,12 @@ public class ErrorRecordLimit {
 
         if (percentageLimit != null) {
             Validate.isTrue(0.0 < percentageLimit && percentageLimit < 1.0,
-                    "Error limit percentage should be in range (0.0, 1.0)");
+                    "脏数据百分比限制应该在(0.0, 1.0)之间");
         }
 
         if (recordLimit != null) {
             Validate.isTrue(recordLimit >= 0,
-                    "Error limit percentage should be in range (0.0, 1.0)");
+                    "脏数据条数现在应该为非负整数");
 
             // errorRecord优先级高于errorPercentage.
             percentageLimit = null;
@@ -63,7 +63,7 @@ public class ErrorRecordLimit {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
                     String.format(
-                            "Error-limit check failed, limit %d but %d reached in fact .",
+                            "脏数据条数检查不通过，限制是[%d]条，但实际上捕获了[%d]条.",
                             recordLimit, errorNumber));
         }
     }
@@ -83,7 +83,7 @@ public class ErrorRecordLimit {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
                     String.format(
-                            "Error-limit check failed, limit %f but %f reached in fact .",
+                            "脏数据百分比检查不通过，限制是[%f]，但实际上捕获到[%f].",
                             percentageLimit, ((double) error / (double) total)));
         }
     }

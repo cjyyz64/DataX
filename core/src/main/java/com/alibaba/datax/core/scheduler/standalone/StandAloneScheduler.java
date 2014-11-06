@@ -39,7 +39,7 @@ public class StandAloneScheduler implements Scheduler {
 	public void schedule(List<Configuration> configurations,
 			ContainerCollector frameworkCollector) {
 		Validate.notNull(configurations,
-				"local scheduler configurations can not be null");
+				"standalone scheduler配置不能为空");
 
 		int masterReportIntervalInMillSec = configurations.get(0).getInt(
 				CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL, 10000);
@@ -99,7 +99,7 @@ public class StandAloneScheduler implements Scheduler {
 			} while (true);
 
 		} catch (InterruptedException e) {
-			LOG.error("InterruptedException caught!", e);
+			LOG.error("捕获到InterruptedException异常!", e);
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR, e);
 		}

@@ -26,7 +26,7 @@ public class JarLoader extends URLClassLoader {
 
     private static URL[] getURLs(String[] paths) {
         Validate.isTrue(null != paths && 0 != paths.length,
-                "Paths cannot be empty .");
+                "jar包路径不能为空.");
 
         List<String> dirs = new ArrayList<String>();
         for (String path : paths) {
@@ -63,12 +63,12 @@ public class JarLoader extends URLClassLoader {
     }
 
     private static List<URL> doGetURLs(final String path) {
-        Validate.isTrue(!StringUtils.isBlank(path), "Path cannot be empty .");
+        Validate.isTrue(!StringUtils.isBlank(path), "jar包路径不能为空.");
 
         File jarPath = new File(path);
 
         Validate.isTrue(jarPath.exists() && jarPath.isDirectory(),
-                "Path must exists and be directory .");
+                "jar包路径必须存在且为目录.");
 
 		/* set filter */
         FileFilter jarFilter = new FileFilter() {
@@ -88,7 +88,7 @@ public class JarLoader extends URLClassLoader {
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.PLUGIN_INIT_ERROR,
-                        "System Fatal Error: Load Jar failed .", e);
+                        "系统加载jar包出错", e);
             }
         }
 

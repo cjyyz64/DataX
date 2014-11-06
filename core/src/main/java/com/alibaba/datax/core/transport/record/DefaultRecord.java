@@ -45,7 +45,7 @@ public class DefaultRecord implements Record {
 	public void setColumn(int i, final Column column) {
 		if (i < 0) {
 			throw DataXException.asDataXException(FrameworkErrorCode.ARGUMENT_ERROR,
-					"Can not set column which index less than 0");
+					"不能给index小于0的column设置值");
 		}
 
 		if (i >= columns.size()) {

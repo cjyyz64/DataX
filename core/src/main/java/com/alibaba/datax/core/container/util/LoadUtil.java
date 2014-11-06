@@ -74,7 +74,7 @@ public class LoadUtil {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_INSTALL_ERROR,
                     String.format(
-                            "System Fatal Error: DataX cannot find configuration for [%s] .",
+                            "DataX不能找到插件[%s]的配置.",
                             pluginName));
         }
 
@@ -102,7 +102,7 @@ public class LoadUtil {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.INNER_ERROR,
                     String.format(
-                            "System Fatal Error: DataX cannot find Master plugin %s .",
+                            "DataX找到plugin[%s]的master配置.",
                             pluginName), e);
         }
     }
@@ -126,7 +126,7 @@ public class LoadUtil {
             return slavePlugin;
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
-                    String.format("DataX cannot find Slave plugin %s .",
+                    String.format("DataX不能找plugin[%s]的slave配置.",
                             pluginName), e);
         }
     }
@@ -153,7 +153,7 @@ public class LoadUtil {
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.INNER_ERROR,
                         String.format(
-                                "System Fatal Error: Plugin [%s] type must be [reader] or [writer]!",
+                                "插件[%s]的类型必须是[reader]或[writer]!",
                                 pluginName));
         }
     }
@@ -193,7 +193,7 @@ public class LoadUtil {
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.INNER_ERROR,
                         String.format(
-                                "System Fatal Error: [%s] plugin [%s] path illegal !",
+                                "%s插件[%s]路径非法!",
                                 pluginType, pluginName));
             }
             jarLoader = new JarLoader(new String[]{pluginPath});

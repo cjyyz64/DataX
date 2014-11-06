@@ -225,11 +225,11 @@ public class SlaveContainer extends AbstractContainer {
 					null != jobConf.getConfiguration(CoreConstant.JOB_READER)
 							&& null != jobConf
 									.getConfiguration(CoreConstant.JOB_WRITER),
-					"reader/writer PluginParam cannot be empty!");
+					"[reader|writer]的插件参数不能为空!");
 
 			if (!isTaskDone()) {
 				throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
-						"Work not completed yet!");
+						"当前slice还没有完成!");
 			}
 
 			int sliceId = jobConf.getInt(CoreConstant.JOB_SLICEID);

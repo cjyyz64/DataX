@@ -37,7 +37,7 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 				.getInt(CoreConstant.DATAX_CORE_CLUSTERMANAGER_TIMEOUT,
 						3000);
 		Validate.isTrue(StringUtils.isNotBlank(this.clusterManagerAddress),
-				"master report address can not be blank for local container collector");
+				"在[local container collector]模式下，master的汇报地址不能为空");
 	}
 
 	@Override
@@ -52,7 +52,7 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 					.execute().returnContent().asString();
 			LOG.debug(result);
 		} catch (Exception e) {
-			LOG.warn("Report problem: " + e.getMessage());
+			LOG.warn("在[local container collector]模式下，master汇报出错: " + e.getMessage());
 		}
 	}
 

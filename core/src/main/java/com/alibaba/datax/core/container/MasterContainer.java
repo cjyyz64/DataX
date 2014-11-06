@@ -143,7 +143,7 @@ public class MasterContainer extends AbstractContainer {
 						this.masterId);
 			} else {
 				throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
-						"Lost master id in Local/Distribute model .");
+						"在[local|distribute]模式下没有设置master id.");
 			}
 		}
 
@@ -225,7 +225,7 @@ public class MasterContainer extends AbstractContainer {
 		}
 
 		throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
-				"Job speed must be set !");
+				"Job运行速度必须设置");
 	}
 
 	/**
@@ -266,7 +266,7 @@ public class MasterContainer extends AbstractContainer {
 					super.getContainerCollector());
 			this.endTransferTimeStamp = System.currentTimeMillis();
 		} catch (Exception e) {
-			LOG.error("run scheduler[{}] error", schedulerClassName);
+			LOG.error("运行scheduler[[{}]]出错", schedulerClassName);
 			this.endTransferTimeStamp = System.currentTimeMillis();
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.INNER_ERROR, e);
@@ -404,7 +404,7 @@ public class MasterContainer extends AbstractContainer {
 				.split(adviceNumber);
 		if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
 			throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-					"reader split slices number can not be null or less than 0");
+					"reader切分的slice数目不能小于等于0");
 		}
 		LOG.info("DataX Reader.Master [{}] splits to [{}] slices.",
 				this.readerPluginName, readerSlicesConfigs.size());
@@ -420,7 +420,7 @@ public class MasterContainer extends AbstractContainer {
 				.split(readerSlicesNumber);
 		if (writerSlicesConfigs == null || writerSlicesConfigs.size() <= 0) {
 			throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-					"writer split slices number can not be null or less than 0");
+					"writer切分的slice不能小于等于0");
 		}
 		LOG.info("DataX Writer [{}] splits to [{}] slices.",
 				this.writerPluginName, writerSlicesConfigs.size());
@@ -443,7 +443,7 @@ public class MasterContainer extends AbstractContainer {
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
 					String.format(
-							"Reader split slices number: [%d] is not equal to writer split slices number: [%d] .",
+							"reader切分的slice数目[%d]不等于writer切分的slice数目[%d].",
 							readerSlicesConfigs.size(),
 							writerSlicesConfigs.size()));
 		}
@@ -494,8 +494,8 @@ public class MasterContainer extends AbstractContainer {
 			int averSlicesPerChannel, int channelNumber,
 			int channelsPerSlaveContainer) {
 		Validate.isTrue(averSlicesPerChannel > 0 && channelNumber > 0
-				&& channelNumber > 0,
-				"all distribute arguments is positive integer");
+				&& channelsPerSlaveContainer > 0,
+				"每个channel的平均slice数[averSlicesPerChannel]，channel数目[channelNumber]，每个slave的平均channel数[channelsPerSlaveContainer]都应该为正数");
 		List<Configuration> slicesConfigs = this.configuration
 				.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 		int slavesNumber = channelNumber / channelsPerSlaveContainer;
