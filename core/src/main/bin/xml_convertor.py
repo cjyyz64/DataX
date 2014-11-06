@@ -87,6 +87,8 @@ class XmlConverter:
             return self.parse_mysqlreader()
         elif reader_plugin == "odpsreader":
             return self.parse_odpsreader()
+        elif reader_plugin == "oraclereader":
+            return self.parse_oraclereader()
         elif reader_plugin == "sqlserverreader":
             return self.parse_sqlserverreader()
         else:
@@ -287,15 +289,16 @@ class XmlConverter:
     def parse_mysqlwriter(self):
         self.writer_parameter["user"] = self.get_value_from_xml(self.writer, "user")
         self.writer_parameter["password"] = self.get_value_from_xml(self.writer, "password")
-        replace = self.get_value_from_xml(self.writer, "replace")
-        if replace:
-            if replace.lower() == "true":
-                replace = "replace"
+        write_mode = self.get_value_from_xml(self.writer, "replace")
+        if write_mode:
+            write_mode = write_mode.lower()
+            if write_mode == "true":
+                write_mode = "replace"
             else:
-                replace = "insert"
+                write_mode = "insert"
         else:
-            replace = "replace"
-        self.writer_parameter["insertOrReplace"] = replace
+            write_mode = "insert"
+        self.writer_parameter["writeMode"] = write_mode
         self.writer_parameter["column"] = self.parse_column(self.get_value_from_xml(self.writer, "column"))
 
         jdbc_url = self.get_value_from_xml(self.writer, "jdbc-url")
@@ -307,9 +310,16 @@ class XmlConverter:
             database = self.get_value_from_xml(self.writer, "database")
             jdbc_url = "jdbc:mysql://%s:%s/%s"%(ip, port, database)
 
+        jdbc_url_array = jdbc_url.split("|")
+        encoding = self.get_value_from_xml(self.reader, "encoding")
+        if encoding:
+            for index in range(len(jdbc_url_array)):
+                jdbc_url = jdbc_url_array[index]
+                if jdbc_url.find("characterEncoding") < 0:
+                    jdbc_url_array[index] = "%s?useUnicode=true&characterEncoding=%s"%(jdbc_url, encoding)
+
         connection_list = []
         self.writer_parameter["connection"] = connection_list
-        jdbc_url_array = jdbc_url.split("|")
         tables = self.get_value_from_xml(self.writer, "table")
         table_array = tables.split("|")
         if len(jdbc_url_array) != len(table_array):
@@ -393,6 +403,39 @@ class XmlConverter:
     def parse_txtfilewriter(self):
         self.writer_parameter["path"] = self.get_value_from_xml(self.writer, "path")
         self.writer_parameter["concurrency"] = self.get_value_from_xml(self.writer, "concurrency")
+
+        return True
+
+    def parse_oraclereader(self):
+        self.reader_parameter["username"] = self.get_value_from_xml(self.reader, "username")
+        self.reader_parameter["password"] = self.get_value_from_xml(self.reader, "password")
+
+        jdbc_url_list = self.get_value_from_xml(self.reader, "jdbc-url").split("|")
+        connection_list = []
+        self.reader_parameter["connection"] = connection_list
+
+        pointed_sql = self.get_value_from_xml(self.reader, "sql")
+        if pointed_sql:
+            connection_dict = {
+                "jdbcUrl": jdbc_url_list,
+                "querySql": pointed_sql
+            }
+            connection_list.append(connection_dict)
+        else:
+            tables = self.get_value_from_xml(self.reader, "table")
+            table_list = tables.split("|")
+            if len(table_list) != len(jdbc_url_list):
+                print >>sys.stderr, "table length[%d] not equal to jdbc-url length[%d]"%(len(table_list), len(jdbc_url_list))
+                return False
+            for i in range(len(table_list)):
+                connection_dict = {}
+                connection_list.append(connection_dict)
+                connection_dict["table"] = table_list[i].split(",")
+                connection_dict["jdbcUrl"] = jdbc_url_list[i].split(",")
+            where = self.get_value_from_xml(self.reader, "where")
+            if where:
+                self.reader_parameter["where"] = where
+            self.reader_parameter["column"] = self.parse_column(self.get_value_from_xml(self.reader, "column"))
 
         return True
 
