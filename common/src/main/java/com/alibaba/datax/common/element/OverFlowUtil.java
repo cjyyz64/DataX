@@ -29,9 +29,9 @@ public final class OverFlowUtil {
 		boolean isOverFlow = OverFlowUtil.isLongOverflow(integer);
 
 		if (isOverFlow) {
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_OVER_FLOW,
-					String.format("Value [%s] convert to long overflow !",
-							integer.toString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_OVER_FLOW,
+					String.format("[%s] 转为Long类型出现溢出 .", integer.toString()));
 		}
 	}
 
@@ -53,8 +53,9 @@ public final class OverFlowUtil {
 	public static void validateDoubleNotOverFlow(final BigDecimal decimal) {
 		boolean isOverFlow = OverFlowUtil.isDoubleOverFlow(decimal);
 		if (isOverFlow) {
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_OVER_FLOW,
-					String.format("Value [%s] convert to double overflow !",
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_OVER_FLOW,
+					String.format("[%s] 转为Double类型出现溢出 .",
 							decimal.toPlainString()));
 		}
 	}

@@ -8,6 +8,7 @@ import java.text.ParseException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,6 +42,16 @@ public class ColumnCastTest {
 		StringCast.init(configuration);
 		Assert.assertTrue(StringCast.asDate(
 				new StringColumn("2014/09/18 16:00:00")).getTime() == 1411027200000L);
+
+		configuration.set("common.column.timeZone", "GMT");
+		StringCast.init(configuration);
+
+		java.util.Date date = StringCast.asDate(new StringColumn(
+				"2014/09/18 16:00:00"));
+		System.out.println(DateFormatUtils.format(date, "yyyy/MM/dd HH:mm:ss"));
+		Assert.assertTrue("2014/09/19 00:00:00".equals(DateFormatUtils.format(
+				date, "yyyy/MM/dd HH:mm:ss")));
+
 	}
 
 	@Test
@@ -58,6 +69,16 @@ public class ColumnCastTest {
 				new DateColumn(System.currentTimeMillis())).startsWith("2014"));
 
 		DateColumn dateColumn = new DateColumn(new Time(0L));
+		System.out.println(dateColumn.asString());
+		Assert.assertTrue(dateColumn.asString().equals("08:00:00"));
+
+		configuration.set("common.column.timeZone", "GMT");
+		DateCast.init(configuration);
+		System.err.println(DateCast.asString(dateColumn));
+		Assert.assertTrue(dateColumn.asString().equals("00:00:00"));
+
+		configuration.set("common.column.timeZone", "GMT+8");
+		DateCast.init(configuration);
 		System.out.println(dateColumn.asString());
 		Assert.assertTrue(dateColumn.asString().equals("08:00:00"));
 

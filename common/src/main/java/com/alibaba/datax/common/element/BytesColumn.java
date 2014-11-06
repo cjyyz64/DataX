@@ -40,45 +40,47 @@ public class BytesColumn extends Column {
 		try {
 			return ColumnCast.bytes2String(this);
 		} catch (Exception e) {
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Bytes[%s] convert to String failed .",
-							this.toString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("Bytes[%s] 类型不能转为String .", this.toString()));
 		}
 	}
 
 	@Override
 	public Long asLong() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to Long .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Long .");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to BigDecimal .");
+		throw DataXException
+				.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+						"Bytes类型不能转为BigDecimal .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to BigInteger .");
+		throw DataXException
+				.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+						"Bytes类型不能转为BigInteger .");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to Long .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Long .");
 	}
 
 	@Override
 	public Date asDate() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to Date .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Date .");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Bytes cannot cast to Boolean .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bytes类型不能转为Boolean .");
 	}
 }

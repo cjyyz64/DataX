@@ -190,7 +190,7 @@ public class DoubleColumnTest {
 			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
-		
+
 		try {
 			column.asLong();
 			Assert.assertTrue(false);
@@ -198,5 +198,12 @@ public class DoubleColumnTest {
 			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
+	}
+
+	@Test
+	public void test_NaN() {
+		System.out.println(Double.valueOf("NaN"));
+		System.out.println(Double.POSITIVE_INFINITY);
+
 	}
 }

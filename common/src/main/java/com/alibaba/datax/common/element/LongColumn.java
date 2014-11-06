@@ -30,7 +30,7 @@ public class LongColumn extends Column {
 			super.setByteSize(rawData.bitLength() / 8);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] cannot conver to Long .", data));
+					String.format("String[%s]类型不能转为Long .", data));
 		}
 	}
 
@@ -125,7 +125,7 @@ public class LongColumn extends Column {
 	@Override
 	public byte[] asBytes() {
 		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Long cannot cast to Bytes .");
+				"Long类型不能转为Bytes .");
 	}
 
 }
