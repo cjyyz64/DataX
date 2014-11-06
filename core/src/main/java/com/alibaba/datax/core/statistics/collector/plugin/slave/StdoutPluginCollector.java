@@ -60,9 +60,8 @@ public class StdoutPluginCollector extends AbstractSlavePluginCollector {
 	public void collectDirtyRecord(Record dirtyRecord, Throwable t,
 			String errorMessage) {
 		currentLogNum.incrementAndGet();
-		if (maxLogNum.intValue() < 0
-				|| currentLogNum.intValue() < maxLogNum.intValue()) {
-			LOG.error("Dirty Record: \n"
+		if (maxLogNum.intValue() < 0 || currentLogNum.intValue() < maxLogNum.intValue()) {
+			LOG.error("脏数据: \n"
 					+ this.formatDirty(dirtyRecord, t, errorMessage));
 		}
 

@@ -9,18 +9,18 @@ import com.alibaba.datax.common.spi.ErrorCode;
  */
 public enum FrameworkErrorCode implements ErrorCode {
 
-	INSTALL_ERROR("Framework-00", "DataX Framework Install Error ."), 
-	ARGUMENT_ERROR("Framework-01","Core argument error ."), 
-	INNER_ERROR("Framework-02","Core operation error ."), 
-	CONFIG_ERROR("Framework-03", "Configuration error ."), 
+	INSTALL_ERROR("Framework-00", "DataX框架安装错误."),
+	ARGUMENT_ERROR("Framework-01", "DataX框架参数有误."),
+	INNER_ERROR("Framework-02", "DataX框架操作出错."),
+	CONFIG_ERROR("Framework-03", "DataX框架配置错误."),
 
 	
-	PLUGIN_INSTALL_ERROR("Framework-10","Plugin Install Error ."), 
-	PLUGIN_NOT_FOUND("Framework-11","Plugin Config Not Found."),
-	PLUGIN_INIT_ERROR("Framework-12",	"Plugin init error ."), 
-	PLUGIN_RUNTIME_ERROR("Framework-13",	"Plugin runtime error ."), 
-	PLUGIN_DIRTY_DATA_LIMIT_EXCEED("Framework-14","Plugin dirty records exceed limit ."), 
-	PLUGIN_SPLIT_ERROR("Framework-15","Plugin split error ."),
+	PLUGIN_INSTALL_ERROR("Framework-10", "DataX插件安装错误."),
+	PLUGIN_NOT_FOUND("Framework-11", "DataX插件配置错误."),
+	PLUGIN_INIT_ERROR("Framework-12", "DataX插件初始化错误."),
+	PLUGIN_RUNTIME_ERROR("Framework-13", "DataX插件运行时出错."),
+	PLUGIN_DIRTY_DATA_LIMIT_EXCEED("Framework-14", "DataX插件脏数据超过限制."),
+	PLUGIN_SPLIT_ERROR("Framework-15", "DataX插件切分出错."),
 	;
 
 	private final String code;
