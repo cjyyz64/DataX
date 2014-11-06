@@ -55,11 +55,11 @@ public class TxtFileReader extends Reader {
 			} catch (UnsupportedCharsetException uce) {
 				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("不支持的编码格式:[%s]", charset), uce);
+						String.format("不支持的编码格式 : [%s]", charset), uce);
 			} catch (Exception e) {
 				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("运行配置异常:%s", e.getMessage()), e);
+						String.format("运行配置异常 : %s", e.getMessage()), e);
 			}
 
 		}
