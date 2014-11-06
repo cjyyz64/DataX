@@ -26,175 +26,175 @@ import java.util.Map;
 
 public class CommonRdbmsReader {
 
-	private static DataBaseType DATABASE_TYPE;
+    private static DataBaseType DATABASE_TYPE;
 
-	public static class Master {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(CommonRdbmsReader.Master.class);
+    public static class Master {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(CommonRdbmsReader.Master.class);
 
-		private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
-		public Master(DataBaseType dataBaseType) {
-			DATABASE_TYPE = dataBaseType;
-			OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
-			SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
-		}
+        public Master(DataBaseType dataBaseType) {
+            DATABASE_TYPE = dataBaseType;
+            OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
+            SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
+        }
 
-		public void init(Configuration originalConfig) {
+        public void init(Configuration originalConfig) {
 
-			OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
 
-			if (IS_DEBUG) {
-				LOG.debug("After master init, job config now is:[\n{}\n]",
-						originalConfig.toJSON());
-			}
-		}
+            if (IS_DEBUG) {
+                LOG.debug("After master init, job config now is:[\n{}\n]",
+                        originalConfig.toJSON());
+            }
+        }
 
-		public List<Configuration> split(Configuration originalConfig,
-				int adviceNumber) {
-			return ReaderSplitUtil.doSplit(originalConfig, adviceNumber);
-		}
+        public List<Configuration> split(Configuration originalConfig,
+                                         int adviceNumber) {
+            return ReaderSplitUtil.doSplit(originalConfig, adviceNumber);
+        }
 
-		public void post(Configuration originalConfig) {
-			// do nothing
-		}
+        public void post(Configuration originalConfig) {
+            // do nothing
+        }
 
-		public void destroy(Configuration originalConfig) {
-			// do nothing
-		}
+        public void destroy(Configuration originalConfig) {
+            // do nothing
+        }
 
-	}
+    }
 
-	public static class Slave {
-		private static final Logger LOG = LoggerFactory
-				.getLogger(CommonRdbmsReader.Slave.class);
+    public static class Slave {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(CommonRdbmsReader.Slave.class);
 
-		private String username;
-		private String password;
-		private String jdbcUrl;
+        private String username;
+        private String password;
+        private String jdbcUrl;
 
-		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-		private static String BASIC_MESSAGE;
+        // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
+        private static String BASIC_MESSAGE;
 
-		public Slave(DataBaseType dataBaseType) {
-			DATABASE_TYPE = dataBaseType;
-		}
+        public Slave(DataBaseType dataBaseType) {
+            DATABASE_TYPE = dataBaseType;
+        }
 
-		public void init(Configuration readerSliceConfig) {
+        public void init(Configuration readerSliceConfig) {
 
 			/* for database connection */
 
-			this.username = readerSliceConfig.getString(Key.USERNAME);
-			this.password = readerSliceConfig.getString(Key.PASSWORD);
-			this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
+            this.username = readerSliceConfig.getString(Key.USERNAME);
+            this.password = readerSliceConfig.getString(Key.PASSWORD);
+            this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
 
-			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
-		}
+            BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
+        }
 
-		public void startRead(Configuration readerSliceConfig,
-				RecordSender recordSender,
-				SlavePluginCollector slavePluginCollector, int fetchSize) {
-			String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
-			Map<String, String> sessionConfig = readerSliceConfig.getMap(
-					Key.SESSION, new HashMap<String, String>(), String.class);
-			String formattedSql = null;
+        public void startRead(Configuration readerSliceConfig,
+                              RecordSender recordSender,
+                              SlavePluginCollector slavePluginCollector, int fetchSize) {
+            String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
+            Map<String, String> sessionConfig = readerSliceConfig.getMap(
+                    Key.SESSION, new HashMap<String, String>(), String.class);
+            String formattedSql = null;
 
-			try {
-				formattedSql = SqlFormatUtil.format(querySql);
-			} catch (Exception unused) {
-				// ignore it
-			}
-			LOG.info("\nbegin to read record by Sql [{}\n] {}.",
-					null != formattedSql ? formattedSql : querySql,
-					BASIC_MESSAGE);
+            try {
+                formattedSql = SqlFormatUtil.format(querySql);
+            } catch (Exception unused) {
+                // ignore it
+            }
+            LOG.info("\nbegin to read record by Sql [{}\n] {}.",
+                    null != formattedSql ? formattedSql : querySql,
+                    BASIC_MESSAGE);
 
-			Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl,
-					username, password);
+            Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl,
+                    username, password);
 
-			int columnNumber = 0;
-			ResultSet rs = null;
-			try {
-				// session config .etc related
-				this.dealWithSessionConfig(conn, sessionConfig);
+            int columnNumber = 0;
+            ResultSet rs = null;
+            try {
+                // session config .etc related
+                this.dealWithSessionConfig(conn, sessionConfig);
 
-				rs = DBUtil.query(conn, querySql, fetchSize);
-				ResultSetMetaData metaData = rs.getMetaData();
-				columnNumber = metaData.getColumnCount();
+                rs = DBUtil.query(conn, querySql, fetchSize);
+                ResultSetMetaData metaData = rs.getMetaData();
+                columnNumber = metaData.getColumnCount();
 
-				while (rs.next()) {
-					ResultSetReadProxy.transportOneRecord(recordSender, rs,
-							metaData, columnNumber, slavePluginCollector);
-				}
+                while (rs.next()) {
+                    ResultSetReadProxy.transportOneRecord(recordSender, rs,
+                            metaData, columnNumber, slavePluginCollector);
+                }
 
-			} catch (Exception e) {
-				String businessMessage = String.format(
-						"Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
-						e.getMessage());
-				String message = StrUtil.buildOriginalCauseMessage(
-						businessMessage, e);
-				LOG.error(message);
+            } catch (Exception e) {
+                String businessMessage = String.format(
+                        "Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
+                        e.getMessage());
+                String message = StrUtil.buildOriginalCauseMessage(
+                        businessMessage, e);
+                LOG.error(message, e);
 
-				throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
-			} finally {
-				DBUtil.closeDBResources(null, conn);
-			}
-		}
+                throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
+            } finally {
+                DBUtil.closeDBResources(null, conn);
+            }
+        }
 
-		public void post(Configuration originalConfig) {
-			// do nothing
-		}
+        public void post(Configuration originalConfig) {
+            // do nothing
+        }
 
-		public void destroy(Configuration originalConfig) {
-			// do nothing
-		}
+        public void destroy(Configuration originalConfig) {
+            // do nothing
+        }
 
-		// warn:until now, only oracle need to handle session config.
-		private void dealWithSessionConfig(Connection conn,
-				Map<String, String> sessionConfig) {
-			switch (DATABASE_TYPE) {
-			case Oracle:
-				this.doDealWithSessionConfig(conn, sessionConfig);
-				break;
-			default:
-				break;
-			}
-		}
+        // warn:until now, only oracle need to handle session config.
+        private void dealWithSessionConfig(Connection conn,
+                                           Map<String, String> sessionConfig) {
+            switch (DATABASE_TYPE) {
+                case Oracle:
+                    this.doDealWithSessionConfig(conn, sessionConfig);
+                    break;
+                default:
+                    break;
+            }
+        }
 
-		private void doDealWithSessionConfig(Connection conn,
-				Map<String, String> sessionConfig) {
-			String ALTER_SESSION_TEMPLAT = "alter session set %s=%s";
-			Statement stmt = null;
-			String sessionSql = null;
-			try {
-				stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
-						ResultSet.CONCUR_READ_ONLY);
-				for (Map.Entry<String, String> entry : sessionConfig.entrySet()) {
-					try {
-						sessionSql = String.format(ALTER_SESSION_TEMPLAT,
-								entry.getKey(), entry.getValue());
-						LOG.info("execute sql:[{}]", sessionSql);
-						stmt.execute(sessionSql);
-					} catch (Exception e) {
-						LOG.warn(String.format(
-								"error while execute sql:[%s], skip it !",
-								sessionSql), e);
-					}
-				}
+        private void doDealWithSessionConfig(Connection conn,
+                                             Map<String, String> sessionConfig) {
+            String ALTER_SESSION_TEMPLAT = "alter session set %s=%s";
+            Statement stmt = null;
+            String sessionSql = null;
+            try {
+                stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
+                        ResultSet.CONCUR_READ_ONLY);
+                for (Map.Entry<String, String> entry : sessionConfig.entrySet()) {
+                    try {
+                        sessionSql = String.format(ALTER_SESSION_TEMPLAT,
+                                entry.getKey(), entry.getValue());
+                        LOG.info("execute sql:[{}]", sessionSql);
+                        stmt.execute(sessionSql);
+                    } catch (Exception e) {
+                        LOG.warn(String.format(
+                                "error while execute sql:[%s], skip it !",
+                                sessionSql), e);
+                    }
+                }
 
-			} catch (Exception e) {
-				String businessMessage = String.format(
-						"Set session configuration failed, %s, detail:[%s]",
-						BASIC_MESSAGE, e.getMessage());
-				String message = StrUtil.buildOriginalCauseMessage(
-						businessMessage, e);
-				LOG.error(message);
+            } catch (Exception e) {
+                String businessMessage = String.format(
+                        "Set session configuration failed, %s, detail:[%s]",
+                        BASIC_MESSAGE, e.getMessage());
+                String message = StrUtil.buildOriginalCauseMessage(
+                        businessMessage, e);
+                LOG.error(message, e);
 
-				throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, e);
-			} finally {
-				DBUtil.closeDBResources(null, stmt, null);
-			}
-		}
+                throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(null, stmt, null);
+            }
+        }
 
-	}
+    }
 
 }

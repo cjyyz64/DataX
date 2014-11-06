@@ -5,12 +5,18 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Types;
 
 public class ResultSetReadProxy {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(ResultSetReadProxy.class);
+
+    private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
     public static void transportOneRecord(RecordSender recordSender, ResultSet rs,
                                           ResultSetMetaData metaData, int columnNumber,
@@ -92,6 +98,9 @@ public class ResultSetReadProxy {
             }
             recordSender.sendToWriter(record);
         } catch (Exception e) {
+            if (IS_DEBUG) {
+                LOG.debug("read data " + record.toString() + " occur exception:", e);
+            }
             throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
         }
     }
