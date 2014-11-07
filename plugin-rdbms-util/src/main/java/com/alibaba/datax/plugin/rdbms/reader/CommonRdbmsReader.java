@@ -123,7 +123,6 @@ public class CommonRdbmsReader {
                     ResultSetReadProxy.transportOneRecord(recordSender, rs,
                             metaData, columnNumber, slavePluginCollector);
                 }
-
             } catch (Exception e) {
                 throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,
                         String.format(

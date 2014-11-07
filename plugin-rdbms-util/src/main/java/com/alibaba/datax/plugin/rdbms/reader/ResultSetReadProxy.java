@@ -87,21 +87,23 @@ public class ResultSetReadProxy {
 
                     // TODO 添加BASIC_MESSAGE
                     default:
-                        throw new Exception(
+                        throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
                                 String.format(
                                         "DataX 不支持这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
                                         metaData.getColumnName(i),
                                         metaData.getColumnType(i),
                                         metaData.getColumnClassName(i)));
                 }
-
             }
             recordSender.sendToWriter(record);
         } catch (Exception e) {
             if (IS_DEBUG) {
                 LOG.debug("read data " + record.toString() + " occur exception:", e);
             }
-            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, "读数据库数据失败. 请联系您读取的数据库的 DBA 处理.", e);
+            slavePluginCollector.collectDirtyRecord(record, e);
+            if (e instanceof DataXException) {
+                throw (DataXException) e;
+            }
         }
     }
 }
