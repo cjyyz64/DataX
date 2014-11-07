@@ -101,7 +101,7 @@ public class StandAloneScheduler implements Scheduler {
 		} catch (InterruptedException e) {
 			LOG.error("捕获到InterruptedException异常!", e);
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}
 	}
 

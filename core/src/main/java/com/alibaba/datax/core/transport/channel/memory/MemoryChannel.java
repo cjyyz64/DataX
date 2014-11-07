@@ -69,7 +69,7 @@ public class MemoryChannel extends Channel {
 			notEmpty.signalAll();
 		} catch (InterruptedException e) {
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		} finally {
 			lock.unlock();
 		}
@@ -98,7 +98,7 @@ public class MemoryChannel extends Channel {
 			notInsufficient.signalAll();
 		} catch (InterruptedException e) {
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		} finally {
 			lock.unlock();
 		}

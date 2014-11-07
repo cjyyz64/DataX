@@ -115,7 +115,7 @@ public class MasterContainer extends AbstractContainer {
 			super.getContainerCollector().report(masterMetric);
 
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		} finally {
 			this.destroy();
 			this.endTimeStamp = System.currentTimeMillis();
@@ -142,7 +142,7 @@ public class MasterContainer extends AbstractContainer {
 						CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID,
 						this.masterId);
 			} else {
-				throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
+				throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 						"在[local|distribute]模式下没有设置master id.");
 			}
 		}
@@ -269,7 +269,7 @@ public class MasterContainer extends AbstractContainer {
 			LOG.error("运行scheduler[[{}]]出错", schedulerClassName);
 			this.endTransferTimeStamp = System.currentTimeMillis();
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}
 
 		/**

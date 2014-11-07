@@ -65,7 +65,7 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 			this.metric.incrWriteFailedBytes(dirtyRecord.getByteSize());
 		} else {
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR,
+					FrameworkErrorCode.RUNTIME_ERROR,
 					String.format("不知道的插件类型[%s].", this.pluginType));
 		}
 	}

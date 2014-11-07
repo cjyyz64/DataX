@@ -100,7 +100,7 @@ public class LoadUtil {
             return masterPlugin;
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    FrameworkErrorCode.INNER_ERROR,
+                    FrameworkErrorCode.RUNTIME_ERROR,
                     String.format(
                             "DataX找到plugin[%s]的master配置.",
                             pluginName), e);
@@ -125,7 +125,7 @@ public class LoadUtil {
             slavePlugin.setPluginConf(getPluginConf(pluginType, pluginName));
             return slavePlugin;
         } catch (Exception e) {
-            throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
                     String.format("DataX不能找plugin[%s]的slave配置.",
                             pluginName), e);
         }
@@ -151,7 +151,7 @@ public class LoadUtil {
                 return RunnerManager.newWriterRunner(slavePlugin, slaveId);
             default:
                 throw DataXException.asDataXException(
-                        FrameworkErrorCode.INNER_ERROR,
+                        FrameworkErrorCode.RUNTIME_ERROR,
                         String.format(
                                 "插件[%s]的类型必须是[reader]或[writer]!",
                                 pluginName));
@@ -177,7 +177,7 @@ public class LoadUtil {
                     .loadClass(pluginConf.getString("class") + "$"
                             + pluginRunType.value());
         } catch (Exception e) {
-            throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR, e);
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
         }
     }
 
@@ -191,7 +191,7 @@ public class LoadUtil {
             String pluginPath = pluginConf.getString("path");
             if (StringUtils.isBlank(pluginPath)) {
                 throw DataXException.asDataXException(
-                        FrameworkErrorCode.INNER_ERROR,
+                        FrameworkErrorCode.RUNTIME_ERROR,
                         String.format(
                                 "%s插件[%s]路径非法!",
                                 pluginType, pluginName));

@@ -73,7 +73,7 @@ public final class MetricManager {
 
 		Map<Long, Metric> slaveStatics = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveStatics) {
-			throw DataXException.asDataXException(FrameworkErrorCode.INNER_ERROR,
+			throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
 							"不能获取slaveId[%d]的metric，因为没有注册",
 							slaveId));
@@ -107,7 +107,7 @@ public final class MetricManager {
 		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR,
+					FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
 							"不能获取slaveId[%d]的metric，因为没有注册.",
 							slaveId));
@@ -116,7 +116,7 @@ public final class MetricManager {
 		Metric channelMetric = slaveMetricMap.get(channelId);
 		if (null == channelMetric) {
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR,
+					FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
 							"不能获取slaveId[%d] channelId[%d]的metric，因为没有注册.",
 							slaveId, channelId));
