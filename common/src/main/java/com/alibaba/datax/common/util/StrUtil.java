@@ -4,12 +4,6 @@ import java.text.DecimalFormat;
 
 public class StrUtil {
 
-    // 第一个%s 对应到：插件开发人员填充的业务信息。第二个%s 对应到异常的简短信息
-    private static final String ORIGINAL_CAUSE__WITH_EXCEPTION_TEMPLATE = "Original cause: {%s},{%s}.";
-
-    // %s 对应到：插件开发人员填充的业务信息
-    private static final String ORIGINAL_CAUSE__WITHOUT_EXCEPTION_TEMPLATE = "Original cause: [%s].";
-
     private final static long KB_IN_BYTES = 1024;
 
     private final static long MB_IN_BYTES = 1024 * KB_IN_BYTES;
@@ -42,15 +36,6 @@ public class StrUtil {
             return df.format((double) byteNumber / (double) KB_IN_BYTES) + "KB";
         } else {
             return String.valueOf(byteNumber) + "B";
-        }
-    }
-
-    public static String buildOriginalCauseMessage(String businessMessage, Throwable thr) {
-        if (null == thr) {
-            return String.format(ORIGINAL_CAUSE__WITHOUT_EXCEPTION_TEMPLATE, businessMessage);
-        } else {
-            return String.format(ORIGINAL_CAUSE__WITH_EXCEPTION_TEMPLATE, businessMessage,
-                    thr.getMessage());
         }
     }
 }

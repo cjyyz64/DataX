@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.Column;
 import com.alibaba.odps.tunnel.RecordSchema;
@@ -117,22 +116,13 @@ public class OdpsWriterProxy {
         int userConfiguredColumnNumber = this.columnPositions.size();
 
         if (sourceColumnCount > userConfiguredColumnNumber) {
-            String businessMessage = String
-                    .format("source columnNumber=[%s] bigger than configured destination columnNumber=[%s].",
-                            sourceColumnCount, userConfiguredColumnNumber);
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage,
-                    null);
-            LOG.error(message);
-
             throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
-                    businessMessage);
+                    String.format("数据源读取的列数是:%s 大于目的端的列数是:%s , DataX 不允许这种行为, 请检查您的配置.",
+                            sourceColumnCount, userConfiguredColumnNumber));
         } else if (sourceColumnCount < userConfiguredColumnNumber) {
             if (printColumnLess) {
-                printColumnLess = false;
-                LOG.warn(
-                        "source columnNumber={} is less than configured destination columnNumber={}, DataX will fill some column with null.",
-                        dataXRecord.getColumnNumber(),
-                        userConfiguredColumnNumber);
+                LOG.warn("数据源读取的列数是:{} 小于的端的列数是:{} , 二者不匹配. DataX 将对目的端的未对齐的列补空.",
+                        sourceColumnCount, userConfiguredColumnNumber);
             }
         }
 
@@ -173,8 +163,7 @@ public class OdpsWriterProxy {
 
             return odpsRecord;
         } catch (Exception e) {
-            String message = String.format(
-                    "Dirty record detail:sourceIndex=[%s], value=[%s].",
+            String message = String.format("写入 ODPS 目的表时遇到了脏数据, 详情:sourceIndex=[%s], value=[%s].",
                     sourceIndex, dataXRecord.getColumn(sourceColumnCount));
             this.slavePluginCollector.collectDirtyRecord(dataXRecord, e,
                     message);

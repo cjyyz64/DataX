@@ -6,7 +6,6 @@ import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.DataTunnel;
@@ -61,14 +60,8 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                String businessMessage = String.format("unsupported account type=[%s].",
-                        this.accountType);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
                 throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
-                        businessMessage);
+                        String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
@@ -119,12 +112,8 @@ public class OdpsWriter extends Writer {
             try {
                 tab.load();
             } catch (Exception e) {
-                String businessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
-                        tab.getName(), e.getMessage());
-                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-                LOG.error(message);
-
-                throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                        String.format("加载 ODPS 目的表:%s 失败, 请先检查您写入 ODPS的项目、表等配置是否正确.", tab.getName()), e);
             }
 
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
@@ -228,8 +217,8 @@ public class OdpsWriter extends Writer {
             this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL);
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "blockSizeInMB should in range:[1,512], but you configured value="
-                        + this.blockSizeInMB);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是其范围为:1-512之间的证书.", this.blockSizeInMB));
             }
 
             if (IS_DEBUG) {
@@ -272,12 +261,7 @@ public class OdpsWriter extends Writer {
 
                 proxy.writeRemainingRecord(blocks);
             } catch (Exception e) {
-                String businessMessage = "Write record failed. detail:" + e.getMessage();
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, e);
-                LOG.error(message);
-
-                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, "写入 ODPS 失败. 请联系 ODPS 管理员处理.", e);
             }
         }
 

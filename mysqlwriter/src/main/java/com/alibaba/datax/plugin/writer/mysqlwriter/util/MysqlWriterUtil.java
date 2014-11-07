@@ -90,7 +90,7 @@ public final class MysqlWriterUtil {
     }
 
     public static String appendJDBCSuffix(String jdbc) {
-        String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
+        String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true";
 
         if (jdbc.contains("?")) {
             return jdbc + "&" + suffix;

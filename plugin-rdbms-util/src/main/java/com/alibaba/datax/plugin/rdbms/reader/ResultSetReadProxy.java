@@ -89,7 +89,7 @@ public class ResultSetReadProxy {
                     default:
                         throw new Exception(
                                 String.format(
-                                        "Unsupported Database Data Type. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+                                        "DataX 不支持这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
                                         metaData.getColumnName(i),
                                         metaData.getColumnType(i),
                                         metaData.getColumnClassName(i)));
@@ -101,7 +101,7 @@ public class ResultSetReadProxy {
             if (IS_DEBUG) {
                 LOG.debug("read data " + record.toString() + " occur exception:", e);
             }
-            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, "读数据库数据失败. 请联系您读取的数据库的 DBA 处理.", e);
         }
     }
 }

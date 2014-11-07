@@ -3,7 +3,6 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
@@ -42,23 +41,15 @@ public class OdpsUtil {
 
         if (null == originalConfig.getList(Key.COLUMN) ||
                 originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
-            String businessMessage = "Lost config Key:column.";
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表的列信息. " +
+                    "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
         }
 
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
         Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
         if (null == truncate) {
-            String businessMessage = "Lost config Key:truncate.";
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表前是否清空表/分区. " +
+                    "正确的配置方式是给 truncate 配置上true 或者 false.");
         }
     }
 
@@ -66,13 +57,8 @@ public class OdpsUtil {
         int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
                 OdpsUtil.MAX_RETRY_TIME);
         if (maxRetryTime < 1) {
-            String businessMessage = "maxRetryTime should >=1.";
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-
-            LOG.error(message);
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                    businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 其值不能小于1. " +
+                    "推荐的配置方式是给maxRetryTime 配置2-5之间的某个值.");
         }
 
         MAX_RETRY_TIME = maxRetryTime;
@@ -125,12 +111,13 @@ public class OdpsUtil {
         List<String> parts = null;
         try {
             parts = table.listPartitions();
+            if (null == parts) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, String.format("获取 ODPS 目的表:%s 的所有分区失败. 请联系 ODPS 管理员处理.",
+                        table.getName()));
+            }
         } catch (Exception e) {
-            String businessMessage = String.format("Failed to get table=[%s] all partitions.", table.getName());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, String.format("获取 ODPS 目的表:%s 的所有分区失败. 请联系 ODPS 管理员处理.",
+                    table.getName()), e);
         }
         return parts;
     }
@@ -144,12 +131,8 @@ public class OdpsUtil {
                 return true;
             }
         } catch (Exception e) {
-            String businessMessage = String.format("Check if partitioned table failed. detail: table=[%s].",
-                    table.getName());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED,
+                    String.format(" 检查 ODPS 目的表:%s 是否为分区表失败, 请联系 ODPS 管理员处理.", table.getName()), e);
         }
         return false;
     }
@@ -161,12 +144,8 @@ public class OdpsUtil {
         try {
             runSqlTask(tab.getProject(), truncateNonPartitionedTableSql);
         } catch (Exception e) {
-            String businessMessage = String.format("Truncate table:[%s] failed. detail:[%s].",
-                    tab.getName(), e.getMessage());
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR,
+                    String.format(" 清空 ODPS 目的表:%s 失败, 请联系 ODPS 管理员处理.", tab.getName()), e);
         }
     }
 
@@ -178,11 +157,9 @@ public class OdpsUtil {
     }
 
     private static boolean isPartitionExist(Table table, String partition) {
-        // check if exist partition
+        // check if exist partition 返回值不为 null
         List<String> odpsParts = OdpsUtil.listOdpsPartitions(table);
-        if (null == odpsParts) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.LIST_PARTITION_FAILED, "Error when list table partitions.");
-        }
+
         int j = 0;
         for (j = 0; j < odpsParts.size(); j++) {
             if (odpsParts.get(j).replaceAll("'", "").equals(partition)) {
@@ -205,12 +182,9 @@ public class OdpsUtil {
         try {
             runSqlTask(table.getProject(), addPart.toString());
         } catch (Exception e) {
-            String businessMessage = String.format("Add partition failed. detail:project=[%s], table=[%s],partition=[%s]."
-                    , table.getProject().getName(), table.getName(), partition);
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
+                    String.format("添加 ODPS 目的表的分区失败. 错误发生在添加 ODPS 的项目:%s 的表:%s 的分区:%s. 请联系 ODPS 管理员处理.",
+                            table.getProject().getName(), table.getName(), partition), e);
         }
     }
 
@@ -225,7 +199,8 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.CREATE_MASTER_UPLOAD_FAIL,
+                    "创建TunnelUpload失败. 请联系 ODPS 管理员处理.", e);
         }
     }
 
@@ -240,7 +215,8 @@ public class OdpsUtil {
             }, MAX_RETRY_TIME, 1000L, true);
 
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_SLAVE_UPLOAD_FAIL,
+                    "获取TunnelUpload失败. 请联系 ODPS 管理员处理.", e);
         }
     }
 
@@ -254,12 +230,9 @@ public class OdpsUtil {
         try {
             runSqlTask(table.getProject(), dropPart.toString());
         } catch (Exception e) {
-            String businessMessage = String.format("Drop partition failed. detail:project=[%s], table=[%s],partition=[%s]."
-                    , table.getProject().getName(), table.getName(), partition);
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage, e);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
+                    String.format("Drop  ODPS 目的表分区失败. 错误发生在项目:%s 的表:%s 的分区:%s .请联系 ODPS 管理员处理.",
+                            table.getProject().getName(), table.getName(), partition), e);
         }
     }
 
@@ -270,12 +243,8 @@ public class OdpsUtil {
             String part = parts[i];
             String[] kv = part.split("=");
             if (kv.length != 2) {
-                String businessMessage = String.format("Wrong partition Spec=[%s].", partition);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
-                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, businessMessage);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("ODPS 目的表自身的 partition:%s 格式不对. 正确的格式形如: pt=1,ds=hangzhou", partition));
             }
             partSpec.append(kv[0]).append("=");
             partSpec.append("'").append(kv[1].replace("'", "")).append("'");
@@ -301,9 +270,9 @@ public class OdpsUtil {
         TaskStatus status = instance.getTaskStatus().get(taskName);
 
         if (!Status.SUCCESS.equals(status.getStatus())) {
-            String message = String.format("Run odps sql task not success. detail:result=[%s].",
-                    instance.getResult().get(taskName));
-            throw new Exception(message);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_FAILED,
+                    String.format("ODPS 目的表在运行 ODPS SQL失败, 返回值为:%s. 请联系 ODPS 管理员处理. SQL 内容为:[\n%s\n].", instance.getResult().get(taskName),
+                            query));
         }
     }
 
@@ -317,7 +286,8 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL,
+                    String.format("ODPS 目的表在提交 block:[\n%s\n] 时失败. 请联系 ODPS 管理员处理.", StringUtils.join(blocks, ",")), e);
         }
     }
 
@@ -334,7 +304,8 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL, e);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL,
+                    String.format("ODPS 目的表写 block:%s 失败. 请联系 ODPS 管理员处理.", blockId), e);
         }
 
     }
@@ -357,13 +328,8 @@ public class OdpsUtil {
                 }
             }
             if (!hasColumn) {
-                String businessMessage = String.format("No column named [%s] !", col);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-                LOG.error(message);
-
                 throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
-                        businessMessage);
+                        String.format("ODPS 目的表的列配置错误. 您所配置的列:%s 不存在.", col));
             }
         }
         return retList;
@@ -380,13 +346,10 @@ public class OdpsUtil {
             allColumns.add(schema.getColumnName(i));
             type = schema.getColumnType(i);
             if (type == Column.Type.ODPS_ARRAY || type == Column.Type.ODPS_MAP) {
-                String businessMessage = String.format("Unsupported column type:[%s].", type);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
                 throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                        businessMessage);
+                        String.format("DataX 写入 ODPS 表不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. " +
+                                        "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
+                                type));
             }
         }
         return allColumns;
@@ -410,12 +373,8 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    String businessMessage = String.format("Can not truncate partitioned table=[%s] without assigning partition.",
-                            table.getName());
-                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-
-                    LOG.error(message);
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, String.format("对分区表:%s 进行 truncate 操作时必须指定需要清空的具体分区值.",
+                            table.getName()));
                 } else {
                     LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
                     OdpsUtil.truncatePartition(table, partition);
@@ -423,12 +382,8 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    String businessMessage = String.format(
-                            "Can not truncate non partitioned table=[%s] with assigning partition.", table.getName());
-                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-
-                    LOG.error(message);
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, String.format("对非分区表:%s 进行 truncate 操作时您不能指定具体分区值.",
+                            table.getName()));
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
                     OdpsUtil.truncateNonPartitionedTable(table);
@@ -439,12 +394,8 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    String businessMessage = String.format(
-                            "Can not write to partitioned table=[%s] without assigning partition.", table.getName());
-                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-                    LOG.error(message);
-
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                            String.format("写入分区表:%s 时必须指定具体分区值.", table.getName()));
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
                     if (!isPartitionExists) {
@@ -457,12 +408,8 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    String businessMessage = String.format(
-                            "Can not write to not partitioned table=[%s] with assigning partition.", table.getName());
-                    String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-                    LOG.error(message);
-
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, businessMessage);
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                            String.format("写入非分区表:%s 时您不能指定具体分区值.", table.getName()));
                 }
             }
         }

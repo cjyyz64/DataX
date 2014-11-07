@@ -14,12 +14,16 @@ public class Constant {
 
     public static final String COLUMN_POSITION = "columnPosition";
 
+    public static final String DEFAULT_SPLIT_MODE = "record";
+
+    public static final String PARTITION_SPLIT_MODE = "partition";
+
     public static final String DEFAULT_ACCOUNT_TYPE = "aliyun";
+
+    public static final String TAOBAO_ACCOUNT_TYPE = "taobao";
 
     // 常量字段用COLUMN_CONSTANT_FLAG 首尾包住即可
     public final static String COLUMN_CONSTANT_FLAG = "'";
-
-    public final static int DEFAULT_RETRY_TIME = 3;
 
     /**
      * 以下是获取accesskey id 需要用到的常量值

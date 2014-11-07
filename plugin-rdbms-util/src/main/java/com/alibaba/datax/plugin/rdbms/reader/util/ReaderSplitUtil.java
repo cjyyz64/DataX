@@ -46,7 +46,7 @@ public final class ReaderSplitUtil {
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
 
                 Validate.isTrue(null != tables && !tables.isEmpty(),
-                        "source table configured error.");
+                        "您读取数据库表配置错误.");
 
                 String splitPk = originalSliceConfig.getString(Key.SPLIT_PK, null);
 

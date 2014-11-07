@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.RetryUtil;
-import com.alibaba.datax.common.util.StrUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +21,8 @@ public final class DBUtil {
                                        final String username, final String password,
                                        final List<String> preSql) {
         if (null == jdbcUrls || jdbcUrls.isEmpty()) {
-            String businessMessage = String.format("jdbcURL in [%s] can not be blank.",
-                    StringUtils.join(jdbcUrls, ","));
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-
-            LOG.error(message);
-            throw DataXException.asDataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, businessMessage);
+            throw DataXException.asDataXException(DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR, String.format("jdbcURL in [%s] 不能为空.",
+                    StringUtils.join(jdbcUrls, ",")));
         }
 
         try {
@@ -56,13 +50,8 @@ public final class DBUtil {
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
-            String businessMessage = String.format("No available jdbcURL from [%s].",
-                    StringUtils.join(jdbcUrls, ","));
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-            LOG.error(message);
-
-            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, businessMessage, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, String.format("无法从:%s 中找到可连接的jdbcURL.",
+                    StringUtils.join(jdbcUrls, ",")), e);
         }
 
     }
@@ -87,7 +76,7 @@ public final class DBUtil {
             }, Constant.MAX_TRY_TIMES, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,
-                    String.format("get jdbc connection failed, connection detail is [\n%s\n].",
+                    String.format("获取数据库连接失败. 连接信息是:%s .",
                             jdbcUrl), e);
         }
 

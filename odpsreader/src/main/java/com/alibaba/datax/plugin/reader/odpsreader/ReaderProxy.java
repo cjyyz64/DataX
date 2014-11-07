@@ -63,6 +63,7 @@ public class ReaderProxy {
         }
     }
 
+    //TODO  odpsRecord 的 String 可能获取出来的是 binary
     private void odpsColumnToDataXField(Record odpsRecord,
                                         com.alibaba.datax.common.element.Record dataXRecord,
                                         List<OdpsType> tableOriginalColumnTypeList, int i) {
@@ -90,7 +91,9 @@ public class ReaderProxy {
             }
             default:
                 throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        String.format("Unknown column type:[%s].", type));
+                        String.format("DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. " +
+                                        "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
+                                type));
         }
     }
 

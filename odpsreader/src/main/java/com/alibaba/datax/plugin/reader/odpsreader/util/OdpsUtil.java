@@ -9,18 +9,32 @@ import com.aliyun.odps.*;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
+import com.aliyun.odps.tunnel.TableTunnel;
+import com.aliyun.odps.tunnel.TunnelException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
+
+    public static void checkNecessaryConfig(Configuration originalConfig) {
+        originalConfig.getNecessaryValue(Key.ODPS_SERVER, OdpsReaderErrorCode.REQUIRED_VALUE);
+
+        originalConfig.getNecessaryValue(Key.PROJECT, OdpsReaderErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.TABLE, OdpsReaderErrorCode.REQUIRED_VALUE);
+
+        if (null == originalConfig.getList(Key.COLUMN) ||
+                originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.REQUIRED_VALUE, "您未配置读取源头表的列信息. " +
+                    "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
+        }
+
+    }
 
     public static Odps initOdps(Configuration originalConfig) {
         String odpsServer = originalConfig.getNecessaryValue(Key.ODPS_SERVER,
@@ -39,11 +53,11 @@ public final class OdpsUtil {
         Account account = null;
         if (accountType.equalsIgnoreCase(Constant.DEFAULT_ACCOUNT_TYPE)) {
             account = new AliyunAccount(accessId, accessKey);
-        } else if (accountType.equalsIgnoreCase("taobao")) {
+        } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
             throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                    String.format("Unsupport account type:[%s].", accountType));
+                    String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
         }
 
         Odps odps = new Odps(account);
@@ -53,39 +67,32 @@ public final class OdpsUtil {
         return odps;
     }
 
-    // TODO retry
     public static Table getTable(Odps odps, String tableName) {
-        Table table = odps.tables().get(tableName);
+        Table table = null;
+        try {
+            table = odps.tables().get(tableName);
+            odps.tables().exists(tableName);
+        } catch (OdpsException e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.TABLE_NOT_EXIST,
+                    String.format("项目:%s 中的表:%s 不存在.", odps.getDefaultProject(), tableName), e);
+        }
 
         return table;
     }
 
     public static boolean isPartitionedTable(Table table) {
-        TableSchema tableSchema = table.getSchema();
-
-        return tableSchema.getPartitionColumns().size() > 0;
+        return getPartitionDepth(table) > 0;
     }
 
-    public static List<String> getTableAllPartitions(Table table, int retryTime) {
-        List<Partition> tableAllPartitions = null;
+    public static int getPartitionDepth(Table table) {
+        TableSchema tableSchema = table.getSchema();
 
-        for (int i = 0; i < retryTime; i++) {
-            try {
-                tableAllPartitions = table.getPartitions();
-            } catch (Exception e) {
-                if (i < retryTime) {
-                    LOG.warn("try to list odps partitions for {} times.", i + 1);
-                    continue;
-                } else {
-                    throw DataXException.asDataXException(
-                            OdpsReaderErrorCode.RUNTIME_EXCEPTION, e);
-                }
-            }
+        return tableSchema.getPartitionColumns().size();
+    }
 
-            if (null != tableAllPartitions) {
-                break;
-            }
-        }
+    public static List<String> getTableAllPartitions(Table table) {
+        List<Partition> tableAllPartitions = table.getPartitions();
+
         List<String> retPartitions = new ArrayList<String>();
 
         if (null != tableAllPartitions) {
@@ -99,9 +106,7 @@ public final class OdpsUtil {
 
     public static List<Column> getTableAllColumns(Table table) {
         TableSchema tableSchema = table.getSchema();
-        List<Column> columns = tableSchema.getColumns();
-
-        return columns;
+        return tableSchema.getColumns();
     }
 
     public static List<OdpsType> getTableOriginalColumnTypeList(
@@ -124,25 +129,6 @@ public final class OdpsUtil {
         }
 
         return tableOriginalColumnNameList;
-    }
-
-    public static Map<String, String> getOdpsProp(String filePath) {
-        Map<String, String> propsMap = new HashMap<String, String>();
-
-        Properties props = new Properties();
-        try {
-            InputStream in = new BufferedInputStream(new FileInputStream(
-                    filePath));
-            props.load(in);
-            Set<Entry<Object, Object>> sets = props.entrySet();
-            for (Entry<Object, Object> e : sets) {
-                propsMap.put(String.valueOf(e.getKey()),
-                        String.valueOf(e.getValue()));
-            }
-        } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE, e);
-        }
-        return propsMap;
     }
 
     public static String formatPartition(String partition) {
@@ -169,18 +155,24 @@ public final class OdpsUtil {
         }
     }
 
-    // TODO 去除首尾的单引号
-    public static List<String> parseConstantColumn(
-            List<String> tableOriginalColumnList,
-            List<String> userConfiguredColumns) {
+    public static List<String> parseConstantColumn(List<String> tableOriginalColumnList,
+                                                   List<String> userConfiguredColumns) {
         List<String> retList = new ArrayList<String>(tableOriginalColumnList);
         for (String col : userConfiguredColumns) {
-            if (col.startsWith(Constant.COLUMN_CONSTANT_FLAG)
-                    && col.endsWith(Constant.COLUMN_CONSTANT_FLAG)) {
-                retList.add(col);
+            if (checkIfConstantColumn(col)) {
+                retList.add(col.substring(1, col.length() - 1));
             }
         }
         return retList;
+    }
+
+    public static boolean checkIfConstantColumn(String column) {
+        if (column.length() >= 2 && column.startsWith(Constant.COLUMN_CONSTANT_FLAG) &&
+                column.endsWith(Constant.COLUMN_CONSTANT_FLAG)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public static List<Integer> parsePosition(List<String> allColumnList,
@@ -199,18 +191,92 @@ public final class OdpsUtil {
             }
             if (!hasColumn) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                        String.format("no column named [%s] !", col));
+                        String.format("读取源头表的列配置错误. 您所配置的列:%s 不存在.", col));
             }
         }
         return retList;
     }
 
-    public static void dealMaxRetryTime(Configuration originalConfig) {
-        int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME, Constant.DEFAULT_RETRY_TIME);
-        if (maxRetryTime < 1) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                    "maxRetryTime can not < 1.");
+    public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps,
+                                                                                        String tunnelServer, String tableName) {
+
+        TableTunnel tunnel = new TableTunnel(odps);
+        if (StringUtils.isNoneBlank(tunnelServer)) {
+            tunnel.setEndpoint(tunnelServer);
         }
-        originalConfig.set(Key.MAX_RETRY_TIME, maxRetryTime);
+
+        TableTunnel.DownloadSession downloadSession = null;
+        try {
+            downloadSession = tunnel.createDownloadSession(
+                    odps.getDefaultProject(), tableName);
+        } catch (TunnelException e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+        }
+
+        return downloadSession;
     }
+
+    public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, String sessionId,
+                                                                                    String tunnelServer, String tableName) {
+
+        TableTunnel tunnel = new TableTunnel(odps);
+        if (StringUtils.isNoneBlank(tunnelServer)) {
+            tunnel.setEndpoint(tunnelServer);
+        }
+
+        TableTunnel.DownloadSession downloadSession = null;
+        try {
+            downloadSession = tunnel.getDownloadSession(
+                    odps.getDefaultProject(), tableName, sessionId);
+        } catch (TunnelException e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+        }
+
+        return downloadSession;
+    }
+
+    public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps,
+                                                                                     String tunnelServer, String tableName, String partition) {
+
+        TableTunnel tunnel = new TableTunnel(odps);
+        if (StringUtils.isNoneBlank(tunnelServer)) {
+            tunnel.setEndpoint(tunnelServer);
+        }
+
+        TableTunnel.DownloadSession downloadSession = null;
+
+        PartitionSpec partitionSpec = new PartitionSpec(partition);
+
+        try {
+            downloadSession = tunnel.createDownloadSession(
+                    odps.getDefaultProject(), tableName, partitionSpec);
+        } catch (TunnelException e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+        }
+
+        return downloadSession;
+    }
+
+    public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, String sessionId,
+                                                                                 String tunnelServer, String tableName, String partition) {
+
+        TableTunnel tunnel = new TableTunnel(odps);
+        if (StringUtils.isNoneBlank(tunnelServer)) {
+            tunnel.setEndpoint(tunnelServer);
+        }
+
+        TableTunnel.DownloadSession downloadSession = null;
+
+        PartitionSpec partitionSpec = new PartitionSpec(partition);
+
+        try {
+            downloadSession = tunnel.getDownloadSession(
+                    odps.getDefaultProject(), tableName, partitionSpec, sessionId);
+        } catch (TunnelException e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+        }
+
+        return downloadSession;
+    }
+
 }

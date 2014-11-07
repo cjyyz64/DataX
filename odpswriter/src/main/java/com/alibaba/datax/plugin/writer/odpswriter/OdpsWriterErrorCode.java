@@ -24,7 +24,7 @@ public enum OdpsWriterErrorCode implements ErrorCode {
     COMMIT_BLOCK_FAIL("OdpsWriter-14", "failed to commit block"),
     COLUMN_CONFIGURED_ERROR("OdpsWriter-15", "column configured error."),
     ADD_PARTITION_FAILED("OdpsWriter-16", "add partition failed."),
-    LIST_PARTITION_FAILED("OdpsWriter-17", "list partition failed."),
+    RUN_SQL_FAILED("OdpsWriter-17", "run odps sql failed."),
     CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-18", "Check if partitioned table failed."),;
 
     private final String code;

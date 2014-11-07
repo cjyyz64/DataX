@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
@@ -12,7 +11,6 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,7 +102,7 @@ public class CommonRdbmsReader {
             } catch (Exception unused) {
                 // ignore it
             }
-            LOG.info("\nbegin to read record by Sql [{}\n] {}.",
+            LOG.info("Begin to read record by Sql [{}\n] {}.",
                     null != formattedSql ? formattedSql : querySql,
                     BASIC_MESSAGE);
 
@@ -127,14 +125,9 @@ public class CommonRdbmsReader {
                 }
 
             } catch (Exception e) {
-                String businessMessage = String.format(
-                        "Read record failed, %s, detail:[%s]", BASIC_MESSAGE,
-                        e.getMessage());
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, e);
-                LOG.error(message, e);
-
-                throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL, e);
+                throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,
+                        String.format(
+                                "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]", BASIC_MESSAGE, querySql), e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
@@ -160,6 +153,7 @@ public class CommonRdbmsReader {
             }
         }
 
+        //TODO  not gook
         private void doDealWithSessionConfig(Connection conn,
                                              Map<String, String> sessionConfig) {
             String ALTER_SESSION_TEMPLAT = "alter session set %s=%s";
@@ -182,14 +176,9 @@ public class CommonRdbmsReader {
                 }
 
             } catch (Exception e) {
-                String businessMessage = String.format(
-                        "Set session configuration failed, %s, detail:[%s]",
-                        BASIC_MESSAGE, e.getMessage());
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, e);
-                LOG.error(message, e);
-
-                throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, e);
+                throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR,
+                        String.format("执行 session 设置失败. 上下文信息是:%s .",
+                                BASIC_MESSAGE), e);
             } finally {
                 DBUtil.closeDBResources(null, stmt, null);
             }
