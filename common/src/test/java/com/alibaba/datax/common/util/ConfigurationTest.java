@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.alibaba.datax.common.exception.DataXException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -550,7 +551,7 @@ public class ConfigurationTest {
 
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = DataXException.class)
 	public void test_remove() {
 		Configuration configuration = Configuration.from("{\"a\": \"b\"}");
 		configuration.remove("a");
