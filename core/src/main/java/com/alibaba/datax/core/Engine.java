@@ -149,7 +149,7 @@ public class Engine {
         try {
             Engine.entry(args);
         } catch (Throwable e) {
-            LOG.error("下面将会显示整个任务最可能的错误原因:\n" + ExceptionTracker.trace(e));
+            LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
             System.exit(Status.FAIL.value());
         }
 
