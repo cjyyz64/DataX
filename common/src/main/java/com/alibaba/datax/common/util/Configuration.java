@@ -223,7 +223,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return CharUtils.toChar(result);
+
+		try {
+			return CharUtils.toChar(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法，期望是字符类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -284,7 +292,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Integer.valueOf(result);
+
+		try {
+			return Integer.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是整数类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -310,7 +326,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Long.valueOf(result);
+
+		try {
+			return Long.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是整数类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -336,7 +360,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Double.valueOf(result);
+
+		try {
+			return Double.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是浮点类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -587,8 +619,9 @@ public class Configuration {
 	public Object remove(final String path) {
 		final Object result = this.get(path);
 		if (null == result) {
-			throw new IllegalArgumentException(String.format(
-					"Remove key [%s] not found .", path));
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR,
+					String.format("配置文件对应Key[%s]并不存在，该情况是代码编程错误 .", path));
 		}
 
 		this.set(path, null);
@@ -694,9 +727,9 @@ public class Configuration {
 			return;
 		}
 
-		throw new IllegalArgumentException(String.format(
-				"值[%s]无法适配您提供[%s]， 该异常代表系统编程错误, 请联系DataX开发团队 !",
-				ToStringBuilder.reflectionToString(object), path));
+		throw DataXException.asDataXException(CommonErrorCode.RUNTIME_ERROR,
+				String.format("值[%s]无法适配您提供[%s]， 该异常代表系统编程错误, 请联系DataX开发团队 !",
+						ToStringBuilder.reflectionToString(object), path));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -736,7 +769,8 @@ public class Configuration {
 
 	Object buildObject(final List<String> paths, final Object object) {
 		if (null == paths) {
-			throw new IllegalArgumentException(
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR,
 					"Path不能为null，该异常代表系统编程错误, 请联系DataX开发团队 !");
 		}
 
@@ -764,9 +798,10 @@ public class Configuration {
 				continue;
 			}
 
-			throw new IllegalArgumentException(String.format(
-					"路径[%s]出现非法值类型[%s]，该异常代表系统编程错误, 请联系DataX开发团队 ! .",
-					StringUtils.join(paths, "."), path));
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR, String.format(
+							"路径[%s]出现非法值类型[%s]，该异常代表系统编程错误, 请联系DataX开发团队 ! .",
+							StringUtils.join(paths, "."), path));
 		}
 
 		return child;
@@ -852,7 +887,8 @@ public class Configuration {
 			return lists;
 		}
 
-		throw new IllegalArgumentException("该异常代表系统编程错误, 请联系DataX开发团队 !");
+		throw DataXException.asDataXException(CommonErrorCode.RUNTIME_ERROR,
+				"该异常代表系统编程错误, 请联系DataX开发团队 !");
 	}
 
 	private Object findObject(final String path) {
@@ -972,12 +1008,18 @@ public class Configuration {
 
 	private static void checkJSON(final String json) {
 		if (StringUtils.isBlank(json)) {
-			throw new IllegalArgumentException("系统编程错误, Json入参不能为空.");
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					"您提供的配置信息不是合法的JSON格式, JSON不能为空白.");
 		}
 	}
 
 	private Configuration(final String json) {
-		this.root = JSON.parse(json);
+		try {
+			this.root = JSON.parse(json);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供的配置信息不是合法的JSON格式: %s .", e.getMessage()));
+		}
 	}
 
 	private static String toJSONString(final Object object) {
