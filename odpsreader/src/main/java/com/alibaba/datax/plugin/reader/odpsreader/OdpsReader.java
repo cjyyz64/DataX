@@ -128,6 +128,11 @@ public class OdpsReader extends Reader {
             List<String> allStandardUserConfiguredPartitions = OdpsUtil
                     .formatPartitions(userConfiguredPartitions);
 
+            /**
+             *  对配置的分区级数(深度)进行检查
+             *  (1)先检查用户配置的分区级数,自身级数是否相等
+             *  (2)检查用户配置的分区级数是否与源头表的的分区级数一样
+             */
             String firstPartition = allStandardUserConfiguredPartitions.get(0);
             int firstPartitionDepth = firstPartition.split(",").length;
 
@@ -141,6 +146,13 @@ public class OdpsReader extends Reader {
                             String.format("分区配置错误, 您所配置的分区级数不一样, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的.",
                                     firstPartition, firstPartitionDepth, comparedPartition, comparedPartitionDepth));
                 }
+            }
+
+            int tableOriginalPartitionDepth = allStandardPartitions.get(0).split(",").length;
+            if (firstPartitionDepth != tableOriginalPartitionDepth) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_CONFIG_ERROR,
+                        String.format("分区配置错误, 您所配置的分区:%s 的级数:%s 与您要读取的 ODPS 源头表的分区级数:%s 不相等. DataX 是通过英文逗号判断您所配置的分区级数的.",
+                                firstPartition, firstPartitionDepth, tableOriginalPartitionDepth));
             }
 
             List<String> retPartitions = FilterUtil.filterByRegulars(allStandardPartitions,

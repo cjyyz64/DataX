@@ -83,14 +83,10 @@ public final class DBUtil {
     }
 
     private static synchronized Connection connect(DataBaseType dataBaseType, String url, String user,
-                                                   String pass) {
-        try {
-            Class.forName(dataBaseType.getDriverClassName());
-            DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
-            return DriverManager.getConnection(url, user, pass);
-        } catch (Exception e) {
-            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, e);
-        }
+                                                   String pass) throws Exception {
+        Class.forName(dataBaseType.getDriverClassName());
+        DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
+        return DriverManager.getConnection(url, user, pass);
     }
 
     /**
@@ -205,7 +201,7 @@ public final class DBUtil {
                 return true;
             }
         } catch (Exception e) {
-            LOG.warn("test connection of [{}] failed, for {}.", url,
+            LOG.warn("正在测试 jdbcUrl 连通性, 目前 jdbcUrl:{} 不可连, 原因是:{} .", url,
                     e.getMessage());
         }
 
@@ -226,7 +222,7 @@ public final class DBUtil {
                 return true;
             }
         } catch (Exception e) {
-            LOG.warn("test connection of [{}] failed, for {}.", url,
+            LOG.warn("正在测试 jdbcUrl 连通性, 目前 jdbcUrl:{} 不可连, 原因是:{} .", url,
                     e.getMessage());
         }
 
@@ -248,7 +244,7 @@ public final class DBUtil {
             if (rs.next()) {
                 checkResult = rs.getInt(1);
                 if (rs.next()) {
-                    LOG.warn("pre check failed. It should return one result:0, pre:[{}].", pre);
+                    LOG.warn("读取数据库表前的检查语句:{} 未通过. 根据 DataX 规定，preCheck 只有返回一条数据且返回值为0 才会通过.", pre);
                     return false;
                 }
 
@@ -258,9 +254,9 @@ public final class DBUtil {
                 return true;
             }
 
-            LOG.warn("pre check failed. It should return one result:0, pre:[{}].", pre);
+            LOG.warn("读取数据库表前的检查语句:{} 未通过. 根据 DataX 规定，preCheck 只有返回一条数据且返回值为0 才会通过.", pre);
         } catch (Exception e) {
-            LOG.warn("pre check failed. pre:[{}], errorMessage:[{}].", pre, e.getMessage());
+            LOG.warn("读取数据库表前的检查语句:{} 执行时发生异常:{}. 根据 DataX 规定，preCheck 只有返回一条数据且返回值为0 才会通过.", pre, e.getMessage());
         }
         return false;
     }

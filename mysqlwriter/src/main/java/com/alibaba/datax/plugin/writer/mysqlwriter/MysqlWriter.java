@@ -35,7 +35,7 @@ public class MysqlWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             OriginalConfPretreatmentUtil.doPretreatment(this.originalConfig);
             if (IS_DEBUG) {
-                LOG.debug("after master init(), originalConfig now is:[\n{}\n]",
+                LOG.debug("After master init(), originalConfig now is:[\n{}\n]",
                         this.originalConfig.toJSON());
             }
         }
