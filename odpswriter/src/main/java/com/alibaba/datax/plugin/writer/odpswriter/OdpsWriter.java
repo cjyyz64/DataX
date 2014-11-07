@@ -70,7 +70,7 @@ public class OdpsWriter extends Writer {
             boolean emptyAsNull = this.originalConfig.getBool(Key.EMPTY_AS_NULL, false);
             this.originalConfig.set(Key.EMPTY_AS_NULL, emptyAsNull);
             if (emptyAsNull) {
-                LOG.warn("As your job configured emptyAsNull=true, so when write to odps,empty string \"\" will be treated as null.");
+                LOG.warn(" 由于您的作业配置了写入 ODPS 的目的表时emptyAsNull=true, 所以 DataX将会把长度为0的空字符串作为 java 的 null 写入 ODPS.");
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
@@ -113,7 +113,7 @@ public class OdpsWriter extends Writer {
                 tab.load();
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("加载 ODPS 目的表:%s 失败, 请先检查您写入 ODPS的项目、表等配置是否正确.", tab.getName()), e);
+                        String.format("加载 ODPS 目的表:%s 失败, 请先检查您写入 ODPS的项目、表等配置是否正确或者向 ODPS 管理员寻求帮助.", tab.getName()), e);
             }
 
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
@@ -158,6 +158,7 @@ public class OdpsWriter extends Writer {
         }
 
         private void dealColumn(Configuration originalConfig, List<String> allColumns) {
+            //之前已经检查了userConfiguredColumns 一定不为空
             List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
             if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
                 userConfiguredColumns = allColumns;
@@ -218,7 +219,7 @@ public class OdpsWriter extends Writer {
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是其范围为:1-512之间的证书.", this.blockSizeInMB));
+                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是[1-512]之间的整数.", this.blockSizeInMB));
             }
 
             if (IS_DEBUG) {
@@ -261,7 +262,7 @@ public class OdpsWriter extends Writer {
 
                 proxy.writeRemainingRecord(blocks);
             } catch (Exception e) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, "写入 ODPS 失败. 请联系 ODPS 管理员处理.", e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, "写入 ODPS 目的表失败. 请联系 ODPS 管理员处理.", e);
             }
         }
 
