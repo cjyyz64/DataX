@@ -1,6 +1,10 @@
 {
     "job": {
-
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
         "content": [
             {
                 "reader": {
