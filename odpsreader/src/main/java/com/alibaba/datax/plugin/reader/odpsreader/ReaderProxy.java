@@ -90,7 +90,7 @@ public class ReaderProxy {
                 break;
             }
             default:
-                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                         String.format("DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. " +
                                         "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
                                 type));

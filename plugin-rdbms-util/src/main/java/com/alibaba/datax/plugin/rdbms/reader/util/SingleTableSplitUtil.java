@@ -38,7 +38,7 @@ public class SingleTableSplitUtil {
 
         if (null == minMaxPK) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                    "根据切分主键切分表失败. DataX 仅支持切分主键为一个，并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
+                    "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
         }
 
         String splitPkName = configuration.getString(Key.SPLIT_PK);
@@ -73,7 +73,7 @@ public class SingleTableSplitUtil {
                     splitPkName);
         } else {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                    "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个，并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
+                    "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
         }
 
         String tempQuerySql = null;
@@ -164,16 +164,16 @@ public class SingleTableSplitUtil {
                         String minMax = rs.getString(1) + rs.getString(2);
                         if (StringUtils.contains(minMax, '.')) {
                             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                                    "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个，并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
+                                    "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
                         }
                     }
                 } else {
                     throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                            "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个，并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
+                            "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
                 }
             } else {
                 throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                        "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个，并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
+                        "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请联系 DBA 进行处理.");
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, "读取数据库表时，切分主键失败.", e);

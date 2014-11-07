@@ -20,13 +20,13 @@ public final class OriginalConfPretreatmentUtil {
 
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
-        originalConfig.getNecessaryValue(Key.USERNAME, MysqlWriterErrorCode.CONF_ERROR);
-        originalConfig.getNecessaryValue(Key.PASSWORD, MysqlWriterErrorCode.CONF_ERROR);
+        originalConfig.getNecessaryValue(Key.USERNAME, MysqlWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.PASSWORD, MysqlWriterErrorCode.REQUIRED_VALUE);
 
         // 检查batchSize 配置（选填，如果未填写，则设置为默认值）
         int batchSize = originalConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
         if (batchSize < 1) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, String.format(
+            throw DataXException.asDataXException(MysqlWriterErrorCode.BATCH_SIZE_CONF_ERROR, String.format(
                     "您所配置的写入数据库表的 batchSize:%s 不能小于1. 推荐配置范围为：[100-1000], 该值越大, 内存溢出可能性越大.",
                     batchSize));
         }
@@ -49,7 +49,7 @@ public final class OriginalConfPretreatmentUtil {
 
             String jdbcUrl = connConf.getString(Key.JDBC_URL);
             if (StringUtils.isBlank(jdbcUrl)) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, "您未配置的写入数据库表的 jdbcUrl.");
+                throw DataXException.asDataXException(MysqlWriterErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL), jdbcUrl);
@@ -57,7 +57,7 @@ public final class OriginalConfPretreatmentUtil {
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
             if (null == tables || tables.isEmpty()) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(MysqlWriterErrorCode.REQUIRED_VALUE,
                         "您未配置写入数据库表的表名称.");
             }
 
@@ -82,7 +82,7 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealColumnConf(Configuration originalConfig) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == columns || columns.isEmpty()) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+            throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
                     "您未配置写入数据库表的列名称.");
         } else {
             String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
@@ -105,7 +105,7 @@ public final class OriginalConfPretreatmentUtil {
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
             } else if (columns.size() > allColumns.size()) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
                         String.format("您所配置的写入数据库表的字段个数:%s 大于目的表的字段总个数:%s .",
                                 columns.size(), allColumns.size()));
             } else {
@@ -128,7 +128,8 @@ public final class OriginalConfPretreatmentUtil {
                 || writeMode.trim().toLowerCase().startsWith("replace");
 
         if (!isWriteModeLegal) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR, String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
+            throw DataXException.asDataXException(MysqlWriterErrorCode.WRITE_MODE_CONF_ERROR,
+                    String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
         }
 
 

@@ -35,8 +35,8 @@ public final class OdpsSplitUtil {
 
         // TODO
         if (null == partitions || partitions.isEmpty()) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                    "no partition to read.");
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    "您所配置的分区不能为空白.");
         }
 
         //splitMode 默认为 record

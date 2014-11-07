@@ -60,7 +60,7 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
@@ -112,7 +112,7 @@ public class OdpsWriter extends Writer {
             try {
                 tab.load();
             } catch (Exception e) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("加载 ODPS 目的表:%s 失败, 请先检查您写入 ODPS的项目、表等配置是否正确.", tab.getName()), e);
             }
 

@@ -76,7 +76,7 @@ public class MysqlWriter extends Writer {
             }
 
             if (IS_DEBUG) {
-                LOG.debug("after master prepare(), originalConfig now is:[\n{}\n]",
+                LOG.debug("After master prepare(), originalConfig now is:[\n{}\n]",
                         this.originalConfig.toJSON());
             }
         }
@@ -298,8 +298,8 @@ public class MysqlWriter extends Writer {
             try {
                 stmt = conn.createStatement();
             } catch (SQLException e) {
-                LOG.error("error while createStatement, {}.", BASIC_MESSAGE);
-                throw DataXException.asDataXException(MysqlWriterErrorCode.SESSION_ERROR, e);
+                throw DataXException.asDataXException(MysqlWriterErrorCode.SESSION_ERROR,
+                        String.format("执行 session 设置失败. 上下文信息是:[%s] .", BASIC_MESSAGE), e);
             }
 
             for (String sessionSql : sessions) {
@@ -307,10 +307,8 @@ public class MysqlWriter extends Writer {
                 try {
                     DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
                 } catch (SQLException e) {
-                    LOG.error("execute sql:[{}] failed, {}.", sessionSql,
-                            BASIC_MESSAGE);
-                    throw DataXException.asDataXException(
-                            MysqlWriterErrorCode.SESSION_ERROR, e);
+                    throw DataXException.asDataXException(MysqlWriterErrorCode.SESSION_ERROR,
+                            String.format("执行 session 设置失败. 上下文信息是:[%s] .", BASIC_MESSAGE), e);
                 }
             }
 

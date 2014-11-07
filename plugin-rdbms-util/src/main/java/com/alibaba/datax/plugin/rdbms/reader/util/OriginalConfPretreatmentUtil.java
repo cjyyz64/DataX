@@ -236,7 +236,7 @@ public final class OriginalConfPretreatmentUtil {
             } else if (true == isTableMode && true == isQuerySqlMode) {
                 // table 和 querySql 二者均配置
                 throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
-                        "您配置凌乱了. 不能同时既配置table又配置querySql");
+                        "您配置凌乱了. 不能同时既配置table又配置querySql.");
             }
         }
 
@@ -244,7 +244,7 @@ public final class OriginalConfPretreatmentUtil {
         if (!ListUtil.checkIfValueSame(tableModeFlags)
                 || !ListUtil.checkIfValueSame(tableModeFlags)) {
             throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
-                    "您配置凌乱了. 不能同时既配置table又配置querySql");
+                    "您配置凌乱了. 不能同时既配置table又配置querySql.");
         }
 
         return tableModeFlags.get(0);

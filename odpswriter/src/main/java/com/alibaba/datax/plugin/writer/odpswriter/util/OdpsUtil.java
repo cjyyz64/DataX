@@ -132,7 +132,7 @@ public class OdpsUtil {
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.CHECK_IF_PARTITIONED_TABLE_FAILED,
-                    String.format(" 检查 ODPS 目的表:%s 是否为分区表失败, 请联系 ODPS 管理员处理.", table.getName()), e);
+                    String.format("检查 ODPS 目的表:%s 是否为分区表失败, 请联系 ODPS 管理员处理.", table.getName()), e);
         }
         return false;
     }
@@ -304,7 +304,7 @@ public class OdpsUtil {
                 }
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_BLOCK_FAIL,
+            throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL,
                     String.format("ODPS 目的表写 block:%s 失败. 请联系 ODPS 管理员处理.", blockId), e);
         }
 
@@ -328,7 +328,7 @@ public class OdpsUtil {
                 }
             }
             if (!hasColumn) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_CONFIGURED_ERROR,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("ODPS 目的表的列配置错误. 您所配置的列:%s 不存在.", col));
             }
         }
@@ -373,7 +373,7 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, String.format("对分区表:%s 进行 truncate 操作时必须指定需要清空的具体分区值.",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("对分区表:%s 进行 truncate 操作时必须指定需要清空的具体分区值.",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
@@ -382,7 +382,7 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, String.format("对非分区表:%s 进行 truncate 操作时您不能指定具体分区值.",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("对非分区表:%s 进行 truncate 操作时您不能指定具体分区值.",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
@@ -394,7 +394,7 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                             String.format("写入分区表:%s 时必须指定具体分区值.", table.getName()));
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
@@ -408,7 +408,7 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR,
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                             String.format("写入非分区表:%s 时您不能指定具体分区值.", table.getName()));
                 }
             }

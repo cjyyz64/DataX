@@ -3,16 +3,11 @@ package com.alibaba.datax.plugin.reader.odpsreader;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum OdpsReaderErrorCode implements ErrorCode {
-    REQUIRED_VALUE("OdpsWriter-00", "lost necessary value"),
-    ILLEGAL_VALUE("OdpsWriter-01", "illegal value"),
-    RUNTIME_EXCEPTION("OdpsReader-00", "run time exception"),
-    NOT_SUPPORT_TYPE("OdpsReader-01", "not supported column type"),
-    CREATE_DOWNLOADSESSION_FAIL("OdpsReader-02", "create downloadSession failed."),
-    READ_DATA_FAIL("OdpsReader-03", "read data fail."),
-    PARTITION_CONFIG_ERROR("OdpsReader-03", "partition configured error."),
-    TABLE_NOT_EXIST("OdpsReader-03", "read data fail."),
-
-    ;
+    REQUIRED_VALUE("OdpsReader-00", "您缺失了必须填写的参数值."),
+    ILLEGAL_VALUE("OdpsReader-01", "您配置的值不合法."),
+    CREATE_DOWNLOADSESSION_FAIL("OdpsReader-03", "创建 ODPS 的 downloadSession 失败."),
+    GET_DOWNLOADSESSION_FAIL("OdpsReader-04", "获取 ODPS 的 downloadSession 失败."),
+    READ_DATA_FAIL("OdpsReader-05", "读取 ODPS 源头表失败."),;
 
     private final String code;
     private final String description;

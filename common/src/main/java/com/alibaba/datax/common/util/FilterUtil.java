@@ -7,14 +7,15 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
- * 提供从 List<String> 中根据 regular 过滤的通用工具. 使用场景，比如：odpsreader
+ * 提供从 List<String> 中根据 regular 过滤的通用工具(返回值已经去重). 使用场景，比如：odpsreader
  * 的分区筛选，hdfsreader/txtfilereader的路径筛选等
  */
 public final class FilterUtil {
 
+    //已经去重
     public static List<String> filterByRegular(List<String> allStrs,
                                                String regular) {
-        List<String> matchedValues = new ArrayList<String>();
+        Set<String> matchedValues = new HashSet<String>();
 
         // 语法习惯上的兼容处理(pt=* 实际正则应该是：pt=.*)
         String newReqular = regular.replace(".*", "*").replace("*", ".*");
@@ -26,7 +27,7 @@ public final class FilterUtil {
                 matchedValues.add(partition);
             }
         }
-        return matchedValues;
+        return new ArrayList<String>(matchedValues);
     }
 
     //已经去重

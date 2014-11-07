@@ -116,7 +116,7 @@ public class OdpsWriterProxy {
         int userConfiguredColumnNumber = this.columnPositions.size();
 
         if (sourceColumnCount > userConfiguredColumnNumber) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.COLUMN_NUMBER_ERROR,
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                     String.format("数据源读取的列数是:%s 大于目的端的列数是:%s , DataX 不允许这种行为, 请检查您的配置.",
                             sourceColumnCount, userConfiguredColumnNumber));
         } else if (sourceColumnCount < userConfiguredColumnNumber) {

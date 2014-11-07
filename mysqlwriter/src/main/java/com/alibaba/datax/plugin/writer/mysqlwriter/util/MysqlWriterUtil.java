@@ -39,7 +39,7 @@ public final class MysqlWriterUtil {
 
         if (tableNumber != adviceNumber) {
             throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
-                    String.format("tableNumber:[%s], but adviceNumb:[%s]",
+                    String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
                             tableNumber, adviceNumber));
         }
 
@@ -110,9 +110,8 @@ public final class MysqlWriterUtil {
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
         } catch (Exception e) {
-            LOG.error("execute sql:[{}] failed, {}.", currentSql,
-                    basicMessage);
-            throw DataXException.asDataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR, e);
+            throw DataXException.asDataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR,
+                    String.format("执行 Sql:%s 语句失败. 上下文信息是:%s .", currentSql, basicMessage), e);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }

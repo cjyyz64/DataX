@@ -37,15 +37,11 @@ public final class OdpsUtil {
     }
 
     public static Odps initOdps(Configuration originalConfig) {
-        String odpsServer = originalConfig.getNecessaryValue(Key.ODPS_SERVER,
-                OdpsReaderErrorCode.NOT_SUPPORT_TYPE);
+        String odpsServer = originalConfig.getString(Key.ODPS_SERVER);
 
-        String accessId = originalConfig.getNecessaryValue(Key.ACCESS_ID,
-                OdpsReaderErrorCode.NOT_SUPPORT_TYPE);
-        String accessKey = originalConfig.getNecessaryValue(Key.ACCESS_KEY,
-                OdpsReaderErrorCode.NOT_SUPPORT_TYPE);
-        String project = originalConfig.getNecessaryValue(Key.PROJECT,
-                OdpsReaderErrorCode.NOT_SUPPORT_TYPE);
+        String accessId = originalConfig.getString(Key.ACCESS_ID);
+        String accessKey = originalConfig.getString(Key.ACCESS_KEY);
+        String project = originalConfig.getString(Key.PROJECT);
 
         String accountType = originalConfig.getString(Key.ACCOUNT_TYPE,
                 Constant.DEFAULT_ACCOUNT_TYPE);
@@ -56,7 +52,7 @@ public final class OdpsUtil {
         } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                     String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
         }
 
@@ -73,7 +69,7 @@ public final class OdpsUtil {
             table = odps.tables().get(tableName);
             odps.tables().exists(tableName);
         } catch (OdpsException e) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.TABLE_NOT_EXIST,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                     String.format("项目:%s 中的表:%s 不存在.", odps.getDefaultProject(), tableName), e);
         }
 
@@ -133,8 +129,8 @@ public final class OdpsUtil {
 
     public static String formatPartition(String partition) {
         if (StringUtils.isBlank(partition)) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
-                    "bad partition which is blank.");
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    "您所配置的分区不能为空白.");
         } else {
             return partition.trim().replaceAll(" *= *", "=")
                     .replaceAll(" */ *", ",").replaceAll(" *, *", ",")
@@ -190,7 +186,7 @@ public final class OdpsUtil {
                 }
             }
             if (!hasColumn) {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.NOT_SUPPORT_TYPE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                         String.format("读取源头表的列配置错误. 您所配置的列:%s 不存在.", col));
             }
         }
@@ -229,7 +225,7 @@ public final class OdpsUtil {
             downloadSession = tunnel.getDownloadSession(
                     odps.getDefaultProject(), tableName, sessionId);
         } catch (TunnelException e) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
 
         return downloadSession;
@@ -273,7 +269,7 @@ public final class OdpsUtil {
             downloadSession = tunnel.getDownloadSession(
                     odps.getDefaultProject(), tableName, partitionSpec, sessionId);
         } catch (TunnelException e) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
 
         return downloadSession;
