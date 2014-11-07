@@ -43,7 +43,6 @@ public class TxtFileReader extends Reader {
 			LOG.debug("init() ok and end...");
 		}
 
-		// TODO 文件 权限
 		// TODO validate column
 		private void validate() {
 			path = this.readerOriginConfig.getNecessaryValue(Key.PATH,
@@ -101,10 +100,8 @@ public class TxtFileReader extends Reader {
 			return readerSplitConfigs;
 		}
 
-		// TODO validate the path?
-		// path must be a absolute path
+		// validate the path, path must be a absolute path
 		private List<String> buildSourceTargets() {
-			// 获取路径前缀，无 * ?
 			int endMark;
 			for (endMark = 0; endMark < this.path.length(); endMark++) {
 				if ('*' != this.path.charAt(endMark)
@@ -184,8 +181,7 @@ public class TxtFileReader extends Reader {
 									subFileNames.getAbsolutePath());
 						}
 					} else {
-						// TODO 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn,
-						// =》如何区分无用的隐藏文件（无权限），和用户指定的文件（无权限）
+						// warn: 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn
 						LOG.warn(String.format("没有权限查看目录 : [%s]", directory));
 					}
 
@@ -275,8 +271,7 @@ public class TxtFileReader extends Reader {
 			LOG.debug("destroy()");
 		}
 
-		// TODO sock 文件无法read
-		// TODO check print exception stack
+		// warn: sock 文件无法read
 		@Override
 		public void startRead(RecordSender recordSender) {
 			LOG.debug("start startRead()");
@@ -287,7 +282,7 @@ public class TxtFileReader extends Reader {
 					this.readFromFile(fileName, recordSender);
 					recordSender.flush();
 				} catch (Exception e) {
-					// 一个文件失败，不能影响所有文件的传输?
+					// 一个文件失败，不能影响所有文件的传输
 					LOG.warn(String.format("could not read file : [%s]",
 							fileName));
 				}
@@ -403,7 +398,7 @@ public class TxtFileReader extends Reader {
 			String columnType = columnConfig.getNecessaryValue(Key.TYPE,
 					TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION);
 			Integer columnIndex = columnConfig.getInt(Key.INDEX);
-			String columnConst = columnConfig.getString(Key.CONST);
+			String columnConst = columnConfig.getString(Key.VALUE);
 
 			String columnValue = null;
 
