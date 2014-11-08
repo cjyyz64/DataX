@@ -67,7 +67,9 @@ public final class OdpsUtil {
         Table table = null;
         try {
             table = odps.tables().get(tableName);
-            odps.tables().exists(tableName);
+
+            //通过这种方式检查表是否存在
+            table.reload();
         } catch (OdpsException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                     String.format("项目:%s 中的表:%s 不存在.", odps.getDefaultProject(), tableName), e);
