@@ -294,7 +294,7 @@ public class OdpsReader extends Reader {
 
             if (count > 0) {
                 LOG.info(String.format(
-                        "准备读取源头表:%s 的分区:%s ,起始下标为:%s , 此次需要抽取行数为:%s .",
+                        "Begin to read ODPS table:%s, partition:%s, startIndex:%s, count:%s.",
                         this.tableName, partition, start, count));
             } else if (count == 0) {
                 LOG.warn(String.format("源头表:%s 的分区:%s 没有内容可抽取, 请您知晓.",
