@@ -91,7 +91,7 @@ public class RetryUtilTest {
 
     @Test(timeout = 3000L)
     public void test5() throws Exception {
-        expectedEx.expect(DataXException.class);
+        expectedEx.expect(Exception.class);
         expectedEx.expectMessage(StringContains.containsString(BAD));
 
         RetryUtil.executeWithRetry(new SomeService(), 2, 100L, false);
