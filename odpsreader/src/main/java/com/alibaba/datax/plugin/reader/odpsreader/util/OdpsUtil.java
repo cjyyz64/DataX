@@ -72,7 +72,8 @@ public final class OdpsUtil {
             table.reload();
         } catch (OdpsException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                    String.format("项目:%s 中的表:%s 不存在.", odps.getDefaultProject(), tableName), e);
+                    String.format("加载 ODPS 源头表:%s 失败. " +
+                            "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
         }
 
         return table;

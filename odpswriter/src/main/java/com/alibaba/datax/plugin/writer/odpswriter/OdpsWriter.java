@@ -113,7 +113,8 @@ public class OdpsWriter extends Writer {
                 tab.load();
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("加载 ODPS 目的表:%s 失败, 请先检查您写入 ODPS的项目、表等配置是否正确或者向 ODPS 管理员寻求帮助.", tab.getName()), e);
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", tab.getName()), e);
             }
 
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
