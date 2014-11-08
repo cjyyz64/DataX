@@ -14,126 +14,126 @@ import java.util.List;
  */
 public final class ListUtil {
 
-	public static boolean checkIfValueDuplicate(List<String> aList,
-			boolean caseSensitive) {
-		if (null == aList || aList.isEmpty()) {
-			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
-					"您提供的作业配置有误，List不能为空 .");
-		}
+    public static boolean checkIfValueDuplicate(List<String> aList,
+                                                boolean caseSensitive) {
+        if (null == aList || aList.isEmpty()) {
+            throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+                    "您提供的作业配置有误，List不能为空.");
+        }
 
-		try {
-			makeSureNoValueDuplicate(aList, caseSensitive);
-		} catch (Exception e) {
-			return true;
-		}
-		return false;
-	}
+        try {
+            makeSureNoValueDuplicate(aList, caseSensitive);
+        } catch (Exception e) {
+            return true;
+        }
+        return false;
+    }
 
-	public static void makeSureNoValueDuplicate(List<String> aList,
-			boolean caseSensitive) {
-		if (null == aList || aList.isEmpty()) {
-			throw new IllegalArgumentException("您提供的作业配置有误，List不能为空 .");
-		}
+    public static void makeSureNoValueDuplicate(List<String> aList,
+                                                boolean caseSensitive) {
+        if (null == aList || aList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
+        }
 
-		if (1 == aList.size()) {
-			return;
-		} else {
-			List<String> list = null;
-			if (!caseSensitive) {
-				list = valueToLowerCase(aList);
-			} else {
-				list = new ArrayList<String>(aList);
-			}
+        if (1 == aList.size()) {
+            return;
+        } else {
+            List<String> list = null;
+            if (!caseSensitive) {
+                list = valueToLowerCase(aList);
+            } else {
+                list = new ArrayList<String>(aList);
+            }
 
-			Collections.sort(list);
+            Collections.sort(list);
 
-			for (int i = 0, len = aList.size() - 1; i < len; i++) {
-				if (list.get(i).equals(list.get(i + 1))) {
-					throw DataXException
-							.asDataXException(
-									CommonErrorCode.CONFIG_ERROR,
-									String.format(
-											"您提供的作业配置信息有误，String:[%s]在列表中不允许重复配置，但在列表中存在重复配置情况: [%s].",
-											aList.get(i),
-											StringUtils.join(aList, ",")));
-				}
-			}
-		}
-	}
+            for (int i = 0, len = aList.size() - 1; i < len; i++) {
+                if (list.get(i).equals(list.get(i + 1))) {
+                    throw DataXException
+                            .asDataXException(
+                                    CommonErrorCode.CONFIG_ERROR,
+                                    String.format(
+                                            "您提供的作业配置信息有误, String:[%s] 不允许重复出现在列表中: [%s].",
+                                            aList.get(i),
+                                            StringUtils.join(aList, ",")));
+                }
+            }
+        }
+    }
 
-	public static boolean checkIfBInA(List<String> aList, List<String> bList,
-			boolean caseSensitive) {
-		if (null == aList || aList.isEmpty() || null == bList
-				|| bList.isEmpty()) {
-			throw new IllegalArgumentException("您提供的作业配置有误，List不能为空 .");
-		}
+    public static boolean checkIfBInA(List<String> aList, List<String> bList,
+                                      boolean caseSensitive) {
+        if (null == aList || aList.isEmpty() || null == bList
+                || bList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
+        }
 
-		try {
-			makeSureBInA(aList, bList, caseSensitive);
-		} catch (Exception e) {
-			return false;
-		}
-		return true;
-	}
+        try {
+            makeSureBInA(aList, bList, caseSensitive);
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
 
-	public static void makeSureBInA(List<String> aList, List<String> bList,
-			boolean caseSensitive) {
-		if (null == aList || aList.isEmpty() || null == bList
-				|| bList.isEmpty()) {
-			throw new IllegalArgumentException("您提供的作业配置有误，List不能为空 .");
-		}
+    public static void makeSureBInA(List<String> aList, List<String> bList,
+                                    boolean caseSensitive) {
+        if (null == aList || aList.isEmpty() || null == bList
+                || bList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
+        }
 
-		List<String> all = null;
-		List<String> part = null;
+        List<String> all = null;
+        List<String> part = null;
 
-		if (!caseSensitive) {
-			all = valueToLowerCase(aList);
-			part = valueToLowerCase(bList);
-		} else {
-			all = new ArrayList<String>(aList);
-			part = new ArrayList<String>(bList);
-		}
+        if (!caseSensitive) {
+            all = valueToLowerCase(aList);
+            part = valueToLowerCase(bList);
+        } else {
+            all = new ArrayList<String>(aList);
+            part = new ArrayList<String>(bList);
+        }
 
-		for (String oneValue : part) {
-			if (!all.contains(oneValue)) {
-				throw DataXException
-						.asDataXException(
-								CommonErrorCode.CONFIG_ERROR,
-								String.format(
-										"您提供的作业配置信息有误，String:[%s]在列表中不允许重复配置，但在列表中存在重复配置情况: [%s].",
-										oneValue, StringUtils.join(aList, ",")));
-			}
-		}
+        for (String oneValue : part) {
+            if (!all.contains(oneValue)) {
+                throw DataXException
+                        .asDataXException(
+                                CommonErrorCode.CONFIG_ERROR,
+                                String.format(
+                                        "您提供的作业配置信息有误, String:[%s] 不存在于列表中:[%s].",
+                                        oneValue, StringUtils.join(aList, ",")));
+            }
+        }
 
-	}
+    }
 
-	public static boolean checkIfValueSame(List<Boolean> aList) {
-		if (null == aList || aList.isEmpty()) {
-			throw new IllegalArgumentException("您提供的作业配置有误，List不能为空 .");
-		}
+    public static boolean checkIfValueSame(List<Boolean> aList) {
+        if (null == aList || aList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
+        }
 
-		if (1 == aList.size()) {
-			return true;
-		} else {
-			Boolean firstValue = aList.get(0);
-			for (int i = 1, len = aList.size(); i < len; i++) {
-				if (firstValue.booleanValue() != aList.get(i).booleanValue()) {
-					return false;
-				}
-			}
-			return true;
-		}
-	}
+        if (1 == aList.size()) {
+            return true;
+        } else {
+            Boolean firstValue = aList.get(0);
+            for (int i = 1, len = aList.size(); i < len; i++) {
+                if (firstValue.booleanValue() != aList.get(i).booleanValue()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
 
-	public static List<String> valueToLowerCase(List<String> aList) {
-		if (null == aList || aList.isEmpty()) {
-			throw new IllegalArgumentException("您提供的作业配置有误，List不能为空 .");
-		}
-		List<String> result = new ArrayList<String>(aList.size());
-		for (String oneValue : aList) {
-			result.add(null != oneValue ? oneValue.toLowerCase() : null);
-		}
+    public static List<String> valueToLowerCase(List<String> aList) {
+        if (null == aList || aList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
+        }
+        List<String> result = new ArrayList<String>(aList.size());
+        for (String oneValue : aList) {
+            result.add(null != oneValue ? oneValue.toLowerCase() : null);
+        }
 
-		return result;
-	}
+        return result;
+    }
 }
