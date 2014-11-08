@@ -92,6 +92,20 @@ public final class OdpsSplitUtil {
         long end = 0;
 
         long step = count / adviceNum;
+
+        // 先进行处理，以免 while 死循环
+        if (step == 0) {
+            // 不需要切分
+            Configuration iParam = sliceConfig.clone();
+            iParam.set(Constant.SESSION_ID, id);
+            iParam.set(Constant.START_INDEX, start);
+            iParam.set(Constant.STEP_COUNT, count);
+
+            params.add(iParam);
+            return params;
+        }
+
+
         while (end < count) {
             end = start + step;
             if (end > count) {
@@ -125,6 +139,20 @@ public final class OdpsSplitUtil {
         long end = 0;
 
         long step = count / adviceNum;
+
+        // 先进行处理，以免 while 死循环
+        if (step == 0) {
+            // 不需要切分
+            Configuration iParam = sliceConfig.clone();
+            iParam.set(Key.PARTITION, onePartition);
+            iParam.set(Constant.SESSION_ID, id);
+            iParam.set(Constant.START_INDEX, start);
+            iParam.set(Constant.STEP_COUNT, count);
+
+            params.add(iParam);
+            return params;
+        }
+
         while (end < count) {
             end = start + step;
             if (end > count) {
