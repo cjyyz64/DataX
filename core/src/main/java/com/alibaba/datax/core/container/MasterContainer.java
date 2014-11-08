@@ -306,23 +306,24 @@ public class MasterContainer extends AbstractContainer {
 				"\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
 						+ "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
 						+ "%-26s: %19s\n",
-
-				"DataX starts work at",
+				"DataX 启动时刻:",
 				dateFormat.format(startTimeStamp),
-				"DataX ends work at",
+
+				"DataX 结束时刻:",
 				dateFormat.format(endTimeStamp),
-				"Total time costs",
+
+				"本任务耗时:",
 				String.valueOf(totalCosts) + "s",
-				"Average byte speed",
+				"平均流量",
 				StrUtil.stringify(masterMetric.getReadSucceedBytes()
 						/ transferCosts)
 						+ "/s",
-				"Average line speed",
+				"记录写入速度",
 				String.valueOf(masterMetric.getReadSucceedRecords()
 						/ transferCosts)
-						+ "rec/s", "Total transferred records",
+						+ "rec/s", "读出行总数",
 				String.valueOf(masterMetric.getTotalReadRecords()),
-				"Total error records",
+				"脏行总数",
 				String.valueOf(masterMetric.getErrorRecords())));
 	}
 

@@ -161,7 +161,7 @@ public class OdpsReader extends Reader {
         }
 
         private void dealColumn(Configuration originalConfig, Table table) {
-            // 用户配置的 column
+            // 用户配置的 column 之前已经确保其不为空
             List<String> userConfiguredColumns = originalConfig.getList(
                     Key.COLUMN, String.class);
 
@@ -177,10 +177,7 @@ public class OdpsReader extends Reader {
 
             LOG.info("源头表:{} 的所有字段是:[{}]", table.getName(), columnMeta.toString());
 
-            if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
-                LOG.warn("您未配置 ODPS 读取的列，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
-                originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
-            } else if (1 == userConfiguredColumns.size()
+            if (1 == userConfiguredColumns.size()
                     && "*".equals(userConfiguredColumns.get(0))) {
                 LOG.warn("您配置的 ODPS 读取的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
                 originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
