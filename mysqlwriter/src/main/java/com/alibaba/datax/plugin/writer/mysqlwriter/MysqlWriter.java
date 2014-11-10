@@ -322,7 +322,6 @@ public class MysqlWriter extends Writer {
         }
 
         //直接使用了两个类变量：columnNumber,resultSetMetaData
-        //TODO 时间类型
         private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement,
                                                         Record record) throws SQLException {
             for (int i = 0; i < this.columnNumber; i++) {
@@ -336,30 +335,23 @@ public class MysqlWriter extends Writer {
                     case Types.LONGVARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
-                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
-                        break;
                     case Types.SMALLINT:
                     case Types.TINYINT:
                     case Types.INTEGER:
                     case Types.BIGINT:
-                        preparedStatement.setLong(i + 1, record.getColumn(i).asLong());
-                        break;
                     case Types.NUMERIC:
                     case Types.DECIMAL:
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                        preparedStatement.setDouble(i + 1, record.getColumn(i).asDouble());
+                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
                         break;
-//                    case Types.TIME:
-//                        preparedStatement.setTime(i + 1, record.getColumn(i).asDate());
-//                        break;
-//                    case Types.DATE:
-//                        preparedStatement.setDate(i + 1, record.getColumn(i).asDate());
-//                        break;
-//                    case Types.TIMESTAMP:
-//                        preparedStatement.setDate(i + 1, record.getColumn(i).asDate());
-//                        break;
+
+                    case Types.TIME:
+                    case Types.DATE:
+                    case Types.TIMESTAMP:
+                        preparedStatement.setObject(i + 1, record.getColumn(i).asDate());
+                        break;
                     case Types.BINARY:
                     case Types.VARBINARY:
                     case Types.BLOB:
@@ -379,7 +371,7 @@ public class MysqlWriter extends Writer {
                                         this.resultSetMetaData.getColumnClassName(i)));
                 }
             }
-            
+
             return preparedStatement;
         }
     }
