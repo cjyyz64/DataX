@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.MysqlWriterUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.util.OriginalConfPretreatmentUtil;
@@ -13,10 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -83,8 +81,7 @@ public class MysqlWriter extends Writer {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            return MysqlWriterUtil.doSplit(this.originalConfig,
-                    adviceNumber);
+            return MysqlWriterUtil.doSplit(this.originalConfig, adviceNumber);
         }
 
         // 一般来说，是需要推迟到 slave 中进行post 的执行（单表情况例外）
@@ -135,6 +132,7 @@ public class MysqlWriter extends Writer {
         private String password;
         private String jdbcUrl;
         private String table;
+        private List<String> columns;
         private List<String> preSqls;
         private List<String> postSqls;
         private int batchSize;
@@ -146,6 +144,7 @@ public class MysqlWriter extends Writer {
         private static String INSERT_OR_REPLACE_TEMPLATE;
 
         private String writeRecordSql;
+        private ResultSetMetaData resultSetMetaData;
 
         @Override
         public void init() {
@@ -155,7 +154,8 @@ public class MysqlWriter extends Writer {
             this.jdbcUrl = this.writerSliceConfig.getString(Key.JDBC_URL);
             this.table = this.writerSliceConfig.getString(Key.TABLE);
 
-            this.columnNumber = this.writerSliceConfig.getList(Key.COLUMN, String.class).size();
+            this.columns = this.writerSliceConfig.getList(Key.COLUMN, String.class);
+            this.columnNumber = this.columns.size();
 
             this.preSqls = this.writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = this.writerSliceConfig.getList(Key.POST_SQL, String.class);
@@ -183,6 +183,11 @@ public class MysqlWriter extends Writer {
                         BASIC_MESSAGE);
                 MysqlWriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
             }
+
+
+            //用于写入数据的时候的类型根据目的表字段类型转换
+            this.resultSetMetaData = DBUtil.getColumnMetaData(connection, this.table, StringUtils.join(this.columns, ","));
+
             DBUtil.closeDBResources(null, null, connection);
         }
 
@@ -195,6 +200,13 @@ public class MysqlWriter extends Writer {
             try {
                 Record record = null;
                 while ((record = recordReceiver.getFromReader()) != null) {
+                    if (record.getColumnNumber() != this.columnNumber) {
+                        //源头读取字段列数与目的 Mysql 表字段写入列数不相等，直接报错
+                        throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+                                String.format("您配置的任务中，源头读取字段数:%s 与 目的 Mysql 表要写入的字段数:%s 不相等. 请检查您的配置字段.",
+                                        record.getColumnNumber(), this.columnNumber));
+                    }
+
                     writeBuffer.add(record);
 
                     if (writeBuffer.size() >= batchSize) {
@@ -240,15 +252,13 @@ public class MysqlWriter extends Writer {
                 preparedStatement = connection.prepareStatement(this.writeRecordSql);
 
                 for (Record record : buffer) {
-                    for (int i = 0; i < this.columnNumber; i++) {
-                        preparedStatement = buildPreparedStatement(preparedStatement, record.getColumn(i),
-                                i + 1);
-                    }
+                    preparedStatement = fillPreparedStatement(preparedStatement, record);
                     preparedStatement.addBatch();
                 }
                 preparedStatement.executeBatch();
                 connection.commit();
             } catch (SQLException e) {
+                LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
                 connection.rollback();
                 doOneInsert(connection, buffer);
             } catch (Exception e) {
@@ -266,11 +276,7 @@ public class MysqlWriter extends Writer {
 
                 for (Record record : buffer) {
                     try {
-                        for (int i = 0; i < this.columnNumber; i++) {
-                            preparedStatement = buildPreparedStatement(preparedStatement, record.getColumn(i),
-                                    i + 1);
-                        }
-
+                        preparedStatement = fillPreparedStatement(preparedStatement, record);
                         preparedStatement.execute();
                     } catch (SQLException e) {
                         if (IS_DEBUG) {
@@ -315,43 +321,66 @@ public class MysqlWriter extends Writer {
             DBUtil.closeDBResources(stmt, null);
         }
 
-        private PreparedStatement buildPreparedStatement(PreparedStatement preparedStatement, Column tempColumn,
-                                                         int index) throws SQLException {
+        //直接使用了两个类变量：columnNumber,resultSetMetaData
+        //TODO 时间类型
+        private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement,
+                                                        Record record) throws SQLException {
+            for (int i = 0; i < this.columnNumber; i++) {
+                switch (this.resultSetMetaData.getColumnType(i + 1)) {
 
-            preparedStatement.setString(index, tempColumn.asString());
-
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.CLOB:
+                    case Types.NCLOB:
+                    case Types.VARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGNVARCHAR:
+                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
+                        break;
+                    case Types.SMALLINT:
+                    case Types.TINYINT:
+                    case Types.INTEGER:
+                    case Types.BIGINT:
+                        preparedStatement.setLong(i + 1, record.getColumn(i).asLong());
+                        break;
+                    case Types.NUMERIC:
+                    case Types.DECIMAL:
+                    case Types.FLOAT:
+                    case Types.REAL:
+                    case Types.DOUBLE:
+                        preparedStatement.setDouble(i + 1, record.getColumn(i).asDouble());
+                        break;
+//                    case Types.TIME:
+//                        preparedStatement.setTime(i + 1, record.getColumn(i).asDate());
+//                        break;
+//                    case Types.DATE:
+//                        preparedStatement.setDate(i + 1, record.getColumn(i).asDate());
+//                        break;
+//                    case Types.TIMESTAMP:
+//                        preparedStatement.setDate(i + 1, record.getColumn(i).asDate());
+//                        break;
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.BLOB:
+                    case Types.LONGVARBINARY:
+                        preparedStatement.setBytes(i + 1, record.getColumn(i).asBytes());
+                        break;
+                    case Types.BOOLEAN:
+                    case Types.BIT:
+                        preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        break;
+                    default:
+                        throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                String.format(
+                                        "DataX 不支持数据库写入这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+                                        this.resultSetMetaData.getColumnName(i),
+                                        this.resultSetMetaData.getColumnType(i),
+                                        this.resultSetMetaData.getColumnClassName(i)));
+                }
+            }
+            
             return preparedStatement;
-
-//            Column.Type type = tempColumn.getType();
-//            switch (type) {
-//                case STRING:
-//                case LONG:
-//                case DOUBLE:
-//                    preparedStatement.setString(index, tempColumn.asString());
-//                    break;
-//
-//                case DATE:
-//                    preparedStatement.setObject(index, tempColumn.asDate());
-//                    break;
-//
-//                case BYTES:
-//                    preparedStatement.setBytes(index, tempColumn.asBytes());
-//                    break;
-//
-//                case BOOL:
-//                    preparedStatement.setBoolean(index, tempColumn.asBoolean());
-//                    break;
-//                case NULL:
-//                    preparedStatement.setObject(index, null);
-//                    break;
-//                default:
-//                    throw DataXException.asDataXException(MysqlWriterErrorCode.UNSUPPORTED_DATA_TYPE,
-//                            String.format("Unsupported data type=[%s].", type));
-//            }
-//
-//            return preparedStatement;
         }
-
     }
-
 }

@@ -5,6 +5,7 @@ import com.alibaba.datax.common.spi.ErrorCode;
 //TODO
 public enum DBUtilErrorCode implements ErrorCode {
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
+    GET_COLUMN_INFO_FAILED("DBUtilErrorCode-01", "获取表字段相关信息失败."),
     JDBC_CONTAINS_BLANK_ERROR("DBUtilErrorCode-11", "jdbcUrl不得为空."),
     UNSUPPORTED_TYPE("DBUtilErrorCode-12", "不支持的数据库类型. 请注意查看 DataX 已经支持的数据库类型以及数据库版本."),
     COLUMN_SPLIT_ERROR("DBUtilErrorCode-13", "根据主键进行切分失败."),

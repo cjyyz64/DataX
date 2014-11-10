@@ -3,7 +3,10 @@ package com.alibaba.datax.plugin.writer.mysqlwriter.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.plugin.rdbms.util.*;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
+import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
 import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
 import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
@@ -80,8 +83,8 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     private static void dealColumnConf(Configuration originalConfig) {
-        List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
-        if (null == columns || columns.isEmpty()) {
+        List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
+        if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
             throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
                     "您未配置写入数据库表的列名称.");
         } else {
@@ -99,18 +102,22 @@ public final class OriginalConfPretreatmentUtil {
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
                     StringUtils.join(allColumns, ","));
 
-            if (1 == columns.size() && "*".equals(columns.get(0))) {
+            if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
                 LOG.warn("您配置的写入数据库表的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
 
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
-            } else if (columns.size() > allColumns.size()) {
+            } else if (userConfiguredColumns.size() > allColumns.size()) {
                 throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
                         String.format("您所配置的写入数据库表的字段个数:%s 大于目的表的字段总个数:%s .",
-                                columns.size(), allColumns.size()));
+                                userConfiguredColumns.size(), allColumns.size()));
             } else {
                 // 确保用户配置的 column 不重复
-                ListUtil.makeSureNoValueDuplicate(columns, false);
+                ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
+
+                // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
+                DBUtil.getColumnMetaData(DataBaseType.MySql, jdbcUrl, username, password, oneTable,
+                        StringUtils.join(userConfiguredColumns, ","));
             }
         }
     }

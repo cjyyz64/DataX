@@ -89,7 +89,7 @@ public class ResultSetReadProxy {
                     default:
                         throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
                                 String.format(
-                                        "DataX 不支持这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+                                        "DataX 不支持数据库读取这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
                                         metaData.getColumnName(i),
                                         metaData.getColumnType(i),
                                         metaData.getColumnClassName(i)));
