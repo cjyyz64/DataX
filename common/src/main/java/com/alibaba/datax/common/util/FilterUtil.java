@@ -1,9 +1,6 @@
 package com.alibaba.datax.common.util;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -15,7 +12,7 @@ public final class FilterUtil {
     //已经去重
     public static List<String> filterByRegular(List<String> allStrs,
                                                String regular) {
-        Set<String> matchedValues = new HashSet<String>();
+        List<String> matchedValues = new ArrayList<String>();
 
         // 语法习惯上的兼容处理(pt=* 实际正则应该是：pt=.*)
         String newReqular = regular.replace(".*", "*").replace("*", ".*");
@@ -24,16 +21,19 @@ public final class FilterUtil {
 
         for (String partition : allStrs) {
             if (p.matcher(partition).matches()) {
-                matchedValues.add(partition);
+                if (!matchedValues.contains(partition)) {
+                    matchedValues.add(partition);
+                }
             }
         }
-        return new ArrayList<String>(matchedValues);
+
+        return matchedValues;
     }
 
     //已经去重
     public static List<String> filterByRegulars(List<String> allStrs,
                                                 List<String> regulars) {
-        Set<String> matchedValues = new HashSet<String>();
+        List<String> matchedValues = new ArrayList<String>();
 
         List<String> tempMatched = null;
         for (String regular : regulars) {
@@ -43,6 +43,6 @@ public final class FilterUtil {
             }
         }
 
-        return new ArrayList<String>(matchedValues);
+        return matchedValues;
     }
 }
