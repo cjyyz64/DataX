@@ -38,7 +38,7 @@ public class ReaderProxy {
 
         try {
             Record odpsRecord;
-            String tempStr = null;
+            String constantColumn = null;
             int originalColumnSize = this.tableSchema.getColumns().size();
             while ((odpsRecord = recordReader.read()) != null) {
                 com.alibaba.datax.common.element.Record dataXRecord = recordSender
@@ -46,9 +46,8 @@ public class ReaderProxy {
 
                 for (int i : columnPositions) {
                     if (i >= originalColumnSize) {
-                        tempStr = allColumnParsedWithConstant.get(i);
-                        dataXRecord.addColumn(new StringColumn(tempStr
-                                .substring(1, tempStr.length() - 1)));
+                        constantColumn = allColumnParsedWithConstant.get(i);
+                        dataXRecord.addColumn(new StringColumn(constantColumn));
                     } else {
                         odpsColumnToDataXField(odpsRecord, dataXRecord,
                                 this.tableOriginalColumnTypeList, i);
