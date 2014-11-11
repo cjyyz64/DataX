@@ -111,7 +111,7 @@ public class SingleTableSplitUtil {
         return pluginParams;
     }
 
-    protected static String buildQuerySql(String column, String table,
+    public static String buildQuerySql(String column, String table,
                                           String where) {
         String querySql = null;
 

@@ -33,6 +33,7 @@
 
         <!-- reader -->
         <module>mysqlreader</module>
+        <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
 
