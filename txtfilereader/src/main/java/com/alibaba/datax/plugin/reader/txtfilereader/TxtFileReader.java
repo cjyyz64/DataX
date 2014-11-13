@@ -83,14 +83,17 @@ public class TxtFileReader extends Reader {
 			LOG.debug("destroy()");
 		}
 
-		// TODO 如果源目录为空，这时候出错
+		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			LOG.debug("split() begin...");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
+			//warn:每个slice拖且仅拖一个文件,
+			int splitNumber = this.sourceFiles.size();
+
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
-					this.sourceFiles, adviceNumber);
+					this.sourceFiles, splitNumber);
 			for (List<String> files : splitedSourceFiles) {
 				Configuration splitedConfig = this.readerOriginConfig.clone();
 				splitedConfig.set(Constants.SOURCE_FILES, files);
