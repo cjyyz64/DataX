@@ -49,8 +49,9 @@ public class MysqlWriter extends Writer {
                 List<Object> conns = this.originalConfig.getList(Constant.CONN_MARK,
                         Object.class);
                 Configuration connConf = Configuration.from(conns.get(0).toString());
+
+                //这里的 jdbcUrl 已经 append 了合适后缀参数
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
-                jdbcUrl = MysqlWriterUtil.appendJDBCSuffix(jdbcUrl);
                 this.originalConfig.set(Key.JDBC_URL, jdbcUrl);
 
                 String table = connConf.getList(Key.TABLE, String.class).get(0);

@@ -55,7 +55,8 @@ public final class OriginalConfPretreatmentUtil {
                 throw DataXException.asDataXException(MysqlWriterErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
-            originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL), jdbcUrl);
+            originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
+                    MysqlWriterUtil.appendJDBCSuffix(jdbcUrl));
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 

@@ -29,6 +29,11 @@ public class DrdsReaderSplitUtil {
             String table = originalSliceConfig.getString(String.format("%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE)).trim();
             originalSliceConfig.set(Key.TABLE, table);
 
+            String jdbcUrl = originalSliceConfig.getString(String.format("%s[0].%s[0]", Constant.CONN_MARK, Key.JDBC_URL)).trim();
+
+            //TODO modify DataBaseType to drds
+            originalSliceConfig.set(Key.JDBC_URL, DataBaseType.MySql.appendJDBCSuffix(jdbcUrl));
+
             originalSliceConfig.remove(Constant.CONN_MARK);
             return doDrdsReaderSplit(originalSliceConfig);
         } else {
@@ -41,8 +46,8 @@ public class DrdsReaderSplitUtil {
 
         Map<String, List<String>> topology = getTopology(originalSliceConfig);
         if (null == topology || topology.isEmpty()) {
-            splittedConfigurations.add(originalSliceConfig);
-            return splittedConfigurations;
+            throw DataXException.asDataXException(DrdsReaderErrorCode.GET_TOPOLOGY_FAILED,
+                    "获取 drds 表拓扑结构失败, 拓扑结构不能为空.");
         } else {
             String table = originalSliceConfig.getString(Key.TABLE).trim();
             String column = originalSliceConfig.getString(Key.COLUMN).trim();
@@ -102,16 +107,14 @@ public class DrdsReaderSplitUtil {
                 }
                 tables.add(tableName);
             }
-        } catch (Exception e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.error("getTopology failed:", e);
-            }
 
-            LOG.warn("切分 drds 表失败, 采用不切分模式运行.");
+            return topology;
+        } catch (Exception e) {
+            throw DataXException.asDataXException(DrdsReaderErrorCode.GET_TOPOLOGY_FAILED,
+                    String.format("获取 drds 表拓扑结构失败, 上下文信息:表:%s, jdbcUrl:%s . 请联系 drds 管理员处理.", logicTable, jdbcURL), e);
         } finally {
             DBUtil.closeDBResources(rs, null, conn);
         }
-        return topology;
     }
 
 }
