@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.print.DocFlavor.STRING;
+
 import com.alibaba.datax.common.exception.DataXException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -580,6 +583,17 @@ public class ConfigurationTest {
 		Assert.assertTrue(new String(new byte[] { 0x01 }).equals(configuration
 				.get("a")));
 
+	}
+	
+	@Test
+	public void test_list() {
+		Configuration configuration = Configuration.newDefault();
+		List<String> lists = new ArrayList<String>();
+		lists.add("bazhen.csy");
+		configuration.set("a.b.c", lists);
+		System.out.println(configuration);
+		configuration.set("a.b.c.d", lists);
+		System.out.println(configuration);
 	}
 
 	@Test
