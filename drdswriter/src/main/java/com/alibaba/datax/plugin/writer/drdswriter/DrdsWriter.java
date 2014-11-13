@@ -1,4 +1,5 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter;
+package com.alibaba.datax.plugin.writer.drdswriter;
+
 
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -8,10 +9,8 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 
 import java.util.List;
 
-
-//TODO writeProxy
-public class MysqlWriter extends Writer {
-    private static final DataBaseType DATABASE_TYPE = DataBaseType.MySql;
+public class DrdsWriter extends Writer {
+    private static final DataBaseType DATABASE_TYPE = DataBaseType.DRDS;
 
     public static class Master extends Writer.Master {
         private Configuration originalConfig = null;
@@ -25,7 +24,7 @@ public class MysqlWriter extends Writer {
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
 
-        // 一般来说，是需要推迟到 slave 中进行pre 的执行（单表情况例外）
+        // 对于 Drds 而言，只会暴露一张逻辑表，所以直接在 Master 做 pre,post 操作
         @Override
         public void prepare() {
             this.commonRdbmsWriterMaster.prepare(this.originalConfig);
@@ -82,6 +81,4 @@ public class MysqlWriter extends Writer {
         }
 
     }
-
-
 }

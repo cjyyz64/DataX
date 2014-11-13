@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +33,12 @@ public class DrdsReaderSplitUtil {
             //注意：这里的 jdbcUrl 不是从数组中获取的，因为之前的  master init 方法已经进行过预处理
             String jdbcUrl = originalSliceConfig.getString(String.format("%s[0].%s", Constant.CONN_MARK, Key.JDBC_URL)).trim();
 
-            //TODO modify DataBaseType to drds
-            originalSliceConfig.set(Key.JDBC_URL, DataBaseType.MySql.appendJDBCSuffix(jdbcUrl));
+            originalSliceConfig.set(Key.JDBC_URL, DataBaseType.DRDS.appendJDBCSuffixForReader(jdbcUrl));
 
             originalSliceConfig.remove(Constant.CONN_MARK);
             return doDrdsReaderSplit(originalSliceConfig);
         } else {
-            throw DataXException.asDataXException(DrdsReaderErrorCode.CONFIG_ERROR, "Drdsreader 只能配置为读取一张表,后台会通过 Proxy 自动获取实际对应物理表的数据.");
+            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR, "Drdsreader 只能配置为读取一张表,后台会通过 Proxy 自动获取实际对应物理表的数据.");
         }
     }
 
@@ -95,8 +95,7 @@ public class DrdsReaderSplitUtil {
         Connection conn = null;
         ResultSet rs = null;
         try {
-            //TODO  DataBaseType.Drds
-            conn = DBUtil.getConnection(DataBaseType.MySql, jdbcURL, username, password);
+            conn = DBUtil.getConnection(DataBaseType.DRDS, jdbcURL, username, password);
             rs = DBUtil.query(conn, "SHOW TOPOLOGY " + logicTable);
             while (rs.next()) {
                 String groupName = rs.getString("GROUP_NAME");

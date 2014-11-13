@@ -20,7 +20,6 @@ public class DrdsReader extends Reader {
 
         @Override
         public void init() {
-
             this.originalConfig = super.getPluginJobConf();
             int fetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             this.originalConfig.set(Constant.FETCH_SIZE, fetchSize);

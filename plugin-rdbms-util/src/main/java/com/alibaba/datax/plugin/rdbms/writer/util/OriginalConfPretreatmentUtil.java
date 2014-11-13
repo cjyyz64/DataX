@@ -1,15 +1,11 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter.util;
+package com.alibaba.datax.plugin.rdbms.writer.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
-import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
-import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
-import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
-import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.*;
+import com.alibaba.datax.plugin.rdbms.writer.Constant;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,19 +13,20 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 public final class OriginalConfPretreatmentUtil {
-
     private static final Logger LOG = LoggerFactory
             .getLogger(OriginalConfPretreatmentUtil.class);
 
+    public static DataBaseType DATABASE_TYPE;
+
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
-        originalConfig.getNecessaryValue(Key.USERNAME, MysqlWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.PASSWORD, MysqlWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.USERNAME, DBUtilErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.PASSWORD, DBUtilErrorCode.REQUIRED_VALUE);
 
         // 检查batchSize 配置（选填，如果未填写，则设置为默认值）
         int batchSize = originalConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
         if (batchSize < 1) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.BATCH_SIZE_CONF_ERROR, String.format(
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE, String.format(
                     "您所配置的写入数据库表的 batchSize:%s 不能小于1. 推荐配置范围为：[100-1000], 该值越大, 内存溢出可能性越大.",
                     batchSize));
         }
@@ -52,16 +49,17 @@ public final class OriginalConfPretreatmentUtil {
 
             String jdbcUrl = connConf.getString(Key.JDBC_URL);
             if (StringUtils.isBlank(jdbcUrl)) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
-                    MysqlWriterUtil.appendJDBCSuffix(jdbcUrl));
+                    jdbcUrl);
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
             if (null == tables || tables.isEmpty()) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.REQUIRED_VALUE,
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
                         "您未配置写入数据库表的表名称.");
             }
 
@@ -70,7 +68,7 @@ public final class OriginalConfPretreatmentUtil {
                     .expandTableConf(DataBaseType.MySql, tables);
 
             if (null == expandedTables || expandedTables.isEmpty()) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+                throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
                         "您配置的写入数据库表名称错误.");
             }
 
@@ -86,7 +84,7 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealColumnConf(Configuration originalConfig) {
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您未配置写入数据库表的列名称.");
         } else {
             String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
@@ -109,7 +107,7 @@ public final class OriginalConfPretreatmentUtil {
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
             } else if (userConfiguredColumns.size() > allColumns.size()) {
-                throw DataXException.asDataXException(MysqlWriterErrorCode.COLUMN_CONF_ERROR,
+                throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                         String.format("您所配置的写入数据库表的字段个数:%s 大于目的表的字段总个数:%s .",
                                 userConfiguredColumns.size(), allColumns.size()));
             } else {
@@ -136,7 +134,7 @@ public final class OriginalConfPretreatmentUtil {
                 || writeMode.trim().toLowerCase().startsWith("replace");
 
         if (!isWriteModeLegal) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.WRITE_MODE_CONF_ERROR,
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
         }
 
@@ -152,7 +150,8 @@ public final class OriginalConfPretreatmentUtil {
         } catch (Exception unused) {
             // ignore it
         }
-        LOG.info("Write data [\n{}\n], which jdbcUrl:[{}]",
+
+        LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]",
                 null != formattedSql ? formattedSql : writeDataSqlTemplate, jdbcUrl);
 
         originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK,

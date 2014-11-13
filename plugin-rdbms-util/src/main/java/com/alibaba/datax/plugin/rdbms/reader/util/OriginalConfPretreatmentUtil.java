@@ -74,7 +74,7 @@ public final class OriginalConfPretreatmentUtil {
             String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
                     username, password, preSql);
 
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffix(jdbcUrl);
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,

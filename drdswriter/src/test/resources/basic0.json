@@ -7,27 +7,19 @@
         },
         "content": [
             {
-                "reader": {
-                    "name": "drdsreader",
+                "reader": {},
+                "writer": {
+                    "name": "drdswriter",
                     "parameter": {
+                        "writeMode": "replace",
                         "username": "root",
                         "password": "root",
                         "column": [
                             "db_id",
                             "db_type",
                             "db_ip",
-                            "db_port",
-                            "db_role",
-                            "db_name",
-                            "db_username",
-                            "db_password",
-                            "db_modify_time",
-                            "db_modify_user",
-                            "db_description",
-                            "db_tddl_info",
-                            "on_line_flag"
+                            "db_port"
                         ],
-                        "where": "",
                         "connection": [
                             {
                                 "table": [
@@ -37,10 +29,17 @@
                                     "jdbc:mysql://drdsHostName:port/dbName"
                                 ]
                             }
+                        ],
+                        "preSql": [
+                            "delete from @table where db_id = -1;"
+                        ],
+                        "postSql": [
+                            "update @table set db_modify_time = now() where db_id = 1;"
+                        ],
+                        "session": [
                         ]
                     }
-                },
-                "writer": {}
+                }
             }
         ]
     }

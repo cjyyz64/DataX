@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter;
+package com.alibaba.datax.plugin.rdbms.writer;
 
 /**
  * 用于插件解析用户配置时，需要进行标识（MARK）的常量的声明.

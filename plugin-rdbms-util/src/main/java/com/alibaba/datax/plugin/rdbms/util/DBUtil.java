@@ -22,7 +22,7 @@ public final class DBUtil {
                                        final String password, final List<String> preSql) {
         if (null == jdbcUrls || jdbcUrls.isEmpty()) {
             throw DataXException.asDataXException(
-                    DBUtilErrorCode.JDBC_CONTAINS_BLANK_ERROR,
+                    DBUtilErrorCode.CONF_ERROR,
                     String.format("jdbcURL in [%s] 不能为空.",
                             StringUtils.join(jdbcUrls, ",")));
         }

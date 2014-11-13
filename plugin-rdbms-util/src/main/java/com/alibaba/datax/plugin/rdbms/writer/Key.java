@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter;
+package com.alibaba.datax.plugin.rdbms.writer;
 
 public final class Key {
     public final static String JDBC_URL = "jdbcUrl";
@@ -11,7 +11,7 @@ public final class Key {
 
     public final static String COLUMN = "column";
 
-    //可选值为：insert,replace，默认为 insert
+    //可选值为：insert,replace，默认为 insert （mysql 支持，oracle 没用 replace 机制，只能 insert,oracle 可以不暴露这个参数）
     public final static String WRITE_MODE = "writeMode";
 
     public final static String PRE_SQL = "preSql";

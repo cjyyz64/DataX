@@ -1,0 +1,376 @@
+package com.alibaba.datax.plugin.rdbms.writer;
+
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
+import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class CommonRdbmsWriter {
+    private static DataBaseType DATABASE_TYPE;
+
+    public static class Master {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(CommonRdbmsWriter.Master.class);
+
+        private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+
+        public Master(DataBaseType dataBaseType) {
+            DATABASE_TYPE = dataBaseType;
+            OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
+        }
+
+        public void init(Configuration originalConfig) {
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
+            if (IS_DEBUG) {
+                LOG.debug("After master init(), originalConfig now is:[\n{}\n]",
+                        originalConfig.toJSON());
+            }
+        }
+
+        // 一般来说，是需要推迟到 slave 中进行pre 的执行（单表情况例外）
+        public void prepare(Configuration originalConfig) {
+            int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber == 1) {
+                String username = originalConfig.getString(Key.USERNAME);
+                String password = originalConfig.getString(Key.PASSWORD);
+
+                List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
+                        Object.class);
+                Configuration connConf = Configuration.from(conns.get(0).toString());
+
+                //这里的 jdbcUrl 已经 append 了合适后缀参数
+                String jdbcUrl = connConf.getString(Key.JDBC_URL);
+                originalConfig.set(Key.JDBC_URL, jdbcUrl);
+
+                String table = connConf.getList(Key.TABLE, String.class).get(0);
+                originalConfig.set(Key.TABLE, table);
+
+                List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
+                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
+
+                originalConfig.remove(Constant.CONN_MARK);
+                if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+                    //说明有 preSql 配置，则此处删除掉
+                    originalConfig.remove(Key.PRE_SQL);
+
+                    Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls, ";"),
+                            jdbcUrl);
+
+                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
+                    DBUtil.closeDBResources(null, null, conn);
+                }
+            }
+
+            if (IS_DEBUG) {
+                LOG.debug("After master prepare(), originalConfig now is:[\n{}\n]",
+                        originalConfig.toJSON());
+            }
+        }
+
+        public List<Configuration> split(Configuration originalConfig, int mandatoryNumber) {
+            return WriterUtil.doSplit(originalConfig, mandatoryNumber);
+        }
+
+        // 一般来说，是需要推迟到 slave 中进行post 的执行（单表情况例外）
+        public void post(Configuration originalConfig) {
+            int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber == 1) {
+                String username = originalConfig.getString(Key.USERNAME);
+                String password = originalConfig.getString(Key.PASSWORD);
+
+                //已经由 prepare 进行了appendJDBCSuffix处理
+                String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
+
+                String table = originalConfig.getString(Key.TABLE);
+
+                List<String> postSqls = originalConfig.getList(Key.POST_SQL, String.class);
+                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(postSqls, table);
+
+                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+                    //说明有 postSql 配置，则此处删除掉
+                    originalConfig.remove(Key.POST_SQL);
+
+                    Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+
+                    LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls, ";"),
+                            jdbcUrl);
+                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
+                    DBUtil.closeDBResources(null, null, conn);
+                }
+            }
+        }
+
+        public void destroy(Configuration originalConfig) {
+        }
+
+    }
+
+    public static class Slave {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(CommonRdbmsWriter.Slave.class);
+
+        private final static boolean IS_DEBUG = LOG.isDebugEnabled();
+
+        private String username;
+        private String password;
+        private String jdbcUrl;
+        private String table;
+        private List<String> columns;
+        private List<String> preSqls;
+        private List<String> postSqls;
+        private int batchSize;
+        private int columnNumber = 0;
+
+        private SlavePluginCollector slavePluginCollector;
+
+        // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
+        private static String BASIC_MESSAGE;
+
+        private static String INSERT_OR_REPLACE_TEMPLATE;
+
+        private String writeRecordSql;
+        private ResultSetMetaData resultSetMetaData;
+
+        public void init(Configuration writerSliceConfig) {
+            this.username = writerSliceConfig.getString(Key.USERNAME);
+            this.password = writerSliceConfig.getString(Key.PASSWORD);
+            this.jdbcUrl = writerSliceConfig.getString(Key.JDBC_URL);
+            this.table = writerSliceConfig.getString(Key.TABLE);
+
+            this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
+            this.columnNumber = this.columns.size();
+
+            this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
+            this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
+            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+
+            INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig
+                    .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
+
+            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
+
+            BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
+                    this.jdbcUrl, this.table);
+        }
+
+        public void prepare(Configuration writerSliceConfig) {
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
+            dealSessionConf(connection, writerSliceConfig.getList(Key.SESSION, String.class));
+
+            int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber != 1) {
+                LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+                        BASIC_MESSAGE);
+                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
+            }
+
+
+            //用于写入数据的时候的类型根据目的表字段类型转换
+            this.resultSetMetaData = DBUtil.getColumnMetaData(connection, this.table, StringUtils.join(this.columns, ","));
+
+            DBUtil.closeDBResources(null, null, connection);
+        }
+
+        //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
+        public void startWrite(RecordReceiver recordReceiver, Configuration writerSliceConfig,
+                               SlavePluginCollector slavePluginCollector) {
+            this.slavePluginCollector = slavePluginCollector;
+
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
+            List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
+            try {
+                Record record = null;
+                while ((record = recordReceiver.getFromReader()) != null) {
+                    if (record.getColumnNumber() != this.columnNumber) {
+                        //源头读取字段列数与目的 Mysql 表字段写入列数不相等，直接报错
+                        throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
+                                String.format("您配置的任务中，源头读取字段数:%s 与 目的 Mysql 表要写入的字段数:%s 不相等. 请检查您的配置字段.",
+                                        record.getColumnNumber(), this.columnNumber));
+                    }
+
+                    writeBuffer.add(record);
+
+                    if (writeBuffer.size() >= batchSize) {
+                        doBatchInsert(connection, writeBuffer);
+                        writeBuffer.clear();
+                    }
+                }
+                if (!writeBuffer.isEmpty()) {
+                    doBatchInsert(connection, writeBuffer);
+                    writeBuffer.clear();
+                }
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                writeBuffer.clear();
+                DBUtil.closeDBResources(null, null, connection);
+            }
+        }
+
+        public void post(Configuration writerSliceConfig) {
+            Connection connection = DBUtil.getConnection(DataBaseType.MySql, this.jdbcUrl, username,
+                    password);
+
+            int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK).intValue();
+            if (tableNumber != 1) {
+                LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(this.preSqls, ";"),
+                        BASIC_MESSAGE);
+                WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
+            }
+            DBUtil.closeDBResources(null, null, connection);
+        }
+
+        public void destroy(Configuration writerSliceConfig) {
+        }
+
+
+        private void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
+            PreparedStatement preparedStatement = null;
+            try {
+                connection.setAutoCommit(false);
+                preparedStatement = connection.prepareStatement(this.writeRecordSql);
+
+                for (Record record : buffer) {
+                    preparedStatement = fillPreparedStatement(preparedStatement, record);
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
+                connection.commit();
+            } catch (SQLException e) {
+                LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
+                connection.rollback();
+                doOneInsert(connection, buffer);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(preparedStatement, null);
+            }
+        }
+
+        private void doOneInsert(Connection connection, List<Record> buffer) {
+            PreparedStatement preparedStatement = null;
+            try {
+                connection.setAutoCommit(true);
+                preparedStatement = connection.prepareStatement(this.writeRecordSql);
+
+                for (Record record : buffer) {
+                    try {
+                        preparedStatement = fillPreparedStatement(preparedStatement, record);
+                        preparedStatement.execute();
+                    } catch (SQLException e) {
+                        if (IS_DEBUG) {
+                            LOG.debug(e.toString());
+                        }
+
+                        this.slavePluginCollector.collectDirtyRecord(record, e);
+                    } finally {
+                        // 最后不要忘了关闭 preparedStatement
+                        preparedStatement.clearParameters();
+                    }
+                }
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(preparedStatement, null);
+            }
+        }
+
+        private static void dealSessionConf(Connection conn, List<String> sessions) {
+            if (null == sessions || sessions.isEmpty()) {
+                return;
+            }
+
+            Statement stmt;
+            try {
+                stmt = conn.createStatement();
+            } catch (SQLException e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR,
+                        String.format("执行 session 设置失败. 上下文信息是:[%s] .", BASIC_MESSAGE), e);
+            }
+
+            for (String sessionSql : sessions) {
+                LOG.info("execute sql:[{}]", sessionSql);
+                try {
+                    DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
+                } catch (SQLException e) {
+                    throw DataXException.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR,
+                            String.format("执行 session 设置失败. 上下文信息是:[%s] .", BASIC_MESSAGE), e);
+                }
+            }
+
+            DBUtil.closeDBResources(stmt, null);
+        }
+
+        //直接使用了两个类变量：columnNumber,resultSetMetaData
+        private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement,
+                                                        Record record) throws SQLException {
+            for (int i = 0; i < this.columnNumber; i++) {
+                switch (this.resultSetMetaData.getColumnType(i + 1)) {
+
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.CLOB:
+                    case Types.NCLOB:
+                    case Types.VARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGNVARCHAR:
+                    case Types.SMALLINT:
+                    case Types.TINYINT:
+                    case Types.INTEGER:
+                    case Types.BIGINT:
+                    case Types.NUMERIC:
+                    case Types.DECIMAL:
+                    case Types.FLOAT:
+                    case Types.REAL:
+                    case Types.DOUBLE:
+                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
+                        break;
+
+                    case Types.TIME:
+                    case Types.DATE:
+                    case Types.TIMESTAMP:
+                        preparedStatement.setObject(i + 1, record.getColumn(i).asDate());
+                        break;
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.BLOB:
+                    case Types.LONGVARBINARY:
+                        preparedStatement.setBytes(i + 1, record.getColumn(i).asBytes());
+                        break;
+                    case Types.BOOLEAN:
+                    case Types.BIT:
+                        preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        break;
+                    default:
+                        throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                String.format(
+                                        "DataX 不支持数据库写入这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+                                        this.resultSetMetaData.getColumnName(i),
+                                        this.resultSetMetaData.getColumnType(i),
+                                        this.resultSetMetaData.getColumnClassName(i)));
+                }
+            }
+
+            return preparedStatement;
+        }
+    }
+}

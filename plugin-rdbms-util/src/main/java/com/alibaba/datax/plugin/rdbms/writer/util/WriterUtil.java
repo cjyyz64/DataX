@@ -1,11 +1,11 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter.util;
+package com.alibaba.datax.plugin.rdbms.writer.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.writer.mysqlwriter.Constant;
-import com.alibaba.datax.plugin.writer.mysqlwriter.Key;
-import com.alibaba.datax.plugin.writer.mysqlwriter.MysqlWriterErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.writer.Constant;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public final class MysqlWriterUtil {
+public final class WriterUtil {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MysqlWriterUtil.class);
+            .getLogger(WriterUtil.class);
 
     public static List<Configuration> doSplit(Configuration simplifiedConf,
                                               int adviceNumber) {
@@ -38,7 +38,7 @@ public final class MysqlWriterUtil {
         }
 
         if (tableNumber != adviceNumber) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.CONF_ERROR,
+            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
                     String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
                             tableNumber, adviceNumber));
         }
@@ -55,7 +55,7 @@ public final class MysqlWriterUtil {
 
             Configuration connConf = Configuration.from(conns.get(i).toString());
             jdbcUrl = connConf.getString(Key.JDBC_URL);
-            sliceConfig.set(Key.JDBC_URL, appendJDBCSuffix(jdbcUrl));
+            sliceConfig.set(Key.JDBC_URL, jdbcUrl);
 
             sliceConfig.remove(Constant.CONN_MARK);
 
@@ -89,17 +89,6 @@ public final class MysqlWriterUtil {
         return renderedSqls;
     }
 
-    public static String appendJDBCSuffix(String jdbc) {
-        String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true";
-
-        if (jdbc.contains("?")) {
-            return jdbc + "&" + suffix;
-        } else {
-            return jdbc + "?" + suffix;
-        }
-    }
-
-
     public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
         Statement stmt = null;
         String currentSql = null;
@@ -110,7 +99,7 @@ public final class MysqlWriterUtil {
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
         } catch (Exception e) {
-            throw DataXException.asDataXException(MysqlWriterErrorCode.EXECUTE_SQL_ERROR,
+            throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
                     String.format("执行 Sql:%s 语句失败. 上下文信息是:%s .", currentSql, basicMessage), e);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
