@@ -29,7 +29,8 @@ public class DrdsReaderSplitUtil {
             String table = originalSliceConfig.getString(String.format("%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE)).trim();
             originalSliceConfig.set(Key.TABLE, table);
 
-            String jdbcUrl = originalSliceConfig.getString(String.format("%s[0].%s[0]", Constant.CONN_MARK, Key.JDBC_URL)).trim();
+            //注意：这里的 jdbcUrl 不是从数组中获取的，因为之前的  master init 方法已经进行过预处理
+            String jdbcUrl = originalSliceConfig.getString(String.format("%s[0].%s", Constant.CONN_MARK, Key.JDBC_URL)).trim();
 
             //TODO modify DataBaseType to drds
             originalSliceConfig.set(Key.JDBC_URL, DataBaseType.MySql.appendJDBCSuffix(jdbcUrl));
