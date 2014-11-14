@@ -39,7 +39,11 @@ public final class FilterUtil {
         for (String regular : regulars) {
             tempMatched = filterByRegular(allStrs, regular);
             if (null != tempMatched && !tempMatched.isEmpty()) {
-                matchedValues.addAll(tempMatched);
+                for (String temp : tempMatched) {
+                    if (!matchedValues.contains(temp)) {
+                        matchedValues.add(temp);
+                    }
+                }
             }
         }
 
