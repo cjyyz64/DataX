@@ -14,6 +14,14 @@ public class DoubleColumn extends Column {
 		this.validate(data);
 	}
 
+	public DoubleColumn(Long data) {
+		this(data == null ? (String) null : String.valueOf(data), 8);
+	}
+
+	public DoubleColumn(Integer data) {
+		this(data == null ? (String) null : String.valueOf(data), 4);
+	}
+
 	public DoubleColumn(final Double data) {
 		this(data == null ? (String) null : String.valueOf(data), 8);
 	}
