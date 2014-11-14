@@ -12,15 +12,14 @@ import java.util.Date;
  */
 public class BoolColumn extends Column {
 
-	public BoolColumn(boolean bool) {
+	public BoolColumn(Boolean bool) {
 		super(bool, Column.Type.BOOL, 1);
 	}
 
 	public BoolColumn(final String data) {
-		this();
-
+		this(true);
 		this.validate(data);
-		super.setRawData(Boolean.valueOf(data));
+		super.setRawData(null == data ? null : Boolean.valueOf(data));
 		return;
 	}
 

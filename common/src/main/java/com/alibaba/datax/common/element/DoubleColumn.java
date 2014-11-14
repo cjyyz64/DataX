@@ -14,25 +14,25 @@ public class DoubleColumn extends Column {
 		this.validate(data);
 	}
 
-	public DoubleColumn(double data) {
-		this(String.valueOf(data), 8);
+	public DoubleColumn(final Double data) {
+		this(data == null ? (String) null : String.valueOf(data), 8);
 	}
 
-	public DoubleColumn(float data) {
-		this(String.valueOf(data), 4);
+	public DoubleColumn(final Float data) {
+		this(data == null ? (String) null : String.valueOf(data), 4);
 	}
 
-	public DoubleColumn(BigDecimal data) {
-		this(null == data ? null : data.toPlainString(), null == data ? 0
-				: data.toPlainString().length());
+	public DoubleColumn(final BigDecimal data) {
+		this(null == data ? (String) null : data.toPlainString(),
+				null == data ? 0 : data.toPlainString().length());
 	}
 
-	public DoubleColumn(BigInteger data) {
-		this(null == data ? null : data.toString());
+	public DoubleColumn(final BigInteger data) {
+		this(null == data ? (String) null : data.toString());
 	}
 
 	public DoubleColumn() {
-		this(null, 0);
+		this((String) null, 0);
 	}
 
 	private DoubleColumn(final String data, int byteSize) {

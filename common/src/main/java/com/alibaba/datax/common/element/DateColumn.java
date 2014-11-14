@@ -28,8 +28,8 @@ public class DateColumn extends Column {
 	/**
 	 * 构建值为stamp(Unix时间戳)的DateColumn，使用Date子类型为DATETIME
 	 * */
-	public DateColumn(final long stamp) {
-		this(new Date(stamp));
+	public DateColumn(final Long stamp) {
+		this(stamp == null ? (Date) null : new Date(stamp));
 	}
 
 	/**
@@ -77,9 +77,9 @@ public class DateColumn extends Column {
 		try {
 			return ColumnCast.date2String(this);
 		} catch (Exception e) {
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Date[%d]类型不能转为String .",
-							this.toString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("Date[%d]类型不能转为String .", this.toString()));
 		}
 	}
 
@@ -94,32 +94,32 @@ public class DateColumn extends Column {
 
 	@Override
 	public byte[] asBytes() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date类型不能转为Bytes .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Bytes .");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date类型不能转为Boolean .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Boolean .");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date类型不能转为Double .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Double .");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date类型不能转为BigInteger .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigInteger .");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Date类型不能转为BigDecimal .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .");
 	}
 
 	public DateType getSubType() {

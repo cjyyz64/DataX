@@ -29,17 +29,18 @@ public class LongColumn extends Column {
 			super.setRawData(rawData);
 			super.setByteSize(rawData.bitLength() / 8);
 		} catch (Exception e) {
-			throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
 					String.format("String[%s]不能转为Long .", data));
 		}
 	}
 
-	public LongColumn(long data) {
-		this(BigInteger.valueOf(data), 8);
+	public LongColumn(Long data) {
+		this(null == data ? (BigInteger) null : BigInteger.valueOf(data), 8);
 	}
 
-	public LongColumn(int data) {
-		this(BigInteger.valueOf(data), 4);
+	public LongColumn(Integer data) {
+		this(null == data ? (BigInteger) null : BigInteger.valueOf(data), 4);
 	}
 
 	public LongColumn(BigInteger data) {
@@ -124,8 +125,8 @@ public class LongColumn extends Column {
 
 	@Override
 	public byte[] asBytes() {
-		throw DataXException.asDataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Long类型不能转为Bytes .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Long类型不能转为Bytes .");
 	}
 
 }

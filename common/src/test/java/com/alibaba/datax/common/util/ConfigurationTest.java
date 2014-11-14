@@ -584,7 +584,7 @@ public class ConfigurationTest {
 				.get("a")));
 
 	}
-	
+
 	@Test
 	public void test_list() {
 		Configuration configuration = Configuration.newDefault();
