@@ -10,8 +10,6 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
-import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
-import com.aliyun.openservices.ots.model.PrimaryKeyType;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -91,23 +89,5 @@ public class OTSConfAdaptor implements JsonDeserializer<OTSConf>, JsonSerializer
             conf.setOperation(OTSOpType.UPDATE_ROW);
         }
         return conf;
-    }
-    
-    public static void main(String [] args) {
-        OTSConf conf = new OTSConf();
-        conf.setEndpoint("www.hello.com");
-        conf.setAccessId("xxxxxxxxxxxxxxx");
-        List<OTSPKColumn> pk = new ArrayList<OTSPKColumn>();
-        pk.add(new OTSPKColumn("userid", PrimaryKeyType.STRING));
-        pk.add(new OTSPKColumn("groupid", PrimaryKeyType.INTEGER));
-        conf.setPrimaryKeyColumn(pk);
-        
-        String json = GsonParser.confToJson(conf);
-        System.out.println(json);
-        
-        OTSConf newConf = GsonParser.jsonToConf(json);
-        System.out.println(newConf.getEndpoint());
-        System.out.println(newConf.getPrimaryKeyColumn().get(0).getName());
-        System.out.println(newConf.getPrimaryKeyColumn().get(0).getType());
     }
 }

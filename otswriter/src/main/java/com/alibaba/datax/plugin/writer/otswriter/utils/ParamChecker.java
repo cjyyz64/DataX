@@ -1,9 +1,11 @@
 package com.alibaba.datax.plugin.writer.otswriter.utils;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
@@ -139,12 +141,12 @@ public class ParamChecker {
     
     public static void checkAttribute(List<OTSAttrColumn> attr) {
         // 检查重复列
-        Map<String, String> names = new HashMap<String, String>();
+        Set<String> names = new HashSet<String>();
         for (OTSAttrColumn col : attr) {
-            if (names.containsKey(col.getName())) {
+            if (names.contains(col.getName())) {
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.ATTR_REPEAT_COLUMN_ERROR, col.getName()));
             } else {
-                names.put(col.getName(), "");
+                names.add(col.getName());
             }
         }
     }

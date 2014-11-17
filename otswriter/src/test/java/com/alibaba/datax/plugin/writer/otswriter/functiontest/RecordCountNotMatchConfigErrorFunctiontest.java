@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.otswriter.functiontest.done;
+package com.alibaba.datax.plugin.writer.otswriter.functiontest;
 
 import static org.junit.Assert.*;
 
@@ -19,6 +19,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.plugin.writer.otswriter.OtsWriterSlaveProxy;
 import com.alibaba.datax.plugin.writer.otswriter.common.BaseTest;
+import com.alibaba.datax.plugin.writer.otswriter.common.Conf;
 import com.alibaba.datax.plugin.writer.otswriter.common.Table;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
@@ -26,28 +27,36 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
-import com.alibaba.datax.plugin.writer.otswriter.sample.TestSlave;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
 import com.aliyun.openservices.ots.model.ColumnType;
 import com.aliyun.openservices.ots.model.PrimaryKeyType;
 
+/**
+ * 测试当传入的Record的Column的长度和用户配置的Column长度不一致时的行为
+ */
 public class RecordCountNotMatchConfigErrorFunctiontest{
     
     private static String tableName = "ots_writer_record_count_not_match_config_error";
     
     private static BaseTest base = new BaseTest(tableName);
     
+    private static List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
+    public static List<ColumnType> attr = new ArrayList<ColumnType>();
+    
     @BeforeClass
     public static void prepare() {
-        List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
         
+        attr.add(ColumnType.STRING);
+        attr.add(ColumnType.INTEGER);
+        attr.add(ColumnType.DOUBLE);
+        
         Table t = new Table(base.getOts(), tableName, pk);
-        t.create();
+        t.create(5000, 5000);
     }
     
     @AfterClass
@@ -121,7 +130,9 @@ public class RecordCountNotMatchConfigErrorFunctiontest{
 
         RecordReceiverForTest recordReceiver = new RecordReceiverForTest(contents);
 
-        Configuration configuration = TestSlave.getConf();
+        OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
+        Configuration configuration = Configuration.newDefault();
+        configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
         
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
 
@@ -171,7 +182,9 @@ public class RecordCountNotMatchConfigErrorFunctiontest{
 
         RecordReceiverForTest recordReceiver = new RecordReceiverForTest(contents);
         
-        Configuration configuration = TestSlave.getConf();
+        OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
+        Configuration configuration = Configuration.newDefault();
+        configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
         
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
 

@@ -1,35 +1,37 @@
 package com.alibaba.datax.plugin.reader.otsreader;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.otsreader.OtsReaderMasterProxy;
+import com.alibaba.datax.plugin.reader.otsreader.OtsReaderSlaveProxy;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class OtsReader extends Reader {
 
     public static class Master extends Reader.Master {
         private static final Logger LOG = LoggerFactory.getLogger(OtsReader.Master.class);
         private OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
-
         @Override
         public void init() {
             LOG.info("init() begin ...");
             try {
                 this.proxy.init(getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}",
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
@@ -61,12 +63,12 @@ public class OtsReader extends Reader {
             try {
                 confs = this.proxy.split(adviceNumber);
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}",
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
@@ -99,14 +101,14 @@ public class OtsReader extends Reader {
         public void startRead(RecordSender recordSender) {
             LOG.info("startRead() begin ...");
             try {
-                this.proxy.read(recordSender, getPluginJobConf());
+                this.proxy.read(recordSender,getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
+                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}",
+                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
                         new Object[]{e.getErrorCode(), e.getMessage()});
                 LOG.error("Stack", e);
                 throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);

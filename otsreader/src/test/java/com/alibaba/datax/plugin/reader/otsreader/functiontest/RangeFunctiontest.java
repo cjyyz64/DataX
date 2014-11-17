@@ -69,7 +69,7 @@ public class RangeFunctiontest{
             attriTypes.add(ColumnType.STRING);
             Table t = new Table(base.getOts(), tableName, pkTypes, attriTypes, 0.5);
             t.create();
-            t.insertData(begin, rowCount);
+            t.insertData(begin, rowCount, 4);
         }
         
         List<Record> noteRecordForTest = new LinkedList<Record>();
@@ -565,7 +565,7 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -100, 100, conf, range, Direction.BACKWARD);
+        long expectCount = test(pkTypes, 0, 100, conf, range, Direction.BACKWARD);
         
         assertEquals(100, expectCount);
     }
@@ -573,8 +573,8 @@ public class RangeFunctiontest{
     /**
      * Partition Key为String时，第一个PK相等，第二个PK逆序
      * 输入：
-     *      begin = ["-10", INF_MAX, INF_MAX, INF_MAX]
-     *      end   = ["-10", INF_MIN, INF_MIN, INF_MIN]
+     *      begin = ["10", INF_MAX, INF_MAX, INF_MAX]
+     *      end   = ["10", INF_MIN, INF_MIN, INF_MIN]
      * 期望：导出指定的数据，且数据正确
      * @throws Exception 
      */
@@ -587,13 +587,13 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-10"));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0010"));
         begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MAX);
         begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MAX);
         begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MAX);
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-10"));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0010"));
         end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MIN);
         end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MIN);
         end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MIN);
@@ -601,14 +601,14 @@ public class RangeFunctiontest{
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-10"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0010"));
         rangeBegin.add(PrimaryKeyValue.INF_MAX);
         rangeBegin.add(PrimaryKeyValue.INF_MAX);
         rangeBegin.add(PrimaryKeyValue.INF_MAX);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("-10"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0010"));
         rangeEnd.add(PrimaryKeyValue.INF_MIN);
         rangeEnd.add(PrimaryKeyValue.INF_MIN);
         rangeEnd.add(PrimaryKeyValue.INF_MIN);
@@ -618,7 +618,7 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -100, 150, conf, range, Direction.BACKWARD);
+        long expectCount = test(pkTypes, 0, 150, conf, range, Direction.BACKWARD);
         
         assertEquals(1, expectCount);
     }
@@ -626,8 +626,8 @@ public class RangeFunctiontest{
     /**
      * 实际插入数据范围为配置指定的range范围的子集
      * 输入：
-     *      1.构造数据，数据范围-300~100
-     *      2.设定请求范围是-600~700
+     *      1.构造数据，数据范围0100~0400
+     *      2.设定请求范围是0000~5000
      * 期望：能获取到所有数据，且数据正确
      * @throws Exception 
      */
@@ -640,13 +640,13 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-600"));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0000"));
         begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MIN);
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("700"));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("5000"));
         end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MAX);
@@ -654,14 +654,14 @@ public class RangeFunctiontest{
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-600"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0000"));
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("700"));
+        rangeEnd.add(PrimaryKeyValue.fromString("5000"));
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
@@ -671,16 +671,16 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -300, 400, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 100, 300, conf, range, Direction.FORWARD);
         
-        assertEquals(111, expectCount);
+        assertEquals(300, expectCount);
     }
     
     /**
      * 指定的range范围是实际插入数据范围的子集
      * 输入：
-     *      1.构造数据，数据范围-300~100
-     *      2.设定请求范围是-1~10
+     *      1.构造数据，数据范围0000~0300
+     *      2.设定请求范围是0100~0200
      * 期望：能获取到指定的数据，且数据正确
      * @throws Exception 
      */
@@ -693,13 +693,13 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-1"));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0100"));
         begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MIN);
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("10"));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0200"));
         end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MAX);
@@ -707,14 +707,14 @@ public class RangeFunctiontest{
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-1"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0100"));
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("10"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0200"));
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
@@ -724,16 +724,16 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -300, 400, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 0, 300, conf, range, Direction.FORWARD);
         
-        assertEquals(303, expectCount);
+        assertEquals(101, expectCount);
     }
     
     /**
      * 左交集
      * 输入：
-     *      1.构造数据，数据范围-100~100
-     *      2.设定请求范围是-200~0
+     *      1.构造数据，数据范围0300~0500
+     *      2.设定请求范围是0200~0400
      * 期望：能获取到指定的数据，且数据正确
      * @throws Exception 
      */
@@ -746,13 +746,13 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-200"));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0200"));
         begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MIN);
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0"));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0400"));
         end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MAX);
@@ -760,14 +760,14 @@ public class RangeFunctiontest{
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-200"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0200"));
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("0"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0400"));
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
@@ -777,16 +777,16 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -100, 200, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 300, 200, conf, range, Direction.FORWARD);
         
-        assertEquals(87, expectCount);
+        assertEquals(101, expectCount);
     }
     
     /**
      * 右交集
      * 输入：
-     *      1.构造数据，数据范围-100~100
-     *      2.设定请求范围是0~200
+     *      1.构造数据，数据范围0300~0500
+     *      2.设定请求范围是0400~0600
      * 期望：能获取到指定的数据，且数据正确
      * @throws Exception 
      */
@@ -799,13 +799,13 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0"));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0400"));
         begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MIN);
         begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MIN);
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("200"));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0600"));
         end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.INF_MAX);
         end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.INF_MAX);
@@ -813,14 +813,14 @@ public class RangeFunctiontest{
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("0"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0400"));
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         rangeBegin.add(PrimaryKeyValue.INF_MIN);
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("200"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0600"));
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
         rangeEnd.add(PrimaryKeyValue.INF_MAX);
@@ -830,16 +830,16 @@ public class RangeFunctiontest{
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -100, 200, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 300, 200, conf, range, Direction.FORWARD);
         
-        assertEquals(14, expectCount);
+        assertEquals(100, expectCount);
     }
     
     /**
      * 左无交集（包括边界情况）
      * 输入：
-     *      1.构造数据，数据范围-200~-300
-     *      2.设定请求范围是-100~-200
+     *      1.构造数据，数据范围0200~0300
+     *      2.设定请求范围是0000~0200
      * 期望：数据为空
      * @throws Exception 
      */
@@ -852,38 +852,38 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-100"));
-        begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("-100"));
-        begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(-100));
-        begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(-100));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0000"));
+        begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("0000"));
+        begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(0));
+        begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(0));
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-200"));
-        end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("-200"));
-        end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(-200));
-        end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(-200));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0200"));
+        end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("0200"));
+        end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(200));
+        end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(200));
         
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-100"));
-        rangeBegin.add(PrimaryKeyValue.fromString("-100"));
-        rangeBegin.add(PrimaryKeyValue.fromLong(-100));
-        rangeBegin.add(PrimaryKeyValue.fromLong(-100));
+        rangeBegin.add(PrimaryKeyValue.fromString("0000"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0000"));
+        rangeBegin.add(PrimaryKeyValue.fromLong(0));
+        rangeBegin.add(PrimaryKeyValue.fromLong(0));
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("-200"));
-        rangeEnd.add(PrimaryKeyValue.fromString("-200"));
-        rangeEnd.add(PrimaryKeyValue.fromLong(-200));
-        rangeEnd.add(PrimaryKeyValue.fromLong(-200));
+        rangeEnd.add(PrimaryKeyValue.fromString("0200"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0200"));
+        rangeEnd.add(PrimaryKeyValue.fromLong(200));
+        rangeEnd.add(PrimaryKeyValue.fromLong(200));
         conf.setRangeEnd(rangeEnd);
         
         OTSRange range = new OTSRange();
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -300, 100, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 200, 100, conf, range, Direction.FORWARD);
         
         assertEquals(0, expectCount);
     }
@@ -891,8 +891,8 @@ public class RangeFunctiontest{
     /**
      * 右无交集（包括边界情况）
      * 输入：
-     *      1.构造数据，数据范围-200~-300
-     *      2.设定请求范围是-300~-400
+     *      1.构造数据，数据范围0200~0300
+     *      2.设定请求范围是0300~0400
      * 期望：数据为空
      * @throws Exception 
      */
@@ -905,38 +905,38 @@ public class RangeFunctiontest{
         pkTypes.add(PrimaryKeyType.INTEGER);
         
         RowPrimaryKey begin = new RowPrimaryKey();
-        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-300"));
-        begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("-300"));
-        begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(-300));
-        begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(-300));
+        begin.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0300"));
+        begin.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("0300"));
+        begin.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(300));
+        begin.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(300));
         
         RowPrimaryKey end = new RowPrimaryKey();
-        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("-400"));
-        end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("-400"));
-        end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(-400));
-        end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(-400));
+        end.addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("0400"));
+        end.addPrimaryKeyColumn("pk_1", PrimaryKeyValue.fromString("0400"));
+        end.addPrimaryKeyColumn("pk_2", PrimaryKeyValue.fromLong(400));
+        end.addPrimaryKeyColumn("pk_3", PrimaryKeyValue.fromLong(400));
         
         OTSConf conf = this.getConf();
         
         List<PrimaryKeyValue> rangeBegin = new ArrayList<PrimaryKeyValue>();
-        rangeBegin.add(PrimaryKeyValue.fromString("-300"));
-        rangeBegin.add(PrimaryKeyValue.fromString("-300"));
-        rangeBegin.add(PrimaryKeyValue.fromLong(-300));
-        rangeBegin.add(PrimaryKeyValue.fromLong(-300));
+        rangeBegin.add(PrimaryKeyValue.fromString("0300"));
+        rangeBegin.add(PrimaryKeyValue.fromString("0300"));
+        rangeBegin.add(PrimaryKeyValue.fromLong(300));
+        rangeBegin.add(PrimaryKeyValue.fromLong(300));
         conf.setRangeBegin(rangeBegin);
 
         List<PrimaryKeyValue> rangeEnd = new ArrayList<PrimaryKeyValue>();
-        rangeEnd.add(PrimaryKeyValue.fromString("-400"));
-        rangeEnd.add(PrimaryKeyValue.fromString("-400"));
-        rangeEnd.add(PrimaryKeyValue.fromLong(-400));
-        rangeEnd.add(PrimaryKeyValue.fromLong(-400));
+        rangeEnd.add(PrimaryKeyValue.fromString("0400"));
+        rangeEnd.add(PrimaryKeyValue.fromString("0400"));
+        rangeEnd.add(PrimaryKeyValue.fromLong(400));
+        rangeEnd.add(PrimaryKeyValue.fromLong(400));
         conf.setRangeEnd(rangeEnd);
         
         OTSRange range = new OTSRange();
         range.setBegin(begin);
         range.setEnd(end);
 
-        long expectCount = test(pkTypes, -299, 100, conf, range, Direction.FORWARD);
+        long expectCount = test(pkTypes, 200, 100, conf, range, Direction.FORWARD);
         
         assertEquals(0, expectCount);
     }

@@ -21,7 +21,7 @@ public class TestForDatax {
         base.prepareData(pk, 0, 10000, 0);
         
         Table t = new Table(base.getOts(), t1, pk, null, 0);
-        t.create();
+        t.create(5000, 5000);
         
         base.getOts().shutdown();
     }

@@ -31,7 +31,7 @@ public class OTSColumn {
     }
     
     public static OTSColumn fromNormalColumn(String name) {
-        if (name .isEmpty()) {
+        if (name.isEmpty()) {
             throw new IllegalArgumentException("The column name is empty.");
         }
         

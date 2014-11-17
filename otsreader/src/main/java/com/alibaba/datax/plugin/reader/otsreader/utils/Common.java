@@ -141,4 +141,21 @@ public class Common {
             return "Exception[ErrorMessage:" + exception.getMessage() + "]";
         }
     }
+    
+    public static long getDelaySendMillinSeconds(int hadRetryTimes, int initSleepInMilliSecond) {
+
+        if (hadRetryTimes <= 0) {
+            return 0;
+        }
+
+        int sleepTime = initSleepInMilliSecond;
+        for (int i = 1; i < hadRetryTimes; i++) {
+            sleepTime += sleepTime;
+            if (sleepTime > 30000) {
+                sleepTime = 30000;
+                break;
+            } 
+        }
+        return sleepTime;
+    }
 }

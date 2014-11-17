@@ -17,12 +17,28 @@ public class BaseTest{
             p.getString("accesskey"), 
             p.getString("instance-name"));
 
+
     public BaseTest (String tableName) {
         this.tableName = tableName;
     }
     
     public void close() {
         ots.shutdown();
+    }
+    
+    public void createTable(List<PrimaryKeyType> pkType, int readCapacityUnit, int writeCapacityUnit) {
+        Table t = new Table(ots, tableName, pkType);
+        t.create(readCapacityUnit, writeCapacityUnit);
+    }
+    
+    public void createTable(List<PrimaryKeyType> pkType) {
+        createTable(pkType, 5000, 5000);
+    }
+    
+    public void prepareData(List<PrimaryKeyType> pkType, List<ColumnType> attrTypes, long begin, long rowCount, double nullPercent) {
+        Table t = new Table(ots, tableName, pkType, attrTypes, nullPercent);
+        t.create(5000, 5000);
+        t.insertData(begin, rowCount);
     }
     
     public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) {
@@ -38,9 +54,7 @@ public class BaseTest{
         attriTypes.add(ColumnType.BOOLEAN);
         attriTypes.add(ColumnType.BINARY);
         
-        Table t = new Table(ots, tableName, pkType, attriTypes, nullPercent);
-        t.create();
-        t.insertData(begin, rowCount);
+        prepareData(pkType, attriTypes, begin, rowCount, nullPercent);
     }
     
     public String getTableName() {
