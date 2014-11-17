@@ -1,9 +1,10 @@
 package com.alibaba.datax.plugin.writer.otswriter.utils;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
@@ -99,12 +100,12 @@ public class WriterModelParser {
     }
     
     private static void checkMultiAttrColumn(List<OTSAttrColumn> attrs) {
-        Map<String, String> pool = new LinkedHashMap<String, String>();
+        Set<String> pool = new HashSet<String>();
         for (OTSAttrColumn col : attrs) {
-            if (pool.containsKey(col.getName())) {
+            if (pool.contains(col.getName())) {
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.MULTI_ATTR_COLUMN_ERROR, col.getName()));
             } else {
-                pool.put(col.getName(), null);
+                pool.add(col.getName());
             }
         }
     }

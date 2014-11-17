@@ -85,6 +85,7 @@
                 <configuration>
                     <includes>
                         <include>**/unittest/*.java</include>
+                        <include>**/functiontest/*.java</include>
                     </includes>
                 </configuration>
             </plugin>

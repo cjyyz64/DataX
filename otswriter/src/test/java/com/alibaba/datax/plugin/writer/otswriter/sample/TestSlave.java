@@ -20,6 +20,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf.RestrictConf;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
 import com.aliyun.openservices.ots.model.ColumnType;
@@ -35,7 +36,7 @@ public class TestSlave {
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
         
-        base.prepareData(pk, -100, 0, 0.5);
+        base.prepareData(pk, 0, 0, 0);
     }
     
     public static Configuration getConf() {
@@ -67,8 +68,13 @@ public class TestSlave {
         
         conf.setRetry(1);
         conf.setSleepInMilliSecond(100);
-        conf.setBatchWriteCount(5);
+        conf.setBatchWriteCount(50);
         conf.setConcurrencyWrite(5);
+        conf.setIoThreadCount(1);
+        
+        RestrictConf restrictConf = conf.new RestrictConf();
+        restrictConf.setRequestTotalSizeLimition(1024*1024);
+        conf.setRestrictConf(restrictConf);
         
         configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
         
@@ -84,19 +90,39 @@ public class TestSlave {
 
         List<Record> contents = new ArrayList<Record>();
         
-        for (int i = 0; i < 10; i++)
+//        for (int i = 0; i < 10; i++)
+//        {
+//            Record r = new DefaultRecord();
+//            // pk
+//            r.addColumn(new StringColumn(String.valueOf(i)));
+//            r.addColumn(new LongColumn(i));
+//            
+//            // attr
+//            r.addColumn(new StringColumn(String.valueOf(i)));
+//            r.addColumn(new LongColumn(i));
+//            r.addColumn(new DoubleColumn(i));
+//            r.addColumn(new BoolColumn(true));
+//            r.addColumn(new BytesColumn("hello".getBytes()));
+//            
+//            contents.add(r);
+//        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 1024; i++) {
+            sb.append("a");
+        }
+        for (int i = 0; i < 11; i++)
         {
             Record r = new DefaultRecord();
             // pk
-            r.addColumn(new StringColumn(String.valueOf(i)));
+            r.addColumn(new StringColumn(""));
             r.addColumn(new LongColumn(i));
             
             // attr
-            r.addColumn(new StringColumn(String.valueOf(i)));
+            r.addColumn(new StringColumn(sb.toString()));
             r.addColumn(new LongColumn(i));
             r.addColumn(new DoubleColumn(i));
             r.addColumn(new BoolColumn(true));
-            r.addColumn(new BytesColumn("hello".getBytes()));
+            r.addColumn(new BytesColumn(sb.toString().getBytes()));
             
             contents.add(r);
         }
@@ -111,12 +137,14 @@ public class TestSlave {
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
 
         OtsWriterSlaveProxy slave = new OtsWriterSlaveProxy();
+        slave.init(configuration);
         try {
-            slave.init(configuration);
             slave.write(recordReceiver, collector);
         } finally {
             slave.close();
         }
+        System.out.println("================================ dirty collector =======================");
+        System.out.println("Size : " + collector.getContent().size());
         for (RecordAndMessage rm : collector.getContent()) {
             System.out.println(rm.getErrorMessage());
         }

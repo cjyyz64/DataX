@@ -12,13 +12,36 @@ public class OTSConf {
     private List<OTSPKColumn> primaryKeyColumn = null;
     private List<OTSAttrColumn> attributeColumn = null;
    
-    private int retry =  12;
-    private int sleepInMilliSecond = 100;
-    private int batchWriteCount = 10;
-    private int concurrencyWrite = 1;
+    private int retry =  -1;
+    private int sleepInMilliSecond = -1;
+    private int batchWriteCount = -1;
+    private int concurrencyWrite = -1;
+    private int ioThreadCount = -1;
+    private int socketTimeout = -1;
+    private int connectTimeout = -1;
     
     private OTSOpType operation = null;
+    
+    private RestrictConf restrictConf = null;
+    
+    //限制项
+    public class RestrictConf {
+        private int requestTotalSizeLimition = -1;
+        
+        public int getRequestTotalSizeLimition() {
+            return requestTotalSizeLimition;
+        }
+        public void setRequestTotalSizeLimition(int requestTotalSizeLimition) {
+            this.requestTotalSizeLimition = requestTotalSizeLimition;
+        }
+    }
 
+    public RestrictConf getRestrictConf() {
+        return restrictConf;
+    }
+    public void setRestrictConf(RestrictConf restrictConf) {
+        this.restrictConf = restrictConf;
+    }
     public OTSOpType getOperation() {
         return operation;
     }
@@ -91,5 +114,23 @@ public class OTSConf {
     }
     public void setSleepInMilliSecond(int sleepInMilliSecond) {
         this.sleepInMilliSecond = sleepInMilliSecond;
+    }
+    public int getIoThreadCount() {
+        return ioThreadCount;
+    }
+    public void setIoThreadCount(int ioThreadCount) {
+        this.ioThreadCount = ioThreadCount;
+    }
+    public int getSocketTimeout() {
+        return socketTimeout;
+    }
+    public void setSocketTimeout(int socketTimeout) {
+        this.socketTimeout = socketTimeout;
+    }
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
     }
 }

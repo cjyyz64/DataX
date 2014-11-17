@@ -35,13 +35,12 @@ public class Table {
         this.attriTypes = attriTypes;
     }
     
-    public void create() {
+    public void create(int readCapacityUnit, int writeCapacityUnit) {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
             ots.deleteTable(deleteTableRequest);
         } catch (Exception e) {
-            //e.printStackTrace();
         }
         
         TableMeta meta =  new TableMeta(this.tableName);
@@ -49,7 +48,7 @@ public class Table {
             String name = String.format("pk_%d", i);
             meta.addPrimaryKeyColumn(name, pkTypes.get(i));
         }
-        CapacityUnit capacityUnit = new CapacityUnit(5000, 5000);
+        CapacityUnit capacityUnit = new CapacityUnit(readCapacityUnit, writeCapacityUnit);
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(meta);
         createTableRequest.setReservedThroughput(capacityUnit);
@@ -61,8 +60,8 @@ public class Table {
         try {
             Thread.sleep(5000);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
+            System.exit(-1);
         }
     }
     

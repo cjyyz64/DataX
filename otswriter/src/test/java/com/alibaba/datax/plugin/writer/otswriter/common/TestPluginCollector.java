@@ -45,4 +45,12 @@ public class TestPluginCollector extends AbstractSlavePluginCollector {
     public List<RecordAndMessage> getContent() {
         return content;
     }
+    
+    public List<Record> getRecord() {
+        List<Record> records = new ArrayList<Record>();
+        for (RecordAndMessage rm : content) {
+            records.add(rm.getDirtyRecord());
+        }
+        return records;
+    }
 }

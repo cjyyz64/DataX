@@ -1,5 +1,10 @@
 package com.alibaba.datax.plugin.writer.otswriter;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -7,30 +12,22 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class OtsWriter {
-    public static class Master extends Writer.Master {
+    public static class Master extends Writer.Master  {
         private static final Logger LOG = LoggerFactory.getLogger(OtsWriter.Master.class);
         private OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-
+        
         @Override
         public void init() {
             LOG.info("init() begin ...");
             try {
                 this.proxy.init(getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
-                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
-                LOG.error("Stack", e);
+                LOG.error("OTSException: {}",  e.getMessage(), e);
                 throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}",
-                        new Object[]{e.getErrorCode(), e.getMessage()});
-                LOG.error("Stack", e);
+                LOG.error("ClientException: {}",  e.getMessage(), e);
                 throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
                 LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
@@ -57,14 +54,13 @@ public class OtsWriter {
             }
         }
     }
-
-    public static class Slave extends Writer.Slave {
+    
+    public static class Slave extends Writer.Slave  {
         private static final Logger LOG = LoggerFactory.getLogger(OtsWriter.Master.class);
         private OtsWriterSlaveProxy proxy = new OtsWriterSlaveProxy();
-
+        
         @Override
-        public void init() {
-        }
+        public void init() {}
 
         @Override
         public void destroy() {
@@ -78,14 +74,10 @@ public class OtsWriter {
                 this.proxy.init(this.getPluginJobConf());
                 this.proxy.write(lineReceiver, this.getSlavePluginCollector());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}",
-                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
-                LOG.error("Stack", e);
+                LOG.error("OTSException: {}",  e.getMessage(), e);
                 throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}",
-                        new Object[]{e.getErrorCode(), e.getMessage()});
-                LOG.error("Stack", e);
+                LOG.error("ClientException: {}",  e.getMessage(), e);
                 throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
                 LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
