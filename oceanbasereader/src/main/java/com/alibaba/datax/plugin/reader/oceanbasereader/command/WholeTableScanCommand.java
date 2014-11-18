@@ -1,12 +1,12 @@
 package com.alibaba.datax.plugin.reader.oceanbasereader.command;
 
+import com.alibaba.datax.plugin.reader.oceanbasereader.Index;
+import com.alibaba.datax.plugin.reader.oceanbasereader.ast.Expression;
+import com.alibaba.datax.plugin.reader.oceanbasereader.ast.SelectExpression;
+import com.alibaba.datax.plugin.reader.oceanbasereader.utils.OBDataSource;
+import com.alibaba.datax.plugin.reader.oceanbasereader.utils.ResultSetHandler;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.taobao.dw.datax.plugins.reader.oceanbasejdbcreader.Index;
-import com.taobao.dw.datax.plugins.reader.oceanbasejdbcreader.ast.Expression;
-import com.taobao.dw.datax.plugins.reader.oceanbasejdbcreader.ast.SelectExpression;
-import com.taobao.dw.datax.plugins.reader.oceanbasejdbcreader.utils.OBDataSource;
-import com.taobao.dw.datax.plugins.reader.oceanbasejdbcreader.utils.ResultSetHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
