@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.reader.oceanbasereader;
 
 public final class Key {
-	// ±ØÌî
+
 	public final static String CONFIG_URL = "config-url";
 
 	public final static String TABLE = "table";

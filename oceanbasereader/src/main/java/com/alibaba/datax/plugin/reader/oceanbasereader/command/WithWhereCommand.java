@@ -100,7 +100,7 @@ public enum WithWhereCommand implements Command{
 			}
 
 			private String getLastCondition(ResultSet result) throws Exception {
-				if (!result.isAfterLast()) return "";//根据jdbc规范判断空结果集
+				if (!result.isAfterLast()) return "";//鏍规嵁jdbc瑙勮寖鍒ゆ柇绌虹粨鏋滈泦
 				result.last();
 				return entry.type.convert(result, entry.name);
 			}
@@ -111,7 +111,7 @@ public enum WithWhereCommand implements Command{
 	protected abstract boolean meet(Expression expr, Set<Index> indexes);
 
 	public static Command getCommand(Expression expr, Set<Index> indexes){
-		WithWhereCommand[] commands = new WithWhereCommand[]{IndexScanCommand,PrefixScanCommand};//优先级
+		WithWhereCommand[] commands = new WithWhereCommand[]{IndexScanCommand,PrefixScanCommand};//锟斤拷锟饺硷拷
 		for(WithWhereCommand command : commands){
 			if(command.meet(expr, indexes)) return command;
 		}
