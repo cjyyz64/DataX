@@ -1,0 +1,18 @@
+package com.alibaba.datax.plugin.reader.oceanbasereader;
+
+public final class Key {
+	// ±ØÌî
+	public final static String CONFIG_URL = "config-url";
+
+	public final static String TABLE = "table";
+
+	public final static String COLUMN = "column";
+
+	public final static String WHERE = "where";
+
+	public final static String SQL = "querySql";
+
+	public final static String TIMEOUT = "timeout";
+
+	public final static String CONNECTION = "connection";
+}

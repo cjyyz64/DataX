@@ -1,0 +1,27 @@
+{
+    "content": [
+        {
+            "reader": {
+                "name": "mysqlreader",
+                "parameter": {
+                    "username": "username?",
+                    "password": "password?",
+                    "connection": [
+                        {
+                            "jdbcUrl": [
+                                "jdbc:mysql://ip1:port1/dbName?"
+                            ],
+                            "querySql": [
+                                "select firstColumn,secondColumn from table0 where id>100?"
+                            ]
+                        }
+                    ],
+                    "preSql": [
+                        "sql must and only return 0 means its data is ok.",
+                        "sql must and only return 0 means its data is ok."
+                    ]                }
+            },
+            "writer": {}
+        }
+    ]
+}

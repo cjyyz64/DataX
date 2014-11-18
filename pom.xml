@@ -41,6 +41,7 @@
         <module>otsreader</module>
         <module>txtfilereader</module>
         <module>streamreader</module>
+        <module>oceanbasereader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
