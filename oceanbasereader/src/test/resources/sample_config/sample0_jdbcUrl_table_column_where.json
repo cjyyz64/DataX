@@ -2,17 +2,13 @@
     "content": [
         {
             "reader": {
-                "name": "mysqlreader",
+                "name": "oceanbasereader",
                 "parameter": {
-                    "username": "username?",
-                    "password": "password?",
                     "connection": [
                         {
-                            "jdbcUrl": [
-                                "jdbc:mysql://ip1:port1/dbName?"
-                            ],
+                            "configUrl": "http://obconsole.test.alibaba-inc.com/ob-config/config.co?dataId=daily_ob5",
                             "table": [
-                                "table0?"
+                                "table?"
                             ]
                         }
                     ],
@@ -20,12 +16,7 @@
                         "firstColumn?",
                         "secondColumn?"
                     ],
-                    "where": "modifyTime>'2014-08-08'?",
-                    "splitPk": "onlyOnePkColumn?",
-                    "preSql": [
-                        "sql must and only return 0 means its data is ok.",
-                        "sql must and only return 0 means its data is ok."
-                    ]
+                    "where": "modifyTime>'2014-08-08'?"
                 }
             },
             "writer": {}

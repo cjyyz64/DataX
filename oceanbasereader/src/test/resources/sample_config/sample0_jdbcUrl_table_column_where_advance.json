@@ -2,26 +2,19 @@
     "content": [
         {
             "reader": {
-                "name": "mysqlreader",
+                "name": "oceanbasereader",
                 "parameter": {
-                    "username": "username?",
-                    "password": "password?",
                     "connection": [
                         {
-                            "jdbcUrl": [
-                                "jdbc:mysql://ip1:port1/dbName01_slave1?",
-                                "jdbc:mysql://ip2:port2/dbName01_slave2?"
-                            ],
+                            "configUrl": "",
                             "table": [
-                                "table0?", "table1", "table[4-10]"
+                                "table0", "table1"
                             ]
                         },
                         {
-                            "jdbcUrl": [
-                                "jdbc:mysql://ip3:port3/dbName02_slave?"
-                            ],
+                            "configUrl": "",
                             "table": [
-                                "table10?", "table11", "table[14-21]"
+                                "table10", "table11"
                             ]
                         }
                     ],
@@ -30,12 +23,8 @@
                         "secondColumn?",
                         "now()?"
                     ],
-                    "where": "modifyTime>'2014-08-08'?",
-                    "splitPk": "onlyOnePkColumn?",
-                    "preSql": [
-                        "sql must and only return 0 means its data is ok.",
-                        "sql must and only return 0 means its data is ok."
-                    ]                }
+                    "where": "modifyTime>'2014-08-08'?"
+                }
             },
             "writer": {}
         }
