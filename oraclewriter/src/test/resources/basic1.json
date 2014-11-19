@@ -1,0 +1,55 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "oraclewriter",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port",
+                            "db_role",
+                            "db_name",
+                            "db_username",
+                            "db_password",
+                            "db_modify_time",
+                            "db_modify_user",
+                            "db_description",
+                            "db_tddl_info"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info_for_writer_00", "db_info_for_writer_0[1-6]"
+                                ],
+                                "jdbcUrl": "jdbc:oracle:thin:@[HOST_NAME]:PORT:[DATABASE_NAME]"
+                            },
+                            {
+                                "table": [
+                                    "db_info_for_writer_10", "db_info_for_writer_1[1-6]"
+                                ],
+                                "jdbcUrl": "jdbc:oracle:thin:@[HOST_NAME]:PORT:[DATABASE_NAME]"
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where db_id = -1;"
+                        ],
+                        "postSql": [
+                            "update @table set db_modify_time = now() where db_id = 1;"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

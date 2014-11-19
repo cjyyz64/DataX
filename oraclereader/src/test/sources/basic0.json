@@ -21,7 +21,7 @@
                                     "db_info"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:oracle:thin:@//hostIp:port/dbName"
+                                    "jdbc:oracle:thin:@[HOST_NAME]:PORT:[DATABASE_NAME]"
                                 ]
                             }
                         ]
