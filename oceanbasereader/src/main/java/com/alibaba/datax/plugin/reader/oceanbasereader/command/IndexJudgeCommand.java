@@ -17,7 +17,7 @@ import java.sql.ResultSet;
 import java.util.List;
 import java.util.Set;
 
-public enum WithWhereCommand implements Command{
+public enum IndexJudgeCommand implements Command{
 
 	PrefixScanCommand {
 		@Override
@@ -111,8 +111,8 @@ public enum WithWhereCommand implements Command{
 	protected abstract boolean meet(Expression expr, Set<Index> indexes);
 
 	public static Command getCommand(Expression expr, Set<Index> indexes){
-		WithWhereCommand[] commands = new WithWhereCommand[]{IndexScanCommand,PrefixScanCommand};//���ȼ�
-		for(WithWhereCommand command : commands){
+		IndexJudgeCommand[] commands = new IndexJudgeCommand[]{IndexScanCommand,PrefixScanCommand};//���ȼ�
+		for(IndexJudgeCommand command : commands){
 			if(command.meet(expr, indexes)) return command;
 		}
 		return new WholeTableScanCommand();

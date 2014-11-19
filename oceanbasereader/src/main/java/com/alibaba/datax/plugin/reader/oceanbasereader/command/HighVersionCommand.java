@@ -13,7 +13,7 @@ public class HighVersionCommand implements Command {
 		try {
 			SelectExpression select = context.orginalAst();
 			Set<Index> indexes = context.index();
-			WithWhereCommand.getCommand(select.where, indexes).execute(context);
+			IndexJudgeCommand.getCommand(select.where, indexes).execute(context);
 		} catch (ParserException e) {
 			throw new UnsupportedOperationException(String.format("not support sql [%s]",context.originalSQL()),e);
 		}
