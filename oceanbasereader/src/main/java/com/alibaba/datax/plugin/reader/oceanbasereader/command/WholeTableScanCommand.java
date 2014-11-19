@@ -27,34 +27,28 @@ public class WholeTableScanCommand implements Command {
 		ResultSetHandler<String> handler = new SendToWriterHandler(context);
 		String condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
 		while (!"".equals(condition)) {
-			sql = String.format("%s where %s limit 1000", select, condition);
+            if(select.where == null){
+                sql = String.format("%s where %s limit 1000", select, condition);
+            }else {
+                sql = String.format("%s and %s limit 1000", select, condition);
+            }
 			condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
 		}
 		log.info("Case[whole table scan] end");
 	}
 
 	private void meetRowkeyExist(final Index rowkey, final List<Expression> columns) {
-		class Checker{
-			public boolean meetWildCard(){
-				return columns.size() == 1 && "*".equals(columns.get(0).toString());
-			}
-			
-			public void checkPrimaryKeyNoMiss(){
-				Set<String> miss = Sets.newHashSet();
-				out:
-				for(Index.Entry field : rowkey){
-					for(Expression column : columns){
-						if(field.name.equalsIgnoreCase(column.toString())){
-							continue out;
-						}
-					}
-					miss.add(field.name);
+		Set<String> miss = Sets.newHashSet();
+		out:
+		for(Index.Entry field : rowkey){
+			for(Expression column : columns){
+				if(field.name.equalsIgnoreCase(column.toString())){
+					continue out;
 				}
-				Preconditions.checkArgument(miss.isEmpty(),String.format("select clause must contain primary key, you miss %s", miss));
 			}
+			miss.add(field.name);
 		}
-		Checker checker = new Checker();
-		if(!checker.meetWildCard()) checker.checkPrimaryKeyNoMiss();
+		Preconditions.checkArgument(miss.isEmpty(),String.format("select clause must contain primary key, you miss %s", miss));
 	}
 
 	private class SendToWriterHandler implements ResultSetHandler<String> {

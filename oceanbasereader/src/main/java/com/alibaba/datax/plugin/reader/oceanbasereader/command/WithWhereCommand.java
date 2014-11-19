@@ -115,6 +115,6 @@ public enum WithWhereCommand implements Command{
 		for(WithWhereCommand command : commands){
 			if(command.meet(expr, indexes)) return command;
 		}
-		throw new UnsupportedOperationException("where-support-case 1) primary or index = some value 2) primary or index closed-range scan");
+		return new WholeTableScanCommand();
 	}
 }

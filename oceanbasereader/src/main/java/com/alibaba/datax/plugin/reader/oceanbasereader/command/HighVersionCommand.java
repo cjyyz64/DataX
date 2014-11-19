@@ -12,14 +12,10 @@ public class HighVersionCommand implements Command {
 	public void execute(Context context) throws Exception {
 		try {
 			SelectExpression select = context.orginalAst();
-			if (select.where == null) {
-				new WholeTableScanCommand().execute(context);
-			} else {
-				Set<Index> indexes = context.index();
-				WithWhereCommand.getCommand(select.where, indexes).execute(context);
-			}
+			Set<Index> indexes = context.index();
+			WithWhereCommand.getCommand(select.where, indexes).execute(context);
 		} catch (ParserException e) {
-			throw new UnsupportedOperationException("only support 1) whole table scan 2) primary or index = some value 3) primary or index closed-range scan",e);
+			throw new UnsupportedOperationException(String.format("not support sql [%s]",context.originalSQL()),e);
 		}
 	}
 }
