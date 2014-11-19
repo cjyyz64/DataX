@@ -23,11 +23,13 @@ public class DoubleColumn extends Column {
 	}
 
 	public DoubleColumn(final Double data) {
-		this(data == null ? (String) null : String.valueOf(data), 8);
+		this(data == null ? (String) null
+				: new BigDecimal(String.valueOf(data)).toPlainString(), 8);
 	}
 
 	public DoubleColumn(final Float data) {
-		this(data == null ? (String) null : String.valueOf(data), 4);
+		this(data == null ? (String) null
+				: new BigDecimal(String.valueOf(data)).toPlainString(), 4);
 	}
 
 	public DoubleColumn(final BigDecimal data) {

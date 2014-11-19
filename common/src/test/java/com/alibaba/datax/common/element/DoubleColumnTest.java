@@ -228,6 +228,17 @@ public class DoubleColumnTest {
 		} catch (Exception e) {
 			Assert.assertTrue(true);
 		}
+	}
 
+	@Test
+	public void test_doubleFormat() {
+		System.out.println(new DoubleColumn(9801523474.39962d).asString());
+		Assert.assertTrue("9801523474.39962".equals(new DoubleColumn(
+				9801523474.39962d).asString()));
+
+		Assert.assertTrue(!new DoubleColumn(Double.MAX_VALUE).asString()
+				.contains("E"));
+		Assert.assertTrue(!new DoubleColumn(Float.MAX_VALUE).asString()
+				.contains("E"));
 	}
 }
