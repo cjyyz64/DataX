@@ -15,4 +15,7 @@ public final class Key {
 	public final static String TIMEOUT = "timeout";
 
 	public final static String CONNECTION = "connection";
+
+    public final static String FETCH_SIZE = "fetchSize";
+
 }

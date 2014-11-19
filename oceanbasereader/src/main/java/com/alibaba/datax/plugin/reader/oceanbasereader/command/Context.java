@@ -154,4 +154,8 @@ public class Context {
     public String url(){
         return configuration.getString(Key.CONFIG_URL);
     }
+
+    public int limit(){
+        return configuration.getInt(Key.FETCH_SIZE, 1000);
+    }
 }
