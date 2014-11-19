@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
-Version:2014111412.4
+Version:201411192100
 Release: %(echo $RELEASE)%{?dist}
 
 Summary: datax 3 core
