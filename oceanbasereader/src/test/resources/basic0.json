@@ -8,39 +8,16 @@
         "content": [
             {
                 "reader": {
-                    "name": "mysqlreader",
+                    "name": "oceanbasereader",
                     "parameter": {
-                        "username": "root",
-                        "password": "root",
-                        "column": [
-                            "db_id",
-                            "db_type",
-                            "db_ip",
-                            "db_port",
-                            "db_role",
-                            "db_name",
-                            "db_username",
-                            "db_password",
-                            "db_modify_time",
-                            "db_modify_user",
-                            "db_description",
-                            "db_tddl_info",
-                            "on_line_flag"
-                        ],
+                        "column": ["c1","c2","c3"],
                         "where": "",
-                        "session": {
-                            "character_set_client": "utf8",
-                            "character_set_results": "utf8",
-                            "character_set_connection": "utf8"
-                        },
                         "connection": [
                             {
                                 "table": [
-                                    "db_info"
+                                    "test"
                                 ],
-                                "jdbcUrl": [
-                                    "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
-                                ]
+                                "configUrl": "http://obconsole.test.alibaba-inc.com/ob-config/config.co?dataId=daily_ob5"
                             }
                         ]
                     }
