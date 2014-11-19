@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.oceanbasereader.utils;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.oceanbasereader.Key;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 
 import java.util.Collections;
@@ -11,15 +12,15 @@ public class TaskSplitter {
 
     public static List<Configuration> split(Configuration configuration){
         List<Configuration> slices = Lists.newArrayList();
-        List<String> connections = configuration.getList(Key.CONNECTION,String.class);
-        for (String connection : connections){
+        List<JSONObject> connections = configuration.getList(Key.CONNECTION,JSONObject.class);
+        for (JSONObject connection : connections){
             slices.addAll(slice(connection, configuration));
             Collections.shuffle(slices);
         }
         return slices;
     }
 
-    private static List<Configuration> slice(String json,Configuration orgin){
+    private static List<Configuration> slice(JSONObject json,Configuration orgin){
         List<Configuration> slices = Lists.newArrayList();
         Configuration configuration = Configuration.from(json);
         List<String> sqls = configuration.getList(Key.SQL, Collections.<String>emptyList(),String.class);

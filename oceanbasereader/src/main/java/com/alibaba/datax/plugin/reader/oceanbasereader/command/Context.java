@@ -10,16 +10,15 @@ import com.alibaba.datax.plugin.reader.oceanbasereader.ast.SelectExpression;
 import com.alibaba.datax.plugin.reader.oceanbasereader.parser.SelectParser;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.OBDataSource;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.ResultSetHandler;
+import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Context {
 
@@ -41,17 +40,17 @@ public class Context {
 		return SelectParser.parse(this.originalSQL());
 	}
 
+    private static final Joiner joiner = Joiner.on(",");
 	public String originalSQL() {
 		String customSQL = configuration.getString(Key.SQL, "");
 		if (StringUtils.isNotBlank(customSQL))
 			return customSQL;
 		String table = configuration.getString(Key.TABLE);
-		String column = configuration.getString(Key.COLUMN, "*");
+		List<String> columns = configuration.getList(Key.COLUMN, String.class);
 		String where = configuration.getString(Key.WHERE, "");
 		String sqlTemplate = "SELECT %s FROM %s %s";
-		String sql = String.format(sqlTemplate, column, table,
-				(StringUtils.isBlank(where) ? "" : " where " + where));
-		return sql;
+		return String.format(sqlTemplate, joiner.join(columns), table,
+				(Strings.isNullOrEmpty(where) ? "" : " where " + where));
 	}
 
 	public void sendToWriter(ResultSet result) throws SQLException {
