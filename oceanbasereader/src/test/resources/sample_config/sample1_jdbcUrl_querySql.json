@@ -6,7 +6,7 @@
                 "parameter": {
                     "connection": [
                         {
-                            "obconfigUrl": "",
+                            "configUrl": "",
                             "querySql": [
                                 "select firstColumn,secondColumn from table0 where id>100?"
                             ]
