@@ -22,11 +22,19 @@ public class DoubleColumn extends Column {
 		this(data == null ? (String) null : String.valueOf(data), 4);
 	}
 
+	/**
+	 * Double无法表示准确的小数数据，我们不推荐使用该方法保存Double数据，建议使用String作为构造入参
+	 * 
+	 * */
 	public DoubleColumn(final Double data) {
 		this(data == null ? (String) null
 				: new BigDecimal(String.valueOf(data)).toPlainString(), 8);
 	}
 
+	/**
+	 * Float无法表示准确的小数数据，我们不推荐使用该方法保存Float数据，建议使用String作为构造入参
+	 * 
+	 * */
 	public DoubleColumn(final Float data) {
 		this(data == null ? (String) null
 				: new BigDecimal(String.valueOf(data)).toPlainString(), 4);
