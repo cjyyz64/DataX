@@ -71,7 +71,7 @@ public class CommonRdbmsWriter {
                     // 说明有 preSql 配置，则此处删除掉
                     originalConfig.remove(Key.PRE_SQL);
 
-                    Connection conn = DBUtil.getConnection(DataBaseType.MySql,
+                    Connection conn = DBUtil.getConnection(DATABASE_TYPE,
                             jdbcUrl, username, password);
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
@@ -115,7 +115,7 @@ public class CommonRdbmsWriter {
                     // 说明有 postSql 配置，则此处删除掉
                     originalConfig.remove(Key.POST_SQL);
 
-                    Connection conn = DBUtil.getConnection(DataBaseType.MySql,
+                    Connection conn = DBUtil.getConnection(DATABASE_TYPE,
                             jdbcUrl, username, password);
 
                     LOG.info(
@@ -193,7 +193,7 @@ public class CommonRdbmsWriter {
         }
 
         public void prepare(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(DataBaseType.MySql,
+            Connection connection = DBUtil.getConnection(DATABASE_TYPE,
                     this.jdbcUrl, username, password);
 
             dealSessionConf(connection,
@@ -217,7 +217,7 @@ public class CommonRdbmsWriter {
                                SlavePluginCollector slavePluginCollector) {
             this.slavePluginCollector = slavePluginCollector;
 
-            Connection connection = DBUtil.getConnection(DataBaseType.MySql,
+            Connection connection = DBUtil.getConnection(DATABASE_TYPE,
                     this.jdbcUrl, username, password);
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
@@ -229,12 +229,12 @@ public class CommonRdbmsWriter {
                 Record record = null;
                 while ((record = recordReceiver.getFromReader()) != null) {
                     if (record.getColumnNumber() != this.columnNumber) {
-                        // 源头读取字段列数与目的 Mysql 表字段写入列数不相等，直接报错
+                        // 源头读取字段列数与目的表字段写入列数不相等，直接报错
                         throw DataXException
                                 .asDataXException(
                                         DBUtilErrorCode.CONF_ERROR,
                                         String.format(
-                                                "您配置的任务中，源头读取字段数:%s 与 目的 Mysql 表要写入的字段数:%s 不相等. 请检查您的配置字段.",
+                                                "您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置字段.",
                                                 record.getColumnNumber(),
                                                 this.columnNumber));
                     }
@@ -260,7 +260,7 @@ public class CommonRdbmsWriter {
         }
 
         public void post(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(DataBaseType.MySql,
+            Connection connection = DBUtil.getConnection(DATABASE_TYPE,
                     this.jdbcUrl, username, password);
 
             int tableNumber = writerSliceConfig.getInt(
