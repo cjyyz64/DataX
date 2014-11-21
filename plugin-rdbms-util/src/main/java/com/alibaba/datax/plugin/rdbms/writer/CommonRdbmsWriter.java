@@ -16,7 +16,11 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -371,6 +375,7 @@ public class CommonRdbmsWriter {
 		private PreparedStatement fillPreparedStatement(
 				PreparedStatement preparedStatement, Record record)
 				throws SQLException {
+			java.util.Date utilDate = null;
 			for (int i = 0; i < this.columnNumber; i++) {
 
 				switch (this.resultSetMetaData.getMiddle().get(i)) {
@@ -402,15 +407,32 @@ public class CommonRdbmsWriter {
 						preparedStatement.setString(i + 1, record.getColumn(i)
 								.asString());
 					} else {
-						preparedStatement.setObject(i + 1, record.getColumn(i)
-								.asDate());
+						java.sql.Date sqlDate = null;
+						utilDate = record.getColumn(i).asDate();
+						if (null != utilDate) {
+							sqlDate = new java.sql.Date(utilDate.getTime());
+						}
+						preparedStatement.setDate(i + 1, sqlDate);
 					}
 					break;
 
 				case Types.TIME:
+					java.sql.Time sqlTime = null;
+					utilDate = record.getColumn(i).asDate();
+					if (null != utilDate) {
+						sqlTime = new java.sql.Time(utilDate.getTime());
+					}
+					preparedStatement.setTime(i + 1, sqlTime);
+					break;
+
 				case Types.TIMESTAMP:
-					preparedStatement.setObject(i + 1, record.getColumn(i)
-							.asDate());
+					java.sql.Timestamp sqlTimestamp = null;
+					utilDate = record.getColumn(i).asDate();
+					if (null != utilDate) {
+						sqlTimestamp = new java.sql.Timestamp(
+								utilDate.getTime());
+					}
+					preparedStatement.setTimestamp(i + 1, sqlTimestamp);
 					break;
 
 				case Types.BINARY:
