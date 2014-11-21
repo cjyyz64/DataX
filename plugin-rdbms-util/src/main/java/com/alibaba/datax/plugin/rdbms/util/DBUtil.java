@@ -2,7 +2,10 @@ package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.RetryUtil;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -218,7 +221,10 @@ public final class DBUtil {
 		return columns;
 	}
 
-	public static ResultSetMetaData getColumnMetaData(
+	/**
+	 * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
+	 * */
+	public static Triple<List<String>, List<Integer>, List<String>> getColumnMetaData(
 			DataBaseType dataBaseType, String jdbcUrl, String user,
 			String pass, String tableName, String column) {
 		Connection conn = null;
@@ -230,10 +236,18 @@ public final class DBUtil {
 		}
 	}
 
-	public static ResultSetMetaData getColumnMetaData(Connection conn,
-			String tableName, String column) {
+	/**
+	 * @return Left:ColumnName Middle:ColumnType Right:ColumnTypeName
+	 * */
+	public static Triple<List<String>, List<Integer>, List<String>> getColumnMetaData(
+			Connection conn, String tableName, String column) {
 		Statement statement = null;
 		ResultSet rs = null;
+
+		
+		Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
+				new ArrayList<String>(), new ArrayList<Integer>(),
+				new ArrayList<String>());
 		try {
 			statement = conn.createStatement();
 			String queryColumnSql = "select " + column + " from " + tableName
@@ -241,15 +255,21 @@ public final class DBUtil {
 
 			rs = statement.executeQuery(queryColumnSql);
 			ResultSetMetaData rsMetaData = rs.getMetaData();
-			return rsMetaData;
+			for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
+
+				columnMetaData.getLeft().add(rsMetaData.getColumnName(i + 1));
+				columnMetaData.getMiddle().add(rsMetaData.getColumnType(i + 1));
+				columnMetaData.getRight().add(
+						rsMetaData.getColumnTypeName(i + 1));
+			}
+			return columnMetaData;
 
 		} catch (SQLException e) {
 			throw DataXException
 					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
 							"获取表的字段的元信息时失败.", e);
 		} finally {
-			// 注意：不关闭这两个资源,在关闭Connection时，会统一释放Statement,ResultSet的资源，目的是保证ResultSetMetaData的后续可用
-			// DBUtil.closeDBResources(rs, statement, null);
+			DBUtil.closeDBResources(rs, statement, null);
 		}
 	}
 
