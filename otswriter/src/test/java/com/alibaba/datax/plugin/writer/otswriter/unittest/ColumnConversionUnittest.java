@@ -204,9 +204,6 @@ public class ColumnConversionUnittest {
     public void testColumnToPrimaryKeyValueInvalid() throws UnsupportedEncodingException {
         Map<PKItem, String> input = new LinkedHashMap<PKItem, String>();
         
-        // binary(非UTF-8) -> string 
-        input.put(new PKItem(new BytesColumn("中国".getBytes("ISO-8859-1")), new OTSPKColumn("", PrimaryKeyType.STRING), null) , "Column coversion error, src type : BYTES, src value: hello, expect type: STRING .");
-        
         // string->int， 非数值型的字符串
         // hello, 0x5f, 100L, 102E2
         input.put(new PKItem(new StringColumn("hello"), new OTSPKColumn("", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: hello, expect type: INTEGER .");
