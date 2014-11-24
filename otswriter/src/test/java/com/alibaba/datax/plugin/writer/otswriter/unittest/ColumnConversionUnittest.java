@@ -201,7 +201,7 @@ public class ColumnConversionUnittest {
      * @throws UnsupportedEncodingException 
      */
     @Test
-    public void testColumnToPrimaryKeyValueInvalid() {
+    public void testColumnToPrimaryKeyValueInvalid() throws UnsupportedEncodingException {
         Map<PKItem, String> input = new LinkedHashMap<PKItem, String>();
         
         // string->int， 非数值型的字符串
