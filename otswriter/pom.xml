@@ -72,7 +72,7 @@
                         <id>dwzip</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                           <goal>single</goal>
                         </goals>
                     </execution>
                 </executions>
