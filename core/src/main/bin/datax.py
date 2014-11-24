@@ -228,7 +228,7 @@ def get_job_from_http(job_path):
 
     try:
         # 这里的参数可能需要处理
-        if not job_path.endswith("/config"):
+        if not (job_path.endswith("/config") or job_path.endswith("/config.xml")):
             job_path = "%s/config"%(job_path)
         response = urllib2.urlopen(job_path)
         job_conf = response.read()
