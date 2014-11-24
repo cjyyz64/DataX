@@ -36,6 +36,7 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
+        <module>oraclereader</module>
 
         <module>odpsreader</module>
         <module>otsreader</module>
@@ -49,12 +50,12 @@
         <module>txtfilewriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>
+        <module>oraclewriter</module>
 
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
-        <module>oraclereader</module>
-
+        
     </modules>
 
     <dependencyManagement>

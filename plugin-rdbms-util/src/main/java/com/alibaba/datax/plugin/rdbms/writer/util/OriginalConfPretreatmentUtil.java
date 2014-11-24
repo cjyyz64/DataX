@@ -65,7 +65,7 @@ public final class OriginalConfPretreatmentUtil {
 
             // 对每一个connection 上配置的table 项进行解析
             List<String> expandedTables = TableExpandUtil
-                    .expandTableConf(DataBaseType.MySql, tables);
+                    .expandTableConf(DATABASE_TYPE, tables);
 
             if (null == expandedTables || expandedTables.isEmpty()) {
                 throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
@@ -95,7 +95,7 @@ public final class OriginalConfPretreatmentUtil {
             String oneTable = originalConfig.getString(String.format(
                     "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
-            List<String> allColumns = DBUtil.getTableColumns(DataBaseType.MySql, jdbcUrl, username, password, oneTable);
+            List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl, username, password, oneTable);
 
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -115,7 +115,7 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                DBUtil.getColumnMetaData(DataBaseType.MySql, jdbcUrl, username, password, oneTable,
+                DBUtil.getColumnMetaData(DATABASE_TYPE, jdbcUrl, username, password, oneTable,
                         StringUtils.join(userConfiguredColumns, ","));
             }
         }

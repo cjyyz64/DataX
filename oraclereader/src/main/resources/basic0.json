@@ -25,7 +25,7 @@
                                     "bvt_case"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:oracle:thin:@[HOST_NAME]:1521/[DATABASE_NAME]"
+                                    "jdbc:oracle:thin:@[HOST_NAME]:PORT:[DATABASE_NAME]"
                                 ]
                             }
                         ]
