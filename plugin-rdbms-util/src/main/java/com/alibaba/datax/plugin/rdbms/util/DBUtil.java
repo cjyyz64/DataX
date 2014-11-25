@@ -244,7 +244,6 @@ public final class DBUtil {
 		Statement statement = null;
 		ResultSet rs = null;
 
-		
 		Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
 				new ArrayList<String>(), new ArrayList<Integer>(),
 				new ArrayList<String>());
@@ -355,4 +354,45 @@ public final class DBUtil {
 		return false;
 	}
 
+	// warn:until now, only oracle need to handle session config.
+	public static void dealWithSessionConfig(Connection conn,
+			List<String> sessionConfig, DataBaseType databaseType,
+			String message) {
+		switch (databaseType) {
+		case Oracle:
+			DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
+			break;
+		default:
+			break;
+		}
+	}
+
+	private static void doDealWithSessionConfig(Connection conn,
+			List<String> sessions, String message) {
+		if (null == sessions || sessions.isEmpty()) {
+			return;
+		}
+
+		Statement stmt;
+		try {
+			stmt = conn.createStatement();
+		} catch (SQLException e) {
+			throw DataXException
+					.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, String
+							.format("执行 session 设置失败. 上下文信息是:[%s] .", message),
+							e);
+		}
+
+		for (String sessionSql : sessions) {
+			LOG.info("execute sql:[{}]", sessionSql);
+			try {
+				DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
+			} catch (SQLException e) {
+				throw DataXException.asDataXException(
+						DBUtilErrorCode.SET_SESSION_ERROR, String.format(
+								"执行 session 设置失败. 上下文信息是:[%s] .", message), e);
+			}
+		}
+		DBUtil.closeDBResources(stmt, null);
+	}
 }
