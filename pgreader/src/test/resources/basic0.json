@@ -3,13 +3,13 @@
         "content": [
             {
                 "reader": {
-                    "name": "oraclereader",
+                    "name": "pgreader",
                     "parameter": {
-                        "username": "root",
-                        "password": "root",
+                        "username": "datax",
+                        "password": "datax",
                         "column": [
-                            "db_id",
-                            "db_type"
+                            "name",
+                            "signup_date"
                         ],
                         "where": "",
                         "session": {
@@ -18,10 +18,10 @@
                         "connection": [
                             {
                                 "table": [
-                                    "db_info"
+                                    "user_tbl"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:oracle:thin:@//hostIp:port/dbName"
+                                    "jdbc:postgresql://10.98.109.113:3002/datax"
                                 ]
                             }
                         ]

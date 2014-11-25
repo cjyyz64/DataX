@@ -46,6 +46,8 @@ public enum DataBaseType {
                 break;
             case DB2:
                 break;
+            case PostgreSQL:
+            	break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
@@ -102,7 +104,8 @@ public enum DataBaseType {
                 }
                 break;
             case DB2:
-                break;
+            case PostgreSQL:
+            	break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
@@ -124,6 +127,7 @@ public enum DataBaseType {
                 result = "[" + columnName + "]";
                 break;
             case DB2:
+            case PostgreSQL:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
@@ -144,6 +148,8 @@ public enum DataBaseType {
             case SQLServer:
                 break;
             case DB2:
+                break;
+            case PostgreSQL:
                 break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");

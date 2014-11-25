@@ -36,6 +36,7 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
+        <module>pgreader</module>
         <module>oraclereader</module>
 
         <module>odpsreader</module>
