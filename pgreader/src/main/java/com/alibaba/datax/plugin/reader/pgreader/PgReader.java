@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.oraclereader;
+package com.alibaba.datax.plugin.reader.pgreader;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -10,24 +10,22 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 import java.util.List;
 
-public class OracleReader extends Reader {
+public class PgReader extends Reader {
 
-    private static final DataBaseType DATABASE_TYPE = DataBaseType.Oracle;
+    private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
 
     public static class Master extends Reader.Master {
 
-        private Configuration originalConfig = null;
+        private Configuration originalConfig;
         private CommonRdbmsReader.Master commonRdbmsReaderMaster;
 
         @Override
         public void init() {
-
             this.originalConfig = super.getPluginJobConf();
             int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     Constant.DEFAULT_FETCH_SIZE);
             if (fetchSize < 1) {
-                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE,
-                        "fetchSize can not less than 1.");
+                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE, "fetchSize can not less than 1.");
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
