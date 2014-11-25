@@ -96,7 +96,7 @@ public class ResultSetReadProxy {
 							.asDataXException(
 									DBUtilErrorCode.UNSUPPORTED_TYPE,
 									String.format(
-											"DataX 不支持数据库读取这种字段类型. ColumnName:[%s], ColumnType:[%s], ColumnClassName:[%s].",
+											"DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s].",
 											metaData.getColumnName(i),
 											metaData.getColumnType(i),
 											metaData.getColumnClassName(i)));

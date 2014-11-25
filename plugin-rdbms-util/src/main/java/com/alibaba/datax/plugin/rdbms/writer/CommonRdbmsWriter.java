@@ -452,7 +452,7 @@ public class CommonRdbmsWriter {
 							.asDataXException(
 									DBUtilErrorCode.UNSUPPORTED_TYPE,
 									String.format(
-											"DataX 不支持数据库写入这种字段类型. ColumnName:[%s], ColumnType:[%d], ColumnTypeName:[%s].",
+											"DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
 											this.resultSetMetaData.getLeft()
 													.get(i),
 											this.resultSetMetaData.getMiddle()
