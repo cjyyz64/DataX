@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -202,8 +201,9 @@ public class CommonRdbmsWriter {
 			Connection connection = DBUtil.getConnection(DATABASE_TYPE,
 					this.jdbcUrl, username, password);
 
-			dealSessionConf(connection,
-					writerSliceConfig.getList(Key.SESSION, String.class));
+			DBUtil.dealWithSessionConfig(connection,
+					writerSliceConfig.getList(Key.SESSION, String.class),
+					DATABASE_TYPE, BASIC_MESSAGE);
 
 			int tableNumber = writerSliceConfig.getInt(
 					Constant.TABLE_NUMBER_MARK).intValue();
@@ -338,37 +338,6 @@ public class CommonRdbmsWriter {
 			} finally {
 				DBUtil.closeDBResources(preparedStatement, null);
 			}
-		}
-
-		private static void dealSessionConf(Connection conn,
-				List<String> sessions) {
-			if (null == sessions || sessions.isEmpty()) {
-				return;
-			}
-
-			Statement stmt;
-			try {
-				stmt = conn.createStatement();
-			} catch (SQLException e) {
-				throw DataXException.asDataXException(
-						DBUtilErrorCode.SET_SESSION_ERROR, String
-								.format("执行 session 设置失败. 上下文信息是:[%s] .",
-										BASIC_MESSAGE), e);
-			}
-
-			for (String sessionSql : sessions) {
-				LOG.info("execute sql:[{}]", sessionSql);
-				try {
-					DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
-				} catch (SQLException e) {
-					throw DataXException.asDataXException(
-							DBUtilErrorCode.SET_SESSION_ERROR, String.format(
-									"执行 session 设置失败. 上下文信息是:[%s] .",
-									BASIC_MESSAGE), e);
-				}
-			}
-
-			DBUtil.closeDBResources(stmt, null);
 		}
 
 		// 直接使用了两个类变量：columnNumber,resultSetMetaData
