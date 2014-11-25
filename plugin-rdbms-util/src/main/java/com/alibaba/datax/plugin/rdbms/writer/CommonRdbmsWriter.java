@@ -377,7 +377,13 @@ public class CommonRdbmsWriter {
 								.asString());
 					} else {
 						java.sql.Date sqlDate = null;
-						utilDate = record.getColumn(i).asDate();
+						try {
+							utilDate = record.getColumn(i).asDate();
+						} catch (DataXException e) {
+							throw new SQLException(String.format(
+									"Date 类型转换错误：[%s]", record.getColumn(i)));
+						}
+
 						if (null != utilDate) {
 							sqlDate = new java.sql.Date(utilDate.getTime());
 						}
@@ -387,7 +393,13 @@ public class CommonRdbmsWriter {
 
 				case Types.TIME:
 					java.sql.Time sqlTime = null;
-					utilDate = record.getColumn(i).asDate();
+					try {
+						utilDate = record.getColumn(i).asDate();
+					} catch (DataXException e) {
+						throw new SQLException(String.format(
+								"TIME 类型转换错误：[%s]", record.getColumn(i)));
+					}
+
 					if (null != utilDate) {
 						sqlTime = new java.sql.Time(utilDate.getTime());
 					}
@@ -396,7 +408,13 @@ public class CommonRdbmsWriter {
 
 				case Types.TIMESTAMP:
 					java.sql.Timestamp sqlTimestamp = null;
-					utilDate = record.getColumn(i).asDate();
+					try {
+						utilDate = record.getColumn(i).asDate();
+					} catch (DataXException e) {
+						throw new SQLException(String.format(
+								"TIMESTAMP 类型转换错误：[%s]", record.getColumn(i)));
+					}
+
 					if (null != utilDate) {
 						sqlTimestamp = new java.sql.Timestamp(
 								utilDate.getTime());
