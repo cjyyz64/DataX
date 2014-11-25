@@ -1,6 +1,6 @@
 {
-    "name": "pgreader",
-    "class": "com.alibaba.datax.plugin.reader.pgreader.PgReader",
+    "name": "oraclereader",
+    "class": "com.alibaba.datax.plugin.reader.oraclereader.OracleReader",
     "description": "useScene: prod. mechanism: Jdbc connection using the database, execute select sql, retrieve data from the ResultSet. warn: The more you know about the database, the less problems you encounter.",
-    "developer": "liuyiyi.ly, bug reported to : liuyiyi.ly@alibaba-inc.com"
+    "developer": "chinan.hjc, bug reported to : chinan.hjc@alibaba-inc.com"
 }
