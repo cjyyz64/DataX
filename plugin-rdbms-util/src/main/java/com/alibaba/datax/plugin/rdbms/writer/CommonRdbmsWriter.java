@@ -201,10 +201,6 @@ public class CommonRdbmsWriter {
 			Connection connection = DBUtil.getConnection(DATABASE_TYPE,
 					this.jdbcUrl, username, password);
 
-			DBUtil.dealWithSessionConfig(connection,
-					writerSliceConfig.getList(Key.SESSION, String.class),
-					DATABASE_TYPE, BASIC_MESSAGE);
-
 			int tableNumber = writerSliceConfig.getInt(
 					Constant.TABLE_NUMBER_MARK).intValue();
 			if (tableNumber != 1) {
@@ -224,6 +220,10 @@ public class CommonRdbmsWriter {
 
 			Connection connection = DBUtil.getConnection(DATABASE_TYPE,
 					this.jdbcUrl, username, password);
+
+			// session config .etc related
+			DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
+					DATABASE_TYPE, BASIC_MESSAGE);
 
 			// 用于写入数据的时候的类型根据目的表字段类型转换
 			this.resultSetMetaData = DBUtil.getColumnMetaData(connection,

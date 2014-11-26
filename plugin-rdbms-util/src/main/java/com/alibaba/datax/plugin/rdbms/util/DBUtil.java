@@ -1,7 +1,9 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -356,10 +358,11 @@ public final class DBUtil {
 
 	// warn:until now, only oracle need to handle session config.
 	public static void dealWithSessionConfig(Connection conn,
-			List<String> sessionConfig, DataBaseType databaseType,
-			String message) {
+			Configuration config, DataBaseType databaseType, String message) {
 		switch (databaseType) {
 		case Oracle:
+			List<String> sessionConfig = config.getList(Key.SESSION,
+					new ArrayList<String>(), String.class);
 			DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
 			break;
 		default:
