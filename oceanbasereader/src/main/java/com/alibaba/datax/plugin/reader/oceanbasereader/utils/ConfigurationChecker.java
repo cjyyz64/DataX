@@ -26,7 +26,7 @@ public class ConfigurationChecker {
             for (JSONObject connection : connections){
                 Configuration cfg = Configuration.from(connection);
                 String url = cfg.getString(Key.CONFIG_URL,"");
-                Preconditions.checkArgument(!Strings.isNullOrEmpty(url), "%s not provide,yours []", Key.CONFIG_URL, connection);
+                Preconditions.checkArgument(!Strings.isNullOrEmpty(url), "%s not provide,yours %s", Key.CONFIG_URL, connection);
             }
         }
 
