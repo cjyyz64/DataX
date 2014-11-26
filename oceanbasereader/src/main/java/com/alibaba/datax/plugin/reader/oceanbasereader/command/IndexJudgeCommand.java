@@ -111,6 +111,7 @@ public enum IndexJudgeCommand implements Command{
 	protected abstract boolean meet(Expression expr, Set<Index> indexes);
 
 	public static Command getCommand(Expression expr, Set<Index> indexes){
+        if(expr == null) return new WholeTableScanCommand();
 		IndexJudgeCommand[] commands = new IndexJudgeCommand[]{IndexScanCommand,PrefixScanCommand};//���ȼ�
 		for(IndexJudgeCommand command : commands){
 			if(command.meet(expr, indexes)) return command;
