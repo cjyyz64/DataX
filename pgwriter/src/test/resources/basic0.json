@@ -26,10 +26,10 @@
                             }
                         ],
                         "preSql": [
-                            "delete from @table where name = 'xxx';"
+                            "update @table set signup_date = now() where name = 'xxx';"
                         ],
                         "postSql": [
-                            "update @table set signup_date = now() where name='xxx';"
+                            "delete from @table where name = 'xxx';"
                         ],
                         "session": [
                         ]

@@ -25,7 +25,8 @@ public class PgReader extends Reader {
             int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     Constant.DEFAULT_FETCH_SIZE);
             if (fetchSize < 1) {
-                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE, "fetchSize can not less than 1.");
+            	throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
+					String.format("fetchSize : [%d] 设置值不能小于 1.", fetchSize));
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 

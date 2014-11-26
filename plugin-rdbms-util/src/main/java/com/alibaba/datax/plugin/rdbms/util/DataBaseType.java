@@ -81,6 +81,8 @@ public enum DataBaseType {
                 break;
             case DB2:
                 break;
+            case PostgreSQL:
+            	break;
             default:
                 throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }

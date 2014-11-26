@@ -52,6 +52,7 @@
         <module>streamwriter</module>
         <module>otswriter</module>
         <module>oraclewriter</module>
+		<module>pgwriter</module>
 
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
