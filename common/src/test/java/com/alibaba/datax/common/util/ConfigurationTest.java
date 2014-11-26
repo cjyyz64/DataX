@@ -619,6 +619,9 @@ public class ConfigurationTest {
         Assert.assertEquals("gmt_modified >= 20141125", conf.getString("core.where"));
         Assert.assertEquals(Integer.valueOf(1), conf.getInt("errorLimit.record"));
         Assert.assertEquals(Double.valueOf(0.5), conf.getDouble("errorLimit.percentage"));
+
+        // 依然能够转回来
+        Configuration.from(conf.toJSON());
     }
 
 }
