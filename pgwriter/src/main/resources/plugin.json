@@ -1,0 +1,6 @@
+{
+    "name": "pgwriter",
+    "class": "com.alibaba.datax.plugin.writer.pgwriter.PgWriter",
+    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute insert sql. warn: The more you know about the database, the less problems you encounter.",
+    "developer": "liuyiyi.ly, bug reported to : liuyiyi.ly@alibaba-inc.com"
+}
