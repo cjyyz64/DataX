@@ -1,28 +1,17 @@
 package com.alibaba.datax.common.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.CharUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.CharUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import java.io.*;
+import java.util.*;
 
 /**
  * Configuration 提供多级JSON配置信息无损存储 <br>
@@ -75,7 +64,8 @@ public class Configuration {
 	/**
 	 * 从JSON字符串加载Configuration
 	 */
-	public static Configuration from(final String json) {
+	public static Configuration from(String json) {
+        json = StrUtil.replaceVariable(json);
 		checkJSON(json);
 
 		try {
@@ -87,7 +77,7 @@ public class Configuration {
 
 	}
 
-	/**
+    /**
 	 * 从包括json的File对象加载Configuration
 	 */
 	public static Configuration from(File file) {
