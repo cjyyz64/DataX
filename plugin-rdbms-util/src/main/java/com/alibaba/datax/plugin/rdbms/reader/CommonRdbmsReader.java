@@ -92,8 +92,6 @@ public class CommonRdbmsReader {
 				RecordSender recordSender,
 				SlavePluginCollector slavePluginCollector, int fetchSize) {
 			String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
-			List<String> sessionConfig = readerSliceConfig.getList(Key.SESSION,
-					new ArrayList<String>(), String.class);
 			String formattedSql = null;
 
 			try {
@@ -108,13 +106,13 @@ public class CommonRdbmsReader {
 			Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl,
 					username, password);
 
+			// session config .etc related
+			DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
+					DATABASE_TYPE, BASIC_MESSAGE);
+
 			int columnNumber = 0;
 			ResultSet rs = null;
 			try {
-				// session config .etc related
-				DBUtil.dealWithSessionConfig(conn, sessionConfig,
-						DATABASE_TYPE, BASIC_MESSAGE);
-
 				rs = DBUtil.query(conn, querySql, fetchSize);
 				ResultSetMetaData metaData = rs.getMetaData();
 				columnNumber = metaData.getColumnCount();
