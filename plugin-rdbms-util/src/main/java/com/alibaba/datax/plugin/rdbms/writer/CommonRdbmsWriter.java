@@ -200,8 +200,7 @@ public class CommonRdbmsWriter {
             Connection connection = DBUtil.getConnection(DATABASE_TYPE,
                     this.jdbcUrl, username, password);
 
-            DBUtil.dealWithSessionConfig(connection,
-                    writerSliceConfig.getList(Key.SESSION, String.class),
+            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     DATABASE_TYPE, BASIC_MESSAGE);
 
             int tableNumber = writerSliceConfig.getInt(
