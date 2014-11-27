@@ -12,9 +12,9 @@
                             "signup_date"
                         ],
                         "where": "",
-                        "session": {
+                        "session": [
 
-                        },
+                        ],
                         "connection": [
                             {
                                 "table": [
