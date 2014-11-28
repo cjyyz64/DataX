@@ -29,7 +29,7 @@ public class OtsWriterSlaveProxy {
     private OTS ots = null;
 
     public void init(Configuration configuration) {
-        LOG.info("OTSWriter slave parameter: {}", configuration.toJSON());
+        //LOG.info("OTSWriter slave parameter: {}", configuration.toJSON());
         conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         
         ClientConfiguration clientConfigure = new ClientConfiguration();
