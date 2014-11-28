@@ -83,7 +83,7 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
         return values;
     }
     
-    public void test(List<PrimaryKeyType> pk) {
+    public void test(List<PrimaryKeyType> pk) throws Exception {
         int lineCount = 500 + (new Random()).nextInt(500);
         int splitCount = 1 + (new Random()).nextInt(10);
         
@@ -113,7 +113,7 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
         assertEquals(true, Utils.checkOutput(base.getOts(), readerConf.getConf(), noteRecordForTest));
     }
     
-    public void test(PrimaryKeyType [][] types) {
+    public void test(PrimaryKeyType [][] types) throws Exception {
         for (PrimaryKeyType [] pkTypes: types) {
             test(Arrays.asList(pkTypes));
         }
@@ -123,9 +123,10 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
      * 测试不同PK组合数据，测试Reader的正确性
      * 输入：混合的PK列，详见：getPKTypes()
      * 期望：期望程序能正常处理每种组合，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testMultiPKColumn() {
+    public void testMultiPKColumn() throws Exception {
         test(getPKTypes());
     }
     
@@ -139,9 +140,10 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
      *      adviceNum = 19
      *      split = []
      * 期望：期望能切分为1份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerEmptyPoints() {
+    public void testIntegerEmptyPoints() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -182,9 +184,10 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
      *      adviceNum = 3
      *      split = [Long.MIN_VALUE, -1121232, 0, 1328978, Long.MAX_VALUE]
      * 期望：期望能切分为6份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerPoints() {
+    public void testIntegerPoints() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -234,9 +237,10 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
      *      adviceNum = 19
      *      split = []
      * 期望：期望能切分为1份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringEmptyPoints() {
+    public void testStringEmptyPoints() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.STRING);
@@ -277,9 +281,10 @@ public class UserSpecialPointSplitRangeFunctiontest extends SomketestTemplate{
      *      adviceNum = 99
      *      split:["", "0", "A", "S中国@#￥……^&*（））“”''`《》？：”|\\/S", "杭州...."]
      * 期望：期望能切分为6份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringPoints() {
+    public void testStringPoints() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.STRING);

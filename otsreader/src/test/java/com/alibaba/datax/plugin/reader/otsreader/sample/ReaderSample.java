@@ -38,7 +38,7 @@ public class ReaderSample {
     
     private static ReaderConf readerConf = null;
     
-    private static void insertData() {
+    private static void insertData() throws Exception {
         List<PrimaryKeyType> pkType = new ArrayList<PrimaryKeyType>();
         pkType.add(PrimaryKeyType.STRING);
         pkType.add(PrimaryKeyType.STRING);
@@ -55,7 +55,7 @@ public class ReaderSample {
         t.close();
     }
     
-    public static void prepareData() {
+    public static void prepareData() throws Exception {
         insertData();
         
         readerConf = new ReaderConf();

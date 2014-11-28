@@ -55,7 +55,7 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
         return types;
     }
     
-    public void test(List<PrimaryKeyType> pk) {
+    public void test(List<PrimaryKeyType> pk) throws Exception {
         int lineCount = 500 + (new Random()).nextInt(500);
         int splitCount = 1 + (new Random()).nextInt(10);
         
@@ -81,7 +81,7 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
         assertEquals(true, Utils.checkOutput(base.getOts(), readerConf.getConf(), noteRecordForTest));
     }
     
-    public void test(PrimaryKeyType [][] types) {
+    public void test(PrimaryKeyType [][] types) throws Exception {
         for (PrimaryKeyType [] pkTypes: types) {
             test(Arrays.asList(pkTypes));
         }
@@ -91,9 +91,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      * 测试不同PK组合数据，测试Reader的正确性
      * 输入：混合的PK列，详见：getPKTypes()
      * 期望：期望程序能正常处理每种组合，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testMultiPKColumn() {
+    public void testMultiPKColumn() throws Exception {
         test(getPKTypes());
     }
     
@@ -103,9 +104,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      begin = ["", INF_MIN, INF_MIN, INF_MIN], 
      *      end = ["\\:中国@#￥……^&*（））“”''`《》？：”|\\/", INF_MAX, INF_MAX, INF_MAX]
      * 期望：系统能正常切分特殊字符串，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testSpecialString() {
+    public void testSpecialString() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.STRING);
@@ -144,9 +146,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      begin = [Long.MIN_VALUE, INF_MIN, INF_MIN, INF_MIN]
      *      end = [Long.MAX_VALUE, INF_MAX, INF_MAX, INF_MAX]
      * 期望：系统能正常切分边界值，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testSpecialInteger() {
+    public void testSpecialInteger() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -186,9 +189,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      end = [200, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 300
      * 期望：能够拆分出156份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerSplitNoEnoughRange() {
+    public void testIntegerSplitNoEnoughRange() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -230,9 +234,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = []
      *      adviceNum = 9
      * 期望：期望能切分为9份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerEmptyBeginAndEnd() {
+    public void testIntegerEmptyBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -262,9 +267,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [INF_MAX, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 132
      * 期望：期望能切分为100份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerBeginAndINFMAXEnd() {
+    public void testIntegerBeginAndINFMAXEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
@@ -304,9 +310,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [INF_MIN, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 132
      * 期望：期望能切分为100份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerBeginAndINFMINEnd() {
+    public void testIntegerBeginAndINFMINEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
@@ -346,9 +353,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [-1, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 12
      * 期望：期望能切分为12份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerINFMAXBeginAndEnd() {
+    public void testIntegerINFMAXBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
@@ -388,9 +396,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [-1, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 12
      * 期望：期望能切分为12份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerINFMINBeginAndEnd() {
+    public void testIntegerINFMINBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
@@ -430,9 +439,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [99, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 2
      * 期望：期望能切分为2份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testIntegerBeginAndEnd() {
+    public void testIntegerBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
@@ -473,9 +483,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = []
      *      adviceNum = 3
      * 期望：期望能切分为3份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringEmptyBeginAndEnd() {
+    public void testStringEmptyBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
@@ -505,9 +516,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [INF_MAX, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 11
      * 期望：期望能切分为11份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringBeginAndINFMAXEnd() {
+    public void testStringBeginAndINFMAXEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
@@ -547,9 +559,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = [INF_MIN, INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 11
      * 期望：期望能切分为11份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringBeginAndINFMINEnd() {
+    public void testStringBeginAndINFMINEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
@@ -589,9 +602,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = ["", INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 21
      * 期望：期望能切分为21份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringINFMAXBeginAndEnd() {
+    public void testStringINFMAXBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
@@ -631,9 +645,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = ["99", INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 21
      * 期望：期望能切分为21份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringINFMINBeginAndEnd() {
+    public void testStringINFMINBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
@@ -673,9 +688,10 @@ public class SystemAutoSplitRangeFunctiontest extends SomketestTemplate{
      *      End = ["中国", INF_MAX, INF_MAX, INF_MAX]
      *      adviceNum = 21
      * 期望：期望能切分为21份，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testStringBeginAndEnd() {
+    public void testStringBeginAndEnd() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);

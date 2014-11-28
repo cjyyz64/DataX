@@ -19,7 +19,7 @@ public class TestMaster {
     private static String tableName = "ots_writer_test_master";
     private static BaseTest base = new BaseTest(tableName);
     
-    public static void prepare() {
+    public static void prepare() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.STRING);
         

@@ -92,7 +92,7 @@ public class OtsReaderMasterProxy {
         ParamChecker.checkInputSplitPoints(meta, range, direction, points);
         conf.setRangeSplit(points);
 
-        LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
+        //LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
     }
 
     public List<Configuration> split(int num) throws Exception {

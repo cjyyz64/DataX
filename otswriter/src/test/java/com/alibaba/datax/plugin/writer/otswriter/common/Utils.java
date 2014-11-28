@@ -23,11 +23,14 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.plugin.writer.otswriter.callable.CreateTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.callable.DeleteTableCallable;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector.RecordAndMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSRowPrimaryKey;
+import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.CapacityUnit;
 import com.aliyun.openservices.ots.model.ColumnType;
@@ -104,7 +107,11 @@ public class Utils {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
-            ots.deleteTable(deleteTableRequest);
+            RetryHelper.executeWithRetry(
+                    new DeleteTableCallable(ots, deleteTableRequest),
+                    2,
+                    1000
+                    );
         } catch (Exception e) {
             //e.printStackTrace();
         }
@@ -116,13 +123,13 @@ public class Utils {
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(tableMeta);
         createTableRequest.setReservedThroughput(capacityUnit);
-        try {
-            ots.createTable(createTableRequest);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
-        Thread.sleep(5 * 1000);
+        RetryHelper.executeWithRetry(
+                new CreateTableCallable(ots, createTableRequest),
+                5,
+                1000
+                );
+
+        Thread.sleep(10000);
     }
 
     public static Configuration loadConf() {

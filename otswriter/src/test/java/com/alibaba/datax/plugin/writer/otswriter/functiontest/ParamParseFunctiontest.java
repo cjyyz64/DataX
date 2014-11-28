@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -65,6 +66,11 @@ public class ParamParseFunctiontest {
         }
         sb.append("}");
         return sb.toString();
+    }
+    
+    @Before
+    public void waiting() throws InterruptedException {
+        Thread.sleep(1000);
     }
 
     private Map<String, String> getLines() {

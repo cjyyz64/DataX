@@ -45,7 +45,7 @@ public class RecordCountNotMatchConfigErrorFunctiontest{
     public static List<ColumnType> attr = new ArrayList<ColumnType>();
     
     @BeforeClass
-    public static void prepare() {
+    public static void prepare() throws Exception {
         pk.add(PrimaryKeyType.STRING);
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.INTEGER);
