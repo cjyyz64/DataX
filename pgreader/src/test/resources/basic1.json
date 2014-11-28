@@ -1,0 +1,28 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "pgreader",
+                    "parameter": {
+                        "username": "datax",
+                        "password": "datax", 
+                        "column": ["id","'hello'::varchar"],
+                        "splitPk": "id",
+                        "connection": [
+                            {
+                                "table": [
+                                    "user_tbl"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:postgresql://10.98.109.113:3002/datax"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
