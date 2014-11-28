@@ -26,22 +26,22 @@ public class BaseTest{
         ots.shutdown();
     }
     
-    public void createTable(List<PrimaryKeyType> pkType, int readCapacityUnit, int writeCapacityUnit) {
+    public void createTable(List<PrimaryKeyType> pkType, int readCapacityUnit, int writeCapacityUnit) throws Exception {
         Table t = new Table(ots, tableName, pkType);
         t.create(readCapacityUnit, writeCapacityUnit);
     }
     
-    public void createTable(List<PrimaryKeyType> pkType) {
+    public void createTable(List<PrimaryKeyType> pkType) throws Exception {
         createTable(pkType, 5000, 5000);
     }
     
-    public void prepareData(List<PrimaryKeyType> pkType, List<ColumnType> attrTypes, long begin, long rowCount, double nullPercent) {
+    public void prepareData(List<PrimaryKeyType> pkType, List<ColumnType> attrTypes, long begin, long rowCount, double nullPercent) throws Exception {
         Table t = new Table(ots, tableName, pkType, attrTypes, nullPercent);
         t.create(5000, 5000);
         t.insertData(begin, rowCount);
     }
     
-    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) {
+    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) throws Exception {
         List<ColumnType> attriTypes = new ArrayList<ColumnType>();
         attriTypes.add(ColumnType.STRING);
         attriTypes.add(ColumnType.INTEGER);

@@ -27,7 +27,7 @@ public class BaseTest{
         this.tableName = tableName;
     }
     
-    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) {
+    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) throws Exception {
         List<ColumnType> attriTypes = new ArrayList<ColumnType>();
         attriTypes.add(ColumnType.STRING);
         attriTypes.add(ColumnType.INTEGER);

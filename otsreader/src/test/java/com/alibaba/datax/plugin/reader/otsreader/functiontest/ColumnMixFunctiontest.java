@@ -41,9 +41,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试全PK的导出正确性
      * 输入：column = [pk_0~pk_3]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testAllPK() {
+    public void testAllPK() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -80,9 +81,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试全PK，且有重复的PK列的导出正确性
      * 输入：column = [pk_0~pk_3, pk_0, pk_3, pk_1, pk_0, pk_1, pk_0, pk_3, pk_3, pk_2]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testAllPKAndRepeat() {
+    public void testAllPKAndRepeat() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -129,9 +131,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试全Attri的导出正确性
      * 输入：column = [attr_0~attr_16]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testAllAttri() {
+    public void testAllAttri() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -168,9 +171,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试全Attri,且有重复的Attr的导出正确性
      * 输入：column = [attr_0~attr_16, attr_2, attr_10, attr_0, attr_0, attr_5, attr_0, attr_0, attr_9, attr_0, attr_16]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testAllAttriAndRepeat() {
+    public void testAllAttriAndRepeat() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -217,9 +221,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试PK和Attri混合的导出正确性
      * 输入：column = [pk_0~pk_3, attr_0~attr_16]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testPKAndAttri() {
+    public void testPKAndAttri() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -256,9 +261,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试只有一个列名，但是重复出现
      * 输入：column = [attr_0(重复5次)]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void test1ColumnAndRepeat() {
+    public void test1ColumnAndRepeat() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -302,9 +308,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试PK和Const混合的导出正确性
      * 输入：column = [pk_0~pk_3, const_0~const_9]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testPKAndConst() {
+    public void testPKAndConst() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -341,9 +348,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试Attri和Const的导出正确性
      * 输入：column = [attr_0~attr_9, const_0~const_2]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testAttriAndConst() {
+    public void testAttriAndConst() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);
@@ -380,9 +388,10 @@ public class ColumnMixFunctiontest extends SomketestTemplate{
      * 测试PK、Attri和Const的导出正确性，且PK和Attri都有多个重复列的情况
      * 输入：column = [pk_0~pk_3, attr_0~attr_9, const_0, pk_3, pk_3, pk_0, pk_1, pk_10, attr_0, attr_0, attr_2, attr_1, attr_1, attr_7, attr_0, attr_4, attr_20]
      * 期望：正常导出数据，且数据正确
+     * @throws Exception 
      */
     @Test
-    public void testPKAndAttriAndConst() {
+    public void testPKAndAttriAndConst() throws Exception {
         List<PrimaryKeyType> pk = new ArrayList<PrimaryKeyType>();
         pk.add(PrimaryKeyType.INTEGER);
         pk.add(PrimaryKeyType.STRING);

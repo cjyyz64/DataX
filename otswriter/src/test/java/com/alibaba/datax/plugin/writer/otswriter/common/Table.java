@@ -2,6 +2,9 @@ package com.alibaba.datax.plugin.writer.otswriter.common;
 
 import java.util.List;
 
+import com.alibaba.datax.plugin.writer.otswriter.callable.CreateTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.callable.DeleteTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.CapacityUnit;
 import com.aliyun.openservices.ots.model.ColumnType;
@@ -35,11 +38,15 @@ public class Table {
         this.attriTypes = attriTypes;
     }
     
-    public void create(int readCapacityUnit, int writeCapacityUnit) {
+    public void create(int readCapacityUnit, int writeCapacityUnit) throws Exception {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
-            ots.deleteTable(deleteTableRequest);
+            RetryHelper.executeWithRetry(
+                    new DeleteTableCallable(ots, deleteTableRequest),
+                    2,
+                    1000
+                    );
         } catch (Exception e) {
         }
         
@@ -52,17 +59,14 @@ public class Table {
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(meta);
         createTableRequest.setReservedThroughput(capacityUnit);
-        try {
-            ots.createTable(createTableRequest);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+        
+        RetryHelper.executeWithRetry(
+                new CreateTableCallable(ots, createTableRequest),
+                5,
+                1000
+                );
+
+        Thread.sleep(10000);
     }
     
     public void insertData(long begin, long rowCount) {

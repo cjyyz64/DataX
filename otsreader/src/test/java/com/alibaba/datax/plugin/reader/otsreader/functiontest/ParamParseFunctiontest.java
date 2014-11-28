@@ -107,6 +107,8 @@ public class ParamParseFunctiontest {
         conf.setRangeSplit(splits);
 
         readerConf.setConf(conf);
+        
+        Thread.sleep(1000);
     }
 
     /**
