@@ -1,0 +1,6 @@
+{
+    "name": "oceanbasewriter",
+    "class": "com.alibaba.datax.plugin.writer.oceanbasewriter.OceanbaseWriter",
+    "description": "useScene: prod. mechanism: Jdbc connection using the database, execute insert/replace sql. warn: The more you know about the database, the less problems you encounter.",
+    "developer": "shice.sc, bug reported to : shice.sc@alibaba-inc.com"
+}

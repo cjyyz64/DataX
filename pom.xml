@@ -36,13 +36,14 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
-		<module>postgresqlreader</module>
-		<module>oraclereader</module>
+	<module>postgresqlreader</module>
+	<module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
         <module>txtfilereader</module>
         <module>streamreader</module>
         <module>oceanbasereader</module>
+        <module>ossreader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -52,9 +53,8 @@
         <module>streamwriter</module>
         <module>otswriter</module>
         <module>oraclewriter</module>
-		<module>postgresqlwriter</module>
-        <module>ossreader</module>
-
+        <module>oceanbasewriter</module>
+	<module>postgresqlwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
