@@ -37,7 +37,7 @@
                 "reportInterval": 1000
             },
             "taskGroup": {
-                "class": "com.alibaba.datax.core.container.TaskContainer",
+                "class": "com.alibaba.datax.core.container.TaskGroupContainer",
                 "channel": 3
             }
         },
@@ -45,7 +45,7 @@
             "collector": {
                 "container": {
                     "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupCollector"
+                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                 },
                 "plugin": {
                     "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",

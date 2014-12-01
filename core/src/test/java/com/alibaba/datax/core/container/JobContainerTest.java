@@ -125,7 +125,7 @@ public class JobContainerTest extends CaseInitializer {
         }
 
         initMethod = jobContainer.getClass().getDeclaredMethod(
-                "mergeReaderAndWriterSlicesConfigs", List.class, List.class);
+                "mergeReaderAndWriterTaskConfigs", List.class, List.class);
         initMethod.setAccessible(true);
 
         List<Configuration> mergedConfigs = (List<Configuration>) initMethod
