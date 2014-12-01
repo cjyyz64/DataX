@@ -7,7 +7,8 @@ import com.alibaba.datax.common.plugin.AbstractPlugin;
 import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.runner.AbstractRunner;
-import com.alibaba.datax.core.container.runner.RunnerManager;
+import com.alibaba.datax.core.container.runner.ReaderRunner;
+import com.alibaba.datax.core.container.runner.WriterRunner;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import org.apache.commons.lang3.StringUtils;
 
@@ -136,19 +137,17 @@ public class LoadUtil {
      *
      * @param pluginType
      * @param pluginName
-     * @param slaveId
      * @return
      */
-    public static AbstractRunner loadPluginRunner(PluginType pluginType,
-                                                  String pluginName, int slaveId) {
+    public static AbstractRunner loadPluginRunner(PluginType pluginType, String pluginName) {
         AbstractSlavePlugin slavePlugin = LoadUtil.loadSlavePlugin(pluginType,
                 pluginName);
 
         switch (pluginType) {
             case READER:
-                return RunnerManager.newReaderRunner(slavePlugin, slaveId);
+                return new ReaderRunner(slavePlugin);
             case WRITER:
-                return RunnerManager.newWriterRunner(slavePlugin, slaveId);
+                return new WriterRunner(slavePlugin);
             default:
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.RUNTIME_ERROR,

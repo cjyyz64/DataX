@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.statistics.collector.container.distribute;
+package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
@@ -8,41 +8,43 @@ import com.alibaba.datax.core.util.State;
 import java.util.List;
 import java.util.Map;
 
-public class MasterContainerCollector extends AbstractContainerCollector {
-
-    public MasterContainerCollector(Configuration configuration) {
+/**
+ * Created by jingxing on 14-9-4.
+ */
+public class StandAloneTestMasterCollector extends AbstractContainerCollector {
+    public StandAloneTestMasterCollector(Configuration configuration) {
         super(configuration);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
-        // TODO Auto-generated method stub
+        System.out.println("register ok");
     }
 
     @Override
     public void report(Communication communication) {
-        // TODO Auto-generated method stub
+        System.out.println("master report 2");
     }
 
     @Override
     public Communication collect() {
-        // TODO Auto-generated method stub
-        return null;
+        return new Communication() {{
+            this.setState(State.SUCCESS);
+        }};
     }
 
     @Override
     public State collectState() {
+        return State.SUCCESS;
+    }
+
+    @Override
+    public Communication getCommunication(int id) {
         return null;
     }
 
     @Override
-    public Communication getCommunication(int slaveContainerId) {
-        return null;
-    }
-
-    @Override
-    public List<Communication> getCommunications(List<Integer> slaveContainerIds) {
+    public List<Communication> getCommunications(List<Integer> ids) {
         return null;
     }
 
@@ -50,5 +52,4 @@ public class MasterContainerCollector extends AbstractContainerCollector {
     public Map<Integer, Communication> getCommunicationsMap() {
         return null;
     }
-
 }

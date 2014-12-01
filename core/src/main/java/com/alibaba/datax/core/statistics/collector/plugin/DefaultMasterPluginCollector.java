@@ -2,7 +2,7 @@ package com.alibaba.datax.core.statistics.collector.plugin;
 
 import com.alibaba.datax.common.plugin.MasterPluginCollector;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.datax.core.statistics.communication.Communication;
 
 import java.util.List;
 import java.util.Map;
@@ -19,13 +19,13 @@ public final class DefaultMasterPluginCollector implements MasterPluginCollector
 
     @Override
     public Map<String, List<String>> getMessage() {
-        Metric totalMetric = this.masterContainerCollector.collect();
-        return totalMetric.getMessage();
+        Communication totalCommunication = this.masterContainerCollector.collect();
+        return totalCommunication.getMessage();
     }
 
     @Override
     public List<String> getMessage(String key) {
-        Metric totalMetric = this.masterContainerCollector.collect();
-        return totalMetric.getMessage(key);
+        Communication totalCommunication = this.masterContainerCollector.collect();
+        return totalCommunication.getMessage(key);
     }
 }

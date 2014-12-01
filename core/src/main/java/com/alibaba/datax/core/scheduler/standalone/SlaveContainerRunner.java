@@ -3,45 +3,45 @@ package com.alibaba.datax.core.scheduler.standalone;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.container.SlaveContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.Status;
+import com.alibaba.datax.core.util.State;
 
 /**
  * Created by jingxing on 14-8-28.
  */
 public class SlaveContainerRunner implements Runnable {
 
-	private SlaveContainer slave;
+	private SlaveContainer slaveContainer;
 
-	private Status status;
+	private State state;
 
 	public SlaveContainerRunner(SlaveContainer slave) {
-		this.slave = slave;
-		this.status = Status.SUCCESS;
+		this.slaveContainer = slave;
+		this.state = State.SUCCESS;
 	}
 
 	@Override
 	public void run() {
 		try {
             Thread.currentThread().setName(
-                    String.format("slave-%d", this.slave.getSlaveId()));
-            this.slave.start();
-			this.status = Status.SUCCESS;
+                    String.format("slaveContainer-%d", this.slaveContainer.getSlaveContainerId()));
+            this.slaveContainer.start();
+			this.state = State.SUCCESS;
 		} catch (Throwable e) {
-			this.status = Status.FAIL;
+			this.state = State.FAIL;
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}
 	}
 
-	public SlaveContainer getSlave() {
-		return slave;
+	public SlaveContainer getSlaveContainer() {
+		return slaveContainer;
 	}
 
-	public Status getStatus() {
-		return status;
+	public State getState() {
+		return state;
 	}
 
-	public void setStatus(Status status) {
-		this.status = status;
+	public void setState(State state) {
+		this.state = state;
 	}
 }

@@ -46,7 +46,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		}
 
 		StandAloneScheduler scheduler = new StandAloneScheduler();
-		scheduler.schedule(jobList, new StandAloneTestMasterMetric(
+		scheduler.schedule(jobList, new StandAloneTestMasterCollector(
 				Configuration.newDefault()));
 	}
 }

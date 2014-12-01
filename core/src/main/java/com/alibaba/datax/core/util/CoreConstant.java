@@ -39,9 +39,9 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY = "core.transport.channel.capacity";
 
-	public static final String DATAX_CORE_TRANSPORT_CHANNEL_ID = "core.transport.channel.id";
-
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE = "core.transport.channel.speed.byte";
+
+    public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD = "core.transport.channel.speed.record";
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL = "core.transport.channel.flowControlInterval";
 
@@ -69,6 +69,8 @@ public class CoreConstant {
 
 	public static final String DATAX_JOB_SETTING_SPEED_BYTE = "job.setting.speed.byte";
 
+    public static final String DATAX_JOB_SETTING_SPEED_RECORD = "job.setting.speed.record";
+
 	public static final String DATAX_JOB_SETTING_SPEED_CHANNEL = "job.setting.speed.channel";
 
 	public static final String DATAX_JOB_SETTING_ERRORLIMIT = "job.setting.errorLimit";
@@ -90,7 +92,7 @@ public class CoreConstant {
 
 	public static final String JOB_WRITER_PARAMETER = "writer.parameter";
 
-	public static final String JOB_SLICEID = "sliceId";
+	public static final String JOB_TASKID = "slaveId";
 
 	// ----------------------------- 环境变量 ---------------------------------
 

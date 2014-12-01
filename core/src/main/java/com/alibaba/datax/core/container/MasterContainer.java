@@ -14,11 +14,12 @@ import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.collector.plugin.DefaultMasterPluginCollector;
-import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.Status;
+import com.alibaba.datax.core.util.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,14 +46,14 @@ public class MasterContainer extends AbstractContainer {
     private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper
             .newCurrentThreadClassLoaderSwapper();
 
-    private long masterId;
+    private long masterContainerId;
 
     private String readerPluginName;
 
     private String writerPluginName;
 
     /**
-     * reader和writer master的实例
+     * reader和writer masterContainer的实例
      */
     private Reader.Master readerMaster;
 
@@ -80,7 +81,7 @@ public class MasterContainer extends AbstractContainer {
     }
 
     /**
-     * master主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
+     * masterContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
      * post以及destroy和statistics
      */
     @Override
@@ -90,29 +91,29 @@ public class MasterContainer extends AbstractContainer {
         try {
             this.startTimeStamp = System.currentTimeMillis();
 
-            LOG.debug("master starts to do init ...");
+            LOG.debug("masterContainer starts to do init ...");
             this.init();
-            LOG.debug("master starts to do prepare ...");
+            LOG.debug("masterContainer starts to do prepare ...");
             this.prepare();
-            LOG.debug("master starts to do split ...");
+            LOG.debug("masterContainer starts to do split ...");
             this.split();
-            LOG.debug("master starts to do schedule ...");
+            LOG.debug("masterContainer starts to do schedule ...");
             this.schedule();
-            LOG.debug("master starts to do post ...");
+            LOG.debug("masterContainer starts to do post ...");
             this.post();
 
-            LOG.info("DataX masterId [{}] completed successfully.",
-                    this.masterId);
+            LOG.info("DataX masterContainerId [{}] completed successfully.",
+                    this.masterContainerId);
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 this.destroy();
                 System.gc();
             }
 
-            Metric masterMetric = super.getContainerCollector().collect();
-            masterMetric.setStatus(Status.FAIL);
-            masterMetric.setError(e);
-            super.getContainerCollector().report(masterMetric);
+            Communication communication = super.getContainerCollector().collect();
+            communication.setState(State.FAIL);
+            communication.setThrowable(e);
+            super.getContainerCollector().report(communication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
@@ -127,25 +128,28 @@ public class MasterContainer extends AbstractContainer {
      * reader和writer的初始化
      */
     private void init() {
-        this.masterId = this.configuration.getLong(
+        this.masterContainerId = this.configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, -1);
 
-        if (this.masterId < 0) {
+        if (this.masterContainerId < 0) {
             boolean isStandAloneMode = this.configuration.getString(
                     CoreConstant.DATAX_CORE_SCHEDULER_CLASS).equalsIgnoreCase(
                     StandAloneScheduler.class.getName());
             // standalone模式下默认masterId=0
             if (isStandAloneMode) {
-                LOG.info("Set masterId = 0");
-                this.masterId = 0;
+                LOG.info("Set masterContainerId = 0");
+                this.masterContainerId = 0;
                 this.configuration.set(
                         CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID,
-                        this.masterId);
+                        this.masterContainerId);
             } else {
                 throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
-                        "在[local|distribute]模式下没有设置master id.");
+                        "在[local|distribute]模式下没有设置masterContainer id.");
             }
         }
+
+        Thread.currentThread().setName(
+                String.format("masterContainer-%d", this.masterContainerId));
 
         MasterPluginCollector masterPluginCollector = new DefaultMasterPluginCollector(
                 this.getContainerCollector());
@@ -189,26 +193,54 @@ public class MasterContainer extends AbstractContainer {
     }
 
     private void adjustChannelNumber() {
+        int needChannelNumberByByte = Integer.MAX_VALUE;
+        int needChannelNumberByRecord = Integer.MAX_VALUE;
+
         boolean isByteLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 0) > 0);
         if (isByteLimit) {
-
-            long globalLimitedSpeed = this.configuration
+            long globalLimitedByteSpeed = this.configuration
                     .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE,
                             10 * 1024 * 1024);
 
             // 在byte流控情况下，单个Channel流量最大值必须设置，否则报错！
-            this.configuration.getNecessaryValue(
-                    CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
-                    FrameworkErrorCode.CONFIG_ERROR);
-            long channelLimitedSpeed = this.configuration
-                    .getInt(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
+            Long channelLimitedByteSpeed = this.configuration
+                    .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
+            if(channelLimitedByteSpeed==null || channelLimitedByteSpeed <= 0) {
+                DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                        "在有总bps限速条件下，单个channel的bps值不能为空，也不能为非正数");
+            }
 
-            this.needChannelNumber = (int) (globalLimitedSpeed / channelLimitedSpeed);
+            needChannelNumberByByte = (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
+            needChannelNumberByByte = needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
+            LOG.info("Job set Max-Speed-Byte to " + globalLimitedByteSpeed + " bytes.");
+        }
 
-            LOG.info("Job set Max-Speed-Byte to " + globalLimitedSpeed
-                    + " bytes .");
+        boolean isRecordLimit = (this.configuration.getInt(
+                CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 0)) > 0;
+        if(isRecordLimit) {
+            long globalLimitedRecordSpeed = this.configuration
+                    .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD,
+                            100000);
 
+            Long channelLimitedRecordSpeed = this.configuration
+                    .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
+            if(channelLimitedRecordSpeed==null || channelLimitedRecordSpeed <= 0) {
+                DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                        "在有总tps限速条件下，单个channel的tps值不能为空，也不能为非正数");
+            }
+
+            needChannelNumberByRecord = (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
+            needChannelNumberByRecord = needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
+            LOG.info("Job set Max-Speed-Record to " + globalLimitedRecordSpeed + " records.");
+        }
+
+        // 取较小值
+        this.needChannelNumber = needChannelNumberByByte<needChannelNumberByRecord?
+                needChannelNumberByByte : needChannelNumberByRecord;
+
+        // 如果从byte或record上设置了needChannelNumber则退出
+        if(this.needChannelNumber < Integer.MAX_VALUE) {
             return;
         }
 
@@ -246,12 +278,12 @@ public class MasterContainer extends AbstractContainer {
         /**
          * 通过获取配置信息得到每个slaveContainer需要运行哪些slices任务
          */
-        int averSlicesPerChannel = sliceNumber / this.needChannelNumber;
-        List<Configuration> slaveContainerConfigs = distributeSlicesToSlaveContainer(
-                averSlicesPerChannel, this.needChannelNumber,
+        int averSlavesPerChannel = sliceNumber / this.needChannelNumber;
+        List<Configuration> slaveContainerConfigs = distributeSlavesToSlaveContainer(
+                averSlavesPerChannel, this.needChannelNumber,
                 channelsPerSlaveContainer);
 
-        LOG.info("Scheduler starts [{}] slaves .", slaveContainerConfigs.size());
+        LOG.info("Scheduler starts [{}] slaveContainers .", slaveContainerConfigs.size());
 
         String schedulerClassName = this.configuration
                 .getString(CoreConstant.DATAX_CORE_SCHEDULER_CLASS);
@@ -301,7 +333,7 @@ public class MasterContainer extends AbstractContainer {
             transferCosts = 1L;
         }
 
-        Metric masterMetric = super.getContainerCollector().collect();
+        Communication communication = super.getContainerCollector().collect();
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
@@ -315,16 +347,16 @@ public class MasterContainer extends AbstractContainer {
                 "任务总计耗时",
                 String.valueOf(totalCosts) + "s",
                 "任务平均流量",
-                StrUtil.stringify(masterMetric.getReadSucceedBytes()
+                StrUtil.stringify(communication.getLongCounter(CommunicationManager.READ_SUCCEED_BYTES)
                         / transferCosts)
                         + "/s",
                 "记录写入速度",
-                String.valueOf(masterMetric.getReadSucceedRecords()
+                String.valueOf(communication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS)
                         / transferCosts)
                         + "rec/s", "读出记录总数",
-                String.valueOf(masterMetric.getTotalReadRecords()),
+                String.valueOf(CommunicationManager.getTotalReadRecords(communication)),
                 "读写失败总数",
-                String.valueOf(masterMetric.getErrorRecords())));
+                String.valueOf(CommunicationManager.getTotalErrorRecords(communication))));
     }
 
     /**
@@ -405,9 +437,9 @@ public class MasterContainer extends AbstractContainer {
                 .split(adviceNumber);
         if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    "reader切分的slice数目不能小于等于0");
+                    "reader切分的slave数目不能小于等于0");
         }
-        LOG.info("DataX Reader.Master [{}] splits to [{}] slices.",
+        LOG.info("DataX Reader.Master [{}] splits to [{}] slaves.",
                 this.readerPluginName, readerSlicesConfigs.size());
         classLoaderSwapper.restoreCurrentThreadClassLoader();
         return readerSlicesConfigs;
@@ -421,9 +453,9 @@ public class MasterContainer extends AbstractContainer {
                 .split(readerSlicesNumber);
         if (writerSlicesConfigs == null || writerSlicesConfigs.size() <= 0) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    "writer切分的slice不能小于等于0");
+                    "writer切分的slave不能小于等于0");
         }
-        LOG.info("DataX Writer [{}] splits to [{}] slices.",
+        LOG.info("DataX Writer [{}] splits to [{}] slaves.",
                 this.writerPluginName, writerSlicesConfigs.size());
         classLoaderSwapper.restoreCurrentThreadClassLoader();
 
@@ -444,7 +476,7 @@ public class MasterContainer extends AbstractContainer {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     String.format(
-                            "reader切分的slice数目[%d]不等于writer切分的slice数目[%d].",
+                            "reader切分的slave数目[%d]不等于writer切分的slave数目[%d].",
                             readerSlicesConfigs.size(),
                             writerSlicesConfigs.size()));
         }
@@ -460,7 +492,7 @@ public class MasterContainer extends AbstractContainer {
                     .set(CoreConstant.JOB_WRITER_NAME, this.writerPluginName);
             sliceConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerSlicesConfigs.get(i));
-            sliceConfig.set(CoreConstant.JOB_SLICEID, i);
+            sliceConfig.set(CoreConstant.JOB_TASKID, i);
             contentConfigs.add(sliceConfig);
         }
 
@@ -468,8 +500,8 @@ public class MasterContainer extends AbstractContainer {
     }
 
     /**
-     * 这里比较复杂，分两步整合 1. slices到channel 2. channel到slaveContainer
-     * 合起来考虑，其实就是把slices整合到slaveContainer中，需要满足计算出的channel数，同时不能多起channel
+     * 这里比较复杂，分两步整合 1. slaves到channel 2. channel到slaveContainer
+     * 合起来考虑，其实就是把slaves整合到slaveContainer中，需要满足计算出的channel数，同时不能多起channel
      * <p/>
      * example:
      * <p/>
@@ -485,111 +517,111 @@ public class MasterContainer extends AbstractContainer {
      * 先按平均为3个slices找4个channel，设置subJobId为0，
      * 接下来就像发牌一样轮询分配slice到剩下的包含平均channel数的slice中
      *
-     * @param averSlicesPerChannel
+     * @param averSlavesPerChannel
      * @param channelNumber
      * @param channelsPerSlaveContainer
      * @return 每个slaveContainer独立的全部配置
      */
     @SuppressWarnings("serial")
-    private List<Configuration> distributeSlicesToSlaveContainer(
-            int averSlicesPerChannel, int channelNumber,
+    private List<Configuration> distributeSlavesToSlaveContainer(
+            int averSlavesPerChannel, int channelNumber,
             int channelsPerSlaveContainer) {
-        Validate.isTrue(averSlicesPerChannel > 0 && channelNumber > 0
+        Validate.isTrue(averSlavesPerChannel > 0 && channelNumber > 0
                         && channelsPerSlaveContainer > 0,
-                "每个channel的平均slice数[averSlicesPerChannel]，channel数目[channelNumber]，每个slave的平均channel数[channelsPerSlaveContainer]都应该为正数");
-        List<Configuration> slicesConfigs = this.configuration
+                "每个channel的平均slave数[averSlicesPerChannel]，channel数目[channelNumber]，每个slave的平均channel数[channelsPerSlaveContainer]都应该为正数");
+        List<Configuration> slavesConfigs = this.configuration
                 .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-        int slavesNumber = channelNumber / channelsPerSlaveContainer;
+        int slaveContainerNumber = channelNumber / channelsPerSlaveContainer;
         int leftChannelNumber = channelNumber % channelsPerSlaveContainer;
         if (leftChannelNumber > 0) {
-            slavesNumber += 1;
+            slaveContainerNumber += 1;
         }
 
         /**
          * 如果只有一个slave，直接打标返回
          */
-        if (slavesNumber == 1) {
-            final Configuration slaveConfig = this.configuration.clone();
+        if (slaveContainerNumber == 1) {
+            final Configuration slaveContainerConfig = this.configuration.clone();
             /**
              * configure的clone不能clone出
              */
-            slaveConfig.set(CoreConstant.DATAX_JOB_CONTENT, this.configuration
+            slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT, this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT));
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
+            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
                     channelNumber);
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
             return new ArrayList<Configuration>() {
                 {
-                    add(slaveConfig);
+                    add(slaveContainerConfig);
                 }
             };
         }
-        List<Configuration> slaveConfigs = new ArrayList<Configuration>();
+        List<Configuration> slaveContainerConfigs = new ArrayList<Configuration>();
         /**
          * 将每个slaveConfig中content的配置清空
          */
-        for (int i = 0; i < slavesNumber; i++) {
-            Configuration slaveConfig = this.configuration.clone();
-            List<Configuration> slaveJobContent = slaveConfig
+        for (int i = 0; i < slaveContainerNumber; i++) {
+            Configuration slaveContainerConfig = this.configuration.clone();
+            List<Configuration> slaveContainerJobContent = slaveContainerConfig
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-            slaveJobContent.clear();
-            slaveConfig.set(CoreConstant.DATAX_JOB_CONTENT, slaveJobContent);
+            slaveContainerJobContent.clear();
+            slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT, slaveContainerJobContent);
 
-            slaveConfigs.add(slaveConfig);
+            slaveContainerConfigs.add(slaveContainerConfig);
         }
 
-        int slicesConfigIndex = 0;
+        int slaveConfigIndex = 0;
         int channelIndex = 0;
-        int slavesConfigIndex = 0;
+        int slaveContainerConfigIndex = 0;
 
         /**
          * 先处理掉slaveContainer包含channel数不是平均值的slave
          */
         if (leftChannelNumber > 0) {
-            Configuration slaveConfig = slaveConfigs.get(slavesConfigIndex);
+            Configuration slaveContainerConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
             for (; channelIndex < leftChannelNumber; channelIndex++) {
-                for (int i = 0; i < averSlicesPerChannel; i++) {
-                    List<Configuration> slaveJobConfigs = slaveConfig
+                for (int i = 0; i < averSlavesPerChannel; i++) {
+                    List<Configuration> slaveContainerJobContent = slaveContainerConfig
                             .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-                    slaveJobConfigs.add(slicesConfigs.get(slicesConfigIndex++));
-                    slaveConfig.set(CoreConstant.DATAX_JOB_CONTENT,
-                            slaveJobConfigs);
+                    slaveContainerJobContent.add(slavesConfigs.get(slaveConfigIndex++));
+                    slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT,
+                            slaveContainerJobContent);
                 }
             }
 
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
+            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
                     leftChannelNumber);
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID,
-                    slavesConfigIndex++);
+            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID,
+                    slaveContainerConfigIndex++);
         }
 
         /**
          * 下面需要轮询分配，并打上channel数和slaveId标记
          */
-        int equalDivisionStartIndex = slavesConfigIndex;
-        for (; slicesConfigIndex < slicesConfigs.size()
-                && equalDivisionStartIndex < slaveConfigs.size(); ) {
-            for (slavesConfigIndex = equalDivisionStartIndex; slavesConfigIndex < slaveConfigs
-                    .size() && slicesConfigIndex < slicesConfigs.size(); slavesConfigIndex++) {
-                Configuration slaveConfig = slaveConfigs.get(slavesConfigIndex);
-                List<Configuration> slaveJobConfigs = slaveConfig
+        int equalDivisionStartIndex = slaveContainerConfigIndex;
+        for (; slaveConfigIndex < slavesConfigs.size()
+                && equalDivisionStartIndex < slaveContainerConfigs.size(); ) {
+            for (slaveContainerConfigIndex = equalDivisionStartIndex; slaveContainerConfigIndex < slaveContainerConfigs
+                    .size() && slaveConfigIndex < slavesConfigs.size(); slaveContainerConfigIndex++) {
+                Configuration slaveContainerConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
+                List<Configuration> slaveContainerJobContent = slaveContainerConfig
                         .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-                slaveJobConfigs.add(slicesConfigs.get(slicesConfigIndex++));
-                slaveConfig
-                        .set(CoreConstant.DATAX_JOB_CONTENT, slaveJobConfigs);
+                slaveContainerJobContent.add(slavesConfigs.get(slaveConfigIndex++));
+                slaveContainerConfig
+                        .set(CoreConstant.DATAX_JOB_CONTENT, slaveContainerJobContent);
             }
         }
 
-        for (slavesConfigIndex = equalDivisionStartIndex; slavesConfigIndex < slaveConfigs
-                .size(); ) {
-            Configuration slaveConfig = slaveConfigs.get(slavesConfigIndex);
+        for (slaveContainerConfigIndex = equalDivisionStartIndex;
+             slaveContainerConfigIndex < slaveContainerConfigs.size(); ) {
+            Configuration slaveConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
             slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
                     channelsPerSlaveContainer);
             slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID,
-                    slavesConfigIndex++);
+                    slaveContainerConfigIndex++);
         }
 
-        return slaveConfigs;
+        return slaveContainerConfigs;
     }
 
     private void postReaderMaster() {
@@ -616,9 +648,8 @@ public class MasterContainer extends AbstractContainer {
      * @param
      */
     private void checkLimit() {
-        Metric masterMetric = super.getContainerCollector().collect();
-        errorLimit.checkRecordLimit(masterMetric);
-        errorLimit.checkPercentageLimit(masterMetric);
+        Communication communication = super.getContainerCollector().collect();
+        errorLimit.checkRecordLimit(communication);
+        errorLimit.checkPercentageLimit(communication);
     }
-
 }

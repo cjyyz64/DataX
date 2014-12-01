@@ -37,7 +37,7 @@ public class Engine {
          */
         LoadUtil.bind(allConf);
 
-        boolean isMaster = !("slave".equalsIgnoreCase(allConf
+        boolean isMaster = !("slaveContainer".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
 
         AbstractContainer container;
@@ -111,7 +111,7 @@ public class Engine {
         if (cl.hasOption("help")) {
             HelpFormatter f = new HelpFormatter();
             f.printHelp("OptionsTip", options);
-            System.exit(Status.SUCCESS.value());
+            System.exit(State.SUCCESS.value());
         }
 
         // TODO: add help info.
@@ -126,8 +126,8 @@ public class Engine {
         Configuration configuration = ConfigParser.parse(jobPath);
 
         String jobId = configuration.getString(
-                CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, UUID.randomUUID()
-                        .toString());
+                CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID,
+                UUID.randomUUID().toString());
         Engine.confLog(jobId);
 
         LOG.info("\n" + Engine.copyRight());
@@ -150,10 +150,10 @@ public class Engine {
             Engine.entry(args);
         } catch (Throwable e) {
             LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
-            System.exit(Status.FAIL.value());
+            System.exit(State.FAIL.value());
         }
 
-        System.exit(Status.SUCCESS.value());
+        System.exit(State.SUCCESS.value());
     }
 
 }

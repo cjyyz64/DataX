@@ -6,12 +6,12 @@ import com.alibaba.datax.core.container.SlaveContainer;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.metric.Metric;
-import com.alibaba.datax.core.statistics.metric.MetricManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.Status;
+import com.alibaba.datax.core.util.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,99 +29,103 @@ import java.util.concurrent.Executors;
  * 获取这些信息。但整个架构还是和其他模式保持一致性
  */
 public class StandAloneScheduler implements Scheduler {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(StandAloneScheduler.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(StandAloneScheduler.class);
 
-	private List<SlaveContainerRunner> slaveContainerRunners = new ArrayList<SlaveContainerRunner>();
+    private List<SlaveContainerRunner> slaveContainerRunners = new ArrayList<SlaveContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
-	@Override
-	public void schedule(List<Configuration> configurations,
-			ContainerCollector frameworkCollector) {
-		Validate.notNull(configurations,
-				"standalone scheduler配置不能为空");
+    @Override
+    public void schedule(List<Configuration> configurations,
+                         ContainerCollector frameworkCollector) {
+        Validate.notNull(configurations,
+                "standalone scheduler配置不能为空");
 
-		int masterReportIntervalInMillSec = configurations.get(0).getInt(
-				CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL, 10000);
+        int masterReportIntervalInMillSec = configurations.get(0).getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL, 10000);
 
         errorLimit = new ErrorRecordLimit(configurations.get(0));
 
-		ExecutorService slaveExecutorService = Executors
-				.newFixedThreadPool(configurations.size());
+        /**
+         * 给slaveContainer的Communication注册
+         */
 
-		/**
-		 * 完成一个slice算一个stage，所以这里求所有slices的和
-		 */
-		int totalSlices = 0;
-		for (Configuration slaveConfiguration : configurations) {
-			SlaveContainerRunner slaveContainerRunner = newSlaveContainerRunner(slaveConfiguration);
-			totalSlices += slaveConfiguration.getListConfiguration(
-					CoreConstant.DATAX_JOB_CONTENT).size();
-			slaveExecutorService.execute(slaveContainerRunner);
-			slaveContainerRunners.add(slaveContainerRunner);
-		}
-		slaveExecutorService.shutdown();
+        frameworkCollector.registerCommunication(configurations);
 
-		Metric lastMetric = new Metric();
-		lastMetric.setTimeStamp(System.currentTimeMillis());
-		try {
-			do {
-				Metric nowMetric = frameworkCollector.collect();
-				nowMetric.setTimeStamp(System.currentTimeMillis());
-				LOG.debug(nowMetric.toString());
+        ExecutorService slaveContainerExecutorService = Executors
+                .newFixedThreadPool(configurations.size());
 
-				if (nowMetric.getStatus() == Status.FAIL) {
-					slaveExecutorService.shutdownNow();
-					throw DataXException.asDataXException(
-							FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-							nowMetric.getError());
-				}
+        /**
+         * 完成一个slave算一个stage，所以这里求所有slaves的和
+         */
+        int totalSlaves = 0;
+        for (Configuration slaveContainerConfiguration : configurations) {
+            SlaveContainerRunner slaveContainerRunner = newSlaveContainerRunner(slaveContainerConfiguration);
+            totalSlaves += slaveContainerConfiguration.getListConfiguration(
+                    CoreConstant.DATAX_JOB_CONTENT).size();
+            slaveContainerExecutorService.execute(slaveContainerRunner);
+            slaveContainerRunners.add(slaveContainerRunner);
+        }
+        slaveContainerExecutorService.shutdown();
 
-                Metric runMetric = MetricManager.getReportMetric(nowMetric,
-                        lastMetric, totalSlices);
-                frameworkCollector.report(runMetric);
-                errorLimit.checkRecordLimit(runMetric);
+        Communication lastMasterContainerCommunication = new Communication();
+        lastMasterContainerCommunication.setTimestamp(System.currentTimeMillis());
+        try {
+            do {
+                Communication nowMasterContainerCommunication = frameworkCollector.collect();
+                nowMasterContainerCommunication.setTimestamp(System.currentTimeMillis());
+                LOG.debug(nowMasterContainerCommunication.toString());
 
-				if (slaveExecutorService.isTerminated()
-                        && !hasSlaveException(runMetric)) {
+                if (nowMasterContainerCommunication.getState() == State.FAIL) {
+                    slaveContainerExecutorService.shutdownNow();
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                            nowMasterContainerCommunication.getThrowable());
+                }
+
+                Communication reportCommunication = CommunicationManager
+                        .getReportCommunication(nowMasterContainerCommunication, lastMasterContainerCommunication, totalSlaves);
+                frameworkCollector.report(reportCommunication);
+                errorLimit.checkRecordLimit(reportCommunication);
+
+                if (slaveContainerExecutorService.isTerminated()
+                        && !hasSlaveException(reportCommunication)) {
                     // 结束前还需统计一次，准确统计
-                    nowMetric = frameworkCollector.collect();
-                    nowMetric.setTimeStamp(System.currentTimeMillis());
-                    runMetric = MetricManager.getReportMetric(nowMetric,
-                            lastMetric, totalSlices);
-                    frameworkCollector.report(runMetric);
-					LOG.info("Scheduler accomplished all jobs.");
-					break;
-				}
+                    nowMasterContainerCommunication = frameworkCollector.collect();
+                    nowMasterContainerCommunication.setTimestamp(System.currentTimeMillis());
+                    reportCommunication = CommunicationManager
+                            .getReportCommunication(nowMasterContainerCommunication, lastMasterContainerCommunication, totalSlaves);
+                    frameworkCollector.report(reportCommunication);
+                    LOG.info("Scheduler accomplished all jobs.");
+                    break;
+                }
 
-                lastMetric = nowMetric;
+                lastMasterContainerCommunication = nowMasterContainerCommunication;
                 Thread.sleep(masterReportIntervalInMillSec);
-			} while (true);
+            } while (true);
+        } catch (InterruptedException e) {
+            LOG.error("捕获到InterruptedException异常!", e);
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.RUNTIME_ERROR, e);
+        }
+    }
 
-		} catch (InterruptedException e) {
-			LOG.error("捕获到InterruptedException异常!", e);
-			throw DataXException.asDataXException(
-					FrameworkErrorCode.RUNTIME_ERROR, e);
-		}
-	}
+    private SlaveContainerRunner newSlaveContainerRunner(
+            Configuration configuration) {
+        SlaveContainer slaveContainer = ClassUtil.instantiate(configuration
+                        .getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
+                SlaveContainer.class, configuration);
 
-	private SlaveContainerRunner newSlaveContainerRunner(
-			Configuration configuration) {
-		SlaveContainer slaveContainer = ClassUtil.instantiate(configuration
-				.getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
-				SlaveContainer.class, configuration);
+        return new SlaveContainerRunner(slaveContainer);
+    }
 
-		return new SlaveContainerRunner(slaveContainer);
-	}
+    private boolean hasSlaveException(Communication communication) {
+        if(!communication.getState().equals(State.SUCCESS)) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                    communication.getThrowable());
+        }
 
-	private boolean hasSlaveException(Metric runMetric) {
-		for (SlaveContainerRunner slaveContainerRunner : slaveContainerRunners) {
-			if (!slaveContainerRunner.getStatus().equals(Status.SUCCESS)) {
-				throw DataXException.asDataXException(
-						FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-						runMetric.getError());
-			}
-		}
-		return false;
-	}
+        return false;
+    }
 }

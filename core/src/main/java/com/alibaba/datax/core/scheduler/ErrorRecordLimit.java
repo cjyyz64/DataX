@@ -2,7 +2,8 @@ package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import org.apache.commons.lang3.Validate;
@@ -49,13 +50,12 @@ public class ErrorRecordLimit {
         }
     }
 
-    public void checkRecordLimit(Metric metric) {
-
+    public void checkRecordLimit(Communication communication) {
         if (recordLimit == null) {
             return;
         }
 
-        long errorNumber = metric.getErrorRecords();
+        long errorNumber = CommunicationManager.getTotalErrorRecords(communication);
         if (recordLimit < errorNumber) {
             LOG.debug(String.format(
                     "Error-limit set to %d, error count check .",
@@ -68,16 +68,15 @@ public class ErrorRecordLimit {
         }
     }
 
-    public void checkPercentageLimit(Metric masterMetric) {
-
+    public void checkPercentageLimit(Communication communication) {
         if (percentageLimit == null) {
             return;
         }
         LOG.debug(String.format(
                 "Error-limit set to %f, error percent check .", percentageLimit));
 
-        long total = masterMetric.getTotalReadRecords();
-        long error = masterMetric.getErrorRecords();
+        long total = CommunicationManager.getTotalReadRecords(communication);
+        long error = CommunicationManager.getTotalErrorRecords(communication);
 
         if (total > 0 && ((double) error / (double) total) > percentageLimit) {
             throw DataXException.asDataXException(

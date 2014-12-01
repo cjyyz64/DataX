@@ -1,72 +1,77 @@
 package com.alibaba.datax.core.statistics.collector.plugin.slave;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.metric.Metric;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by jingxing on 14-9-11.
  */
 public abstract class AbstractSlavePluginCollector extends SlavePluginCollector {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(AbstractSlavePluginCollector.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(AbstractSlavePluginCollector.class);
 
-	private Metric metric;
+    private Communication communication;
 
-	private Configuration configuration;
+    private Configuration configuration;
 
-	private PluginType pluginType;
+    private PluginType pluginType;
 
-	public AbstractSlavePluginCollector(Configuration conf, Metric metric,
-			PluginType type) {
-		this.configuration = conf;
-		this.metric = metric;
-		this.pluginType = type;
-	}
+    public AbstractSlavePluginCollector(Configuration conf, Communication communication,
+                                        PluginType type) {
+        this.configuration = conf;
+        this.communication = communication;
+        this.pluginType = type;
+    }
 
-	public Metric getMetric() {
-		return metric;
-	}
+    public Communication getCommunication() {
+        return communication;
+    }
 
-	public Configuration getConfiguration() {
-		return configuration;
-	}
+    public Configuration getConfiguration() {
+        return configuration;
+    }
 
-	public PluginType getPluginType() {
-		return pluginType;
-	}
+    public PluginType getPluginType() {
+        return pluginType;
+    }
 
-	@Override
-	final public void collectMessage(String key, String value) {
-		this.metric.addMessage(key, value);
-	}
+    @Override
+    final public void collectMessage(String key, String value) {
+        this.communication.addMessage(key, value);
+    }
 
-	@Override
-	public void collectDirtyRecord(Record dirtyRecord, Throwable t,
-			String errorMessage) {
+    @Override
+    public void collectDirtyRecord(Record dirtyRecord, Throwable t,
+                                   String errorMessage) {
 
-		if (null == dirtyRecord) {
-			LOG.warn("脏数据record=null.");
-			return;
-		}
+        if (null == dirtyRecord) {
+            LOG.warn("脏数据record=null.");
+            return;
+        }
 
-		if (this.pluginType.equals(PluginType.READER)) {
-			this.metric.incrReadFailedRecords(1L);
-			this.metric.incrReadFailedBytes(dirtyRecord.getByteSize());
-		} else if (this.pluginType.equals(PluginType.WRITER)) {
-			this.metric.incrWriteFailedRecords(1L);
-			this.metric.incrWriteFailedBytes(dirtyRecord.getByteSize());
-		} else {
-			throw DataXException.asDataXException(
-					FrameworkErrorCode.RUNTIME_ERROR,
-					String.format("不知道的插件类型[%s].", this.pluginType));
-		}
-	}
+        if (this.pluginType.equals(PluginType.READER)) {
+            this.communication.increaseCounter(
+                    CommunicationManager.READ_FAILED_RECORDS, 1);
+            this.communication.increaseCounter(
+                    CommunicationManager.READ_FAILED_BYTES, dirtyRecord.getByteSize());
+        } else if (this.pluginType.equals(PluginType.WRITER)) {
+            this.communication.increaseCounter(
+                    CommunicationManager.WRITE_FAILED_RECORDS, 1);
+            this.communication.increaseCounter(
+                    CommunicationManager.WRITE_FAILED_BYTES, dirtyRecord.getByteSize());
+        } else {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.RUNTIME_ERROR,
+                    String.format("不知道的插件类型[%s].", this.pluginType));
+        }
+    }
 }

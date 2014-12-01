@@ -13,6 +13,11 @@ public class StandAloneTestSlaveContainer extends SlaveContainer {
 
     @Override
     public void start() {
+        try {
+            Thread.sleep(200);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         System.out.println("start standAlone test slave container");
     }
 }
