@@ -34,7 +34,7 @@ public class OtsWriterMasterProxy {
      * @throws Exception
      */
     public void init(Configuration param) throws Exception {
-        LOG.info("OTSWriter master parameter : {}", param.toJSON());
+        //LOG.info("OTSWriter master parameter : {}", param.toJSON());
         
         // 默认参数
         conf.setRetry(param.getInt(OTSConst.RETRY, 18));
