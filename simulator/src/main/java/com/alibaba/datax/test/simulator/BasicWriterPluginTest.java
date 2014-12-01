@@ -24,7 +24,7 @@ import java.util.concurrent.Executors;
 
 public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
-    protected Writer.Master writerMaster = null;
+    protected Writer.Job writerMaster = null;
 
     @BeforeClass
     public static void checkPluginPackageDir() {
@@ -78,7 +78,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
     	ColumnCast.bind(jobConf);
     	
         String pluginName = getTestPluginName();
-        writerMaster = (Writer.Master) getPluginMaster(jobConf, pluginName,
+        writerMaster = (Writer.Job) getPluginMaster(jobConf, pluginName,
                 PluginType.WRITER);
 
         writerMaster.init();
@@ -102,7 +102,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
             /**
              * 设置slavePlugin的collector，用来处理脏数据和master/slave通信
              */
-//            writerRunner.setSlavePluginCollector(ClassUtil.instantiate(
+//            writerRunner.setTaskPluginCollector(ClassUtil.instantiate(
 //                    slaveCollectorClass, AbstractSlavePluginCollector.class,
 //                    configuration, this.channel.getChannelMetric(),
 //                    PluginType.WRITER));

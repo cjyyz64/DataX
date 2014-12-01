@@ -1,11 +1,11 @@
-package com.alibaba.datax.core.statistics.collector.plugin.slave;
+package com.alibaba.datax.core.statistics.collector.plugin.task;
 
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 
@@ -15,9 +15,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by jingxing on 14-9-11.
  */
-public abstract class AbstractSlavePluginCollector extends SlavePluginCollector {
+public abstract class AbstractTaskPluginCollector extends TaskPluginCollector {
     private static final Logger LOG = LoggerFactory
-            .getLogger(AbstractSlavePluginCollector.class);
+            .getLogger(AbstractTaskPluginCollector.class);
 
     private Communication communication;
 
@@ -25,8 +25,8 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 
     private PluginType pluginType;
 
-    public AbstractSlavePluginCollector(Configuration conf, Communication communication,
-                                        PluginType type) {
+    public AbstractTaskPluginCollector(Configuration conf, Communication communication,
+                                       PluginType type) {
         this.configuration = conf;
         this.communication = communication;
         this.pluginType = type;

@@ -3,12 +3,12 @@ package com.alibaba.datax.core;
 import java.io.File;
 import java.io.FileWriter;
 
+import com.alibaba.datax.core.faker.FakeJobContainer;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.util.LoadUtil;
-import com.alibaba.datax.core.faker.FakeMasterContainer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
@@ -31,8 +31,8 @@ public class EngineTest extends CaseInitializer {
 
 	@Test
 	public void test_entry() throws Throwable {
-		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_CLASS,
-				FakeMasterContainer.class.getName());
+		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_CLASS,
+				FakeJobContainer.class.getName());
 
 		String jobConfig = this.configuration.toString();
 

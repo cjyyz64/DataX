@@ -14,7 +14,7 @@
         }
     },
     "core": {
-        "clusterManager": {
+        "dataXService": {
             "address": "http://localhost:7001/api",
             "timeout": 3000
         },
@@ -34,23 +34,23 @@
             }
         },
         "container": {
-            "master": {
-                "class": "com.alibaba.datax.core.container.MasterContainer",
+            "job": {
+                "class": "com.alibaba.datax.core.container.JobContainer",
                 "reportInterval": 10000
             },
-            "slave": {
-                "class": "com.alibaba.datax.core.container.SlaveContainer",
+            "taskGroup": {
+                "class": "com.alibaba.datax.core.container.TaskGroupContainer",
                 "channel": 5
             }
         },
         "statistics": {
             "collector": {
                 "container": {
-                    "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterContainerCollector",
-                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector"
+                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
+                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                 },
                 "plugin": {
-                    "slaveClass": "com.alibaba.datax.core.statistics.collector.plugin.slave.StdoutPluginCollector",
+                    "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",
                     "maxDirtyNumber": 1000
                 }
             }

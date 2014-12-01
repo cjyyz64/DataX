@@ -24,7 +24,7 @@ public abstract class Channel {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
 
-    protected int slaveContainerId;
+    protected int taskGroupId;
 
     protected int capacity;
 
@@ -70,8 +70,8 @@ public abstract class Channel {
             }
         }
 
-        this.slaveContainerId = configuration
-                .getInt(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
+        this.taskGroupId = configuration
+                .getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
         this.capacity = capacity;
         this.byteSpeed = byteSpeed;
         this.recordSpeed = recordSpeed;
@@ -94,8 +94,8 @@ public abstract class Channel {
         return isClosed;
     }
 
-    public int getSlaveContainerId() {
-        return this.slaveContainerId;
+    public int getTaskGroupId() {
+        return this.taskGroupId;
     }
 
     public int getCapacity() {

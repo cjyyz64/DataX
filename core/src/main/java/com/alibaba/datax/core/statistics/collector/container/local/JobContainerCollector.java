@@ -3,7 +3,7 @@ package com.alibaba.datax.core.statistics.collector.container.local;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.statistics.communication.LocalSlaveContainerCommunication;
+import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.State;
 import com.alibaba.datax.common.util.Configuration;
@@ -19,37 +19,37 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MasterContainerCollector extends AbstractContainerCollector {
+public class JobContainerCollector extends AbstractContainerCollector {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MasterContainerCollector.class);
+            .getLogger(JobContainerCollector.class);
 
     @SuppressWarnings("unused")
-    private long masterContainerId;
+    private long jobId;
 
     private String clusterManagerAddress;
 
     private int clusterManagerTimeout;
 
-    public MasterContainerCollector(Configuration configuration) {
+    public JobContainerCollector(Configuration configuration) {
         super(configuration);
-        this.masterContainerId = configuration
-                .getLong(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID);
+        this.jobId = configuration
+                .getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
         this.clusterManagerAddress = configuration
-                .getString(CoreConstant.DATAX_CORE_CLUSTERMANAGER_ADDRESS);
+                .getString(CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
         this.clusterManagerTimeout = configuration
-                .getInt(CoreConstant.DATAX_CORE_CLUSTERMANAGER_TIMEOUT,
+                .getInt(CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT,
                         3000);
         Validate.isTrue(StringUtils.isNotBlank(this.clusterManagerAddress),
-                "在[local container collector]模式下，master的汇报地址不能为空");
+                "在[local container collector]模式下，job的汇报地址不能为空");
     }
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
         for(Configuration config : configurationList) {
-            int slaveContainerId = config.getInt(
-                    CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
-            LocalSlaveContainerCommunication
-                    .registerSlaveContainerCommunication(slaveContainerId, new Communication());
+            int taskGroupId = config.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+            LocalTaskGroupCommunication
+                    .registerTaskGroupCommunication(taskGroupId, new Communication());
         }
     }
 
@@ -59,19 +59,19 @@ public class MasterContainerCollector extends AbstractContainerCollector {
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
 
         try {
-            String result = Request.Put(String.format("%s/job/%d/status", this.clusterManagerAddress, masterContainerId))
+            String result = Request.Put(String.format("%s/job/%d/status", this.clusterManagerAddress, jobId))
                     .connectTimeout(this.clusterManagerTimeout).socketTimeout(this.clusterManagerTimeout)
                     .bodyString(message, ContentType.APPLICATION_JSON)
                     .execute().returnContent().asString();
             LOG.debug(result);
         } catch (Exception e) {
-            LOG.warn("在[local container collector]模式下，master汇报出错: " + e.getMessage());
+            LOG.warn("在[local container collector]模式下，job汇报出错: " + e.getMessage());
         }
     }
 
     @Override
     public Communication collect() {
-        return LocalSlaveContainerCommunication.getMasterCommunication();
+        return LocalTaskGroupCommunication.getJobCommunication();
     }
 
     @Override
@@ -80,21 +80,21 @@ public class MasterContainerCollector extends AbstractContainerCollector {
     }
 
     @Override
-    public Communication getCommunication(int slaveContainerId) {
-        Validate.isTrue(slaveContainerId>=0, "注册的slaveContainerId不能小于0");
+    public Communication getCommunication(int taskGroupId) {
+        Validate.isTrue(taskGroupId>=0, "注册的taskGroupId不能小于0");
 
-        return LocalSlaveContainerCommunication
-                .getSlaveContainerCommunication(slaveContainerId);
+        return LocalTaskGroupCommunication
+                .getTaskGroupCommunication(taskGroupId);
     }
 
     @Override
-    public List<Communication> getCommunications(List<Integer> slaveContainerIds) {
-        Validate.notNull(slaveContainerIds, "传入的slaveContainerIds不能为null");
+    public List<Communication> getCommunications(List<Integer> taskGroupIds) {
+        Validate.notNull(taskGroupIds, "传入的taskGroupIds不能为null");
 
         List retList = new ArrayList();
-        for(int slaveContainerId : slaveContainerIds) {
-            Communication communication = LocalSlaveContainerCommunication
-                    .getSlaveContainerCommunication(slaveContainerId);
+        for(int taskGroupId : taskGroupIds) {
+            Communication communication = LocalTaskGroupCommunication
+                    .getTaskGroupCommunication(taskGroupId);
             if(communication!=null) {
                 retList.add(communication);
             }
@@ -105,8 +105,8 @@ public class MasterContainerCollector extends AbstractContainerCollector {
 
     @Override
     public Map<Integer, Communication> getCommunicationsMap() {
-        return LocalSlaveContainerCommunication
-                .getSlaveContainerCommunicationMap();
+        return LocalTaskGroupCommunication
+                .getTaskGroupCommunicationMap();
     }
 
 }

@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.statistics.collector.plugin.slave.util;
+package com.alibaba.datax.core.statistics.collector.plugin.task.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

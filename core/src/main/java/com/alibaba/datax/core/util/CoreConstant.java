@@ -11,27 +11,27 @@ public class CoreConstant {
 	// --------------------------- 全局使用的变量(最好按照逻辑顺序，调整下成员变量顺序)
 	// --------------------------------
 
-	public static final String DATAX_CORE_CONTAINER_SLAVE_CHANNEL = "core.container.slave.channel";
+	public static final String DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL = "core.container.taskGroup.channel";
 
 	public static final String DATAX_CORE_CONTAINER_MODEL = "core.container.model";
 
-	public static final String DATAX_CORE_CONTAINER_MASTER_ID = "core.container.master.id";
+	public static final String DATAX_CORE_CONTAINER_JOB_ID = "core.container.job.id";
 
-	public static final String DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL = "core.container.master.reportInterval";
+	public static final String DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL = "core.container.job.reportInterval";
 
-	public static final String DATAX_CORE_CONTAINER_MASTER_CLASS = "core.container.master.class";
+	public static final String DATAX_CORE_CONTAINER_JOB_CLASS = "core.container.job.class";
 
-	public static final String DATAX_CORE_CONTAINER_SLAVE_CLASS = "core.container.slave.class";
+	public static final String DATAX_CORE_CONTAINER_TASKGROUP_CLASS = "core.container.taskGroup.class";
 
-	public static final String DATAX_CORE_CONTAINER_SLAVE_ID = "core.container.slave.id";
+	public static final String DATAX_CORE_CONTAINER_TASKGROUP_ID = "core.container.taskGroup.id";
 
-	public static final String DATAX_CORE_CONTAINER_SLAVE_SLEEPINTERVAL = "core.container.slave.sleepInterval";
+	public static final String DATAX_CORE_CONTAINER_TASKGROUP_SLEEPINTERVAL = "core.container.taskGroup.sleepInterval";
 
-	public static final String DATAX_CORE_CONTAINER_SLAVE_REPORTINTERVAL = "core.container.slave.reportInterval";
+	public static final String DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL = "core.container.taskGroup.reportInterval";
 
-    public static final String DATAX_CORE_CLUSTERMANAGER_ADDRESS = "core.clusterManager.address";
+    public static final String DATAX_CORE_DATAXSERVICE_ADDRESS = "core.dataXService.address";
 
-    public static final String DATAX_CORE_CLUSTERMANAGER_TIMEOUT = "core.clusterManager.timeout";
+    public static final String DATAX_CORE_DATAXSERVICE_TIMEOUT = "core.dataXService.timeout";
 
 	public static final String DATAX_CORE_SCHEDULER_CLASS = "core.scheduler.class";
 
@@ -49,11 +49,11 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_TRANSPORT_RECORD_CLASS = "core.transport.record.class";
 
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS = "core.statistics.collector.container.masterClass";
+	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS = "core.statistics.collector.container.jobClass";
 
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVECLASS = "core.statistics.collector.container.slaveClass";
+	public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS = "core.statistics.collector.container.taskGroupClass";
 
-	public static final String DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_SLAVECLASS = "core.statistics.collector.plugin.slaveClass";
+	public static final String DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_TASKCLASS = "core.statistics.collector.plugin.taskClass";
 
 	public static final String DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_MAXDIRTYNUM = "core.statistics.collector.plugin.maxDirtyNumber";
 
@@ -92,7 +92,7 @@ public class CoreConstant {
 
 	public static final String JOB_WRITER_PARAMETER = "writer.parameter";
 
-	public static final String JOB_TASKID = "slaveId";
+	public static final String JOB_TASK_ID = "taskId";
 
 	// ----------------------------- 环境变量 ---------------------------------
 

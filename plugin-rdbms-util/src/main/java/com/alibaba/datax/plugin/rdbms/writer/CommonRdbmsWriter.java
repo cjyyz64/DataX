@@ -3,7 +3,7 @@ package com.alibaba.datax.plugin.rdbms.writer;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
@@ -27,12 +27,13 @@ public class CommonRdbmsWriter {
     private static DataBaseType DATABASE_TYPE;
     private static final String VALUE_HOLDER = "?";
 
-    public static class Master {
-        private static final Logger LOG = LoggerFactory.getLogger(CommonRdbmsWriter.Master.class);
+    public static class Job {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(Job.class);
 
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
-        public Master(DataBaseType dataBaseType) {
+        public Job(DataBaseType dataBaseType) {
             DATABASE_TYPE = dataBaseType;
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
         }
@@ -46,7 +47,7 @@ public class CommonRdbmsWriter {
             }
         }
 
-        // 一般来说，是需要推迟到 slave 中进行pre 的执行（单表情况例外）
+        // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         public void prepare(Configuration originalConfig) {
             int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK)
                     .intValue();
@@ -98,7 +99,7 @@ public class CommonRdbmsWriter {
             return WriterUtil.doSplit(originalConfig, mandatoryNumber);
         }
 
-        // 一般来说，是需要推迟到 slave 中进行post 的执行（单表情况例外）
+        // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         public void post(Configuration originalConfig) {
             int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK)
                     .intValue();
@@ -137,9 +138,9 @@ public class CommonRdbmsWriter {
 
     }
 
-    public static class Slave {
+    public static class Task {
         private static final Logger LOG = LoggerFactory
-                .getLogger(CommonRdbmsWriter.Slave.class);
+                .getLogger(Task.class);
 
         private final static boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -161,7 +162,7 @@ public class CommonRdbmsWriter {
 
         private int columnNumber = 0;
 
-        private SlavePluginCollector slavePluginCollector;
+        private TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
@@ -216,8 +217,8 @@ public class CommonRdbmsWriter {
         // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver,
                                Configuration writerSliceConfig,
-                               SlavePluginCollector slavePluginCollector) {
-            this.slavePluginCollector = slavePluginCollector;
+                               TaskPluginCollector taskPluginCollector) {
+            this.taskPluginCollector = taskPluginCollector;
 
             Connection connection = DBUtil.getConnection(DATABASE_TYPE,
                     this.jdbcUrl, username, password);
@@ -330,7 +331,7 @@ public class CommonRdbmsWriter {
                             LOG.debug(e.toString());
                         }
 
-                        this.slavePluginCollector.collectDirtyRecord(record, e);
+                        this.taskPluginCollector.collectDirtyRecord(record, e);
                     } finally {
                         // 最后不要忘了关闭 preparedStatement
                         preparedStatement.clearParameters();

@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StreamWriter extends Writer {
-    public static class Master extends Writer.Master {
+    public static class Job extends Writer.Job {
         private static final Logger LOG = LoggerFactory
-                .getLogger(StreamWriter.Master.class);
+                .getLogger(Job.class);
 
         private Configuration originalConfig;
 
@@ -50,9 +50,9 @@ public class StreamWriter extends Writer {
         }
     }
 
-    public static class Slave extends Writer.Slave {
+    public static class Task extends Writer.Task {
         private static final Logger LOG = LoggerFactory
-                .getLogger(StreamWriter.Slave.class);
+                .getLogger(Task.class);
 
         private static final String NEWLINE_FLAG = System.getProperty("line.separator", "\n");
 

@@ -15,10 +15,10 @@ import java.util.List;
 public class DrdsWriter extends Writer {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.DRDS;
 
-    public static class Master extends Writer.Master {
+    public static class Job extends Writer.Job {
         private Configuration originalConfig = null;
-        private CommonRdbmsWriter.Master commonRdbmsWriterMaster;
         private String ONLY_SUPPORTED_WRITEMODE = "replace";
+        private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         @Override
         public void init() {
@@ -31,64 +31,64 @@ public class DrdsWriter extends Writer {
             }
 
             this.originalConfig.set(Key.WRITE_MODE, ONLY_SUPPORTED_WRITEMODE);
-            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Master(DATABASE_TYPE);
-            this.commonRdbmsWriterMaster.init(this.originalConfig);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
         // 对于 Drds 而言，只会暴露一张逻辑表，所以直接在 Master 做 pre,post 操作
         @Override
         public void prepare() {
-            this.commonRdbmsWriterMaster.prepare(this.originalConfig);
+            this.commonRdbmsWriterJob.prepare(this.originalConfig);
         }
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            return this.commonRdbmsWriterMaster.split(this.originalConfig, mandatoryNumber);
+            return this.commonRdbmsWriterJob.split(this.originalConfig, mandatoryNumber);
         }
 
-        // 一般来说，是需要推迟到 slave 中进行post 的执行（单表情况例外）
+        // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
-            this.commonRdbmsWriterMaster.post(this.originalConfig);
+            this.commonRdbmsWriterJob.post(this.originalConfig);
         }
 
         @Override
         public void destroy() {
-            this.commonRdbmsWriterMaster.destroy(this.originalConfig);
+            this.commonRdbmsWriterJob.destroy(this.originalConfig);
         }
 
     }
 
-    public static class Slave extends Writer.Slave {
+    public static class Task extends Writer.Task {
         private Configuration writerSliceConfig;
-        private CommonRdbmsWriter.Slave commonRdbmsWriterSlave;
+        private CommonRdbmsWriter.Task commonRdbmsWriterTask;
 
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Slave();
-            this.commonRdbmsWriterSlave.init(this.writerSliceConfig);
+            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task();
+            this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 
         @Override
         public void prepare() {
-            this.commonRdbmsWriterSlave.prepare(this.writerSliceConfig);
+            this.commonRdbmsWriterTask.prepare(this.writerSliceConfig);
         }
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
-            this.commonRdbmsWriterSlave.startWrite(recordReceiver, this.writerSliceConfig,
-                    super.getSlavePluginCollector());
+            this.commonRdbmsWriterTask.startWrite(recordReceiver, this.writerSliceConfig,
+                    super.getTaskPluginCollector());
         }
 
         @Override
         public void post() {
-            this.commonRdbmsWriterSlave.post(this.writerSliceConfig);
+            this.commonRdbmsWriterTask.post(this.writerSliceConfig);
         }
 
         @Override
         public void destroy() {
-            this.commonRdbmsWriterSlave.destroy(this.writerSliceConfig);
+            this.commonRdbmsWriterTask.destroy(this.writerSliceConfig);
         }
 
     }

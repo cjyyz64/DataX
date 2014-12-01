@@ -8,9 +8,9 @@ import com.alibaba.datax.core.util.State;
 import java.util.List;
 import java.util.Map;
 
-public class MasterContainerCollector extends AbstractContainerCollector {
+public class JobContainerCollector extends AbstractContainerCollector {
 
-    public MasterContainerCollector(Configuration configuration) {
+    public JobContainerCollector(Configuration configuration) {
         super(configuration);
         // TODO Auto-generated constructor stub
     }
@@ -37,12 +37,12 @@ public class MasterContainerCollector extends AbstractContainerCollector {
     }
 
     @Override
-    public Communication getCommunication(int slaveContainerId) {
+    public Communication getCommunication(int taskGroupId) {
         return null;
     }
 
     @Override
-    public List<Communication> getCommunications(List<Integer> slaveContainerIds) {
+    public List<Communication> getCommunications(List<Integer> taskGroupIds) {
         return null;
     }
 

@@ -1,21 +1,21 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.core.container.SlaveContainer;
+import com.alibaba.datax.core.container.TaskGroupContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.State;
 
 /**
  * Created by jingxing on 14-8-28.
  */
-public class SlaveContainerRunner implements Runnable {
+public class TaskGroupContainerRunner implements Runnable {
 
-	private SlaveContainer slaveContainer;
+	private TaskGroupContainer taskGroupContainer;
 
 	private State state;
 
-	public SlaveContainerRunner(SlaveContainer slave) {
-		this.slaveContainer = slave;
+	public TaskGroupContainerRunner(TaskGroupContainer taskGroup) {
+		this.taskGroupContainer = taskGroup;
 		this.state = State.SUCCESS;
 	}
 
@@ -23,8 +23,8 @@ public class SlaveContainerRunner implements Runnable {
 	public void run() {
 		try {
             Thread.currentThread().setName(
-                    String.format("slaveContainer-%d", this.slaveContainer.getSlaveContainerId()));
-            this.slaveContainer.start();
+                    String.format("taskGroup-%d", this.taskGroupContainer.getTaskGroupId()));
+            this.taskGroupContainer.start();
 			this.state = State.SUCCESS;
 		} catch (Throwable e) {
 			this.state = State.FAIL;
@@ -33,8 +33,8 @@ public class SlaveContainerRunner implements Runnable {
 		}
 	}
 
-	public SlaveContainer getSlaveContainer() {
-		return slaveContainer;
+	public TaskGroupContainer getTaskGroupContainer() {
+		return taskGroupContainer;
 	}
 
 	public State getState() {

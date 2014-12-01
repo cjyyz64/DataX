@@ -1,11 +1,11 @@
-package com.alibaba.datax.core.statistics.collector.plugin.slave;
+package com.alibaba.datax.core.statistics.collector.plugin.task;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.statistics.collector.plugin.slave.util.DirtyRecord;
+import com.alibaba.datax.core.statistics.collector.plugin.task.util.DirtyRecord;
 import com.alibaba.fastjson.JSON;
 
 import org.apache.commons.lang3.StringUtils;
@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by jingxing on 14-9-9.
  */
-public class StdoutPluginCollector extends AbstractSlavePluginCollector {
+public class StdoutPluginCollector extends AbstractTaskPluginCollector {
     private static final Logger LOG = LoggerFactory
             .getLogger(StdoutPluginCollector.class);
 

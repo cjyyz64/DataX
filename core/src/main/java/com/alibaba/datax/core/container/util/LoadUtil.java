@@ -2,9 +2,9 @@ package com.alibaba.datax.core.container.util;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.AbstractMasterPlugin;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.plugin.AbstractPlugin;
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.runner.AbstractRunner;
 import com.alibaba.datax.core.container.runner.ReaderRunner;
@@ -19,7 +19,7 @@ import java.util.Map;
  * Created by jingxing on 14-8-24.
  * <p/>
  * 插件加载器，大体上分reader、transformer（还未实现）和writer三中插件类型，
- * reader和writer在执行时又可能出现Master和Slave两种运行时（加载的类不同）
+ * reader和writer在执行时又可能出现Job和Task两种运行时（加载的类不同）
  */
 public class LoadUtil {
     private static final String pluginTypeNameFormat = "plugin.%s.%s";
@@ -28,7 +28,7 @@ public class LoadUtil {
     }
 
     private enum ContainerType {
-        Master("Master"), Slave("Slave");
+        Job("Job"), Task("Task");
         private String type;
 
         private ContainerType(String type) {
@@ -83,71 +83,71 @@ public class LoadUtil {
     }
 
     /**
-     * 加载MasterPlugin，reader、writer都可能要加载
+     * 加载JobPlugin，reader、writer都可能要加载
      *
      * @param pluginType
      * @param pluginName
      * @return
      */
-    public static AbstractMasterPlugin loadMasterPlugin(PluginType pluginType,
-                                                        String pluginName) {
+    public static AbstractJobPlugin loadJobPlugin(PluginType pluginType,
+                                                  String pluginName) {
         Class<? extends AbstractPlugin> clazz = LoadUtil.loadPluginClass(
-                pluginType, pluginName, ContainerType.Master);
+                pluginType, pluginName, ContainerType.Job);
 
         try {
-            AbstractMasterPlugin masterPlugin = (AbstractMasterPlugin) clazz
+            AbstractJobPlugin jobPlugin = (AbstractJobPlugin) clazz
                     .newInstance();
-            masterPlugin.setPluginConf(getPluginConf(pluginType, pluginName));
-            return masterPlugin;
+            jobPlugin.setPluginConf(getPluginConf(pluginType, pluginName));
+            return jobPlugin;
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR,
                     String.format(
-                            "DataX找到plugin[%s]的master配置.",
+                            "DataX找到plugin[%s]的Job配置.",
                             pluginName), e);
         }
     }
 
     /**
-     * 加载SlavePlugin，reader、writer都可能加载
+     * 加载taskPlugin，reader、writer都可能加载
      *
      * @param pluginType
      * @param pluginName
      * @return
      */
-    public static AbstractSlavePlugin loadSlavePlugin(PluginType pluginType,
-                                                      String pluginName) {
+    public static AbstractTaskPlugin loadTaskPlugin(PluginType pluginType,
+                                                    String pluginName) {
         Class<? extends AbstractPlugin> clazz = LoadUtil.loadPluginClass(
-                pluginType, pluginName, ContainerType.Slave);
+                pluginType, pluginName, ContainerType.Task);
 
         try {
-            AbstractSlavePlugin slavePlugin = (AbstractSlavePlugin) clazz
+            AbstractTaskPlugin taskPlugin = (AbstractTaskPlugin) clazz
                     .newInstance();
-            slavePlugin.setPluginConf(getPluginConf(pluginType, pluginName));
-            return slavePlugin;
+            taskPlugin.setPluginConf(getPluginConf(pluginType, pluginName));
+            return taskPlugin;
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
-                    String.format("DataX不能找plugin[%s]的slave配置.",
+                    String.format("DataX不能找plugin[%s]的Task配置.",
                             pluginName), e);
         }
     }
 
     /**
-     * 根据插件类型、名字和执行时slaveContainerId加载对应运行器
+     * 根据插件类型、名字和执行时taskGroupId加载对应运行器
      *
      * @param pluginType
      * @param pluginName
      * @return
      */
     public static AbstractRunner loadPluginRunner(PluginType pluginType, String pluginName) {
-        AbstractSlavePlugin slavePlugin = LoadUtil.loadSlavePlugin(pluginType,
+        AbstractTaskPlugin taskPlugin = LoadUtil.loadTaskPlugin(pluginType,
                 pluginName);
 
         switch (pluginType) {
             case READER:
-                return new ReaderRunner(slavePlugin);
+                return new ReaderRunner(taskPlugin);
             case WRITER:
-                return new WriterRunner(slavePlugin);
+                return new WriterRunner(taskPlugin);
             default:
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.RUNTIME_ERROR,

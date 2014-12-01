@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.aliyun.openservices.ots.OTS;
 
 /**
@@ -20,7 +20,7 @@ public class OTSSendBuffer {
 
     public OTSSendBuffer(
             OTS ots,
-            SlavePluginCollector collector,
+            TaskPluginCollector collector,
             OTSConf conf) {
         this.conf = conf;
         this.manager = new OTSBatchWriteRowTaskManager(ots, collector, conf);

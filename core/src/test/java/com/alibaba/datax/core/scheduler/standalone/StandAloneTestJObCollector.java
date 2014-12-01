@@ -11,8 +11,8 @@ import java.util.Map;
 /**
  * Created by jingxing on 14-9-4.
  */
-public class StandAloneTestMasterCollector extends AbstractContainerCollector {
-    public StandAloneTestMasterCollector(Configuration configuration) {
+public class StandAloneTestJobCollector extends AbstractContainerCollector {
+    public StandAloneTestJobCollector(Configuration configuration) {
         super(configuration);
     }
 
@@ -23,7 +23,7 @@ public class StandAloneTestMasterCollector extends AbstractContainerCollector {
 
     @Override
     public void report(Communication communication) {
-        System.out.println("master report 2");
+        System.out.println("job report 2");
     }
 
     @Override

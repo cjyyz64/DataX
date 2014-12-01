@@ -11,7 +11,7 @@ import java.util.List;
  * Created by jingxing on 14-9-12.
  */
 public class FakeExceptionReader extends Reader {
-    public static final class Master extends Reader.Master {
+    public static final class Job extends Reader.Job {
         @Override
         public List<Configuration> split(int adviceNumber) {
             Configuration jobParameter = this.getPluginJobConf();
@@ -37,16 +37,16 @@ public class FakeExceptionReader extends Reader {
 
         @Override
         public void init() {
-            System.out.println("fake reader master initialized!");
+            System.out.println("fake reader job initialized!");
         }
 
         @Override
         public void destroy() {
-            System.out.println("fake reader master destroyed!");
+            System.out.println("fake reader job destroyed!");
         }
     }
 
-    public static final class Slave extends Reader.Slave {
+    public static final class Task extends Reader.Task {
         @Override
         public void startRead(RecordSender lineSender) {
             throw new RuntimeException("just for test");
@@ -54,22 +54,22 @@ public class FakeExceptionReader extends Reader {
 
         @Override
         public void prepare() {
-            System.out.println("fake reader slave prepared!");
+            System.out.println("fake reader task prepared!");
         }
 
         @Override
         public void post() {
-            System.out.println("fake reader slave posted!");
+            System.out.println("fake reader task posted!");
         }
 
         @Override
         public void init() {
-            System.out.println("fake reader slave initialized!");
+            System.out.println("fake reader task initialized!");
         }
 
         @Override
         public void destroy() {
-            System.out.println("fake reader master destroyed!");
+            System.out.println("fake reader task destroyed!");
         }
     }
 }

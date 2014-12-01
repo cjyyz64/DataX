@@ -6,7 +6,7 @@ import java.util.List;
 
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.LocalSlaveContainerCommunication;
+import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.State;
 import org.junit.Assert;
 import org.junit.Before;
@@ -23,13 +23,13 @@ import com.alibaba.datax.core.util.CoreConstant;
 /**
  * Created by jingxing on 14-9-4.
  */
-public class SlaveContainerTest extends CaseInitializer {
+public class TaskGroupContainerTest extends CaseInitializer {
     private Configuration configuration;
-    private int slaveNumber;
+    private int taskNumber;
 
     @Before
     public void setUp() {
-        String path = SlaveContainerTest.class.getClassLoader()
+        String path = TaskGroupContainerTest.class.getClassLoader()
                 .getResource(".").getFile();
 
         this.configuration = ConfigParser.parse(path + File.separator
@@ -37,56 +37,56 @@ public class SlaveContainerTest extends CaseInitializer {
         LoadUtil.bind(this.configuration);
 
         int channelNumber = 5;
-        slaveNumber = channelNumber + 3;
-        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, 0);
-        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 1);
+        taskNumber = channelNumber + 3;
+        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
+        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
         this.configuration.set(
-                CoreConstant.DATAX_CORE_CONTAINER_SLAVE_SLEEPINTERVAL, 200);
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_SLEEPINTERVAL, 200);
         this.configuration.set(
-                CoreConstant.DATAX_CORE_CONTAINER_SLAVE_REPORTINTERVAL, 1000);
-        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL, 1000);
+        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
                 channelNumber);
         Configuration jobContent = this.configuration.getListConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT).get(0);
         List<Configuration> jobContents = new ArrayList<Configuration>();
-        for (int i = 0; i < this.slaveNumber; i++) {
+        for (int i = 0; i < this.taskNumber; i++) {
             Configuration newJobContent = jobContent.clone();
-            newJobContent.set(CoreConstant.JOB_TASKID, i);
+            newJobContent.set(CoreConstant.JOB_TASK_ID, i);
             jobContents.add(newJobContent);
         }
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
 
-        LocalSlaveContainerCommunication.clear();
-        LocalSlaveContainerCommunication.registerSlaveContainerCommunication(
+        LocalTaskGroupCommunication.clear();
+        LocalTaskGroupCommunication.registerTaskGroupCommunication(
                 1, new Communication());
     }
 
     @Test
     public void testStart() throws InterruptedException {
-        SlaveContainer slaveContainer = new SlaveContainer(this.configuration);
-        slaveContainer.start();
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
+        taskGroupContainer.start();
 
-        ContainerCollector collector = slaveContainer.getContainerCollector();
+        ContainerCollector collector = taskGroupContainer.getContainerCollector();
         while (true) {
-            State totalSlaveState = collector.collectState();
-            if(totalSlaveState.isRunning()) {
+            State totalTaskState = collector.collectState();
+            if(totalTaskState.isRunning()) {
                 Thread.sleep(1000);
             } else {
                 break;
             }
         }
 
-        Communication totalSlaveCommunication = collector.collect();
-        List<String> messages = totalSlaveCommunication.getMessage("bazhen-reader");
+        Communication totalTaskCommunication = collector.collect();
+        List<String> messages = totalTaskCommunication.getMessage("bazhen-reader");
         Assert.assertTrue(!messages.isEmpty());
 
-        messages = totalSlaveCommunication.getMessage("bazhen-writer");
+        messages = totalTaskCommunication.getMessage("bazhen-writer");
         Assert.assertTrue(!messages.isEmpty());
 
-        messages = totalSlaveCommunication.getMessage("bazhen");
+        messages = totalTaskCommunication.getMessage("bazhen");
         Assert.assertNull(messages);
 
-        State state = totalSlaveCommunication.getState();
+        State state = totalTaskCommunication.getState();
 
         Assert.assertTrue("task finished", state.equals(State.SUCCESS));
     }
@@ -95,15 +95,15 @@ public class SlaveContainerTest extends CaseInitializer {
     public void testReaderException() {
         this.configuration.set("plugin.reader.fakereader.class",
                 FakeExceptionReader.class.getCanonicalName());
-        SlaveContainer slaveContainer = new SlaveContainer(this.configuration);
-        slaveContainer.start();
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
+        taskGroupContainer.start();
     }
 
     @Test(expected = RuntimeException.class)
     public void testWriterException() {
         this.configuration.set("plugin.writer.fakewriter.class",
                 FakeExceptionWriter.class.getName());
-        SlaveContainer slaveContainer = new SlaveContainer(this.configuration);
-        slaveContainer.start();
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
+        taskGroupContainer.start();
     }
 }

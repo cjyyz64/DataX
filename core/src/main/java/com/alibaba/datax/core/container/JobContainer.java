@@ -2,7 +2,7 @@ package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.MasterPluginCollector;
+import com.alibaba.datax.common.plugin.JobPluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -13,7 +13,7 @@ import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
-import com.alibaba.datax.core.statistics.collector.plugin.DefaultMasterPluginCollector;
+import com.alibaba.datax.core.statistics.collector.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ClassUtil;
@@ -33,12 +33,12 @@ import java.util.Random;
 /**
  * Created by jingxing on 14-8-24.
  * <p/>
- * master实例运行在masterContainer容器中，它是所有任务master，负责初始化、拆分、调度、运行、回收、监控和汇报
+ * job实例运行在jobContainer容器中，它是所有任务的master，负责初始化、拆分、调度、运行、回收、监控和汇报
  * 但它并不做实际的数据同步操作
  */
-public class MasterContainer extends AbstractContainer {
+public class JobContainer extends AbstractContainer {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MasterContainer.class);
+            .getLogger(JobContainer.class);
 
     private static final SimpleDateFormat dateFormat = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss");
@@ -46,18 +46,18 @@ public class MasterContainer extends AbstractContainer {
     private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper
             .newCurrentThreadClassLoaderSwapper();
 
-    private long masterContainerId;
+    private long jobId;
 
     private String readerPluginName;
 
     private String writerPluginName;
 
     /**
-     * reader和writer masterContainer的实例
+     * reader和writer jobContainer的实例
      */
-    private Reader.Master readerMaster;
+    private Reader.Job jobReader;
 
-    private Writer.Master writerMaster;
+    private Writer.Job jobWriter;
 
     private long startTimeStamp;
 
@@ -71,39 +71,39 @@ public class MasterContainer extends AbstractContainer {
 
     private ErrorRecordLimit errorLimit;
 
-    public MasterContainer(Configuration configuration) {
+    public JobContainer(Configuration configuration) {
         super(configuration);
         super.setContainerCollector(ClassUtil.instantiate(
                 configuration
-                        .getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_MASTERCLASS),
+                        .getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
                 AbstractContainerCollector.class, configuration));
         errorLimit = new ErrorRecordLimit(configuration);
     }
 
     /**
-     * masterContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
+     * jobContainer主要负责的工作全部在start()里面，包括init、prepare、split、scheduler、
      * post以及destroy和statistics
      */
     @Override
     public void start() {
-        LOG.info("DataX MasterContainer starts master.");
+        LOG.info("DataX jobContainer starts job.");
 
         try {
             this.startTimeStamp = System.currentTimeMillis();
 
-            LOG.debug("masterContainer starts to do init ...");
+            LOG.debug("jobContainer starts to do init ...");
             this.init();
-            LOG.debug("masterContainer starts to do prepare ...");
+            LOG.debug("jobContainer starts to do prepare ...");
             this.prepare();
-            LOG.debug("masterContainer starts to do split ...");
+            LOG.debug("jobContainer starts to do split ...");
             this.split();
-            LOG.debug("masterContainer starts to do schedule ...");
+            LOG.debug("jobContainer starts to do schedule ...");
             this.schedule();
-            LOG.debug("masterContainer starts to do post ...");
+            LOG.debug("jobContainer starts to do post ...");
             this.post();
 
-            LOG.info("DataX masterContainerId [{}] completed successfully.",
-                    this.masterContainerId);
+            LOG.info("DataX jobId [{}] completed successfully.",
+                    this.jobId);
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 this.destroy();
@@ -128,38 +128,38 @@ public class MasterContainer extends AbstractContainer {
      * reader和writer的初始化
      */
     private void init() {
-        this.masterContainerId = this.configuration.getLong(
-                CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, -1);
+        this.jobId = this.configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
 
-        if (this.masterContainerId < 0) {
+        if (this.jobId < 0) {
             boolean isStandAloneMode = this.configuration.getString(
                     CoreConstant.DATAX_CORE_SCHEDULER_CLASS).equalsIgnoreCase(
                     StandAloneScheduler.class.getName());
-            // standalone模式下默认masterId=0
+            // standalone模式下默认jobId=0
             if (isStandAloneMode) {
-                LOG.info("Set masterContainerId = 0");
-                this.masterContainerId = 0;
+                LOG.info("Set jobId = 0");
+                this.jobId = 0;
                 this.configuration.set(
-                        CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID,
-                        this.masterContainerId);
+                        CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
+                        this.jobId);
             } else {
                 throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
-                        "在[local|distribute]模式下没有设置masterContainer id.");
+                        "在[local|distribute]模式下没有设置jobId.");
             }
         }
 
         Thread.currentThread().setName(
-                String.format("masterContainer-%d", this.masterContainerId));
+                String.format("job-%d", this.jobId));
 
-        MasterPluginCollector masterPluginCollector = new DefaultMasterPluginCollector(
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
                 this.getContainerCollector());
-        this.readerMaster = this.initReaderMaster(masterPluginCollector);
-        this.writerMaster = this.initWriterMaster(masterPluginCollector);
+        this.jobReader = this.initJobReader(jobPluginCollector);
+        this.jobWriter = this.initJobWriter(jobPluginCollector);
     }
 
     private void prepare() {
-        this.prepareReaderMaster();
-        this.prepareWriterMaster();
+        this.prepareJobReader();
+        this.prepareJobWriter();
     }
 
     /**
@@ -174,17 +174,17 @@ public class MasterContainer extends AbstractContainer {
             this.needChannelNumber = 1;
         }
 
-        List<Configuration> readerSlicesConfigs = this
+        List<Configuration> readerTaskConfigs = this
                 .doReaderSplit(this.needChannelNumber);
-        int slicesNumber = readerSlicesConfigs.size();
-        List<Configuration> writerSlicesConfigs = this
-                .doWriterSplit(slicesNumber);
+        int taskNumber = readerTaskConfigs.size();
+        List<Configuration> writerTaskConfigs = this
+                .doWriterSplit(taskNumber);
 
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
-        List<Configuration> contentConfig = mergeReaderAndWriterSlicesConfigs(
-                readerSlicesConfigs, writerSlicesConfigs);
+        List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
+                readerTaskConfigs, writerTaskConfigs);
 
         Collections.shuffle(contentConfig,
                 new Random(System.currentTimeMillis()));
@@ -213,7 +213,7 @@ public class MasterContainer extends AbstractContainer {
 
             needChannelNumberByByte = (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
             needChannelNumberByByte = needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
-            LOG.info("Job set Max-Speed-Byte to " + globalLimitedByteSpeed + " bytes.");
+            LOG.info("Job set Max-Byte-Speed to " + globalLimitedByteSpeed + " bytes.");
         }
 
         boolean isRecordLimit = (this.configuration.getInt(
@@ -232,7 +232,7 @@ public class MasterContainer extends AbstractContainer {
 
             needChannelNumberByRecord = (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
             needChannelNumberByRecord = needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
-            LOG.info("Job set Max-Speed-Record to " + globalLimitedRecordSpeed + " records.");
+            LOG.info("Job set Max-Record-Speed to " + globalLimitedRecordSpeed + " records.");
         }
 
         // 取较小值
@@ -250,8 +250,8 @@ public class MasterContainer extends AbstractContainer {
             this.needChannelNumber = this.configuration
                     .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);
 
-            LOG.info("Job set Max-Speed-Channel to " + this.needChannelNumber
-                    + " channels .");
+            LOG.info("Job set Channel-Number to " + this.needChannelNumber
+                    + " channels.");
 
             return;
         }
@@ -261,29 +261,29 @@ public class MasterContainer extends AbstractContainer {
     }
 
     /**
-     * schedule首先完成的工作是把上一步reader和writer split的结果整合到具体slaveContainer中,
+     * schedule首先完成的工作是把上一步reader和writer split的结果整合到具体taskGroupContainer中,
      * 同时不同的执行模式调用不同的调度策略，将所有任务调度起来
      */
     private void schedule() {
         /**
          * 这里的全局speed和每个channel的速度设置为B/s
          */
-        int channelsPerSlaveContainer = this.configuration.getInt(
-                CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL, 5);
-        int sliceNumber = this.configuration.getList(
+        int channelsPerTaskGroup = this.configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL, 5);
+        int taskNumber = this.configuration.getList(
                 CoreConstant.DATAX_JOB_CONTENT).size();
 
-        this.needChannelNumber = Math.min(this.needChannelNumber, sliceNumber);
+        this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
 
         /**
-         * 通过获取配置信息得到每个slaveContainer需要运行哪些slices任务
+         * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
          */
-        int averSlavesPerChannel = sliceNumber / this.needChannelNumber;
-        List<Configuration> slaveContainerConfigs = distributeSlavesToSlaveContainer(
-                averSlavesPerChannel, this.needChannelNumber,
-                channelsPerSlaveContainer);
+        int averTasksPerChannel = taskNumber / this.needChannelNumber;
+        List<Configuration> taskGroupConfigs = distributeTasksToTaskGroup(
+                averTasksPerChannel, this.needChannelNumber,
+                channelsPerTaskGroup);
 
-        LOG.info("Scheduler starts [{}] slaveContainers .", slaveContainerConfigs.size());
+        LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
         String schedulerClassName = this.configuration
                 .getString(CoreConstant.DATAX_CORE_SCHEDULER_CLASS);
@@ -294,7 +294,7 @@ public class MasterContainer extends AbstractContainer {
                     Scheduler.class);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
-            scheduler.schedule(slaveContainerConfigs,
+            scheduler.schedule(taskGroupConfigs,
                     super.getContainerCollector());
             this.endTransferTimeStamp = System.currentTimeMillis();
         } catch (Exception e) {
@@ -311,18 +311,18 @@ public class MasterContainer extends AbstractContainer {
     }
 
     private void post() {
-        this.postWriterMaster();
-        this.postReaderMaster();
+        this.postJobWriter();
+        this.postJobReader();
     }
 
     private void destroy() {
-        if (this.writerMaster != null) {
-            this.writerMaster.destroy();
-            this.writerMaster = null;
+        if (this.jobWriter != null) {
+            this.jobWriter.destroy();
+            this.jobWriter = null;
         }
-        if (this.readerMaster != null) {
-            this.readerMaster.destroy();
-            this.readerMaster = null;
+        if (this.jobReader != null) {
+            this.jobReader.destroy();
+            this.jobReader = null;
         }
     }
 
@@ -360,72 +360,72 @@ public class MasterContainer extends AbstractContainer {
     }
 
     /**
-     * reader master的初始化，返回Reader.Master
+     * reader job的初始化，返回Reader.Job
      *
      * @return
      */
-    private Reader.Master initReaderMaster(
-            MasterPluginCollector masterPluginCollector) {
+    private Reader.Job initJobReader(
+            JobPluginCollector jobPluginCollector) {
         this.readerPluginName = this.configuration
                 .getString(CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
 
-        Reader.Master readerMaster = (Reader.Master) LoadUtil.loadMasterPlugin(
+        Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
                 PluginType.READER, this.readerPluginName);
 
         // 设置reader的jobConfig
-        readerMaster
+        jobReader
                 .setPluginJobConf(this.configuration
                         .getConfiguration(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
-        readerMaster.setMasterPluginCollector(masterPluginCollector);
-        readerMaster.init();
+        jobReader.setJobPluginCollector(jobPluginCollector);
+        jobReader.init();
 
         classLoaderSwapper.restoreCurrentThreadClassLoader();
-        return readerMaster;
+        return jobReader;
     }
 
     /**
-     * writer master的初始化，返回Writer.Master
+     * writer job的初始化，返回Writer.Job
      *
      * @return
      */
-    private Writer.Master initWriterMaster(
-            MasterPluginCollector masterPluginCollector) {
+    private Writer.Job initJobWriter(
+            JobPluginCollector jobPluginCollector) {
         this.writerPluginName = this.configuration
                 .getString(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
 
-        Writer.Master writerMaster = (Writer.Master) LoadUtil.loadMasterPlugin(
+        Writer.Job jobWriter = (Writer.Job) LoadUtil.loadJobPlugin(
                 PluginType.WRITER, this.writerPluginName);
 
         // 设置writer的jobConfig
-        writerMaster
+        jobWriter
                 .setPluginJobConf(this.configuration
                         .getConfiguration(CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
-        writerMaster.setMasterPluginCollector(masterPluginCollector);
-        writerMaster.init();
+        jobWriter.setJobPluginCollector(jobPluginCollector);
+        jobWriter.init();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
 
-        return writerMaster;
+        return jobWriter;
     }
 
-    private void prepareReaderMaster() {
+    private void prepareJobReader() {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        LOG.info(String.format("DataX Reader.Master [%s] do prepare work .",
+        LOG.info(String.format("DataX Reader.Job [%s] do prepare work .",
                 this.readerPluginName));
-        this.readerMaster.prepare();
+        this.jobReader.prepare();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
-    private void prepareWriterMaster() {
+    private void prepareJobWriter() {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
-        LOG.info(String.format("DataX Writer.Master [%s] do prepare work .",
+        LOG.info(String.format("DataX Writer.Job [%s] do prepare work .",
                 this.writerPluginName));
-        this.writerMaster.prepare();
+        this.jobWriter.prepare();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
@@ -433,29 +433,29 @@ public class MasterContainer extends AbstractContainer {
     private List<Configuration> doReaderSplit(int adviceNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        List<Configuration> readerSlicesConfigs = this.readerMaster
+        List<Configuration> readerSlicesConfigs = this.jobReader
                 .split(adviceNumber);
         if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    "reader切分的slave数目不能小于等于0");
+                    "reader切分的task数目不能小于等于0");
         }
-        LOG.info("DataX Reader.Master [{}] splits to [{}] slaves.",
+        LOG.info("DataX Reader.Job [{}] splits to [{}] tasks.",
                 this.readerPluginName, readerSlicesConfigs.size());
         classLoaderSwapper.restoreCurrentThreadClassLoader();
         return readerSlicesConfigs;
     }
 
-    private List<Configuration> doWriterSplit(int readerSlicesNumber) {
+    private List<Configuration> doWriterSplit(int readerTaskNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
 
-        List<Configuration> writerSlicesConfigs = this.writerMaster
-                .split(readerSlicesNumber);
+        List<Configuration> writerSlicesConfigs = this.jobWriter
+                .split(readerTaskNumber);
         if (writerSlicesConfigs == null || writerSlicesConfigs.size() <= 0) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    "writer切分的slave不能小于等于0");
+                    "writer切分的task不能小于等于0");
         }
-        LOG.info("DataX Writer [{}] splits to [{}] slaves.",
+        LOG.info("DataX Writer.Job [{}] splits to [{}] tasks.",
                 this.writerPluginName, writerSlicesConfigs.size());
         classLoaderSwapper.restoreCurrentThreadClassLoader();
 
@@ -463,182 +463,183 @@ public class MasterContainer extends AbstractContainer {
     }
 
     /**
-     * 按顺序整合reader和writer的配置，这里的顺序不能乱！ 输入是reader、writer级别的配置，输出是一个完整slice的配置
+     * 按顺序整合reader和writer的配置，这里的顺序不能乱！ 输入是reader、writer级别的配置，输出是一个完整task的配置
      *
-     * @param readerSlicesConfigs
-     * @param writerSlicesConfigs
+     * @param readerTasksConfigs
+     * @param writerTasksConfigs
      * @return
      */
-    private List<Configuration> mergeReaderAndWriterSlicesConfigs(
-            List<Configuration> readerSlicesConfigs,
-            List<Configuration> writerSlicesConfigs) {
-        if (readerSlicesConfigs.size() != writerSlicesConfigs.size()) {
+    private List<Configuration> mergeReaderAndWriterTaskConfigs(
+            List<Configuration> readerTasksConfigs,
+            List<Configuration> writerTasksConfigs) {
+        if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     String.format(
-                            "reader切分的slave数目[%d]不等于writer切分的slave数目[%d].",
-                            readerSlicesConfigs.size(),
-                            writerSlicesConfigs.size()));
+                            "reader切分的task数目[%d]不等于writer切分的task数目[%d].",
+                            readerTasksConfigs.size(),
+                            writerTasksConfigs.size()));
         }
 
         List<Configuration> contentConfigs = new ArrayList<Configuration>();
-        for (int i = 0; i < readerSlicesConfigs.size(); i++) {
-            Configuration sliceConfig = Configuration.newDefault();
-            sliceConfig
-                    .set(CoreConstant.JOB_READER_NAME, this.readerPluginName);
-            sliceConfig.set(CoreConstant.JOB_READER_PARAMETER,
-                    readerSlicesConfigs.get(i));
-            sliceConfig
-                    .set(CoreConstant.JOB_WRITER_NAME, this.writerPluginName);
-            sliceConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
-                    writerSlicesConfigs.get(i));
-            sliceConfig.set(CoreConstant.JOB_TASKID, i);
-            contentConfigs.add(sliceConfig);
+        for (int i = 0; i < readerTasksConfigs.size(); i++) {
+            Configuration taskConfig = Configuration.newDefault();
+            taskConfig.set(CoreConstant.JOB_READER_NAME,
+                    this.readerPluginName);
+            taskConfig.set(CoreConstant.JOB_READER_PARAMETER,
+                    readerTasksConfigs.get(i));
+            taskConfig.set(CoreConstant.JOB_WRITER_NAME,
+                    this.writerPluginName);
+            taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
+                    writerTasksConfigs.get(i));
+            taskConfig.set(CoreConstant.JOB_TASK_ID, i);
+            contentConfigs.add(taskConfig);
         }
 
         return contentConfigs;
     }
 
     /**
-     * 这里比较复杂，分两步整合 1. slaves到channel 2. channel到slaveContainer
-     * 合起来考虑，其实就是把slaves整合到slaveContainer中，需要满足计算出的channel数，同时不能多起channel
+     * 这里比较复杂，分两步整合 1. tasks到channel 2. channel到taskGroup
+     * 合起来考虑，其实就是把tasks整合到taskGroup中，需要满足计算出的channel数，同时不能多起channel
      * <p/>
      * example:
      * <p/>
      * 前提条件： 切分后是1024个分表，假设用户要求总速率是1000M/s，每个channel的速率的3M/s，
-     * 每个slaveContainer负责运行7个channel
+     * 每个taskGroup负责运行7个channel
      * <p/>
      * 计算： 总channel数为：1000M/s / 3M/s =
-     * 333个，为平均分配，计算可知有308个每个channel有3个slices，而有25个每个channel有4个slices，
-     * 需要的slaveContainer数为：333 / 7 =
-     * 47...4，也就是需要48个slaveContainer，47个是每个负责7个channel，有4个负责1个channel
+     * 333个，为平均分配，计算可知有308个每个channel有3个tasks，而有25个每个channel有4个tasks，
+     * 需要的taskGroup数为：333 / 7 =
+     * 47...4，也就是需要48个taskGroup，47个是每个负责7个channel，有4个负责1个channel
      * <p/>
-     * 处理：我们先将这负责4个channel的slaveContainer处理掉，逻辑是：
-     * 先按平均为3个slices找4个channel，设置subJobId为0，
-     * 接下来就像发牌一样轮询分配slice到剩下的包含平均channel数的slice中
+     * 处理：我们先将这负责4个channel的taskGroup处理掉，逻辑是：
+     * 先按平均为3个tasks找4个channel，设置taskGroupId为0，
+     * 接下来就像发牌一样轮询分配task到剩下的包含平均channel数的taskGroup中
      *
-     * @param averSlavesPerChannel
+     * @param averTaskPerChannel
      * @param channelNumber
-     * @param channelsPerSlaveContainer
-     * @return 每个slaveContainer独立的全部配置
+     * @param channelsPerTaskGroup
+     * @return 每个taskGroup独立的全部配置
      */
     @SuppressWarnings("serial")
-    private List<Configuration> distributeSlavesToSlaveContainer(
-            int averSlavesPerChannel, int channelNumber,
-            int channelsPerSlaveContainer) {
-        Validate.isTrue(averSlavesPerChannel > 0 && channelNumber > 0
-                        && channelsPerSlaveContainer > 0,
-                "每个channel的平均slave数[averSlicesPerChannel]，channel数目[channelNumber]，每个slave的平均channel数[channelsPerSlaveContainer]都应该为正数");
-        List<Configuration> slavesConfigs = this.configuration
+    private List<Configuration> distributeTasksToTaskGroup(
+            int averTaskPerChannel, int channelNumber,
+            int channelsPerTaskGroup) {
+        Validate.isTrue(averTaskPerChannel > 0 && channelNumber > 0
+                        && channelsPerTaskGroup > 0,
+                "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
+        List<Configuration> taskConfigs = this.configuration
                 .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-        int slaveContainerNumber = channelNumber / channelsPerSlaveContainer;
-        int leftChannelNumber = channelNumber % channelsPerSlaveContainer;
+        int taskGroupNumber = channelNumber / channelsPerTaskGroup;
+        int leftChannelNumber = channelNumber % channelsPerTaskGroup;
         if (leftChannelNumber > 0) {
-            slaveContainerNumber += 1;
+            taskGroupNumber += 1;
         }
 
         /**
-         * 如果只有一个slave，直接打标返回
+         * 如果只有一个taskGroup，直接打标返回
          */
-        if (slaveContainerNumber == 1) {
-            final Configuration slaveContainerConfig = this.configuration.clone();
+        if (taskGroupNumber == 1) {
+            final Configuration taskGroupConfig = this.configuration.clone();
             /**
              * configure的clone不能clone出
              */
-            slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT, this.configuration
+            taskGroupConfig.set(CoreConstant.DATAX_JOB_CONTENT, this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT));
-            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
                     channelNumber);
-            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 0);
             return new ArrayList<Configuration>() {
                 {
-                    add(slaveContainerConfig);
+                    add(taskGroupConfig);
                 }
             };
         }
-        List<Configuration> slaveContainerConfigs = new ArrayList<Configuration>();
-        /**
-         * 将每个slaveConfig中content的配置清空
-         */
-        for (int i = 0; i < slaveContainerNumber; i++) {
-            Configuration slaveContainerConfig = this.configuration.clone();
-            List<Configuration> slaveContainerJobContent = slaveContainerConfig
-                    .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-            slaveContainerJobContent.clear();
-            slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT, slaveContainerJobContent);
 
-            slaveContainerConfigs.add(slaveContainerConfig);
+        List<Configuration> taskGroupConfigs = new ArrayList<Configuration>();
+        /**
+         * 将每个taskGroup中content的配置清空
+         */
+        for (int i = 0; i < taskGroupNumber; i++) {
+            Configuration taskGroupConfig = this.configuration.clone();
+            List<Configuration> taskGroupJobContent = taskGroupConfig
+                    .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
+            taskGroupJobContent.clear();
+            taskGroupConfig.set(CoreConstant.DATAX_JOB_CONTENT, taskGroupJobContent);
+
+            taskGroupConfigs.add(taskGroupConfig);
         }
 
-        int slaveConfigIndex = 0;
+        int taskConfigIndex = 0;
         int channelIndex = 0;
-        int slaveContainerConfigIndex = 0;
+        int taskGroupConfigIndex = 0;
 
         /**
-         * 先处理掉slaveContainer包含channel数不是平均值的slave
+         * 先处理掉taskGroup包含channel数不是平均值的taskGroup
          */
         if (leftChannelNumber > 0) {
-            Configuration slaveContainerConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
+            Configuration taskGroupConfig = taskGroupConfigs.get(taskGroupConfigIndex);
             for (; channelIndex < leftChannelNumber; channelIndex++) {
-                for (int i = 0; i < averSlavesPerChannel; i++) {
-                    List<Configuration> slaveContainerJobContent = slaveContainerConfig
+                for (int i = 0; i < averTaskPerChannel; i++) {
+                    List<Configuration> taskGroupJobContent = taskGroupConfig
                             .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-                    slaveContainerJobContent.add(slavesConfigs.get(slaveConfigIndex++));
-                    slaveContainerConfig.set(CoreConstant.DATAX_JOB_CONTENT,
-                            slaveContainerJobContent);
+                    taskGroupJobContent.add(taskConfigs.get(taskConfigIndex++));
+                    taskGroupConfig.set(CoreConstant.DATAX_JOB_CONTENT,
+                            taskGroupJobContent);
                 }
             }
 
-            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
                     leftChannelNumber);
-            slaveContainerConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID,
-                    slaveContainerConfigIndex++);
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID,
+                    taskGroupConfigIndex++);
         }
 
         /**
-         * 下面需要轮询分配，并打上channel数和slaveId标记
+         * 下面需要轮询分配，并打上channel数和taskGroupId标记
          */
-        int equalDivisionStartIndex = slaveContainerConfigIndex;
-        for (; slaveConfigIndex < slavesConfigs.size()
-                && equalDivisionStartIndex < slaveContainerConfigs.size(); ) {
-            for (slaveContainerConfigIndex = equalDivisionStartIndex; slaveContainerConfigIndex < slaveContainerConfigs
-                    .size() && slaveConfigIndex < slavesConfigs.size(); slaveContainerConfigIndex++) {
-                Configuration slaveContainerConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
-                List<Configuration> slaveContainerJobContent = slaveContainerConfig
+        int equalDivisionStartIndex = taskGroupConfigIndex;
+        for (; taskConfigIndex < taskConfigs.size()
+                && equalDivisionStartIndex < taskGroupConfigs.size(); ) {
+            for (taskGroupConfigIndex = equalDivisionStartIndex; taskGroupConfigIndex < taskGroupConfigs
+                    .size() && taskConfigIndex < taskConfigs.size(); taskGroupConfigIndex++) {
+                Configuration taskGroupConfig = taskGroupConfigs.get(taskGroupConfigIndex);
+                List<Configuration> taskGroupJobContent = taskGroupConfig
                         .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-                slaveContainerJobContent.add(slavesConfigs.get(slaveConfigIndex++));
-                slaveContainerConfig
-                        .set(CoreConstant.DATAX_JOB_CONTENT, slaveContainerJobContent);
+                taskGroupJobContent.add(taskConfigs.get(taskConfigIndex++));
+                taskGroupConfig
+                        .set(CoreConstant.DATAX_JOB_CONTENT, taskGroupJobContent);
             }
         }
 
-        for (slaveContainerConfigIndex = equalDivisionStartIndex;
-             slaveContainerConfigIndex < slaveContainerConfigs.size(); ) {
-            Configuration slaveConfig = slaveContainerConfigs.get(slaveContainerConfigIndex);
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CHANNEL,
-                    channelsPerSlaveContainer);
-            slaveConfig.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID,
-                    slaveContainerConfigIndex++);
+        for (taskGroupConfigIndex = equalDivisionStartIndex;
+             taskGroupConfigIndex < taskGroupConfigs.size(); ) {
+            Configuration taskGroupConfig = taskGroupConfigs.get(taskGroupConfigIndex);
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
+                    channelsPerTaskGroup);
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID,
+                    taskGroupConfigIndex++);
         }
 
-        return slaveContainerConfigs;
+        return taskGroupConfigs;
     }
 
-    private void postReaderMaster() {
+    private void postJobReader() {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        LOG.info("DataX Reader.Master [{}] do post work.",
+        LOG.info("DataX Reader.Job [{}] do post work.",
                 this.readerPluginName);
-        this.readerMaster.post();
+        this.jobReader.post();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
-    private void postWriterMaster() {
+    private void postJobWriter() {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
-        LOG.info("DataX Writer.Master [{}] do post work.",
+        LOG.info("DataX Writer.Job [{}] do post work.",
                 this.writerPluginName);
-        this.writerMaster.post();
+        this.jobWriter.post();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 

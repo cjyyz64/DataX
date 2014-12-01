@@ -25,7 +25,7 @@ public class MemoryChannelTest extends CaseInitializer {
     public void before() {
         System.out.println(ConfigurationProducer.produce().toJSON());
         Configuration configuration = ConfigurationProducer.produce();
-        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 0);
+        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 0);
         this.channel = new MemoryChannel(configuration);
         this.channel.setCommunication(new Communication());
     }

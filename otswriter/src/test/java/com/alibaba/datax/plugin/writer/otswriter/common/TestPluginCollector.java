@@ -6,10 +6,10 @@ import java.util.List;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.collector.plugin.slave.AbstractSlavePluginCollector;
+import com.alibaba.datax.core.statistics.collector.plugin.task.AbstractTaskPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 
-public class TestPluginCollector extends AbstractSlavePluginCollector {
+public class TestPluginCollector extends AbstractTaskPluginCollector {
     
     private List<RecordAndMessage> content = new ArrayList<RecordAndMessage>();
 

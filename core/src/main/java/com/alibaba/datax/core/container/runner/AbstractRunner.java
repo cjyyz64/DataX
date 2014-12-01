@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.container.runner;
 
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.util.State;
@@ -11,18 +11,18 @@ import org.apache.commons.lang.Validate;
  * Created by jingxing on 14-9-1.
  */
 public abstract class AbstractRunner {
-    private AbstractSlavePlugin plugin;
+    private AbstractTaskPlugin plugin;
 
     private Configuration jobConf;
 
     private Communication runnerCommunication;
 
-    private int slaveContainerId;
+    private int taskGroupId;
 
-    private int slaveExecutorId;
+    private int taskId;
 
-    public AbstractRunner(AbstractSlavePlugin abstractSlavePlugin) {
-        this.plugin = abstractSlavePlugin;
+    public AbstractRunner(AbstractTaskPlugin abstractTaskPlugin) {
+        this.plugin = abstractTaskPlugin;
     }
 
     public void destroy() {
@@ -36,11 +36,11 @@ public abstract class AbstractRunner {
         return this.runnerCommunication.getState();
     }
 
-    public AbstractSlavePlugin getPlugin() {
+    public AbstractTaskPlugin getPlugin() {
         return plugin;
     }
 
-    public void setPlugin(AbstractSlavePlugin plugin) {
+    public void setPlugin(AbstractTaskPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -53,8 +53,8 @@ public abstract class AbstractRunner {
         this.plugin.setPluginJobConf(jobConf);
     }
 
-    public void setSlavePluginCollector(SlavePluginCollector pluginCollector) {
-        this.plugin.setSlavePluginCollector(pluginCollector);
+    public void setTaskPluginCollector(TaskPluginCollector pluginCollector) {
+        this.plugin.setTaskPluginCollector(pluginCollector);
     }
 
     private void mark(State state) {
@@ -76,26 +76,26 @@ public abstract class AbstractRunner {
     }
 
     /**
-     * @param slaveContainerId
-     *            the slaveContainerId to set
+     * @param taskGroupId
+     *            the taskGroupId to set
      */
-    public void setSlaveContainerId(int slaveContainerId) {
-        this.slaveContainerId = slaveContainerId;
+    public void setTaskGroupId(int taskGroupId) {
+        this.taskGroupId = taskGroupId;
     }
 
     /**
-     * @return the slaveContainerId
+     * @return the taskGroupId
      */
-    public int getSlaveContainerId() {
-        return slaveContainerId;
+    public int getTaskGroupId() {
+        return taskGroupId;
     }
 
-    public int getSlaveExecutorId() {
-        return slaveExecutorId;
+    public int getTaskId() {
+        return taskId;
     }
 
-    public void setSlaveExecutorId(int slaveExecutorId) {
-        this.slaveExecutorId = slaveExecutorId;
+    public void setTaskId(int taskId) {
+        this.taskId = taskId;
     }
 
     public void setRunnerCommunication(final Communication runnerCommunication) {

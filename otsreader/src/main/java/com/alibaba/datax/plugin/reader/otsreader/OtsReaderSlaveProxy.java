@@ -86,7 +86,7 @@ public class OtsReaderSlaveProxy {
     public void read(RecordSender sender, Configuration configuration) throws Exception {
         LOG.info("read begin.");
         
-        //LOG.info("OTSReader slave parameter: {}", configuration.toJSON());
+        //LOG.info("OTSReader task parameter: {}", configuration.toJSON());
         
         OTSConf conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         OTSRange range = GsonParser.jsonToRange(configuration.getString(OTSConst.OTS_RANGE));

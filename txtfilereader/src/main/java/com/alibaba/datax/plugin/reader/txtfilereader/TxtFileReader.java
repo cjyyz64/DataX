@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
  * Created by haiwei.luo on 14-9-20.
  */
 public class TxtFileReader extends Reader {
-	public static class Master extends Reader.Master {
+	public static class Job extends Reader.Job {
 		private static final Logger LOG = LoggerFactory
-				.getLogger(TxtFileReader.Master.class);
+				.getLogger(Job.class);
 
 		private Configuration readerOriginConfig = null;
 
@@ -223,9 +223,9 @@ public class TxtFileReader extends Reader {
 
 	}
 
-	public static class Slave extends Reader.Slave {
+	public static class Task extends Reader.Task {
 		private static Logger LOG = LoggerFactory
-				.getLogger(TxtFileReader.Slave.class);
+				.getLogger(Task.class);
 
 		private Configuration readerSliceConfig;
 
@@ -389,7 +389,7 @@ public class TxtFileReader extends Reader {
                 record = recordSender.createRecord();
 				record = this.generateStringRecord(sourceLine, record);
 
-				this.getSlavePluginCollector().collectDirtyRecord(record,
+				this.getTaskPluginCollector().collectDirtyRecord(record,
 						dxe.getMessage());
 
 				return record;

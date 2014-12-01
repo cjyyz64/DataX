@@ -3,23 +3,23 @@ package com.alibaba.datax.common.spi;
 import java.util.List;
 
 import com.alibaba.datax.common.base.BaseObject;
-import com.alibaba.datax.common.plugin.AbstractMasterPlugin;
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordSender;
 
 /**
- * 每个Reader插件在其内部内部实现Master、Slave两个内部类。
+ * 每个Reader插件在其内部内部实现Job、Task两个内部类。
  * 
  * 
  * */
 public abstract class Reader extends BaseObject {
 
 	/**
-	 * 每个Reader插件必须实现Master内部类。
+	 * 每个Reader插件必须实现Job内部类。
 	 * 
 	 * */
-	public static abstract class Master extends AbstractMasterPlugin {
+	public static abstract class Job extends AbstractJobPlugin {
 
 		/**
 		 * 切分任务
@@ -46,7 +46,7 @@ public abstract class Reader extends BaseObject {
 		public abstract List<Configuration> split(int adviceNumber);
 	}
 
-	public static abstract class Slave extends AbstractSlavePlugin {
+	public static abstract class Task extends AbstractTaskPlugin {
 		public abstract void startRead(RecordSender recordSender);
 	}
 }

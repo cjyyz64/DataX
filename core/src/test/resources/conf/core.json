@@ -17,11 +17,11 @@
             }
         },
         "container": {
-            "master": {
-                "class": "com.alibaba.datax.core.container.MasterContainer"
+            "job": {
+                "class": "com.alibaba.datax.core.container.JobContainer"
             },
-            "slave": {
-                "class": "com.alibaba.datax.core.container.SlaveContainer"
+            "taskGroup": {
+                "class": "com.alibaba.datax.core.container.TaskGroupContainer"
             },
             "model": "master",
         	"id": 1
@@ -29,8 +29,8 @@
         "statistics": {
             "collector": {
                 "framework": {
-                    "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterCollector",
-                                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveCollector"
+                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
+                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                 },
                 "plugin": {
                     "maxDirtyNumber": 1000

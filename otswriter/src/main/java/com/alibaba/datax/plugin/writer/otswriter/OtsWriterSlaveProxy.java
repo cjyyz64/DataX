@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
@@ -29,7 +29,7 @@ public class OtsWriterSlaveProxy {
     private OTS ots = null;
 
     public void init(Configuration configuration) {
-        //LOG.info("OTSWriter slave parameter: {}", configuration.toJSON());
+        //LOG.info("OTSWriter task parameter: {}", configuration.toJSON());
         conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         
         ClientConfiguration clientConfigure = new ClientConfiguration();
@@ -54,7 +54,7 @@ public class OtsWriterSlaveProxy {
         ots.shutdown();
     }
     
-    public void write(RecordReceiver recordReceiver, SlavePluginCollector collector) throws Exception {
+    public void write(RecordReceiver recordReceiver, TaskPluginCollector collector) throws Exception {
         LOG.info("write begin.");
         int expectColumnCount = conf.getPrimaryKeyColumn().size() + conf.getAttributeColumn().size();
         Record record = null;

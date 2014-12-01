@@ -3,7 +3,7 @@ package com.alibaba.datax.core.container.util;
 /**
  * Created by jingxing on 14-8-29.
  *
- * 为避免jar冲突，比如hbase可能有多个版本的读写依赖jar包，MasterContainer和SlaveContainer
+ * 为避免jar冲突，比如hbase可能有多个版本的读写依赖jar包，JobContainer和TaskGroupContainer
  * 就需要脱离当前classLoader去加载这些jar包，执行完成后，又退回到原来classLoader上继续执行接下来的代码
  */
 public final class ClassLoaderSwapper {

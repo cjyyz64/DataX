@@ -3,7 +3,7 @@ package com.alibaba.datax.plugin.rdbms.reader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ public class ResultSetReadProxy {
 
 	public static void transportOneRecord(RecordSender recordSender,
 			ResultSet rs, ResultSetMetaData metaData, int columnNumber,
-			SlavePluginCollector slavePluginCollector) {
+			TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 
 		try {
@@ -108,7 +108,7 @@ public class ResultSetReadProxy {
 				LOG.debug("read data " + record.toString()
 						+ " occur exception:", e);
 			}
-			slavePluginCollector.collectDirtyRecord(record, e);
+			taskPluginCollector.collectDirtyRecord(record, e);
 			if (e instanceof DataXException) {
 				throw (DataXException) e;
 			}

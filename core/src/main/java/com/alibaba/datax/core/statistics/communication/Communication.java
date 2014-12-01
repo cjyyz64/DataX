@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Created by jingxing on 14/11/8.
  *
- * DataX所有的状态及统计信息交互类，master、slaveGroup、slave等的消息汇报都走该类
+ * DataX所有的状态及统计信息交互类，job、taskGroup、task等的消息汇报都走该类
  */
 public class Communication extends BaseObject implements Cloneable {
     /** 所有的数值key-value对 **/
@@ -29,7 +29,7 @@ public class Communication extends BaseObject implements Cloneable {
     /** 记录的timestamp **/
     private long timestamp;
 
-    /** slave给master的信息 **/
+    /** task给job的信息 **/
     Map<String, List<String>> message;
 
     public Communication() {

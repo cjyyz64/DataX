@@ -22,7 +22,7 @@ public class RecordExchangerTest extends CaseInitializer {
 	@Before
 	public void before() {
 		this.configuration = ConfigurationProducer.produce();
-		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 1);
+		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
 		return;
 	}
 
