@@ -9,7 +9,7 @@ import com.aliyun.openservices.ots.model.PrimaryKeyType;
 
 public class TestForDatax {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String t0 = "ots_writer_t0";
         String t1 = "ots_writer_t1";
         BaseTest base = new BaseTest(t0);
@@ -21,7 +21,7 @@ public class TestForDatax {
         base.prepareData(pk, 0, 10000, 0);
         
         Table t = new Table(base.getOts(), t1, pk, null, 0);
-        t.create();
+        t.create(5000, 5000);
         
         base.getOts().shutdown();
     }

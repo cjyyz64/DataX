@@ -26,11 +26,11 @@ public class StreamReader extends Reader {
 			Long sliceRecordCount = this.originalConfig
 					.getLong(Key.SLICE_RECORD_COUNT);
 			if (null == sliceRecordCount) {
-				throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE,
-						"Lost config sliceRecordCount.");
+				throw DataXException.asDataXException(StreamReaderErrorCode.REQUIRED_VALUE,
+						"没有设置参数[sliceRecordCount].");
 			} else if (sliceRecordCount < 1) {
-				throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
-						"sliceRecordCount can not <1.");
+				throw DataXException.asDataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
+						"参数[sliceRecordCount]不能小于1.");
 			}
 
 		}
@@ -39,8 +39,8 @@ public class StreamReader extends Reader {
 			List<JSONObject> columns = originalConfig.getList(Key.COLUMN,
 					JSONObject.class);
 			if (null == columns || columns.isEmpty()) {
-				throw new DataXException(StreamReaderErrorCode.REQUIRED_VALUE,
-						"Lost config column.");
+				throw DataXException.asDataXException(StreamReaderErrorCode.REQUIRED_VALUE,
+						"没有设置参数[column].");
 			}
 
 			List<String> dealedColumns = new ArrayList<String>();
@@ -63,9 +63,9 @@ public class StreamReader extends Reader {
 						}
 					}
 					if (!Type.isTypeIllegal(typeName)) {
-						throw new DataXException(
+						throw DataXException.asDataXException(
 								StreamReaderErrorCode.NOT_SUPPORT_TYPE,
-								"Unsupported type:" + typeName);
+								String.format("不支持类型[%s]", typeName));
 					}
 				}
 				dealedColumns.add(eachColumnConfig.toJSON());
@@ -142,12 +142,12 @@ public class StreamReader extends Reader {
 				List<String> columns) {
 			if (null == recordSender) {
 				throw new IllegalArgumentException(
-						"Parameter recordSender can not be null.");
+						"参数[recordSender]不能为空.");
 			}
 
 			if (null == columns || columns.isEmpty()) {
 				throw new IllegalArgumentException(
-						"Parameter columns can not be null nor empty.");
+						"参数[column]不能为空.");
 			}
 
 			Record record = recordSender.createRecord();
@@ -185,13 +185,13 @@ public class StreamReader extends Reader {
 						break;
 					default:
 						// in fact,never to be here
-						throw new Exception("Unsupported type:"
-								+ columnType.name());
+						throw new Exception(String.format("不支持类型[%s]",
+                                columnType.name()));
 					}
 				}
 			} catch (Exception e) {
-				throw new DataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
-						"Construct one record failed.", e);
+				throw DataXException.asDataXException(StreamReaderErrorCode.ILLEGAL_VALUE,
+						"构造一个record失败.", e);
 			}
 
 			return record;

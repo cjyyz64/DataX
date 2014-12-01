@@ -107,6 +107,8 @@ public class ParamParseFunctiontest {
         conf.setRangeSplit(splits);
 
         readerConf.setConf(conf);
+        
+        Thread.sleep(1000);
     }
 
     /**
@@ -815,6 +817,26 @@ public class ParamParseFunctiontest {
             proxy.init(p);
             assertEquals(18, proxy.getConf().getRetry());
         }
+
+        // 测试配置的值是否生效
+        // maxRetryTime : 100
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":[]"
+                            + "},"
+                            + "\"maxRetryTime\": 100,"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            proxy.init(p);
+            assertEquals(100, proxy.getConf().getRetry());
+        }
     }
 
     /**
@@ -831,6 +853,26 @@ public class ParamParseFunctiontest {
             Configuration p = Configuration.from(readerConf.toString());
             proxy.init(p);
             assertEquals(100, proxy.getConf().getSleepInMilliSecond());
+        }
+        
+        // 测试配置的值是否生效
+        // retrySleepInMillionSecond : 555
+        {
+            String json = 
+                    "{\"accessId\":\""+ p.getString("accessid") +"\","
+                            + "\"accessKey\":\""+ p.getString("accesskey") +"\","
+                            + "\"endpoint\":\""+ p.getString("endpoint") +"\","
+                            + "\"instanceName\":\""+ p.getString("instance-name") +"\","
+                            + "\"column\":[{\"name\":\"xxxx\"}],"
+                            + "\"range\":{"
+                            +    "\"begin\":[],"
+                            +    "\"end\":[]"
+                            + "},"
+                            + "\"retrySleepInMillionSecond\": 555,"
+                            + "\"table\":\""+ tableName +"\"}";
+            Configuration p = Configuration.from(json);
+            proxy.init(p);
+            assertEquals(555, proxy.getConf().getSleepInMilliSecond());
         }
     }
 }

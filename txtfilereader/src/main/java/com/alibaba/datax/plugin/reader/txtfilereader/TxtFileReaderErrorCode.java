@@ -6,12 +6,11 @@ import com.alibaba.datax.common.spi.ErrorCode;
  * Created by haiwei.luo on 14-9-20.
  */
 public enum TxtFileReaderErrorCode implements ErrorCode {
-	RUNTIME_EXCEPTION("TxtFileReader-00", "run time exception"), FILE_EXCEPTION(
-			"TxtFileReader-01", "file read exception"), CONFIG_INVALID_EXCEPTION(
-			"TxtFileReader-02", "config parameter is invalid"), NOT_SUPPORT_TYPE(
-			"TxtFileReader-03", "not supported column type"), CAST_VALUE_TYPE_ERROR(
-			"TxtFileReader-04", "can not cast value to pointed type"), SECURITY_EXCEPTION(
-			"TxtFileReader-05", "do not have permission"), ;
+	RUNTIME_EXCEPTION("TxtFileReader-00", "运行时异常"), FILE_EXCEPTION(
+			"TxtFileReader-01", "文件读取异常"), CONFIG_INVALID_EXCEPTION(
+			"TxtFileReader-02", "参数配置错误"), NOT_SUPPORT_TYPE("TxtFileReader-03",
+			"不支持的类型"), CAST_VALUE_TYPE_ERROR("TxtFileReader-04", "无法完成指定类型的转换"), SECURITY_EXCEPTION(
+			"TxtFileReader-05", "缺少权限"), ;
 
 	private final String code;
 	private final String description;

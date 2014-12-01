@@ -69,4 +69,11 @@ public class BoolColumnTest extends BaseTest {
 			Assert.assertTrue(e instanceof DataXException);
 		}
 	}
+
+	@Test
+	public void test_nullReference() {
+		Boolean b = null;
+		BoolColumn boolColumn = new BoolColumn(b);
+		Assert.assertTrue(boolColumn.asBoolean() == null);
+	}
 }

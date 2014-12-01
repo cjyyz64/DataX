@@ -1,62 +1,28 @@
+
 {
     "entry": {
         "jvm": "-Xms1G -Xmx1G",
-        "environment": {
-            "JAVA_HOME": "/home/xiaoyong.dengxy/myTools/jdk1.6.0_24"
-        }
+        "environment": {}
     },
-    "data": {
+    "common": {
         "column": {
-            "number": {
-                "bool": {
-                    "0": false,
-                    "^0": true
-                }
-            },
-            "string": {
-                "date": {
-                    "timeFormat": "yyyy-MM-dd HH:mm:ss",
-                    "timeZone": "GMT+8"
-                },
-                "bool": {
-                    "true": true,
-                    "^true": false
-                },
-                "bytes": {
-                    "encoding": "utf-8"
-                }
-            },
-            "date": {
-                "string": {
-                    "timeFormat": "yyyy-MM-dd HH:mm:ss",
-                    "timeZone": "GMT+8"
-                }
-            },
-            "bool": {
-                "number": {
-                    "true": 1,
-                    "false": 0
-                },
-                "string": {
-                    "true": "true",
-                    "false": "false"
-                }
-            },
-            "bytes": {
-                "encoding": "utf-8"
-            }
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
         }
     },
     "core": {
         "clusterManager": {
             "address": "http://localhost:7001/api",
             "timeout": 3000
-         },
+        },
         "transport": {
             "channel": {
                 "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
                 "speed": {
-                    "byte": 5242880
+                    "byte": 1048576
                 },
                 "flowControlInterval": 20,
                 "capacity": 512

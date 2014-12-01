@@ -22,141 +22,138 @@ import java.util.UUID;
 
 /**
  * Engine是DataX入口类，该类负责初始化Master或者Slave的运行容器，并运行插件的Master或者Slave逻辑
- * 
- * */
+ */
 public class Engine {
-	private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
-	/* check job model (master/slave) first */
-	public void start(Configuration allConf) {
+    /* check job model (master/slave) first */
+    public void start(Configuration allConf) {
 
-		// 绑定column转换信息
-		ColumnCast.bind(allConf);
+        // 绑定column转换信息
+        ColumnCast.bind(allConf);
 
-		/**
-		 * 初始化PluginLoader，可以获取各种插件配置
-		 */
-		LoadUtil.bind(allConf);
+        /**
+         * 初始化PluginLoader，可以获取各种插件配置
+         */
+        LoadUtil.bind(allConf);
 
-		boolean isMaster = !("slave".equalsIgnoreCase(allConf
-				.getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
+        boolean isMaster = !("slave".equalsIgnoreCase(allConf
+                .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
 
-		AbstractContainer container;
-		if (isMaster) {
-			container = ClassUtil.instantiate(allConf
-					.getString(CoreConstant.DATAX_CORE_CONTAINER_MASTER_CLASS),
-					AbstractContainer.class, allConf);
-		} else {
-			container = ClassUtil.instantiate(allConf
-					.getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
-					AbstractContainer.class, allConf);
-		}
+        AbstractContainer container;
+        if (isMaster) {
+            container = ClassUtil.instantiate(allConf
+                            .getString(CoreConstant.DATAX_CORE_CONTAINER_MASTER_CLASS),
+                    AbstractContainer.class, allConf);
+        } else {
+            container = ClassUtil.instantiate(allConf
+                            .getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
+                    AbstractContainer.class, allConf);
+        }
 
-		container.start();
-	}
+        container.start();
+    }
 
-	/**
-	 * configure log environment.
-	 * 
-	 * @param jobId
-	 *            DataX job id.
-	 * 
-	 * */
-	private static void confLog(String jobId) throws Exception {
-		java.util.Calendar c = java.util.Calendar.getInstance();
-		java.text.SimpleDateFormat f = new java.text.SimpleDateFormat(
-				"yyyyMMddHHmmss");
+    /**
+     * configure log environment.
+     *
+     * @param jobId DataX job id.
+     */
+    private static void confLog(String jobId) throws Exception {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        java.text.SimpleDateFormat f = new java.text.SimpleDateFormat(
+                "yyyyMMddHHmmss");
         String logFile = String.format("%s.%s", jobId, f.format(c.getTime()));
-		System.setProperty("log.file", logFile);
+        System.setProperty("log.file", logFile);
 
-		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-		LoggerContext loggerContext = (LoggerContext) loggerFactory;
-		loggerContext.reset();
-		JoranConfigurator configurator = new JoranConfigurator();
-		configurator.setContext(loggerContext);
-		configurator.doConfigure(new File(CoreConstant.DATAX_CONF_LOG_PATH)
-				.toURI().toURL());
+        ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+        LoggerContext loggerContext = (LoggerContext) loggerFactory;
+        loggerContext.reset();
+        JoranConfigurator configurator = new JoranConfigurator();
+        configurator.setContext(loggerContext);
+        configurator.doConfigure(new File(CoreConstant.DATAX_CONF_LOG_PATH)
+                .toURI().toURL());
         LOG.info(String.format("log file : %s", logFile));
-	}
+    }
 
-	private static String copyRight() {
-		String title = "\nDataX, From Alibaba ! \nCopyright (C) 2010-2014, Alibaba Group. All Rights Reserved.\n";
-		return title;
-	}
+    private static String copyRight() {
+        String title = "\nDataX, From Alibaba ! \nCopyright (C) 2010-2014, Alibaba Group. All Rights Reserved.\n";
+        return title;
+    }
 
-	// 注意屏蔽敏感信息
-	private static String filterJobConfiguration(
-			final Configuration configuration) {
-		Configuration jobConf = configuration.getConfiguration("job.content")
-				.clone();
+    // 注意屏蔽敏感信息
+    private static String filterJobConfiguration(
+            final Configuration configuration) {
+        Configuration jobConf = configuration.getConfiguration("job.content")
+                .clone();
 
-		Set<String> keys = jobConf.getKeys();
-		for (final String key : keys) {
-			boolean isSensitive = StringUtils.endsWithIgnoreCase(key,
-					"password")
-					|| StringUtils.endsWithIgnoreCase(key, "accessKey");
-			if (isSensitive && jobConf.get(key) instanceof String) {
-				jobConf.set(key, jobConf.getString(key).replaceAll(".", "*"));
-			}
-		}
+        Set<String> keys = jobConf.getKeys();
+        for (final String key : keys) {
+            boolean isSensitive = StringUtils.endsWithIgnoreCase(key,
+                    "password")
+                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
+            if (isSensitive && jobConf.get(key) instanceof String) {
+                jobConf.set(key, jobConf.getString(key).replaceAll(".", "*"));
+            }
+        }
 
-		return jobConf.beautify();
-	}
+        return jobConf.beautify();
+    }
 
-	public static void entry(final String[] args) throws Throwable {
-		Options options = new Options();
-		options.addOption("job", true, "Job Config .");
-		options.addOption("help", false, "Show help .");
+    public static void entry(final String[] args) throws Throwable {
+        Options options = new Options();
+        options.addOption("job", true, "Job Config .");
+        options.addOption("help", false, "Show help .");
 
-		BasicParser parser = new BasicParser();
-		CommandLine cl = parser.parse(options, args);
+        BasicParser parser = new BasicParser();
+        CommandLine cl = parser.parse(options, args);
 
-		if (cl.hasOption("help")) {
-			HelpFormatter f = new HelpFormatter();
-			f.printHelp("OptionsTip", options);
-			System.exit(Status.SUCCESS.value());
-		}
+        if (cl.hasOption("help")) {
+            HelpFormatter f = new HelpFormatter();
+            f.printHelp("OptionsTip", options);
+            System.exit(Status.SUCCESS.value());
+        }
 
-		// TODO: add help info.
-		if (!cl.hasOption("job")) {
-			System.err.printf(String.format(
-					"Usage: %s/bin/datax.py job.json .",
-					CoreConstant.DATAX_HOME));
-			return;
-		}
+        // TODO: add help info.
+        if (!cl.hasOption("job")) {
+            System.err.printf(String.format(
+                    "Usage: %s/bin/datax.py job.json .",
+                    CoreConstant.DATAX_HOME));
+            return;
+        }
 
-		String jobPath = cl.getOptionValue("job");
-		Configuration configuration = ConfigParser.parse(jobPath);
+        String jobPath = cl.getOptionValue("job");
+        Configuration configuration = ConfigParser.parse(jobPath);
 
-		String jobId = configuration.getString(
-				CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, UUID.randomUUID()
-						.toString());
-		Engine.confLog(jobId);
+        String jobId = configuration.getString(
+                CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, UUID.randomUUID()
+                        .toString());
+        Engine.confLog(jobId);
 
-		LOG.info("\n" + Engine.copyRight());
+        LOG.info("\n" + Engine.copyRight());
 
-		LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
+        LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 
-		LOG.debug(configuration.toJSON());
+        LOG.debug(configuration.toJSON());
 
-		ConfigurationValidate.doValidate(configuration);
-		Engine engine = new Engine();
-		try {
-			engine.start(configuration);
-		} catch (Throwable e) {
-			throw e;
-		}
-	}
+        ConfigurationValidate.doValidate(configuration);
+        Engine engine = new Engine();
+        try {
+            engine.start(configuration);
+        } catch (Throwable e) {
+            throw e;
+        }
+    }
 
-	public static void main(String[] args) throws Exception {
-		try {
-			Engine.entry(args);
-		} catch (Throwable e) {
-			LOG.error("\n" + ExceptionTracker.trace(e));
-			System.exit(Status.FAIL.value());
-		}
+    public static void main(String[] args) throws Exception {
+        try {
+            Engine.entry(args);
+        } catch (Throwable e) {
+            LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
+            System.exit(Status.FAIL.value());
+        }
 
-		System.exit(Status.SUCCESS.value());
-	}
+        System.exit(Status.SUCCESS.value());
+    }
 
 }

@@ -6,7 +6,6 @@ import com.alibaba.datax.common.plugin.SlavePluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.DataTunnel;
@@ -61,14 +60,8 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                String businessMessage = String.format("unsupported account type=[%s].",
-                        this.accountType);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.UNSUPPORTED_ACCOUNT_TYPE,
-                        businessMessage);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
@@ -77,7 +70,7 @@ public class OdpsWriter extends Writer {
             boolean emptyAsNull = this.originalConfig.getBool(Key.EMPTY_AS_NULL, false);
             this.originalConfig.set(Key.EMPTY_AS_NULL, emptyAsNull);
             if (emptyAsNull) {
-                LOG.warn("As your job configured emptyAsNull=true, so when write to odps,empty string \"\" will be treated as null.");
+                LOG.warn(" 由于您的作业配置了写入 ODPS 的目的表时emptyAsNull=true, 所以 DataX将会把长度为0的空字符串作为 java 的 null 写入 ODPS.");
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
@@ -85,7 +78,7 @@ public class OdpsWriter extends Writer {
             LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 
             if (IS_DEBUG) {
-                LOG.debug("After init, job config now is: [\n{}\n] .",
+                LOG.debug("After master init(), job config now is: [\n{}\n] .",
                         this.originalConfig.toJSON());
             }
         }
@@ -119,12 +112,9 @@ public class OdpsWriter extends Writer {
             try {
                 tab.load();
             } catch (Exception e) {
-                String businessMessage = String.format("Can not load table. detail: table=[%s]. detail:[%s].",
-                        tab.getName(), e.getMessage());
-                String message = StrUtil.buildOriginalCauseMessage(businessMessage, null);
-                LOG.error(message);
-
-                throw new DataXException(OdpsWriterErrorCode.CONFIG_INNER_ERROR, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", tab.getName()), e);
             }
 
             OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
@@ -169,6 +159,7 @@ public class OdpsWriter extends Writer {
         }
 
         private void dealColumn(Configuration originalConfig, List<String> allColumns) {
+            //之前已经检查了userConfiguredColumns 一定不为空
             List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
             if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
                 userConfiguredColumns = allColumns;
@@ -228,8 +219,8 @@ public class OdpsWriter extends Writer {
             this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL);
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
-                throw new DataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "blockSizeInMB should in range:[1,512], but you configured value="
-                        + this.blockSizeInMB);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是[1-512]之间的整数.", this.blockSizeInMB));
             }
 
             if (IS_DEBUG) {
@@ -272,12 +263,7 @@ public class OdpsWriter extends Writer {
 
                 proxy.writeRemainingRecord(blocks);
             } catch (Exception e) {
-                String businessMessage = "Write record failed. detail:" + e.getMessage();
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, e);
-                LOG.error(message);
-
-                throw new DataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, e);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, "写入 ODPS 目的表失败. 请联系 ODPS 管理员处理.", e);
             }
         }
 

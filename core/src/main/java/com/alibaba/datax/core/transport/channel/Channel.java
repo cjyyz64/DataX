@@ -46,7 +46,7 @@ public abstract class Channel {
 
 		if (id < 0) {
 			throw new IllegalArgumentException(String.format(
-					"ID [%d] must be > 0 .", id));
+					"channel id[%d]不能小于0.", id));
 		}
 
 		int capacity = configuration.getInt(
@@ -57,7 +57,7 @@ public abstract class Channel {
 
 		if (capacity <= 0) {
 			throw new IllegalArgumentException(String.format(
-					"Capacity [%d] must be > 0 .", capacity));
+					"通道容量[%d]必须大于0.", capacity));
 
 		}
 
@@ -114,7 +114,7 @@ public abstract class Channel {
 	}
 
 	public void push(final Record r) {
-		Validate.notNull(r, "Record cannot null .");
+		Validate.notNull(r, "record不能为空.");
 		this.doPush(r);
 		this.statPush(this.getChannelMetric(), 1L, r.getByteSize());
 	}

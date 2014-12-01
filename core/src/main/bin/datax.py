@@ -51,7 +51,7 @@ DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_JVM = "-Xms1024m -Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log"%(DATAX_HOME)
 YUNTI_JAVA_HOME = r"/home/yunti/java-current"
 TAOBAO_JAVA_HOME = r"/opt/taobao/java"
-ENGINE_COMMAND = "${JAVA_HOME}/bin/java -server ${jvm} -Ddatax.home=%s -classpath %s/lib/*:. ${params} com.alibaba.datax.core.Engine -job ${job}"%(DATAX_HOME, DATAX_HOME)
+ENGINE_COMMAND = "${JAVA_HOME}/bin/java -server -Dfile.encoding=UTF-8 ${jvm} -Ddatax.home=%s -classpath %s/lib/*:. ${params} com.alibaba.datax.core.Engine -job ${job}"%(DATAX_HOME, DATAX_HOME)
 DEBUG_JVM = "-Xms1024m -Xmx1024m  -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log"%(DATAX_HOME)
 child_process = None
 
@@ -228,7 +228,7 @@ def get_job_from_http(job_path):
 
     try:
         # 这里的参数可能需要处理
-        if not job_path.endswith("/config"):
+        if not (job_path.endswith("/config") or job_path.endswith("/config.xml")):
             job_path = "%s/config"%(job_path)
         response = urllib2.urlopen(job_path)
         job_conf = response.read()

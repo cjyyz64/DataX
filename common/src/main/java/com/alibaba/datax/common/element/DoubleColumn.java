@@ -14,25 +14,43 @@ public class DoubleColumn extends Column {
 		this.validate(data);
 	}
 
-	public DoubleColumn(double data) {
-		this(String.valueOf(data), 8);
+	public DoubleColumn(Long data) {
+		this(data == null ? (String) null : String.valueOf(data), 8);
 	}
 
-	public DoubleColumn(float data) {
-		this(String.valueOf(data), 4);
+	public DoubleColumn(Integer data) {
+		this(data == null ? (String) null : String.valueOf(data), 4);
 	}
 
-	public DoubleColumn(BigDecimal data) {
-		this(null == data ? null : data.toPlainString(), null == data ? 0
-				: data.toPlainString().length());
+	/**
+	 * Double无法表示准确的小数数据，我们不推荐使用该方法保存Double数据，建议使用String作为构造入参
+	 * 
+	 * */
+	public DoubleColumn(final Double data) {
+		this(data == null ? (String) null
+				: new BigDecimal(String.valueOf(data)).toPlainString(), 8);
 	}
 
-	public DoubleColumn(BigInteger data) {
-		this(null == data ? null : data.toString());
+	/**
+	 * Float无法表示准确的小数数据，我们不推荐使用该方法保存Float数据，建议使用String作为构造入参
+	 * 
+	 * */
+	public DoubleColumn(final Float data) {
+		this(data == null ? (String) null
+				: new BigDecimal(String.valueOf(data)).toPlainString(), 4);
+	}
+
+	public DoubleColumn(final BigDecimal data) {
+		this(null == data ? (String) null : data.toPlainString(),
+				null == data ? 0 : data.toPlainString().length());
+	}
+
+	public DoubleColumn(final BigInteger data) {
+		this(null == data ? (String) null : data.toString());
 	}
 
 	public DoubleColumn() {
-		this(null, 0);
+		this((String) null, 0);
 	}
 
 	private DoubleColumn(final String data, int byteSize) {
@@ -45,13 +63,28 @@ public class DoubleColumn extends Column {
 			return null;
 		}
 
-		return new BigDecimal((String) this.getRawData());
+		try {
+			return new BigDecimal((String) this.getRawData());
+		} catch (NumberFormatException e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s] 无法转换为Double类型 .",
+							(String) this.getRawData()));
+		}
 	}
 
 	@Override
 	public Double asDouble() {
 		if (null == this.getRawData()) {
 			return null;
+		}
+
+		String string = (String) this.getRawData();
+
+		boolean isDoubleSpecific = string.equals("NaN")
+				|| string.equals("-Infinity") || string.equals("+Infinity");
+		if (isDoubleSpecific) {
+			return Double.valueOf(string);
 		}
 
 		BigDecimal result = this.asBigDecimal();
@@ -91,32 +124,38 @@ public class DoubleColumn extends Column {
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Boolean .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Bool .");
 	}
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Date .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Date类型 .");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Double cannot cast to Bytes .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Double类型无法转为Bytes类型 .");
 	}
 
 	private void validate(final String data) {
 		if (null == data) {
 			return;
 		}
+
+		if (data.equalsIgnoreCase("NaN") || data.equalsIgnoreCase("-Infinity")
+				|| data.equalsIgnoreCase("Infinity")) {
+			return;
+		}
+
 		try {
 			new BigDecimal(data);
 		} catch (Exception e) {
-			throw new DataXException(
+			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] cannot convert to Double .", data));
+					String.format("String[%s]无法转为Double类型 .", data));
 		}
 	}
 

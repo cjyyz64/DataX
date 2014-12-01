@@ -18,7 +18,6 @@ package com.alibaba.datax.plugin.writer.odpswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.Constant;
 import com.alibaba.datax.plugin.writer.odpswriter.Key;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
@@ -72,24 +71,13 @@ public class IdAndKeyUtil {
                 originalConfig.set(Key.ACCESS_KEY, accessKey);
                 LOG.info("Get accessId/accessKey from environment variables successfully.");
             } else {
-                String businessMessage = String.format(
-                        "Get accessId/accessKey from environment variables failed, detail: accessId=[%s]", accessId);
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
-                throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
-                        businessMessage);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
+                        String.format("从环境变量中获取accessId/accessKey 失败, accessId=[%s]", accessId));
             }
         } else {
             // 无处获取（既没有配置在作业中，也没用在环境变量中）
-            String businessMessage = "accessId/accessKey not in config nor in environment variables.";
-            String message = StrUtil.buildOriginalCauseMessage(
-                    businessMessage, null);
-
-            LOG.error(message);
-            throw new DataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
-                    businessMessage);
+            throw DataXException.asDataXException(OdpsWriterErrorCode.GET_ID_KEY_FAIL,
+                    "无法获取到accessId/accessKey. 它们既不存在于您的配置中，也不存在于环境变量中.");
         }
 
         return originalConfig;

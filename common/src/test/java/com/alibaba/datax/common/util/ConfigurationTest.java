@@ -1,18 +1,12 @@
 package com.alibaba.datax.common.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.fastjson.JSON;
+import java.util.*;
 
 public class ConfigurationTest {
 
@@ -550,7 +544,7 @@ public class ConfigurationTest {
 
 	}
 
-	@Test(expected = IllegalArgumentException.class)
+	@Test(expected = DataXException.class)
 	public void test_remove() {
 		Configuration configuration = Configuration.from("{\"a\": \"b\"}");
 		configuration.remove("a");
@@ -582,6 +576,17 @@ public class ConfigurationTest {
 	}
 
 	@Test
+	public void test_list() {
+		Configuration configuration = Configuration.newDefault();
+		List<String> lists = new ArrayList<String>();
+		lists.add("bazhen.csy");
+		configuration.set("a.b.c", lists);
+		System.out.println(configuration);
+		configuration.set("a.b.c.d", lists);
+		System.out.println(configuration);
+	}
+
+	@Test
 	public void test_serialize() {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 1; i < 128; i++) {
@@ -593,5 +598,30 @@ public class ConfigurationTest {
 		Configuration another = Configuration.from(configuration.toJSON());
 		Assert.assertTrue(another.getString("a").equals(configuration.get("a")));
 	}
+
+    @Test
+    public void test_variable() {
+        Properties prop = new Properties();
+        System.setProperties(prop);
+        System.setProperty("bizdate", "20141125");
+        System.setProperty("errRec", "1");
+        System.setProperty("errPercent", "0.5");
+        String json = "{\n" +
+                "  \"core\": {\n" +
+                "    \"where\": \"gmt_modified >= ${bizdate}\"\n" +
+                "  },\n" +
+                "  \"errorLimit\": {\n" +
+                "  \t\"record\": ${errRec},\n" +
+                "  \t\"percentage\": ${errPercent}\n" +
+                "  }\n" +
+                "}";
+        Configuration conf = Configuration.from(json);
+        Assert.assertEquals("gmt_modified >= 20141125", conf.getString("core.where"));
+        Assert.assertEquals(Integer.valueOf(1), conf.getInt("errorLimit.record"));
+        Assert.assertEquals(Double.valueOf(0.5), conf.getDouble("errorLimit.percentage"));
+
+        // 依然能够转回来
+        Configuration.from(conf.toJSON());
+    }
 
 }

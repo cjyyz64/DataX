@@ -13,6 +13,8 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.OtsReaderSlaveProxy;
+import com.alibaba.datax.plugin.reader.otsreader.callable.CreateTableCallable;
+import com.alibaba.datax.plugin.reader.otsreader.callable.DeleteTableCallable;
 import com.alibaba.datax.plugin.reader.otsreader.common.BaseTest;
 import com.alibaba.datax.plugin.reader.otsreader.common.Utils;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
@@ -20,6 +22,7 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConst;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
+import com.alibaba.datax.plugin.reader.otsreader.utils.RetryHelper;
 import com.alibaba.datax.test.simulator.util.RecordSenderForTest;
 import com.aliyun.openservices.ots.model.BatchWriteRowRequest;
 import com.aliyun.openservices.ots.model.CapacityUnit;
@@ -49,11 +52,15 @@ public class CUE2Etest {
         base.close();
     }
     
-    public void create(List<PrimaryKeyType> pkTypes , int readCapacityUnit, int writeCapacityUnit) {
+    public void create(List<PrimaryKeyType> pkTypes , int readCapacityUnit, int writeCapacityUnit) throws Exception {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
-            base.getOts().deleteTable(deleteTableRequest);
+            RetryHelper.executeWithRetry(
+                    new DeleteTableCallable(base.getOts(), deleteTableRequest),
+                    2,
+                    1000
+                    );
         } catch (Exception e) {
         }
         
@@ -66,15 +73,13 @@ public class CUE2Etest {
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(meta);
         createTableRequest.setReservedThroughput(capacityUnit);
-        try {
-            base.getOts().createTable(createTableRequest);
-        } catch (Exception e) {
-        }
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        RetryHelper.executeWithRetry(
+                new CreateTableCallable(base.getOts(), createTableRequest),
+                5,
+                1000
+                );
+
+        Thread.sleep(10000);
     }
     
     public void insertData(List<PrimaryKeyType> pkTypes, long begin, long rowCount, int cellSize) {

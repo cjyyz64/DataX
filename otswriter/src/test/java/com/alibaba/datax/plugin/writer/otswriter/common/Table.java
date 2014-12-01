@@ -2,6 +2,9 @@ package com.alibaba.datax.plugin.writer.otswriter.common;
 
 import java.util.List;
 
+import com.alibaba.datax.plugin.writer.otswriter.callable.CreateTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.callable.DeleteTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.CapacityUnit;
 import com.aliyun.openservices.ots.model.ColumnType;
@@ -35,13 +38,16 @@ public class Table {
         this.attriTypes = attriTypes;
     }
     
-    public void create() {
+    public void create(int readCapacityUnit, int writeCapacityUnit) throws Exception {
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
-            ots.deleteTable(deleteTableRequest);
+            RetryHelper.executeWithRetry(
+                    new DeleteTableCallable(ots, deleteTableRequest),
+                    2,
+                    1000
+                    );
         } catch (Exception e) {
-            //e.printStackTrace();
         }
         
         TableMeta meta =  new TableMeta(this.tableName);
@@ -49,21 +55,18 @@ public class Table {
             String name = String.format("pk_%d", i);
             meta.addPrimaryKeyColumn(name, pkTypes.get(i));
         }
-        CapacityUnit capacityUnit = new CapacityUnit(5000, 5000);
+        CapacityUnit capacityUnit = new CapacityUnit(readCapacityUnit, writeCapacityUnit);
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(meta);
         createTableRequest.setReservedThroughput(capacityUnit);
-        try {
-            ots.createTable(createTableRequest);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        
+        RetryHelper.executeWithRetry(
+                new CreateTableCallable(ots, createTableRequest),
+                5,
+                1000
+                );
+
+        Thread.sleep(10000);
     }
     
     public void insertData(long begin, long rowCount) {

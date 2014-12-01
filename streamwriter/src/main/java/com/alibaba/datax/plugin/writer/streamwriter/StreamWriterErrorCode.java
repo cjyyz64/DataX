@@ -3,7 +3,7 @@ package com.alibaba.datax.plugin.writer.streamwriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum StreamWriterErrorCode implements ErrorCode {
-    RUNTIME_EXCEPTION("StreamWriter-00", "runtime exception"),;
+    RUNTIME_EXCEPTION("StreamWriter-00", "运行时异常"),;
 
 
     private final String code;

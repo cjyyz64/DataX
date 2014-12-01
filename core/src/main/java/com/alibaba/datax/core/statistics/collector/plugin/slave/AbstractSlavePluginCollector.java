@@ -53,7 +53,7 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 			String errorMessage) {
 
 		if (null == dirtyRecord) {
-			LOG.warn("Dirty record meet null .");
+			LOG.warn("脏数据record=null.");
 			return;
 		}
 
@@ -64,9 +64,9 @@ public abstract class AbstractSlavePluginCollector extends SlavePluginCollector 
 			this.metric.incrWriteFailedRecords(1L);
 			this.metric.incrWriteFailedBytes(dirtyRecord.getByteSize());
 		} else {
-			throw new DataXException(
-					FrameworkErrorCode.INNER_ERROR,
-					String.format("Unknown plugin type [%s] .", this.pluginType));
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.RUNTIME_ERROR,
+					String.format("不知道的插件类型[%s].", this.pluginType));
 		}
 	}
 }

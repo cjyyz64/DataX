@@ -8,6 +8,7 @@ import com.alibaba.datax.common.exception.DataXException;
  */
 public enum DataBaseType {
     MySql("mysql", "com.mysql.jdbc.Driver"),
+    DRDS("drds", "com.mysql.jdbc.Driver"),
     Oracle("oracle", "oracle.jdbc.OracleDriver"),
     SQLServer("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
     PostgreSQL("postgresql", "org.postgresql.Driver"),
@@ -26,11 +27,13 @@ public enum DataBaseType {
         return this.driverClassName;
     }
 
-    public String appendJDBCSuffix(String jdbc) {
+    public String appendJDBCSuffixForReader(String jdbc) {
         String result = jdbc;
+        String suffix = null;
         switch (this) {
             case MySql:
-                String suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
+            case DRDS:
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {
@@ -44,7 +47,40 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+        }
+
+        return result;
+    }
+
+    public String appendJDBCSuffixForWriter(String jdbc) {
+        String result = jdbc;
+        String suffix = null;
+        switch (this) {
+            case MySql:
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true";
+                if (jdbc.contains("?")) {
+                    result = jdbc + "&" + suffix;
+                } else {
+                    result = jdbc + "?" + suffix;
+                }
+                break;
+            case DRDS:
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull";
+                if (jdbc.contains("?")) {
+                    result = jdbc + "&" + suffix;
+                } else {
+                    result = jdbc + "?" + suffix;
+                }
+                break;
+            case Oracle:
+                break;
+            case SQLServer:
+                break;
+            case DB2:
+                break;
+            default:
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
 
         return result;
@@ -68,7 +104,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type.");
         }
 
         return result;
@@ -90,7 +126,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
 
         return result;
@@ -110,7 +146,7 @@ public enum DataBaseType {
             case DB2:
                 break;
             default:
-                throw new DataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
+                throw DataXException.asDataXException(DBUtilErrorCode.UNSUPPORTED_TYPE, "unsupported database type");
         }
 
         return result;

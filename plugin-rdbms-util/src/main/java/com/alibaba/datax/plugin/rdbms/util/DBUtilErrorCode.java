@@ -4,21 +4,25 @@ import com.alibaba.datax.common.spi.ErrorCode;
 
 //TODO
 public enum DBUtilErrorCode implements ErrorCode {
-    CONN_DB_ERROR("DBUtilErrorCode-00", "Connect to DataBase failed: Please check your IP/Port/Database/User/Pass is available !"),
-    JDBC_CONTAINS_BLANK_ERROR("DBUtilErrorCode-01", "Configuration jdbcUrl Cannot be null :  Please check your configuration of jdbcUrl !"),
-    UNSUPPORTED_TYPE("DBUtilErrorCode-02", "Unsupported database type: I cannot help you, sorry. Please ask your administrator for HELP !"),
-    COLUMN_SPLIT_ERROR("DBUtilErrorCode-10", "Column split failed ."),
+    CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
+    CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
+    GET_COLUMN_INFO_FAILED("DBUtilErrorCode-01", "获取表字段相关信息失败."),
+    UNSUPPORTED_TYPE("DBUtilErrorCode-12", "不支持的数据库类型. 请注意查看 DataX 已经支持的数据库类型以及数据库版本."),
+    COLUMN_SPLIT_ERROR("DBUtilErrorCode-13", "根据主键进行切分失败."),
+    SET_SESSION_ERROR("DBUtilErrorCode-14", "设置 session 失败."),
 
-    REQUIRED_KEY("DBUtilErrorCode-00", "Lost required key: Please make key required available !"),
-    REQUIRED_VALUE("DBUtilErrorCode-01", "Lost necessary value:  Please make value required available !"),
-    ILLEGAL_KEY("DBUtilErrorCode-02", "Illegal key: Please correct your key !"),
-    ILLEGAL_VALUE("DBUtilErrorCode-03", "Illegal value: Please correct your value !"),
-    ILLEGAL_SPLIT_PK("DBUtilErrorCode-04", "Illegal splitPk value: SplitPk must be PrimaryKey in table and column type must be integer or string ."),
-    NOT_RECOMMENDED("DBUtilErrorCode-05", "Your config not recommended: Please read DataX manual and modify your configuration ."),
-    SQL_EXECUTE_FAIL("DBUtilErrorCode-06", "Failed to execute mysql sql: Please check your Column/Table/Where/querySql !"),
-    READ_RECORD_FAIL("DBUtilErrorCode-07", "Failed to read mysql record: Please check your Column/Table/Where/querySql !"),
-    TABLE_QUERYSQL_MIXED("DBUtilErrorCode-08", "Can not config both table and querySql: Please keep just ONE of them !"),
-    TABLE_QUERYSQL_MISSING("DBUtilErrorCode-09", "Table and querySql should configured one item: Please keep ONE of them !"),;
+    REQUIRED_VALUE("DBUtilErrorCode-00", "您缺失了必须填写的参数值."),
+    ILLEGAL_VALUE("DBUtilErrorCode-02", "您填写的参数值不合法."),
+    ILLEGAL_SPLIT_PK("DBUtilErrorCode-04", "您填写的主键列不合法, DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型."),
+    SQL_EXECUTE_FAIL("DBUtilErrorCode-06", "执行数据库 Sql 失败, 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
+
+    // only for reader
+    READ_RECORD_FAIL("DBUtilErrorCode-07", "读取数据看数据失败. 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
+    TABLE_QUERYSQL_MIXED("DBUtilErrorCode-08", "您配置凌乱了. 不能同时既配置table又配置querySql"),
+    TABLE_QUERYSQL_MISSING("DBUtilErrorCode-09", "您配置错误. table和querySql 应该并且只能配置一个."),
+
+    // only for writer
+    WRITE_DATA_ERROR("DBUtilErrorCode-05", "往您配置的写入表中写入数据时失败."),;
 
     private final String code;
 

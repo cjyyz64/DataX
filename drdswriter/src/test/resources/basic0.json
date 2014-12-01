@@ -1,0 +1,46 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "drdswriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "logicTableName"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:mysql://drdsHostName:port/dbName"
+                                ]
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where db_id = -1;"
+                        ],
+                        "postSql": [
+                            "update @table set db_modify_time = now() where db_id = 1;"
+                        ],
+                        "session": [
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

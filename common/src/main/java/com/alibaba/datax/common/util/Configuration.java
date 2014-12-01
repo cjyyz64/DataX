@@ -1,27 +1,17 @@
 package com.alibaba.datax.common.util;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.spi.ErrorCode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.CharUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.spi.ErrorCode;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializerFeature;
+import java.io.*;
+import java.util.*;
 
 /**
  * Configuration 提供多级JSON配置信息无损存储 <br>
@@ -74,19 +64,20 @@ public class Configuration {
 	/**
 	 * 从JSON字符串加载Configuration
 	 */
-	public static Configuration from(final String json) {
+	public static Configuration from(String json) {
+        json = StrUtil.replaceVariable(json);
 		checkJSON(json);
 
 		try {
 			return new Configuration(json);
 		} catch (Exception e) {
-			throw new IllegalArgumentException(String.format(
-					"Illegal JSON:\n %s", json));
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					e);
 		}
 
 	}
 
-	/**
+    /**
 	 * 从包括json的File对象加载Configuration
 	 */
 	public static Configuration from(File file) {
@@ -94,9 +85,13 @@ public class Configuration {
 			return Configuration.from(IOUtils
 					.toString(new FileInputStream(file)));
 		} catch (FileNotFoundException e) {
-			throw new IllegalArgumentException(e);
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供的配置文件[%s]不存在 .", file.getAbsolutePath()));
 		} catch (IOException e) {
-			throw new IllegalArgumentException(e);
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供配置文件[%s]读取失败，错误原因: %s .",
+							file.getAbsolutePath(), e));
 		}
 	}
 
@@ -107,7 +102,8 @@ public class Configuration {
 		try {
 			return Configuration.from(IOUtils.toString(is));
 		} catch (IOException e) {
-			throw new IllegalArgumentException(e);
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供的配置文件读取失败，错误原因: %s .", e));
 		}
 	}
 
@@ -128,8 +124,8 @@ public class Configuration {
 	public String getNecessaryValue(String key, ErrorCode errorCode) {
 		String value = this.getString(key, null);
 		if (StringUtils.isBlank(value)) {
-			throw new DataXException(errorCode, String.format(
-					"Key:[%s] cannot be blank .", key));
+			throw DataXException.asDataXException(errorCode,
+					String.format("您提供配置文件有误，[%s]是必填参数，不允许为空或者留白 .", key));
 		}
 
 		return value;
@@ -217,7 +213,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return CharUtils.toChar(result);
+
+		try {
+			return CharUtils.toChar(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法，期望是字符类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -248,8 +252,9 @@ public class Configuration {
 		} else if ("false".equalsIgnoreCase(result)) {
 			return Boolean.FALSE;
 		} else {
-			throw new IllegalArgumentException(String.format(
-					"String [%s] cannot be cast to bool .", result));
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供的配置文件存在配置错误，从[%s]获取的值[%s]无法转换为bool类型.",
+							path, result));
 		}
 
 	}
@@ -277,7 +282,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Integer.valueOf(result);
+
+		try {
+			return Integer.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是整数类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -303,7 +316,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Long.valueOf(result);
+
+		try {
+			return Long.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是整数类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -329,7 +350,15 @@ public class Configuration {
 		if (null == result) {
 			return null;
 		}
-		return Double.valueOf(result);
+
+		try {
+			return Double.valueOf(result);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONFIG_ERROR,
+					String.format("配置文件路径[%s] 值非法, 期望是浮点类型: %s .", path,
+							e.getMessage()));
+		}
 	}
 
 	/**
@@ -580,8 +609,9 @@ public class Configuration {
 	public Object remove(final String path) {
 		final Object result = this.get(path);
 		if (null == result) {
-			throw new IllegalArgumentException(String.format(
-					"Remove key [%s] not found .", path));
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR,
+					String.format("配置文件对应Key[%s]并不存在，该情况是代码编程错误 .", path));
 		}
 
 		this.set(path, null);
@@ -687,9 +717,9 @@ public class Configuration {
 			return;
 		}
 
-		throw new IllegalArgumentException(String.format(
-				"New value[%s] cannot in path[%s] .",
-				ToStringBuilder.reflectionToString(object), path));
+		throw DataXException.asDataXException(CommonErrorCode.RUNTIME_ERROR,
+				String.format("值[%s]无法适配您提供[%s]， 该异常代表系统编程错误, 请联系DataX开发团队 !",
+						ToStringBuilder.reflectionToString(object), path));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -729,7 +759,9 @@ public class Configuration {
 
 	Object buildObject(final List<String> paths, final Object object) {
 		if (null == paths) {
-			throw new IllegalArgumentException("Paths cannot be null .");
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR,
+					"Path不能为null，该异常代表系统编程错误, 请联系DataX开发团队 !");
 		}
 
 		if (1 == paths.size() && StringUtils.isBlank(paths.get(0))) {
@@ -756,9 +788,10 @@ public class Configuration {
 				continue;
 			}
 
-			throw new IllegalArgumentException(String.format(
-					"Path [%s] illegal: [%s] .", StringUtils.join(paths, "."),
-					path));
+			throw DataXException.asDataXException(
+					CommonErrorCode.RUNTIME_ERROR, String.format(
+							"路径[%s]出现非法值类型[%s]，该异常代表系统编程错误, 请联系DataX开发团队 ! .",
+							StringUtils.join(paths, "."), path));
 		}
 
 		return child;
@@ -844,7 +877,8 @@ public class Configuration {
 			return lists;
 		}
 
-		throw new IllegalArgumentException("cannot happen !");
+		throw DataXException.asDataXException(CommonErrorCode.RUNTIME_ERROR,
+				"该异常代表系统编程错误, 请联系DataX开发团队 !");
 	}
 
 	private Object findObject(final String path) {
@@ -872,16 +906,15 @@ public class Configuration {
 	private Object findObjectInMap(final Object target, final String index) {
 		boolean isMap = (target instanceof Map);
 		if (!isMap) {
-			throw new IllegalArgumentException(
-					String.format(
-							"Path [%s] need to find in a map, but current structure is [%s] .",
-							index, target.getClass().toString()));
+			throw new IllegalArgumentException(String.format(
+					"您提供的配置文件有误，路径[%s]需要配置Json格式的Map对象，但该节点发现实际类型是[%s] .",
+					index, target.getClass().toString()));
 		}
 
 		Object result = ((Map<String, Object>) target).get(index);
 		if (null == result) {
 			throw new IllegalArgumentException(String.format(
-					"Path [%s] cannot find any path matched .", index));
+					"您提供的配置文件有误，路径[%s]值为null，不允许为null .", index));
 		}
 
 		return result;
@@ -891,17 +924,16 @@ public class Configuration {
 	private Object findObjectInList(final Object target, final String each) {
 		boolean isList = (target instanceof List);
 		if (!isList) {
-			throw new IllegalArgumentException(
-					String.format(
-							"Path [%s] need to find in a list, but current structure is [%s] .",
-							each, target.getClass().toString()));
+			throw new IllegalArgumentException(String.format(
+					"您提供的配置文件有误，路径[%s]需要配置Json格式的Map对象，但该节点发现实际类型是[%s] .",
+					each, target.getClass().toString()));
 		}
 
 		String index = each.replace("[", "").replace("]", "");
 		if (!StringUtils.isNumeric(index)) {
 			throw new IllegalArgumentException(
 					String.format(
-							"List index must be numberic, but current structure is [%s] .",
+							"系统编程错误，列表下标必须为数字类型，但该节点发现实际类型是[%s] ，该异常代表系统编程错误, 请联系DataX开发团队 !",
 							index));
 		}
 
@@ -946,14 +978,14 @@ public class Configuration {
 
 	private void checkPath(final String path) {
 		if (null == path) {
-			throw new IllegalArgumentException("Input Json cannot be null .");
+			throw new IllegalArgumentException(
+					"系统编程错误, 该异常代表系统编程错误, 请联系DataX开发团队 !.");
 		}
 
 		for (final String each : StringUtils.split(".")) {
 			if (StringUtils.isBlank(each)) {
 				throw new IllegalArgumentException(String.format(
-						"Input path [%s] illegal, cannot have blank path .",
-						path));
+						"系统编程错误, 路径[%s]不合法, 路径层次之间不能出现空白字符 .", path));
 			}
 		}
 	}
@@ -966,12 +998,18 @@ public class Configuration {
 
 	private static void checkJSON(final String json) {
 		if (StringUtils.isBlank(json)) {
-			throw new IllegalArgumentException("Input Json cannot be blank .");
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					"您提供的配置信息不是合法的JSON格式, JSON不能为空白.");
 		}
 	}
 
 	private Configuration(final String json) {
-		this.root = JSON.parse(json);
+		try {
+			this.root = JSON.parse(json);
+		} catch (Exception e) {
+			throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+					String.format("您提供的配置信息不是合法的JSON格式: %s .", e.getMessage()));
+		}
 	}
 
 	private static String toJSONString(final Object object) {

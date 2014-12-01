@@ -18,4 +18,8 @@ public class OTSConst {
     public final static String OTS_CONF = "OTS_CONF";
     public final static String OTS_RANGE = "OTS_RANGE";
     public final static String OTS_DIRECTION = "OTS_DIRECTION";
+    
+    // options
+    public final static String RETRY = "maxRetryTime";
+    public final static String SLEEP_IN_MILLI_SECOND = "retrySleepInMillionSecond";
 }

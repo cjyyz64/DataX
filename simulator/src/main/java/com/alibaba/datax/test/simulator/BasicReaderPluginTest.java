@@ -90,7 +90,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
         List<Configuration> jobs = readerMaster.split(adviceSplitNumber);
 
         if (null == jobs || jobs.isEmpty()) {
-            throw new DataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
+            throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     "split job failed.");
         }
 

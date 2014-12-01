@@ -18,7 +18,7 @@
         <slf4j-api-version>1.6.1</slf4j-api-version>
         <logback-classic-version>1.0.6</logback-classic-version>
         <commons-io-version>2.4</commons-io-version>
-        <mysql-connector-java-version>5.1.26</mysql-connector-java-version>
+        <mysql-connector-java-version>5.1.34</mysql-connector-java-version>
         <junit-version>4.11</junit-version>
 
         <project-sourceEncoding>UTF-8</project-sourceEncoding>
@@ -33,8 +33,10 @@
 
         <!-- reader -->
         <module>mysqlreader</module>
+        <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
+        <module>oraclereader</module>
 
         <module>odpsreader</module>
         <module>otsreader</module>
@@ -43,16 +45,17 @@
 
         <!-- writer -->
         <module>mysqlwriter</module>
+        <module>drdswriter</module>
         <module>odpswriter</module>
         <module>txtfilewriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>
+        <module>oraclewriter</module>
 
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
-        <module>oraclereader</module>
-
+        
     </modules>
 
     <dependencyManagement>
@@ -129,4 +132,4 @@
             </plugin>
         </plugins>
     </build>
-</project> 
+</project>

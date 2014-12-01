@@ -3,7 +3,6 @@ package com.alibaba.datax.plugin.rdbms.reader.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -75,7 +74,7 @@ public final class OriginalConfPretreatmentUtil {
             String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
                     username, password, preSql);
 
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffix(jdbcUrl);
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
@@ -90,9 +89,9 @@ public final class OriginalConfPretreatmentUtil {
                         DATABASE_TYPE, tables);
 
                 if (null == expandedTables || expandedTables.isEmpty()) {
-                    throw new DataXException(
-                            DBUtilErrorCode.ILLEGAL_VALUE,
-                            "Read table configured error: table cannot be empty ! Ask your administrator for help !");
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.ILLEGAL_VALUE, String.format("您所配置的读取数据库表:%s 不正确. " +
+                                    "请先了解 DataX 配置.", StringUtils.join(tables, ",")));
                 }
 
                 tableNum += expandedTables.size();
@@ -116,21 +115,14 @@ public final class OriginalConfPretreatmentUtil {
         if (isTableMode) {
             if (null == userConfiguredColumns
                     || userConfiguredColumns.isEmpty()) {
-                String businessMessage = "Lost column config.";
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-
-                LOG.error(message);
-                throw new DataXException(DBUtilErrorCode.REQUIRED_KEY,
-                        businessMessage);
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置读取数据库表的列信息. " +
+                        "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
             } else {
                 String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
 
                 if (1 == userConfiguredColumns.size()
                         && "*".equals(userConfiguredColumns.get(0))) {
-                    LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
-                            + "because column configured as * may not work when you changed your table structure.");
-
+                    LOG.warn("您未配置读取数据库表的列，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
                     // 回填其值，需要以 String 的方式转交后续处理
                     originalConfig.set(Key.COLUMN, "*");
                 } else {
@@ -158,9 +150,9 @@ public final class OriginalConfPretreatmentUtil {
 
                     for (String column : userConfiguredColumns) {
                         if ("*".equals(column)) {
-                            throw new DataXException(
+                            throw DataXException.asDataXException(
                                     DBUtilErrorCode.ILLEGAL_VALUE,
-                                    "No column named[*].");
+                                    "读取数据库表的列中不允许存在多个*.");
                         }
 
                         if (null == column) {
@@ -180,15 +172,8 @@ public final class OriginalConfPretreatmentUtil {
                     if (StringUtils.isNotBlank(splitPk)) {
 
                         if (!allColumns.contains(splitPk)) {
-                            String businessMessage = String.format(
-                                    "No pk column named:[%s].", splitPk);
-                            String message = StrUtil.buildOriginalCauseMessage(
-                                    businessMessage, null);
-                            LOG.error(message);
-
-                            throw new DataXException(
-                                    DBUtilErrorCode.ILLEGAL_SPLIT_PK,
-                                    businessMessage);
+                            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+                                    String.format("您读取的数据库表:%s 中没有主键名为:%s .", tableName, splitPk));
                         }
                     }
 
@@ -198,24 +183,21 @@ public final class OriginalConfPretreatmentUtil {
             // querySql模式，不希望配制 column，那样是混淆不清晰的
             if (null != userConfiguredColumns
                     && userConfiguredColumns.size() > 0) {
-                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
-                        + "because you have configured querySql, no need to config column.");
+                LOG.warn("由于您读取数据库表采用了querySql的方式, 所以您不需要再配置 column. 如果您不想看到这条提醒，请移除您源头表中配置中的 column.");
                 originalConfig.remove(Key.COLUMN);
             }
 
             // querySql模式，不希望配制 where，那样是混淆不清晰的
             String where = originalConfig.getString(Key.WHERE, null);
             if (StringUtils.isNotBlank(where)) {
-                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
-                        + "because you have configured querySql, no need to config where.");
+                LOG.warn("由于您读取数据库表采用了querySql的方式, 所以您不需要再配置 where. 如果您不想看到这条提醒，请移除您源头表中配置中的 where.");
                 originalConfig.remove(Key.WHERE);
             }
 
             // querySql模式，不希望配制 splitPk，那样是混淆不清晰的
             String splitPk = originalConfig.getString(Key.SPLIT_PK, null);
             if (StringUtils.isNotBlank(splitPk)) {
-                LOG.warn(DBUtilErrorCode.NOT_RECOMMENDED.toString()
-                        + "because you have configured querySql, no need to config splitPk.");
+                LOG.warn("由于您读取数据库表采用了querySql的方式, 所以您不需要再配置 splitPk. 如果您不想看到这条提醒，请移除您源头表中配置中的 splitPk.");
                 originalConfig.remove(Key.SPLIT_PK);
             }
         }
@@ -249,35 +231,20 @@ public final class OriginalConfPretreatmentUtil {
 
             if (false == isTableMode && false == isQuerySqlMode) {
                 // table 和 querySql 二者均未配制
-                String businessMessage = "table and querySql should configured one item.";
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-                LOG.error(message);
-
-                throw new DataXException(
-                        DBUtilErrorCode.TABLE_QUERYSQL_MISSING, businessMessage);
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.TABLE_QUERYSQL_MISSING, "您配置错误. table和querySql 应该并且只能配置一个.");
             } else if (true == isTableMode && true == isQuerySqlMode) {
                 // table 和 querySql 二者均配置
-                String businessMessage = "table and querySql can not mixed.";
-                String message = StrUtil.buildOriginalCauseMessage(
-                        businessMessage, null);
-                LOG.error(message);
-
-                throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
-                        businessMessage);
+                throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
+                        "您配置凌乱了. 不能同时既配置table又配置querySql.");
             }
         }
 
         // 混合配制 table 和 querySql
         if (!ListUtil.checkIfValueSame(tableModeFlags)
                 || !ListUtil.checkIfValueSame(tableModeFlags)) {
-            String businessMessage = "table and querySql can not mixed.";
-            String message = StrUtil.buildOriginalCauseMessage(businessMessage,
-                    null);
-            LOG.error(message);
-
-            throw new DataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
-                    businessMessage);
+            throw DataXException.asDataXException(DBUtilErrorCode.TABLE_QUERYSQL_MIXED,
+                    "您配置凌乱了. 不能同时既配置table又配置querySql.");
         }
 
         return tableModeFlags.get(0);

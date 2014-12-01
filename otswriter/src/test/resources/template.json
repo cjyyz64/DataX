@@ -39,8 +39,6 @@
                         
                         // 需要导入的列名，区分大小写
                         // 类型支持STRING，INT，DOUBLE，BOOL和BINARY
-                        // 备注：BINARY需要通过Base64转换为对应的字符串传入插件
-                        // 1. 支持类型转换，注意类型转换时的精度丢失
                         "column" : [
                             {"name":"col2", "type":"INT"},
                             {"name":"col3", "type":"STRING"},
@@ -52,7 +50,25 @@
                         // 写入OTS的方式
                         // PutRow : 等同于OTS API中PutRow操作，检查条件是ignore
                         // UpdateRow : 等同于OTS API中UpdateRow操作，检查条件是ignore
-                        "writeMode" : "PutRow"
+                        "writeMode" : "PutRow",
+
+                        <! -------- 开发选项，不建议用户修改如下参数 ------->
+                        // 单次错误重试的次数
+                        "maxRetryTime":18,
+                        // 每次重试之前Sleep的时间的起始时间，如果重试次数增加，Sleep的时间也会翻倍，直到大于30秒，后面的重试时间统一修改为30秒
+                        "retrySleepInMillionSecond":100, 
+                        // 单次写入的行数
+                        "batchWriteCount":100,
+                        // 单次写入的数据量限制
+                        "requestTotalSizeLimition":1048576,
+                        // 单个Channel并发写入OTS
+                        "concurrencyWrite":5,
+                        // 单个Channel使用的IO线程
+                        "ioThreadCount":1,
+                        // 数据包之间的超时时间
+                        "socketTimeoutInMillionSecond":60000,
+                        // 连接服务器的超时时间
+                        "connectTimeoutInMillionSecond":60000
                     }
                 }
             }

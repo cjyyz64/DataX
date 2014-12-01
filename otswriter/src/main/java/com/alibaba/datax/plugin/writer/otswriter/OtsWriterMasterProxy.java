@@ -9,7 +9,9 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.callable.GetTableMetaCallable;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf.RestrictConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParamChecker;
 import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
@@ -35,9 +37,17 @@ public class OtsWriterMasterProxy {
         LOG.info("OTSWriter master parameter : {}", param.toJSON());
         
         // 默认参数
-        conf.setRetry(18);
-        conf.setSleepInMilliSecond(100);
-        conf.setBatchWriteCount(10);
+        conf.setRetry(param.getInt(OTSConst.RETRY, 18));
+        conf.setSleepInMilliSecond(param.getInt(OTSConst.SLEEP_IN_MILLI_SECOND, 100));
+        conf.setBatchWriteCount(param.getInt(OTSConst.BATCH_WRITE_COUNT, 100));
+        conf.setConcurrencyWrite(param.getInt(OTSConst.CONCURRENCY_WRITE, 5));
+        conf.setIoThreadCount(param.getInt(OTSConst.IO_THREAD_COUNT, 1));
+        conf.setSocketTimeout(param.getInt(OTSConst.SOCKET_TIMEOUT, 60000));
+        conf.setConnectTimeout(param.getInt(OTSConst.CONNECT_TIMEOUT, 60000));
+        
+        RestrictConf restrictConf = conf.new RestrictConf();
+        restrictConf.setRequestTotalSizeLimition(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITION, 1024*1024));
+        conf.setRestrictConf(restrictConf);
 
         // 必选参数
         conf.setEndpoint(ParamChecker.checkStringAndGet(param, Key.OTS_ENDPOINT)); 
@@ -45,6 +55,8 @@ public class OtsWriterMasterProxy {
         conf.setAccessKey(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSKEY)); 
         conf.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME)); 
         conf.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME)); 
+        
+        conf.setOperation(WriterModelParser.parseOTSOpType(ParamChecker.checkStringAndGet(param, Key.WRITE_MODE)));
         
         ots = new OTSClient(
                 this.conf.getEndpoint(),
@@ -58,16 +70,14 @@ public class OtsWriterMasterProxy {
         conf.setPrimaryKeyColumn(WriterModelParser.parseOTSPKColumnList(ParamChecker.checkListAndGet(param, Key.PRIMARY_KEY, true)));
         ParamChecker.checkPrimaryKey(meta, conf.getPrimaryKeyColumn());
         
-        conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, true)));
+        conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, conf.getOperation() == OTSOpType.PUT_ROW ? false : true)));
         ParamChecker.checkAttribute(conf.getAttributeColumn());
-        
-        conf.setOperation(WriterModelParser.parseOTSOpType(ParamChecker.checkStringAndGet(param, Key.WRITE_MODE)));
-        LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
+
+        //LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
     }
     
     public List<Configuration> split(int mandatoryNumber){
-        LOG.info("Begin split.");
-        LOG.info("MandatoryNumber : {}", mandatoryNumber);
+        LOG.info("Begin split and MandatoryNumber : {}", mandatoryNumber);
         List<Configuration> configurations = new ArrayList<Configuration>();
         for (int i = 0; i < mandatoryNumber; i++) {
             Configuration configuration = Configuration.newDefault();
@@ -75,6 +85,7 @@ public class OtsWriterMasterProxy {
             configurations.add(configuration);
         }
         LOG.info("End split.");
+        assert(mandatoryNumber == configurations.size());
         return configurations;
     }
     

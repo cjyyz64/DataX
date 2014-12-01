@@ -36,26 +36,26 @@ public class DirtyRecord implements Record {
 
 	@Override
 	public void setColumn(int i, Column column) {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"this method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public Column getColumn(int i) {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"this method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public int getColumnNumber() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"this method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public int getByteSize() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"this method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	public List<Column> getColumns() {
@@ -91,50 +91,50 @@ class DirtyColumn extends Column {
 
 	@Override
 	public Long asLong() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public Double asDouble() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public String asString() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public Boolean asBoolean() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public BigDecimal asBigDecimal() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	@Override
 	public BigInteger asBigInteger() {
-		throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-				"This method NOT support !");
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
 	}
 
 	private DirtyColumn(Object object, Type type, int byteSize, int index) {

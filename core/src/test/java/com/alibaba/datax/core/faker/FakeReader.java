@@ -63,7 +63,7 @@ public class FakeReader extends Reader {
 			for (int i = 0; i < 10; i++) {
 				this.getSlavePluginCollector().collectDirtyRecord(
 						record,
-						new DataXException(FrameworkErrorCode.INNER_ERROR,
+						DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 								"EXCEPTION MSG"), "ERROR MSG");
 			}
 
@@ -75,7 +75,7 @@ public class FakeReader extends Reader {
 			for (int i = 0; i < 10; i++) {
 				this.getSlavePluginCollector().collectDirtyRecord(
 						record,
-						new DataXException(FrameworkErrorCode.INNER_ERROR,
+						DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 								"EXCEPTION MSG"));
 			}
 

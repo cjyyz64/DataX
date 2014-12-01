@@ -1,87 +1,59 @@
+
 {
     "entry": {
         "jvm": "-Xms1G -Xmx1G",
         "environment": {
             "PATH": "/home/admin",
             "DATAX_HOME": "/home/admin"
-        	}
-    	},
-       "data": {
+        }
+    },
+    "common": {
         "column": {
-            "number": {
-                "bool": {
-                    "0": false,
-                    "!0": true
-                }
-            },
-            "string": {
-                "date": {
-                    "timeFormat": "yyyy-MM-dd HH:mm:ss",
-                    "timeZone": "GMT+8"
-                },
-                "bool": {
-                    "true": true,
-                    "!true": false
-                },
-                "bytes": {
-                    "encoding": "utf-8"
-                }
-            },
-            "date": {
-                "string": {
-                    "timeFormat": "yyyy-MM-dd HH:mm:ss",
-                    "timeZone": "GMT+8"
-                }
-            },
-            "bool": {
-                "number": {
-                    "true": 1,
-                    "false": 0
-                },
-                "string": {
-                    "true": "true",
-                    "false": "false"
-                }
-            },
-            "bytes": {
-                "encoding": "utf-8"
-            }
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
         }
     },
     "core": {
-        "channel": {
-            "class": "com.alibaba.datax.core.MemoryChannel",
-            "speed": 1000000,
-            "capacity": 128,
-            "queue": {
-                "class": "com.alibaba.datax.core.transport.channel.memory.DoubleQueue",
-                "timeOut": 30
-            }
-        },
-        "container": {
-            "master": {
-                "class": "com.alibaba.datax.core.container.MasterContainer"
+        "transport": {
+            "channel": {
+                "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
+                "speed": {
+                    "byte": 1048576
+                },
+                "capacity": 32
             },
-            "slave": {
-                "class": "com.alibaba.datax.core.container.SlaveContainer"
-            }
-        },
-        "metric": {
-            "class": "com.alibaba.datax.core.metric.HTTPMetric",
-            "service": "http://localhost/xxx",
-            "badRecord": {
-                "errorLimit": 0.1,
-                "reportLimit": 10000
-            }
-        },
-        "scheduler": {
-            "class": "com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler"
-        },
-        "plugin": {
             "exchanger": {
                 "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",
                 "bufferSize": 32
             }
+        },
+        "container": {
+            "master": {
+                "class": "com.alibaba.datax.core.container.MasterContainer",
+                "reportInterval": 1000
+            },
+            "slave": {
+                "class": "com.alibaba.datax.core.container.SlaveContainer",
+                "channel": 3
+            }
+        },
+        "statistics": {
+            "collector": {
+                "container": {
+                    "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterContainerCollector",
+                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector"
+                },
+                "plugin": {
+                    "slaveClass": "com.alibaba.datax.core.statistics.collector.plugin.slave.StdoutPluginCollector",
+                    "maxDirtyNumber": 1000
+                }
+            }
+        },
+        "scheduler": {
+            "class": "com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler"
         }
     },
     "plugin": {
@@ -89,37 +61,59 @@
             "mysqlreader": {
                 "name": "fakereader",
                 "class": "com.alibaba.datax.plugins.reader.fakereader.FakeReader",
-                "description": "useScene: only for performance test. \n mechanism: Produce Record from memory. \n warn: Never use it in your real job.",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
                 "developer": "someBody,bug reported to : someBody@someSite"
             },
             "oraclereader": {
                 "name": "oraclereader",
                 "class": "com.alibaba.datax.plugins.reader.oraclereader.OracleReader",
-                "description": "useScene: only for performance test. \n mechanism: Produce Record from memory. \n warn: Never use it in your real job.",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
                 "developer": "someBody,bug reported to : someBody@someSite"
             },
             "fakereader": {
                 "name": "fakereader",
                 "class": "com.alibaba.datax.core.faker.FakeReader",
-                "description": "useScene: only for performance test. \n mechanism: Produce Record from memory. \n warn: Never use it in your real job.",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
                 "developer": "someBody,bug reported to : someBody@someSite"
-            },
+            }
         },
         "writer": {
             "fakewriter": {
-                        "name": "fakewriter",
-                        "class": "com.alibaba.datax.core.faker.FakeWriter",
-                        "description": "useScene: only for performance test. \n mechanism: Produce Record from memory. \n warn: Never use it in your real job.",
-                        "developer": "someBody,bug reported to : someBody@someSite"
-                    }
+                "name": "fakewriter",
+                "class": "com.alibaba.datax.core.faker.FakeWriter",
+                "description": {
+                    "useScene": "only for performance test.",
+                    "mechanism": "Produce Record from memory.",
+                    "warn": "Never use it in your real job."
+                },
+                "developer": "someBody,bug reported to : someBody@someSite"
+            }
         },
         "transformer": {
             "groovyTranformer": {}
-        },
+        }
     },
     "job": {
         "setting": {
-            "speed": 10
+            "speed": {
+                "byte": 104857600
+            },
+            "errorLimit": {
+                "record": null,
+                "percentage": null
+            }
         },
         "content": [
             {
@@ -144,7 +138,7 @@
                 },
                 "writer": {
                     "name": "fakewriter",
-                    "paramter": {
+                    "parameter": {
                         "column": [
                             {
                                 "type": "string",

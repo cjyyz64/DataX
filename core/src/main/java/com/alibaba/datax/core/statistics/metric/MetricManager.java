@@ -34,7 +34,7 @@ public final class MetricManager {
 	public static synchronized Metric registerMetric(long slaveId,
 			long channelId) {
 		Validate.isTrue(slaveId >= 0 && channelId >= 0,
-				"Illegal parameter: slaveId and channelId can not be less than 0.");
+				"参数非法: slaveId和channelId不能小于0.");
 
 		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
@@ -73,9 +73,9 @@ public final class MetricManager {
 
 		Map<Long, Metric> slaveStatics = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveStatics) {
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+			throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
-							"Can not get unregistered metric for slaveId:[%d]",
+							"不能获取slaveId[%d]的metric，因为没有注册",
 							slaveId));
 		}
 
@@ -102,23 +102,23 @@ public final class MetricManager {
 	public static synchronized Metric getChannelMetric(long slaveId,
 			long channelId) {
 		Validate.isTrue(slaveId >= 0 && channelId >= 0,
-				"Illegal parameter: slaveId and channelId can not be less than 0.");
+				"参数非法: slaveId和channelId不能小于0.");
 
 		Map<Long, Metric> slaveMetricMap = CHANNEL_METRICS.get(slaveId);
 		if (null == slaveMetricMap) {
-			throw new DataXException(
-					FrameworkErrorCode.INNER_ERROR,
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
-							"Can not get unregistered metric for slaveId:[%d] .",
+							"不能获取slaveId[%d]的metric，因为没有注册.",
 							slaveId));
 		}
 
 		Metric channelMetric = slaveMetricMap.get(channelId);
 		if (null == channelMetric) {
-			throw new DataXException(
-					FrameworkErrorCode.INNER_ERROR,
+			throw DataXException.asDataXException(
+					FrameworkErrorCode.RUNTIME_ERROR,
 					String.format(
-							"Can not get unregistered metric for slaveId:[%d] channelId:[%d] .",
+							"不能获取slaveId[%d] channelId[%d]的metric，因为没有注册.",
 							slaveId, channelId));
 		}
 
@@ -131,7 +131,7 @@ public final class MetricManager {
             Metric slaveMetric = entry.getValue();
             if(slaveMetric.getStatus() == Status.FAIL) {
                 LOG.error(String.format(
-                        "slaveId[%d] failed, reason: %s",
+                        "slaveId[%d]失败，原因是: %s",
                         slaveId, slaveMetric.getErrorMessage()));
                 return Status.FAIL;
             }
@@ -181,7 +181,7 @@ public final class MetricManager {
 
 	public static Metric getReportMetric(Metric now, Metric old, int totalStage) {
 		Validate.isTrue(now != null || old != null,
-				"now and old metric not null for report metric");
+				"为汇报准备的新旧metric不能为null");
 
 		long timeInterval = now.getTimeStamp() - old.getTimeStamp();
 		long sec = timeInterval <= 1000 ? 1 : timeInterval / 1000;

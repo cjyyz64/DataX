@@ -29,7 +29,7 @@ public class SlaveContainerRunner implements Runnable {
 		} catch (Throwable e) {
 			this.status = Status.FAIL;
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}
 	}
 

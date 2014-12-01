@@ -12,76 +12,85 @@ import java.util.List;
 
 public class OracleReader extends Reader {
 
-    private static final DataBaseType DATABASE_TYPE = DataBaseType.Oracle;
+	private static final DataBaseType DATABASE_TYPE = DataBaseType.Oracle;
 
-    public static class Master extends Reader.Master {
+	public static class Master extends Reader.Master {
 
-        private Configuration originalConfig = null;
-        private CommonRdbmsReader.Master commonRdbmsReaderMaster;
+		private Configuration originalConfig = null;
+		private CommonRdbmsReader.Master commonRdbmsReaderMaster;
 
-        @Override
-        public void init() {
+		@Override
+		public void init() {
 
-            this.originalConfig = super.getPluginJobConf();
-            int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
-                    Constant.DEFAULT_FETCH_SIZE);
-            if (fetchSize < 1) {
-                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE,
-                        "fetchSize can not less than 1.");
-            }
-            this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
+			this.originalConfig = super.getPluginJobConf();
+			int fetchSize = this.originalConfig.getInt(
+					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+					Constant.DEFAULT_FETCH_SIZE);
+			if (fetchSize < 1) {
+				throw DataXException
+						.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
+								String.format("fetchSize : [%d] 设置值不能小于 1.",
+										fetchSize));
+			}
+			this.originalConfig.set(
+					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
+					fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
-            this.commonRdbmsReaderMaster.init(this.originalConfig);
-        }
+			this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(
+					DATABASE_TYPE);
+			this.commonRdbmsReaderMaster.init(this.originalConfig);
+		}
 
-        @Override
-        public List<Configuration> split(int adviceNumber) {
-            return this.commonRdbmsReaderMaster.split(this.originalConfig, adviceNumber);
-        }
+		@Override
+		public List<Configuration> split(int adviceNumber) {
+			return this.commonRdbmsReaderMaster.split(this.originalConfig,
+					adviceNumber);
+		}
 
-        @Override
-        public void post() {
-            this.commonRdbmsReaderMaster.post(this.originalConfig);
-        }
+		@Override
+		public void post() {
+			this.commonRdbmsReaderMaster.post(this.originalConfig);
+		}
 
-        @Override
-        public void destroy() {
-            this.commonRdbmsReaderMaster.destroy(this.originalConfig);
-        }
+		@Override
+		public void destroy() {
+			this.commonRdbmsReaderMaster.destroy(this.originalConfig);
+		}
 
-    }
+	}
 
-    public static class Slave extends Reader.Slave {
+	public static class Slave extends Reader.Slave {
 
-        private Configuration readerSliceConfig;
-        private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
+		private Configuration readerSliceConfig;
+		private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
 
-        @Override
-        public void init() {
-            this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(DATABASE_TYPE);
-            this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
-        }
+		@Override
+		public void init() {
+			this.readerSliceConfig = super.getPluginJobConf();
+			this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(
+					DATABASE_TYPE);
+			this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
+		}
 
-        @Override
-        public void startRead(RecordSender recordSender) {
-            int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
+		@Override
+		public void startRead(RecordSender recordSender) {
+			int fetchSize = this.readerSliceConfig
+					.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
-            this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
-                    super.getSlavePluginCollector(), fetchSize);
-        }
+			this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig,
+					recordSender, super.getSlavePluginCollector(), fetchSize);
+		}
 
-        @Override
-        public void post() {
-            this.commonRdbmsReaderSlave.post(this.readerSliceConfig);
-        }
+		@Override
+		public void post() {
+			this.commonRdbmsReaderSlave.post(this.readerSliceConfig);
+		}
 
-        @Override
-        public void destroy() {
-            this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
-        }
+		@Override
+		public void destroy() {
+			this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
+		}
 
-    }
+	}
 
 }

@@ -11,8 +11,8 @@ import com.alibaba.fastjson.JSON;
 public class SerializeTester {
 	@Test
 	public void test_exception() {
-		Exception exception = new DataXException(
-				FrameworkErrorCode.INNER_ERROR, "ERROR");
+		Exception exception = DataXException.asDataXException(
+				FrameworkErrorCode.RUNTIME_ERROR, "ERROR");
 		String ex = JSON.toJSONString(exception);
 		System.out.println(ex);
 

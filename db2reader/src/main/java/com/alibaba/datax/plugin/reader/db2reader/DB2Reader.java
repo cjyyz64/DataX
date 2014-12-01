@@ -44,8 +44,8 @@ public class DB2Reader extends Reader {
             int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     Constant.DEFAULT_FETCH_SIZE);
             if (fetchSize < 1) {
-                throw new DataXException(DBUtilErrorCode.REQUIRED_VALUE,
-                        "fetchSize can not less than 1.");
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
+                        "fetchSize不能小于1.");
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 

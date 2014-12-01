@@ -115,8 +115,8 @@ public class Metric extends BaseObject implements Cloneable {
 		try {
 			BeanUtils.copyProperties(statistics, this);
 		} catch (Exception e) {
-			throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-					"Clone metric error.");
+			throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+					"克隆metric出错.");
 		}
 
 		return statistics;

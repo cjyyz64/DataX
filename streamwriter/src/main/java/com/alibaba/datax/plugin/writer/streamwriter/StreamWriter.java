@@ -91,7 +91,7 @@ public class StreamWriter extends Writer {
                 }
                 writer.flush();
             } catch (Exception e) {
-                throw new DataXException(StreamWriterErrorCode.RUNTIME_EXCEPTION, e);
+                throw DataXException.asDataXException(StreamWriterErrorCode.RUNTIME_EXCEPTION, e);
             }
         }
 

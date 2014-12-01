@@ -26,6 +26,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>drdsreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>oraclereader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -86,6 +93,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>drdswriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>odpswriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -108,6 +122,13 @@
         </fileSet>
         <fileSet>
             <directory>otswriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+		<fileSet>
+            <directory>oraclewriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

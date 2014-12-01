@@ -1,7 +1,7 @@
 {
-    "endpoint":"http://10.101.168.117",
-    "accessid":"dataxaccessid",
-    "accesskey":"dataxaccesskey",
-    "instance-name":"dataxtest",
-    "ag-ip":"10.101.168.117"
+    "endpoint":"http://10.101.16.6",
+    "accessid":"OTSMultiUser001_accessid",
+    "accesskey":"OTSMultiUser001_accesskey",
+    "instance-name":"TestInstance001",
+    "ag-ip":""
 }

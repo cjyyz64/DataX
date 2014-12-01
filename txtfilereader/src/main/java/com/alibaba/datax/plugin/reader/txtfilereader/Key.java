@@ -18,6 +18,6 @@ public class Key {
 
 	public static final String INDEX = "index";
 
-	public static final String CONST = "const";
+	public static final String VALUE = "value";
 
 }

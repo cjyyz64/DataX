@@ -1,26 +1,25 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
 
 /**
  * Created by jingxing on 14-8-24.
  */
 public class BoolColumn extends Column {
 
-	public BoolColumn(boolean bool) {
+	public BoolColumn(Boolean bool) {
 		super(bool, Column.Type.BOOL, 1);
 	}
 
 	public BoolColumn(final String data) {
-		this();
-
+		this(true);
 		this.validate(data);
-		super.setRawData(Boolean.valueOf(data));
+		super.setRawData(null == data ? null : Boolean.valueOf(data));
 		return;
 	}
 
@@ -84,14 +83,14 @@ public class BoolColumn extends Column {
 
 	@Override
 	public Date asDate() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Boolean cannot cast to Date .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Bool类型不能转为Date .");
 	}
 
 	@Override
 	public byte[] asBytes() {
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				"Boolean cannot cast to Bytes .");
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT, "Boolean类型不能转为Bytes .");
 	}
 
 	private void validate(final String data) {
@@ -103,7 +102,8 @@ public class BoolColumn extends Column {
 			return;
 		}
 
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				String.format("String[%s] cannot convert to Bool .", data));
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT,
+				String.format("String[%s]不能转为Bool .", data));
 	}
 }

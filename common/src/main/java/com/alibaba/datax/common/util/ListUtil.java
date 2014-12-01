@@ -8,16 +8,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-
 /**
- * 提供针对 DataX中使用的 List 较为常见的一些封装。
- * 比如：checkIfValueDuplicate 可以用于检查用户配置的 writer 的列不能重复。makeSureNoValueDuplicate亦然，只是会严格报错。
+ * 提供针对 DataX中使用的 List 较为常见的一些封装。 比如：checkIfValueDuplicate 可以用于检查用户配置的 writer
+ * 的列不能重复。makeSureNoValueDuplicate亦然，只是会严格报错。
  */
 public final class ListUtil {
 
-    public static boolean checkIfValueDuplicate(List<String> aList, boolean caseSensitive) {
+    public static boolean checkIfValueDuplicate(List<String> aList,
+                                                boolean caseSensitive) {
         if (null == aList || aList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList can not be null nor empty.");
+            throw DataXException.asDataXException(CommonErrorCode.CONFIG_ERROR,
+                    "您提供的作业配置有误，List不能为空.");
         }
 
         try {
@@ -28,9 +29,10 @@ public final class ListUtil {
         return false;
     }
 
-    public static void makeSureNoValueDuplicate(List<String> aList, boolean caseSensitive) {
+    public static void makeSureNoValueDuplicate(List<String> aList,
+                                                boolean caseSensitive) {
         if (null == aList || aList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList can not be null nor empty.");
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
         }
 
         if (1 == aList.size()) {
@@ -47,17 +49,23 @@ public final class ListUtil {
 
             for (int i = 0, len = aList.size() - 1; i < len; i++) {
                 if (list.get(i).equals(list.get(i + 1))) {
-                    throw new DataXException(CommonErrorCode.CONFIG_ERROR, String.format(
-                            "String:[%s] duplicated in List:[%s].", aList.get(i), StringUtils.join(aList, ",")));
+                    throw DataXException
+                            .asDataXException(
+                                    CommonErrorCode.CONFIG_ERROR,
+                                    String.format(
+                                            "您提供的作业配置信息有误, String:[%s] 不允许重复出现在列表中: [%s].",
+                                            aList.get(i),
+                                            StringUtils.join(aList, ",")));
                 }
             }
         }
     }
 
-
-    public static boolean checkIfBInA(List<String> aList, List<String> bList, boolean caseSensitive) {
-        if (null == aList || aList.isEmpty() || null == bList || bList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList/bList can not be null nor empty.");
+    public static boolean checkIfBInA(List<String> aList, List<String> bList,
+                                      boolean caseSensitive) {
+        if (null == aList || aList.isEmpty() || null == bList
+                || bList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
         }
 
         try {
@@ -68,9 +76,11 @@ public final class ListUtil {
         return true;
     }
 
-    public static void makeSureBInA(List<String> aList, List<String> bList, boolean caseSensitive) {
-        if (null == aList || aList.isEmpty() || null == bList || bList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList/bList can not be null nor empty.");
+    public static void makeSureBInA(List<String> aList, List<String> bList,
+                                    boolean caseSensitive) {
+        if (null == aList || aList.isEmpty() || null == bList
+                || bList.isEmpty()) {
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
         }
 
         List<String> all = null;
@@ -86,8 +96,12 @@ public final class ListUtil {
 
         for (String oneValue : part) {
             if (!all.contains(oneValue)) {
-                throw new DataXException(CommonErrorCode.CONFIG_ERROR, String.format(
-                        "String:[%s] not in List:[%s].", oneValue, StringUtils.join(aList, ",")));
+                throw DataXException
+                        .asDataXException(
+                                CommonErrorCode.CONFIG_ERROR,
+                                String.format(
+                                        "您提供的作业配置信息有误, String:[%s] 不存在于列表中:[%s].",
+                                        oneValue, StringUtils.join(aList, ",")));
             }
         }
 
@@ -95,7 +109,7 @@ public final class ListUtil {
 
     public static boolean checkIfValueSame(List<Boolean> aList) {
         if (null == aList || aList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList can not be null nor empty.");
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
         }
 
         if (1 == aList.size()) {
@@ -113,7 +127,7 @@ public final class ListUtil {
 
     public static List<String> valueToLowerCase(List<String> aList) {
         if (null == aList || aList.isEmpty()) {
-            throw new IllegalArgumentException("Parameter aList can not be null nor empty.");
+            throw new IllegalArgumentException("您提供的作业配置有误, List不能为空.");
         }
         List<String> result = new ArrayList<String>(aList.size());
         for (String oneValue : aList) {

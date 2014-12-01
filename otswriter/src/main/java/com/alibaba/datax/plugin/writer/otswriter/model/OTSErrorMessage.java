@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.otswriter.model;
 
 public class OTSErrorMessage {
     
-    public static final String OPERATION_PARSE_ERROR = "The 'operation' only support 'PutRow' and 'UpdateRow' not '%s'.";
+    public static final String OPERATION_PARSE_ERROR = "The 'writeMode' only support 'PutRow' and 'UpdateRow' not '%s'.";
     
     public static final String UNSUPPORT_PARSE = "Unsupport parse '%s' to '%s'.";
     
@@ -51,4 +51,16 @@ public class OTSErrorMessage {
     public static final String MULTI_ATTR_COLUMN_ERROR = "Multi item in 'column', column name : %s .";
     
     public static final String COLUMN_CONVERSION_ERROR = "Column coversion error, src type : %s, src value: %s, expect type: %s .";
+    
+    public static final String PK_COLUMN_VALUE_IS_NULL_ERROR = "The column of record is NULL, primary key name : %d .";
+    
+    public static final String PK_STRONG_LENGTH_ERROR = "The length of pk string value is more than configuration, conf: %d, input: %d .";
+    
+    public static final String ATTR_STRING_LENGTH_ERROR = "The length of attr string value is more than configuration, conf: %d, input: %d .";
+    
+    public static final String BINARY_LENGTH_ERROR = "The length of binary value is more than configuration, conf: %d, input: %d .";
+    
+    public static final String LINE_LENGTH_ERROR = "The length of row is more than length of request configuration, conf: %d, row: %d .";
+    
+    public static final String INSERT_TASK_ERROR = "Can not execute the task, becase the ExecutorService is shutdown.";
 }

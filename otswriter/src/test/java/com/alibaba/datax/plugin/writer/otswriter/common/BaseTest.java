@@ -17,6 +17,7 @@ public class BaseTest{
             p.getString("accesskey"), 
             p.getString("instance-name"));
 
+
     public BaseTest (String tableName) {
         this.tableName = tableName;
     }
@@ -25,7 +26,22 @@ public class BaseTest{
         ots.shutdown();
     }
     
-    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) {
+    public void createTable(List<PrimaryKeyType> pkType, int readCapacityUnit, int writeCapacityUnit) throws Exception {
+        Table t = new Table(ots, tableName, pkType);
+        t.create(readCapacityUnit, writeCapacityUnit);
+    }
+    
+    public void createTable(List<PrimaryKeyType> pkType) throws Exception {
+        createTable(pkType, 5000, 5000);
+    }
+    
+    public void prepareData(List<PrimaryKeyType> pkType, List<ColumnType> attrTypes, long begin, long rowCount, double nullPercent) throws Exception {
+        Table t = new Table(ots, tableName, pkType, attrTypes, nullPercent);
+        t.create(5000, 5000);
+        t.insertData(begin, rowCount);
+    }
+    
+    public void prepareData(List<PrimaryKeyType> pkType, long begin, long rowCount, double nullPercent) throws Exception {
         List<ColumnType> attriTypes = new ArrayList<ColumnType>();
         attriTypes.add(ColumnType.STRING);
         attriTypes.add(ColumnType.INTEGER);
@@ -38,9 +54,7 @@ public class BaseTest{
         attriTypes.add(ColumnType.BOOLEAN);
         attriTypes.add(ColumnType.BINARY);
         
-        Table t = new Table(ots, tableName, pkType, attriTypes, nullPercent);
-        t.create();
-        t.insertData(begin, rowCount);
+        prepareData(pkType, attriTypes, begin, rowCount, nullPercent);
     }
     
     public String getTableName() {

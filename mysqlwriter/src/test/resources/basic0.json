@@ -1,7 +1,9 @@
 {
     "job": {
         "setting": {
-            "speed": 10
+            "speed": {
+                "channel": 5
+            }
         },
         "content": [
             {

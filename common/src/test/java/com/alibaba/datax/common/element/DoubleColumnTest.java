@@ -190,7 +190,7 @@ public class DoubleColumnTest {
 			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
-		
+
 		try {
 			column.asLong();
 			Assert.assertTrue(false);
@@ -198,5 +198,54 @@ public class DoubleColumnTest {
 			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
+	}
+
+	@Test
+	public void test_NaN() {
+		DoubleColumn column = new DoubleColumn(String.valueOf(Double.NaN));
+		Assert.assertTrue(column.asString().equals("NaN"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		column = new DoubleColumn(String.valueOf(Double.POSITIVE_INFINITY));
+		Assert.assertTrue(column.asString().equals("Infinity"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+
+		column = new DoubleColumn(String.valueOf(Double.NEGATIVE_INFINITY));
+		Assert.assertTrue(column.asString().equals("-Infinity"));
+		try {
+			column.asBigDecimal();
+			Assert.assertTrue(false);
+		} catch (Exception e) {
+			Assert.assertTrue(true);
+		}
+	}
+
+	@Test
+	public void test_doubleFormat() {
+		System.out.println(new BigDecimal("9801523474.1234567890987654321")
+				.toPlainString());
+
+		System.out.println("double: " + 9801523474.399621d);
+		System.out.println("bigdecimal: " + new BigDecimal(9801523474.399621d).toPlainString());
+		System.out.println("bigdecimal: " + new BigDecimal(String.valueOf(9801523474.399621d)).toPlainString());
+
+		System.out.println(new DoubleColumn(9801523474.399621d).asString());
+		Assert.assertTrue("9801523474.399621".equals(new DoubleColumn(
+				9801523474.399621d).asString()));
+
+		Assert.assertTrue(!new DoubleColumn(Double.MAX_VALUE).asString()
+				.contains("E"));
+		Assert.assertTrue(!new DoubleColumn(Float.MAX_VALUE).asString()
+				.contains("E"));
 	}
 }

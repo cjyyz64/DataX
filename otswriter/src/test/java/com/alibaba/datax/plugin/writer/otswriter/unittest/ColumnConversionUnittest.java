@@ -151,7 +151,7 @@ public class ColumnConversionUnittest {
         // double -> string
         // -12.01, 0, 0.0, 109.0
         input.add(new PKItem(new DoubleColumn(-12.01), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("-12.01")));
-        input.add(new PKItem(new DoubleColumn(0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0.0")));
+        input.add(new PKItem(new DoubleColumn(0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0")));
         input.add(new PKItem(new DoubleColumn(0.0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0.0")));
         input.add(new PKItem(new DoubleColumn(109.0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("109.0")));
         
@@ -201,7 +201,7 @@ public class ColumnConversionUnittest {
      * @throws UnsupportedEncodingException 
      */
     @Test
-    public void testColumnToPrimaryKeyValueInvalid() {
+    public void testColumnToPrimaryKeyValueInvalid() throws UnsupportedEncodingException {
         Map<PKItem, String> input = new LinkedHashMap<PKItem, String>();
         
         // string->int， 非数值型的字符串
@@ -248,7 +248,7 @@ public class ColumnConversionUnittest {
         // double -> string
         // -12.01, 0, 0.0, 109.0
         input.add(new AttrItem(new DoubleColumn(-12.01), new OTSAttrColumn("", ColumnType.STRING), ColumnValue.fromString("-12.01")));
-        input.add(new AttrItem(new DoubleColumn(0), new OTSAttrColumn("", ColumnType.STRING), ColumnValue.fromString("0.0")));
+        input.add(new AttrItem(new DoubleColumn(0), new OTSAttrColumn("", ColumnType.STRING), ColumnValue.fromString("0")));
         input.add(new AttrItem(new DoubleColumn(0.0), new OTSAttrColumn("", ColumnType.STRING), ColumnValue.fromString("0.0")));
         input.add(new AttrItem(new DoubleColumn(109.0), new OTSAttrColumn("", ColumnType.STRING), ColumnValue.fromString("109.0")));
         

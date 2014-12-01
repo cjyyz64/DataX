@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.reader;
 
-//TODO add final
-public class Constant {
+public final class Constant {
     public static final String PK_TYPE = "pkType";
 
     public static final Object PK_TYPE_STRING = "pkTypeString";

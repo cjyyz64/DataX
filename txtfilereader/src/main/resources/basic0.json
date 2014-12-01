@@ -17,7 +17,7 @@
                             },
                             {
                                 "type": "String",
-                                "const": "alibaba"
+                                "value": "alibaba"
                             }
                         ],
                         "charset": "UTF-8",

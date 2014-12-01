@@ -3,29 +3,22 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 import com.alibaba.datax.common.spi.ErrorCode;
 
 public enum OdpsWriterErrorCode implements ErrorCode {
-    REQUIRED_VALUE("OdpsWriter-00", "lost necessary value"),
-    ILLEGAL_VALUE("OdpsWriter-01", "illegal value"),
-    CONFIG_INNER_ERROR("OdpsWriter-02", "inner config error(some config error only can be found after runtime)"),
-    UNSUPPORTED_ACCOUNT_TYPE("OdpsWriter-03", "unsupported account type"),
-    UNSUPPORTED_COLUMN_TYPE("OdpsWriter-04", "unsupported column type"),
+    REQUIRED_VALUE("OdpsWriter-00", "您缺失了必须填写的参数值."),
+    ILLEGAL_VALUE("OdpsWriter-01", "您配置的值不合法."),
+    UNSUPPORTED_COLUMN_TYPE("OdpsWriter-02", "DataX 不支持写入 ODPS 的目的表的此种数据类型."),
 
-    TABLE_TRUNCATE_ERROR("OdpsWriter-05", "error while truncate table."),
-    CREATE_MASTER_UPLOAD_FAIL("OdpsWriter-06", "failed to create master upload"),
-    COLUMN_NUMBER_ERROR("OdpsWriter-07", "Column number not match."),
-    GET_SLAVE_UPLOAD_FAIL("OdpsWriter-08", "failed to get slave upload"),
-    GET_ID_KEY_FAIL("OdpsWriter-09", "failed to get accessId/accessKey"),
+    TABLE_TRUNCATE_ERROR("OdpsWriter-03", "清空 ODPS 目的表时出错."),
+    CREATE_MASTER_UPLOAD_FAIL("OdpsWriter-04", "创建 ODPS 的 uploadSession 失败."),
+    GET_SLAVE_UPLOAD_FAIL("OdpsWriter-05", "获取 ODPS 的 uploadSession 失败."),
+    GET_ID_KEY_FAIL("OdpsWriter-06", "获取 accessId/accessKey 失败."),
+    GET_PARTITION_FAIL("OdpsWriter-07", "获取 ODPS 目的表的所有分区失败."),
 
-    GET_PARTITION_FAIL("OdpsWriter-10", "failed to get table all partitions"),
-    GET_TABLE_DDL_FAIL("OdpsWriter-11", "failed to get table ddl sql"),
+    ADD_PARTITION_FAILED("OdpsWriter-08", "添加分区到 ODPS 目的表失败."),
+    WRITER_RECORD_FAIL("OdpsWriter-09", "写入数据到 ODPS 目的表失败."),
 
-    WRITER_RECORD_FAIL("OdpsWriter-12", "failed to write odps record"),
-    WRITER_BLOCK_FAIL("OdpsWriter-13", "failed to write odps block"),
-
-    COMMIT_BLOCK_FAIL("OdpsWriter-14", "failed to commit block"),
-    COLUMN_CONFIGURED_ERROR("OdpsWriter-15", "column configured error."),
-    ADD_PARTITION_FAILED("OdpsWriter-16", "add partition failed."),
-    LIST_PARTITION_FAILED("OdpsWriter-17", "list partition failed."),
-    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-18", "Check if partitioned table failed."),;
+    COMMIT_BLOCK_FAIL("OdpsWriter-10", "提交 block 到 ODPS 目的表失败."),
+    RUN_SQL_FAILED("OdpsWriter-11", "执行 ODPS Sql 失败."),
+    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-12", "检查 ODPS 目的表:%s 是否为分区表失败."),;
 
     private final String code;
     private final String description;

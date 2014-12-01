@@ -1,28 +1,21 @@
 package com.alibaba.datax.plugin.reader.txtfilereader;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Pattern;
-
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
-
+import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Created by haiwei.luo on 14-9-20.
@@ -50,7 +43,6 @@ public class TxtFileReader extends Reader {
 			LOG.debug("init() ok and end...");
 		}
 
-		// TODO 文件 权限
 		// TODO validate column
 		private void validate() {
 			path = this.readerOriginConfig.getNecessaryValue(Key.PATH,
@@ -60,13 +52,13 @@ public class TxtFileReader extends Reader {
 			try {
 				Charsets.toCharset(charset);
 			} catch (UnsupportedCharsetException uce) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						uce.getMessage(), uce);
+						String.format("不支持的编码格式 : [%s]", charset), uce);
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						e.getMessage(), e);
+						String.format("运行配置异常 : %s", e.getMessage()), e);
 			}
 
 		}
@@ -91,14 +83,17 @@ public class TxtFileReader extends Reader {
 			LOG.debug("destroy()");
 		}
 
-		// TODO 如果源目录为空，这时候出错
+		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			LOG.debug("split() begin...");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
+			//warn:每个slice拖且仅拖一个文件,
+			int splitNumber = this.sourceFiles.size();
+
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
-					this.sourceFiles, adviceNumber);
+					this.sourceFiles, splitNumber);
 			for (List<String> files : splitedSourceFiles) {
 				Configuration splitedConfig = this.readerOriginConfig.clone();
 				splitedConfig.set(Constants.SOURCE_FILES, files);
@@ -108,10 +103,8 @@ public class TxtFileReader extends Reader {
 			return readerSplitConfigs;
 		}
 
-		// TODO validate the path?
-		// path must be a absolute path
+		// validate the path, path must be a absolute path
 		private List<String> buildSourceTargets() {
-			// 获取路径前缀，无 * ?
 			int endMark;
 			for (endMark = 0; endMark < this.path.length(); endMark++) {
 				if ('*' != this.path.charAt(endMark)
@@ -140,18 +133,17 @@ public class TxtFileReader extends Reader {
 				File dir = new File(parentDirectory);
 				boolean isExists = dir.exists();
 				if (!isExists) {
-					String message = String.format(
-							"the directory does not exist : [%s]",
+					String message = String.format("设定的目录不存在 : [%s]",
 							parentDirectory);
 					LOG.error(message);
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileReaderErrorCode.FILE_EXCEPTION, message);
 				}
 			} catch (SecurityException se) {
-				String message = String.format(
-						"do not have permission to : [%s]", parentDirectory);
+				String message = String.format("没有权限创建目录 : [%s]",
+						parentDirectory);
 				LOG.error(message);
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.SECURITY_EXCEPTION, message);
 			}
 
@@ -172,10 +164,13 @@ public class TxtFileReader extends Reader {
 							parentDirectory));
 					// 文件数量限制
 					if (result.size() > Constants.MAX_FILE_READ) {
-						throw new DataXException(
-								TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
-								String.format("too much files to read > [%d]",
-										Constants.MAX_FILE_READ));
+						throw DataXException
+								.asDataXException(
+										TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+										String.format(
+												"读取文件数量  [%d] 超过最大限制 > [%d]",
+												result.size(),
+												Constants.MAX_FILE_READ));
 					}
 				}
 			} else {
@@ -189,10 +184,8 @@ public class TxtFileReader extends Reader {
 									subFileNames.getAbsolutePath());
 						}
 					} else {
-						// TODO 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn,
-						// =》如何区分无用的隐藏文件（无权限），和用户指定的文件（无权限）
-						LOG.warn(String.format("unable list files for : [%s]",
-								directory));
+						// warn: 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn
+						LOG.warn(String.format("没有权限查看目录 : [%s]", directory));
 					}
 
 				} catch (SecurityException e) {
@@ -281,8 +274,7 @@ public class TxtFileReader extends Reader {
 			LOG.debug("destroy()");
 		}
 
-		// TODO sock 文件无法read
-		// TODO check print exception stack
+		// warn: sock 文件无法read
 		@Override
 		public void startRead(RecordSender recordSender) {
 			LOG.debug("start startRead()");
@@ -293,7 +285,7 @@ public class TxtFileReader extends Reader {
 					this.readFromFile(fileName, recordSender);
 					recordSender.flush();
 				} catch (Exception e) {
-					// 一个文件失败，不能影响所有文件的传输?
+					// 一个文件失败，不能影响所有文件的传输
 					LOG.warn(String.format("could not read file : [%s]",
 							fileName));
 				}
@@ -333,20 +325,21 @@ public class TxtFileReader extends Reader {
 					}
 				}
 			} catch (UnsupportedEncodingException uee) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("could not use charset : [%]",
-								this.charset), uee);
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.FILE_EXCEPTION,
+						String.format("不支持的编码格式 : [%]", this.charset), uee);
 			} catch (FileNotFoundException fnfe) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("could not find file : [%s]", fileName),
-						fnfe);
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.FILE_EXCEPTION,
+						String.format("无法找到文件 : [%s]", fileName), fnfe);
 			} catch (IOException ioe) {
-				throw new DataXException(TxtFileReaderErrorCode.FILE_EXCEPTION,
-						String.format("read file error : [%s]", fileName), ioe);
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.FILE_EXCEPTION,
+						String.format("读取文件错误 : [%s]", fileName), ioe);
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
-						e.getMessage(), e);
+						String.format("运行时异常 : %s", e.getMessage()), e);
 			} finally {
 				IOUtils.closeQuietly(reader);
 			}
@@ -389,8 +382,7 @@ public class TxtFileReader extends Reader {
 				record = this.generateAndSendStringRecord(recordSender,
 						sourceLine);
 
-				String dirtyDataMessage = String.format(
-						"got a dirty data : [%s]", record);
+				String dirtyDataMessage = String.format("出现脏数据 : [%s]", record);
 				this.getSlavePluginCollector().collectDirtyRecord(record,
 						dirtyDataMessage);
 				LOG.warn(dirtyDataMessage);
@@ -398,9 +390,9 @@ public class TxtFileReader extends Reader {
 				return record;
 
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
-						e.getMessage());
+						String.format("运行时异常 : %s", e.getMessage()));
 			}
 		}
 
@@ -409,7 +401,7 @@ public class TxtFileReader extends Reader {
 			String columnType = columnConfig.getNecessaryValue(Key.TYPE,
 					TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION);
 			Integer columnIndex = columnConfig.getInt(Key.INDEX);
-			String columnConst = columnConfig.getString(Key.CONST);
+			String columnConst = columnConfig.getString(Key.VALUE);
 
 			String columnValue = null;
 
@@ -438,22 +430,21 @@ public class TxtFileReader extends Reader {
 				} else if ("byte".equalsIgnoreCase(columnType)) {
 					return new BytesColumn(((String) columnValue).getBytes());
 				} else {
-					String errorMessage = String.format(
-							"not support column type :[%s]", columnType);
+					String errorMessage = String.format("不支持的列类型 :[%s]",
+							columnType);
 					LOG.error(errorMessage);
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileReaderErrorCode.NOT_SUPPORT_TYPE,
 							errorMessage);
 				}
 			} catch (IndexOutOfBoundsException ioe) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("index [%s] is out of bounds",
-								columnIndex));
+						String.format("索引下标越界 : [%s]", columnIndex));
 			} catch (NumberFormatException nfe) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.CAST_VALUE_TYPE_ERROR,
-						nfe.getMessage(), nfe);
+						String.format("数字格式错误 : %s", nfe.getMessage()), nfe);
 			}
 		}
 	}

@@ -24,21 +24,17 @@ public class OtsWriter {
             try {
                 this.proxy.init(getPluginJobConf());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
-                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
-                LOG.error("Stack", e);
-                throw new DataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
+                LOG.error("OTSException: {}",  e.getMessage(), e);
+                throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
-                        new Object[]{e.getErrorCode(), e.getMessage()});
-                LOG.error("Stack", e);
-                throw new DataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
+                LOG.error("ClientException: {}",  e.getMessage(), e);
+                throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
                 LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
-                throw new DataXException(OtsWriterError.INVALID_PARAM, Common.getDetailMessage(e), e);
+                throw DataXException.asDataXException(OtsWriterError.INVALID_PARAM, Common.getDetailMessage(e), e);
             } catch (Exception e) {
                 LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
-                throw new DataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
+                throw DataXException.asDataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
             }
             LOG.info("init() end ...");
         }
@@ -54,7 +50,7 @@ public class OtsWriter {
                 return this.proxy.split(mandatoryNumber);
             } catch (Exception e) {
                 LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
-                throw new DataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
+                throw DataXException.asDataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
             }
         }
     }
@@ -78,21 +74,17 @@ public class OtsWriter {
                 this.proxy.init(this.getPluginJobConf());
                 this.proxy.write(lineReceiver, this.getSlavePluginCollector());
             } catch (OTSException e) {
-                LOG.error("OTSException. ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
-                        new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()});
-                LOG.error("Stack", e);
-                throw new DataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
+                LOG.error("OTSException: {}",  e.getMessage(), e);
+                throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (ClientException e) {
-                LOG.error("ClientException. ErrorCode:{}, ErrorMsg:{}", 
-                        new Object[]{e.getErrorCode(), e.getMessage()});
-                LOG.error("Stack", e);
-                throw new DataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
+                LOG.error("ClientException: {}",  e.getMessage(), e);
+                throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);
             } catch (IllegalArgumentException e) {
                 LOG.error("IllegalArgumentException. ErrorMsg:{}", e.getMessage(), e);
-                throw new DataXException(OtsWriterError.INVALID_PARAM, Common.getDetailMessage(e), e);
+                throw DataXException.asDataXException(OtsWriterError.INVALID_PARAM, Common.getDetailMessage(e), e);
             } catch (Exception e) {
                 LOG.error("Exception. ErrorMsg:{}", e.getMessage(), e);
-                throw new DataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
+                throw DataXException.asDataXException(OtsWriterError.ERROR, Common.getDetailMessage(e), e);
             }
             LOG.info("startWrite() end ...");
         }

@@ -1,0 +1,47 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "drdsreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port",
+                            "db_role",
+                            "db_name",
+                            "db_username",
+                            "db_password",
+                            "db_modify_time",
+                            "db_modify_user",
+                            "db_description",
+                            "db_tddl_info",
+                            "on_line_flag"
+                        ],
+                        "where": "",
+                        "connection": [
+                            {
+                                "table": [
+                                    "logicTableName"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:mysql://drdsHostName:port/dbName"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

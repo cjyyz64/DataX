@@ -14,7 +14,7 @@ import com.alibaba.datax.common.exception.DataXException;
 public class StringColumn extends Column {
 
 	public StringColumn() {
-		this(null);
+		this((String) null);
 	}
 
 	public StringColumn(final String rawData) {
@@ -31,18 +31,31 @@ public class StringColumn extends Column {
 		return (String) this.getRawData();
 	}
 
+	private void validateDoubleSpecific(final String data) {
+		if ("NaN".equals(data) || "Infinity".equals(data)
+				|| "-Infinity".equals(data)) {
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s]属于Double特殊类型，不能转为其他类型 .", data));
+		}
+
+		return;
+	}
+
 	@Override
 	public BigInteger asBigInteger() {
 		if (null == this.getRawData()) {
 			return null;
 		}
 
+		this.validateDoubleSpecific((String) this.getRawData());
+
 		try {
 			return this.asBigDecimal().toBigInteger();
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] convert to BigInteger failed",
-							this.asString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT, String.format(
+							"String[%s]不能转为BigInteger .", this.asString()));
 		}
 	}
 
@@ -52,14 +65,16 @@ public class StringColumn extends Column {
 			return null;
 		}
 
+		this.validateDoubleSpecific((String) this.getRawData());
+
 		try {
 			BigInteger integer = this.asBigInteger();
 			OverFlowUtil.validateLongNotOverFlow(integer);
 			return integer.longValue();
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] convert to Long failed",
-							this.asString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s]不能转为Long .", this.asString()));
 		}
 	}
 
@@ -69,12 +84,14 @@ public class StringColumn extends Column {
 			return null;
 		}
 
+		this.validateDoubleSpecific((String) this.getRawData());
+
 		try {
 			return new BigDecimal(this.asString());
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] convert to BigDecimal failed",
-							this.asString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT, String.format(
+							"String[%s]不能转为BigDecimal .", this.asString()));
 		}
 	}
 
@@ -82,6 +99,19 @@ public class StringColumn extends Column {
 	public Double asDouble() {
 		if (null == this.getRawData()) {
 			return null;
+		}
+
+		String data = (String) this.getRawData();
+		if ("NaN".equals(data)) {
+			return Double.NaN;
+		}
+
+		if ("Infinity".equals(data)) {
+			return Double.POSITIVE_INFINITY;
+		}
+
+		if ("-Infinity".equals(data)) {
+			return Double.NEGATIVE_INFINITY;
 		}
 
 		BigDecimal decimal = this.asBigDecimal();
@@ -104,9 +134,9 @@ public class StringColumn extends Column {
 			return false;
 		}
 
-		throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-				String.format("String[%s] convert to Boolean failed .",
-						this.asString()));
+		throw DataXException.asDataXException(
+				CommonErrorCode.CONVERT_NOT_SUPPORT,
+				String.format("String[%s]不能转为Bool .", this.asString()));
 	}
 
 	@Override
@@ -114,9 +144,9 @@ public class StringColumn extends Column {
 		try {
 			return ColumnCast.string2Date(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] convert to Date failed .",
-							this.asString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s]不能转为Date .", this.asString()));
 		}
 	}
 
@@ -125,9 +155,9 @@ public class StringColumn extends Column {
 		try {
 			return ColumnCast.string2Bytes(this);
 		} catch (Exception e) {
-			throw new DataXException(CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s] convert to Bytes failed .",
-							this.asString()));
+			throw DataXException.asDataXException(
+					CommonErrorCode.CONVERT_NOT_SUPPORT,
+					String.format("String[%s]不能转为Bytes .", this.asString()));
 		}
 	}
 }

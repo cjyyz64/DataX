@@ -181,7 +181,7 @@ public class SlaveContainer extends AbstractContainer {
 			super.getContainerCollector().report(nowMetric);
 
 			throw DataXException.asDataXException(
-					FrameworkErrorCode.INNER_ERROR, e);
+					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}
 	}
 
@@ -225,11 +225,11 @@ public class SlaveContainer extends AbstractContainer {
 					null != jobConf.getConfiguration(CoreConstant.JOB_READER)
 							&& null != jobConf
 									.getConfiguration(CoreConstant.JOB_WRITER),
-					"reader/writer PluginParam cannot be empty!");
+					"[reader|writer]的插件参数不能为空!");
 
 			if (!isTaskDone()) {
-				throw new DataXException(FrameworkErrorCode.INNER_ERROR,
-						"Work not completed yet!");
+				throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+						"当前slice还没有完成!");
 			}
 
 			int sliceId = jobConf.getInt(CoreConstant.JOB_SLICEID);
@@ -269,7 +269,7 @@ public class SlaveContainer extends AbstractContainer {
 			// bug: 如果启动伊始，writer即挂，这里需要判断
 			while (!this.writerThread.isAlive()) {
 				if (writerRunner.getRunnerStatus().isFail()) {
-					throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+					throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 							MetricManager.getChannelMetric(
 									this.channel.getSlaveId(),
 									this.channel.getChannelId()).getError());
@@ -316,7 +316,7 @@ public class SlaveContainer extends AbstractContainer {
 			while (!this.readerThread.isAlive()) {
 				// 这里有可能出现Reader线上启动即挂情况 对于这类情况 需要立刻抛出异常
 				if (readerRunner.getRunnerStatus().isFail()) {
-					throw new DataXException(FrameworkErrorCode.INNER_ERROR,
+					throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 							MetricManager.getChannelMetric(
 									this.channel.getSlaveId(),
 									this.channel.getChannelId()).getError());

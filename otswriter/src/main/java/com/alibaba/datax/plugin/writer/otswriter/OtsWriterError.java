@@ -39,6 +39,7 @@ public class OtsWriterError implements ErrorCode {
         return this.description;
     }
     
+    @Override
     public String toString() {
         return this.code;
     }

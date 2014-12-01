@@ -1,14 +1,14 @@
 package com.alibaba.datax.common.util;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class StrUtil {
-
-    // 第一个%s 对应到：插件开发人员填充的业务信息。第二个%s 对应到异常的简短信息
-    private static final String ORIGINAL_CAUSE__WITH_EXCEPTION_TEMPLATE = "Original cause: {%s},{%s}.";
-
-    // %s 对应到：插件开发人员填充的业务信息
-    private static final String ORIGINAL_CAUSE__WITHOUT_EXCEPTION_TEMPLATE = "Original cause: [%s].";
 
     private final static long KB_IN_BYTES = 1024;
 
@@ -19,6 +19,9 @@ public class StrUtil {
     private final static long TB_IN_BYTES = 1024 * GB_IN_BYTES;
 
     private final static DecimalFormat df = new DecimalFormat("0.00");
+
+    private static final Pattern VARIABLE_PATTERN = Pattern
+            .compile("(\\$)\\{?(\\w+)\\}?");
 
     private static String SYSTEM_ENCODING = System.getProperty("file.encoding");
 
@@ -45,12 +48,26 @@ public class StrUtil {
         }
     }
 
-    public static String buildOriginalCauseMessage(String businessMessage, Throwable thr) {
-        if (null == thr) {
-            return String.format(ORIGINAL_CAUSE__WITHOUT_EXCEPTION_TEMPLATE, businessMessage);
-        } else {
-            return String.format(ORIGINAL_CAUSE__WITH_EXCEPTION_TEMPLATE, businessMessage,
-                    thr.getMessage());
+
+    public static String replaceVariable(final String param) {
+        Map<String, String> mapping = new HashMap<String, String>();
+
+        Matcher matcher = VARIABLE_PATTERN.matcher(param);
+        while (matcher.find()) {
+            String variable = matcher.group(2);
+            String value = System.getProperty(variable);
+            if (StringUtils.isBlank(value)) {
+                value = matcher.group();
+            }
+            mapping.put(matcher.group(), value);
         }
+
+        String retString = param;
+        for (final String key : mapping.keySet()) {
+            retString = retString.replace(key, mapping.get(key));
+        }
+
+        return retString;
     }
+
 }

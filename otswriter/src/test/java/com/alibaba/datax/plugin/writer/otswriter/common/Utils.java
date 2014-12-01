@@ -3,39 +3,61 @@ package com.alibaba.datax.plugin.writer.otswriter.common;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.Column.Type;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.plugin.writer.otswriter.callable.CreateTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.callable.DeleteTableCallable;
+import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector.RecordAndMessage;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSRowPrimaryKey;
+import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
 import com.aliyun.openservices.ots.OTSClient;
 import com.aliyun.openservices.ots.model.CapacityUnit;
 import com.aliyun.openservices.ots.model.ColumnType;
 import com.aliyun.openservices.ots.model.ColumnValue;
 import com.aliyun.openservices.ots.model.CreateTableRequest;
 import com.aliyun.openservices.ots.model.DeleteTableRequest;
+import com.aliyun.openservices.ots.model.Direction;
 import com.aliyun.openservices.ots.model.GetRangeRequest;
 import com.aliyun.openservices.ots.model.GetRangeResult;
+import com.aliyun.openservices.ots.model.MockOTSClient;
+import com.aliyun.openservices.ots.model.OTSRow;
 import com.aliyun.openservices.ots.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.model.PrimaryKeyValue;
-import com.aliyun.openservices.ots.model.PutRowRequest;
 import com.aliyun.openservices.ots.model.RangeRowQueryCriteria;
 import com.aliyun.openservices.ots.model.Row;
 import com.aliyun.openservices.ots.model.RowPrimaryKey;
-import com.aliyun.openservices.ots.model.RowPutChange;
 import com.aliyun.openservices.ots.model.TableMeta;
 
 public class Utils {
     
-    public static String getRowPKString(RowPrimaryKey pk) {
-        Set<String> keys = pk.getPrimaryKey().keySet();
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    
+    public static String getRowPKString(Map<String, PrimaryKeyValue> pk) {
+        Set<String> keys = pk.keySet();
         StringBuilder sb = new StringBuilder();
         for (String key:keys) {
-            PrimaryKeyValue value = pk.getPrimaryKey().get(key);
+            PrimaryKeyValue value = pk.get(key);
             sb.append("[");
             if (value.equals(PrimaryKeyValue.INF_MIN)) {
                 sb.append("("+ key +")INF_MIN");
@@ -55,21 +77,18 @@ public class Utils {
         }
         return sb.toString();
     }
-
-    public static String getCriateriaString(RangeRowQueryCriteria criteria) {
+    
+    public static String getRowPKString(RowPrimaryKey pk) {
+        return getRowPKString(pk.getPrimaryKey());
+    }
+    
+    public static String getRowString(Row row) {
         StringBuilder sb = new StringBuilder();
-        sb.append(getRowPKString(criteria.getInclusiveStartPrimaryKey()));
-        sb.append("\n");
-        sb.append(getRowPKString(criteria.getExclusiveEndPrimaryKey()));
-        sb.append("\n");
-        sb.append("Table    :" + criteria.getTableName());
-        sb.append("\n");
-        sb.append("Direction:" + criteria.getDirection().toString());
-        sb.append("\n");
-        sb.append("Column   :" + criteria.getColumnsToGet());
-        sb.append("\n");
-        sb.append("Limit    :" + criteria.getLimit());
-        sb.append("\n");
+        sb.append("[");
+        for (Entry<String, ColumnValue> en : row.getColumns().entrySet()) {
+            sb.append(en.getKey() + "=" +en.getValue().toString() +",");
+        }
+        sb.append("]");
         return sb.toString();
     }
 
@@ -83,60 +102,16 @@ public class Utils {
         return Configuration.from(parameters);
     }
 
-    public static String getRangeString(OTSClient ots, RangeRowQueryCriteria criteria) {
-        StringBuilder ss = new StringBuilder();
-        RowPrimaryKey token = criteria.getInclusiveStartPrimaryKey();
-        do {
-            RangeRowQueryCriteria cur = new RangeRowQueryCriteria(criteria.getTableName());
-            cur.setDirection(criteria.getDirection());
-            cur.setColumnsToGet(criteria.getColumnsToGet());
-            cur.setLimit(criteria.getLimit());
-            cur.setInclusiveStartPrimaryKey(token);
-            cur.setExclusiveEndPrimaryKey(criteria.getExclusiveEndPrimaryKey());
-
-            GetRangeRequest request = new GetRangeRequest();
-            request.setRangeRowQueryCriteria(cur);
-
-            GetRangeResult result = ots.getRange(request);
-            token = result.getNextStartPrimaryKey();
-            List<Row> rows = result.getRows();
-            for (Row row:rows) {
-                Map<String, ColumnValue> cols = row.getColumns();
-                Set<String> keys = cols.keySet();
-                StringBuilder sb = new StringBuilder();
-                for (String key:keys) {
-                    ColumnValue v = cols.get(key);
-                    if (v == null) {
-                        sb.append(String.format("%s(%s)", key, "N/A"));
-                    } else {
-                        if (v.getType() == ColumnType.STRING) {
-                            sb.append(String.format("%s(%s)", key, v.asString()));
-                        } else if (v.getType() == ColumnType.INTEGER) {
-                            sb.append(String.format("%s(%d)", key, v.asLong()));
-                        } else if (v.getType() == ColumnType.DOUBLE) {
-                            sb.append(String.format("%s(%f)", key, v.asDouble()));
-                        } else if (v.getType() == ColumnType.BOOLEAN) {
-                            sb.append(String.format("%s(%s)", key, v.asBoolean()));
-                        } else if (v.getType() == ColumnType.BINARY) {
-                            sb.append(String.format("%s(%s)", key, v.asBinary()));
-                        } else {
-                            throw new IllegalArgumentException(String.format("Unsuporrt tranform the type: %s.", v.getType()));
-                        }
-                    }
-
-                }
-                ss.append(sb);
-            }
-        } while (token != null);
-        return ss.toString();
-    }
-
     public static void createTable(OTSClient ots, String tableName, TableMeta tableMeta) throws Exception{
         // drop table
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
         try {
-            ots.deleteTable(deleteTableRequest);
+            RetryHelper.executeWithRetry(
+                    new DeleteTableCallable(ots, deleteTableRequest),
+                    2,
+                    1000
+                    );
         } catch (Exception e) {
             //e.printStackTrace();
         }
@@ -148,75 +123,13 @@ public class Utils {
         CreateTableRequest createTableRequest = new CreateTableRequest();
         createTableRequest.setTableMeta(tableMeta);
         createTableRequest.setReservedThroughput(capacityUnit);
-        try {
-            ots.createTable(createTableRequest);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
-        Thread.sleep(5 * 1000);
-    }
+        RetryHelper.executeWithRetry(
+                new CreateTableCallable(ots, createTableRequest),
+                5,
+                1000
+                );
 
-    public static void prepareData(OTSClient ots, String tableName) throws Exception{
-        for (int i  = 0; i < 1000; i++) {
-            RowPutChange rowChange = new RowPutChange(tableName);
-            RowPrimaryKey primaryKey = new RowPrimaryKey();
-            primaryKey.addPrimaryKeyColumn("Uid", PrimaryKeyValue.fromString(String.format("%d", i)));
-            primaryKey.addPrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(i));
-            primaryKey.addPrimaryKeyColumn("Gid", PrimaryKeyValue.fromString(String.format("%d", i)));
-            primaryKey.addPrimaryKeyColumn("Mid", PrimaryKeyValue.fromLong(i));
-            rowChange.setPrimaryKey(primaryKey);
-
-            Person p = new Person();
-            p.setName(String.format("name_%d", i));
-            p.setAge(i);
-            p.setMale(true);
-            p.setHeight(Double.valueOf(i));
-
-            byte [] person = Person.toByte(p);
-
-            rowChange.addAttributeColumn("name", ColumnValue.fromString(p.getName()));
-            rowChange.addAttributeColumn("age", ColumnValue.fromLong(p.getAge()));
-            if (i % 2 == 1) { 
-                rowChange.addAttributeColumn("male", ColumnValue.fromBoolean(p.isMale()));
-            }
-            rowChange.addAttributeColumn("height", ColumnValue.fromDouble(p.getHeight()));
-            rowChange.addAttributeColumn("hash", ColumnValue.fromBinary(person));
-
-            PutRowRequest putRowRequest = new PutRowRequest();
-            putRowRequest.setRowChange(rowChange);
-            ots.putRow(putRowRequest);
-        }
-
-        for (int i  = 0; i < 1000; i++) {
-            RowPutChange rowChange = new RowPutChange(tableName);
-            RowPrimaryKey primaryKey = new RowPrimaryKey();
-            primaryKey.addPrimaryKeyColumn("Uid", PrimaryKeyValue.fromString(String.format("杭州%d", i)));
-            primaryKey.addPrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(i));
-            primaryKey.addPrimaryKeyColumn("Gid", PrimaryKeyValue.fromString(String.format("余杭%d", i)));
-            primaryKey.addPrimaryKeyColumn("Mid", PrimaryKeyValue.fromLong(i));
-            rowChange.setPrimaryKey(primaryKey);
-
-            Person p = new Person();
-            p.setName(String.format("name_%d", i));
-            p.setAge(i);
-            p.setMale(true);
-            p.setHeight(Double.valueOf(i));
-
-            byte [] person = Person.toByte(p);
-
-            rowChange.addAttributeColumn("name", ColumnValue.fromString(p.getName()));
-            rowChange.addAttributeColumn("age", ColumnValue.fromLong(p.getAge()));
-            if (i % 2 == 1) { 
-                rowChange.addAttributeColumn("male", ColumnValue.fromBoolean(p.isMale()));
-            }
-            rowChange.addAttributeColumn("height", ColumnValue.fromDouble(p.getHeight()));
-            rowChange.addAttributeColumn("hash", ColumnValue.fromBinary(person));
-
-            PutRowRequest putRowRequest = new PutRowRequest();
-            putRowRequest.setRowChange(rowChange);
-            ots.putRow(putRowRequest);
-        }
+        Thread.sleep(10000);
     }
 
     public static Configuration loadConf() {
@@ -278,5 +191,351 @@ public class Utils {
                         + "{\"writer\":{\"name\":\"otswriter\", \"parameter\":"+ TestGsonParser.confToJson(conf) +"}, "
                         + "\"reader\":{}}]}}";
         return json;
+    }
+    
+    private static List<Row> getData(OTSClient ots, OTSConf conf) {
+        List<Row> results = new ArrayList<Row>();
+        RowPrimaryKey begin  = new RowPrimaryKey();
+        RowPrimaryKey end  = new RowPrimaryKey();
+        
+        List<String> cc = new ArrayList<String>();
+        
+        for (OTSPKColumn col : conf.getPrimaryKeyColumn()) {
+            begin.addPrimaryKeyColumn(col.getName(), PrimaryKeyValue.INF_MIN);
+            end.addPrimaryKeyColumn(col.getName(), PrimaryKeyValue.INF_MAX);
+            cc.add(col.getName());
+        }
+        for (OTSAttrColumn col : conf.getAttributeColumn()) {
+            cc.add(col.getName());
+        }
+        
+        RowPrimaryKey token =  begin;
+        do {
+            RangeRowQueryCriteria cur = new RangeRowQueryCriteria(conf.getTableName());
+            cur.setDirection(Direction.FORWARD);
+            cur.setColumnsToGet(cc);
+            cur.setLimit(-1);
+            cur.setInclusiveStartPrimaryKey(token);
+            cur.setExclusiveEndPrimaryKey(end);
+
+            GetRangeRequest request = new GetRangeRequest();
+            request.setRangeRowQueryCriteria(cur);
+
+            GetRangeResult result = ots.getRange(request);
+            token = result.getNextStartPrimaryKey();
+            results.addAll(result.getRows());
+        } while (token != null);
+        return results;
+    }
+    
+    private static String getPKValue(OTSConf conf, Map<String, ColumnValue> row) {
+        List<OTSPKColumn> pks = conf.getPrimaryKeyColumn();
+        StringBuilder sb = new StringBuilder();
+        for (OTSPKColumn pk : pks) {
+            sb.append(row.get(pk.getName()) + ",");
+        }
+        return sb.toString();
+    }
+    
+    private static Map<String, Map<String, ColumnValue>> mapping(OTSConf conf, List<Map<String, ColumnValue>> input) {
+        Map<String, Map<String, ColumnValue>> m = new HashMap<String, Map<String, ColumnValue>>();
+        
+        for (Map<String, ColumnValue> row : input) {
+            m.put(getPKValue(conf, row), row);
+        }
+        
+        return m;
+    }
+    
+    private static boolean cmpRow(Map<String, ColumnValue> src, Map<String, ColumnValue> target) {
+        if (src.size() != target.size()) {
+            LOG.error("src size({}) not equal target size({}).", src.size(), target.size());
+            return false;
+        }
+        for (Entry<String, ColumnValue> entry : src.entrySet()) {
+            if (!target.containsKey(entry.getKey())) {
+                LOG.error("{} is exist.", entry.getKey());
+                return false;
+            }
+            ColumnValue targetValue = target.get(entry.getKey());
+            ColumnValue srcValue = entry.getValue();
+            
+            if (targetValue == null && srcValue == null) {
+                continue;
+            } else if (targetValue == null && srcValue != null) {
+                LOG.error("targetValue is null, but src is not null");
+                return false;
+            } else if (targetValue != null && srcValue == null) {
+                LOG.error("srcValue is null, but targetValue is not null.");
+                return false;
+            }
+            
+            if (srcValue.getType() == ColumnType.BINARY && targetValue.getType() == ColumnType.BINARY) {
+                if (compareBytes(srcValue.asBinary(), targetValue.asBinary()) != 0) {
+                    LOG.error("Binary not equal.");
+                    return false;
+                }
+            } else {
+                if (!srcValue.equals(targetValue)) {
+                    LOG.error("{} not equal, v1={}, v2={}", new String[] {entry.getKey(), targetValue.toString(), srcValue.toString()});
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    private static boolean cmpRecord(Record src, Record target) {
+        if (src.getColumnNumber() != target.getColumnNumber()) {
+            LOG.error("src size({}) not equal target size({}).", src.getColumnNumber() , target.getColumnNumber());
+            return false;
+        }
+        for (int i = 0; i < src.getColumnNumber(); i++) {
+            Column srcValue = src.getColumn(i);
+            Column targetValue = target.getColumn(i);
+
+            if (srcValue.getType() == Type.BYTES && targetValue.getType() == Type.BYTES) {
+                if (compareBytes(srcValue.asBytes(), targetValue.asBytes()) != 0) {
+                    LOG.error("Binary not equal.");
+                    return false;
+                }
+            } else {
+                if (srcValue.getType() != targetValue.getType()) {
+                    LOG.error("targetValue type({}) not equal srcValue type({}), . index({}) in record.", new Object[] {targetValue.getType(), srcValue.getType(), i});
+                    return false;
+                } else {
+                    switch (srcValue.getType()) {
+                        case BOOL:
+                            if (srcValue.asBoolean().booleanValue() != targetValue.asBoolean().booleanValue()) {
+                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asBoolean(), srcValue.asBoolean(), i});
+                                return false;
+                            }
+                            break;
+                        case DOUBLE:
+                            if (srcValue.asDouble().doubleValue() != targetValue.asDouble().doubleValue()) {
+                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asDouble(), srcValue.asDouble(), i});
+                                return false;
+                            }
+                            break;
+                        case LONG:
+                            if (srcValue.asLong().longValue() != targetValue.asLong().longValue()) {
+                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asLong(), srcValue.asLong(), i});
+                                return false;
+                            }
+                            break;
+                        case STRING:
+                            if (!srcValue.asString().equals(targetValue.asString())) {
+                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asString(), srcValue.asString(), i});
+                                return false;
+                            }
+                            break;
+                        default:
+                            break;
+                        
+                    }
+                }
+            }
+        }
+        return true;
+    }
+    
+    public static boolean checkInput(List<Record> expect, List<Record> src) {
+        if (src.size() != expect.size()) {
+            LOG.error("Expect size({}) not equal size({}) of src.", expect.size(), src.size());
+            return false;
+        }
+        int size = src.size();
+        for (int i = 0; i < size; i++) {
+            Record expectRecord = expect.get(i);
+            Record srcRecord = src.get(i);
+            
+            if (expectRecord.getColumnNumber() != srcRecord.getColumnNumber()) {
+                LOG.error("Expect number({}) not equal number({}) of src, Index : {}", new Object[]{expectRecord.getColumnNumber(), srcRecord.getColumnNumber(), i});
+                return false;
+            }
+            
+            int number = expectRecord.getColumnNumber();
+            for (int j = 0; j < number; j++) {
+                if (!cmpRecord(srcRecord, expectRecord)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    
+    public static boolean checkInputWithMessage(List<RecordAndMessage> expect, List<RecordAndMessage> src) {
+        if (src.size() != expect.size()) {
+            LOG.error("Expect size({}) not equal size({}) of src.", expect.size(), src.size());
+            return false;
+        }
+        int size = src.size();
+        for (int i = 0; i < size; i++) {
+            Record expectRecord = expect.get(i).getDirtyRecord();
+            Record srcRecord = src.get(i).getDirtyRecord();
+            
+            if (expectRecord.getColumnNumber() != srcRecord.getColumnNumber()) {
+                LOG.error("Expect number({}) not equal number({}) of src, Index : {}", new Object[]{expectRecord.getColumnNumber(), srcRecord.getColumnNumber(), i});
+                return false;
+            }
+            
+            int number = expectRecord.getColumnNumber();
+            for (int j = 0; j < number; j++) {
+                if (!cmpRecord(srcRecord, expectRecord)) {
+                    return false;
+                }
+            }
+            
+            String expectMsg = expect.get(i).getErrorMessage();
+            String srcMsg = src.get(i).getErrorMessage();
+            
+            if (!expectMsg.equals(srcMsg)) {
+                LOG.error("Expect Message({}) not equal Message({}) of src, Index : {}", new Object[]{expectMsg, srcMsg, i});
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * 
+     * @param ots
+     * @param conf
+     * @param expect 用户期望的行
+     * @return
+     */
+    public static boolean checkInput(
+            OTSClient ots, 
+            OTSConf conf,
+            List<Map<String, ColumnValue>> expect) {
+        List<Row> rows = getData(ots, conf);
+
+        if (expect.size() != rows.size()) {
+            LOG.error("Expect size not equal size in ots, expect size : {}, size in ots : {}", expect.size(), rows.size());
+            return false;
+        }
+        
+        Map<String, Map<String, ColumnValue>> m = mapping(conf, expect);
+        
+        for (Row row : rows) {
+            String key = getPKValue(conf, row.getColumns());
+            if (!m.containsKey(key)) {
+                LOG.error("Can not get value ('{}') from expect inputs.", key);
+                return false;
+            }
+            LOG.info("\nExpect : {} \nRow    : {}", m.get(key), row.getColumns());
+            if (!cmpRow(m.get(key), row.getColumns())){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public static boolean checkInput(
+            MockOTSClient ots, 
+            List<OTSRow> expect
+            ) {
+        Map<OTSRowPrimaryKey, Row> rows = ots.getData();
+        if (rows.size() != expect.size()) {
+            LOG.error("Expect size not equal size in ots, expect size : {}, size in ots : {}", expect.size(), rows.size());
+            return false;
+        } 
+        
+        for (OTSRow or : expect) {
+            Row r = rows.get(or.getPK());
+            if (r == null) {
+                LOG.error("Can not get row ('{}') from ots.", getRowPKString(or.getPK().getColumns()));
+                return false;
+            }
+            //
+            if (!cmpRow(r.getColumns(), or.getRow().getColumns())){
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    public static boolean checkRows(List<Integer> expect, List<Integer> src) {
+        if (expect.size() != src.size()) {
+            LOG.error("Expect size not equal size in ots, expect size : {}, size in ots : {}", expect.size(), src.size());
+            return false;
+        }
+        
+        for (int i = 0; i < expect.size(); i++) {
+            if (expect.get(i) != src.get(i)) {
+                LOG.error("Expect({}) not equal src({}), index : {}", new Object[]{expect.get(i), src.get(i), i});
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public static Column getPKColumn(PrimaryKeyType type, int value) {
+        switch (type) {
+        case INTEGER:
+            return new LongColumn(value);
+        case STRING:
+            return new StringColumn(String.valueOf(value));
+        default:
+            break;
+        }
+        return null;
+    }
+    
+    public static Column getAttrColumn(ColumnType type, int value) throws Exception {
+        switch (type) {
+        case BINARY:
+            return new BytesColumn("hello".getBytes("UTF-8"));
+        case BOOLEAN:
+            return new BoolColumn(value%2 == 0 ? true : false);
+        case DOUBLE:
+            return new DoubleColumn(value);
+        case INTEGER:
+            return new LongColumn(value);
+        case STRING:
+            return new StringColumn(String.valueOf(value));
+        default:
+            break;
+        }
+        return null;
+    }
+    
+    public static ColumnValue getPKColumnValue(PrimaryKeyType type, int value) {
+        switch (type) {
+        case INTEGER:
+            return ColumnValue.fromLong(value);
+        case STRING:
+            return ColumnValue.fromString(String.valueOf(value));
+        default:
+            break;
+        }
+        return null;
+    }
+    
+    public static ColumnValue getAttrColumnValue(ColumnType type, int value) throws Exception {
+        switch (type) {
+        case BINARY:
+            return ColumnValue.fromBinary("hello".getBytes("UTF-8"));
+        case BOOLEAN:
+            return ColumnValue.fromBoolean(value%2 == 0 ? true : false);
+        case DOUBLE:
+            return ColumnValue.fromDouble(value);
+        case INTEGER:
+            return ColumnValue.fromLong(value);
+        case STRING:
+            return ColumnValue.fromString(String.valueOf(value));
+        default:
+            break;
+        }
+        return null;
+    }
+    
+    public static List<PrimaryKeyType> getPKTypeList(List<OTSPKColumn> pks) {
+        List<PrimaryKeyType> types = new ArrayList<PrimaryKeyType>();
+        for (OTSPKColumn pk : pks) {
+            types.add(pk.getType());
+        }
+        return types;
     }
 }

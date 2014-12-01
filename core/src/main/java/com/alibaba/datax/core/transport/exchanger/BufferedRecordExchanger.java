@@ -65,7 +65,7 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void sendToWriter(Record record) {
-		Validate.notNull(record, "record can not be null.");
+		Validate.notNull(record, "record不能为空.");
 
 		boolean isFull = (this.bufferIndex >= this.bufferSize);
 		if (isFull) {

@@ -17,15 +17,15 @@ public final class RetryUtil {
      * @param <T>                    返回值类型
      * @return
      */
-    public static <T> T executeWithRetry(Callable<T> callable, int retryTimes, long sleepTimeInMilliSecond,
-                                         boolean exponential) {
+    public static <T> T executeWithRetry(Callable<T> callable, int retryTimes,
+                                         long sleepTimeInMilliSecond, boolean exponential) throws Exception {
         if (null == callable) {
-            throw new IllegalArgumentException("parameter callable can not null");
+            throw new IllegalArgumentException("系统编程错误, 入参callable不能为空 ! ");
         }
 
         if (retryTimes < 1) {
-            throw new IllegalArgumentException(String.format("parameter retryTimes can not <1. detail:retryTimes=[%s].",
-                    retryTimes));
+            throw new IllegalArgumentException(String.format(
+                    "系统编程错误, 入参retrytime[%d]不能小于1 !", retryTimes));
         }
 
         Exception saveException = null;
@@ -40,7 +40,8 @@ public final class RetryUtil {
                     } else {
                         long timeToSleep = 0;
                         if (exponential) {
-                            timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);
+                            timeToSleep = sleepTimeInMilliSecond
+                                    * (long) Math.pow(2, i);
                         } else {
                             timeToSleep = sleepTimeInMilliSecond;
                         }
@@ -52,14 +53,13 @@ public final class RetryUtil {
                 }
             }
         }
-        
+
         if (saveException == null) {
-            throw new DataXException(CommonErrorCode.RETRY_FAIL, "retry to execute some method failed.");
+            // 理论上是不会到这里的
+            throw DataXException.asDataXException(CommonErrorCode.RETRY_FAIL,
+                    "重试方法多次失败，终止重试 .");
         }
 
-
-		throw DataXException.asDataXException(CommonErrorCode.RETRY_FAIL,
-				saveException);
-	}
-
+        throw saveException;
+    }
 }

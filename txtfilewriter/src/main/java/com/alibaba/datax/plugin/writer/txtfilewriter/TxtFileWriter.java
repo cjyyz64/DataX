@@ -1,5 +1,19 @@
 package com.alibaba.datax.plugin.writer.txtfilewriter;
 
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.spi.Writer;
+import com.alibaba.datax.common.util.Configuration;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.FileWriterWithEncoding;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -9,20 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.output.FileWriterWithEncoding;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.spi.Writer;
-import com.alibaba.datax.common.util.Configuration;
 
 /**
  * Created by haiwei.luo on 14-9-17.
@@ -65,21 +65,17 @@ public class TxtFileWriter extends Writer {
 				}
 
 			} catch (UnsupportedCharsetException uce) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format(
-								"charset error:the named charset [%s] is unavailable",
-								charset), uce);
+						String.format("不支持的编码格式:[%s]", charset), uce);
 			} catch (SecurityException se) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format(
-								"security forbidden:path [%s] is unable to be created,",
-								path), se);
+						String.format("没有权限创建文件路径 : [%s] ", path), se);
 			} catch (Exception e) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						"unable to go on for " + e.getMessage(), e);
+						String.format("运行配置异常: %s", e.getMessage()), e);
 			}
 		}
 
@@ -99,14 +95,13 @@ public class TxtFileWriter extends Writer {
 						FileUtils.cleanDirectory(dir);
 					}
 				} catch (SecurityException se) {
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileWriterErrorCode.FILE_EXCEPTION,
-							String.format("could not list directory [%s]", path));
+							String.format("没有权限查看目录 : [%s]", path));
 				} catch (IOException e) {
-					throw new DataXException(
+					throw DataXException.asDataXException(
 							TxtFileWriterErrorCode.FILE_EXCEPTION,
-							String.format("could not truncate directory [%s]",
-									path));
+							String.format("无法清空目录 : [%s]", path));
 				}
 			}
 			LOG.info("prefare() ok and end...");
@@ -209,17 +204,17 @@ public class TxtFileWriter extends Writer {
 					fileWriter.write(this.format(record));
 				}
 			} catch (SecurityException se) {
-				throw new DataXException(TxtFileWriterErrorCode.FILE_EXCEPTION,
-						String.format("could not create file [%s]",
-								this.fileName));
+				throw DataXException.asDataXException(
+						TxtFileWriterErrorCode.FILE_EXCEPTION,
+						String.format("无法创建文件  : [%s]", this.fileName));
 			} catch (IOException ioe) {
-				throw new DataXException(TxtFileWriterErrorCode.FILE_EXCEPTION,
-						String.format("could not write [%s]", this.fileName),
-						ioe);
+				throw DataXException.asDataXException(
+						TxtFileWriterErrorCode.FILE_EXCEPTION,
+						String.format("无法写文件 : [%s]", this.fileName), ioe);
 			} catch (Exception dxe) {
-				throw new DataXException(
+				throw DataXException.asDataXException(
 						TxtFileWriterErrorCode.RUNTIME_EXCEPTION,
-						dxe.getMessage(), dxe);
+						String.format("运行时异常 : %s", dxe.getMessage()), dxe);
 			} finally {
 				IOUtils.closeQuietly(fileWriter);
 			}
