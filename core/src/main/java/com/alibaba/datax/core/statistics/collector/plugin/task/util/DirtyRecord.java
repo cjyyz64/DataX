@@ -20,13 +20,14 @@ public class DirtyRecord implements Record {
 		for (int i = 0; i < record.getColumnNumber(); i++) {
 			result.addColumn(record.getColumn(i));
 		}
+
 		return result;
 	}
 
 	@Override
 	public void addColumn(Column column) {
-		this.columns
-				.add(DirtyColumn.asDirtyColumn(column, this.columns.size()));
+		this.columns.add(
+                DirtyColumn.asDirtyColumn(column, this.columns.size()));
 	}
 
 	@Override

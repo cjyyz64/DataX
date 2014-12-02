@@ -74,8 +74,8 @@ public class JobContainer extends AbstractContainer {
     public JobContainer(Configuration configuration) {
         super(configuration);
         super.setContainerCollector(ClassUtil.instantiate(
-                configuration
-                        .getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
+                configuration.getString(
+                        CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
                 AbstractContainerCollector.class, configuration));
         errorLimit = new ErrorRecordLimit(configuration);
     }
@@ -110,7 +110,8 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            Communication communication = super.getContainerCollector().collect();
+            Communication communication =
+                    super.getContainerCollector().collect();
             communication.setState(State.FAIL);
             communication.setThrowable(e);
             super.getContainerCollector().report(communication);
@@ -199,44 +200,47 @@ public class JobContainer extends AbstractContainer {
         boolean isByteLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 0) > 0);
         if (isByteLimit) {
-            long globalLimitedByteSpeed = this.configuration
-                    .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE,
-                            10 * 1024 * 1024);
+            long globalLimitedByteSpeed = this.configuration.getInt(
+                    CoreConstant.DATAX_JOB_SETTING_SPEED_BYTE, 10 * 1024 * 1024);
 
             // 在byte流控情况下，单个Channel流量最大值必须设置，否则报错！
             Long channelLimitedByteSpeed = this.configuration
                     .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
             if(channelLimitedByteSpeed==null || channelLimitedByteSpeed <= 0) {
-                DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+                DataXException.asDataXException(
+                        FrameworkErrorCode.CONFIG_ERROR,
                         "在有总bps限速条件下，单个channel的bps值不能为空，也不能为非正数");
             }
 
-            needChannelNumberByByte = (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
-            needChannelNumberByByte = needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
+            needChannelNumberByByte =
+                    (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
+            needChannelNumberByByte =
+                    needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
             LOG.info("Job set Max-Byte-Speed to " + globalLimitedByteSpeed + " bytes.");
         }
 
         boolean isRecordLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 0)) > 0;
         if(isRecordLimit) {
-            long globalLimitedRecordSpeed = this.configuration
-                    .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD,
-                            100000);
+            long globalLimitedRecordSpeed = this.configuration.getInt(
+                    CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 100000);
 
-            Long channelLimitedRecordSpeed = this.configuration
-                    .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
+            Long channelLimitedRecordSpeed = this.configuration.getLong(
+                    CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
             if(channelLimitedRecordSpeed==null || channelLimitedRecordSpeed <= 0) {
                 DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
                         "在有总tps限速条件下，单个channel的tps值不能为空，也不能为非正数");
             }
 
-            needChannelNumberByRecord = (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
-            needChannelNumberByRecord = needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
+            needChannelNumberByRecord =
+                    (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
+            needChannelNumberByRecord =
+                    needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
             LOG.info("Job set Max-Record-Speed to " + globalLimitedRecordSpeed + " records.");
         }
 
         // 取较小值
-        this.needChannelNumber = needChannelNumberByByte<needChannelNumberByRecord?
+        this.needChannelNumber = needChannelNumberByByte<needChannelNumberByRecord ?
                 needChannelNumberByByte : needChannelNumberByRecord;
 
         // 如果从byte或record上设置了needChannelNumber则退出
@@ -247,8 +251,8 @@ public class JobContainer extends AbstractContainer {
         boolean isChannelLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL, 0) > 0);
         if (isChannelLimit) {
-            this.needChannelNumber = this.configuration
-                    .getInt(CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);
+            this.needChannelNumber = this.configuration.getInt(
+                    CoreConstant.DATAX_JOB_SETTING_SPEED_CHANNEL);
 
             LOG.info("Job set Channel-Number to " + this.needChannelNumber
                     + " channels.");
@@ -256,7 +260,8 @@ public class JobContainer extends AbstractContainer {
             return;
         }
 
-        throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
+        throw DataXException.asDataXException(
+                FrameworkErrorCode.CONFIG_ERROR,
                 "Job运行速度必须设置");
     }
 
@@ -285,13 +290,13 @@ public class JobContainer extends AbstractContainer {
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
-        String schedulerClassName = this.configuration
-                .getString(CoreConstant.DATAX_CORE_SCHEDULER_CLASS);
+        String schedulerClassName = this.configuration.getString(
+                CoreConstant.DATAX_CORE_SCHEDULER_CLASS);
         LOG.info("Scheduler [{}] activated.", schedulerClassName);
 
         try {
-            Scheduler scheduler = ClassUtil.instantiate(schedulerClassName,
-                    Scheduler.class);
+            Scheduler scheduler = ClassUtil.instantiate(
+                    schedulerClassName, Scheduler.class);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
             scheduler.schedule(taskGroupConfigs,
@@ -366,8 +371,8 @@ public class JobContainer extends AbstractContainer {
      */
     private Reader.Job initJobReader(
             JobPluginCollector jobPluginCollector) {
-        this.readerPluginName = this.configuration
-                .getString(CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
+        this.readerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
 
@@ -375,9 +380,8 @@ public class JobContainer extends AbstractContainer {
                 PluginType.READER, this.readerPluginName);
 
         // 设置reader的jobConfig
-        jobReader
-                .setPluginJobConf(this.configuration
-                        .getConfiguration(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        jobReader.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
         jobReader.setJobPluginCollector(jobPluginCollector);
         jobReader.init();
 
@@ -392,8 +396,8 @@ public class JobContainer extends AbstractContainer {
      */
     private Writer.Job initJobWriter(
             JobPluginCollector jobPluginCollector) {
-        this.writerPluginName = this.configuration
-                .getString(CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
+        this.writerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
 
@@ -401,9 +405,8 @@ public class JobContainer extends AbstractContainer {
                 PluginType.WRITER, this.writerPluginName);
 
         // 设置writer的jobConfig
-        jobWriter
-                .setPluginJobConf(this.configuration
-                        .getConfiguration(CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
+        jobWriter.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
         jobWriter.setJobPluginCollector(jobPluginCollector);
         jobWriter.init();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
@@ -433,10 +436,11 @@ public class JobContainer extends AbstractContainer {
     private List<Configuration> doReaderSplit(int adviceNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        List<Configuration> readerSlicesConfigs = this.jobReader
-                .split(adviceNumber);
+        List<Configuration> readerSlicesConfigs =
+                this.jobReader.split(adviceNumber);
         if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
-            throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     "reader切分的task数目不能小于等于0");
         }
         LOG.info("DataX Reader.Job [{}] splits to [{}] tasks.",
@@ -452,7 +456,8 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> writerSlicesConfigs = this.jobWriter
                 .split(readerTaskNumber);
         if (writerSlicesConfigs == null || writerSlicesConfigs.size() <= 0) {
-            throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     "writer切分的task不能小于等于0");
         }
         LOG.info("DataX Writer.Job [{}] splits to [{}] tasks.",
@@ -475,10 +480,8 @@ public class JobContainer extends AbstractContainer {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    String.format(
-                            "reader切分的task数目[%d]不等于writer切分的task数目[%d].",
-                            readerTasksConfigs.size(),
-                            writerTasksConfigs.size()));
+                    String.format("reader切分的task数目[%d]不等于writer切分的task数目[%d].",
+                            readerTasksConfigs.size(), writerTasksConfigs.size()));
         }
 
         List<Configuration> contentConfigs = new ArrayList<Configuration>();
@@ -608,8 +611,8 @@ public class JobContainer extends AbstractContainer {
                 List<Configuration> taskGroupJobContent = taskGroupConfig
                         .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
                 taskGroupJobContent.add(taskConfigs.get(taskConfigIndex++));
-                taskGroupConfig
-                        .set(CoreConstant.DATAX_JOB_CONTENT, taskGroupJobContent);
+                taskGroupConfig.set(
+                        CoreConstant.DATAX_JOB_CONTENT, taskGroupJobContent);
             }
         }
 

@@ -51,18 +51,18 @@ public class TaskGroupContainer extends AbstractContainer {
     public TaskGroupContainer(Configuration configuration) {
         super(configuration);
         super.setContainerCollector(ClassUtil.instantiate(
-                configuration
-                        .getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS),
+                configuration.getString(
+                        CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS),
                 AbstractContainerCollector.class, configuration));
-        this.jobId = this.configuration
-                .getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-        this.taskGroupId = this.configuration
-                .getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+        this.jobId = this.configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        this.taskGroupId = this.configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
 
-        this.channelClazz = this.configuration
-                .getString(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CLASS);
-        this.taskCollectorClass = this.configuration
-                .getString(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_TASKCLASS);
+        this.channelClazz = this.configuration.getString(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CLASS);
+        this.taskCollectorClass = this.configuration.getString(
+                CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_TASKCLASS);
     }
 
     public long getJobId() {
@@ -97,8 +97,8 @@ public class TaskGroupContainer extends AbstractContainer {
                     5000);
 
             // 获取channel数目
-            int channelNumber = this.configuration
-                    .getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
+            int channelNumber = this.configuration.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
 
             // 根据channelNumber初始化taskExecutors的大小
             List<TaskExecutor> taskExecutors = new ArrayList<TaskExecutor>();
@@ -138,15 +138,15 @@ public class TaskGroupContainer extends AbstractContainer {
                     }
                 }
 
-                boolean isWorkAllDone = true;
+                boolean isAllTaskDone = true;
                 for (TaskExecutor executor : taskExecutors) {
                     if (!executor.isTaskFinished()) {
-                        isWorkAllDone = false;
+                        isAllTaskDone = false;
                         break;
                     }
                 }
 
-                if (taskIndex >= taskConfigs.size() && isWorkAllDone
+                if (taskIndex >= taskConfigs.size() && isAllTaskDone
                         && taskExecutorTotalState.isSucceed()) {
                     LOG.info("taskGroup[{}] complete all tasks.", this.taskGroupId);
                     break;
@@ -219,7 +219,8 @@ public class TaskGroupContainer extends AbstractContainer {
              */
             this.taskCommunication = containerCollector
                     .getCommunication(taskId);
-            org.apache.commons.lang.Validate.notNull(this.taskCommunication,
+            org.apache.commons.lang.Validate.notNull(
+                    this.taskCommunication,
                     String.format("taskId[%d]的Communication没有注册过", taskId));
             this.channel = ClassUtil.instantiate(channelClazz,
                     Channel.class, configuration);
@@ -230,26 +231,26 @@ public class TaskGroupContainer extends AbstractContainer {
              */
             WriterRunner writerRunner = (WriterRunner) generateRunner(false);
             this.writerThread = new Thread(writerRunner,
-                    String.format("%d-%d-%d-writer", jobId,
-                            taskGroupId, this.taskId));
+                    String.format("%d-%d-%d-writer",
+                            jobId, taskGroupId, this.taskId));
             //通过设置thread的contextClassLoader，即可实现同步和主程序不通的加载器
             this.writerThread.setContextClassLoader(LoadUtil.getJarLoader(
-                    PluginType.WRITER, this.taskConfig
-                            .getString(CoreConstant.JOB_WRITER_NAME)));
+                    PluginType.WRITER, this.taskConfig.getString(
+                            CoreConstant.JOB_WRITER_NAME)));
 
             /**
              * 生成readerThread
              */
             ReaderRunner readerRunner = (ReaderRunner) generateRunner(true);
             this.readerThread = new Thread(readerRunner,
-                    String.format("%d-%d-%d-reader", jobId,
-                            taskGroupId, this.taskId));
+                    String.format("%d-%d-%d-reader",
+                            jobId, taskGroupId, this.taskId));
             /**
              * 通过设置thread的contextClassLoader，即可实现同步和主程序不通的加载器
              */
             this.readerThread.setContextClassLoader(LoadUtil.getJarLoader(
-                    PluginType.READER, this.taskConfig
-                            .getString(CoreConstant.JOB_READER_NAME)));
+                    PluginType.READER, this.taskConfig.getString(
+                            CoreConstant.JOB_READER_NAME)));
         }
 
         public void doStart() {
@@ -258,7 +259,8 @@ public class TaskGroupContainer extends AbstractContainer {
             // bug: 如果启动伊始，writer即挂，这里需要判断
             while (!this.writerThread.isAlive()) {
                 if (this.taskCommunication.getState().isFailed()) {
-                    throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.RUNTIME_ERROR,
                             this.taskCommunication.getThrowable());
                 } else {
                     break;
@@ -271,7 +273,8 @@ public class TaskGroupContainer extends AbstractContainer {
             while (!this.readerThread.isAlive()) {
                 // 这里有可能出现Reader线上启动即挂情况 对于这类情况 需要立刻抛出异常
                 if (this.taskCommunication.getState().isFailed()) {
-                    throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.RUNTIME_ERROR,
                             this.taskCommunication.getThrowable());
                 } else {
                     break;

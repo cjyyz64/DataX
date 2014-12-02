@@ -33,9 +33,9 @@ public class StdoutPluginCollector extends AbstractTaskPluginCollector {
                                  PluginType type) {
         super(configuration, communication, type);
         maxLogNum = new AtomicInteger(
-                configuration
-                        .getInt(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_MAXDIRTYNUM,
-                                DEFAULT_MAX_DIRTYNUM));
+                configuration.getInt(
+                        CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_MAXDIRTYNUM,
+                        DEFAULT_MAX_DIRTYNUM));
     }
 
     private String formatDirty(final Record dirty, final Throwable t,
@@ -53,6 +53,7 @@ public class StdoutPluginCollector extends AbstractTaskPluginCollector {
             msgGroup.put("record", DirtyRecord.asDirtyRecord(dirty)
                     .getColumns());
         }
+
         return JSON.toJSONString(msgGroup);
     }
 

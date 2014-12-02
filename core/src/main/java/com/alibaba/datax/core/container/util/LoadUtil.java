@@ -74,8 +74,7 @@ public class LoadUtil {
         if (null == pluginConf) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_INSTALL_ERROR,
-                    String.format(
-                            "DataX不能找到插件[%s]的配置.",
+                    String.format("DataX不能找到插件[%s]的配置.",
                             pluginName));
         }
 
@@ -102,8 +101,7 @@ public class LoadUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR,
-                    String.format(
-                            "DataX找到plugin[%s]的Job配置.",
+                    String.format("DataX找到plugin[%s]的Job配置.",
                             pluginName), e);
         }
     }
@@ -151,8 +149,7 @@ public class LoadUtil {
             default:
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.RUNTIME_ERROR,
-                        String.format(
-                                "插件[%s]的类型必须是[reader]或[writer]!",
+                        String.format("插件[%s]的类型必须是[reader]或[writer]!",
                                 pluginName));
         }
     }

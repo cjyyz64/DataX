@@ -28,9 +28,9 @@ public abstract class Channel {
 
     protected int capacity;
 
-    protected long byteSpeed; // 单位：byte/s
+    protected long byteSpeed; // bps: bytes/s
 
-    protected long recordSpeed; // tps
+    protected long recordSpeed; // tps: records/s
 
     protected long flowControlInterval;
 
@@ -48,16 +48,13 @@ public abstract class Channel {
         int capacity = configuration.getInt(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
         long byteSpeed = configuration.getLong(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
-                1024 * 1024);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
         long recordSpeed = configuration.getLong(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD,
-                10000);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD, 10000);
 
         if (capacity <= 0) {
             throw new IllegalArgumentException(String.format(
                     "通道容量[%d]必须大于0.", capacity));
-
         }
 
         synchronized (isFirstPrint) {
@@ -70,14 +67,13 @@ public abstract class Channel {
             }
         }
 
-        this.taskGroupId = configuration
-                .getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+        this.taskGroupId = configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
         this.capacity = capacity;
         this.byteSpeed = byteSpeed;
         this.recordSpeed = recordSpeed;
         this.flowControlInterval = configuration.getLong(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL,
-                1000);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
 
         this.configuration = configuration;
     }
@@ -196,6 +192,7 @@ public abstract class Channel {
                             - interval;
                 }
             }
+
             if(isChannelRecordSpeedLimit) {
                 long currentRecordSpeed = (CommunicationManager.getTotalReadRecords(currentCommunication) -
                         CommunicationManager.getTotalReadRecords(lastCommunication)) * 1000 / interval;
@@ -226,9 +223,9 @@ public abstract class Channel {
     }
 
     private void statPull(long recordSize, long byteSize) {
-        currentCommunication.increaseCounter(CommunicationManager.WRITE_RECEIVED_RECORDS,
-                recordSize);
-        currentCommunication.increaseCounter(CommunicationManager.WRITE_RECEIVED_BYTES,
-                byteSize);
+        currentCommunication.increaseCounter(
+                CommunicationManager.WRITE_RECEIVED_RECORDS, recordSize);
+        currentCommunication.increaseCounter(
+                CommunicationManager.WRITE_RECEIVED_BYTES, byteSize);
     }
 }

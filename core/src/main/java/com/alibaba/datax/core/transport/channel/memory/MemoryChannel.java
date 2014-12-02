@@ -15,7 +15,8 @@ import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 
 /**
- * 
+ * 内存Channel的具体实现，底层其实是一个ArrayBlockingQueue
+ *
  */
 public class MemoryChannel extends Channel {
 
@@ -30,8 +31,8 @@ public class MemoryChannel extends Channel {
 	public MemoryChannel(final Configuration configuration) {
 		super(configuration);
 		this.queue = new ArrayBlockingQueue<Record>(this.getCapacity());
-		this.bufferSize = configuration
-				.getInt(CoreConstant.DATAX_CORE_TRANSPORT_EXCHANGER_BUFFERSIZE);
+		this.bufferSize = configuration.getInt(
+                CoreConstant.DATAX_CORE_TRANSPORT_EXCHANGER_BUFFERSIZE);
 
 		lock = new ReentrantLock();
 		notInsufficient = lock.newCondition();

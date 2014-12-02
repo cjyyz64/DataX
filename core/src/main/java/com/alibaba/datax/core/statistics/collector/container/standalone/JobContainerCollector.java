@@ -29,8 +29,8 @@ public class JobContainerCollector extends AbstractContainerCollector {
         for(Configuration config : configurationList) {
             int taskGroupId = config.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            LocalTaskGroupCommunication
-                    .registerTaskGroupCommunication(taskGroupId, new Communication());
+            LocalTaskGroupCommunication.registerTaskGroupCommunication(
+                    taskGroupId, new Communication());
         }
     }
 

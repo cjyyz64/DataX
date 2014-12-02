@@ -26,20 +26,19 @@ public class JobContainerCollector extends AbstractContainerCollector {
     @SuppressWarnings("unused")
     private long jobId;
 
-    private String clusterManagerAddress;
+    private String dataXServiceAddress;
 
-    private int clusterManagerTimeout;
+    private int dataXServiceTimeout;
 
     public JobContainerCollector(Configuration configuration) {
         super(configuration);
-        this.jobId = configuration
-                .getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-        this.clusterManagerAddress = configuration
-                .getString(CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
-        this.clusterManagerTimeout = configuration
-                .getInt(CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT,
-                        3000);
-        Validate.isTrue(StringUtils.isNotBlank(this.clusterManagerAddress),
+        this.jobId = configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        this.dataXServiceAddress = configuration.getString(
+                CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
+        this.dataXServiceTimeout = configuration.getInt(
+                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 3000);
+        Validate.isTrue(StringUtils.isNotBlank(this.dataXServiceAddress),
                 "在[local container collector]模式下，job的汇报地址不能为空");
     }
 
@@ -48,8 +47,8 @@ public class JobContainerCollector extends AbstractContainerCollector {
         for(Configuration config : configurationList) {
             int taskGroupId = config.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            LocalTaskGroupCommunication
-                    .registerTaskGroupCommunication(taskGroupId, new Communication());
+            LocalTaskGroupCommunication.registerTaskGroupCommunication(
+                    taskGroupId, new Communication());
         }
     }
 
@@ -59,8 +58,8 @@ public class JobContainerCollector extends AbstractContainerCollector {
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
 
         try {
-            String result = Request.Put(String.format("%s/job/%d/status", this.clusterManagerAddress, jobId))
-                    .connectTimeout(this.clusterManagerTimeout).socketTimeout(this.clusterManagerTimeout)
+            String result = Request.Put(String.format("%s/job/%d/status", this.dataXServiceAddress, jobId))
+                    .connectTimeout(this.dataXServiceTimeout).socketTimeout(this.dataXServiceTimeout)
                     .bodyString(message, ContentType.APPLICATION_JSON)
                     .execute().returnContent().asString();
             LOG.debug(result);

@@ -112,8 +112,8 @@ public class StandAloneScheduler implements Scheduler {
 
     private TaskGroupContainerRunner newTaskGroupContainerRunner(
             Configuration configuration) {
-        TaskGroupContainer taskGroupContainer = ClassUtil.instantiate(configuration
-                        .getString(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS),
+        TaskGroupContainer taskGroupContainer = ClassUtil.instantiate(
+                configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS),
                 TaskGroupContainer.class, configuration);
 
         return new TaskGroupContainerRunner(taskGroupContainer);

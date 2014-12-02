@@ -12,7 +12,8 @@ import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 public class DistributeScheduler implements Scheduler {
 
 	@Override
-	public void schedule(List<Configuration> configurations, ContainerCollector frameworkCollector) {
+	public void schedule(List<Configuration> configurations,
+                         ContainerCollector frameworkCollector) {
 
 	}
 }

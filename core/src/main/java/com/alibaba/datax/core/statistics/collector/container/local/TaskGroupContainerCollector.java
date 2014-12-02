@@ -24,6 +24,7 @@ public class TaskGroupContainerCollector extends AbstractTaskGroupContainerColle
     @Override
     public void report(Communication communication) {
         LOG.debug("taskGroup collector: \n" + communication.toString());
+
         LocalTaskGroupCommunication.updateTaskGroupCommunication(
                 this.taskGroupId, communication);
     }

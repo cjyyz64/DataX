@@ -30,15 +30,15 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
 
     public AbstractTaskGroupContainerCollector(Configuration configuration) {
         super(configuration);
-        this.taskGroupId = configuration
-                .getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+        this.taskGroupId = configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
     }
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
         for (Configuration taskConfig : configurationList) {
-            int taskId = taskConfig
-                    .getInt(CoreConstant.JOB_TASK_ID);
+            int taskId = taskConfig.getInt(
+                    CoreConstant.JOB_TASK_ID);
             this.taskCommunicationMap.put(
                     taskId, new Communication());
         }
