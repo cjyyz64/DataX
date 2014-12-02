@@ -19,6 +19,6 @@ public final class Key {
 	
 	public final static String BAD_FILE = "badFile";
 
-	public final static String ACTIVE_MEM_PERCENT = "activeMemPpercent";
+	public final static String ACTIVE_MEM_PERCENT = "activeMemPercent";
 
 }
