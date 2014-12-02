@@ -62,7 +62,17 @@ public class PgWriter extends Writer {
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Slave();
+			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Slave(){
+				@Override
+				public String calcValueHolder(String columnType){
+					if("serial".equalsIgnoreCase(columnType)){
+						return "?::int";
+					}else if("bit".equalsIgnoreCase(columnType)){
+						return "?::bit varying";
+					}
+					return "?::" + columnType;
+				}
+			};
 			this.commonRdbmsWriterSlave.init(this.writerSliceConfig);
 		}
 

@@ -62,10 +62,9 @@ public class PgWriterTest extends BasicWriterPluginTest {
 		List<Record> list = new ArrayList<Record>();
 		Record r = new DefaultRecord();
 		r.addColumn(new LongColumn(99999));
-		r.addColumn(new LongColumn(1));
-		//TODO bit类型需定制插入模板 pstmt = con.prepareStatement("INSERT INTO jdbc_demo VALUES (?::bit)"); 
-		//r.addColumn(new StringColumn("1010000000"));
-		//r.addColumn(new StringColumn("1"));
+		r.addColumn(new LongColumn(12345));
+		r.addColumn(new StringColumn("1010000000"));
+		r.addColumn(new StringColumn("1"));
 		r.addColumn(new BytesColumn());
 		r.addColumn(new StringColumn("aa"));
 		r.addColumn(new StringColumn("2011-11-11 11:11:11"));

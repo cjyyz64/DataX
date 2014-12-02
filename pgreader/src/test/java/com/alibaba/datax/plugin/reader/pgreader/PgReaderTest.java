@@ -27,8 +27,7 @@ public class PgReaderTest extends BasicReaderPluginTest {
 		List<Configuration> subjobs = super.doReaderTest("basic0.json", 0, noteRecordForTest);
 
 		Assert.assertEquals(1, subjobs.size());
-		Assert.assertTrue("记录总数应该是：每张表1条记录，一共1张表，共计1条记录.",
-				noteRecordForTest.size() == 1);
+		Assert.assertTrue("记录总数应该是：每张表1条记录，一共1张表，共计1条记录.", noteRecordForTest.size() == 1);
 	}
 	
 	@TestLogger(log = "测试basic1.json. 配置常量.")

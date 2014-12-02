@@ -6,10 +6,12 @@ import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class OriginalConfPretreatmentUtil {
@@ -129,43 +131,17 @@ public final class OriginalConfPretreatmentUtil {
 
         // 默认为：insert 方式
         String writeMode = originalConfig.getString(Key.WRITE_MODE, "INSERT");
-
-        boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
-                || writeMode.trim().toLowerCase().startsWith("replace");
-
-        if (!isWriteModeLegal) {
-            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                    String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
+        
+        List<String> valueHolders = new ArrayList<String>(columns.size());
+        for(int i=0; i<columns.size(); i++){
+        	valueHolders.add("?");
         }
 
+        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode);
 
-        String writeDataSqlTemplate = new StringBuilder().append(writeMode).append(" INTO %s (")
-                .append(StringUtils.join(columns, ",")).append(") VALUES(")
-                .append(getValueHolder(columns)).append(")").toString();
+        LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]", writeDataSqlTemplate, jdbcUrl);
 
-        String formattedSql = null;
-
-        try {
-            formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
-        } catch (Exception unused) {
-            // ignore it
-        }
-
-        LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]",
-                null != formattedSql ? formattedSql : writeDataSqlTemplate, jdbcUrl);
-
-        originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK,
-                writeDataSqlTemplate);
-    }
-
-    private static String getValueHolder(List<String> columns) {
-        StringBuilder placeHolder = new StringBuilder();
-        for (int i = 0, len = columns.size(); i < len; i++) {
-            placeHolder.append("?").append(",");
-        }
-        placeHolder.setLength(placeHolder.length() - 1);
-
-        return placeHolder.toString();
+        originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK, writeDataSqlTemplate);
     }
 
 }

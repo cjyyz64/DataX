@@ -7,7 +7,7 @@
                     "parameter": {
                         "username": "datax",
                         "password": "datax", 
-                        "column": ["id","'hello'::varchar"],
+                        "column": ["id","'hello'::varchar","true","2.5::real","power(2,3)"],
                         "splitPk": "id",
                         "connection": [
                             {
