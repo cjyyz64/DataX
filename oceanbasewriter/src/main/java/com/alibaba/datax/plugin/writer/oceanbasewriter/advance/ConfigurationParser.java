@@ -4,8 +4,6 @@ import com.alibaba.datax.plugin.writer.oceanbasewriter.advance.ast.*;
 import org.codehaus.jparsec.*;
 import org.codehaus.jparsec.misc.Mapper;
 
-import java.util.List;
-
 public class ConfigurationParser {
 
 	static final Parser<Expression> STRING_PARSER = Mapper
@@ -75,13 +73,12 @@ public class ConfigurationParser {
 		return parser;
 	}
 
-	private static Parser<List<ConfigurationItem>> PARSER = Mapper
+	private static Parser<ConfigurationItem> PARSER = Mapper
 			.curry(ConfigurationItem.class)
 			.sequence(Terminals.Identifier.PARSER, term("="), expression(ATOM))
-			.sepBy1(TerminalParser.TERMS.token(";"))
 			.from(TerminalParser.TOKENIZER, Scanners.JAVA_DELIMITER);
 
-	public static List<ConfigurationItem> parse(String config) {
+	public static ConfigurationItem parse(String config) {
 		return PARSER.parse(config);
 	}
 

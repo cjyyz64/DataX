@@ -49,8 +49,8 @@ public class Context {
 		return this.configuration.getList(Key.COLUMNS, String.class);
 	}
 	
-	public String dsl(){
-		return this.configuration.getString(Key.ADVANCE);
+	public List<String> dsl(){
+		return this.configuration.getList(Key.ADVANCE,String.class);
 	}
 
     public String writeMode(){

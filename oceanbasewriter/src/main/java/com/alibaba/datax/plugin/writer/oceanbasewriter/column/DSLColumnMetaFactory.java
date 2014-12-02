@@ -20,11 +20,11 @@ public class DSLColumnMetaFactory extends ColumnMetaFactory {
 
 	@Override
 	public List<ColumnMeta> product(final Context context) {
-		String dsl = context.dsl();
-		List<ConfigurationItem> items = ConfigurationParser.parse(dsl);
+		List<String> dsl = context.dsl();
 		Map<String, String> columnType = context.columnType();
-		List<ColumnMeta> columns = Lists.newArrayListWithExpectedSize(items.size());
-		for(ConfigurationItem item : items){
+		List<ColumnMeta> columns = Lists.newArrayList();
+		for(String column : dsl){
+            ConfigurationItem item = ConfigurationParser.parse(column);
 			String name = item.name.trim().toLowerCase();
 			String type = columnType.get(name);
             if(Strings.isNullOrEmpty(type)){
