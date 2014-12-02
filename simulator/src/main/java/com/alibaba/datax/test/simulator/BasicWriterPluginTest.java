@@ -1,6 +1,7 @@
 package com.alibaba.datax.test.simulator;
 
 import com.alibaba.datax.common.constant.PluginType;
+import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -11,6 +12,7 @@ import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
@@ -74,6 +76,8 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
     }
 
     protected void doWriterTest(Configuration jobConf, int mandatoryNumber) {
+    	ColumnCast.bind(jobConf);
+    	
         String pluginName = getTestPluginName();
         writerMaster = (Writer.Master) getPluginMaster(jobConf, pluginName,
                 PluginType.WRITER);

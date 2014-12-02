@@ -15,22 +15,30 @@
                         "password": "datax",
                         "column": [
                         	"id",
-                            "name",
-                            "signup_date"
+							"a_bigint",
+							"a_byte",
+							"a_char",
+							"a_date",
+							"a_double",
+							"a_integer",
+							"a_money",
+							"a_num",
+							"a_real",
+							"a_smallint",
+							"a_text",
+							"a_time",
+							"a_timestamp"
                         ],
                         "connection": [
                             {
                                 "table": [
-                                    "user_tbl"
+                                    "test_case_special_col_type"
                                 ],
                                 "jdbcUrl": "jdbc:postgresql://10.98.109.113:3002/datax"
                             }
                         ],
-                        "preSql": [
-                            "update @table set signup_date = now() where name = 'xxx';"
-                        ],
                         "postSql": [
-                            "delete from @table where name = 'xxx';"
+                            "delete from @table where id = 99999;"
                         ],
                         "session": [
                         ]
