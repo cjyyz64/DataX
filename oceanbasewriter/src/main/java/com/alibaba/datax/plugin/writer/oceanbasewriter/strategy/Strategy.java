@@ -43,8 +43,14 @@ public abstract class Strategy {
 					if (record == null) break;
 					records.add(record);
 				}
-				if (records.isEmpty()) return;
-				this.writeWithRetry(records,null);
+				if (records.size() == batch){
+                    this.writeWithRetry(records,null);
+                }else if (records.isEmpty()){
+                    return;
+                }else {
+                    this.writeWithRetry(records,null);
+                    return;
+                }
 			}
 		}
 	}
