@@ -256,29 +256,21 @@ public class TaskGroupContainer extends AbstractContainer {
         public void doStart() {
             this.writerThread.start();
 
-            // bug: 如果启动伊始，writer即挂，这里需要判断
-            while (!this.writerThread.isAlive()) {
-                if (this.taskCommunication.getState().isFailed()) {
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.RUNTIME_ERROR,
-                            this.taskCommunication.getThrowable());
-                } else {
-                    break;
-                }
+            // reader没有起来，writer不可能结束
+            if (!this.writerThread.isAlive() || this.taskCommunication.getState().isFailed()) {
+                throw DataXException.asDataXException(
+                        FrameworkErrorCode.RUNTIME_ERROR,
+                        this.taskCommunication.getThrowable());
             }
 
             this.readerThread.start();
 
-            // 我们担心在isTaskDone函数检查Reader/Writer 是否存活时候存在时序问题，因此这里先优先保证启动成功
-            while (!this.readerThread.isAlive()) {
+            // 这里reader可能很快结束
+            if (!this.readerThread.isAlive() && this.taskCommunication.getState().isFailed()) {
                 // 这里有可能出现Reader线上启动即挂情况 对于这类情况 需要立刻抛出异常
-                if (this.taskCommunication.getState().isFailed()) {
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.RUNTIME_ERROR,
-                            this.taskCommunication.getThrowable());
-                } else {
-                    break;
-                }
+                throw DataXException.asDataXException(
+                        FrameworkErrorCode.RUNTIME_ERROR,
+                        this.taskCommunication.getThrowable());
             }
         }
 
