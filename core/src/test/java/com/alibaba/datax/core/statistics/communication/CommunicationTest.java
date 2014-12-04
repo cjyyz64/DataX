@@ -1,7 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
 import com.alibaba.datax.core.util.State;
-import com.sun.tools.corba.se.idl.InvalidArgument;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -90,7 +89,7 @@ public class CommunicationTest {
         comm2.setLongCounter("long", 5);
         comm2.setDoubleCounter("double", 5.1);
         comm2.setState(State.FAIL);
-        comm2.setThrowable(new InvalidArgument(""));
+        comm2.setThrowable(new IllegalArgumentException(""));
         comm2.addMessage("message", "message2");
 
         Communication comm = comm1.mergeFrom(comm2);
