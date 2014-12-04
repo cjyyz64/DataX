@@ -10,6 +10,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -24,10 +25,10 @@ import java.util.List;
 
 public class CommonRdbmsWriter {
     private static DataBaseType DATABASE_TYPE;
+    private static final String VALUE_HOLDER = "?";
 
     public static class Master {
-        private static final Logger LOG = LoggerFactory
-                .getLogger(CommonRdbmsWriter.Master.class);
+        private static final Logger LOG = LoggerFactory.getLogger(CommonRdbmsWriter.Master.class);
 
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -169,6 +170,8 @@ public class CommonRdbmsWriter {
 
         private String writeRecordSql;
 
+        private String writeMode;
+
         private Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public void init(Configuration writerSliceConfig) {
@@ -181,16 +184,12 @@ public class CommonRdbmsWriter {
             this.columnNumber = this.columns.size();
 
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
-            this.postSqls = writerSliceConfig.getList(Key.POST_SQL,
-                    String.class);
-            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE,
-                    Constant.DEFAULT_BATCH_SIZE);
+            this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
+            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
 
-            INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig
-                    .getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
-
-            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE,
-                    this.table);
+            writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
+            INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
+            this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s], table:[%s]",
                     this.jdbcUrl, this.table);
@@ -228,6 +227,8 @@ public class CommonRdbmsWriter {
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
                     this.table, StringUtils.join(this.columns, ","));
+            // 写数据库的SQL语句
+            calcWriteRecordSql();
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             try {
@@ -344,118 +345,130 @@ public class CommonRdbmsWriter {
         }
 
         // 直接使用了两个类变量：columnNumber,resultSetMetaData
-        private PreparedStatement fillPreparedStatement(
-                PreparedStatement preparedStatement, Record record)
+        private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
                 throws SQLException {
             java.util.Date utilDate = null;
             for (int i = 0; i < this.columnNumber; i++) {
 
                 switch (this.resultSetMetaData.getMiddle().get(i)) {
-                case Types.CHAR:
-                case Types.NCHAR:
-                case Types.CLOB:
-                case Types.NCLOB:
-                case Types.VARCHAR:
-                case Types.LONGVARCHAR:
-                case Types.NVARCHAR:
-                case Types.LONGNVARCHAR:
-                case Types.SMALLINT:
-                case Types.TINYINT:
-                case Types.INTEGER:
-                case Types.BIGINT:
-                case Types.NUMERIC:
-                case Types.DECIMAL:
-                case Types.FLOAT:
-                case Types.REAL:
-                case Types.DOUBLE:
-                    preparedStatement.setString(i + 1, record.getColumn(i)
-                            .asString());
-                    break;
-
-                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
-                case Types.DATE:
-                    if (this.resultSetMetaData.getRight().get(i)
-                            .equalsIgnoreCase("year")) {
+                    case Types.CHAR:
+                    case Types.NCHAR:
+                    case Types.CLOB:
+                    case Types.NCLOB:
+                    case Types.VARCHAR:
+                    case Types.LONGVARCHAR:
+                    case Types.NVARCHAR:
+                    case Types.LONGNVARCHAR:
+                    case Types.SMALLINT:
+                    case Types.TINYINT:
+                    case Types.INTEGER:
+                    case Types.BIGINT:
+                    case Types.NUMERIC:
+                    case Types.DECIMAL:
+                    case Types.FLOAT:
+                    case Types.REAL:
+                    case Types.DOUBLE:
+                    case Types.BIT:
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
-                    } else {
-                        java.sql.Date sqlDate = null;
+                        break;
 
+                    // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
+                    case Types.DATE:
+                        if (this.resultSetMetaData.getRight().get(i)
+                                .equalsIgnoreCase("year")) {
+                            preparedStatement.setString(i + 1, record.getColumn(i)
+                                    .asString());
+                        } else {
+                            java.sql.Date sqlDate = null;
+                            try {
+                                utilDate = record.getColumn(i).asDate();
+                            } catch (DataXException e) {
+                                throw new SQLException(String.format(
+                                        "Date 类型转换错误：[%s]", record.getColumn(i)));
+                            }
+
+                            if (null != utilDate) {
+                                sqlDate = new java.sql.Date(utilDate.getTime());
+                            }
+                            preparedStatement.setDate(i + 1, sqlDate);
+                        }
+                        break;
+
+                    case Types.TIME:
+                        java.sql.Time sqlTime = null;
                         try {
                             utilDate = record.getColumn(i).asDate();
                         } catch (DataXException e) {
                             throw new SQLException(String.format(
-                                    "Date 类型转换错误：[%s]", record.getColumn(i)));
+                                    "TIME 类型转换错误：[%s]", record.getColumn(i)));
                         }
 
                         if (null != utilDate) {
-                            sqlDate = new java.sql.Date(utilDate.getTime());
+                            sqlTime = new java.sql.Time(utilDate.getTime());
                         }
-                        preparedStatement.setDate(i + 1, sqlDate);
-                    }
-                    break;
+                        preparedStatement.setTime(i + 1, sqlTime);
+                        break;
 
-                case Types.TIME:
-                    java.sql.Time sqlTime = null;
+                    case Types.TIMESTAMP:
+                        java.sql.Timestamp sqlTimestamp = null;
+                        try {
+                            utilDate = record.getColumn(i).asDate();
+                        } catch (DataXException e) {
+                            throw new SQLException(String.format(
+                                    "TIMESTAMP 类型转换错误：[%s]", record.getColumn(i)));
+                        }
 
-                    try {
-                        utilDate = record.getColumn(i).asDate();
-                    } catch (DataXException e) {
-                        throw new SQLException(String.format(
-                                "TIME 类型转换错误：[%s]", record.getColumn(i)));
-                    }
+                        if (null != utilDate) {
+                            sqlTimestamp = new java.sql.Timestamp(
+                                    utilDate.getTime());
+                        }
+                        preparedStatement.setTimestamp(i + 1, sqlTimestamp);
+                        break;
 
-                    if (null != utilDate) {
-                        sqlTime = new java.sql.Time(utilDate.getTime());
-                    }
-                    preparedStatement.setTime(i + 1, sqlTime);
-                    break;
-
-                case Types.TIMESTAMP:
-                    java.sql.Timestamp sqlTimestamp = null;
-
-                    try {
-                        utilDate = record.getColumn(i).asDate();
-                    } catch (DataXException e) {
-                        throw new SQLException(String.format(
-                                "TIMESTAMP 类型转换错误：[%s]", record.getColumn(i)));
-                    }
-
-                    if (null != utilDate) {
-                        sqlTimestamp = new java.sql.Timestamp(
-                                utilDate.getTime());
-                    }
-                    preparedStatement.setTimestamp(i + 1, sqlTimestamp);
-                    break;
-
-                case Types.BINARY:
-                case Types.VARBINARY:
-                case Types.BLOB:
-                case Types.LONGVARBINARY:
-                    preparedStatement.setBytes(i + 1, record.getColumn(i)
-                            .asBytes());
-                    break;
-                case Types.BOOLEAN:
-                case Types.BIT:
-                    preparedStatement.setBoolean(i + 1, record.getColumn(i)
-                            .asBoolean());
-                    break;
-                default:
-                    throw DataXException
-                            .asDataXException(
-                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
-                                    String.format(
-                                            "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
-                                            this.resultSetMetaData.getLeft()
-                                                    .get(i),
-                                            this.resultSetMetaData.getMiddle()
-                                                    .get(i),
-                                            this.resultSetMetaData.getRight()
-                                                    .get(i)));
+                    case Types.BINARY:
+                    case Types.VARBINARY:
+                    case Types.BLOB:
+                    case Types.LONGVARBINARY:
+                        preparedStatement.setBytes(i + 1, record.getColumn(i)
+                                .asBytes());
+                        break;
+                    case Types.BOOLEAN:
+                        preparedStatement.setBoolean(i + 1, record.getColumn(i)
+                                .asBoolean());
+                        break;
+                    default:
+                        throw DataXException
+                                .asDataXException(
+                                        DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                        String.format(
+                                                "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
+                                                this.resultSetMetaData.getLeft()
+                                                        .get(i),
+                                                this.resultSetMetaData.getMiddle()
+                                                        .get(i),
+                                                this.resultSetMetaData.getRight()
+                                                        .get(i)));
                 }
             }
 
             return preparedStatement;
+        }
+
+        private void calcWriteRecordSql() {
+            if (!VALUE_HOLDER.equals(calcValueHolder(""))) {
+                List<String> valueHolders = new ArrayList<String>(columnNumber);
+                for (int i = 0; i < columns.size(); i++) {
+                    String type = resultSetMetaData.getRight().get(i);
+                    valueHolders.add(calcValueHolder(type));
+                }
+                INSERT_OR_REPLACE_TEMPLATE = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode);
+                writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
+            }
+        }
+
+        protected String calcValueHolder(String columnType) {
+            return VALUE_HOLDER;
         }
     }
 }

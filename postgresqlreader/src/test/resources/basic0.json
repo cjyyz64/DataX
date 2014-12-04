@@ -1,0 +1,49 @@
+{
+    "job": {
+        "content": [
+            {
+                "reader": {
+                    "name": "postgresqlreader",
+                    "parameter": {
+                        "username": "datax",
+                        "password": "datax",
+                        "column": [
+                            "id",
+							"a_bigint",
+							"a_bit",
+							"a_boolean",
+							"a_byte",
+							"a_char",
+							"a_inet::varchar"
+							"a_date",
+							"a_double",
+							"a_integer",
+							"a_money::numeric",
+							"a_num",
+							"a_real",
+							"a_smallint",
+							"a_text",
+							"a_time",
+							"a_timestamp"
+                        ],
+                        "where": "",
+                        "session": [
+
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "test_case_special_col_type"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:postgresql://10.98.109.113:3002/datax"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

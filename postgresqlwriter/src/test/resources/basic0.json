@@ -1,0 +1,42 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "postgresqlwriter",
+                    "parameter": {
+                        "username": "datax",
+                        "password": "datax",
+                        "column": [
+                        	"id",
+                            "name",
+                            "signup_date"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "user_tbl"
+                                ],
+                                "jdbcUrl": "jdbc:postgresql://10.98.109.113:3002/datax"
+                            }
+                        ],
+                        "preSql": [
+                            "update @table set signup_date = now() where name = 'xxx';"
+                        ],
+                        "postSql": [
+                            "delete from @table where name = 'xxx';"
+                        ],
+                        "session": [
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

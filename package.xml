@@ -53,6 +53,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>postgresqlreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 
         <fileSet>
             <directory>odpsreader/target/datax/</directory>
@@ -129,6 +136,13 @@
         </fileSet>
 		<fileSet>
             <directory>oraclewriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+		<fileSet>
+            <directory>postgresqlwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

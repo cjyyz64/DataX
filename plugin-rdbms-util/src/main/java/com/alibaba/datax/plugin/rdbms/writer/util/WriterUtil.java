@@ -4,8 +4,11 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,8 +19,7 @@ import java.util.Collections;
 import java.util.List;
 
 public final class WriterUtil {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(WriterUtil.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
 
     public static List<Configuration> doSplit(Configuration simplifiedConf,
                                               int adviceNumber) {
@@ -75,7 +77,6 @@ public final class WriterUtil {
         return splitResultConfigs;
     }
 
-
     public static List<String> renderPreOrPostSqls(List<String> preOrPostSqls, String tableName) {
         if (null == preOrPostSqls) {
             return Collections.emptyList();
@@ -105,5 +106,28 @@ public final class WriterUtil {
             DBUtil.closeDBResources(null, stmt, null);
         }
     }
+    
+    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode){
+		boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
+				|| writeMode.trim().toLowerCase().startsWith("replace");
+
+		if (!isWriteModeLegal) {
+			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
+				String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
+		}
+
+		String writeDataSqlTemplate = new StringBuilder().append(writeMode)
+				.append(" INTO %s (").append(StringUtils.join(columnHolders, ","))
+				.append(") VALUES(").append(StringUtils.join(valueHolders, ","))
+				.append(")").toString();
+
+		String formattedSql = writeDataSqlTemplate;
+		try {
+			formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
+		} catch (Exception unused) {
+			// ignore it
+		}
+		return formattedSql;
+	}
 
 }
