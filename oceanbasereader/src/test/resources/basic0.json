@@ -1,0 +1,77 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "oceanbasereader",
+                    "parameter": {
+                        "column": [
+                            "trade_no_prefix",
+                            "trade_no",
+                            "id",
+                            "out_trade_no",
+                            "seller_account",
+                            "seller_login_email",
+                            "buyer_account",
+                            "buyer_login_email",
+                            "seller_type",
+                            "buyer_type",
+                            "trade_from",
+                            "trade_email",
+                            "operator_role",
+                            "trade_status",
+                            "total_fee",
+                            "service_fee_ratio",
+                            "service_fee",
+                            "currency",
+                            "seller_action",
+                            "buyer_action",
+                            "gmt_create",
+                            "seller_user_id",
+                            "buyer_user_id",
+                            "additional_trd_status",
+                            "trade_type",
+                            "seller_fullname",
+                            "buyer_fullname",
+                            "seller_nick",
+                            "buyer_nick",
+                            "goods_title",
+                            "gmt_last_modified_dt",
+                            "stop_timeout",
+                            "gathering_type",
+                            "buyer_marker",
+                            "seller_marker",
+                            "buyer_marker_memo",
+                            "seller_marker_memo",
+                            "channel",
+                            "product",
+                            "pay_channel",
+                            "other_service_fee",
+                            "relation_pro",
+                            "platform",
+                            "channel_partner",
+                            "goods_type",
+                            "goods_sub_type"
+                        ],
+                        "where": "gmt_create > timestamp'2014-10-16 00:00:00'",
+                        "connection": [
+                            {
+                                "table": [
+                                    "trade_base_000"
+                                ],
+                                "configUrl": "http://obconsole.test.alibaba-inc.com/ob-config/config.co?dataId=daily_ob5"
+                            }
+                        ],
+                        "fetchSize": 500
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

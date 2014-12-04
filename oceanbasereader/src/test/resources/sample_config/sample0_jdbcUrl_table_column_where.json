@@ -1,0 +1,25 @@
+{
+    "content": [
+        {
+            "reader": {
+                "name": "oceanbasereader",
+                "parameter": {
+                    "connection": [
+                        {
+                            "configUrl": "http://obconsole.test.alibaba-inc.com/ob-config/config.co?dataId=daily_ob5",
+                            "table": [
+                                "table?"
+                            ]
+                        }
+                    ],
+                    "column": [
+                        "firstColumn?",
+                        "secondColumn?"
+                    ],
+                    "where": "modifyTime>'2014-08-08'?"
+                }
+            },
+            "writer": {}
+        }
+    ]
+}

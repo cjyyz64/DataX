@@ -1,0 +1,27 @@
+{
+    "content": [
+        {
+            "reader": {
+                "name": "oceanbasereader",
+                "parameter": {
+                    "connection": [
+                        {
+                            "configUrl": "",
+                            "querySql": [
+                                "select firstColumn,secondColumn from table0 where id>100?",
+                                "select firstColumn,secondColumn from table1 where id>100?"
+                            ]
+                        },
+                        {
+                            "configUrl": "",
+                            "querySql": [
+                                "select firstColumn,secondColumn from table2 where id>100?"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "writer": {}
+        }
+    ]
+}
