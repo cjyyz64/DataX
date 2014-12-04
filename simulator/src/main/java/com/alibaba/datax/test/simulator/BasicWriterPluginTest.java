@@ -8,7 +8,6 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.runner.WriterRunner;
 import com.alibaba.datax.core.container.util.LoadUtil;
-import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
@@ -25,7 +24,7 @@ import java.util.concurrent.Executors;
 
 public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
-    protected Writer.Master writerMaster = null;
+    protected Writer.Job writerMaster = null;
 
     @BeforeClass
     public static void checkPluginPackageDir() {
@@ -79,7 +78,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
     	ColumnCast.bind(jobConf);
     	
         String pluginName = getTestPluginName();
-        writerMaster = (Writer.Master) getPluginMaster(jobConf, pluginName,
+        writerMaster = (Writer.Job) getPluginMaster(jobConf, pluginName,
                 PluginType.WRITER);
 
         writerMaster.init();
@@ -88,7 +87,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
         long channelId = 0;
         long slaveId = 1;
-        MetricManager.registerMetric(slaveId, channelId);
+//        MetricManager.registerMetric(slaveId, channelId);
 
         int numThread = jobs.size();
         ExecutorService executor = Executors.newFixedThreadPool(numThread);
@@ -103,7 +102,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
             /**
              * 设置slavePlugin的collector，用来处理脏数据和master/slave通信
              */
-//            writerRunner.setSlavePluginCollector(ClassUtil.instantiate(
+//            writerRunner.setTaskPluginCollector(ClassUtil.instantiate(
 //                    slaveCollectorClass, AbstractSlavePluginCollector.class,
 //                    configuration, this.channel.getChannelMetric(),
 //                    PluginType.WRITER));
@@ -126,7 +125,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
     private WriterRunner getWriterRunner(Configuration jobConf, int slaveId) {
         WriterRunner writerRunner = (WriterRunner) LoadUtil.loadPluginRunner(
-                PluginType.WRITER, getTestPluginName(), slaveId);
+                PluginType.WRITER, getTestPluginName());
 
         writerRunner.setJobConf(jobConf);
         writerRunner.setRecordReceiver(new RecordReceiverForTest(

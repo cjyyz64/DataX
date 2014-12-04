@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.container.runner;
 
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 
@@ -23,30 +23,30 @@ public class WriterRunner extends AbstractRunner implements Runnable {
 		this.recordReceiver = receiver;
 	}
 
-	public WriterRunner(AbstractSlavePlugin abstractSlavePlugin) {
-		super(abstractSlavePlugin);
+	public WriterRunner(AbstractTaskPlugin abstractTaskPlugin) {
+		super(abstractTaskPlugin);
 	}
 
 	@Override
 	public void run() {
 		assert null != this.recordReceiver;
 
-		Writer.Slave writerSlave = (Writer.Slave) this.getPlugin();
+		Writer.Task taskWriter = (Writer.Task) this.getPlugin();
 		try {
-			LOG.debug("slave writer starts to do init ...");
-			writerSlave.init();
-			LOG.debug("slave writer starts to do prepare ...");
-			writerSlave.prepare();
-			LOG.debug("slave writer starts to write ...");
-			writerSlave.startWrite(recordReceiver);
-			LOG.debug("slave writer starts to do post ...");
-			writerSlave.post();
+			LOG.debug("task writer starts to do init ...");
+			taskWriter.init();
+			LOG.debug("task writer starts to do prepare ...");
+			taskWriter.prepare();
+			LOG.debug("task writer starts to write ...");
+			taskWriter.startWrite(recordReceiver);
+			LOG.debug("task writer starts to do post ...");
+			taskWriter.post();
 			super.markSuccess();
 		} catch (Throwable e) {
-			LOG.error("slave Writer Received Exceptions:", e);
+			LOG.error("Writer Runner Received Exceptions:", e);
 			super.markFail(e);
 		} finally {
-			LOG.debug("slave writer starts to do destroy ...");
+			LOG.debug("task writer starts to do destroy ...");
 			super.destroy();
 		}
 	}

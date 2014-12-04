@@ -6,7 +6,7 @@ import java.util.List;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Column.Type;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
@@ -121,13 +121,13 @@ public class Common {
         return sleepTime;
     }
 
-    public static void collectDirtyRecord(SlavePluginCollector collector, List<LineAndError> errors) {
+    public static void collectDirtyRecord(TaskPluginCollector collector, List<LineAndError> errors) {
         for (LineAndError re : errors) {
             collector.collectDirtyRecord(re.getLine().getRecord(), re.getError().getMessage());
         }
     }
 
-    public static void collectDirtyRecord(SlavePluginCollector collector, List<OTSLine> lines, String errorMsg) {
+    public static void collectDirtyRecord(TaskPluginCollector collector, List<OTSLine> lines, String errorMsg) {
         for (OTSLine l : lines) {
             collector.collectDirtyRecord(l.getRecord(), errorMsg);
         }

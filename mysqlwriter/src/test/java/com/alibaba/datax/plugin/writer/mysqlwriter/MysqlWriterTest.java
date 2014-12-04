@@ -33,7 +33,7 @@ public class MysqlWriterTest extends BasicWriterPluginTest {
 		int dbType = 3;
 		String dbIp = "1.2.3.45";
 		String dbPort = "8798";
-		String dbRole = "slave";
+		String dbRole = "task";
 		String dbName = "hello";
 		String user = "root";
 		String pass = "root";

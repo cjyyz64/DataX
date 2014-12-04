@@ -18,9 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OdpsReader extends Reader {
-    public static class Master extends Reader.Master {
+    public static class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory
-                .getLogger(OdpsReader.Master.class);
+                .getLogger(Job.class);
 
         private static boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -238,8 +238,8 @@ public class OdpsReader extends Reader {
         }
     }
 
-    public static class Slave extends Reader.Slave {
-        private static final Logger LOG = LoggerFactory.getLogger(OdpsReader.Slave.class);
+    public static class Task extends Reader.Task {
+        private static final Logger LOG = LoggerFactory.getLogger(Task.class);
         private Configuration readerSliceConf;
 
         private String tunnelServer;

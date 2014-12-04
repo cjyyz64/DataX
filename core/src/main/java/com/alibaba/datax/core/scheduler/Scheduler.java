@@ -7,6 +7,7 @@ import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 
 public interface Scheduler {
 
-	void schedule(List<Configuration> configurations, ContainerCollector frameworkCollector);
+	void schedule(List<Configuration> configurations,
+                  ContainerCollector frameworkCollector);
 
 }

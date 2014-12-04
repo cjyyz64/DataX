@@ -1,23 +1,23 @@
 package com.alibaba.datax.common.spi;
 
 import com.alibaba.datax.common.base.BaseObject;
-import com.alibaba.datax.common.plugin.AbstractMasterPlugin;
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 
 import java.util.List;
 
 /**
- * 每个Writer插件需要实现Writer类，并在其内部实现Master、Slave两个内部类。
+ * 每个Writer插件需要实现Writer类，并在其内部实现Job、Task两个内部类。
  * 
  * 
  * */
 public abstract class Writer extends BaseObject {
 	/**
-	 * 每个Writer插件必须实现Master内部类
+	 * 每个Writer插件必须实现Job内部类
 	 */
-	public abstract static class Master extends AbstractMasterPlugin {
+	public abstract static class Job extends AbstractJobPlugin {
 		/**
 		 * 切分任务。<br>
 		 * 
@@ -29,9 +29,9 @@ public abstract class Writer extends BaseObject {
 	}
 
 	/**
-	 * 每个Writer插件必须实现Slave内部类
+	 * 每个Writer插件必须实现Task内部类
 	 */
-	public abstract static class Slave extends AbstractSlavePlugin {
+	public abstract static class Task extends AbstractTaskPlugin {
 		public abstract void startWrite(RecordReceiver lineReceiver);
 	}
 }

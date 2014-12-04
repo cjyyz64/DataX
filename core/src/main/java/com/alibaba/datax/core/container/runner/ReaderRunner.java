@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.container.runner;
 
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
@@ -24,34 +24,34 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
 		this.recordSender = recordSender;
 	}
 
-	public ReaderRunner(AbstractSlavePlugin abstractSlavePlugin) {
-		super(abstractSlavePlugin);
+	public ReaderRunner(AbstractTaskPlugin abstractTaskPlugin) {
+		super(abstractTaskPlugin);
 	}
 
 	@Override
 	public void run() {
 		assert null != this.recordSender;
 
-		Reader.Slave readerSlave = (Reader.Slave) this.getPlugin();
+		Reader.Task taskReader = (Reader.Task) this.getPlugin();
 
 		try {
-			LOG.debug("slave reader starts to do init ...");
-			readerSlave.init();
-			LOG.debug("slave reader starts to do prepare ...");
-			readerSlave.prepare();
-			LOG.debug("slave reader starts to read ...");
-			readerSlave.startRead(recordSender);
+			LOG.debug("task reader starts to do init ...");
+			taskReader.init();
+			LOG.debug("task reader starts to do prepare ...");
+			taskReader.prepare();
+			LOG.debug("task reader starts to read ...");
+			taskReader.startRead(recordSender);
 			recordSender.sendToWriter(TerminateRecord.get());
 			recordSender.flush();
-			LOG.debug("slave reader starts to do post ...");
-			readerSlave.post();
+			LOG.debug("task reader starts to do post ...");
+			taskReader.post();
 			// automatic flush
 			super.markSuccess();
 		} catch (Throwable e) {
 			LOG.error("Reader runner Received Exceptions:", e);
 			super.markFail(e);
 		} finally {
-			LOG.debug("slave reader starts to do destroy ...");
+			LOG.debug("task reader starts to do destroy ...");
 			super.destroy();
 		}
 	}

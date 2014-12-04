@@ -2,206 +2,230 @@ package com.alibaba.datax.core.transport.channel;
 
 import java.util.Collection;
 
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.metric.Metric;
-import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.SleepQuiet;
-import com.alibaba.datax.core.util.Status;
 
 /**
+ *
+ * Created by jingxing on 14-8-25.
+ *
  * 统计和限速都在这里
- * 
+ *
  */
 public abstract class Channel {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
 
-	protected int channelId;
+    protected int taskGroupId;
 
-	protected int slaveId;
+    protected int capacity;
 
-	protected int capacity;
+    protected long byteSpeed; // bps: bytes/s
 
-	protected long speed; // 单位：byte/s
+    protected long recordSpeed; // tps: records/s
 
-	protected long flowControlInterval;
+    protected long flowControlInterval;
 
-	protected volatile boolean isClosed = false;
+    protected volatile boolean isClosed = false;
 
-	protected Configuration configuration = null;
+    protected Configuration configuration = null;
 
-	private static Boolean isFirstPrint = true;
+    private static Boolean isFirstPrint = true;
 
-	private Metric lastMetric = new Metric();
+    private Communication currentCommunication;
 
-	public Channel(final Configuration configuration) {
-		int id = configuration.getInt(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_ID, 0);
+    private Communication lastCommunication = new Communication();
 
-		if (id < 0) {
-			throw new IllegalArgumentException(String.format(
-					"channel id[%d]不能小于0.", id));
-		}
+    public Channel(final Configuration configuration) {
+        int capacity = configuration.getInt(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
+        long byteSpeed = configuration.getLong(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
+        long recordSpeed = configuration.getLong(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD, 10000);
 
-		int capacity = configuration.getInt(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
-		long speed = configuration.getLong(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE,
-				1024 * 1024);
+        if (capacity <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "通道容量[%d]必须大于0.", capacity));
+        }
 
-		if (capacity <= 0) {
-			throw new IllegalArgumentException(String.format(
-					"通道容量[%d]必须大于0.", capacity));
+        synchronized (isFirstPrint) {
+            if (isFirstPrint) {
+                Channel.LOGGER.info("Channel set byte_speed_limit to " + byteSpeed
+                        + (byteSpeed <= 0 ? ", No bps activated." : "."));
+                Channel.LOGGER.info("Channel set record_speed_limit to " + recordSpeed
+                        + (recordSpeed <= 0 ? ", No tps activated." : "."));
+                isFirstPrint = false;
+            }
+        }
 
-		}
+        this.taskGroupId = configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+        this.capacity = capacity;
+        this.byteSpeed = byteSpeed;
+        this.recordSpeed = recordSpeed;
+        this.flowControlInterval = configuration.getLong(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
 
-		synchronized (isFirstPrint) {
-			if (isFirstPrint) {
-				Channel.LOGGER.info("Channel set speed limit to " + speed
-						+ (speed <= 0 ? " , No Limit actived ." : " ."));
-				isFirstPrint = false;
-			}
-		}
+        this.configuration = configuration;
+    }
 
-		this.channelId = id;
-		this.slaveId = configuration
-				.getInt(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID);
-		this.capacity = capacity;
-		this.speed = speed;
-		this.flowControlInterval = configuration.getLong(
-				CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL,
-				1000);
+    public void close() {
+        this.isClosed = true;
+    }
 
-		this.configuration = configuration;
-	}
+    public void open() {
+        this.isClosed = false;
+    }
 
-	public void close() {
-		this.isClosed = true;
-	}
+    public boolean isClosed() {
+        return isClosed;
+    }
 
-	public void open() {
-		this.isClosed = false;
-	}
+    public int getTaskGroupId() {
+        return this.taskGroupId;
+    }
 
-	public boolean isClosed() {
-		return isClosed;
-	}
+    public int getCapacity() {
+        return capacity;
+    }
 
-	public int getChannelId() {
-		return channelId;
-	}
+    public long getByteSpeed() {
+        return byteSpeed;
+    }
 
-	public int getSlaveId() {
-		return this.slaveId;
-	}
+    public Configuration getConfiguration() {
+        return this.configuration;
+    }
 
-	public int getCapacity() {
-		return capacity;
-	}
+    public void setCommunication(final Communication communication) {
+        this.currentCommunication = communication;
+        this.lastCommunication.reset();
+    }
 
-	public long getSpeed() {
-		return speed;
-	}
+    public void push(final Record r) {
+        Validate.notNull(r, "record不能为空.");
+        this.doPush(r);
+        this.statPush(1L, r.getByteSize());
+    }
 
-	public Configuration getConfiguration() {
-		return this.configuration;
-	}
+    public void pushAll(final Collection<Record> rs) {
+        Validate.notNull(rs);
+        Validate.noNullElements(rs);
+        this.doPushAll(rs);
+        this.statPush(rs.size(), this.getByteSize(rs));
+    }
 
-	public void push(final Record r) {
-		Validate.notNull(r, "record不能为空.");
-		this.doPush(r);
-		this.statPush(this.getChannelMetric(), 1L, r.getByteSize());
-	}
+    public Record pull() {
+        Record record = this.doPull();
+        this.statPull(1L, record.getByteSize());
+        return record;
+    }
 
-	public void pushAll(final Collection<Record> rs) {
-		Validate.notNull(rs);
-		Validate.noNullElements(rs);
-		this.doPushAll(rs);
-		this.statPush(this.getChannelMetric(), rs.size(), this.getByteSize(rs));
-	}
+    public void pullAll(final Collection<Record> rs) {
+        Validate.notNull(rs);
+        this.doPullAll(rs);
+        this.statPull(rs.size(), this.getByteSize(rs));
+    }
 
-	public Record pull() {
-		Record record = this.doPull();
-		this.statPull(this.getChannelMetric(), 1L, record.getByteSize());
-		return record;
-	}
+    public void decreaseTerminateRecordMetric() {
+        currentCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS,
+                currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS) - 1);
+        currentCommunication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS,
+                currentCommunication.getLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS) - 1);
+        currentCommunication.setLongCounter(CommunicationManager.STAGE,
+                currentCommunication.getLongCounter(CommunicationManager.STAGE) + 1);
+    }
 
-	public void pullAll(final Collection<Record> rs) {
-		Validate.notNull(rs);
-		this.doPullAll(rs);
-		this.statPull(this.getChannelMetric(), rs.size(), this.getByteSize(rs));
-	}
+    protected abstract void doPush(Record r);
 
-	public void decreaseTerminateRecordMetric() {
-		Metric metric = this.getChannelMetric();
-		metric.setReadSucceedRecords(metric.getReadSucceedRecords() - 1);
-		metric.setWriteReceivedRecords(metric.getWriteReceivedRecords() - 1);
-		metric.setStage(metric.getStage() + 1);
-	}
+    protected abstract void doPushAll(Collection<Record> rs);
 
-	protected abstract void doPush(Record r);
+    protected abstract Record doPull();
 
-	protected abstract void doPushAll(Collection<Record> rs);
+    protected abstract void doPullAll(Collection<Record> rs);
 
-	protected abstract Record doPull();
+    public abstract int size();
 
-	protected abstract void doPullAll(Collection<Record> rs);
+    public abstract boolean isEmpty();
 
-	public abstract int size();
+    private long getByteSize(final Collection<Record> rs) {
+        long size = 0;
+        for (final Record each : rs) {
+            size += each.getByteSize();
+        }
+        return size;
+    }
 
-	public abstract boolean isEmpty();
+    private void statPush(long recordSize, long byteSize) {
+        currentCommunication.increaseCounter(CommunicationManager.READ_SUCCEED_RECORDS,
+                recordSize);
+        currentCommunication.increaseCounter(CommunicationManager.READ_SUCCEED_BYTES,
+                byteSize);
 
-	public Metric getChannelMetric() {
-		return MetricManager.getChannelMetric(getSlaveId(), getChannelId());
-	}
+        boolean isChannelByteSpeedLimit = (this.byteSpeed > 0);
+        boolean isChannelRecordSpeedLimit = (this.recordSpeed > 0);
+        if (!isChannelByteSpeedLimit && !isChannelRecordSpeedLimit) {
+            return;
+        }
 
-	private long getByteSize(final Collection<Record> rs) {
-		long size = 0;
-		for (final Record each : rs) {
-			size += each.getByteSize();
-		}
-		return size;
-	}
+        long lastTimestamp = lastCommunication.getTimestamp();
+        long nowTimestamp = System.currentTimeMillis();
+        long interval = nowTimestamp - lastTimestamp;
+        if (interval - this.flowControlInterval >= 0) {
+            long byteLimitSleepTime = 0;
+            long recordLimitSleepTime = 0;
+            if(isChannelByteSpeedLimit) {
+                long currentByteSpeed = (CommunicationManager.getTotalReadBytes(currentCommunication) -
+                        CommunicationManager.getTotalReadBytes(lastCommunication)) * 1000 / interval;
+                if (currentByteSpeed > this.byteSpeed) {
+                    // 计算根据byteLimit得到的休眠时间
+                    byteLimitSleepTime = currentByteSpeed * interval / this.byteSpeed
+                            - interval;
+                }
+            }
 
-	private void statPush(Metric metric, long recordSize, long byteSize) {
-		metric.incrReadSucceedRecords(recordSize);
-		metric.incrReadSucceedBytes(byteSize);
+            if(isChannelRecordSpeedLimit) {
+                long currentRecordSpeed = (CommunicationManager.getTotalReadRecords(currentCommunication) -
+                        CommunicationManager.getTotalReadRecords(lastCommunication)) * 1000 / interval;
+                if(currentRecordSpeed > this.recordSpeed) {
+                    // 计算根据recordLimit得到的休眠时间
+                    recordLimitSleepTime = currentRecordSpeed * interval / this.recordSpeed
+                            - interval;
+                }
+            }
 
-		boolean isChannelSpeedLimit = (this.speed > 0);
-		if (!isChannelSpeedLimit) {
-			return;
-		}
+            // 休眠时间取较大值
+            long sleepTime = byteLimitSleepTime<recordLimitSleepTime ?
+                    recordLimitSleepTime : byteLimitSleepTime;
+            if(sleepTime > 0) {
+                SleepQuiet.sleep(sleepTime);
+            }
 
-		long lastTimestamp = lastMetric.getTimeStamp();
-		long nowTimestamp = System.currentTimeMillis();
-		long interval = nowTimestamp - lastTimestamp;
-		if (interval - this.flowControlInterval >= 0) {
-			if (lastTimestamp > 0) {
-				long currentSpeed = (metric.getTotalReadBytes() - lastMetric
-						.getTotalReadBytes()) * 1000 / interval;
-				if (currentSpeed > this.speed) {
-					/**
-					 * 计算休眠时间，使平均速度为this.speed
-					 */
-					long sleepTime = currentSpeed * interval / this.speed
-							- interval;
-					SleepQuiet.sleep(sleepTime);
-				}
-			}
-			lastMetric.setReadSucceedBytes(metric.getReadSucceedBytes());
-			lastMetric.setReadFailedBytes(metric.getReadFailedBytes());
-			lastMetric.setTimeStamp(nowTimestamp);
-		}
-	}
+            lastCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES,
+                    currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_BYTES));
+            lastCommunication.setLongCounter(CommunicationManager.READ_FAILED_BYTES,
+                    currentCommunication.getLongCounter(CommunicationManager.READ_FAILED_BYTES));
+            lastCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS,
+                    currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS));
+            lastCommunication.setLongCounter(CommunicationManager.READ_FAILED_RECORDS,
+                    currentCommunication.getLongCounter(CommunicationManager.READ_FAILED_RECORDS));
+            lastCommunication.setTimestamp(nowTimestamp);
+        }
+    }
 
-	private void statPull(Metric metric, long recordSize, long byteSize) {
-		metric.incrWriteReceivedRecords(recordSize);
-		metric.incrWriteReceivedBytes(byteSize);
-	}
+    private void statPull(long recordSize, long byteSize) {
+        currentCommunication.increaseCounter(
+                CommunicationManager.WRITE_RECEIVED_RECORDS, recordSize);
+        currentCommunication.increaseCounter(
+                CommunicationManager.WRITE_RECEIVED_BYTES, byteSize);
+    }
 }

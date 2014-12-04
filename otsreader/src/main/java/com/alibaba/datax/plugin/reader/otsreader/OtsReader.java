@@ -9,16 +9,14 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.otsreader.OtsReaderMasterProxy;
-import com.alibaba.datax.plugin.reader.otsreader.OtsReaderSlaveProxy;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
 
 public class OtsReader extends Reader {
 
-    public static class Master extends Reader.Master {
-        private static final Logger LOG = LoggerFactory.getLogger(OtsReader.Master.class);
+    public static class Job extends Reader.Job {
+        private static final Logger LOG = LoggerFactory.getLogger(Job.class);
         private OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
         @Override
         public void init() {
@@ -85,8 +83,8 @@ public class OtsReader extends Reader {
         }
     }
 
-    public static class Slave extends Reader.Slave {
-        private static final Logger LOG = LoggerFactory.getLogger(OtsReader.Slave.class);
+    public static class Task extends Reader.Task {
+        private static final Logger LOG = LoggerFactory.getLogger(Task.class);
         private OtsReaderSlaveProxy proxy = new OtsReaderSlaveProxy();
 
         @Override

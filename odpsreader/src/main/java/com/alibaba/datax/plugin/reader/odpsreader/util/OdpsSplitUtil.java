@@ -44,7 +44,7 @@ public final class OdpsSplitUtil {
         Configuration tempConfig = null;
         if (partitions.size() > adviceNum || Constant.PARTITION_SPLIT_MODE.equals(splitMode)) {
             // 此时不管 splitMode 是什么，都不需要再进行切分了
-            // 注意：此处没有把 sessionId 设置到 config 中去，所以后续在 slave 中获取 sessionId 时，需要针对这种情况重新创建 sessionId
+            // 注意：此处没有把 sessionId 设置到 config 中去，所以后续在 task 中获取 sessionId 时，需要针对这种情况重新创建 sessionId
             for (String onePartition : partitions) {
                 tempConfig = originalConfig.clone();
                 tempConfig.set(Key.PARTITION, onePartition);

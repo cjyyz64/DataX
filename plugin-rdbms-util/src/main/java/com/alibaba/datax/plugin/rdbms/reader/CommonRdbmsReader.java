@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.rdbms.reader;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
@@ -24,13 +24,13 @@ public class CommonRdbmsReader {
 
 	private static DataBaseType DATABASE_TYPE;
 
-	public static class Master {
+	public static class Job {
 		private static final Logger LOG = LoggerFactory
-				.getLogger(CommonRdbmsReader.Master.class);
+				.getLogger(Job.class);
 
 		private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
-		public Master(DataBaseType dataBaseType) {
+		public Job(DataBaseType dataBaseType) {
 			DATABASE_TYPE = dataBaseType;
 			OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
 			SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
@@ -61,9 +61,9 @@ public class CommonRdbmsReader {
 
 	}
 
-	public static class Slave {
+	public static class Task {
 		private static final Logger LOG = LoggerFactory
-				.getLogger(CommonRdbmsReader.Slave.class);
+				.getLogger(Task.class);
 
 		private String username;
 		private String password;
@@ -72,7 +72,7 @@ public class CommonRdbmsReader {
 		// 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
 		private static String BASIC_MESSAGE;
 
-		public Slave(DataBaseType dataBaseType) {
+		public Task(DataBaseType dataBaseType) {
 			DATABASE_TYPE = dataBaseType;
 		}
 
@@ -89,7 +89,7 @@ public class CommonRdbmsReader {
 
 		public void startRead(Configuration readerSliceConfig,
 				RecordSender recordSender,
-				SlavePluginCollector slavePluginCollector, int fetchSize) {
+				TaskPluginCollector taskPluginCollector, int fetchSize) {
 			String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
 			String formattedSql = null;
 
@@ -118,7 +118,7 @@ public class CommonRdbmsReader {
 
 				while (rs.next()) {
 					ResultSetReadProxy.transportOneRecord(recordSender, rs,
-							metaData, columnNumber, slavePluginCollector);
+							metaData, columnNumber, taskPluginCollector);
 				}
 			} catch (Exception e) {
 				throw DataXException.asDataXException(

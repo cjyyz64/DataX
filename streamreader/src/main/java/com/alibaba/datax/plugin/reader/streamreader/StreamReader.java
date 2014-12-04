@@ -14,7 +14,7 @@ import java.util.List;
 
 public class StreamReader extends Reader {
 
-	public static class Master extends Reader.Master {
+	public static class Job extends Reader.Job {
 
 		private Configuration originalConfig;
 
@@ -98,7 +98,7 @@ public class StreamReader extends Reader {
 
 	}
 
-	public static class Slave extends Reader.Slave {
+	public static class Task extends Reader.Task {
 
 		private Configuration readerSliceConfig;
 

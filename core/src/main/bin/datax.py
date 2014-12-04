@@ -158,7 +158,7 @@ def get_json_job_path(job_path):
             is_resaved_json = True
 
     if is_job_from_http:
-        # 把masterId 和 reportAddress写入配置中
+        # 把jobId 和 reportAddress写入配置中
         job_json_content = add_core_config_for_http(job_json_content, job_path)
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
@@ -169,16 +169,16 @@ def get_json_job_path(job_path):
     return job_new_path, is_resaved_json
 
 def add_core_config_for_http(job_json_content, job_path):
-    job_id = get_masterId_from_http(job_path)
+    job_id = get_jobId_from_http(job_path)
     if job_id:
         job_json_content = json.loads(job_json_content)
-        job_json_content["core"] = {"container":{"master":{"id":job_id}}}
+        job_json_content["core"] = {"container":{"job":{"id":job_id}}}
     else:
         return None
 
     return json.dumps(job_json_content, sort_keys=True, indent=4)
 
-def get_masterId_from_http(job_path):
+def get_jobId_from_http(job_path):
     m = re.match(r"^http[s]?://\S+/(\d+)\w*", job_path)
     if m:
         return m.group(1)
@@ -199,7 +199,7 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
 
     tmp_file_path = None
     if is_job_from_http:
-        tmp_file_path = get_masterId_from_http(job_path)
+        tmp_file_path = get_jobId_from_http(job_path)
         if not tmp_file_path:
             sys.exit(RET_STATE["FAIL"])
     else:

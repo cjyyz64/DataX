@@ -14,8 +14,8 @@ import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
 
 public class OtsWriter {
-    public static class Master extends Writer.Master  {
-        private static final Logger LOG = LoggerFactory.getLogger(OtsWriter.Master.class);
+    public static class Job extends Writer.Job {
+        private static final Logger LOG = LoggerFactory.getLogger(Job.class);
         private OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
         
         @Override
@@ -55,8 +55,8 @@ public class OtsWriter {
         }
     }
     
-    public static class Slave extends Writer.Slave  {
-        private static final Logger LOG = LoggerFactory.getLogger(OtsWriter.Master.class);
+    public static class Task extends Writer.Task {
+        private static final Logger LOG = LoggerFactory.getLogger(Job.class);
         private OtsWriterSlaveProxy proxy = new OtsWriterSlaveProxy();
         
         @Override
@@ -72,7 +72,7 @@ public class OtsWriter {
             LOG.info("startWrite() begin ...");
             try {
                 this.proxy.init(this.getPluginJobConf());
-                this.proxy.write(lineReceiver, this.getSlavePluginCollector());
+                this.proxy.write(lineReceiver, this.getTaskPluginCollector());
             } catch (OTSException e) {
                 LOG.error("OTSException: {}",  e.getMessage(), e);
                 throw DataXException.asDataXException(new OtsWriterError(e.getErrorCode(), "OTS端的错误"), Common.getDetailMessage(e), e);

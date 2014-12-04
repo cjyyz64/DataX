@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.transport.exchanger;
 
+import com.alibaba.datax.core.statistics.communication.Communication;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,13 +22,14 @@ public class RecordExchangerTest extends CaseInitializer {
 	@Before
 	public void before() {
 		this.configuration = ConfigurationProducer.produce();
-		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, 1);
+		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
 		return;
 	}
 
 	@Test
 	public void test_Exchanger() {
 		Channel channel = new MemoryChannel(configuration);
+        channel.setCommunication(new Communication());
 
 		int capacity = 10;
 		Record record = null;
@@ -54,6 +56,7 @@ public class RecordExchangerTest extends CaseInitializer {
 	@Test
 	public void test_BufferExchanger() {
 		Channel channel = new MemoryChannel(configuration);
+        channel.setCommunication(new Communication());
 
 		int capacity = 10;
 		Record record = null;

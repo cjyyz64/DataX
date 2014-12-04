@@ -15,7 +15,7 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
  * Created by jingxing on 14-9-2.
  */
 public class FakeReader extends Reader {
-	public static final class Master extends Reader.Master {
+	public static final class Job extends Reader.Job {
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			Configuration jobParameter = this.getPluginJobConf();
@@ -41,16 +41,16 @@ public class FakeReader extends Reader {
 
 		@Override
 		public void init() {
-			System.out.println("fake reader master initialized!");
+			System.out.println("fake reader job initialized!");
 		}
 
 		@Override
 		public void destroy() {
-			System.out.println("fake reader master destroyed!");
+			System.out.println("fake reader job destroyed!");
 		}
 	}
 
-	public static final class Slave extends Reader.Slave {
+	public static final class Task extends Reader.Task {
 		@Override
 		public void startRead(RecordSender lineSender) {
 			Record record = lineSender.createRecord();
@@ -61,48 +61,48 @@ public class FakeReader extends Reader {
 			}
 
 			for (int i = 0; i < 10; i++) {
-				this.getSlavePluginCollector().collectDirtyRecord(
+				this.getTaskPluginCollector().collectDirtyRecord(
 						record,
 						DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 								"EXCEPTION MSG"), "ERROR MSG");
 			}
 
 			for (int i = 0; i < 10; i++) {
-				this.getSlavePluginCollector().collectDirtyRecord(record,
+				this.getTaskPluginCollector().collectDirtyRecord(record,
 						"ERROR MSG");
 			}
 
 			for (int i = 0; i < 10; i++) {
-				this.getSlavePluginCollector().collectDirtyRecord(
+				this.getTaskPluginCollector().collectDirtyRecord(
 						record,
 						DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 								"EXCEPTION MSG"));
 			}
 
 			for (int i = 0; i < 10; i++) {
-				this.getSlavePluginCollector().collectMessage("bazhen-reader",
+				this.getTaskPluginCollector().collectMessage("bazhen-reader",
 						"bazhen");
 			}
 		}
 
 		@Override
 		public void prepare() {
-			System.out.println("fake reader slave prepared!");
+			System.out.println("fake reader task prepared!");
 		}
 
 		@Override
 		public void post() {
-			System.out.println("fake reader slave posted!");
+			System.out.println("fake reader task posted!");
 		}
 
 		@Override
 		public void init() {
-			System.out.println("fake reader slave initialized!");
+			System.out.println("fake reader task initialized!");
 		}
 
 		@Override
 		public void destroy() {
-			System.out.println("fake reader master destroyed!");
+			System.out.println("fake reader task destroyed!");
 		}
 	}
 }

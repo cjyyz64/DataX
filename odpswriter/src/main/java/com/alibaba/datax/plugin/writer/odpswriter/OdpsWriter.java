@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * 已修改为：每个 slave 各自创建自己的 upload,拥有自己的 uploadId，并在 slave 中完成对对应 block 的提交。
+ * 已修改为：每个 task 各自创建自己的 upload,拥有自己的 uploadId，并在 task 中完成对对应 block 的提交。
  */
 public class OdpsWriter extends Writer {
 
-    public static class Master extends Writer.Master {
+    public static class Job extends Writer.Job {
         private static final Logger LOG = LoggerFactory
-                .getLogger(OdpsWriter.Master.class);
+                .getLogger(Job.class);
 
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -186,9 +186,9 @@ public class OdpsWriter extends Writer {
     }
 
 
-    public static class Slave extends Writer.Slave {
+    public static class Task extends Writer.Task {
         private static final Logger LOG = LoggerFactory
-                .getLogger(OdpsWriter.Slave.class);
+                .getLogger(Task.class);
 
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
@@ -224,7 +224,7 @@ public class OdpsWriter extends Writer {
             }
 
             if (IS_DEBUG) {
-                LOG.debug("After init in slave, sliceConfig now is:[\n{}\n].", this.sliceConfig);
+                LOG.debug("After init in task, sliceConfig now is:[\n{}\n].", this.sliceConfig);
             }
 
         }
@@ -235,7 +235,7 @@ public class OdpsWriter extends Writer {
             this.managerUpload = OdpsUtil.createMasterTunnelUpload(dataTunnel, this.project,
                     this.table, this.partition);
             this.uploadId = this.managerUpload.getUploadId();
-            LOG.info("slave uploadId:[{}].", this.uploadId);
+            LOG.info("task uploadId:[{}].", this.uploadId);
 
             this.workerUpload = OdpsUtil.getSlaveTunnelUpload(dataTunnel, this.project,
                     this.table, this.partition, uploadId);
@@ -251,10 +251,10 @@ public class OdpsWriter extends Writer {
                     Integer.class);
 
             try {
-                SlavePluginCollector slavePluginCollector = super.getSlavePluginCollector();
+                TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();
 
                 OdpsWriterProxy proxy = new OdpsWriterProxy(this.workerUpload, this.blockSizeInMB, blockId,
-                        columnPositions, slavePluginCollector, this.emptyAsNull);
+                        columnPositions, taskPluginCollector, this.emptyAsNull);
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
                 while ((dataXRecord = recordReceiver.getFromReader()) != null) {
