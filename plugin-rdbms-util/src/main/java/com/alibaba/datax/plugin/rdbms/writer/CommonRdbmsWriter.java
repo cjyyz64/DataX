@@ -278,8 +278,7 @@ public class CommonRdbmsWriter {
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
                     StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
-            WriterUtil
-                    .executeSqls(connection, this.postSqls, BASIC_MESSAGE);
+            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
             DBUtil.closeDBResources(null, null, connection);
         }
 
@@ -352,86 +351,107 @@ public class CommonRdbmsWriter {
             for (int i = 0; i < this.columnNumber; i++) {
 
                 switch (this.resultSetMetaData.getMiddle().get(i)) {
-                    case Types.CHAR:
-                    case Types.NCHAR:
-                    case Types.CLOB:
-                    case Types.NCLOB:
-                    case Types.VARCHAR:
-                    case Types.LONGVARCHAR:
-                    case Types.NVARCHAR:
-                    case Types.LONGNVARCHAR:
-                    case Types.SMALLINT:
-                    case Types.TINYINT:
-                    case Types.INTEGER:
-                    case Types.BIGINT:
-                    case Types.NUMERIC:
-                    case Types.DECIMAL:
-                    case Types.FLOAT:
-                    case Types.REAL:
-                    case Types.DOUBLE:
+                case Types.CHAR:
+                case Types.NCHAR:
+                case Types.CLOB:
+                case Types.NCLOB:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.NVARCHAR:
+                case Types.LONGNVARCHAR:
+                case Types.SMALLINT:
+                case Types.TINYINT:
+                case Types.INTEGER:
+                case Types.BIGINT:
+                case Types.NUMERIC:
+                case Types.DECIMAL:
+                case Types.FLOAT:
+                case Types.REAL:
+                case Types.DOUBLE:
+                    preparedStatement.setString(i + 1, record.getColumn(i)
+                            .asString());
+                    break;
+
+                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
+                case Types.DATE:
+                    if (this.resultSetMetaData.getRight().get(i)
+                            .equalsIgnoreCase("year")) {
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
-                        break;
+                    } else {
+                        java.sql.Date sqlDate = null;
 
-                    // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
-                    case Types.DATE:
-                        if (this.resultSetMetaData.getRight().get(i)
-                                .equalsIgnoreCase("year")) {
-                            preparedStatement.setString(i + 1, record.getColumn(i)
-                                    .asString());
-                        } else {
-                            java.sql.Date sqlDate = null;
+                        try {
                             utilDate = record.getColumn(i).asDate();
-                            if (null != utilDate) {
-                                sqlDate = new java.sql.Date(utilDate.getTime());
-                            }
-                            preparedStatement.setDate(i + 1, sqlDate);
+                        } catch (DataXException e) {
+                            throw new SQLException(String.format(
+                                    "Date 类型转换错误：[%s]", record.getColumn(i)));
                         }
-                        break;
 
-                    case Types.TIME:
-                        java.sql.Time sqlTime = null;
-                        utilDate = record.getColumn(i).asDate();
                         if (null != utilDate) {
-                            sqlTime = new java.sql.Time(utilDate.getTime());
+                            sqlDate = new java.sql.Date(utilDate.getTime());
                         }
-                        preparedStatement.setTime(i + 1, sqlTime);
-                        break;
+                        preparedStatement.setDate(i + 1, sqlDate);
+                    }
+                    break;
 
-                    case Types.TIMESTAMP:
-                        java.sql.Timestamp sqlTimestamp = null;
+                case Types.TIME:
+                    java.sql.Time sqlTime = null;
+
+                    try {
                         utilDate = record.getColumn(i).asDate();
-                        if (null != utilDate) {
-                            sqlTimestamp = new java.sql.Timestamp(
-                                    utilDate.getTime());
-                        }
-                        preparedStatement.setTimestamp(i + 1, sqlTimestamp);
-                        break;
+                    } catch (DataXException e) {
+                        throw new SQLException(String.format(
+                                "TIME 类型转换错误：[%s]", record.getColumn(i)));
+                    }
 
-                    case Types.BINARY:
-                    case Types.VARBINARY:
-                    case Types.BLOB:
-                    case Types.LONGVARBINARY:
-                        preparedStatement.setBytes(i + 1, record.getColumn(i)
-                                .asBytes());
-                        break;
-                    case Types.BOOLEAN:
-                    case Types.BIT:
-                        preparedStatement.setBoolean(i + 1, record.getColumn(i)
-                                .asBoolean());
-                        break;
-                    default:
-                        throw DataXException
-                                .asDataXException(
-                                        DBUtilErrorCode.UNSUPPORTED_TYPE,
-                                        String.format(
-                                                "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
-                                                this.resultSetMetaData.getLeft()
-                                                        .get(i),
-                                                this.resultSetMetaData.getMiddle()
-                                                        .get(i),
-                                                this.resultSetMetaData.getRight()
-                                                        .get(i)));
+                    if (null != utilDate) {
+                        sqlTime = new java.sql.Time(utilDate.getTime());
+                    }
+                    preparedStatement.setTime(i + 1, sqlTime);
+                    break;
+
+                case Types.TIMESTAMP:
+                    java.sql.Timestamp sqlTimestamp = null;
+
+                    try {
+                        utilDate = record.getColumn(i).asDate();
+                    } catch (DataXException e) {
+                        throw new SQLException(String.format(
+                                "TIMESTAMP 类型转换错误：[%s]", record.getColumn(i)));
+                    }
+
+                    if (null != utilDate) {
+                        sqlTimestamp = new java.sql.Timestamp(
+                                utilDate.getTime());
+                    }
+                    preparedStatement.setTimestamp(i + 1, sqlTimestamp);
+                    break;
+
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.BLOB:
+                case Types.LONGVARBINARY:
+                    preparedStatement.setBytes(i + 1, record.getColumn(i)
+                            .asBytes());
+                    break;
+                case Types.BOOLEAN:
+                case Types.BIT:
+                    preparedStatement.setBoolean(i + 1, record.getColumn(i)
+                            .asBoolean());
+                    break;
+                default:
+                    throw DataXException
+                            .asDataXException(
+                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                    String.format(
+                                            "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
+                                            this.resultSetMetaData.getLeft()
+                                                    .get(i),
+                                            this.resultSetMetaData.getMiddle()
+                                                    .get(i),
+                                            this.resultSetMetaData.getRight()
+                                                    .get(i)));
                 }
             }
 
