@@ -1,0 +1,76 @@
+{
+    //普通模式的配置模板
+    "reader": {
+        "name": "hbasereader",
+        "parameter": {
+            // hbase 连接信息
+            "hbase-config": {
+                "hbase.zookeeper.quorum": "?",
+                "hbase.zookeeper.property.clientPort": "?",
+                "k3": "v3"
+            },
+            "table": "hbase_test_table",
+
+            // 默认为 utf8,可以配置为 utf8,gbk
+            "encoding": "utf8",
+
+            // 可能取值为：normal, mutiVersion
+            "mode": "normal",
+            "column": [
+                {
+                    //如果 name=rowkey 固定值，则表示读取 rowkey
+                    "name": "rowkey",
+
+                    // type 类型可能为：string, bytes（这里的string,bytes 与 range里的含义不一样）, int, short, long, double, float, boolean
+                    "type": "bytes"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 name 的列的数据，
+                    // 编码信息为 encoding 指定
+                    "name": "basicInfo:name",
+                    "type": "string"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 address 的列的数据，
+                    // 编码信息为 encoding 指定
+                    "name": "basicInfo:address",
+                    "type": "string"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 school 的列的数据，
+                    // 并且直接把 hbase 的 byte 数组读出来
+                    "name": "basicInfo:school",
+                    "type": "bytes"
+                },
+                {
+                    "name": "extendsInfo:age",
+                    "type": "int"
+                },
+                {
+                    // 读取常量列
+                    "type": "string",
+                    "value": "hello-常量"
+                }
+            ],
+            "range": {
+                // 执行 startRowKey 和 endRowKey 的范围，如果不指定，则表示全表读取
+                "startRowkey": [
+                    {
+                        // type 类型如果为 bytes，则调用Bytes.toBytesBinary(String rowKey)
+                        // type 类型如果为 string，则调用Bytes.toBytes(String rowKey)
+                        "type": "bytes",
+                        "value": "\\x0001"
+                    }
+                ],
+                "region": "",
+                "endRowkey": [
+                    {
+                        "type": "bytes",
+                        "value": "\\xffff"
+                    }
+                ]
+            }
+
+        }
+    }
+}

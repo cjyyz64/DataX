@@ -57,7 +57,8 @@
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
-        
+        <module>hbasereader</module>
+
     </modules>
 
     <dependencyManagement>
