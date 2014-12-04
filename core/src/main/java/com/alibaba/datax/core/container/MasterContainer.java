@@ -323,7 +323,7 @@ public class MasterContainer extends AbstractContainer {
                         / transferCosts)
                         + "rec/s", "读出记录总数",
                 String.valueOf(masterMetric.getTotalReadRecords()),
-                "写入失败总数",
+                "读写失败总数",
                 String.valueOf(masterMetric.getErrorRecords())));
     }
 
