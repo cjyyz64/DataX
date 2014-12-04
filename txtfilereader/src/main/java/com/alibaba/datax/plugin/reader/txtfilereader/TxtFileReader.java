@@ -345,18 +345,25 @@ public class TxtFileReader extends Reader {
 			}
 		}
 
-		// 创建都为String类型column的record
+
+        // 创建都为String类型column的record（注意，参数 record 要是没有任何字段的纯粹的 record）
+        private Record generateStringRecord(String[] sourceLine,Record record) {
+            Column columnGenerated = null;
+
+            for (String columnValue : sourceLine) {
+                columnGenerated = new StringColumn(columnValue);
+                record.addColumn(columnGenerated);
+            }
+
+            return record;
+        }
+
+        // 创建都为String类型column的record
 		private Record generateAndSendStringRecord(RecordSender recordSender,
 				String[] sourceLine) {
 
-			Record record;
-			Column columnGenerated;
-			record = recordSender.createRecord();
-
-			for (String columnValue : sourceLine) {
-				columnGenerated = new StringColumn(columnValue);
-				record.addColumn(columnGenerated);
-			}
+			Record record = recordSender.createRecord();
+            record = this.generateStringRecord(sourceLine,record);
 
 			recordSender.sendToWriter(record);
 			return record;
@@ -378,17 +385,14 @@ public class TxtFileReader extends Reader {
 				return record;
 
 			} catch (DataXException dxe) {
-				// 脏数据处理,已经调用sendToWriter
-				record = this.generateAndSendStringRecord(recordSender,
-						sourceLine);
+				// 脏数据处理,不发送给下游，只记录即可
+                record = recordSender.createRecord();
+				record = this.generateStringRecord(sourceLine, record);
 
-				String dirtyDataMessage = String.format("出现脏数据 : [%s]", record);
 				this.getSlavePluginCollector().collectDirtyRecord(record,
-						dirtyDataMessage);
-				LOG.warn(dirtyDataMessage);
+						dxe.getMessage());
 
 				return record;
-
 			} catch (Exception e) {
 				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,

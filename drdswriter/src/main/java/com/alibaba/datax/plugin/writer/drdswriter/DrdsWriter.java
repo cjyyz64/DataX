@@ -1,11 +1,14 @@
 package com.alibaba.datax.plugin.writer.drdswriter;
 
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 
 import java.util.List;
 
@@ -15,11 +18,19 @@ public class DrdsWriter extends Writer {
     public static class Master extends Writer.Master {
         private Configuration originalConfig = null;
         private CommonRdbmsWriter.Master commonRdbmsWriterMaster;
+        private String ONLY_SUPPORTED_WRITEMODE = "replace";
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
+            String writeMode = this.originalConfig.getString(Key.WRITE_MODE, ONLY_SUPPORTED_WRITEMODE);
+            if (!ONLY_SUPPORTED_WRITEMODE.equalsIgnoreCase(writeMode)) {
+                throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
+                        String.format("drdswriter only support writeMode:%s, but you configured writeMode:%s",
+                                ONLY_SUPPORTED_WRITEMODE, writeMode));
+            }
 
+            this.originalConfig.set(Key.WRITE_MODE, ONLY_SUPPORTED_WRITEMODE);
             this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Master(DATABASE_TYPE);
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
