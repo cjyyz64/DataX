@@ -14,10 +14,10 @@ public class PostgresqlReader extends Reader {
 
     private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
 
-    public static class Master extends Reader.Master {
+    public static class Master extends Reader.Job {
 
         private Configuration originalConfig;
-        private CommonRdbmsReader.Master commonRdbmsReaderMaster;
+        private CommonRdbmsReader.Job commonRdbmsReaderMaster;
 
         @Override
         public void init() {
@@ -30,7 +30,7 @@ public class PostgresqlReader extends Reader {
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
+            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
 
@@ -51,15 +51,15 @@ public class PostgresqlReader extends Reader {
 
     }
 
-    public static class Slave extends Reader.Slave {
+    public static class Slave extends Reader.Task {
 
         private Configuration readerSliceConfig;
-        private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
+        private CommonRdbmsReader.Task commonRdbmsReaderSlave;
 
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(DATABASE_TYPE);
+            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Task(DATABASE_TYPE);
             this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
         }
 
@@ -68,7 +68,7 @@ public class PostgresqlReader extends Reader {
             int fetchSize = this.readerSliceConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE);
 
             this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
-                    super.getSlavePluginCollector(), fetchSize);
+                    super.getTaskPluginCollector(), fetchSize);
         }
 
         @Override

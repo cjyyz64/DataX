@@ -14,7 +14,7 @@ import java.util.List;
 
 public class OceanbaseReader extends Reader {
 
-    public static class Master extends Reader.Master {
+    public static class Master extends Reader.Job {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
@@ -30,12 +30,12 @@ public class OceanbaseReader extends Reader {
         public void destroy() { }
     }
 
-    public static class Slave extends Reader.Slave{
+    public static class Slave extends Reader.Task{
 
         @Override
         public void startRead(RecordSender recordSender) {
             try {
-                Context context = new Context(super.getPluginJobConf(),recordSender,super.getSlavePluginCollector());
+                Context context = new Context(super.getPluginJobConf(),recordSender,super.getTaskPluginCollector());
                 if (context.lowVersion()) {
                     new LowVersionCommand().execute(context);
                 } else {

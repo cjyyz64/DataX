@@ -14,9 +14,9 @@ import java.util.List;
 public class PostgresqlWriter extends Writer {
 	private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
 
-	public static class Master extends Writer.Master {
+	public static class Master extends Writer.Job {
 		private Configuration originalConfig = null;
-		private CommonRdbmsWriter.Master commonRdbmsWriterMaster;
+		private CommonRdbmsWriter.Job commonRdbmsWriterMaster;
 
 		@Override
 		public void init() {
@@ -29,7 +29,7 @@ public class PostgresqlWriter extends Writer {
 					String.format("pg不支持配置参数项 writeMode: %s, pg仅使用insert sql 插入数据.", writeMode));
 			}
 
-			this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Master(DATABASE_TYPE);
+			this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE);
 			this.commonRdbmsWriterMaster.init(this.originalConfig);
 		}
 
@@ -55,14 +55,14 @@ public class PostgresqlWriter extends Writer {
 
 	}
 
-	public static class Slave extends Writer.Slave {
+	public static class Slave extends Writer.Task {
 		private Configuration writerSliceConfig;
-		private CommonRdbmsWriter.Slave commonRdbmsWriterSlave;
+		private CommonRdbmsWriter.Task commonRdbmsWriterSlave;
 
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Slave(){
+			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(){
 				@Override
 				public String calcValueHolder(String columnType){
 					if("serial".equalsIgnoreCase(columnType)){
@@ -82,7 +82,7 @@ public class PostgresqlWriter extends Writer {
 		}
 
 		public void startWrite(RecordReceiver recordReceiver) {
-			this.commonRdbmsWriterSlave.startWrite(recordReceiver, this.writerSliceConfig, super.getSlavePluginCollector());
+			this.commonRdbmsWriterSlave.startWrite(recordReceiver, this.writerSliceConfig, super.getTaskPluginCollector());
 		}
 
 		@Override

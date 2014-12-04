@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.reader.oceanbasereader.command;
 
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.ResultSetReadProxy;
 import com.alibaba.datax.plugin.reader.oceanbasereader.Index;
@@ -24,9 +24,9 @@ public class Context {
 
 	private final Configuration configuration;
     private final RecordSender recordSender;
-    private final SlavePluginCollector slavePluginCollector;
+    private final TaskPluginCollector slavePluginCollector;
 
-	public Context(Configuration configuration, RecordSender recordSender, SlavePluginCollector slavePluginCollector) {
+	public Context(Configuration configuration, RecordSender recordSender, TaskPluginCollector slavePluginCollector) {
 		this.configuration = configuration;
         this.recordSender = recordSender;
         this.slavePluginCollector = slavePluginCollector;

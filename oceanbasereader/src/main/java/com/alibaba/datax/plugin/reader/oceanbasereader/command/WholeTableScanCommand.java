@@ -68,7 +68,7 @@ public class WholeTableScanCommand implements Command {
 		}
 
 		private String getLastRowkey(ResultSet result) throws Exception {
-			if (!result.isAfterLast())//根据jdbc规范判断空结果集
+			if (!result.isAfterLast())
 				return "";
 			result.last();
 			String left = "(";
