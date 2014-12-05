@@ -57,6 +57,7 @@ public class JobContainerCollector extends AbstractContainerCollector {
         String message = CommunicationManager.Jsonify.getSnapshot(communication);
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
 
+        //  local 模式下，把 统计的状态，汇报给 DS
         try {
             String result = Request.Put(String.format("%s/job/%d/status", this.dataXServiceAddress, jobId))
                     .connectTimeout(this.dataXServiceTimeout).socketTimeout(this.dataXServiceTimeout)
@@ -70,6 +71,7 @@ public class JobContainerCollector extends AbstractContainerCollector {
 
     @Override
     public Communication collect() {
+        // local 模式下，还需要考虑 killing,wait 等状态的合并
         return LocalTaskGroupCommunication.getJobCommunication();
     }
 

@@ -73,6 +73,8 @@ public class JobContainer extends AbstractContainer {
 
     public JobContainer(Configuration configuration) {
         super(configuration);
+
+        //TODO 可能需要考虑采用 set方式在使用前进行初始化
         super.setContainerCollector(ClassUtil.instantiate(
                 configuration.getString(
                         CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
@@ -206,7 +208,7 @@ public class JobContainer extends AbstractContainer {
             // 在byte流控情况下，单个Channel流量最大值必须设置，否则报错！
             Long channelLimitedByteSpeed = this.configuration
                     .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
-            if(channelLimitedByteSpeed==null || channelLimitedByteSpeed <= 0) {
+            if (channelLimitedByteSpeed == null || channelLimitedByteSpeed <= 0) {
                 DataXException.asDataXException(
                         FrameworkErrorCode.CONFIG_ERROR,
                         "在有总bps限速条件下，单个channel的bps值不能为空，也不能为非正数");
@@ -215,19 +217,19 @@ public class JobContainer extends AbstractContainer {
             needChannelNumberByByte =
                     (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
             needChannelNumberByByte =
-                    needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
+                    needChannelNumberByByte > 0 ? needChannelNumberByByte : 1;
             LOG.info("Job set Max-Byte-Speed to " + globalLimitedByteSpeed + " bytes.");
         }
 
         boolean isRecordLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 0)) > 0;
-        if(isRecordLimit) {
+        if (isRecordLimit) {
             long globalLimitedRecordSpeed = this.configuration.getInt(
                     CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 100000);
 
             Long channelLimitedRecordSpeed = this.configuration.getLong(
                     CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
-            if(channelLimitedRecordSpeed==null || channelLimitedRecordSpeed <= 0) {
+            if (channelLimitedRecordSpeed == null || channelLimitedRecordSpeed <= 0) {
                 DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
                         "在有总tps限速条件下，单个channel的tps值不能为空，也不能为非正数");
             }
@@ -235,16 +237,16 @@ public class JobContainer extends AbstractContainer {
             needChannelNumberByRecord =
                     (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
             needChannelNumberByRecord =
-                    needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
+                    needChannelNumberByRecord > 0 ? needChannelNumberByRecord : 1;
             LOG.info("Job set Max-Record-Speed to " + globalLimitedRecordSpeed + " records.");
         }
 
         // 取较小值
-        this.needChannelNumber = needChannelNumberByByte<needChannelNumberByRecord ?
+        this.needChannelNumber = needChannelNumberByByte < needChannelNumberByRecord ?
                 needChannelNumberByByte : needChannelNumberByRecord;
 
         // 如果从byte或record上设置了needChannelNumber则退出
-        if(this.needChannelNumber < Integer.MAX_VALUE) {
+        if (this.needChannelNumber < Integer.MAX_VALUE) {
             return;
         }
 
@@ -289,6 +291,32 @@ public class JobContainer extends AbstractContainer {
                 channelsPerTaskGroup);
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
+
+
+        // 判断是否为分布式模式运行
+        if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
+            /**
+             * TODO  如果 用户强行配置了只使用单机模式运行，则需要对对应的configuration 的配置项改动
+             * 否则按照 完全分布式模式运行
+             */
+            if("local".equalsIgnoreCase(this.configuration.getString("TODO"))){
+                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                        "com.alibaba.datax.core.scheduler.local.LocalScheduler");
+
+                //TODO 还有其他的配置需要刷新
+                /**
+                 * "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
+                 "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
+                 */
+            }else{
+                // 分布式运行模式
+                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                        "com.alibaba.datax.core.scheduler.distribute.DistributeScheduler");
+                //TODO 还有其他的配置需要刷新
+            }
+
+        }
+
 
         String schedulerClassName = this.configuration.getString(
                 CoreConstant.DATAX_CORE_SCHEDULER_CLASS);

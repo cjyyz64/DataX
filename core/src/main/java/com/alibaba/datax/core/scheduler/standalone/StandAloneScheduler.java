@@ -69,7 +69,10 @@ public class StandAloneScheduler implements Scheduler {
         taskGroupContainerExecutorService.shutdown();
 
         Communication lastJobContainerCommunication = new Communication();
+
+        // TODO 下面这句是多余的
         lastJobContainerCommunication.setTimestamp(System.currentTimeMillis());
+
         try {
             do {
                 Communication nowJobContainerCommunication = frameworkCollector.collect();
