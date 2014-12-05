@@ -14,7 +14,7 @@ public class PostgresqlReader extends Reader {
 
     private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
 
-    public static class Master extends Reader.Job {
+    public static class Job extends Reader.Job {
 
         private Configuration originalConfig;
         private CommonRdbmsReader.Job commonRdbmsReaderMaster;
@@ -51,7 +51,7 @@ public class PostgresqlReader extends Reader {
 
     }
 
-    public static class Slave extends Reader.Task {
+    public static class Task extends Reader.Task {
 
         private Configuration readerSliceConfig;
         private CommonRdbmsReader.Task commonRdbmsReaderSlave;
