@@ -14,7 +14,7 @@
 							"a_boolean",
 							"a_byte",
 							"a_char",
-							"a_inet::varchar"
+							"a_inet::varchar",
 							"a_date",
 							"a_double",
 							"a_integer",
