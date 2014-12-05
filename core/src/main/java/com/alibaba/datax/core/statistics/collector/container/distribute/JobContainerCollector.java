@@ -27,6 +27,7 @@ public class JobContainerCollector extends AbstractContainerCollector {
 
     @Override
     public Communication collect() {
+        // 先查询job下属taskGroup的状态，再合并器状态，作为 jobContainer 的状态
         // TODO Auto-generated method stub
         return null;
     }

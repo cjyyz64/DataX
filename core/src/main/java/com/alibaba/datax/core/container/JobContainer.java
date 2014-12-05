@@ -71,6 +71,8 @@ public class JobContainer extends AbstractContainer {
 
     public JobContainer(Configuration configuration) {
         super(configuration);
+
+        //TODO 可能需要考虑采用 set方式在使用前进行初始化
         super.setContainerCollector(ClassUtil.instantiate(
                 configuration.getString(
                         CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
@@ -288,6 +290,32 @@ public class JobContainer extends AbstractContainer {
                 channelsPerTaskGroup);
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
+
+
+        // 判断是否为分布式模式运行
+        if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
+            /**
+             * TODO  如果 用户强行配置了只使用单机模式运行，则需要对对应的configuration 的配置项改动
+             * 否则按照 完全分布式模式运行
+             */
+            if("local".equalsIgnoreCase(this.configuration.getString("TODO"))){
+                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                        "com.alibaba.datax.core.scheduler.local.LocalScheduler");
+
+                //TODO 还有其他的配置需要刷新
+                /**
+                 * "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
+                 "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
+                 */
+            }else{
+                // 分布式运行模式
+                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                        "com.alibaba.datax.core.scheduler.distribute.DistributeScheduler");
+                //TODO 还有其他的配置需要刷新
+            }
+
+        }
+
 
         String schedulerClassName = this.configuration.getString(
                 CoreConstant.DATAX_CORE_SCHEDULER_CLASS);

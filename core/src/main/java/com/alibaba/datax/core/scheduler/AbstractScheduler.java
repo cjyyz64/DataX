@@ -1,55 +1,38 @@
-package com.alibaba.datax.core.scheduler.standalone;
+package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.TaskGroupContainer;
-import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
-import com.alibaba.datax.core.scheduler.Scheduler;
+import com.alibaba.datax.core.scheduler.standalone.TaskGroupContainerRunner;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
 import org.apache.commons.lang.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Created by jingxing on 14-8-24.
- * <p/>
- * 该类是工具包模式下的调度类，它是通过job起多线程来运行taskGroup作业的，除了调度方式和其他模式不一致外，
- * 它的状态汇报也比较特殊，由于在同一个进程中，状态和统计可以在一个全局单粒中提交，job也可以从该单粒中
- * 获取这些信息。但整个架构还是和其他模式保持一致性
- */
-public class StandAloneScheduler implements Scheduler {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(StandAloneScheduler.class);
-
+public abstract class AbstractScheduler implements Scheduler {
     private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
-    @Override
     public void schedule(List<Configuration> configurations,
                          ContainerCollector frameworkCollector) {
         Validate.notNull(configurations,
                 "standalone scheduler配置不能为空");
-
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 10000);
 
         errorLimit = new ErrorRecordLimit(configurations.get(0));
 
         /**
-         * 给taskGroupContainer的Communication注册
+         * 给 taskGroupContainer 的 Communication 注册
          */
-
         frameworkCollector.registerCommunication(configurations);
 
         ExecutorService taskGroupContainerExecutorService = Executors
@@ -70,41 +53,40 @@ public class StandAloneScheduler implements Scheduler {
 
         Communication lastJobContainerCommunication = new Communication();
 
-        // TODO 下面这句是多余的
-        lastJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-        try {
-            do {
-                Communication nowJobContainerCommunication = frameworkCollector.collect();
-                nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-                LOG.debug(nowJobContainerCommunication.toString());
-
+        while(true){
+            // 分布式情况下，需要先查询job下属taskGroup的状态，再合并为 JobContainer 的状态
+            Communication nowJobContainerCommunication = frameworkCollector.collect();
+            nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
+            if(nowJobContainerCommunication.getState().isFailed()){
+                taskGroupContainerExecutorService.shutdownNow();
+                throw DataXException.asDataXException(
+                        FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                        nowJobContainerCommunication.getThrowable());
+            }else if(nowJobContainerCommunication.getState().isSucceed()){
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
                 frameworkCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
+                break;
+            }
 
-                if (reportCommunication.getState() == State.SUCCESS) {
-                    LOG.info("Scheduler accomplished all tasks.");
-                    break;
-                }
+            boolean isKilling = checkIfKilling();
+            if(isKilling){
 
-                if (reportCommunication.getState() == State.FAIL) {
-                    taskGroupContainerExecutorService.shutdownNow();
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                            nowJobContainerCommunication.getThrowable());
-                }
 
-                lastJobContainerCommunication = nowJobContainerCommunication;
-                Thread.sleep(jobReportIntervalInMillSec);
-            } while (true);
-        } catch (InterruptedException e) {
-            LOG.error("捕获到InterruptedException异常!", e);
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.RUNTIME_ERROR, e);
+            }
+
+
+
+
         }
+
     }
+
+    protected boolean checkIfKilling(){
+        //去 DS 根据 jobId 查询其状态，URL:GET /job/{jobId}/status
+    }
+
 
     private TaskGroupContainerRunner newTaskGroupContainerRunner(
             Configuration configuration) {
@@ -114,4 +96,5 @@ public class StandAloneScheduler implements Scheduler {
 
         return new TaskGroupContainerRunner(taskGroupContainer);
     }
+
 }
