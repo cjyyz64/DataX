@@ -70,11 +70,8 @@ public class StandAloneScheduler implements Scheduler {
 
         Communication lastJobContainerCommunication = new Communication();
 
-        // TODO 下面这句是多余的
-        lastJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-
         try {
-            do {
+            while (true) {
                 Communication nowJobContainerCommunication = frameworkCollector.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
@@ -98,9 +95,8 @@ public class StandAloneScheduler implements Scheduler {
 
                 lastJobContainerCommunication = nowJobContainerCommunication;
                 Thread.sleep(jobReportIntervalInMillSec);
-            } while (true);
-        } catch (InterruptedException e) {
-            LOG.error("捕获到InterruptedException异常!", e);
+            }
+        } catch (Exception e) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
