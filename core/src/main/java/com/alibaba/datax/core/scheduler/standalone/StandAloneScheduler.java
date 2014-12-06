@@ -91,6 +91,7 @@ public class StandAloneScheduler implements Scheduler {
                 frameworkCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
+                //TODO 是否可以不用判断 taskGroupContainerExecutorService.isTerminated()？？
                 if (taskGroupContainerExecutorService.isTerminated()
                         && !hasTaskGroupException(reportCommunication)) {
                     // 结束前还需统计一次，准确统计
@@ -123,7 +124,7 @@ public class StandAloneScheduler implements Scheduler {
     }
 
     private boolean hasTaskGroupException(Communication communication) {
-        if(!communication.getState().equals(State.SUCCESS)) {
+        if (!communication.getState().equals(State.SUCCESS)) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
                     communication.getThrowable());

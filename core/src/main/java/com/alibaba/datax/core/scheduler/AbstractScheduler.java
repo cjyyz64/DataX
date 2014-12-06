@@ -2,22 +2,24 @@ package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.TaskGroupContainer;
 import com.alibaba.datax.core.scheduler.standalone.TaskGroupContainerRunner;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.State;
 import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public abstract class AbstractScheduler implements Scheduler {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(AbstractScheduler.class);
+
     private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
@@ -35,66 +37,92 @@ public abstract class AbstractScheduler implements Scheduler {
          */
         frameworkCollector.registerCommunication(configurations);
 
-        ExecutorService taskGroupContainerExecutorService = Executors
-                .newFixedThreadPool(configurations.size());
-
-        /**
-         * 完成一个task算一个stage，所以这里求所有tasks的和
-         */
-        int totalTasks = 0;
-        for (Configuration taskGroupConfiguration : configurations) {
-            TaskGroupContainerRunner taskGroupContainerRunner = newTaskGroupContainerRunner(taskGroupConfiguration);
-            totalTasks += taskGroupConfiguration.getListConfiguration(
-                    CoreConstant.DATAX_JOB_CONTENT).size();
-            taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
-            taskGroupContainerRunners.add(taskGroupContainerRunner);
-        }
-        taskGroupContainerExecutorService.shutdown();
+        int totalTasks = calculateTaskCount(configurations);
+        startAllTaskGroup(configurations);
 
         Communication lastJobContainerCommunication = new Communication();
+        boolean isDone = false;
+        try {
+            while (true) {
+                /**
+                 * step 1: collect job stat
+                 * step 2: getReport info
+                 * step 3: errorLimit do check
+                 * step 4: checkAndDealFailedStat(frameworkCollector, totalTasks);
+                 * step 5: checkAndDealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
+                 * step 6: checkAndDealKillingStat(frameworkCollector, totalTasks);
+                 * step 7: refresh last job stat, and then sleep for next while
+                 *
+                 * above step, some ones should report info to DS
+                 *
+                 */
+                Communication nowJobContainerCommunication = frameworkCollector.collect();
+                nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
+                LOG.debug(nowJobContainerCommunication.toString());
 
-        while(true){
-            // 分布式情况下，需要先查询job下属taskGroup的状态，再合并为 JobContainer 的状态
-            Communication nowJobContainerCommunication = frameworkCollector.collect();
-            nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-            if(nowJobContainerCommunication.getState().isFailed()){
-                taskGroupContainerExecutorService.shutdownNow();
-                throw DataXException.asDataXException(
-                        FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                        nowJobContainerCommunication.getThrowable());
-            }else if(nowJobContainerCommunication.getState().isSucceed()){
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
+
                 frameworkCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
-                break;
+
+                checkAndDealFailedStat(frameworkCollector, nowJobContainerCommunication, totalTasks);
+
+
+                if (!hasTaskGroupException(reportCommunication)) {
+                    isDone = checkAndDealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
+                }
+                if (isDone) {
+                    LOG.info("Scheduler accomplished all jobs.");
+                    break;
+                }
+
+//                先判断是否为 killing 状态,或者在checkAndDealKillingStat内部进行判断
+//                if(nowJobContainerCommunication.getState().isKilling){
+//
+//                }
+                checkAndDealKillingStat(frameworkCollector, totalTasks);
+
+                lastJobContainerCommunication = nowJobContainerCommunication;
+                Thread.sleep(jobReportIntervalInMillSec);
             }
+        } catch (InterruptedException e) {
+            // 以 failed 状态退出
+            LOG.error("捕获到InterruptedException异常!", e);
 
-            boolean isKilling = checkIfKilling();
-            if(isKilling){
-
-
-            }
-
-
-
-
+            // TODO report it
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.RUNTIME_ERROR, e);
         }
 
     }
 
-    protected boolean checkIfKilling(){
-        //去 DS 根据 jobId 查询其状态，URL:GET /job/{jobId}/status
+    protected abstract boolean startAllTaskGroup(List<Configuration> configurations);
+
+    protected abstract void checkAndDealFailedStat(ContainerCollector frameworkCollector,
+                                                   Communication nowJobContainerCommunication, int totalTasks);
+
+    protected abstract boolean checkAndDealSucceedStat(ContainerCollector frameworkCollector,
+                                                       Communication lastJobContainerCommunication, int totalTasks);
+
+    protected abstract void checkAndDealKillingStat(ContainerCollector frameworkCollector, int totalTasks);
+
+    private int calculateTaskCount(List<Configuration> configurations) {
+        int totalTasks = 0;
+        for (Configuration taskGroupConfiguration : configurations) {
+            totalTasks += taskGroupConfiguration.getListConfiguration(
+                    CoreConstant.DATAX_JOB_CONTENT).size();
+        }
+        return totalTasks;
     }
 
+    public boolean hasTaskGroupException(Communication communication) {
+        if (!communication.getState().equals(State.SUCCESS)) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                    communication.getThrowable());
+        }
 
-    private TaskGroupContainerRunner newTaskGroupContainerRunner(
-            Configuration configuration) {
-        TaskGroupContainer taskGroupContainer = ClassUtil.instantiate(
-                configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS),
-                TaskGroupContainer.class, configuration);
-
-        return new TaskGroupContainerRunner(taskGroupContainer);
+        return false;
     }
-
 }
