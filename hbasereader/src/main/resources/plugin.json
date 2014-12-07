@@ -2,5 +2,5 @@
     "name": "hbasereader",
     "class": "com.alibaba.datax.plugin.reader.hbasereader.HbaseReader",
     "description": "useScene: prod. mechanism: Scan to read data.",
-    "developer": "qingyi.mqy, chinan.hjc , bug reported to : qingyi.mqy@alibaba-inc.com"
+    "developer": "qingyi.mqy | judy.lt, bug reported to : qingyi.mqy@alibaba-inc.com | judy.lt@alibaba-inc.com"
 }
