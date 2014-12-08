@@ -16,11 +16,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class JobContainerCollector extends AbstractContainerCollector {
+public class StandaloneJobContainerCollector extends AbstractContainerCollector {
     private static final Logger LOG = LoggerFactory
-            .getLogger(JobContainerCollector.class);
+            .getLogger(StandaloneJobContainerCollector.class);
 
-    public JobContainerCollector(Configuration configuration) {
+    public StandaloneJobContainerCollector(Configuration configuration) {
         super(configuration);
     }
 

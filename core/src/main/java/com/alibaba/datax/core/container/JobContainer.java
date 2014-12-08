@@ -13,6 +13,7 @@ import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.collector.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
@@ -299,7 +300,7 @@ public class JobContainer extends AbstractContainer {
              * TODO  如果 用户强行配置了只使用单机模式运行，则需要对对应的configuration 的配置项改动
              * 否则按照 完全分布式模式运行
              */
-            if("local".equalsIgnoreCase(this.configuration.getString("TODO"))){
+            if ("local".equalsIgnoreCase(this.configuration.getString("TODO"))) {
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         "com.alibaba.datax.core.scheduler.local.LocalScheduler");
 
@@ -308,7 +309,7 @@ public class JobContainer extends AbstractContainer {
                  * "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
                  "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                  */
-            }else{
+            } else {
                 // 分布式运行模式
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         "com.alibaba.datax.core.scheduler.distribute.DistributeScheduler");
@@ -326,9 +327,16 @@ public class JobContainer extends AbstractContainer {
             Scheduler scheduler = ClassUtil.instantiate(
                     schedulerClassName, Scheduler.class);
 
+            ContainerCollector containerCollector = super.getContainerCollector();
+            if (containerCollector instanceof AbstractContainerCollector) {
+                String dataxServiceAddress = ((AbstractContainerCollector) containerCollector).getDataXServiceAddress();
+                //TODO 根据dataxServiceAddress 初始化 DataXService SDK 的服务
+            }
+
             this.startTransferTimeStamp = System.currentTimeMillis();
-            scheduler.schedule(taskGroupConfigs,
-                    super.getContainerCollector());
+
+            scheduler.schedule(taskGroupConfigs,containerCollector);
+
             this.endTransferTimeStamp = System.currentTimeMillis();
         } catch (Exception e) {
             LOG.error("运行scheduler[[{}]]出错", schedulerClassName);

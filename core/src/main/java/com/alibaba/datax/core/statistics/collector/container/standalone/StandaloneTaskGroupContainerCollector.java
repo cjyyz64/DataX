@@ -7,11 +7,11 @@ import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicati
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class TaskGroupContainerCollector extends AbstractTaskGroupContainerCollector {
+public class StandaloneTaskGroupContainerCollector extends AbstractTaskGroupContainerCollector {
     private static final Logger LOG = LoggerFactory
-            .getLogger(TaskGroupContainerCollector.class);
+            .getLogger(StandaloneTaskGroupContainerCollector.class);
 
-    public TaskGroupContainerCollector(Configuration configuration) {
+    public StandaloneTaskGroupContainerCollector(Configuration configuration) {
         super(configuration);
     }
 

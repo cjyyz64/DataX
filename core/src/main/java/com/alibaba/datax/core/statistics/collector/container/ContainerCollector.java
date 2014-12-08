@@ -7,9 +7,6 @@ import com.alibaba.datax.core.util.State;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Created by jingxing on 14-9-9.
- */
 public interface ContainerCollector {
     void registerCommunication(List<Configuration> configurationList);
 

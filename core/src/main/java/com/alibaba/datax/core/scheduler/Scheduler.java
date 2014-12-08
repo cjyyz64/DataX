@@ -8,6 +8,6 @@ import java.util.List;
 public interface Scheduler {
 
 	void schedule(List<Configuration> configurations,
-                  ContainerCollector frameworkCollector);
+                  ContainerCollector jobCollector);
 
 }

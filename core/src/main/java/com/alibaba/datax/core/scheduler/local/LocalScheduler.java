@@ -13,7 +13,6 @@ import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.State;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,28 +20,24 @@ import java.util.concurrent.Executors;
 public class LocalScheduler extends AbstractScheduler {
 
     private ExecutorService taskGroupContainerExecutorService;
-    private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
-
 
     @Override
-    protected boolean startAllTaskGroup(List<Configuration> configurations) {
+    protected void startAllTaskGroup(List<Configuration> configurations) {
         this.taskGroupContainerExecutorService = Executors
                 .newFixedThreadPool(configurations.size());
 
         for (Configuration taskGroupConfiguration : configurations) {
             TaskGroupContainerRunner taskGroupContainerRunner = newTaskGroupContainerRunner(taskGroupConfiguration);
-            taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
-            taskGroupContainerRunners.add(taskGroupContainerRunner);
+            this.taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
         }
-        taskGroupContainerExecutorService.shutdown();
 
-        return true;
+        this.taskGroupContainerExecutorService.shutdown();
     }
 
     @Override
     protected void checkAndDealFailedStat(ContainerCollector frameworkCollector, Communication nowJobContainerCommunication, int totalTasks) {
         if (nowJobContainerCommunication.getState() == State.FAIL) {
-            taskGroupContainerExecutorService.shutdownNow();
+            this.taskGroupContainerExecutorService.shutdownNow();
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
                     nowJobContainerCommunication.getThrowable());
@@ -52,7 +47,7 @@ public class LocalScheduler extends AbstractScheduler {
     @Override
     protected boolean checkAndDealSucceedStat(ContainerCollector frameworkCollector, Communication lastJobContainerCommunication, int totalTasks) {
         Communication nowJobContainerCommunication = null;
-        if (taskGroupContainerExecutorService.isTerminated()) {
+        if (this.taskGroupContainerExecutorService.isTerminated()) {
             // 结束前还需统计一次，准确统计
             nowJobContainerCommunication = frameworkCollector.collect();
             nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());

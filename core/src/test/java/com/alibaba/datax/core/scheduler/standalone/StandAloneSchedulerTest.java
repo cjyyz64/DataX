@@ -3,7 +3,7 @@ package com.alibaba.datax.core.scheduler.standalone;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.standalone.StandaloneTaskGroupContainerCollector;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 
@@ -40,7 +40,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
 			configuration
 					.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-							TaskGroupContainerCollector.class.getName());
+							StandaloneTaskGroupContainerCollector.class.getName());
 			jobList.add(configuration);
 
 		}

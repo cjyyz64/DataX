@@ -16,7 +16,6 @@ import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,12 +31,11 @@ public class StandAloneScheduler implements Scheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(StandAloneScheduler.class);
 
-    private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
     @Override
     public void schedule(List<Configuration> configurations,
-                         ContainerCollector frameworkCollector) {
+                         ContainerCollector jobCollector) {
         Validate.notNull(configurations,
                 "standalone scheduler配置不能为空");
 
@@ -50,7 +48,7 @@ public class StandAloneScheduler implements Scheduler {
          * 给taskGroupContainer的Communication注册
          */
 
-        frameworkCollector.registerCommunication(configurations);
+        jobCollector.registerCommunication(configurations);
 
         ExecutorService taskGroupContainerExecutorService = Executors
                 .newFixedThreadPool(configurations.size());
@@ -64,7 +62,6 @@ public class StandAloneScheduler implements Scheduler {
             totalTasks += taskGroupConfiguration.getListConfiguration(
                     CoreConstant.DATAX_JOB_CONTENT).size();
             taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
-            taskGroupContainerRunners.add(taskGroupContainerRunner);
         }
         taskGroupContainerExecutorService.shutdown();
 
@@ -75,7 +72,7 @@ public class StandAloneScheduler implements Scheduler {
 
         try {
             do {
-                Communication nowJobContainerCommunication = frameworkCollector.collect();
+                Communication nowJobContainerCommunication = jobCollector.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
@@ -88,18 +85,18 @@ public class StandAloneScheduler implements Scheduler {
 
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                frameworkCollector.report(reportCommunication);
+                jobCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
                 //TODO 是否可以不用判断 taskGroupContainerExecutorService.isTerminated()？？
                 if (taskGroupContainerExecutorService.isTerminated()
                         && !hasTaskGroupException(reportCommunication)) {
                     // 结束前还需统计一次，准确统计
-                    nowJobContainerCommunication = frameworkCollector.collect();
+                    nowJobContainerCommunication = jobCollector.collect();
                     nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                     reportCommunication = CommunicationManager
                             .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                    frameworkCollector.report(reportCommunication);
+                    jobCollector.report(reportCommunication);
                     LOG.info("Scheduler accomplished all jobs.");
                     break;
                 }
