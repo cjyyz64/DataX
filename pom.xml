@@ -53,6 +53,7 @@
         <module>otswriter</module>
         <module>oraclewriter</module>
 		<module>postgresqlwriter</module>
+        <module>ossreader</module>
 
         <!--hook-->
         <module>dqchook</module>

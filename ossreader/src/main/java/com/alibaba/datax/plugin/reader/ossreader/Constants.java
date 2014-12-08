@@ -1,0 +1,9 @@
+package com.alibaba.datax.plugin.reader.ossreader;
+
+/**
+ * Created by mengxin.liumx on 2014/12/7.
+ */
+public class Constants {
+
+    public static final String OBJECT = "object";
+}
