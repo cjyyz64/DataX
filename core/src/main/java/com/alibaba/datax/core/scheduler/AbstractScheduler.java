@@ -2,7 +2,6 @@ package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scheduler.standalone.TaskGroupContainerRunner;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
@@ -13,18 +12,16 @@ import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractScheduler implements Scheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(AbstractScheduler.class);
 
-    private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
     public void schedule(List<Configuration> configurations,
-                         ContainerCollector frameworkCollector) {
+                         ContainerCollector jobCollector) {
         Validate.notNull(configurations,
                 "standalone scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
@@ -35,7 +32,7 @@ public abstract class AbstractScheduler implements Scheduler {
         /**
          * 给 taskGroupContainer 的 Communication 注册
          */
-        frameworkCollector.registerCommunication(configurations);
+        jobCollector.registerCommunication(configurations);
 
         int totalTasks = calculateTaskCount(configurations);
         startAllTaskGroup(configurations);
@@ -56,21 +53,21 @@ public abstract class AbstractScheduler implements Scheduler {
                  * above step, some ones should report info to DS
                  *
                  */
-                Communication nowJobContainerCommunication = frameworkCollector.collect();
+                Communication nowJobContainerCommunication = jobCollector.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
 
-                frameworkCollector.report(reportCommunication);
+                jobCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
-                checkAndDealFailedStat(frameworkCollector, nowJobContainerCommunication, totalTasks);
+                checkAndDealFailedStat(jobCollector, nowJobContainerCommunication, totalTasks);
 
 
                 if (!hasTaskGroupException(reportCommunication)) {
-                    isDone = checkAndDealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
+                    isDone = checkAndDealSucceedStat(jobCollector, lastJobContainerCommunication, totalTasks);
                 }
                 if (isDone) {
                     LOG.info("Scheduler accomplished all jobs.");
@@ -81,7 +78,7 @@ public abstract class AbstractScheduler implements Scheduler {
 //                if(nowJobContainerCommunication.getState().isKilling){
 //
 //                }
-                checkAndDealKillingStat(frameworkCollector, totalTasks);
+                checkAndDealKillingStat(jobCollector, totalTasks);
 
                 lastJobContainerCommunication = nowJobContainerCommunication;
                 Thread.sleep(jobReportIntervalInMillSec);
@@ -97,7 +94,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
     }
 
-    protected abstract boolean startAllTaskGroup(List<Configuration> configurations);
+    protected abstract void startAllTaskGroup(List<Configuration> configurations);
 
     protected abstract void checkAndDealFailedStat(ContainerCollector frameworkCollector,
                                                    Communication nowJobContainerCommunication, int totalTasks);

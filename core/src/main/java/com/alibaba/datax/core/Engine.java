@@ -3,6 +3,8 @@ package com.alibaba.datax.core;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import com.alibaba.datax.common.element.ColumnCast;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.AbstractContainer;
 import com.alibaba.datax.core.container.util.LoadUtil;
@@ -146,14 +148,26 @@ public class Engine {
     }
 
     public static void main(String[] args) throws Exception {
+        int exitCode = 0;
         try {
             Engine.entry(args);
         } catch (Throwable e) {
+            exitCode = 1;
             LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
-            System.exit(State.FAIL.value());
+
+            if (e instanceof DataXException) {
+                DataXException tempException = (DataXException) e;
+                ErrorCode errorCode = tempException.getErrorCode();
+                if (errorCode instanceof FrameworkErrorCode) {
+                    FrameworkErrorCode tempErrorCode = (FrameworkErrorCode) errorCode;
+                    exitCode = tempErrorCode.toExitValue();
+                }
+            }
+
+            System.exit(exitCode);
         }
 
-        System.exit(State.SUCCESS.value());
+        System.exit(exitCode);
     }
 
 }

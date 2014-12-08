@@ -8,11 +8,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Created by jingxing on 14/11/8.
  *
- * 类比分布式情况下，taskGroup的communication需要汇报到clusterManager上
- * 对于standalone和local模式下taskGroup地communication也需要集中到一个地方
- * 用LocalTaskGroupCommunication来充当该两种模式下的communication集中地
+ * 类比分布式情况下，taskGroup的communication需要汇报到 DataXService 上
+ * 对于 standalone 和 local 模式下 taskGroup 的 communication 也需要集中到一个地方
+ * 用 LocalTaskGroupCommunication 来充当该两种模式下的communication集中地
  */
 public class LocalTaskGroupCommunication {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
