@@ -30,6 +30,7 @@ import json
 import signal
 import subprocess
 import urllib2
+import base64
 import socket
 from optparse import OptionParser
 from string import Template
@@ -102,7 +103,7 @@ def is_url(path):
         return False
 
 # 输入job_path，输出json格式的job路径
-def get_json_job_path(job_id, task_group_id, job_path):
+def get_json_job_path(job_id, task_group_id, job_path, auth_user, auth_pass):
     if not job_path:
         print >>sys.stderr, "not give file or http address for job"
         sys.exit(RET_STATE["FAIL"])
@@ -114,7 +115,7 @@ def get_json_job_path(job_id, task_group_id, job_path):
         is_job_from_http = True
         counter = 0
         while counter < 4:
-            job_content = get_job_from_http(job_path)
+            job_content = get_job_from_http(job_path, auth_user, auth_pass)
             if job_content:
                 break
             time.sleep(2**counter)
@@ -230,15 +231,19 @@ def save_to_tmp_file(job_id, job_path, is_job_from_http, job_json_content):
 
     return tmp_file_path
 
-def get_job_from_http(job_path):
+def get_job_from_http(job_path, username, password):
     job_conf = None
     response = None
 
     try:
         # 这里的参数可能需要处理
         if not (job_path.endswith("/config") or job_path.endswith("/config.xml")):
-            job_path = "%s/config"%(job_path)
-        response = urllib2.urlopen(job_path)
+            job_path = "%s/config" % job_path
+
+        request = urllib2.Request(job_path)
+        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+        request.add_header("Authorization", "Basic %s" % base64string)
+        response = urllib2.urlopen(request)
         job_conf = response.read()
     except Exception, ex:
         print >>sys.stderr, str(ex)
@@ -322,6 +327,26 @@ def suicide(signum, e):
     sys.exit(RET_STATE["KILL"])
 
 # start to go
+def get_auth_info(file_name):
+    import StringIO
+    import os
+    import ConfigParser
+    if not os.path.exists(file_name):
+        return [None, None]
+    with open(file_name) as f:
+        fp = StringIO.StringIO()
+        fp.write('[default_section]\n')
+        fp.write(f.read())
+        fp.seek(0, os.SEEK_SET)
+        conf = ConfigParser.ConfigParser()
+        conf.readfp(fp)
+        if conf.has_option('default_section', 'auth.user'):
+            return [conf.get('default_section', 'auth.user'),
+                    conf.get('default_section', 'auth.pass')]
+        else:
+            return [None, None]
+
+
 if __name__ == "__main__":
     # 解析option参数，其余返回到args中
     options, args = get_option_parser().parse_args(sys.argv[1:])
@@ -338,8 +363,12 @@ if __name__ == "__main__":
         show_usage()
         sys.exit(RET_STATE["OK"])
 
+    # 尝试获取读取url的认证信息
+    auth_user, auth_pass = get_auth_info('%s/conf/.security.properties' % DATAX_HOME)
+
     # 获取job配置文件
-    job_path, is_resaved_json = get_json_job_path(options.jobid, options.taskgroup, args[0].strip())
+    job_path, is_resaved_json = get_json_job_path(options.jobid, options.taskgroup, args[0].strip(),
+                                                  auth_user, auth_pass)
     # 处理entry相关配置
     run_context = process_entry(job_path, run_context)
     run_context["job"] = job_path
