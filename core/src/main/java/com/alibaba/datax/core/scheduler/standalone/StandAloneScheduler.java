@@ -97,7 +97,7 @@ public class StandAloneScheduler implements Scheduler {
                     reportCommunication = CommunicationManager
                             .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
                     jobCollector.report(reportCommunication);
-                    LOG.info("Scheduler accomplished all jobs.");
+                    LOG.info("Scheduler accomplished all tasks.");
                     break;
                 }
 

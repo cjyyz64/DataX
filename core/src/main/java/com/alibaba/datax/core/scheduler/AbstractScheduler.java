@@ -6,6 +6,7 @@ import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.State;
 import org.apache.commons.lang.Validate;
@@ -20,12 +21,28 @@ public abstract class AbstractScheduler implements Scheduler {
 
     private ErrorRecordLimit errorLimit;
 
+    private Long jobId;
+
+    public Long getJobId() {
+        return jobId;
+    }
+
     public void schedule(List<Configuration> configurations,
                          ContainerCollector jobCollector) {
         Validate.notNull(configurations,
                 "standalone scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 10000);
+
+        this.jobId = configurations.get(0).getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        String dataxService = configurations.get(0).getString(
+                CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
+        int httpTimeOut = configurations.get(0).getInt(
+                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 5000);
+
+        initDataXServiceManager(jobId, dataxService, httpTimeOut);
+
 
         errorLimit = new ErrorRecordLimit(configurations.get(0));
 
@@ -70,7 +87,7 @@ public abstract class AbstractScheduler implements Scheduler {
                     isDone = checkAndDealSucceedStat(jobCollector, lastJobContainerCommunication, totalTasks);
                 }
                 if (isDone) {
-                    LOG.info("Scheduler accomplished all jobs.");
+                    LOG.info("Scheduler accomplished all tasks.");
                     break;
                 }
 
@@ -92,6 +109,12 @@ public abstract class AbstractScheduler implements Scheduler {
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
 
+    }
+
+    private void initDataXServiceManager(Long jobId, String dataxService, int httpTimeOut) {
+        DataxServiceUtil.setBasicUrl(dataxService);
+        DataxServiceUtil.setTimeoutInMilliSeconds(httpTimeOut);
+        DataxServiceUtil.setJobId(jobId);
     }
 
     protected abstract void startAllTaskGroup(List<Configuration> configurations);
