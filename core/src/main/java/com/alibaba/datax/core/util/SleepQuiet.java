@@ -8,4 +8,13 @@ public final class SleepQuiet {
 			Thread.currentThread().interrupt();
 		}
 	}
+
+    public static void sleepAndSkipInterrupt(long timeout) {
+        try {
+            Thread.sleep(timeout);
+        } catch (InterruptedException e) {
+            System.err.println();
+            System.err.println("sleep end, message: " + e.getMessage());
+        }
+    }
 }
