@@ -369,7 +369,6 @@ public class CommonRdbmsWriter {
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                    case Types.BIT:
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
                         break;
@@ -435,6 +434,7 @@ public class CommonRdbmsWriter {
                                 .asBytes());
                         break;
                     case Types.BOOLEAN:
+                    case Types.BIT:
                         preparedStatement.setBoolean(i + 1, record.getColumn(i)
                                 .asBoolean());
                         break;
