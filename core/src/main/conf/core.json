@@ -16,7 +16,7 @@
     "core": {
         "dataXServer": {
             "address": "http://localhost:7001/api",
-            "timeout": 3000
+            "timeout": 5000
         },
         "transport": {
             "channel": {

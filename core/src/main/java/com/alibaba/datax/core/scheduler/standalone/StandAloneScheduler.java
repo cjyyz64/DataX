@@ -16,7 +16,6 @@ import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,12 +31,11 @@ public class StandAloneScheduler implements Scheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(StandAloneScheduler.class);
 
-    private List<TaskGroupContainerRunner> taskGroupContainerRunners = new ArrayList<TaskGroupContainerRunner>();
     private ErrorRecordLimit errorLimit;
 
     @Override
     public void schedule(List<Configuration> configurations,
-                         ContainerCollector frameworkCollector) {
+                         ContainerCollector jobCollector) {
         Validate.notNull(configurations,
                 "standalone scheduler配置不能为空");
 
@@ -50,7 +48,7 @@ public class StandAloneScheduler implements Scheduler {
          * 给taskGroupContainer的Communication注册
          */
 
-        frameworkCollector.registerCommunication(configurations);
+        jobCollector.registerCommunication(configurations);
 
         ExecutorService taskGroupContainerExecutorService = Executors
                 .newFixedThreadPool(configurations.size());
@@ -64,39 +62,50 @@ public class StandAloneScheduler implements Scheduler {
             totalTasks += taskGroupConfiguration.getListConfiguration(
                     CoreConstant.DATAX_JOB_CONTENT).size();
             taskGroupContainerExecutorService.execute(taskGroupContainerRunner);
-            taskGroupContainerRunners.add(taskGroupContainerRunner);
         }
         taskGroupContainerExecutorService.shutdown();
 
         Communication lastJobContainerCommunication = new Communication();
 
+        // TODO 下面这句是多余的
+        lastJobContainerCommunication.setTimestamp(System.currentTimeMillis());
+
         try {
-            while (true) {
-                Communication nowJobContainerCommunication = frameworkCollector.collect();
+            do {
+                Communication nowJobContainerCommunication = jobCollector.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
-                Communication reportCommunication = CommunicationManager
-                        .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                frameworkCollector.report(reportCommunication);
-                errorLimit.checkRecordLimit(reportCommunication);
-
-                if (reportCommunication.getState() == State.SUCCESS) {
-                    LOG.info("Scheduler accomplished all tasks.");
-                    break;
-                }
-
-                if (reportCommunication.getState() == State.FAIL) {
+                if (nowJobContainerCommunication.getState() == State.FAIL) {
                     taskGroupContainerExecutorService.shutdownNow();
                     throw DataXException.asDataXException(
                             FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
                             nowJobContainerCommunication.getThrowable());
                 }
 
+                Communication reportCommunication = CommunicationManager
+                        .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
+                jobCollector.report(reportCommunication);
+                errorLimit.checkRecordLimit(reportCommunication);
+
+                //TODO 是否可以不用判断 taskGroupContainerExecutorService.isTerminated()？？
+                if (taskGroupContainerExecutorService.isTerminated()
+                        && !hasTaskGroupException(reportCommunication)) {
+                    // 结束前还需统计一次，准确统计
+                    nowJobContainerCommunication = jobCollector.collect();
+                    nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
+                    reportCommunication = CommunicationManager
+                            .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
+                    jobCollector.report(reportCommunication);
+                    LOG.info("Scheduler accomplished all tasks.");
+                    break;
+                }
+
                 lastJobContainerCommunication = nowJobContainerCommunication;
                 Thread.sleep(jobReportIntervalInMillSec);
-            }
-        } catch (Exception e) {
+            } while (true);
+        } catch (InterruptedException e) {
+            LOG.error("捕获到InterruptedException异常!", e);
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
@@ -109,5 +118,15 @@ public class StandAloneScheduler implements Scheduler {
                 TaskGroupContainer.class, configuration);
 
         return new TaskGroupContainerRunner(taskGroupContainer);
+    }
+
+    private boolean hasTaskGroupException(Communication communication) {
+        if (!communication.getState().equals(State.SUCCESS)) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                    communication.getThrowable());
+        }
+
+        return false;
     }
 }
