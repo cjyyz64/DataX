@@ -46,6 +46,9 @@ public abstract class AbstractScheduler implements Scheduler {
 
         errorLimit = new ErrorRecordLimit(configurations.get(0));
 
+
+        //jobId = configurations.get(0).get
+
         /**
          * 给 taskGroupContainer 的 Communication 注册
          */
