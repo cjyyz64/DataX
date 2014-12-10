@@ -377,8 +377,7 @@ public class CommonRdbmsWriter {
                     case Types.DATE:
                         if (this.resultSetMetaData.getRight().get(i)
                                 .equalsIgnoreCase("year")) {
-                            preparedStatement.setString(i + 1, record.getColumn(i)
-                                    .asString());
+                            preparedStatement.setInt(i + 1, record.getColumn(i).asBigInteger().intValue());
                         } else {
                             java.sql.Date sqlDate = null;
                             try {
