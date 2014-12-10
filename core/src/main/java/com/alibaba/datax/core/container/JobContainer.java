@@ -12,8 +12,12 @@ import com.alibaba.datax.core.container.util.HookInvoker;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
+import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
+import com.alibaba.datax.core.scheduler.local.LocalScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeTaskGroupContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.local.LocalTaskGroupContainerCollector;
 import com.alibaba.datax.core.statistics.collector.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
@@ -298,20 +302,21 @@ public class JobContainer extends AbstractContainer {
              * TODO  如果 用户强行配置了只使用单机模式运行，则需要对对应的configuration 的配置项改动
              * 否则按照 完全分布式模式运行
              */
-            if ("local".equalsIgnoreCase(this.configuration.getString("TODO"))) {
+            if ("local".equalsIgnoreCase(this.configuration.getString("???TODO"))) {
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                        "com.alibaba.datax.core.scheduler.local.LocalScheduler");
-
-                //TODO 还有其他的配置需要刷新
-                /**
-                 * "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                 "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
-                 */
+                        LocalScheduler.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                        LocalScheduler.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                        LocalTaskGroupContainerCollector.class.getCanonicalName());
             } else {
                 // 分布式运行模式
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                        "com.alibaba.datax.core.scheduler.distribute.DistributeScheduler");
-                //TODO 还有其他的配置需要刷新
+                        DistributeScheduler.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                        DistributeScheduler.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                        DistributeTaskGroupContainerCollector.class.getCanonicalName());
             }
 
         }
