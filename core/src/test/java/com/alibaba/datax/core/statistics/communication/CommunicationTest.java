@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,19 +20,19 @@ public class CommunicationTest {
         Assert.assertEquals(0.0, comm.getDoubleCounter(doubleKey), 0.01);
         double doubleValue = 0.01d;
         comm.setDoubleCounter(doubleKey, doubleValue);
-        comm.setState(State.SUCCESS);
+        comm.setState(State.SUCCEEDED);
         comm.setThrowable(new RuntimeException("runtime exception"));
         long now = System.currentTimeMillis();
         comm.setTimestamp(now);
 
         Assert.assertEquals(longValue, (long)comm.getLongCounter("long"));
         Assert.assertEquals(doubleValue, comm.getDoubleCounter("double"), 0.01);
-        Assert.assertTrue(State.SUCCESS.equals(comm.getState()));
+        Assert.assertTrue(State.SUCCEEDED.equals(comm.getState()));
         Assert.assertTrue(comm.getThrowable() instanceof RuntimeException);
         Assert.assertEquals(now, comm.getTimestamp());
 
         comm.reset();
-        Assert.assertTrue(State.RUN.equals(comm.getState()));
+        Assert.assertTrue(State.RUNNING.equals(comm.getState()));
         Assert.assertTrue(comm.getTimestamp() >= now);
 
         long delta = 5;
@@ -48,16 +48,16 @@ public class CommunicationTest {
     @Test
     public void setStateTest() {
         Communication comm = new Communication();
-        Assert.assertTrue(State.RUN.equals(comm.getState()));
+        Assert.assertTrue(State.RUNNING.equals(comm.getState()));
 
-        comm.setState(State.SUCCESS);
-        Assert.assertTrue(State.SUCCESS.equals(comm.getState()));
+        comm.setState(State.SUCCEEDED);
+        Assert.assertTrue(State.SUCCEEDED.equals(comm.getState()));
 
-        comm.setState(State.FAIL);
-        Assert.assertTrue(State.FAIL.equals(comm.getState()));
+        comm.setState(State.FAILED);
+        Assert.assertTrue(State.FAILED.equals(comm.getState()));
 
-        comm.setState(State.SUCCESS);
-        Assert.assertTrue(State.FAIL.equals(comm.getState()));
+        comm.setState(State.SUCCEEDED);
+        Assert.assertTrue(State.FAILED.equals(comm.getState()));
     }
 
     @Test
@@ -67,7 +67,7 @@ public class CommunicationTest {
         long longValue = 5;
         long timestamp = comm0.getTimestamp();
         comm0.setLongCounter(longKey, longValue);
-        comm0.setState(State.SUCCESS);
+        comm0.setState(State.SUCCEEDED);
 
         Communication comm1 = comm0.clone();
 
@@ -81,21 +81,21 @@ public class CommunicationTest {
         Communication comm1 = new Communication();
         comm1.setLongCounter("long", 5);
         comm1.setDoubleCounter("double", 5.1);
-        comm1.setState(State.SUCCESS);
+        comm1.setState(State.SUCCEEDED);
         comm1.setThrowable(new RuntimeException("run exception"));
         comm1.addMessage("message", "message1");
 
         Communication comm2 = new Communication();
         comm2.setLongCounter("long", 5);
         comm2.setDoubleCounter("double", 5.1);
-        comm2.setState(State.FAIL);
+        comm2.setState(State.FAILED);
         comm2.setThrowable(new IllegalArgumentException(""));
         comm2.addMessage("message", "message2");
 
         Communication comm = comm1.mergeFrom(comm2);
         Assert.assertEquals(10, (long)comm.getLongCounter("long"));
         Assert.assertEquals(10.2, comm.getDoubleCounter("double"), 0.01);
-        Assert.assertTrue(State.FAIL.equals(comm.getState()));
+        Assert.assertTrue(State.FAILED.equals(comm.getState()));
         Assert.assertTrue(comm.getThrowable() instanceof RuntimeException);
         Assert.assertEquals(2, comm.getMessage("message").size());
     }

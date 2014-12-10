@@ -113,7 +113,7 @@ public class Engine {
         if (cl.hasOption("help")) {
             HelpFormatter f = new HelpFormatter();
             f.printHelp("OptionsTip", options);
-            System.exit(State.SUCCESS.value());
+            System.exit(0);
         }
 
         // TODO: add help info.

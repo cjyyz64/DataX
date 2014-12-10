@@ -11,7 +11,7 @@ import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,43 +67,32 @@ public class StandAloneScheduler implements Scheduler {
 
         Communication lastJobContainerCommunication = new Communication();
 
-        // TODO 下面这句是多余的
-        lastJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-
         try {
-            do {
+            while (true) {
                 Communication nowJobContainerCommunication = jobCollector.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
-
-                if (nowJobContainerCommunication.getState() == State.FAIL) {
-                    taskGroupContainerExecutorService.shutdownNow();
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                            nowJobContainerCommunication.getThrowable());
-                }
 
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
                 jobCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
-                //TODO 是否可以不用判断 taskGroupContainerExecutorService.isTerminated()？？
-                if (taskGroupContainerExecutorService.isTerminated()
-                        && !hasTaskGroupException(reportCommunication)) {
-                    // 结束前还需统计一次，准确统计
-                    nowJobContainerCommunication = jobCollector.collect();
-                    nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-                    reportCommunication = CommunicationManager
-                            .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                    jobCollector.report(reportCommunication);
+                if (reportCommunication.getState() == State.SUCCEEDED) {
                     LOG.info("Scheduler accomplished all tasks.");
                     break;
                 }
 
+                if (reportCommunication.getState() == State.FAILED) {
+                    taskGroupContainerExecutorService.shutdownNow();
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                            nowJobContainerCommunication.getThrowable());
+                }
+
                 lastJobContainerCommunication = nowJobContainerCommunication;
                 Thread.sleep(jobReportIntervalInMillSec);
-            } while (true);
+            }
         } catch (InterruptedException e) {
             LOG.error("捕获到InterruptedException异常!", e);
             throw DataXException.asDataXException(
@@ -120,13 +109,4 @@ public class StandAloneScheduler implements Scheduler {
         return new TaskGroupContainerRunner(taskGroupContainer);
     }
 
-    private boolean hasTaskGroupException(Communication communication) {
-        if (!communication.getState().equals(State.SUCCESS)) {
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                    communication.getThrowable());
-        }
-
-        return false;
-    }
 }

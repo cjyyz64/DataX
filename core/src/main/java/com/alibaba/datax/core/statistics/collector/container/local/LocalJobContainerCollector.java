@@ -6,7 +6,7 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

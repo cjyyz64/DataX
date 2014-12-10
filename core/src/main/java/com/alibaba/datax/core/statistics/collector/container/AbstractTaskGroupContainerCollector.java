@@ -3,7 +3,7 @@ package com.alibaba.datax.core.statistics.collector.container;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 
 import java.util.ArrayList;
@@ -13,11 +13,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by jingxing on 14/11/8.
- *
+ * <p/>
  * 该类是用于处理taskGroupContainer的communication的收集汇报的父类
  * 主要是taskCommunicationMap记录了taskExecutor的communication属性
  */
-public abstract class AbstractTaskGroupContainerCollector extends AbstractContainerCollector{
+public abstract class AbstractTaskGroupContainerCollector extends AbstractContainerCollector {
     protected Map<Integer, Communication> taskCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 
@@ -54,9 +54,9 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
     @Override
     public final Communication collect() {
         Communication communication = new Communication();
-        communication.setState(State.SUCCESS);
+        communication.setState(State.SUCCEEDED);
 
-        for(Communication taskCommunication :
+        for (Communication taskCommunication :
                 this.taskCommunicationMap.values()) {
             communication.mergeFrom(taskCommunication);
         }
@@ -67,9 +67,9 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
     @Override
     public final State collectState() {
         Communication communication = new Communication();
-        communication.setState(State.SUCCESS);
+        communication.setState(State.SUCCEEDED);
 
-        for(Communication taskCommunication :
+        for (Communication taskCommunication :
                 this.taskCommunicationMap.values()) {
             communication.mergeStateFrom(taskCommunication);
         }
@@ -82,11 +82,11 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
         Validate.notNull(taskIds, "传入的taskIds不能为null");
 
         List retList = new ArrayList();
-        for(int taskId : taskIds) {
+        for (int taskId : taskIds) {
             Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
             Communication communication = this.taskCommunicationMap
                     .get(taskId);
-            if(null != communication) {
+            if (null != communication) {
                 retList.add(communication);
             }
         }

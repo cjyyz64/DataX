@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Map;
@@ -24,7 +24,7 @@ public class LocalTaskGroupCommunication {
 
     public static Communication getJobCommunication() {
         Communication communication = new Communication();
-        communication.setState(State.SUCCESS);
+        communication.setState(State.SUCCEEDED);
 
         for(Communication taskGroupCommunication :
                 taskGroupCommunicationMap.values()) {

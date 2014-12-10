@@ -1,24 +1,23 @@
 package com.alibaba.datax.core.container;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
-import com.alibaba.datax.core.util.State;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.service.face.domain.State;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-4.
@@ -69,7 +68,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
         ContainerCollector collector = taskGroupContainer.getContainerCollector();
         while (true) {
             State totalTaskState = collector.collectState();
-            if(totalTaskState.isRunning()) {
+            if (totalTaskState.isRunning()) {
                 Thread.sleep(1000);
             } else {
                 break;
@@ -88,7 +87,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
 
         State state = totalTaskCommunication.getState();
 
-        Assert.assertTrue("task finished", state.equals(State.SUCCESS));
+        Assert.assertTrue("task finished", state.equals(State.SUCCEEDED));
     }
 
     @Test(expected = RuntimeException.class)

@@ -1,14 +1,5 @@
 package com.alibaba.datax.core.container;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.alibaba.datax.core.statistics.collector.plugin.task.AbstractTaskPluginCollector;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.util.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
@@ -17,9 +8,20 @@ import com.alibaba.datax.core.container.runner.ReaderRunner;
 import com.alibaba.datax.core.container.runner.WriterRunner;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.collector.plugin.task.AbstractTaskPluginCollector;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
+import com.alibaba.datax.core.util.ClassUtil;
+import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.service.face.domain.State;
 import com.alibaba.fastjson.JSON;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -116,7 +118,7 @@ public class TaskGroupContainer extends AbstractContainer {
             while (true) {
                 State taskExecutorTotalState = this.containerCollector.collectState();
                 // 发现该taskGroup下taskExecutor的总状态失败则汇报错误
-                if(taskExecutorTotalState.isFailed()) {
+                if (taskExecutorTotalState == State.FAILED) {
                     taskGroupCommunication = this.containerCollector.collect();
                     this.containerCollector.report(taskGroupCommunication);
 
@@ -124,11 +126,11 @@ public class TaskGroupContainer extends AbstractContainer {
                             FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, taskGroupCommunication.getThrowable());
                 }
 
-                for(int slotIndex=0; slotIndex<taskExecutors.size(); slotIndex++) {
+                for (int slotIndex = 0; slotIndex < taskExecutors.size(); slotIndex++) {
                     TaskExecutor taskExecutor = taskExecutors.get(slotIndex);
                     // 当taskExecutor为空或上一个任务已完成，且仍有未完成任务时，启动一个新的taskExecutor
-                    if((taskExecutor==null || taskExecutor.isTaskFinished())
-                            && taskIndex<taskConfigs.size()) {
+                    if ((taskExecutor == null || taskExecutor.isTaskFinished())
+                            && taskIndex < taskConfigs.size()) {
                         LOG.debug(String.format("start a new taskExecutor[%d]", taskIndex));
                         TaskExecutor newTaskExecutor = new TaskExecutor(
                                 taskConfigs.get(taskIndex++));
@@ -147,7 +149,7 @@ public class TaskGroupContainer extends AbstractContainer {
                 }
 
                 if (taskIndex >= taskConfigs.size() && isAllTaskDone
-                        && taskExecutorTotalState.isSucceed()) {
+                        && taskExecutorTotalState == State.SUCCEEDED) {
                     LOG.info("taskGroup[{}] complete all tasks.", this.taskGroupId);
                     break;
                 }
@@ -169,10 +171,10 @@ public class TaskGroupContainer extends AbstractContainer {
         } catch (Throwable e) {
             taskGroupCommunication = this.containerCollector.collect();
 
-            if(taskGroupCommunication.getThrowable() == null) {
+            if (taskGroupCommunication.getThrowable() == null) {
                 taskGroupCommunication.setThrowable(e);
             }
-            taskGroupCommunication.setState(State.FAIL);
+            taskGroupCommunication.setState(State.FAILED);
             this.containerCollector.report(taskGroupCommunication);
 
             throw DataXException.asDataXException(
@@ -257,7 +259,7 @@ public class TaskGroupContainer extends AbstractContainer {
             this.writerThread.start();
 
             // reader没有起来，writer不可能结束
-            if (!this.writerThread.isAlive() || this.taskCommunication.getState().isFailed()) {
+            if (!this.writerThread.isAlive() || this.taskCommunication.getState() == State.FAILED) {
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.RUNTIME_ERROR,
                         this.taskCommunication.getThrowable());
@@ -266,7 +268,7 @@ public class TaskGroupContainer extends AbstractContainer {
             this.readerThread.start();
 
             // 这里reader可能很快结束
-            if (!this.readerThread.isAlive() && this.taskCommunication.getState().isFailed()) {
+            if (!this.readerThread.isAlive() && this.taskCommunication.getState() == State.FAILED) {
                 // 这里有可能出现Reader线上启动即挂情况 对于这类情况 需要立刻抛出异常
                 throw DataXException.asDataXException(
                         FrameworkErrorCode.RUNTIME_ERROR,
@@ -276,12 +278,12 @@ public class TaskGroupContainer extends AbstractContainer {
 
         private AbstractRunner generateRunner(boolean isReader) {
             AbstractRunner newRunner = null;
-            if(isReader) {
+            if (isReader) {
                 newRunner = LoadUtil.loadPluginRunner(PluginType.READER,
                         this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
                 newRunner.setJobConf(this.taskConfig.getConfiguration(
                         CoreConstant.JOB_READER_PARAMETER));
-                ((ReaderRunner)newRunner).setRecordSender(
+                ((ReaderRunner) newRunner).setRecordSender(
                         new BufferedRecordExchanger(this.channel));
                 /**
                  * 设置taskPlugin的collector，用来处理脏数据和job/task通信
@@ -295,7 +297,7 @@ public class TaskGroupContainer extends AbstractContainer {
                         this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
                 newRunner.setJobConf(this.taskConfig
                         .getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
-                ((WriterRunner)newRunner).setRecordReceiver(new BufferedRecordExchanger(
+                ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(
                         this.channel));
                 /**
                  * 设置taskPlugin的collector，用来处理脏数据和job/task通信

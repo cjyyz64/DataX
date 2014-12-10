@@ -8,7 +8,9 @@ import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.Job;
+import com.alibaba.datax.service.face.domain.Result;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,11 +45,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
         initDataXServiceManager(jobId, dataxService, httpTimeOut);
 
-
         errorLimit = new ErrorRecordLimit(configurations.get(0));
-
-
-        //jobId = configurations.get(0).get
 
         /**
          * 给 taskGroupContainer 的 Communication 注册
@@ -58,16 +56,15 @@ public abstract class AbstractScheduler implements Scheduler {
         startAllTaskGroup(configurations);
 
         Communication lastJobContainerCommunication = new Communication();
-        boolean isDone = false;
         try {
             while (true) {
                 /**
                  * step 1: collect job stat
                  * step 2: getReport info
                  * step 3: errorLimit do check
-                 * step 4: checkAndDealFailedStat(frameworkCollector, totalTasks);
-                 * step 5: checkAndDealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
-                 * step 6: checkAndDealKillingStat(frameworkCollector, totalTasks);
+                 * step 4: dealFailedStat(frameworkCollector, throwable);
+                 * step 5: dealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
+                 * step 6: dealKillingStat(frameworkCollector, totalTasks);
                  * step 7: refresh last job stat, and then sleep for next while
                  *
                  * above step, some ones should report info to DS
@@ -79,26 +76,20 @@ public abstract class AbstractScheduler implements Scheduler {
 
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-
                 jobCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
-                checkAndDealFailedStat(jobCollector, nowJobContainerCommunication, totalTasks);
 
-
-                if (!hasTaskGroupException(reportCommunication)) {
-                    isDone = checkAndDealSucceedStat(jobCollector, lastJobContainerCommunication, totalTasks);
-                }
-                if (isDone) {
+                if (reportCommunication.getState() == State.SUCCEEDED) {
                     LOG.info("Scheduler accomplished all tasks.");
                     break;
                 }
 
-//                先判断是否为 killing 状态,或者在checkAndDealKillingStat内部进行判断
-//                if(nowJobContainerCommunication.getState().isKilling){
-//
-//                }
-                checkAndDealKillingStat(jobCollector, totalTasks);
+                if (isJobKilling(this.getJobId())) {
+                    dealKillingStat(jobCollector, totalTasks);
+                } else if (reportCommunication.getState() == State.FAILED) {
+                    dealFailedStat(jobCollector, nowJobContainerCommunication.getThrowable());
+                }
 
                 lastJobContainerCommunication = nowJobContainerCommunication;
                 Thread.sleep(jobReportIntervalInMillSec);
@@ -107,7 +98,6 @@ public abstract class AbstractScheduler implements Scheduler {
             // 以 failed 状态退出
             LOG.error("捕获到InterruptedException异常!", e);
 
-            // TODO report it
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
@@ -122,13 +112,9 @@ public abstract class AbstractScheduler implements Scheduler {
 
     protected abstract void startAllTaskGroup(List<Configuration> configurations);
 
-    protected abstract void checkAndDealFailedStat(ContainerCollector frameworkCollector,
-                                                   Communication nowJobContainerCommunication, int totalTasks);
+    protected abstract void dealFailedStat(ContainerCollector frameworkCollector, Throwable throwable);
 
-    protected abstract boolean checkAndDealSucceedStat(ContainerCollector frameworkCollector,
-                                                       Communication lastJobContainerCommunication, int totalTasks);
-
-    protected abstract void checkAndDealKillingStat(ContainerCollector frameworkCollector, int totalTasks);
+    protected abstract void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks);
 
     private int calculateTaskCount(List<Configuration> configurations) {
         int totalTasks = 0;
@@ -139,13 +125,10 @@ public abstract class AbstractScheduler implements Scheduler {
         return totalTasks;
     }
 
-    public boolean hasTaskGroupException(Communication communication) {
-        if (!communication.getState().equals(State.SUCCESS)) {
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                    communication.getThrowable());
-        }
+    private boolean isJobKilling(Long jobId) {
+        Result<Job> jobInfo = DataxServiceUtil.getJobInfo(jobId);
+        State state = jobInfo.getData().getState();
 
-        return false;
+        return state == State.KILLING;
     }
 }
