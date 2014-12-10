@@ -6,6 +6,8 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.service.face.domain.JobStatus;
 import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -21,15 +23,10 @@ public class LocalJobContainerCollector extends AbstractContainerCollector {
 
     private long jobId;
 
-    //TODO delete it ?   unused
-    private int dataXServiceTimeout;
-
     public LocalJobContainerCollector(Configuration configuration) {
         super(configuration);
         this.jobId = configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-        this.dataXServiceTimeout = configuration.getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 3000);
     }
 
     @Override
@@ -45,15 +42,10 @@ public class LocalJobContainerCollector extends AbstractContainerCollector {
     @Override
     public void report(Communication communication) {
         String message = CommunicationManager.Jsonify.getSnapshot(communication);
-        // TODO
-        // 1、 把 json 格式的 message 封装为 t_job表对应的 Data Object
-        // 2、 把 统计的状态，汇报给 DS
+        LOG.debug(message);
 
-        try {
-            LOG.debug(message);
-        } catch (Exception e) {
-            LOG.warn("在[local container collector]模式下，job汇报出错: " + e.getMessage());
-        }
+        JobStatus jobStatus = DataxServiceUtil.convertToJobStatus(message);
+        DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
     }
 
     @Override

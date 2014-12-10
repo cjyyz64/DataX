@@ -6,6 +6,7 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.service.face.domain.JobStatus;
 import com.alibaba.datax.service.face.domain.Result;
 import com.alibaba.datax.service.face.domain.State;
 import com.alibaba.datax.service.face.domain.TaskGroup;
@@ -40,21 +41,13 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
         }
     }
 
-    //TODO  参考 LocalJobContainerCollector 的 repot 的实现
     @Override
     public void report(Communication communication) {
         String message = CommunicationManager.Jsonify.getSnapshot(communication);
-        // TODO
-        // 1、 把 json 格式的 message 封装为 t_job表对应的 Data Object
-        // 2、 把 统计的状态，汇报给 DS
+        LOG.debug(message);
 
-        // 注意：汇报将会重试，如果汇报失败，打印 error 日志，但是继续，不退出
-
-        try {
-            LOG.debug(message);
-        } catch (Exception e) {
-            LOG.warn("在[local container collector]模式下，job汇报出错: " + e.getMessage());
-        }
+        JobStatus jobStatus = DataxServiceUtil.convertToJobStatus(message);
+        DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
     }
 
     @Override

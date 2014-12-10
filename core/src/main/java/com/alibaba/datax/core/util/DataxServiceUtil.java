@@ -3,6 +3,7 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.service.face.domain.*;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.restassured.response.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -45,8 +46,9 @@ public final class DataxServiceUtil {
             httpGet.setURI(new URI(url));
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 3, 1000l);
 
-            Type type = new TypeToken<Result<Job>>(){}.getType();
-            Result<Job> result = SerializationUtil.gson2Object(resJson,type);
+            Type type = new TypeToken<Result<Job>>() {
+            }.getType();
+            Result<Job> result = SerializationUtil.gson2Object(resJson, type);
             return result;
 
         } catch (Exception e) {
@@ -62,8 +64,9 @@ public final class DataxServiceUtil {
                 .when().put(url);
 
         String jsonStr = response.getBody().asString();
-        Type type = new TypeToken<Result<Boolean>>(){}.getType();
-        Result<Boolean> result = SerializationUtil.gson2Object(jsonStr,type);
+        Type type = new TypeToken<Result<Boolean>>() {
+        }.getType();
+        Result<Boolean> result = SerializationUtil.gson2Object(jsonStr, type);
         return result;
     }
 
@@ -158,5 +161,15 @@ public final class DataxServiceUtil {
             System.err.println("updateTaskGroupInfo error");
             throw new RuntimeException("updateTaskGroupInfo error");
         }
+    }
+
+    public static JobStatus convertToJobStatus(String info) {
+        if (StringUtils.isBlank(info)) {
+            throw new IllegalArgumentException("can not convert null/empty to JobStatus.");
+        }
+
+        JobStatus jobStatus = SerializationUtil.gson2Object(info, JobStatus.class);
+
+        return jobStatus;
     }
 }
