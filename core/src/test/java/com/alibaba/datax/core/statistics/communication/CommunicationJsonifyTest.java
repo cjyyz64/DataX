@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.junit.Assert;
@@ -19,7 +19,7 @@ public class CommunicationJsonifyTest {
         communication.setLongCounter(CommunicationManager.BYTE_SPEED, 10240);
         communication.setLongCounter(CommunicationManager.RECORD_SPEED, 100);
         communication.setDoubleCounter(CommunicationManager.PERCENTAGE, 0.1);
-        communication.setState(State.RUN);
+        communication.setState(State.RUNNING);
         communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 99);
         communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_BYTES, 102300);
 

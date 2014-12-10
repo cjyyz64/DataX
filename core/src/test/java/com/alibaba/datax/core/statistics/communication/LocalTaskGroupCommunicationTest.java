@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,7 +14,7 @@ public class LocalTaskGroupCommunicationTest {
     @Before
     public void setUp() {
         LocalTaskGroupCommunication.clear();
-        for(int index=0; index< taskGroupNumber; index++) {
+        for (int index = 0; index < taskGroupNumber; index++) {
             LocalTaskGroupCommunication.registerTaskGroupCommunication(
                     index, new Communication());
         }
@@ -24,18 +24,18 @@ public class LocalTaskGroupCommunicationTest {
     public void LocalCommunicationTest() {
         Communication jobCommunication =
                 LocalTaskGroupCommunication.getJobCommunication();
-        Assert.assertTrue(jobCommunication.getState().equals(State.RUN));
+        Assert.assertTrue(jobCommunication.getState().equals(State.RUNNING));
 
-        for(int index : LocalTaskGroupCommunication.getTaskGroupIdSet()) {
+        for (int index : LocalTaskGroupCommunication.getTaskGroupIdSet()) {
             Communication communication = LocalTaskGroupCommunication
                     .getTaskGroupCommunication(index);
-            communication.setState(State.SUCCESS);
+            communication.setState(State.SUCCEEDED);
             LocalTaskGroupCommunication.updateTaskGroupCommunication(
                     index, communication);
         }
 
         jobCommunication = LocalTaskGroupCommunication.getJobCommunication();
-        Assert.assertTrue(jobCommunication.getState().equals(State.SUCCESS));
+        Assert.assertTrue(jobCommunication.getState().equals(State.SUCCEEDED));
     }
 
     @Test(expected = IllegalArgumentException.class)

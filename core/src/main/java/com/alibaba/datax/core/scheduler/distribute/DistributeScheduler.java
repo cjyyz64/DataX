@@ -5,16 +5,16 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
-import com.alibaba.datax.service.face.domain.Job;
-import com.alibaba.datax.service.face.domain.Result;
+import com.alibaba.datax.service.face.domain.State;
 import com.alibaba.datax.service.face.domain.TaskGroup;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class DistributeScheduler extends AbstractScheduler {
 
@@ -33,51 +33,77 @@ public class DistributeScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void checkAndDealFailedStat(ContainerCollector frameworkCollector, Communication nowJobContainerCommunication, int totalTasks) {
-        // TODO 检查到 job 失败，还需要跟 DS 请求 kill 其他 tg
-        if (nowJobContainerCommunication.getState() == State.FAIL) {
-            Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(super.getJobId());
-            for (TaskGroup taskGroup : taskGroupInJob.getData()) {
-                if (taskGroup.getState().isRunning()) {
-                    DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroup.getTaskGroupId());
+    protected void dealFailedStat(ContainerCollector frameworkCollector, Throwable throwable) {
+        long beginTime = System.currentTimeMillis();
+        long maxKillTime = TimeUnit.HOURS.toMillis(8);
+
+        Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
+
+        boolean allTaskGroupFinished = true;
+        while (true) {
+            Communication nowJobContainerCommunication = frameworkCollector.collect();
+            if (nowJobContainerCommunication.getState() == State.FAILED) {
+                Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
+                for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
+                    State taskGroupState = entry.getValue().getState();
+                    Integer taskGroupId = entry.getKey();
+                    taskGroupCurrentStateMap.put(taskGroupId, taskGroupState);
+
+                    if (taskGroupState.isRunning()) {
+                        DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroupId);
+                    }
                 }
             }
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
-                    nowJobContainerCommunication.getThrowable());
+
+            for (Map.Entry<Integer, State> entry : taskGroupCurrentStateMap.entrySet()) {
+                State taskGroupState = entry.getValue();
+                if (!taskGroupState.isFinished()) {
+                    allTaskGroupFinished = false;
+                }
+            }
+            if (allTaskGroupFinished) {
+                break;
+            }
+
+            if (System.currentTimeMillis() - beginTime >= maxKillTime) {
+                throw DataXException.asDataXException(FrameworkErrorCode.KILL_JOB_TIMEOUT_ERROR,
+                        "内部运行失败，在 Kill 其他运行实例时出现超时错误，需要 PE 介入处理");
+            }
+            try {
+                TimeUnit.SECONDS.sleep(5);
+            } catch (InterruptedException unused) {
+            }
         }
+
+        throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+                throwable);
 
     }
 
     @Override
-    protected boolean checkAndDealSucceedStat(ContainerCollector frameworkCollector, Communication lastJobContainerCommunication, int totalTasks) {
-        Communication nowJobContainerCommunication = frameworkCollector.collect();
-        if (nowJobContainerCommunication.getState().isSucceed()) {
-            nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-            Communication reportCommunication = CommunicationManager
-                    .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-            frameworkCollector.report(reportCommunication);
+    protected void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
+        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
 
-            return true;
+        for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
+            if (entry.getValue().getState().isRunning()) {
+                DataxServiceUtil.killTaskGroup(super.getJobId(), entry.getKey());
+            }
         }
 
-        return false;
-    }
-
-    @Override
-    protected void checkAndDealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
-        Result<Job> jobInfo = DataxServiceUtil.getJobInfo(super.getJobId());
-        com.alibaba.datax.service.face.domain.State state = jobInfo.getData().getState();
-        if(state.equals(com.alibaba.datax.service.face.domain.State.KILLING)) {
-            Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(super.getJobId());
-            for (TaskGroup taskGroup : taskGroupInJob.getData()) {
-                if (taskGroup.getState().isRunning()) {
-                    DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroup.getTaskGroupId());
-                }
+        // 认为一定是 killed 或者 failed
+        boolean isAllTaskGroupFinished = true;
+        for (Communication communication : taskGroupInJob.values()) {
+            if (communication.getState().isRunning()) {
+                isAllTaskGroupFinished = false;
+                break;
             }
+        }
+
+        if (isAllTaskGroupFinished) {
             throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
-                    "job killed status");
+                    "DataX 被 Kill 了");
         }
 
-        //如果job 的状态是 killing，则 去杀 tg 最后 再以 143 退出
     }
+
 }

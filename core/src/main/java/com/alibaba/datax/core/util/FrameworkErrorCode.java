@@ -23,6 +23,7 @@ public enum FrameworkErrorCode implements ErrorCode {
     PLUGIN_RUNTIME_ERROR("Framework-13", "DataX插件运行时出错, 具体原因请参看DataX运行结束时的错误诊断信息 ."),
     PLUGIN_DIRTY_DATA_LIMIT_EXCEED("Framework-14", "DataX传输脏数据超过用户预期，该错误通常是由于源端数据存在较多业务脏数据导致，请仔细检查DataX汇报的脏数据日志信息, 或者您可以适当调大脏数据阈值 ."),
     PLUGIN_SPLIT_ERROR("Framework-15", "DataX插件切分出错, 该问题通常是由于DataX各个插件编程错误引起，请联系DataX开发团队解决"),
+    KILL_JOB_TIMEOUT_ERROR("Framework-16", "kill 任务超时，请联系PE解决"),
     KILLED_EXIT_VALUE("Framework-143", "DataX 被 Kill 了"),;
 
     private final String code;
@@ -54,7 +55,7 @@ public enum FrameworkErrorCode implements ErrorCode {
      * 通过 "Framework-143" 来标示 任务是 Killed 状态
      */
     public int toExitValue() {
-        if ("Framework-143".equalsIgnoreCase(this.code)) {
+        if (this == FrameworkErrorCode.KILLED_EXIT_VALUE) {
             return 143;
         } else {
             return 1;

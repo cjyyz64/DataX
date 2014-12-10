@@ -3,7 +3,7 @@ package com.alibaba.datax.core.scheduler.standalone;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 
 import java.util.List;
 import java.util.Map;
@@ -29,13 +29,13 @@ public class StandAloneTestJobCollector extends AbstractContainerCollector {
     @Override
     public Communication collect() {
         return new Communication() {{
-            this.setState(State.SUCCESS);
+            this.setState(State.SUCCEEDED);
         }};
     }
 
     @Override
     public State collectState() {
-        return State.SUCCESS;
+        return State.SUCCEEDED;
     }
 
     @Override

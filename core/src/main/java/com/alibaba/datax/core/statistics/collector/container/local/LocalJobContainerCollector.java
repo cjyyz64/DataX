@@ -6,7 +6,7 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;

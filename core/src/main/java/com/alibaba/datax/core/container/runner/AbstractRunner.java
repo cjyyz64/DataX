@@ -4,7 +4,7 @@ import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
 
 /**
@@ -62,22 +62,21 @@ public abstract class AbstractRunner {
     }
 
     public void markRun() {
-        mark(State.RUN);
+        mark(State.RUNNING);
     }
 
     public void markSuccess() {
-        mark(State.SUCCESS);
+        mark(State.SUCCEEDED);
     }
 
     public void markFail(final Throwable throwable) {
-        mark(State.FAIL);
+        mark(State.FAILED);
 
         this.runnerCommunication.setThrowable(throwable);
     }
 
     /**
-     * @param taskGroupId
-     *            the taskGroupId to set
+     * @param taskGroupId the taskGroupId to set
      */
     public void setTaskGroupId(int taskGroupId) {
         this.taskGroupId = taskGroupId;

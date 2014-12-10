@@ -3,7 +3,7 @@ package com.alibaba.datax.core.scheduler.standalone;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.container.TaskGroupContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.service.face.domain.State;
 
 /**
  * Created by jingxing on 14-8-28.
@@ -16,7 +16,7 @@ public class TaskGroupContainerRunner implements Runnable {
 
 	public TaskGroupContainerRunner(TaskGroupContainer taskGroup) {
 		this.taskGroupContainer = taskGroup;
-		this.state = State.SUCCESS;
+		this.state = State.SUCCEEDED;
 	}
 
 	@Override
@@ -25,9 +25,9 @@ public class TaskGroupContainerRunner implements Runnable {
             Thread.currentThread().setName(
                     String.format("taskGroup-%d", this.taskGroupContainer.getTaskGroupId()));
             this.taskGroupContainer.start();
-			this.state = State.SUCCESS;
+			this.state = State.SUCCEEDED;
 		} catch (Throwable e) {
-			this.state = State.FAIL;
+			this.state = State.FAILED;
 			throw DataXException.asDataXException(
 					FrameworkErrorCode.RUNTIME_ERROR, e);
 		}

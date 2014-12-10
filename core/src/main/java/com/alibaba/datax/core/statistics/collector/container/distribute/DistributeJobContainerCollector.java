@@ -5,34 +5,39 @@ import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCo
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.service.face.domain.Result;
+import com.alibaba.datax.service.face.domain.State;
+import com.alibaba.datax.service.face.domain.TaskGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DistributeJobContainerCollector extends AbstractContainerCollector {
     private static final Logger LOG = LoggerFactory
             .getLogger(DistributeJobContainerCollector.class);
 
+    private Map<Integer, Communication> taskGroupCommunicationMap =
+            new ConcurrentHashMap<Integer, Communication>();
+
     private long jobId;
-
-    // TODO delete it ?   unused
-    private int dataXServiceTimeout;
-
 
     public DistributeJobContainerCollector(Configuration configuration) {
         super(configuration);
         this.jobId = configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-        this.dataXServiceTimeout = configuration.getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 3000);
     }
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
-        // do nothing
+        for (Configuration config : configurationList) {
+            int taskGroupId = config.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
+            this.taskGroupCommunicationMap.put(taskGroupId, new Communication());
+        }
     }
 
     //TODO  参考 LocalJobContainerCollector 的 repot 的实现
@@ -54,26 +59,21 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public Communication collect() {
-        /**
-         *
-         *
-         *查询 job 下属 taskGroup 的状态，再合并其状态，作为 jobContainer 的状态
-         1、 查询job下属taskGroup  URL：GET /job/{jobId}/taskGroup
-         *
-         * Communication communication = new Communication();
-         communication.setState(State.SUCCESS);
+        Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(this.jobId);
+        for (TaskGroup taskGroup : taskGroupInJob.getData()) {
+            // TODO TaskGroup 转为 Communication
+            taskGroupCommunicationMap.put(taskGroup.getId(), null);
+        }
 
-         for(Communication taskGroupCommunication :
-         taskGroupCommunicationMap.values()) {
-         communication.mergeFrom(taskGroupCommunication);
-         }
+        Communication communication = new Communication();
+        communication.setState(State.SUCCEEDED);
 
-         return communication;
-         *
-         */
+        for (Communication taskGroupCommunication :
+                this.taskGroupCommunicationMap.values()) {
+            communication.mergeFrom(taskGroupCommunication);
+        }
 
-
-        return null;
+        return communication;
     }
 
     @Override
@@ -100,8 +100,7 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public Map<Integer, Communication> getCommunicationsMap() {
-        // TODO 暂时没有地方使用 skip it
-        return null;
+        return this.taskGroupCommunicationMap;
     }
 
 }
