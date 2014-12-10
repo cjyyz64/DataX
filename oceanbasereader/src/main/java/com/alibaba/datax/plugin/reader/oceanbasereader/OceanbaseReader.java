@@ -14,7 +14,7 @@ import java.util.List;
 
 public class OceanbaseReader extends Reader {
 
-    public static class Master extends Reader.Job {
+    public static class Job extends Reader.Job {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
@@ -30,7 +30,7 @@ public class OceanbaseReader extends Reader {
         public void destroy() { }
     }
 
-    public static class Slave extends Reader.Task{
+    public static class Task extends Reader.Task{
 
         @Override
         public void startRead(RecordSender recordSender) {
