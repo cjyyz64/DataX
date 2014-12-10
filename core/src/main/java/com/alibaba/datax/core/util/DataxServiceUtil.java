@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.service.face.domain.*;
 import com.google.gson.reflect.TypeToken;
 import com.jayway.restassured.response.Response;
@@ -171,5 +172,25 @@ public final class DataxServiceUtil {
         JobStatus jobStatus = SerializationUtil.gson2Object(info, JobStatus.class);
 
         return jobStatus;
+    }
+
+    /**
+     * TODO 统计数据指标  update?
+     */
+    public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
+        Communication communication = new Communication();
+        communication.setState(taskGroup.getState());
+        communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
+        communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
+        communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
+        communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
+
+        String errorMessage = taskGroup.getErrorMessage();
+        if (StringUtils.isBlank(errorMessage)) {
+            communication.setThrowable(new Throwable(errorMessage));
+        } else {
+            communication.setThrowable(null);
+        }
+        return communication;
     }
 }

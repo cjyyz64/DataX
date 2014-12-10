@@ -54,8 +54,8 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
     public Communication collect() {
         Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(this.jobId);
         for (TaskGroup taskGroup : taskGroupInJob.getData()) {
-            // TODO TaskGroup 转为 Communication
-            taskGroupCommunicationMap.put(taskGroup.getId(), null);
+            taskGroupCommunicationMap.put(taskGroup.getId(),
+                    DataxServiceUtil.convertTaskGroupToCommunication(taskGroup));
         }
 
         Communication communication = new Communication();

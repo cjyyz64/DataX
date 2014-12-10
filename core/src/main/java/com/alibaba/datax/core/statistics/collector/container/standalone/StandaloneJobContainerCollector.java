@@ -25,7 +25,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
-        for(Configuration config : configurationList) {
+        for (Configuration config : configurationList) {
             int taskGroupId = config.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
             LocalTaskGroupCommunication.registerTaskGroupCommunication(
@@ -63,10 +63,10 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
         Validate.notNull(taskGroupIds, "传入的taskGroupIds不能为null");
 
         List retList = new ArrayList();
-        for(int taskGroupId : taskGroupIds) {
+        for (int taskGroupId : taskGroupIds) {
             Communication communication = LocalTaskGroupCommunication
                     .getTaskGroupCommunication(taskGroupId);
-            if(communication!=null) {
+            if (communication != null) {
                 retList.add(communication);
             }
         }
