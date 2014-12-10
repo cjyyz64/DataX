@@ -36,7 +36,7 @@ public class NormalColumnMetaFactory extends ColumnMetaFactory {
 
 		@Override
 		public Object value(Column field,Record record) throws Exception {
-			return field.getRawData();
+			return field == null ? null : field.getRawData();
 		}
 	}
 }
