@@ -21,7 +21,6 @@ public class DistributeScheduler extends AbstractScheduler {
     @Override
     protected void startAllTaskGroup(List<Configuration> configurations) {
         //TODO 向 DataX Service 提交任务， one by one
-
         // TODO 转换 configuration 为 taskGroup 重试
 
         for (Configuration taskGroupConfig : configurations) {
@@ -67,15 +66,16 @@ public class DistributeScheduler extends AbstractScheduler {
     @Override
     protected void checkAndDealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
         Result<Job> jobInfo = DataxServiceUtil.getJobInfo(super.getJobId());
-        Integer state = 0; // state= jobInfo.getData().getState();
-        if(state.equals(com.alibaba.datax.service.face.domain.State.KILLING.value())) {
+        com.alibaba.datax.service.face.domain.State state = jobInfo.getData().getState();
+        if(state.equals(com.alibaba.datax.service.face.domain.State.KILLING)) {
             Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(super.getJobId());
             for (TaskGroup taskGroup : taskGroupInJob.getData()) {
                 if (taskGroup.getState().isRunning()) {
                     DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroup.getTaskGroupId());
                 }
             }
-            throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE, "job killed status");
+            throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
+                    "job killed status");
         }
 
         //如果job 的状态是 killing，则 去杀 tg 最后 再以 143 退出
