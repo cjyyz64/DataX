@@ -65,7 +65,7 @@ public class DSLColumnMetaFactory extends ColumnMetaFactory {
 				}
 				@Override
 				public Object stringToValue(String value) throws Exception {
-					return Long.valueOf(value);
+					return new BigInteger(value);
 				}
 			},
 			Varchar {
