@@ -46,8 +46,8 @@
         "statistics": {
             "collector": {
                 "container": {
-                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
+                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.StandaloneJobContainerCollector",
+                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.StandaloneTaskGroupContainerCollector"
                 },
                 "plugin": {
                     "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",

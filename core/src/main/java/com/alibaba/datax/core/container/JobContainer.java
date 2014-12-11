@@ -299,11 +299,8 @@ public class JobContainer extends AbstractContainer {
 
         // 判断是否为分布式模式运行
         if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
-            /**
-             * TODO  如果 用户强行配置了只使用单机模式运行，则需要对对应的configuration 的配置项改动
-             * 否则按照 完全分布式模式运行
-             */
-            if ("local".equalsIgnoreCase(this.configuration.getString("???TODO"))) {
+            if ("local".equalsIgnoreCase(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE))) {
+                LOG.info("The job used Local Mode.");
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         LocalScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
@@ -312,6 +309,7 @@ public class JobContainer extends AbstractContainer {
                         LocalTaskGroupContainerCollector.class.getCanonicalName());
             } else {
                 // 分布式运行模式
+                LOG.info("The job used Distribute Mode.");
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         DistributeScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,

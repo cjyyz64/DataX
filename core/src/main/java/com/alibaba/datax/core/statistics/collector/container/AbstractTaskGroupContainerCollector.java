@@ -21,6 +21,8 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
     protected Map<Integer, Communication> taskCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 
+    protected long jobId;
+
     /**
      * 由于taskGroupContainer是进程内部调度
      * 其registerCommunication()，getCommunication()，
@@ -30,6 +32,8 @@ public abstract class AbstractTaskGroupContainerCollector extends AbstractContai
 
     public AbstractTaskGroupContainerCollector(Configuration configuration) {
         super(configuration);
+        this.jobId = configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
         this.taskGroupId = configuration.getInt(
                 CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
     }

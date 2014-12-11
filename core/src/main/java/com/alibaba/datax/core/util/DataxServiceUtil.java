@@ -141,7 +141,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result<Boolean> updateTaskGroupInfo(Long jobId, Long taskGroupId, TaskGroupStatus taskGroupStatus) {
+    public static Result<Boolean> updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatus taskGroupStatus) {
         String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId;
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
