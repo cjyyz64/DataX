@@ -81,6 +81,7 @@ def get_option_parser():
     parser.add_option('-D', '--remotedebug', action="store_true", dest="remotedebug", help='use remote debug mode.')
     parser.add_option('-t', '--taskgroup', default="", dest="taskgroup", help='task group id')
     parser.add_option('-J', '--jobid', default="", dest="jobid", help='job id')
+    parser.add_option('-m', '--mode', default=None, dest="mode", help='execute mode')
 
     return parser
 
@@ -103,7 +104,7 @@ def is_url(path):
         return False
 
 # 输入job_path，输出json格式的job路径
-def get_json_job_path(job_id, task_group_id, job_path, auth_user, auth_pass):
+def get_json_job_path(job_id, mode, task_group_id, job_path, auth_user, auth_pass):
     if not job_path:
         print >>sys.stderr, "not give file or http address for job"
         sys.exit(RET_STATE["FAIL"])
@@ -161,7 +162,7 @@ def get_json_job_path(job_id, task_group_id, job_path, auth_user, auth_pass):
 
     if is_job_from_http:
         # 把jobId 和 reportAddress写入配置中
-        job_json_content = add_core_config_for_http(job_id, task_group_id, job_json_content, job_path)
+        job_json_content = add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_path)
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
@@ -170,7 +171,7 @@ def get_json_job_path(job_id, task_group_id, job_path, auth_user, auth_pass):
 
     return job_new_path, is_resaved_json
 
-def add_core_config_for_http(job_id, task_group_id, job_json_content, job_path):
+def add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_path):
     if not job_id:
         job_id = get_jobId_from_http(job_path)
     if job_id:
@@ -367,7 +368,7 @@ if __name__ == "__main__":
     auth_user, auth_pass = get_auth_info('%s/conf/.security.properties' % DATAX_HOME)
 
     # 获取job配置文件
-    job_path, is_resaved_json = get_json_job_path(options.jobid, options.taskgroup, args[0].strip(),
+    job_path, is_resaved_json = get_json_job_path(options.jobid, options.mode, options.taskgroup, args[0].strip(),
                                                   auth_user, auth_pass)
     # 处理entry相关配置
     run_context = process_entry(job_path, run_context)
