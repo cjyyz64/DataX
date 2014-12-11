@@ -22,7 +22,7 @@
 """
 
 import os
-import sys 
+import sys
 import time
 import re
 import errno
@@ -30,6 +30,7 @@ import json
 import signal
 import subprocess
 import urllib2
+import base64
 import socket
 from optparse import OptionParser
 from string import Template
@@ -58,7 +59,7 @@ child_process = None
 ########## 函数 #############
 
 def get_usage():
-    return """Usage: %prog [-g] [-d] [-j jvm] [-p params] job.json"""
+    return """Usage: %prog [-g] [-d] [-j jvm] [-p params] [-J jobId] [-t taskGroupId] job.json"""
 
 def show_usage():
     print get_usage()
@@ -78,7 +79,9 @@ def get_option_parser():
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
     parser.add_option('-D', '--remotedebug', action="store_true", dest="remotedebug", help='use remote debug mode.')
-
+    parser.add_option('-t', '--taskgroup', default="", dest="taskgroup", help='task group id')
+    parser.add_option('-J', '--jobid', default="", dest="jobid", help='job id')
+    parser.add_option('-m', '--mode', default=None, dest="mode", help='execute mode')
 
     return parser
 
@@ -101,7 +104,7 @@ def is_url(path):
         return False
 
 # 输入job_path，输出json格式的job路径
-def get_json_job_path(job_path):
+def get_json_job_path(job_id, mode, task_group_id, job_path, auth_user, auth_pass):
     if not job_path:
         print >>sys.stderr, "not give file or http address for job"
         sys.exit(RET_STATE["FAIL"])
@@ -113,7 +116,7 @@ def get_json_job_path(job_path):
         is_job_from_http = True
         counter = 0
         while counter < 4:
-            job_content = get_job_from_http(job_path)
+            job_content = get_job_from_http(job_path, auth_user, auth_pass)
             if job_content:
                 break
             time.sleep(2**counter)
@@ -154,25 +157,29 @@ def get_json_job_path(job_path):
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
         if not is_job_from_http:
-            job_new_path = save_to_tmp_file(job_path, False, job_json_content)
+            job_new_path = save_to_tmp_file(job_id, job_path, False, job_json_content)
             is_resaved_json = True
 
     if is_job_from_http:
         # 把jobId 和 reportAddress写入配置中
-        job_json_content = add_core_config_for_http(job_json_content, job_path)
+        job_json_content = add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_path)
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
-        job_new_path = save_to_tmp_file(job_path, True, job_json_content)
+        job_new_path = save_to_tmp_file(job_id, job_path, True, job_json_content)
         is_resaved_json = True
 
     return job_new_path, is_resaved_json
 
-def add_core_config_for_http(job_json_content, job_path):
-    job_id = get_jobId_from_http(job_path)
+def add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_path):
+    if not job_id:
+        job_id = get_jobId_from_http(job_path)
     if job_id:
         job_json_content = json.loads(job_json_content)
-        job_json_content["core"] = {"container":{"job":{"id":job_id}}}
+        job_json_content["core"] = {"container":
+                                        {"job": {"id": job_id,
+                                                 "mode": mode},
+                                         "taskGroup": {"id": task_group_id}}}
     else:
         return None
 
@@ -194,12 +201,15 @@ def get_string_type(job_content):
         print >>sys.stderr, "can not get supported string type for string:\n%s"%(job_content)
         sys.exit(RET_STATE["FAIL"])
 
-def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
+def save_to_tmp_file(job_id, job_path, is_job_from_http, job_json_content):
     assert(isinstance(job_path, str))
 
     tmp_file_path = None
     if is_job_from_http:
-        tmp_file_path = get_jobId_from_http(job_path)
+        if job_id:
+            tmp_file_path = job_id
+        else:
+            tmp_file_path = get_jobId_from_http(job_path)
         if not tmp_file_path:
             sys.exit(RET_STATE["FAIL"])
     else:
@@ -222,15 +232,19 @@ def save_to_tmp_file(job_path, is_job_from_http, job_json_content):
 
     return tmp_file_path
 
-def get_job_from_http(job_path):
+def get_job_from_http(job_path, username, password):
     job_conf = None
     response = None
 
     try:
         # 这里的参数可能需要处理
         if not (job_path.endswith("/config") or job_path.endswith("/config.xml")):
-            job_path = "%s/config"%(job_path)
-        response = urllib2.urlopen(job_path)
+            job_path = "%s/config" % job_path
+
+        request = urllib2.Request(job_path)
+        base64string = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
+        request.add_header("Authorization", "Basic %s" % base64string)
+        response = urllib2.urlopen(request)
         job_conf = response.read()
     except Exception, ex:
         print >>sys.stderr, str(ex)
@@ -250,7 +264,7 @@ def process_entry(json_path, run_context):
             entry_json = all_json["entry"]
     finally:
         file.close()
-    
+
     # 如果entry_json为空或没有设置jvm，使用默认jvm+命令行jvm
     if not entry_json or len(entry_json)<=0:
         run_context["jvm"] = "%s %s"%(DEFAULT_JVM, run_context["jvm"])
@@ -314,6 +328,26 @@ def suicide(signum, e):
     sys.exit(RET_STATE["KILL"])
 
 # start to go
+def get_auth_info(file_name):
+    import StringIO
+    import os
+    import ConfigParser
+    if not os.path.exists(file_name):
+        return [None, None]
+    with open(file_name) as f:
+        fp = StringIO.StringIO()
+        fp.write('[default_section]\n')
+        fp.write(f.read())
+        fp.seek(0, os.SEEK_SET)
+        conf = ConfigParser.ConfigParser()
+        conf.readfp(fp)
+        if conf.has_option('default_section', 'auth.user'):
+            return [conf.get('default_section', 'auth.user'),
+                    conf.get('default_section', 'auth.pass')]
+        else:
+            return [None, None]
+
+
 if __name__ == "__main__":
     # 解析option参数，其余返回到args中
     options, args = get_option_parser().parse_args(sys.argv[1:])
@@ -330,8 +364,12 @@ if __name__ == "__main__":
         show_usage()
         sys.exit(RET_STATE["OK"])
 
+    # 尝试获取读取url的认证信息
+    auth_user, auth_pass = get_auth_info('%s/conf/.security.properties' % DATAX_HOME)
+
     # 获取job配置文件
-    job_path, is_resaved_json = get_json_job_path(args[0].strip())
+    job_path, is_resaved_json = get_json_job_path(options.jobid, options.mode, options.taskgroup, args[0].strip(),
+                                                  auth_user, auth_pass)
     # 处理entry相关配置
     run_context = process_entry(job_path, run_context)
     run_context["job"] = job_path
@@ -343,7 +381,7 @@ if __name__ == "__main__":
     child_process = subprocess.Popen(command, shell=True)
     register_signal()
     (stdout, stderr) = child_process.communicate()
-    
+
     # 按要求删除临时生成的json文件
     if options.delete and is_resaved_json:
         os.remove(job_path)
