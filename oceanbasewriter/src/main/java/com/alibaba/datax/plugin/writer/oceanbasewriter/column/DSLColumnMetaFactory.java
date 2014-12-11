@@ -10,6 +10,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -60,7 +61,7 @@ public class DSLColumnMetaFactory extends ColumnMetaFactory {
 			Int {
 				@Override
 				protected Class<?> expect() {
-					return Long.class;
+					return BigInteger.class;
 				}
 				@Override
 				public Object stringToValue(String value) throws Exception {
