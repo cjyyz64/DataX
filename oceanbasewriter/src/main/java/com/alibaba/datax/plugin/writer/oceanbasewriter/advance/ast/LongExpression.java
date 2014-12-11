@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.writer.oceanbasewriter.advance.ast;
 
 import com.alibaba.datax.common.element.Record;
 
+import java.math.BigInteger;
+
 public class LongExpression implements Expression {
 
 	private final Long value;
@@ -11,8 +13,8 @@ public class LongExpression implements Expression {
 	}
 	
 	@Override
-	public Long evaluate(Record record) {
-		return value;
+	public BigInteger evaluate(Record record) {
+		return BigInteger.valueOf(value);
 	}
 
 }
