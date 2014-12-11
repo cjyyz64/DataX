@@ -123,7 +123,7 @@ public class DSLColumnMetaFactory extends ColumnMetaFactory {
 			Bool {
 				@Override
 				protected Class<?> expect() {
-					return Boolean.class;
+					return BigInteger.class;
 				}
 
 				@Override
