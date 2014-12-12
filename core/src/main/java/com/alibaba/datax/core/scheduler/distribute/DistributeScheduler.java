@@ -20,10 +20,9 @@ public class DistributeScheduler extends AbstractScheduler {
 
     @Override
     protected void startAllTaskGroup(List<Configuration> configurations) {
-        //TODO 向 DataX Service 提交任务， one by one
-        // TODO 转换 configuration 为 taskGroup 重试
 
         for (Configuration taskGroupConfig : configurations) {
+            taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_MODEL, "taskGroup");
             TaskGroup taskGroup = new TaskGroup();
             taskGroup.setJobId(super.getJobId());
             taskGroup.setTaskGroupId(taskGroupConfig.getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID));
