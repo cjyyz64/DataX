@@ -1,9 +1,12 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.service.face.domain.*;
+import com.alibaba.datax.service.face.domain.JobStatus;
+import com.alibaba.datax.service.face.domain.Result;
+import com.alibaba.datax.service.face.domain.TaskGroup;
+import com.alibaba.datax.service.face.domain.TaskGroupStatus;
 import com.google.gson.reflect.TypeToken;
-import com.jayway.restassured.response.Response;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -14,8 +17,6 @@ import org.apache.http.entity.StringEntity;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
-
-import static com.jayway.restassured.RestAssured.given;
 
 
 public final class DataxServiceUtil {
@@ -53,31 +54,31 @@ public final class DataxServiceUtil {
 
         } catch (Exception e) {
             System.err.println("getJobInfo error");
-            throw new RuntimeException("getJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"getJobInfo error");
         }
     }
 
-    public static Result<Boolean> updateJobInfo(Long jobId, JobStatus jobStatus) {
+    public static Result updateJobInfo(Long jobId, JobStatus jobStatus) {
         String url = basicUrl + "inner/job/" + jobId + "/status";
-        Response response = given()
-                .body(SerializationUtil.gson2String(jobStatus))
-                .when().put(url);
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url));
 
-        String jsonStr = response.getBody().asString();
-        Type type = new TypeToken<Result<Boolean>>() {
-        }.getType();
-        Result<Boolean> result = SerializationUtil.gson2Object(jsonStr, type);
-        return result;
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(jobStatus));
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
+            Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            return result;
+        } catch (Exception e) {
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"updateJobInfo error");
+        }
     }
 
     public static Result<List<TaskGroup>> getTaskGroupInJob(Long jobId) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup/status";
-
-//        Response response = given()
-//        .when().get(url);
-//        String jsonStr = response.getBody().asString();
-//        Type type = new TypeToken<Result<List<TaskGroup>>>(){}.getType();
-//        Result<List<TaskGroup>> result = SerializationUtil.gson2Object(jsonStr,type);
+        String url = basicUrl + "inner/job/" + jobId + "/taskGroup";
 
         try {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
@@ -91,11 +92,11 @@ public final class DataxServiceUtil {
             return result;
         } catch (Exception e) {
             System.err.println("getJobInfo error");
-            throw new RuntimeException("getTaskGroupInJob error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"getJobInfo error");
         }
     }
 
-    public static Result<Boolean> startTaskGroup(Long jobId, TaskGroup taskGroup) {
+    public static Result startTaskGroup(Long jobId, TaskGroup taskGroup) {
         String url = basicUrl + "inner/job/" + jobId + "/taskGroup";
         try {
             HttpPost httpPost = HttpClientUtil.getPostRequest();
@@ -107,41 +108,33 @@ public final class DataxServiceUtil {
             httpPost.setEntity(jsonEntity);
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
-            Type type = new TypeToken<Result<Boolean>>() {
-            }.getType();
-            Result<Boolean> result = SerializationUtil.gson2Object(resJson, type);
+            Result result = SerializationUtil.gson2Object(resJson, Result.class);
             return result;
-//            Response response = given()
-//                    .body(SerializationUtil.gson2String(taskGroup))
-//                    .when().post(url);
-//            return null;
         } catch (Exception e) {
             System.err.println("startTaskGroup error, groupId = " + taskGroup.getTaskGroupId());
-            throw new RuntimeException("startTaskGroup error");
+            //throw new RuntimeException("startTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.START_TASKGROUP_ERROR,"startTaskGroup error");
         }
     }
 
-    public static Result<Boolean> killTaskGroup(Long jobId, Integer taskGroupId) {
+    public static Result killTaskGroup(Long jobId, Integer taskGroupId) {
         String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId;
         try {
             HttpDelete httpDelete = HttpClientUtil.getDeleteRequest();
             httpDelete.setURI(new URI(url));
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 3, 1000l);
-
-            Type type = new TypeToken<Result<Boolean>>() {
-            }.getType();
-            Result<Boolean> result = SerializationUtil.gson2Object(resJson, type);
+            Result result = SerializationUtil.gson2Object(resJson, Result.class);
             return result;
 
         } catch (Exception e) {
             System.err.println("killTaskGroup error");
-            throw new RuntimeException("killTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"killTaskGroup error");
         }
     }
 
-    public static Result<Boolean> updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatus taskGroupStatus) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId;
+    public static Result updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatus taskGroupStatus) {
+        String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId + "/status";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
@@ -153,13 +146,11 @@ public final class DataxServiceUtil {
             httpPut.setEntity(jsonEntity);
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
-            Type type = new TypeToken<Result<Boolean>>() {
-            }.getType();
-            Result<Boolean> result = SerializationUtil.gson2Object(resJson, type);
+            Result result = SerializationUtil.gson2Object(resJson, Result.class);
             return result;
         } catch (Exception e) {
             System.err.println("updateTaskGroupInfo error");
-            throw new RuntimeException("updateTaskGroupInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"updateTaskGroupInfo error");
         }
     }
 
