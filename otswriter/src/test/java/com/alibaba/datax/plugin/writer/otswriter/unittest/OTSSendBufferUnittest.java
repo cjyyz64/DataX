@@ -10,7 +10,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
@@ -110,7 +109,7 @@ public class OTSSendBufferUnittest {
         {
             Record r = new DefaultRecord();
             r.addColumn(new StringColumn("hello"));
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
             input.add(r);
             
             OTSRow row = new OTSRow();
@@ -130,7 +129,7 @@ public class OTSSendBufferUnittest {
         {
             Record r = new DefaultRecord();
             r.addColumn(new StringColumn("hello"));
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
             input.add(r);
             
             OTSRow row = new OTSRow();
