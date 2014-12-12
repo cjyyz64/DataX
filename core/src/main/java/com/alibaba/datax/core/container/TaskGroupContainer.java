@@ -150,7 +150,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
                 if (taskIndex >= taskConfigs.size() && isAllTaskDone
                         && taskExecutorTotalState == State.SUCCEEDED) {
-                    LOG.info("taskGroup[{}] complete all tasks.", this.taskGroupId);
+                    LOG.info("taskGroup[{}] complete it's tasks.", this.taskGroupId);
                     break;
                 }
 
