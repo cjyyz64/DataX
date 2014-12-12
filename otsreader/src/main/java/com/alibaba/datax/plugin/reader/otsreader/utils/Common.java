@@ -10,7 +10,10 @@ import com.alibaba.datax.common.element.DoubleColumn;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.otsreader.Key;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
+import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSPrimaryKeyColumn;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSException;
@@ -157,5 +160,17 @@ public class Common {
             } 
         }
         return sleepTime;
+    }
+    
+    public static String configurtionToNoSensitiveString(Configuration param) {
+        Configuration outputParam = param.clone();
+        outputParam.set(Key.OTS_ACCESSKEY, "*************");
+        return outputParam.toJSON();
+    }
+    
+    public static String OTSConfToNoSensitiveString(OTSConf conf) {
+        OTSConf tmpConf = conf;
+        tmpConf.setAccessKey("*************");
+        return GsonParser.confToJson(tmpConf);
     }
 }

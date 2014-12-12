@@ -54,7 +54,7 @@ public class LargeSplitRangeFunctiontest {
         Configuration p = Utils.loadConf();
         conf.setEndpoint(p.getString("endpoint"));
         conf.setAccessId(p.getString("accessid"));
-        conf.setAccesskey(p.getString("accesskey"));
+        conf.setAccessKey(p.getString("accesskey"));
         conf.setInstanceName(p.getString("instance-name"));
         conf.setTableName(tableName);
 

@@ -6,7 +6,10 @@ import java.util.List;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.writer.otswriter.Key;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
@@ -130,5 +133,17 @@ public class Common {
         for (OTSLine l : lines) {
             collector.collectDirtyRecord(l.getRecord(), errorMsg);
         }
+    }
+    
+    public static String configurtionToNoSensitiveString(Configuration param) {
+        Configuration outputParam = param.clone();
+        outputParam.set(Key.OTS_ACCESSKEY, "*************");
+        return outputParam.toJSON();
+    }
+    
+    public static String OTSConfToNoSensitiveString(OTSConf conf) {
+        OTSConf tmpConf = conf;
+        tmpConf.setAccessKey("*************");
+        return GsonParser.confToJson(tmpConf);
     }
 }
