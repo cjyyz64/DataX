@@ -16,7 +16,9 @@ import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
 import com.alibaba.datax.core.scheduler.local.LocalScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeJobContainerCollector;
 import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeTaskGroupContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.local.LocalJobContainerCollector;
 import com.alibaba.datax.core.statistics.collector.container.local.LocalTaskGroupContainerCollector;
 import com.alibaba.datax.core.statistics.collector.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -76,11 +78,6 @@ public class JobContainer extends AbstractContainer {
     public JobContainer(Configuration configuration) {
         super(configuration);
 
-        //TODO 可能需要考虑采用 set方式在使用前进行初始化
-        super.setContainerCollector(ClassUtil.instantiate(
-                configuration.getString(
-                        CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
-                AbstractContainerCollector.class, configuration));
         errorLimit = new ErrorRecordLimit(configuration);
     }
 
@@ -299,24 +296,36 @@ public class JobContainer extends AbstractContainer {
         // 判断是否为分布式模式运行
         if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
             if ("local".equalsIgnoreCase(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE))) {
-                LOG.info("The job used Local Mode.");
+                LOG.info("Running by Local Mode.");
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         LocalScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
                         LocalScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
                         LocalTaskGroupContainerCollector.class.getCanonicalName());
+
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                        LocalJobContainerCollector.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                        LocalTaskGroupContainerCollector.class.getCanonicalName());
             } else {
                 // 分布式运行模式
-                LOG.info("The job used Distribute Mode.");
+                LOG.info("Running by Distribute Mode.");
                 this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
                         DistributeScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
                         DistributeScheduler.class.getCanonicalName());
                 this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
                         DistributeTaskGroupContainerCollector.class.getCanonicalName());
+
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                        DistributeJobContainerCollector.class.getCanonicalName());
+                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                        DistributeTaskGroupContainerCollector.class.getCanonicalName());
             }
 
+        } else {
+            LOG.info("Running by Standalone Mode.");
         }
 
 
@@ -329,6 +338,11 @@ public class JobContainer extends AbstractContainer {
                     schedulerClassName, Scheduler.class);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
+
+            super.setContainerCollector(ClassUtil.instantiate(
+                    configuration.getString(
+                            CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
+                    AbstractContainerCollector.class, configuration));
 
             scheduler.schedule(taskGroupConfigs, super.getContainerCollector());
 
