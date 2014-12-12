@@ -44,10 +44,11 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
     @Override
     public void report(Communication communication) {
         String message = CommunicationManager.Jsonify.getSnapshot(communication);
-        LOG.debug(message);
 
         JobStatus jobStatus = DataxServiceUtil.convertToJobStatus(message);
         DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
+
+        LOG.info(message);
     }
 
     @Override
