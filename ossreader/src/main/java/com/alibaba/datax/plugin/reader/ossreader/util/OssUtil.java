@@ -1,7 +1,11 @@
 package com.alibaba.datax.plugin.reader.ossreader.util;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.ossreader.Constants;
 import com.alibaba.datax.plugin.reader.ossreader.Key;
+import com.alibaba.datax.plugin.reader.ossreader.OssReaderErrorCode;
+import com.aliyun.oss.ClientConfiguration;
 import com.aliyun.oss.OSSClient;
 
 /**
@@ -9,10 +13,20 @@ import com.aliyun.oss.OSSClient;
  */
 public class OssUtil {
     public static OSSClient initOssClient(Configuration conf){
-        // TODO 增加 OSS 网络参数设置
         String endpoint = conf.getString(Key.ENDPOINT);
         String accessId = conf.getString(Key.ACCESSID);
         String accessKey = conf.getString(Key.ACCESSKEY);
-        return new OSSClient(endpoint, accessId, accessKey);
+        ClientConfiguration ossConf = new ClientConfiguration();
+        ossConf.setSocketTimeout(Constants.SOCKETTIMEOUT);
+        OSSClient client = null;
+        try{
+            client = new OSSClient(endpoint, accessId, accessKey, ossConf);
+
+        } catch (IllegalArgumentException e){
+            throw DataXException.asDataXException(
+                    OssReaderErrorCode.OSS_EXCEPTION,e.getMessage());
+        }
+
+        return client;
     }
 }

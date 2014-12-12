@@ -10,6 +10,8 @@ public class Key {
 
     public static final String ACCESSKEY = "accessKey";
 
+    public static final String ENCODING = "encoding";
+
     public static final String BUCKET = "bucket";
 
     public static final String OBJECT = "object";

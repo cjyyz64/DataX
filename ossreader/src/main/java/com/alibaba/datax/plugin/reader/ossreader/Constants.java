@@ -6,4 +6,5 @@ package com.alibaba.datax.plugin.reader.ossreader;
 public class Constants {
 
     public static final String OBJECT = "object";
+    public static final int SOCKETTIMEOUT = 5000000;
 }

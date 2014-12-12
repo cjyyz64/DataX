@@ -5,7 +5,6 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.ossreader.util.OssUtil;
-import com.alibaba.datax.plugin.unstructuredstorage.Constant;
 import com.alibaba.datax.plugin.unstructuredstorage.UnstructuredStorageReaderUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
@@ -14,6 +13,7 @@ import com.aliyun.oss.model.ListObjectsRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
+import com.google.common.collect.Sets;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -43,22 +44,75 @@ public class OssReader extends Reader {
             LOG.debug("init() ok and end...");
         }
 
-        // TODO column 校验
         private void validate() {
-            String charset = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.Key.CHARSET,
-                    Constant.DEFAULT_CHARSET);
+            String endpoint = this.readerOriginConfig.getString(Key.ENDPOINT);
+            if (null == endpoint || endpoint.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 endpoint");
+            }
+
+            String charset = this.readerOriginConfig
+                    .getString(
+                            Key.ENCODING,
+                            com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_CHARSET);
             try {
                 Charsets.toCharset(charset);
             } catch (UnsupportedCharsetException uce) {
                 throw DataXException.asDataXException(
-                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        OssReaderErrorCode.ILLEGAL_VALUE,
                         String.format("不支持的编码格式 : [%s]", charset), uce);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
-                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        OssReaderErrorCode.ILLEGAL_VALUE,
                         String.format("运行配置异常 : %s", e.getMessage()), e);
             }
 
+            // column: 1. index type 2.value type 3.when type is Data, may have
+            // format
+            List<Configuration> columns = this.readerOriginConfig
+                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN);
+            if (null != columns && columns.size() != 0) {
+                for (Configuration eachColumnConf : columns) {
+                    eachColumnConf
+                            .getNecessaryValue(
+                                    com.alibaba.datax.plugin.unstructuredstorage.Key.TYPE,
+                                    OssReaderErrorCode.REQUIRED_VALUE);
+                    Integer columnIndex = eachColumnConf
+                            .getInt(com.alibaba.datax.plugin.unstructuredstorage.Key.INDEX);
+                    String columnValue = eachColumnConf
+                            .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.VALUE);
+
+                    if (null == columnIndex && null == columnValue) {
+                        throw DataXException.asDataXException(
+                                OssReaderErrorCode.NO_INDEX_VALUE,
+                                "由于您配置了type, 则至少需要配置 index 或 value");
+                    }
+
+                    if (null != columnIndex && null != columnValue) {
+                        throw DataXException.asDataXException(
+                                OssReaderErrorCode.MIXED_INDEX_VALUE,
+                                "您混合配置了index, value, 每一列同时仅能选择其中一种");
+                    }
+
+                }
+            }
+
+            // only support compress: lzo,lzop,gzip,bzip
+            String compress = this.readerOriginConfig
+                    .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.COMPRESS);
+            if (null != compress) {
+                Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
+                        "gzip", "bzip");
+                if (!supportedCompress.contains(compress.toLowerCase().trim())) {
+                    throw DataXException
+                            .asDataXException(
+                                    OssReaderErrorCode.ILLEGAL_VALUE,
+                                    String.format(
+                                            "仅支持 lzo, lzop, gzip, bzip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+                                            compress));
+                }
+            }
         }
 
         @Override
@@ -118,27 +172,29 @@ public class OssReader extends Reader {
             return parsedObjects;
         }
 
-        // TODO OSS异常校验
         private List<String> getRemoteObjects(String parentDir) throws OSSException,ClientException{
 
             List<String> remoteObjects = new ArrayList<String>();
             OSSClient client = OssUtil.initOssClient(readerOriginConfig);
+            try{
+                ListObjectsRequest listObjectsRequest= new ListObjectsRequest(readerOriginConfig.getString(Key.BUCKET));
+                listObjectsRequest.setPrefix(parentDir);
+                ObjectListing objectList;
+                do {
+                    objectList = client.listObjects(listObjectsRequest);
+                    for (OSSObjectSummary objectSummary : objectList.getObjectSummaries()){
+                        remoteObjects.add(objectSummary.getKey());
+                    }
+                    listObjectsRequest.setMarker(objectList.getNextMarker());
 
-            ListObjectsRequest listObjectsRequest= new ListObjectsRequest(readerOriginConfig.getString(Key.BUCKET));
-            listObjectsRequest.setPrefix(parentDir);
-            ObjectListing objectList;
-            do {
-                objectList = client.listObjects(listObjectsRequest);
-                for (OSSObjectSummary objectSummary : objectList.getObjectSummaries()){
-                    remoteObjects.add(objectSummary.getKey());
-                }
-                listObjectsRequest.setMarker(objectList.getNextMarker());
-
-            } while (!objectList.isTruncated());
+                } while (!objectList.isTruncated());
+            } catch (IllegalArgumentException e){
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
+            }
 
             return remoteObjects;
         }
-
     }
 
     public static class Slave extends Task{
@@ -147,19 +203,23 @@ public class OssReader extends Reader {
         private Configuration readerSliceConfig;
 
 
-        // TODO OSS异常校验
         @Override
         public void startRead(RecordSender recordSender) {
             LOG.debug("read start");
             String object = readerSliceConfig.getString(Key.OBJECT);
             OSSClient client = OssUtil.initOssClient(readerSliceConfig);
-            // TODO 改为 request 模式
-            OSSObject ossObject = client.getObject(readerSliceConfig.getString(Key.BUCKET), object);
-            InputStream objectStream = ossObject.getObjectContent();
-            UnstructuredStorageReaderUtil.readFromStream(objectStream,
-                    object, this.readerSliceConfig, recordSender,
-                    this.getTaskPluginCollector());
-            recordSender.flush();
+
+            try {
+                OSSObject ossObject = client.getObject(readerSliceConfig.getString(Key.BUCKET), object);
+                InputStream objectStream = ossObject.getObjectContent();
+                UnstructuredStorageReaderUtil.readFromStream(objectStream,
+                        object, this.readerSliceConfig, recordSender,
+                        this.getTaskPluginCollector());
+                recordSender.flush();
+            } catch (IllegalArgumentException e){
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
+            }
         }
 
         @Override
