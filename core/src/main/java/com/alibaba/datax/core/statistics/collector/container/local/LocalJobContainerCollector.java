@@ -44,6 +44,7 @@ public class LocalJobContainerCollector extends AbstractContainerCollector {
         String message = CommunicationManager.Jsonify.getSnapshot(communication);
 
         JobStatus jobStatus = DataxServiceUtil.convertToJobStatus(message);
+
         DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
         LOG.info(message);
     }
