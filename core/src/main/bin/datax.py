@@ -177,9 +177,9 @@ def add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_
     if job_id:
         job_json_content = json.loads(job_json_content)
         job_json_content["core"] = {"container":
-                                        {"job": {"id": job_id,
-                                                 "mode": mode},
-                                         "taskGroup": {"id": task_group_id}}}
+                                        {"job": {"id": job_id},
+                                         "taskGroup": {"id": task_group_id},
+                                         "mode": mode}}
     else:
         return None
 
