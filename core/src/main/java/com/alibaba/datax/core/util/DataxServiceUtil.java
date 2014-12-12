@@ -38,18 +38,17 @@ public final class DataxServiceUtil {
 
     private static HttpClientUtil httpClientUtil = HttpClientUtil.getHttpClientUtil();
 
-    public static Result<Job> getJobInfo(Long jobId) {
+    public static Result<Integer> getJobInfo(Long jobId) {
         String url = basicUrl + "inner/job/" + jobId + "/state";
-        System.out.println("getJobInfo url: " + url);
 
         try {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
             httpGet.setURI(new URI(url));
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 3, 1000l);
 
-            Type type = new TypeToken<Result<Job>>() {
+            Type type = new TypeToken<Result<Integer>>() {
             }.getType();
-            Result<Job> result = SerializationUtil.gson2Object(resJson, type);
+            Result<Integer> result = SerializationUtil.gson2Object(resJson, type);
             return result;
 
         } catch (Exception e) {

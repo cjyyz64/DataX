@@ -8,7 +8,6 @@ import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.service.face.domain.Job;
 import com.alibaba.datax.service.face.domain.Result;
 import com.alibaba.datax.service.face.domain.State;
 import org.apache.commons.lang.Validate;
@@ -126,9 +125,7 @@ public abstract class AbstractScheduler implements Scheduler {
     }
 
     private boolean isJobKilling(Long jobId) {
-        Result<Job> jobInfo = DataxServiceUtil.getJobInfo(jobId);
-        State state = jobInfo.getData().getState();
-
-        return state == State.KILLING;
+        Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
+        return jobInfo.getData().intValue() == State.KILLING.value();
     }
 }
