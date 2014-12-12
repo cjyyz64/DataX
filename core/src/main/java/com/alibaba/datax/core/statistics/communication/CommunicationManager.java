@@ -110,7 +110,7 @@ public class CommunicationManager {
             sb.append("Error ");
             sb.append(getError(communication));
             sb.append(" | ");
-            sb.append("Stage ");
+            sb.append("Percentage ");
             sb.append(getPercentage(communication));
             return sb.toString();
         }
@@ -169,6 +169,9 @@ public class CommunicationManager {
             pair = getErrorMessage(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
+            pair = getPercentage(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
             return JSON.toJSONString(state);
         }
 
@@ -197,7 +200,11 @@ public class CommunicationManager {
         }
 
         private static Pair<String, Double> getStage(final Communication communication) {
-            return new Pair<String, Double>("stage", communication.getDoubleCounter(PERCENTAGE));
+            return new Pair<String, Double>("stage", communication.getDoubleCounter(STAGE));
+        }
+
+        private static Pair<String, Double> getPercentage(final Communication communication) {
+            return new Pair<String, Double>("percentage", communication.getDoubleCounter(PERCENTAGE));
         }
 
         private static Pair<String, String> getErrorMessage(final Communication communication) {
