@@ -88,7 +88,9 @@ public final class DataxServiceUtil {
 
             Type type = new TypeToken<Result<List<TaskGroup>>>() {
             }.getType();
-            Result<List<TaskGroup>> result = SerializationUtil.gson2Object(resJson, type);
+            Result<List<TaskGroup>> result = SerializationUtil.longDateGson2Object(resJson, type);
+
+
             return result;
         } catch (Exception e) {
             System.err.println("getJobInfo error");
