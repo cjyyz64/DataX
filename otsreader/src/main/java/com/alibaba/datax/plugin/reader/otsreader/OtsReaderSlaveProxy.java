@@ -53,6 +53,9 @@ public class OtsReaderSlaveProxy {
         for (Row row : rows) {
             Record line = sender.createRecord();
             line = Common.parseRowToLine(row, columns, line);
+            
+            LOG.debug("Reader send record : {}", line.toString());
+            
             sender.sendToWriter(line);
         }
     }

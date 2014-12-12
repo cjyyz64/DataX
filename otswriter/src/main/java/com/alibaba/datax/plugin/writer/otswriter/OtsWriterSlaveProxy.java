@@ -60,6 +60,9 @@ public class OtsWriterSlaveProxy {
         Record record = null;
         buffer = new OTSSendBuffer(ots, collector, conf);
         while ((record = recordReceiver.getFromReader()) != null) {
+            
+            LOG.debug("Record Raw: {}", record.toString());
+            
             int columnCount = record.getColumnNumber();
             if (columnCount != expectColumnCount) {
                 // 如果Column的个数和预期的个数不一致时，认为是系统故障或者用户配置Column错误，异常退出
