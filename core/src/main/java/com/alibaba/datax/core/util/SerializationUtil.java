@@ -23,6 +23,15 @@ public class SerializationUtil {
                 }
             }).setDateFormat(DateFormat.LONG).create();
 
+    public static <T> T longDateGson2Object(String jsonString, Type type) {
+        try {
+            return longDateGson.fromJson(jsonString, type);
+        } catch (JsonSyntaxException e) {
+            LOGGER.warn("Gson string to object error, string : {} to object type {}", jsonString, type);
+            throw  e;
+        }
+    }
+
 
     public static JsonObject string2JsObj(String jsonStr) {
         return gson.fromJson(jsonStr, JsonElement.class).getAsJsonObject();
