@@ -34,7 +34,7 @@ public class ReaderSample1 {
         OTSConf conf = new OTSConf();
         conf.setEndpoint("http://10.101.200.36");
         conf.setAccessId("OTSMultiUser001_accessid");
-        conf.setAccesskey("OTSMultiUser001_accesskey");
+        conf.setAccessKey("OTSMultiUser001_accesskey");
         conf.setInstanceName("TestInstance001");
         conf.setTableName(tableName);
         

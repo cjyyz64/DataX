@@ -57,7 +57,7 @@ public class Case2 {
         
         conf.setEndpoint(endpoint);
         conf.setAccessId(accessId);
-        conf.setAccesskey(accesskey);
+        conf.setAccessKey(accesskey);
         conf.setInstanceName(instanceName);
         conf.setTableName(tableName);
         
