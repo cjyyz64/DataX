@@ -30,9 +30,9 @@ import java.util.regex.Pattern;
  * Created by mengxin.liumx on 2014/12/7.
  */
 public class OssReader extends Reader {
-    public static class Master extends Job {
+    public static class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory
-                .getLogger(OssReader.Master.class);
+                .getLogger(OssReader.Job.class);
 
         private Configuration readerOriginConfig = null;
 
@@ -174,6 +174,7 @@ public class OssReader extends Reader {
 
         private List<String> getRemoteObjects(String parentDir) throws OSSException,ClientException{
 
+            LOG.debug(String.format("父文件夹 : %s",parentDir));
             List<String> remoteObjects = new ArrayList<String>();
             OSSClient client = OssUtil.initOssClient(readerOriginConfig);
             try{
@@ -183,11 +184,14 @@ public class OssReader extends Reader {
                 do {
                     objectList = client.listObjects(listObjectsRequest);
                     for (OSSObjectSummary objectSummary : objectList.getObjectSummaries()){
+                        LOG.debug(String.format("找到文件 : %s",objectSummary.getKey()));
                         remoteObjects.add(objectSummary.getKey());
                     }
                     listObjectsRequest.setMarker(objectList.getNextMarker());
+                    LOG.debug(listObjectsRequest.getMarker());
+                    LOG.debug(String.valueOf(objectList.isTruncated()));
 
-                } while (!objectList.isTruncated());
+                } while (objectList.isTruncated());
             } catch (IllegalArgumentException e){
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
@@ -197,8 +201,8 @@ public class OssReader extends Reader {
         }
     }
 
-    public static class Slave extends Task{
-        private static Logger LOG = LoggerFactory.getLogger(Slave.class);
+    public static class Task extends Reader.Task{
+        private static Logger LOG = LoggerFactory.getLogger(Reader.Task.class);
 
         private Configuration readerSliceConfig;
 
