@@ -172,6 +172,22 @@ public final class DataxServiceUtil {
     public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
         Communication communication = new Communication();
         communication.setState(taskGroup.getState());
+        if(taskGroup.getTotalRecords() == null ) {
+            taskGroup.setTotalRecords(0L);
+        }
+
+        if (taskGroup.getTotalBytes() == null) {
+            taskGroup.setTotalBytes(0L);
+        }
+
+        if (taskGroup.getErrorRecords() == null) {
+            taskGroup.setErrorRecords(0L);
+        }
+
+        if (taskGroup.getErrorBytes() == null) {
+            taskGroup.setErrorBytes(0L);
+        }
+
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
