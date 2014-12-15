@@ -157,7 +157,7 @@ def get_json_job_path(job_id, mode, task_group_id, job_path, auth_user, auth_pas
             print >>sys.stderr, "can not parse job conf to json"
             sys.exit(RET_STATE["FAIL"])
         if not is_job_from_http:
-            job_new_path = save_to_tmp_file(job_id, job_path, False, job_json_content)
+            job_new_path = save_to_tmp_file(job_id, task_group_id, job_path, False, job_json_content)
             is_resaved_json = True
 
     if is_job_from_http:
@@ -166,7 +166,7 @@ def get_json_job_path(job_id, mode, task_group_id, job_path, auth_user, auth_pas
         if not job_json_content:
             print >>sys.stderr, "add core config for http error"
             sys.exit(RET_STATE["FAIL"])
-        job_new_path = save_to_tmp_file(job_id, job_path, True, job_json_content)
+        job_new_path = save_to_tmp_file(job_id, task_group_id, job_path, True, job_json_content)
         is_resaved_json = True
 
     return job_new_path, is_resaved_json
@@ -176,10 +176,23 @@ def add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_
         job_id = get_jobId_from_http(job_path)
     if job_id:
         job_json_content = json.loads(job_json_content)
-        job_json_content["core"] = {"container":
-                                        {"job": {"id": job_id,
-                                                 "mode": mode},
-                                         "taskGroup": {"id": task_group_id}}}
+
+        if not job_json_content.has_key("core"):
+            job_json_content["core"] = {"container":{"job":{}}}
+
+        job_json_content["core"]["container"]["job"]["id"] = job_id
+        job_json_content["core"]["container"]["job"]["mode"] = mode
+
+        # if not job_json_content.has_key("core"):
+        #     job_json_content["core"]["container"]["job"]["id"] = job_id
+        #
+        # core_container_job_content_map = job_json_content["core"]["container"]["job"]
+        # if not core_container_job_content_map.has_key("id"):
+        #     job_json_content["core"]["container"]["job"]["id"] = job_id
+        #
+        # if not core_container_job_content_map.has_key("mode"):
+        #     job_json_content["core"]["container"]["job"]["mode"] = mode
+
     else:
         return None
 
@@ -201,7 +214,7 @@ def get_string_type(job_content):
         print >>sys.stderr, "can not get supported string type for string:\n%s"%(job_content)
         sys.exit(RET_STATE["FAIL"])
 
-def save_to_tmp_file(job_id, job_path, is_job_from_http, job_json_content):
+def save_to_tmp_file(job_id, task_group_id, job_path, is_job_from_http, job_json_content):
     assert(isinstance(job_path, str))
 
     tmp_file_path = None
@@ -210,6 +223,9 @@ def save_to_tmp_file(job_id, job_path, is_job_from_http, job_json_content):
             tmp_file_path = job_id
         else:
             tmp_file_path = get_jobId_from_http(job_path)
+
+        if task_group_id:
+            tmp_file_path = tmp_file_path + "-" + task_group_id
         if not tmp_file_path:
             sys.exit(RET_STATE["FAIL"])
     else:
@@ -224,6 +240,7 @@ def save_to_tmp_file(job_id, job_path, is_job_from_http, job_json_content):
             if exception.errno != errno.EEXIST:
                 raise
     tmp_file_path = os.path.join(tmp_dir, tmp_file_path + ".json")
+
     file = open(tmp_file_path, "w")
     try:
         file.write(job_json_content)
