@@ -23,11 +23,15 @@ public class DistributeTaskGroupContainerCollector extends AbstractTaskGroupCont
     public void report(Communication communication) {
         TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
 
-        taskGroupStatus.setState(communication.getState());
-        taskGroupStatus.setTotalRecords(communication.getLongCounter("totalReadRecords"));
-        taskGroupStatus.setTotalBytes(communication.getLongCounter("totalReadBytes"));
+        // 不能设置 state，否则会收到 DataXService 的报错：State should be updated be alisa ONLY.
+        // taskGroupStatus.setState(communication.getState());
+        taskGroupStatus.setTotalRecords(CommunicationManager.getTotalReadRecords(communication));
+        taskGroupStatus.setTotalBytes(CommunicationManager.getTotalReadBytes(communication));
+
+        //TODO speed
         taskGroupStatus.setSpeedRecords(communication.getLongCounter(CommunicationManager.RECORD_SPEED));
         taskGroupStatus.setSpeedBytes(communication.getLongCounter(CommunicationManager.BYTE_SPEED));
+
         taskGroupStatus.setErrorRecords(CommunicationManager.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationManager.getTotalErrorBytes(communication));
         taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
