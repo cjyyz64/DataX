@@ -75,6 +75,8 @@ public class JobContainer extends AbstractContainer {
 
     private int needChannelNumber;
 
+    private int totalStage = 1;
+
     private ErrorRecordLimit errorLimit;
 
     public JobContainer(Configuration configuration) {
@@ -99,7 +101,7 @@ public class JobContainer extends AbstractContainer {
             LOG.debug("jobContainer starts to do prepare ...");
             this.prepare();
             LOG.debug("jobContainer starts to do split ...");
-            this.split();
+            this.totalStage = this.split();
             LOG.debug("jobContainer starts to do schedule ...");
             this.schedule();
             LOG.debug("jobContainer starts to do post ...");
@@ -171,7 +173,7 @@ public class JobContainer extends AbstractContainer {
      * 达到切分后数目相等，才能满足1：1的通道模型，所以这里可以将reader和writer的配置整合到一起，
      * 然后，为避免顺序给读写端带来长尾影响，将整合的结果shuffler掉
      */
-    private void split() {
+    private int split() {
         this.adjustChannelNumber();
 
         if (this.needChannelNumber <= 0) {
@@ -194,6 +196,8 @@ public class JobContainer extends AbstractContainer {
                 new Random(System.currentTimeMillis()));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
+
+        return contentConfig.size();
     }
 
     private void adjustChannelNumber() {
@@ -385,6 +389,21 @@ public class JobContainer extends AbstractContainer {
         }
 
         Communication communication = super.getContainerCollector().collect();
+        communication.setTimestamp(this.endTimeStamp);
+
+        Communication tempComm = new Communication();
+        tempComm.setTimestamp(this.startTransferTimeStamp);
+
+        Communication reportCommunication = CommunicationManager.getReportCommunication(communication, tempComm, this.totalStage);
+
+//        communication.setLongCounter(CommunicationManager.BYTE_SPEED, CommunicationManager.getTotalReadBytes(communication) / transferCosts);
+//        communication.setLongCounter(CommunicationManager.RECORD_SPEED, CommunicationManager.getTotalReadRecords(communication) / transferCosts);
+//
+//        communication.setLongCounter("totalReadBytes", CommunicationManager.getTotalReadBytes(communication));
+//        communication.setLongCounter("totalReadRecords", CommunicationManager.getTotalReadRecords(communication));
+
+        super.getContainerCollector().report(reportCommunication);
+
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
