@@ -150,6 +150,10 @@ public class TaskGroupContainer extends AbstractContainer {
 
                 if (taskIndex >= taskConfigs.size() && isAllTaskDone
                         && taskExecutorTotalState == State.SUCCEEDED) {
+                    // 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
+                    taskGroupCommunication = this.containerCollector.collect();
+                    this.containerCollector.report(taskGroupCommunication);
+
                     LOG.info("taskGroup[{}] complete it's tasks.", this.taskGroupId);
                     break;
                 }
