@@ -2,6 +2,7 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
@@ -54,7 +55,7 @@ public final class DataxServiceUtil {
 
         } catch (Exception e) {
             System.err.println("getJobInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"getJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "getJobInfo error");
         }
     }
 
@@ -73,7 +74,7 @@ public final class DataxServiceUtil {
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             return result;
         } catch (Exception e) {
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"updateJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "updateJobInfo error");
         }
     }
 
@@ -94,7 +95,7 @@ public final class DataxServiceUtil {
             return result;
         } catch (Exception e) {
             System.err.println("getJobInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"getJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "getJobInfo error");
         }
     }
 
@@ -115,7 +116,7 @@ public final class DataxServiceUtil {
         } catch (Exception e) {
             System.err.println("startTaskGroup error, groupId = " + taskGroup.getTaskGroupId());
             //throw new RuntimeException("startTaskGroup error");
-            throw DataXException.asDataXException(FrameworkErrorCode.START_TASKGROUP_ERROR,"startTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.START_TASKGROUP_ERROR, "startTaskGroup error");
         }
     }
 
@@ -131,7 +132,7 @@ public final class DataxServiceUtil {
 
         } catch (Exception e) {
             System.err.println("killTaskGroup error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"killTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "killTaskGroup error");
         }
     }
 
@@ -152,7 +153,7 @@ public final class DataxServiceUtil {
             return result;
         } catch (Exception e) {
             System.err.println("updateTaskGroupInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,"updateTaskGroupInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "updateTaskGroupInfo error");
         }
     }
 
@@ -172,7 +173,7 @@ public final class DataxServiceUtil {
     public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
         Communication communication = new Communication();
         communication.setState(taskGroup.getState());
-        if(taskGroup.getTotalRecords() == null ) {
+        if (taskGroup.getTotalRecords() == null) {
             taskGroup.setTotalRecords(0L);
         }
 
@@ -189,15 +190,21 @@ public final class DataxServiceUtil {
         }
 
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
+        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
+        communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
+
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
+        communication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
+        communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
+
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
         communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
 
         String errorMessage = taskGroup.getErrorMessage();
         if (StringUtils.isBlank(errorMessage)) {
-            communication.setThrowable(new Throwable(errorMessage));
-        } else {
             communication.setThrowable(null);
+        } else {
+            communication.setThrowable(new Throwable(errorMessage));
         }
         return communication;
     }
