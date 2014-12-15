@@ -8,8 +8,8 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.service.face.domain.State;
-import com.alibaba.datax.service.face.domain.TaskGroup;
+import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +26,7 @@ public class DistributeScheduler extends AbstractScheduler {
             TaskGroup taskGroup = new TaskGroup();
             taskGroup.setJobId(super.getJobId());
             taskGroup.setTaskGroupId(taskGroupConfig.getInt(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID));
-            taskGroup.setContext(taskGroupConfig.toJSON());
+            taskGroup.setConfig(taskGroupConfig.toJSON());
             DataxServiceUtil.startTaskGroup(super.getJobId(), taskGroup);
         }
     }

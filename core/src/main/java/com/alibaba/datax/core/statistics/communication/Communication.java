@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.statistics.communication;
 
 import com.alibaba.datax.common.base.BaseObject;
-import com.alibaba.datax.service.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 

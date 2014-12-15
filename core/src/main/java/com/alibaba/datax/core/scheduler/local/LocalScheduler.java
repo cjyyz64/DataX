@@ -10,8 +10,8 @@ import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.service.face.domain.Result;
-import com.alibaba.datax.service.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.Result;
+import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;

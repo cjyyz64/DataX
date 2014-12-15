@@ -10,7 +10,7 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.service.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
