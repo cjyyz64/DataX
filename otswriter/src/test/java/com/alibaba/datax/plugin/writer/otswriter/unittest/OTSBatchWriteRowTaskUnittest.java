@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
@@ -400,7 +399,7 @@ public class OTSBatchWriteRowTaskUnittest {
             row.addColumn("attr_015", ColumnValue.fromString(tmpSb.toString()));
 
             // Null Column
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
 
             input.add(r);
             expect.add(row);

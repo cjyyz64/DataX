@@ -13,10 +13,10 @@ public class MysqlReader extends Reader {
 
     private static final DataBaseType DATABASE_TYPE = DataBaseType.MySql;
 
-    public static class Master extends Reader.Master {
+    public static class Job extends Reader.Job {
 
         private Configuration originalConfig = null;
-        private CommonRdbmsReader.Master commonRdbmsReaderMaster;
+        private CommonRdbmsReader.Job commonRdbmsReaderJob;
 
         @Override
         public void init() {
@@ -24,37 +24,37 @@ public class MysqlReader extends Reader {
             int fetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             this.originalConfig.set(Constant.FETCH_SIZE, fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(DATABASE_TYPE);
-            this.commonRdbmsReaderMaster.init(this.originalConfig);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
+            this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            return this.commonRdbmsReaderMaster.split(this.originalConfig, adviceNumber);
+            return this.commonRdbmsReaderJob.split(this.originalConfig, adviceNumber);
         }
 
         @Override
         public void post() {
-            this.commonRdbmsReaderMaster.post(this.originalConfig);
+            this.commonRdbmsReaderJob.post(this.originalConfig);
         }
 
         @Override
         public void destroy() {
-            this.commonRdbmsReaderMaster.destroy(this.originalConfig);
+            this.commonRdbmsReaderJob.destroy(this.originalConfig);
         }
 
     }
 
-    public static class Slave extends Reader.Slave {
+    public static class Task extends Reader.Task {
 
         private Configuration readerSliceConfig;
-        private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
+        private CommonRdbmsReader.Task commonRdbmsReaderTask;
 
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(DATABASE_TYPE);
-            this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
+            this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(DATABASE_TYPE);
+            this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
         }
 
@@ -62,18 +62,18 @@ public class MysqlReader extends Reader {
         public void startRead(RecordSender recordSender) {
             int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
-            this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig, recordSender,
-                    super.getSlavePluginCollector(), fetchSize);
+            this.commonRdbmsReaderTask.startRead(this.readerSliceConfig, recordSender,
+                    super.getTaskPluginCollector(), fetchSize);
         }
 
         @Override
         public void post() {
-            this.commonRdbmsReaderSlave.post(this.readerSliceConfig);
+            this.commonRdbmsReaderTask.post(this.readerSliceConfig);
         }
 
         @Override
         public void destroy() {
-            this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
+            this.commonRdbmsReaderTask.destroy(this.readerSliceConfig);
         }
 
     }

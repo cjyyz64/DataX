@@ -47,14 +47,14 @@ public final class ListUtil {
 
             Collections.sort(list);
 
-            for (int i = 0, len = aList.size() - 1; i < len; i++) {
+            for (int i = 0, len = list.size() - 1; i < len; i++) {
                 if (list.get(i).equals(list.get(i + 1))) {
                     throw DataXException
                             .asDataXException(
                                     CommonErrorCode.CONFIG_ERROR,
                                     String.format(
                                             "您提供的作业配置信息有误, String:[%s] 不允许重复出现在列表中: [%s].",
-                                            aList.get(i),
+                                            list.get(i),
                                             StringUtils.join(aList, ",")));
                 }
             }

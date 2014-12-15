@@ -5,13 +5,14 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.DefaultNoRetry;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.aliyun.openservices.ots.ClientConfiguration;
@@ -29,7 +30,7 @@ public class OtsWriterSlaveProxy {
     private OTS ots = null;
 
     public void init(Configuration configuration) {
-        //LOG.info("OTSWriter slave parameter: {}", configuration.toJSON());
+        LOG.info("OTSWriter task parameter: {}", Common.configurtionToNoSensitiveString(configuration));
         conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         
         ClientConfiguration clientConfigure = new ClientConfiguration();
@@ -54,12 +55,15 @@ public class OtsWriterSlaveProxy {
         ots.shutdown();
     }
     
-    public void write(RecordReceiver recordReceiver, SlavePluginCollector collector) throws Exception {
+    public void write(RecordReceiver recordReceiver, TaskPluginCollector collector) throws Exception {
         LOG.info("write begin.");
         int expectColumnCount = conf.getPrimaryKeyColumn().size() + conf.getAttributeColumn().size();
         Record record = null;
         buffer = new OTSSendBuffer(ots, collector, conf);
         while ((record = recordReceiver.getFromReader()) != null) {
+            
+            LOG.debug("Record Raw: {}", record.toString());
+            
             int columnCount = record.getColumnNumber();
             if (columnCount != expectColumnCount) {
                 // 如果Column的个数和预期的个数不一致时，认为是系统故障或者用户配置Column错误，异常退出

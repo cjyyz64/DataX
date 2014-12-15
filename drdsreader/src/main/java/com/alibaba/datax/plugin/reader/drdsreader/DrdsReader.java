@@ -21,10 +21,10 @@ public class DrdsReader extends Reader {
 	private static final DataBaseType DATABASE_TYPE = DataBaseType.MySql;
 	private static final Logger LOG = LoggerFactory.getLogger(DrdsReader.class);
 
-	public static class Master extends Reader.Master {
+	public static class Job extends Reader.Job {
 
 		private Configuration originalConfig = null;
-		private CommonRdbmsReader.Master commonRdbmsReaderMaster;
+		private CommonRdbmsReader.Job commonRdbmsReaderJob;
 
 		@Override
 		public void init() {
@@ -34,9 +34,9 @@ public class DrdsReader extends Reader {
 			this.originalConfig.set(Constant.FETCH_SIZE, fetchSize);
 			this.validateConfiguration();
 
-			this.commonRdbmsReaderMaster = new CommonRdbmsReader.Master(
+			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
 					DATABASE_TYPE);
-			this.commonRdbmsReaderMaster.init(this.originalConfig);
+			this.commonRdbmsReaderJob.init(this.originalConfig);
 		}
 
 		@Override
@@ -47,12 +47,12 @@ public class DrdsReader extends Reader {
 
 		@Override
 		public void post() {
-			this.commonRdbmsReaderMaster.post(this.originalConfig);
+			this.commonRdbmsReaderJob.post(this.originalConfig);
 		}
 
 		@Override
 		public void destroy() {
-			this.commonRdbmsReaderMaster.destroy(this.originalConfig);
+			this.commonRdbmsReaderJob.destroy(this.originalConfig);
 		}
 
 		private void validateConfiguration() {
@@ -114,17 +114,17 @@ public class DrdsReader extends Reader {
 		}
 	}
 
-	public static class Slave extends Reader.Slave {
+	public static class Task extends Reader.Task {
 
 		private Configuration readerSliceConfig;
-		private CommonRdbmsReader.Slave commonRdbmsReaderSlave;
+		private CommonRdbmsReader.Task commonRdbmsReaderTask;
 
 		@Override
 		public void init() {
 			this.readerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsReaderSlave = new CommonRdbmsReader.Slave(
+			this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(
 					DATABASE_TYPE);
-			this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
+			this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
 		}
 
@@ -132,18 +132,18 @@ public class DrdsReader extends Reader {
 		public void startRead(RecordSender recordSender) {
 			int fetchSize = this.readerSliceConfig.getInt(Constant.FETCH_SIZE);
 
-			this.commonRdbmsReaderSlave.startRead(this.readerSliceConfig,
-					recordSender, super.getSlavePluginCollector(), fetchSize);
+			this.commonRdbmsReaderTask.startRead(this.readerSliceConfig,
+					recordSender, super.getTaskPluginCollector(), fetchSize);
 		}
 
 		@Override
 		public void post() {
-			this.commonRdbmsReaderSlave.post(this.readerSliceConfig);
+			this.commonRdbmsReaderTask.post(this.readerSliceConfig);
 		}
 
 		@Override
 		public void destroy() {
-			this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
+			this.commonRdbmsReaderTask.destroy(this.readerSliceConfig);
 		}
 
 	}

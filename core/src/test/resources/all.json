@@ -21,7 +21,8 @@
             "channel": {
                 "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",
                 "speed": {
-                    "byte": 1048576
+                    "byte": 1048576,
+                    "record": 10000
                 },
                 "capacity": 32
             },
@@ -31,23 +32,23 @@
             }
         },
         "container": {
-            "master": {
-                "class": "com.alibaba.datax.core.container.MasterContainer",
+            "job": {
+                "class": "com.alibaba.datax.core.container.JobContainer",
                 "reportInterval": 1000
             },
-            "slave": {
-                "class": "com.alibaba.datax.core.container.SlaveContainer",
+            "taskGroup": {
+                "class": "com.alibaba.datax.core.container.TaskGroupContainer",
                 "channel": 3
             }
         },
         "statistics": {
             "collector": {
                 "container": {
-                    "masterClass": "com.alibaba.datax.core.statistics.collector.container.standalone.MasterContainerCollector",
-                    "slaveClass": "com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector"
+                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
+                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                 },
                 "plugin": {
-                    "slaveClass": "com.alibaba.datax.core.statistics.collector.plugin.slave.StdoutPluginCollector",
+                    "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",
                     "maxDirtyNumber": 1000
                 }
             }

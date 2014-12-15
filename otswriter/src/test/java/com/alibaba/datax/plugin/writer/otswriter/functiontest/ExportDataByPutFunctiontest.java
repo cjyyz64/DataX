@@ -12,7 +12,6 @@ import org.junit.AfterClass;
 import org.junit.Test;
 
 import com.alibaba.datax.common.element.LongColumn;
-import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
@@ -159,7 +158,7 @@ public class ExportDataByPutFunctiontest {
             Record r = new DefaultRecord();
             r.addColumn(new LongColumn(-1));
             r.addColumn(new StringColumn("-1"));
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
             r.addColumn(new StringColumn("-1"));
             
             r.addColumn(new StringColumn("-1"));
@@ -191,7 +190,7 @@ public class ExportDataByPutFunctiontest {
             r.addColumn(new LongColumn(-1));
             r.addColumn(new StringColumn("-1"));
             
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
             r.addColumn(new LongColumn(-1));
             rs.add(r);
             

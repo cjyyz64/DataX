@@ -3,12 +3,12 @@ package com.alibaba.datax.core.scheduler.standalone;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.collector.container.standalone.SlaveContainerCollector;
 import com.alibaba.datax.core.util.CoreConstant;
 
 /**
@@ -31,22 +31,22 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		for (int i = 0; i < jobNumber; i++) {
 			Configuration configuration = Configuration.newDefault();
 			configuration
-					.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_REPORTINTERVAL,
+					.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL,
 							11);
-			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, 0);
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 			configuration.set(CoreConstant.DATAX_JOB_CONTENT, internal);
-			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS,
-					StandAloneTestSlaveContainer.class.getName());
-			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_ID, i);
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS,
+					StandAloneTestTaskGroupContainer.class.getName());
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
 			configuration
-					.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_SLAVECLASS,
-							SlaveContainerCollector.class.getName());
+					.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+							TaskGroupContainerCollector.class.getName());
 			jobList.add(configuration);
 
 		}
 
 		StandAloneScheduler scheduler = new StandAloneScheduler();
-		scheduler.schedule(jobList, new StandAloneTestMasterMetric(
+		scheduler.schedule(jobList, new StandAloneTestJobCollector(
 				Configuration.newDefault()));
 	}
 }

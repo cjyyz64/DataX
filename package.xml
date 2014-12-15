@@ -26,6 +26,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>oceanbasereader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>drdsreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -48,6 +55,13 @@
         </fileSet>
         <fileSet>
             <directory>db2reader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>postgresqlreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -129,6 +143,13 @@
         </fileSet>
 		<fileSet>
             <directory>oraclewriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+		<fileSet>
+            <directory>postgresqlwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

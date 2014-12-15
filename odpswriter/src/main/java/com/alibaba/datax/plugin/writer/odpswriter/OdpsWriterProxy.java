@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 import com.alibaba.odps.tunnel.Column;
 import com.alibaba.odps.tunnel.RecordSchema;
@@ -22,7 +22,7 @@ public class OdpsWriterProxy {
 
 	private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
 
-	private SlavePluginCollector slavePluginCollector;
+	private TaskPluginCollector taskPluginCollector;
 
 	private Upload slaveUpload;
 
@@ -46,7 +46,7 @@ public class OdpsWriterProxy {
 
 	public OdpsWriterProxy(Upload slaveUpload, int blockSizeInMB,
 			AtomicLong blockId, List<Integer> columnPositions,
-			SlavePluginCollector slavePluginCollector, boolean emptyAsNull)
+			TaskPluginCollector taskPluginCollector, boolean emptyAsNull)
 			throws IOException {
 		this.slaveUpload = slaveUpload;
 		this.blockSizeInMB = blockSizeInMB;
@@ -60,7 +60,7 @@ public class OdpsWriterProxy {
 				byteArrayOutputStream);
 		this.blockId = blockId;
 		this.columnPositions = columnPositions;
-		this.slavePluginCollector = slavePluginCollector;
+		this.taskPluginCollector = taskPluginCollector;
 		this.emptyAsNull = emptyAsNull;
 
 		// 初始化与 buffer 区相关的值
@@ -176,7 +176,7 @@ public class OdpsWriterProxy {
 			String message = String.format(
 					"写入 ODPS 目的表时遇到了脏数据, 在源端第[%s]个字段, 具体值[%s].", sourceIndex,
 					dataXRecord.getColumn(sourceIndex));
-			this.slavePluginCollector.collectDirtyRecord(dataXRecord, e,
+			this.taskPluginCollector.collectDirtyRecord(dataXRecord, e,
 					message);
 
 			return null;

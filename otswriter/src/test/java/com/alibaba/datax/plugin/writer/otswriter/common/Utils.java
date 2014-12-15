@@ -304,34 +304,42 @@ public class Utils {
                     LOG.error("targetValue type({}) not equal srcValue type({}), . index({}) in record.", new Object[] {targetValue.getType(), srcValue.getType(), i});
                     return false;
                 } else {
-                    switch (srcValue.getType()) {
-                        case BOOL:
-                            if (srcValue.asBoolean().booleanValue() != targetValue.asBoolean().booleanValue()) {
-                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asBoolean(), srcValue.asBoolean(), i});
-                                return false;
-                            }
-                            break;
-                        case DOUBLE:
-                            if (srcValue.asDouble().doubleValue() != targetValue.asDouble().doubleValue()) {
-                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asDouble(), srcValue.asDouble(), i});
-                                return false;
-                            }
-                            break;
-                        case LONG:
-                            if (srcValue.asLong().longValue() != targetValue.asLong().longValue()) {
-                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asLong(), srcValue.asLong(), i});
-                                return false;
-                            }
-                            break;
-                        case STRING:
-                            if (!srcValue.asString().equals(targetValue.asString())) {
-                                LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asString(), srcValue.asString(), i});
-                                return false;
-                            }
-                            break;
-                        default:
-                            break;
-                        
+                    
+                    if (srcValue.getRawData() == null || targetValue.getRawData() == null) {
+                        if (!(srcValue.getRawData() == null && targetValue.getRawData() == null)) {
+                            LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asDouble(), srcValue.asDouble(), i});
+                            return false;
+                        }
+                    } else {
+                        switch (srcValue.getType()) {
+                            case BOOL:
+                                if (srcValue.asBoolean().booleanValue() != targetValue.asBoolean().booleanValue()) {
+                                    LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asBoolean(), srcValue.asBoolean(), i});
+                                    return false;
+                                }
+                                break;
+                            case DOUBLE:
+                                if (srcValue.asDouble().doubleValue() != targetValue.asDouble().doubleValue()) {
+                                    LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asDouble(), srcValue.asDouble(), i});
+                                    return false;
+                                }
+                                break;
+                            case LONG:
+                                if (srcValue.asLong().longValue() != targetValue.asLong().longValue()) {
+                                    LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asLong(), srcValue.asLong(), i});
+                                    return false;
+                                }
+                                break;
+                            case STRING:
+                                if (!srcValue.asString().equals(targetValue.asString())) {
+                                    LOG.error("targetValue({}) not equal srcValue({}), . index({}) in record.", new Object[] {targetValue.asString(), srcValue.asString(), i});
+                                    return false;
+                                }
+                                break;
+                            default:
+                                break;
+                            
+                        }
                     }
                 }
             }

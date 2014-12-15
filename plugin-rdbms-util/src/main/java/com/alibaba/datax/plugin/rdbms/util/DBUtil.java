@@ -3,8 +3,7 @@ package com.alibaba.datax.plugin.rdbms.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
-import com.alibaba.datax.plugin.rdbms.writer.Key;
-
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -116,6 +115,8 @@ public final class DBUtil {
 	 */
 	public static ResultSet query(Connection conn, String sql, int fetchSize)
 			throws SQLException {
+		// make sure autocommit is off
+		conn.setAutoCommit(false);
 		Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
 				ResultSet.CONCUR_READ_ONLY);
 		stmt.setFetchSize(fetchSize);
@@ -356,46 +357,53 @@ public final class DBUtil {
 		return false;
 	}
 
-	// warn:until now, only oracle need to handle session config.
-	public static void dealWithSessionConfig(Connection conn,
-			Configuration config, DataBaseType databaseType, String message) {
-		switch (databaseType) {
-		case Oracle:
-			List<String> sessionConfig = config.getList(Key.SESSION,
-					new ArrayList<String>(), String.class);
-			DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
-			break;
-		default:
-			break;
-		}
-	}
+    // warn:until now, only oracle need to handle session config.
+    public static void dealWithSessionConfig(Connection conn,
+                                             Configuration config, DataBaseType databaseType, String message) {
+        List<String> sessionConfig = null;
+        switch (databaseType) {
+            case Oracle:
+                sessionConfig = config.getList(Key.SESSION,
+                        new ArrayList<String>(), String.class);
+                DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
+                break;
+            case DRDS:
+                // 用于关闭 drds 的分布式事务开关
+                sessionConfig = new ArrayList<String>();
+                sessionConfig.add("set transaction policy 4");
+                DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
+                break;
+            default:
+                break;
+        }
+    }
 
-	private static void doDealWithSessionConfig(Connection conn,
-			List<String> sessions, String message) {
-		if (null == sessions || sessions.isEmpty()) {
-			return;
-		}
+    private static void doDealWithSessionConfig(Connection conn,
+                                                List<String> sessions, String message) {
+        if (null == sessions || sessions.isEmpty()) {
+            return;
+        }
 
-		Statement stmt;
-		try {
-			stmt = conn.createStatement();
-		} catch (SQLException e) {
-			throw DataXException
-					.asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, String
-							.format("执行 session 设置失败. 上下文信息是:[%s] .", message),
-							e);
-		}
+        Statement stmt;
+        try {
+            stmt = conn.createStatement();
+        } catch (SQLException e) {
+            throw DataXException
+                    .asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, String
+                                    .format("执行 session 设置失败. 上下文信息是:[%s] .", message),
+                            e);
+        }
 
-		for (String sessionSql : sessions) {
-			LOG.info("execute sql:[{}]", sessionSql);
-			try {
-				DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
-			} catch (SQLException e) {
-				throw DataXException.asDataXException(
-						DBUtilErrorCode.SET_SESSION_ERROR, String.format(
-								"执行 session 设置失败. 上下文信息是:[%s] .", message), e);
-			}
-		}
-		DBUtil.closeDBResources(stmt, null);
-	}
+        for (String sessionSql : sessions) {
+            LOG.info("execute sql:[{}]", sessionSql);
+            try {
+                DBUtil.executeSqlWithoutResultSet(stmt, sessionSql);
+            } catch (SQLException e) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.SET_SESSION_ERROR, String.format(
+                                "执行 session 设置失败. 上下文信息是:[%s] .", message), e);
+            }
+        }
+        DBUtil.closeDBResources(stmt, null);
+    }
 }

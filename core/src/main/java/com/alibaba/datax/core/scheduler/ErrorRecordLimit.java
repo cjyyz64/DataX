@@ -2,7 +2,8 @@ package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.metric.Metric;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import org.apache.commons.lang3.Validate;
@@ -49,41 +50,37 @@ public class ErrorRecordLimit {
         }
     }
 
-    public void checkRecordLimit(Metric metric) {
-
+    public void checkRecordLimit(Communication communication) {
         if (recordLimit == null) {
             return;
         }
 
-        long errorNumber = metric.getErrorRecords();
+        long errorNumber = CommunicationManager.getTotalErrorRecords(communication);
         if (recordLimit < errorNumber) {
-            LOG.debug(String.format(
-                    "Error-limit set to %d, error count check .",
+            LOG.debug(
+                    String.format("Error-limit set to %d, error count check.",
                     recordLimit));
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
-                    String.format(
-                            "脏数据条数检查不通过，限制是[%d]条，但实际上捕获了[%d]条.",
+                    String.format("脏数据条数检查不通过，限制是[%d]条，但实际上捕获了[%d]条.",
                             recordLimit, errorNumber));
         }
     }
 
-    public void checkPercentageLimit(Metric masterMetric) {
-
+    public void checkPercentageLimit(Communication communication) {
         if (percentageLimit == null) {
             return;
         }
         LOG.debug(String.format(
-                "Error-limit set to %f, error percent check .", percentageLimit));
+                "Error-limit set to %f, error percent check.", percentageLimit));
 
-        long total = masterMetric.getTotalReadRecords();
-        long error = masterMetric.getErrorRecords();
+        long total = CommunicationManager.getTotalReadRecords(communication);
+        long error = CommunicationManager.getTotalErrorRecords(communication);
 
         if (total > 0 && ((double) error / (double) total) > percentageLimit) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_DIRTY_DATA_LIMIT_EXCEED,
-                    String.format(
-                            "脏数据百分比检查不通过，限制是[%f]，但实际上捕获到[%f].",
+                    String.format("脏数据百分比检查不通过，限制是[%f]，但实际上捕获到[%f].",
                             percentageLimit, ((double) error / (double) total)));
         }
     }

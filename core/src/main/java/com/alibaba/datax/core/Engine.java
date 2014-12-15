@@ -21,12 +21,12 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Engine是DataX入口类，该类负责初始化Master或者Slave的运行容器，并运行插件的Master或者Slave逻辑
+ * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
  */
 public class Engine {
     private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
-    /* check job model (master/slave) first */
+    /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
         // 绑定column转换信息
@@ -37,17 +37,17 @@ public class Engine {
          */
         LoadUtil.bind(allConf);
 
-        boolean isMaster = !("slave".equalsIgnoreCase(allConf
+        boolean isJob = !("taskGroup".equalsIgnoreCase(allConf
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
 
         AbstractContainer container;
-        if (isMaster) {
+        if (isJob) {
             container = ClassUtil.instantiate(allConf
-                            .getString(CoreConstant.DATAX_CORE_CONTAINER_MASTER_CLASS),
+                            .getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_CLASS),
                     AbstractContainer.class, allConf);
         } else {
             container = ClassUtil.instantiate(allConf
-                            .getString(CoreConstant.DATAX_CORE_CONTAINER_SLAVE_CLASS),
+                            .getString(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS),
                     AbstractContainer.class, allConf);
         }
 
@@ -111,7 +111,7 @@ public class Engine {
         if (cl.hasOption("help")) {
             HelpFormatter f = new HelpFormatter();
             f.printHelp("OptionsTip", options);
-            System.exit(Status.SUCCESS.value());
+            System.exit(State.SUCCESS.value());
         }
 
         // TODO: add help info.
@@ -126,8 +126,8 @@ public class Engine {
         Configuration configuration = ConfigParser.parse(jobPath);
 
         String jobId = configuration.getString(
-                CoreConstant.DATAX_CORE_CONTAINER_MASTER_ID, UUID.randomUUID()
-                        .toString());
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
+                UUID.randomUUID().toString());
         Engine.confLog(jobId);
 
         LOG.info("\n" + Engine.copyRight());
@@ -150,10 +150,10 @@ public class Engine {
             Engine.entry(args);
         } catch (Throwable e) {
             LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
-            System.exit(Status.FAIL.value());
+            System.exit(State.FAIL.value());
         }
 
-        System.exit(Status.SUCCESS.value());
+        System.exit(State.SUCCESS.value());
     }
 
 }

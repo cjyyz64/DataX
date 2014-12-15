@@ -2,7 +2,7 @@ package com.alibaba.datax.test.simulator.util;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.AbstractMasterPlugin;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.util.ClassLoaderSwapper;
 import com.alibaba.datax.core.container.util.LoadUtil;
@@ -76,14 +76,14 @@ public abstract class BasicPluginTest {
         return files[0];
     }
 
-    public AbstractMasterPlugin getPluginMaster(Configuration jobConf,
+    public AbstractJobPlugin getPluginMaster(Configuration jobConf,
                                                 String pluginName, PluginType pluginType) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 pluginType, pluginName));
 
         // PluginLoader.setPluginConfigs(pluginConfigs);
-        AbstractMasterPlugin master = (AbstractMasterPlugin) LoadUtil
-                .loadMasterPlugin(pluginType, pluginName);
+        AbstractJobPlugin master = (AbstractJobPlugin) LoadUtil
+                .loadJobPlugin(pluginType, pluginName);
 
         // 设置reader的jobConfig
         if (pluginType.equals(PluginType.READER)) {

@@ -19,7 +19,8 @@ public class LocalScheduler implements Scheduler {
 			.getLogger(LocalScheduler.class);
 
     @Override
-    public void schedule(List<Configuration> configurations, ContainerCollector frameworkCollector) {
+    public void schedule(List<Configuration> configurations,
+                         ContainerCollector frameworkCollector) {
 
     }
 

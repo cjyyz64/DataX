@@ -19,10 +19,10 @@ import java.util.*;
  * <p/>
  * 实例代码:<br>
  * <p/>
- * 获取master的配置信息<br>
+ * 获取job的配置信息<br>
  * Configuration configuration = Configuration.from(new File("Config.json")); <br>
- * String masterContainerClass =
- * configuration.getString("core.container.master.class"); <br>
+ * String jobContainerClass =
+ * configuration.getString("core.container.job.class"); <br>
  * <p/>
  * <br>
  * 设置多级List <br>

@@ -1,114 +1,106 @@
 package com.alibaba.datax.core.container.runner;
 
-import com.alibaba.datax.common.plugin.AbstractSlavePlugin;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.metric.MetricManager;
-import com.alibaba.datax.core.util.Status;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.util.State;
+import org.apache.commons.lang.Validate;
 
 /**
  * Created by jingxing on 14-9-1.
  */
 public abstract class AbstractRunner {
-	private AbstractSlavePlugin plugin;
+    private AbstractTaskPlugin plugin;
 
-	private Configuration jobConf;
+    private Configuration jobConf;
 
-	private RunnerStatus runnerStatus = new RunnerStatus();
+    private Communication runnerCommunication;
 
-	private int slaveId;
+    private int taskGroupId;
 
-	private int channelId;
+    private int taskId;
 
-	public AbstractRunner(AbstractSlavePlugin abstractSlavePlugin) {
-		this.plugin = abstractSlavePlugin;
-	}
+    public AbstractRunner(AbstractTaskPlugin abstractTaskPlugin) {
+        this.plugin = abstractTaskPlugin;
+    }
 
-	public void destroy() {
-		if (this.plugin != null) {
-			this.plugin.destroy();
-			this.plugin = null;
-		}
-	}
+    public void destroy() {
+        if (this.plugin != null) {
+            this.plugin.destroy();
+            this.plugin = null;
+        }
+    }
 
-	public AbstractSlavePlugin getPlugin() {
-		return plugin;
-	}
+    public State getRunnerState() {
+        return this.runnerCommunication.getState();
+    }
 
-	public void setPlugin(AbstractSlavePlugin plugin) {
-		this.plugin = plugin;
-	}
+    public AbstractTaskPlugin getPlugin() {
+        return plugin;
+    }
 
-	public Configuration getJobConf() {
-		return jobConf;
-	}
+    public void setPlugin(AbstractTaskPlugin plugin) {
+        this.plugin = plugin;
+    }
 
-	public void setJobConf(Configuration jobConf) {
-		this.jobConf = jobConf;
-		this.plugin.setPluginJobConf(jobConf);
-	}
+    public Configuration getJobConf() {
+        return jobConf;
+    }
 
-	public void setSlavePluginCollector(SlavePluginCollector pluginCollector) {
-		this.plugin.setSlavePluginCollector(pluginCollector);
-	}
+    public void setJobConf(Configuration jobConf) {
+        this.jobConf = jobConf;
+        this.plugin.setPluginJobConf(jobConf);
+    }
 
-	private void mark(int status) {
-		runnerStatus.setStatus(status);
-	}
+    public void setTaskPluginCollector(TaskPluginCollector pluginCollector) {
+        this.plugin.setTaskPluginCollector(pluginCollector);
+    }
 
-	public void markRun() {
-		mark(Status.RUN.value());
-	}
+    private void mark(State state) {
+        this.runnerCommunication.setState(state);
+    }
 
-	public void markSuccess() {
-		mark(Status.SUCCESS.value());
-	}
+    public void markRun() {
+        mark(State.RUN);
+    }
 
-	public void markFail(final Throwable throwable) {
-		mark(Status.FAIL.value());
+    public void markSuccess() {
+        mark(State.SUCCESS);
+    }
 
-		MetricManager.getChannelMetric(this.getSlaveId(), this.getChannelId())
-				.setError(throwable);
+    public void markFail(final Throwable throwable) {
+        mark(State.FAIL);
 
-		// throw DataXException.asDataXException(
-		// FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
-	}
+        this.runnerCommunication.setThrowable(throwable);
+    }
 
-	public RunnerStatus getRunnerStatus() {
-		return runnerStatus;
-	}
+    /**
+     * @param taskGroupId
+     *            the taskGroupId to set
+     */
+    public void setTaskGroupId(int taskGroupId) {
+        this.taskGroupId = taskGroupId;
+    }
 
-	public void setRunnerStatus(RunnerStatus runnerStatus) {
-		this.runnerStatus = runnerStatus;
-	}
+    /**
+     * @return the taskGroupId
+     */
+    public int getTaskGroupId() {
+        return taskGroupId;
+    }
 
-	/**
-	 * @param slaveId
-	 *            the slaveId to set
-	 */
-	public void setSlaveId(int slaveId) {
-		this.slaveId = slaveId;
-	}
+    public int getTaskId() {
+        return taskId;
+    }
 
-	/**
-	 * @param channelId
-	 *            the channelId to set
-	 */
-	public void setChannelId(int channelId) {
-		this.channelId = channelId;
-	}
+    public void setTaskId(int taskId) {
+        this.taskId = taskId;
+    }
 
-	/**
-	 * @return the slaveId
-	 */
-	public int getSlaveId() {
-		return slaveId;
-	}
-
-	/**
-	 * @return the channelId
-	 */
-	public int getChannelId() {
-		return channelId;
-	}
+    public void setRunnerCommunication(final Communication runnerCommunication) {
+        Validate.notNull(runnerCommunication,
+                "插件的Communication不能为空");
+        this.runnerCommunication = runnerCommunication;
+    }
 }

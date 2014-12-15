@@ -14,9 +14,9 @@ import java.util.List;
 public class OracleWriter extends Writer {
 	private static final DataBaseType DATABASE_TYPE = DataBaseType.Oracle;
 
-	public static class Master extends Writer.Master {
+	public static class Job extends Writer.Job {
 		private Configuration originalConfig = null;
-		private CommonRdbmsWriter.Master commonRdbmsWriterMaster;
+		private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
 		@Override
 		public void init() {
@@ -33,63 +33,63 @@ public class OracleWriter extends Writer {
 										writeMode));
 			}
 
-			this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Master(
+			this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(
 					DATABASE_TYPE);
-			this.commonRdbmsWriterMaster.init(this.originalConfig);
+			this.commonRdbmsWriterJob.init(this.originalConfig);
 		}
 
 		@Override
 		public void prepare() {
-			this.commonRdbmsWriterMaster.prepare(this.originalConfig);
+			this.commonRdbmsWriterJob.prepare(this.originalConfig);
 		}
 
 		@Override
 		public List<Configuration> split(int mandatoryNumber) {
-			return this.commonRdbmsWriterMaster.split(this.originalConfig,
+			return this.commonRdbmsWriterJob.split(this.originalConfig,
 					mandatoryNumber);
 		}
 
 		@Override
 		public void post() {
-			this.commonRdbmsWriterMaster.post(this.originalConfig);
+			this.commonRdbmsWriterJob.post(this.originalConfig);
 		}
 
 		@Override
 		public void destroy() {
-			this.commonRdbmsWriterMaster.destroy(this.originalConfig);
+			this.commonRdbmsWriterJob.destroy(this.originalConfig);
 		}
 
 	}
 
-	public static class Slave extends Writer.Slave {
+	public static class Task extends Writer.Task {
 		private Configuration writerSliceConfig;
-		private CommonRdbmsWriter.Slave commonRdbmsWriterSlave;
+		private CommonRdbmsWriter.Task commonRdbmsWriterTask;
 
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Slave();
-			this.commonRdbmsWriterSlave.init(this.writerSliceConfig);
+			this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task();
+			this.commonRdbmsWriterTask.init(this.writerSliceConfig);
 		}
 
 		@Override
 		public void prepare() {
-			this.commonRdbmsWriterSlave.prepare(this.writerSliceConfig);
+			this.commonRdbmsWriterTask.prepare(this.writerSliceConfig);
 		}
 
 		public void startWrite(RecordReceiver recordReceiver) {
-			this.commonRdbmsWriterSlave.startWrite(recordReceiver,
-					this.writerSliceConfig, super.getSlavePluginCollector());
+			this.commonRdbmsWriterTask.startWrite(recordReceiver,
+					this.writerSliceConfig, super.getTaskPluginCollector());
 		}
 
 		@Override
 		public void post() {
-			this.commonRdbmsWriterSlave.post(this.writerSliceConfig);
+			this.commonRdbmsWriterTask.post(this.writerSliceConfig);
 		}
 
 		@Override
 		public void destroy() {
-			this.commonRdbmsWriterSlave.destroy(this.writerSliceConfig);
+			this.commonRdbmsWriterTask.destroy(this.writerSliceConfig);
 		}
 
 	}

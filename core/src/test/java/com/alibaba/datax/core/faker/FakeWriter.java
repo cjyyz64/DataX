@@ -14,7 +14,7 @@ import java.util.List;
  * Created by jingxing on 14-9-2.
  */
 public class FakeWriter extends Writer {
-	public static final class Master extends Writer.Master {
+	public static final class Job extends Writer.Job {
 
 		@Override
 		public List<Configuration> split(int readerSlicesNumber) {
@@ -41,52 +41,52 @@ public class FakeWriter extends Writer {
 
 		@Override
 		public void init() {
-			System.out.println("fake writer master initialized!");
+			System.out.println("fake writer job initialized!");
 		}
 
 		@Override
 		public void destroy() {
-			System.out.println("fake writer master destroyed!");
+			System.out.println("fake writer job destroyed!");
 		}
 	}
 
-	public static final class Slave extends Writer.Slave {
+	public static final class Task extends Writer.Task {
 
 		@Override
 		public void startWrite(RecordReceiver lineReceiver) {
 			Record record = null;
 
 			while ((record = lineReceiver.getFromReader()) != null) {
-				this.getSlavePluginCollector().collectDirtyRecord(
+				this.getTaskPluginCollector().collectDirtyRecord(
 						record,
 						DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 								"TEST"), "TEST");
 			}
 
 			for (int i = 0; i < 10; i++) {
-				this.getSlavePluginCollector().collectMessage("bazhen-writer",
+				this.getTaskPluginCollector().collectMessage("bazhen-writer",
 						"bazhen");
 			}
 		}
 
 		@Override
 		public void prepare() {
-			System.out.println("fake writer slave prepared!");
+			System.out.println("fake writer task prepared!");
 		}
 
 		@Override
 		public void post() {
-			System.out.println("fake writer slave posted!");
+			System.out.println("fake writer task posted!");
 		}
 
 		@Override
 		public void init() {
-			System.out.println("fake writer slave initialized!");
+			System.out.println("fake writer task initialized!");
 		}
 
 		@Override
 		public void destroy() {
-			System.out.println("fake writer slave destroyed!");
+			System.out.println("fake writer task destroyed!");
 		}
 	}
 }

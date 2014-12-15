@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Column.Type;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.writer.otswriter.Key;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
@@ -47,7 +49,7 @@ public class Common {
             Column col = r.getColumn(i);
             OTSPKColumn expect = pkColumns.get(i);
 
-            if (col.getType() == Type.NULL) {
+            if (col.getRawData() == null) {
                 throw new IllegalArgumentException(String.format(OTSErrorMessage.PK_COLUMN_VALUE_IS_NULL_ERROR, expect.getName()));
             }
 
@@ -63,7 +65,7 @@ public class Common {
             Column col = r.getColumn(i + pkCount);
             OTSAttrColumn expect = attrColumns.get(i);
 
-            if (col.getType() == Type.NULL) {
+            if (col.getRawData() == null) {
                 attr.add(new Pair<String, ColumnValue>(expect.getName(), null));
                 continue;
             }
@@ -121,15 +123,27 @@ public class Common {
         return sleepTime;
     }
 
-    public static void collectDirtyRecord(SlavePluginCollector collector, List<LineAndError> errors) {
+    public static void collectDirtyRecord(TaskPluginCollector collector, List<LineAndError> errors) {
         for (LineAndError re : errors) {
             collector.collectDirtyRecord(re.getLine().getRecord(), re.getError().getMessage());
         }
     }
 
-    public static void collectDirtyRecord(SlavePluginCollector collector, List<OTSLine> lines, String errorMsg) {
+    public static void collectDirtyRecord(TaskPluginCollector collector, List<OTSLine> lines, String errorMsg) {
         for (OTSLine l : lines) {
             collector.collectDirtyRecord(l.getRecord(), errorMsg);
         }
+    }
+    
+    public static String configurtionToNoSensitiveString(Configuration param) {
+        Configuration outputParam = param.clone();
+        outputParam.set(Key.OTS_ACCESSKEY, "*************");
+        return outputParam.toJSON();
+    }
+    
+    public static String OTSConfToNoSensitiveString(OTSConf conf) {
+        OTSConf tmpConf = conf;
+        tmpConf.setAccessKey("*************");
+        return GsonParser.confToJson(tmpConf);
     }
 }

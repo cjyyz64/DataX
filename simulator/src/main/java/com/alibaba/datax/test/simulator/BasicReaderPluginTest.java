@@ -7,7 +7,6 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.container.runner.ReaderRunner;
 import com.alibaba.datax.core.container.util.LoadUtil;
-import com.alibaba.datax.core.statistics.metric.MetricManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
@@ -26,7 +25,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class BasicReaderPluginTest extends BasicPluginTest {
-    protected Reader.Master readerMaster = null;
+    protected Reader.Job jobReader = null;
 
     @BeforeClass
     public static void checkPluginPackageDir() {
@@ -82,12 +81,12 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
     protected List<Configuration> doReaderTest(Configuration jobConf,
                                                int adviceSplitNumber, List<Record> noteRecordForTest) {
         String pluginName = getTestPluginName();
-        readerMaster = (Reader.Master) super.getPluginMaster(jobConf,
+        jobReader = (Reader.Job) super.getPluginMaster(jobConf,
                 pluginName, PluginType.READER);
 
-        readerMaster.init();
-        readerMaster.prepare();
-        List<Configuration> jobs = readerMaster.split(adviceSplitNumber);
+        jobReader.init();
+        jobReader.prepare();
+        List<Configuration> jobs = jobReader.split(adviceSplitNumber);
 
         if (null == jobs || jobs.isEmpty()) {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
@@ -96,7 +95,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 
         long channelId = 0;
         long slaveId = 1;
-        MetricManager.registerMetric(slaveId, channelId);
+//        MetricManager.registerMetric(slaveId, channelId);
 
         int numThread = jobs.size();
         ExecutorService executor = Executors.newFixedThreadPool(numThread);
@@ -140,8 +139,8 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
         for (List<Record> tempList : allTempRecordForTest) {
             noteRecordForTest.addAll(tempList);
         }
-        readerMaster.post();
-        readerMaster.destroy();
+        jobReader.post();
+        jobReader.destroy();
 
         return jobs;
     }
@@ -149,7 +148,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
     private ReaderRunner getReaderRunner(Configuration jobConf, int slaveId,
                                          PrintWriter printWriter, List<Record> noteRecordForTest) {
         ReaderRunner readerRunner = (ReaderRunner) LoadUtil.loadPluginRunner(
-                PluginType.READER, getTestPluginName(), slaveId);
+                PluginType.READER, getTestPluginName());
 
         readerRunner.setJobConf(jobConf);
         readerRunner.setRecordSender(new RecordSenderForTest(printWriter,

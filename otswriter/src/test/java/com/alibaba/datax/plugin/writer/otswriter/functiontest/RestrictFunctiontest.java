@@ -12,7 +12,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
@@ -272,9 +271,9 @@ public class RestrictFunctiontest {
             r.addColumn(new StringColumn(s));
             r.addColumn(new StringColumn(s));
             r.addColumn(new BytesColumn(sb.toString().getBytes("UTF-8")));
-            r.addColumn(new NullColumn());
-            r.addColumn(new NullColumn());
-            r.addColumn(new NullColumn());
+            r.addColumn(new StringColumn());
+            r.addColumn(new StringColumn());
+            r.addColumn(new StringColumn());
             
             // expect
             row.put("pk_0", ColumnValue.fromString(s));

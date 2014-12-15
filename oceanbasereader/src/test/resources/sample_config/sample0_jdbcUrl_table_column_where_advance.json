@@ -1,0 +1,32 @@
+{
+    "content": [
+        {
+            "reader": {
+                "name": "oceanbasereader",
+                "parameter": {
+                    "connection": [
+                        {
+                            "configUrl": "",
+                            "table": [
+                                "table0", "table1"
+                            ]
+                        },
+                        {
+                            "configUrl": "",
+                            "table": [
+                                "table10", "table11"
+                            ]
+                        }
+                    ],
+                    "column": [
+                        "firstColumn?",
+                        "secondColumn?",
+                        "now()?"
+                    ],
+                    "where": "modifyTime>'2014-08-08'?"
+                }
+            },
+            "writer": {}
+        }
+    ]
+}

@@ -1,7 +1,7 @@
 {
-    "endpoint":"http://10.101.16.6",
-    "accessid":"OTSMultiUser001_accessid",
-    "accesskey":"OTSMultiUser001_accesskey",
-    "instance-name":"TestInstance001",
+    "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
+    "accessid":"5GbtIurEnFZDWMih",
+    "accesskey":"IJ5Eq4aRsMQu8JczndW6v78wYMsJIP",
+    "instance-name":"datax3",
     "ag-ip":""
 }

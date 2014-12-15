@@ -28,9 +28,9 @@ import java.util.UUID;
  * Created by haiwei.luo on 14-9-17.
  */
 public class TxtFileWriter extends Writer {
-	public static class Master extends Writer.Master {
+	public static class Job extends Writer.Job {
 		private static final Logger LOG = LoggerFactory
-				.getLogger(TxtFileWriter.Master.class);
+				.getLogger(Job.class);
 
 		private Configuration writerSliceConfig = null;
 
@@ -145,9 +145,9 @@ public class TxtFileWriter extends Writer {
 
 	}
 
-	public static class Slave extends Writer.Slave {
+	public static class Task extends Writer.Task {
 		private static final Logger LOG = LoggerFactory
-				.getLogger(TxtFileWriter.Slave.class);
+				.getLogger(Task.class);
 
 		private Configuration writerSliceConfig;
 

@@ -6,7 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.callable.BatchWriteRowCallable;
 import com.alibaba.datax.plugin.writer.otswriter.callable.PutRowChangeCallable;
 import com.alibaba.datax.plugin.writer.otswriter.callable.UpdateRowChangeCallable;
@@ -27,7 +27,7 @@ import com.aliyun.openservices.ots.model.UpdateRowRequest;
 import com.aliyun.openservices.ots.model.UpdateRowResult;
 
 public class OTSBatchWriterRowTask implements Runnable {
-    private SlavePluginCollector collector = null;
+    private TaskPluginCollector collector = null;
     private OTS ots = null;
     private OTSConf conf = null;
     private List<OTSLine> otsLines = new ArrayList<OTSLine>();
@@ -38,7 +38,7 @@ public class OTSBatchWriterRowTask implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(OTSBatchWriterRowTask.class);
 
     public OTSBatchWriterRowTask(
-            SlavePluginCollector collector,
+            TaskPluginCollector collector,
             OTS ots,
             OTSConf conf, 
             List<OTSLine> lines
@@ -148,6 +148,7 @@ public class OTSBatchWriterRowTask implements Runnable {
                     List<OTSLine> newLines = new ArrayList<OTSLine>();
                     for (LineAndError re : errors) {
                         if (RetryHelper.canRetry(re.getError().getCode())) {
+                            LOG.warn("Retry for '{}'", re.getError().getMessage());
                             newLines.add(re.getLine());
                         } else {
                             LOG.error("Can not retry, record row to collector. {}", re.getError().getMessage());

@@ -1,0 +1,6 @@
+# psql -h 10.98.109.113 -p3002 -U datax -d datax
+
+ip:			10.98.109.113
+port:		3002
+username:	datax
+password:	datax

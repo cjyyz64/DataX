@@ -401,7 +401,6 @@ public class OdpsUtil {
                     if (!isPartitionExists) {
                         LOG.info("Try to add partition:[{}] in table:[{}] by drop it and then add it..", partition,
                                 table.getName());
-                        OdpsUtil.dropPart(table, partition);
                         OdpsUtil.addPart(table, partition);
                     }
                 }
