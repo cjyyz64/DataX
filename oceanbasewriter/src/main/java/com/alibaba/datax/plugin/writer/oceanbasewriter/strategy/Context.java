@@ -85,11 +85,6 @@ public class Context {
         this.slavePluginCollector.collectDirtyRecord(record,e);
 	}
 	
-	public String badFile(){
-		return this.configuration.getString(Key.BAD_FILE, "");
-	}
-
-
 	public long activeMemPercent(){
 		return this.configuration.getInt(Key.ACTIVE_MEM_PERCENT, 60);
 	}
