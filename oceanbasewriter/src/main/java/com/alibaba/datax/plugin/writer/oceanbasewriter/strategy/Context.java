@@ -14,6 +14,7 @@ import java.sql.ResultSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Context {
 	
@@ -80,10 +81,17 @@ public class Context {
 			throw DataXException.asDataXException(OceanbaseErrorCode.DESC,e);
 		}
 	}
-	
+
+    private static final AtomicLong failNumber = new AtomicLong(0);
+
 	public void reportFail(Record record,Exception e){
+        failNumber.incrementAndGet();
         this.slavePluginCollector.collectDirtyRecord(record,e);
 	}
+
+    public long failNumber(){
+        return failNumber.longValue();
+    }
 	
 	public long activeMemPercent(){
 		return this.configuration.getInt(Key.ACTIVE_MEM_PERCENT, 60);

@@ -79,11 +79,11 @@ public abstract class Strategy {
 		}
 		
 		private void logException(Record record,Exception e){
-			//if(context.failNumber() < max){
+			if(context.failNumber() < max){
 				log.error(record.toString(),e);
-			//}else if(context.failNumber() == max){
+			}else if(context.failNumber() == max){
 				log.error("Pay attention more bad lines are hidden");
-			//}
+			}
 		}
 		
 		public void handle(Record record,Exception e){
