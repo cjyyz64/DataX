@@ -6,10 +6,10 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
-import com.alibaba.datax.service.face.domain.JobStatus;
-import com.alibaba.datax.service.face.domain.Result;
-import com.alibaba.datax.service.face.domain.State;
-import com.alibaba.datax.service.face.domain.TaskGroup;
+import com.alibaba.datax.dataxservice.face.domain.JobStatus;
+import com.alibaba.datax.dataxservice.face.domain.Result;
+import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

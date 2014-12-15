@@ -2,10 +2,10 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.service.face.domain.JobStatus;
-import com.alibaba.datax.service.face.domain.Result;
-import com.alibaba.datax.service.face.domain.TaskGroup;
-import com.alibaba.datax.service.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.JobStatus;
+import com.alibaba.datax.dataxservice.face.domain.Result;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;

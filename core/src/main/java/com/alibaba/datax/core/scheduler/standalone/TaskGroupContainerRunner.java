@@ -3,7 +3,7 @@ package com.alibaba.datax.core.scheduler.standalone;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.container.TaskGroupContainer;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.service.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.State;
 
 /**
  * Created by jingxing on 14-8-28.

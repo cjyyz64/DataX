@@ -5,7 +5,7 @@ import com.alibaba.datax.core.statistics.collector.container.AbstractTaskGroupCo
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.DataxServiceUtil;
-import com.alibaba.datax.service.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
