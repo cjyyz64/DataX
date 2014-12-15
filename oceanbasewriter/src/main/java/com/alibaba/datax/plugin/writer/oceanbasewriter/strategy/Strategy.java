@@ -23,10 +23,6 @@ public abstract class Strategy {
 
 	protected abstract void write(List<Record> records) throws Exception;
 
-	protected Record escape(Record record){
-		return record;
-	}
-	
 	public void batchWrite() throws Exception {
 		final int batch = context.batch();
 		while (true) {
@@ -59,8 +55,7 @@ public abstract class Strategy {
 				helper.handle(original, e);
 			}else{
 				for(Record record : records){
-					Record escape = this.escape(record);
-					this.writeWithRetry(ImmutableList.of(escape), record);
+					this.writeWithRetry(ImmutableList.of(record), record);
 				}
 			}
 		}
