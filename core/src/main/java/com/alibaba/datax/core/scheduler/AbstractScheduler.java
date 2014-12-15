@@ -37,12 +37,6 @@ public abstract class AbstractScheduler implements Scheduler {
 
         this.jobId = configurations.get(0).getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
-        String dataxService = configurations.get(0).getString(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
-        int httpTimeOut = configurations.get(0).getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 5000);
-
-        initDataXServiceManager(jobId, dataxService, httpTimeOut);
 
         errorLimit = new ErrorRecordLimit(configurations.get(0));
 
@@ -101,12 +95,6 @@ public abstract class AbstractScheduler implements Scheduler {
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
 
-    }
-
-    private void initDataXServiceManager(Long jobId, String dataxService, int httpTimeOut) {
-        DataxServiceUtil.setBasicUrl(dataxService);
-        DataxServiceUtil.setTimeoutInMilliSeconds(httpTimeOut);
-        DataxServiceUtil.setJobId(jobId);
     }
 
     protected abstract void startAllTaskGroup(List<Configuration> configurations);
