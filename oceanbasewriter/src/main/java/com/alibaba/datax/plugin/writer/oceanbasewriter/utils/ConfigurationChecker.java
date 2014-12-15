@@ -32,12 +32,12 @@ public class ConfigurationChecker {
     }
 
     private static void checkConnection(Configuration configuration){
-        List<JSONObject> connections = configuration.getList(Key.CONNECITON, JSONObject.class);
-        Preconditions.checkArgument(connections != null && !connections.isEmpty(), "%s not provide", Key.CONNECITON);
+        List<JSONObject> connections = configuration.getList(Key.CONNECTION, JSONObject.class);
+        Preconditions.checkArgument(connections != null && !connections.isEmpty(), "%s not provide", Key.CONNECTION);
     }
 
     private static void checkTable(Configuration configuration){
-        List<JSONObject> connections = configuration.getList(Key.CONNECITON, JSONObject.class);
+        List<JSONObject> connections = configuration.getList(Key.CONNECTION, JSONObject.class);
         for (JSONObject connection : connections){
             Configuration cfg = Configuration.from(connection);
             String url = cfg.getString(Key.TABLE,"");
@@ -46,7 +46,7 @@ public class ConfigurationChecker {
     }
 
     private static void checkConfigURL(Configuration configuration){
-        List<JSONObject> connections = configuration.getList(Key.CONNECITON, JSONObject.class);
+        List<JSONObject> connections = configuration.getList(Key.CONNECTION, JSONObject.class);
         for (JSONObject connection : connections){
             Configuration cfg = Configuration.from(connection);
             String url = cfg.getString(Key.CONFIG_URL,"");

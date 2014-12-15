@@ -7,7 +7,7 @@ public final class Key {
 
 	public final static String TABLE = "table";
 
-    public final static String CONNECITON = "connection";
+    public final static String CONNECTION = "connection";
 
 	public final static String COLUMNS = "column";
 

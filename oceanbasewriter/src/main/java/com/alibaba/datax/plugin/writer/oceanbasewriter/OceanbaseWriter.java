@@ -21,14 +21,14 @@ public class OceanbaseWriter extends Writer {
         @Override
         public List<Configuration> split(int mandatoryNumber) {
             Configuration configuration = this.getPluginJobConf();
-            List<JSONObject> connections = configuration.getList(Key.CONNECITON, JSONObject.class);
+            List<JSONObject> connections = configuration.getList(Key.CONNECTION, JSONObject.class);
             for (JSONObject connection : connections){
                 Configuration slice = Configuration.from(connection);
                 String table = slice.getString(Key.TABLE);
                 String url = slice.getString(Key.CONFIG_URL);
                 configuration.set(Key.TABLE, table);
                 configuration.set(Key.CONFIG_URL, url);
-                configuration.remove(Key.CONNECITON);
+                configuration.remove(Key.CONNECTION);
             }
             List<Configuration> configurations = Lists.newArrayList();
             for (int index = 0; index < mandatoryNumber; index++){
