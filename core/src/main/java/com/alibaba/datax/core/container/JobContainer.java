@@ -301,34 +301,22 @@ public class JobContainer extends AbstractContainer {
         // 判断是否为分布式模式运行
         if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
             if ("local".equalsIgnoreCase(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE))) {
-                LOG.info("Running by Local Mode.");
-                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                        LocalScheduler.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
-                        LocalScheduler.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-                        LocalTaskGroupContainerCollector.class.getCanonicalName());
 
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
-                        LocalJobContainerCollector.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-                        LocalTaskGroupContainerCollector.class.getCanonicalName());
+                for (Configuration taskGroupConfig : taskGroupConfigs) {
+                    flushLocalConfig(taskGroupConfig);
+                }
+                flushLocalConfig(this.configuration);
+
+                LOG.info("Running by Local Mode.");
             } else {
                 // 分布式运行模式
+                for (Configuration taskGroupConfig : taskGroupConfigs) {
+                    flushDistributeConfig(taskGroupConfig);
+                }
+                flushDistributeConfig(this.configuration);
+
                 LOG.info("Running by Distribute Mode.");
-                this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                        DistributeScheduler.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
-                        DistributeScheduler.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-                        DistributeTaskGroupContainerCollector.class.getCanonicalName());
-
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
-                        DistributeJobContainerCollector.class.getCanonicalName());
-                this.configuration.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-                        DistributeTaskGroupContainerCollector.class.getCanonicalName());
             }
-
         } else {
             LOG.info("Running by Standalone Mode.");
         }
@@ -363,6 +351,24 @@ public class JobContainer extends AbstractContainer {
          * 检查任务执行情况
          */
         this.checkLimit();
+    }
+
+    private void flushDistributeConfig(Configuration taskGroupConfig) {
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                DistributeScheduler.class.getCanonicalName());
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                DistributeJobContainerCollector.class.getCanonicalName());
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                DistributeTaskGroupContainerCollector.class.getCanonicalName());
+    }
+
+    private void flushLocalConfig(Configuration taskGroupConfig) {
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
+                LocalScheduler.class.getCanonicalName());
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS,
+                LocalJobContainerCollector.class.getCanonicalName());
+        taskGroupConfig.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
+                LocalTaskGroupContainerCollector.class.getCanonicalName());
     }
 
     private void post() {
