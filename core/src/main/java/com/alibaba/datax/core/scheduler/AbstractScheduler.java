@@ -31,7 +31,7 @@ public abstract class AbstractScheduler implements Scheduler {
     public void schedule(List<Configuration> configurations,
                          ContainerCollector jobCollector) {
         Validate.notNull(configurations,
-                "standalone scheduler配置不能为空");
+                "scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 10000);
 
@@ -114,6 +114,6 @@ public abstract class AbstractScheduler implements Scheduler {
 
     private boolean isJobKilling(Long jobId) {
         Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
-        return jobInfo.getData().intValue() == State.KILLING.value();
+        return jobInfo.getData() == State.KILLING.value();
     }
 }
