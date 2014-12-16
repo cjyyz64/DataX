@@ -393,6 +393,10 @@ public class JobContainer extends AbstractContainer {
             transferCosts = 1L;
         }
 
+        if (super.getContainerCollector() == null) {
+            return;
+        }
+
         Communication communication = super.getContainerCollector().collect();
         communication.setTimestamp(this.endTimeStamp);
 
