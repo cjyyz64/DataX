@@ -20,13 +20,12 @@ public abstract class AbstractContainer implements Container {
     public AbstractContainer(Configuration configuration) {
         Validate.notNull(configuration, "Configuration can not be null.");
 
-        String dataxService = configuration.getString(
+        String dataxServiceUrl = configuration.getString(
                 CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
-        int httpTimeOut = configuration.getInt(
+        int httpTimeOutInMillionSeconds = configuration.getInt(
                 CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 5000);
 
-        DataxServiceUtil.setBasicUrl(dataxService);
-        DataxServiceUtil.setTimeoutInMilliSeconds(httpTimeOut);
+        DataxServiceUtil.init(dataxServiceUrl, httpTimeOutInMillionSeconds);
 
         this.configuration = configuration;
     }

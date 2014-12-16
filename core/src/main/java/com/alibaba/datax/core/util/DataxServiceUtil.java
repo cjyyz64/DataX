@@ -21,27 +21,20 @@ import java.util.List;
 
 
 public final class DataxServiceUtil {
+    private static String DATAX_SERVICE_URL;
 
-    private static String basicUrl;
-    private static int timeoutInMilliSeconds;
-    private static Long jobId;
+    private static HttpClientUtil httpClientUtil;
 
-    public static void setBasicUrl(String basicUrl) {
-        DataxServiceUtil.basicUrl = basicUrl;
+    public static void init(String dataxServiceUrl, int httpTimeOutInMillionSeconds) {
+        DATAX_SERVICE_URL = dataxServiceUrl;
+        HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
+
+        httpClientUtil = HttpClientUtil.getHttpClientUtil();
     }
 
-    public static void setTimeoutInMilliSeconds(int timeoutInMilliSeconds) {
-        DataxServiceUtil.timeoutInMilliSeconds = timeoutInMilliSeconds;
-    }
-
-    public static void setJobId(Long jobId) {
-        DataxServiceUtil.jobId = jobId;
-    }
-
-    private static HttpClientUtil httpClientUtil = HttpClientUtil.getHttpClientUtil();
 
     public static Result<Integer> getJobInfo(Long jobId) {
-        String url = basicUrl + "inner/job/" + jobId + "/state";
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/state";
 
         try {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
@@ -51,16 +44,19 @@ public final class DataxServiceUtil {
             Type type = new TypeToken<Result<Integer>>() {
             }.getType();
             Result<Integer> result = SerializationUtil.gson2Object(resJson, type);
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("getJobInfo error, jobId=[%s], http result:[%s].", jobId, resJson));
+            }
             return result;
 
         } catch (Exception e) {
-            System.err.println("getJobInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "getJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED, String.format("getJobInfo error, jobId=[%s]", jobId), e);
         }
     }
 
     public static Result updateJobInfo(Long jobId, JobStatus jobStatus) {
-        String url = basicUrl + "inner/job/" + jobId + "/status";
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/status";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
@@ -72,14 +68,21 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
+
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("updateJobInfo error, jobId=[%s], jobStatus=[%s], http result:[%s].", jobId, jobStatus, resJson));
+            }
+
             return result;
         } catch (Exception e) {
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "updateJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("updateJobInfo error, jobId=[%s], jobStatus=[%s].", jobId, jobStatus.toString()), e);
         }
     }
 
     public static Result<List<TaskGroup>> getTaskGroupInJob(Long jobId) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup";
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup";
 
         try {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
@@ -91,16 +94,20 @@ public final class DataxServiceUtil {
             }.getType();
             Result<List<TaskGroup>> result = SerializationUtil.longDateGson2Object(resJson, type);
 
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("getTaskGroupInJob error, jobId=[%s], http result:[%s].", jobId, resJson));
+            }
 
             return result;
         } catch (Exception e) {
-            System.err.println("getJobInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "getJobInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("getTaskGroupInJob error, jobId=[%s]", jobId), e);
         }
     }
 
     public static Result startTaskGroup(Long jobId, TaskGroup taskGroup) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup";
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup";
         try {
             HttpPost httpPost = HttpClientUtil.getPostRequest();
             httpPost.setURI(new URI(url));
@@ -112,32 +119,41 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup, resJson));
+            }
+
             return result;
         } catch (Exception e) {
-            System.err.println("startTaskGroup error, groupId = " + taskGroup.getTaskGroupId());
-            //throw new RuntimeException("startTaskGroup error");
-            throw DataXException.asDataXException(FrameworkErrorCode.START_TASKGROUP_ERROR, "startTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s].", jobId, taskGroup), e);
         }
     }
 
     public static Result killTaskGroup(Long jobId, Integer taskGroupId) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId;
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup/" + taskGroupId;
         try {
             HttpDelete httpDelete = HttpClientUtil.getDeleteRequest();
             httpDelete.setURI(new URI(url));
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("killTaskGroup error, jobId=[%s], taskGroupId=[%s], http result:[%s].", jobId, taskGroupId, resJson));
+            }
+
             return result;
 
         } catch (Exception e) {
-            System.err.println("killTaskGroup error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "killTaskGroup error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("killTaskGroup error, jobId=[%s], taskGroupId=[%s].", jobId, taskGroupId), e);
         }
     }
 
     public static Result updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatus taskGroupStatus) {
-        String url = basicUrl + "inner/job/" + jobId + "/taskGroup/" + taskGroupId + "/status";
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup/" + taskGroupId + "/status";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
@@ -150,16 +166,19 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            if (!result.getIsSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("updateTaskGroupInfo error, jobId=[%s], taskGroupId=[%s], TaskGroupStatus=[%s], http result:[%s].", jobId, taskGroupId, taskGroupStatus, resJson));
+            }
+
             return result;
         } catch (Exception e) {
-            System.err.println("updateTaskGroupInfo error");
-            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, "updateTaskGroupInfo error");
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("updateTaskGroupInfo error, jobId=[%s], taskGroupId=[%s], TaskGroupStatus=[%s].", jobId, taskGroupId, taskGroupStatus), e);
         }
     }
 
-    /**
-     * TODO 统计数据指标  update?
-     */
+
     public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
         Communication communication = new Communication();
         communication.setState(taskGroup.getState());
@@ -198,4 +217,5 @@ public final class DataxServiceUtil {
         }
         return communication;
     }
+
 }

@@ -7,8 +7,6 @@ import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
-import com.alibaba.datax.dataxservice.face.domain.Result;
-
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.slf4j.Logger;
@@ -66,8 +64,8 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public Communication collect() {
-        Result<List<TaskGroup>> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(this.jobId);
-        for (TaskGroup taskGroup : taskGroupInJob.getData()) {
+        List<TaskGroup> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(this.jobId);
+        for (TaskGroup taskGroup : taskGroupInJob) {
             taskGroupCommunicationMap.put(taskGroup.getTaskGroupId(),
                     DataxServiceUtil.convertTaskGroupToCommunication(taskGroup));
         }
