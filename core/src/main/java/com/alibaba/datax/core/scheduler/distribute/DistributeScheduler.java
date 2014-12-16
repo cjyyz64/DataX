@@ -44,7 +44,6 @@ public class DistributeScheduler extends AbstractScheduler {
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
 
-        boolean allTaskGroupFinished = true;
         while (true) {
             Communication nowJobContainerCommunication = frameworkCollector.collect();
             if (nowJobContainerCommunication.getState() == State.FAILED) {
@@ -55,11 +54,13 @@ public class DistributeScheduler extends AbstractScheduler {
                     taskGroupCurrentStateMap.put(taskGroupId, taskGroupState);
 
                     if (taskGroupState.isRunning()) {
+                        LOG.info("TaskGroup {} is still running, try to kill.", taskGroupId);
                         DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroupId);
                     }
                 }
             }
 
+            boolean allTaskGroupFinished = true;
             for (Map.Entry<Integer, State> entry : taskGroupCurrentStateMap.entrySet()) {
                 State taskGroupState = entry.getValue();
                 if (!taskGroupState.isFinished()) {
@@ -67,13 +68,17 @@ public class DistributeScheduler extends AbstractScheduler {
                 }
             }
             if (allTaskGroupFinished) {
+                LOG.info("All task group finished.");
                 break;
             }
 
-            if (System.currentTimeMillis() - beginTime >= maxKillTime) {
+            long killTime = System.currentTimeMillis() - beginTime;
+            if (killTime >= maxKillTime) {
                 throw DataXException.asDataXException(FrameworkErrorCode.KILL_JOB_TIMEOUT_ERROR,
                         "内部运行失败，在 Kill 其他运行实例时出现超时错误，需要 PE 介入处理");
             }
+            LOG.info("There are still task groups running, scheduler will try for {} seconds",
+                    (maxKillTime - killTime) / 1000);
             try {
                 TimeUnit.SECONDS.sleep(5);
             } catch (InterruptedException unused) {
