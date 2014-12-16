@@ -58,7 +58,7 @@ public class JobContainerCollector extends AbstractContainerCollector {
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
 
         try {
-            String result = Request.Put(String.format("%s/job/%d/status", this.dataXServiceAddress, jobId))
+            String result = Request.Put(String.format("%s/inner/job/%d/status", this.dataXServiceAddress, jobId))
                     .connectTimeout(this.dataXServiceTimeout).socketTimeout(this.dataXServiceTimeout)
                     .bodyString(message, ContentType.APPLICATION_JSON)
                     .execute().returnContent().asString();

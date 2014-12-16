@@ -63,12 +63,15 @@ public final class ConfigParser {
             String lastPathKey = key.substring(lastPathIndex);
             if (lastPathKey.length() > 1 && lastPathKey.charAt(0) == '*'
                     && lastPathKey.charAt(1) != '*') {
-                String value = config.getString(key);
-                String newKey = key.substring(0, lastPathIndex)
-                        + lastPathKey.substring(1);
-                config.set(newKey,
-                        SecretUtil.decrypt(value, privateKey));
-                config.remove(key);
+                Object value = config.get(key);
+                if(value instanceof String) {
+                    String newKey = key.substring(0, lastPathIndex)
+                            + lastPathKey.substring(1);
+                    config.set(newKey,
+                            SecretUtil.decrypt((String)value, privateKey));
+                    config.addSecretKeyPath(newKey);
+                    config.remove(key);
+                }
             }
         }
 

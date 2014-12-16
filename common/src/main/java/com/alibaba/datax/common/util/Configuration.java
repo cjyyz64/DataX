@@ -674,9 +674,7 @@ public class Configuration {
 	public Configuration clone() {
 		Configuration config = Configuration
 				.from(Configuration.toJSONString(this.getInternal()));
-        for(String keyPath : this.secretKeyPathSet) {
-            config.addSecretKeyPath(keyPath);
-        }
+        config.addSecretKeyPath(this.getKeys());
         return config;
 	}
 
@@ -690,6 +688,12 @@ public class Configuration {
     public void addSecretKeyPath(String path) {
         if(StringUtils.isNotBlank(path)) {
             this.secretKeyPathSet.add(path);
+        }
+    }
+
+    public void addSecretKeyPath(Set<String> pathSet) {
+        if(pathSet != null) {
+            this.secretKeyPathSet.addAll(pathSet);
         }
     }
 
