@@ -8,9 +8,7 @@ import com.alibaba.datax.core.scheduler.standalone.TaskGroupContainerRunner;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -44,14 +42,9 @@ public class LocalScheduler extends AbstractScheduler {
     @Override
     protected void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
         //通过进程退出返回码标示状态
-        Integer jobState = DataxServiceUtil.getJobInfo(super.getJobId()).getData();
-
-        boolean isKilling = jobState == State.KILLING.value();
-        if (isKilling) {
-            this.taskGroupContainerExecutorService.shutdownNow();
-            throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
-                    "job killed status");
-        }
+        this.taskGroupContainerExecutorService.shutdownNow();
+        throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
+                "job killed status");
     }
 
     private TaskGroupContainerRunner newTaskGroupContainerRunner(

@@ -16,16 +16,15 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class DistributeScheduler extends AbstractScheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(DistributeScheduler.class);
 
     @Override
-    protected void startAllTaskGroup(List<Configuration> configurations) {
+    protected void startAllTaskGroup(List<Configuration> taskGroupConfigurations) {
 
-        for (Configuration taskGroupConfig : configurations) {
+        for (Configuration taskGroupConfig : taskGroupConfigurations) {
             taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_MODEL, "taskGroup");
             TaskGroup taskGroup = new TaskGroup();
             taskGroup.setJobId(super.getJobId());
@@ -37,57 +36,31 @@ public class DistributeScheduler extends AbstractScheduler {
 
     @Override
     protected void dealFailedStat(ContainerCollector frameworkCollector, Throwable throwable) {
-        LOG.error("有任务失败，DataX 尝试终止整个任务.");
-
-        long beginTime = System.currentTimeMillis();
-        long maxKillTime = TimeUnit.HOURS.toMillis(1);
+        LOG.error("有 TaskGroup 失败，DataX 尝试终止整个任务.");
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
 
-        while (true) {
-            Communication nowJobContainerCommunication = frameworkCollector.collect();
-            if (nowJobContainerCommunication.getState() == State.FAILED) {
-                Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
-                for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
-                    State taskGroupState = entry.getValue().getState();
-                    Integer taskGroupId = entry.getKey();
-                    taskGroupCurrentStateMap.put(taskGroupId, taskGroupState);
+        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
+        for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
+            State taskGroupState = entry.getValue().getState();
+            Integer taskGroupId = entry.getKey();
+            taskGroupCurrentStateMap.put(taskGroupId, taskGroupState);
 
-                    if (taskGroupState.isRunning()) {
-                        LOG.info("TaskGroup {} is still running, try to kill.", taskGroupId);
-                        DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroupId);
-                    }
-                }
+            if (taskGroupState.isRunning()) {
+                LOG.info("有 TaskGroup {} 仍在运行, 尝试终止该 TaskGroup.", taskGroupId);
+                DataxServiceUtil.killTaskGroup(super.getJobId(), taskGroupId);
             }
+        }
 
-            boolean allTaskGroupFinished = true;
-            for (Map.Entry<Integer, State> entry : taskGroupCurrentStateMap.entrySet()) {
-                State taskGroupState = entry.getValue();
-                if (!taskGroupState.isFinished()) {
-                    allTaskGroupFinished = false;
-                }
-            }
-            if (allTaskGroupFinished) {
-                LOG.info("All task group finished.");
-                break;
-            }
-
-            long killTime = System.currentTimeMillis() - beginTime;
-            if (killTime >= maxKillTime) {
-                throw DataXException.asDataXException(FrameworkErrorCode.KILL_JOB_TIMEOUT_ERROR,
-                        "内部运行失败，在 Kill 其他运行实例时出现超时错误，需要 PE 介入处理");
-            }
-            LOG.info("There are still task groups running, scheduler will try for {} seconds",
-                    (maxKillTime - killTime) / 1000);
-            try {
-                TimeUnit.SECONDS.sleep(5);
-            } catch (InterruptedException unused) {
+        for (Map.Entry<Integer, State> entry : taskGroupCurrentStateMap.entrySet()) {
+            State taskGroupState = entry.getValue();
+            if (taskGroupState.isRunning()) {
+                return;
             }
         }
 
         throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
                 throwable);
-
     }
 
     @Override
