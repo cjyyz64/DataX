@@ -194,8 +194,8 @@ public class CommunicationManager {
             return new Pair<String, Long>("errorRecords", communication.getLongCounter(TOTAL_ERROR_RECORDS));
         }
 
-        private static Pair<String, Double> getStage(final Communication communication) {
-            return new Pair<String, Double>("stage", communication.getDoubleCounter(STAGE));
+        private static Pair<String, Long> getStage(final Communication communication) {
+            return new Pair<String, Long>("stage", communication.getLongCounter(STAGE));
         }
 
         private static Pair<String, Double> getPercentage(final Communication communication) {

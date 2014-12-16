@@ -18,17 +18,22 @@ public class DistributeTaskGroupContainerCollector extends AbstractTaskGroupCont
         super(configuration);
     }
 
+    // 用于计算 speed
+    private Communication oldCommuication;
 
+    /**
+     * 注意：这里的 report，是用于 每一个 taskGroup 搜集自身对应的 task 的状态，然后汇报到 DataxService.
+     */
     @Override
     public void report(Communication communication) {
         TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
 
         // 不能设置 state，否则会收到 DataXService 的报错：State should be updated be alisa ONLY.
         // taskGroupStatus.setState(communication.getState());
+        taskGroupStatus.setStage(communication.getLongCounter("stage").intValue());
         taskGroupStatus.setTotalRecords(CommunicationManager.getTotalReadRecords(communication));
         taskGroupStatus.setTotalBytes(CommunicationManager.getTotalReadBytes(communication));
 
-        //TODO speed
         taskGroupStatus.setSpeedRecords(communication.getLongCounter(CommunicationManager.RECORD_SPEED));
         taskGroupStatus.setSpeedBytes(communication.getLongCounter(CommunicationManager.BYTE_SPEED));
 

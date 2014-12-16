@@ -10,6 +10,7 @@ import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.collector.plugin.task.AbstractTaskPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.util.ClassUtil;
@@ -77,7 +78,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
     @Override
     public void start() {
-        Communication taskGroupCommunication;
+        Communication nowTaskGroupContainerCommunication = null;
 
         try {
             List<Configuration> taskConfigs = this.configuration
@@ -109,21 +110,28 @@ public class TaskGroupContainer extends AbstractContainer {
             }
             this.containerCollector.registerCommunication(taskConfigs);
 
+            int taskCountInThisTaskGroup = taskConfigs.size();
             LOG.info(String.format(
                     "taskGroupId=[%d] start [%d] channels for [%d] tasks.",
-                    this.taskGroupId, channelNumber, taskConfigs.size()));
+                    this.taskGroupId, channelNumber, taskCountInThisTaskGroup));
 
             long lastReportTimeStamp = 0;
             int taskIndex = 0;
+
+            Communication lastTaskGroupContainerCommunication = new Communication();
+
             while (true) {
                 State taskExecutorTotalState = this.containerCollector.collectState();
                 // 发现该taskGroup下taskExecutor的总状态失败则汇报错误
                 if (taskExecutorTotalState == State.FAILED) {
-                    taskGroupCommunication = this.containerCollector.collect();
-                    this.containerCollector.report(taskGroupCommunication);
+                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+
+                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
+                    this.containerCollector.report(reportCommunication);
 
                     throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, taskGroupCommunication.getThrowable());
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, reportCommunication.getThrowable());
                 }
 
                 for (int slotIndex = 0; slotIndex < taskExecutors.size(); slotIndex++) {
@@ -131,7 +139,8 @@ public class TaskGroupContainer extends AbstractContainer {
                     // 当taskExecutor为空或上一个任务已完成，且仍有未完成任务时，启动一个新的taskExecutor
                     if ((taskExecutor == null || taskExecutor.isTaskFinished())
                             && taskIndex < taskConfigs.size()) {
-                        LOG.debug(String.format("start a new taskExecutor[%d]", taskIndex));
+                        LOG.debug("start a new taskExecutor[{}]", taskIndex);
+
                         TaskExecutor newTaskExecutor = new TaskExecutor(
                                 taskConfigs.get(taskIndex++));
                         // 将新生成的newTaskExecutor放入taskExecutors中，并启动
@@ -151,35 +160,46 @@ public class TaskGroupContainer extends AbstractContainer {
                 if (taskIndex >= taskConfigs.size() && isAllTaskDone
                         && taskExecutorTotalState == State.SUCCEEDED) {
                     // 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
-                    taskGroupCommunication = this.containerCollector.collect();
-                    this.containerCollector.report(taskGroupCommunication);
+                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
-                    LOG.info("taskGroup[{}] complete it's tasks.", this.taskGroupId);
+                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    this.containerCollector.report(reportCommunication);
+
+                    LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
                     break;
                 }
 
                 // 如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
                 long now = System.currentTimeMillis();
                 if (now - lastReportTimeStamp > reportIntervalInMillSec) {
-                    taskGroupCommunication = this.containerCollector.collect();
-                    this.containerCollector.report(taskGroupCommunication);
+                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
+
+                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    this.containerCollector.report(reportCommunication);
+
                     lastReportTimeStamp = now;
                 }
 
+                lastTaskGroupContainerCommunication = nowTaskGroupContainerCommunication;
                 Thread.sleep(sleepIntervalInMillSec);
             }
 
             //最后还要汇报一次
-            taskGroupCommunication = this.containerCollector.collect();
-            this.containerCollector.report(taskGroupCommunication);
-        } catch (Throwable e) {
-            taskGroupCommunication = this.containerCollector.collect();
+            nowTaskGroupContainerCommunication = this.containerCollector.collect();
+            nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
-            if (taskGroupCommunication.getThrowable() == null) {
-                taskGroupCommunication.setThrowable(e);
+            Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+            this.containerCollector.report(reportCommunication);
+        } catch (Throwable e) {
+            nowTaskGroupContainerCommunication = this.containerCollector.collect();
+
+            if (nowTaskGroupContainerCommunication.getThrowable() == null) {
+                nowTaskGroupContainerCommunication.setThrowable(e);
             }
-            taskGroupCommunication.setState(State.FAILED);
-            this.containerCollector.report(taskGroupCommunication);
+            nowTaskGroupContainerCommunication.setState(State.FAILED);
+            this.containerCollector.report(nowTaskGroupContainerCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
