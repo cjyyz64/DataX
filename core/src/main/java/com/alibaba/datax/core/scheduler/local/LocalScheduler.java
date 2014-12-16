@@ -44,8 +44,9 @@ public class LocalScheduler extends AbstractScheduler {
     @Override
     protected void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
         //通过进程退出返回码标示状态
-        State jobState = DataxServiceUtil.getJobInfo(super.getJobId());
-        boolean isKilling = jobState.value() == State.KILLING.value();
+        Integer jobState = DataxServiceUtil.getJobInfo(super.getJobId()).getData();
+
+        boolean isKilling = jobState == State.KILLING.value();
         if (isKilling) {
             this.taskGroupContainerExecutorService.shutdownNow();
             throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
