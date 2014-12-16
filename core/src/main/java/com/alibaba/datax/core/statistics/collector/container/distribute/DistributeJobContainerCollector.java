@@ -58,6 +58,8 @@ public class DistributeJobContainerCollector extends AbstractContainerCollector 
         jobStatus.setErrorRecords(communication.getLongCounter("totalErrorRecords"));
         jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
 
+        jobStatus.setErrorMessage(communication.getThrowableMessage());
+
         DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
     }

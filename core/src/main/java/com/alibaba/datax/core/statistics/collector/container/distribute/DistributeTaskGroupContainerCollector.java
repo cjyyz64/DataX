@@ -36,6 +36,7 @@ public class DistributeTaskGroupContainerCollector extends AbstractTaskGroupCont
 
         taskGroupStatus.setErrorRecords(CommunicationManager.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationManager.getTotalErrorBytes(communication));
+
         taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
 
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));

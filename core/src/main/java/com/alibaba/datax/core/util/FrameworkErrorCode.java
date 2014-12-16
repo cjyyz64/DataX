@@ -22,8 +22,8 @@ public enum FrameworkErrorCode implements ErrorCode {
     PLUGIN_SPLIT_ERROR("Framework-15", "DataX插件切分出错, 该问题通常是由于DataX各个插件编程错误引起，请联系DataX开发团队解决"),
     KILL_JOB_TIMEOUT_ERROR("Framework-16", "kill 任务超时，请联系PE解决"),
     START_TASKGROUP_ERROR("Framework-17", "taskGroup启动失败,请联系DataX开发团队解决"),
-    CALL_DATAX_SERVICE_FAILED("Framework-18", "请求 DataX_Service 出错."),
-    KILLED_EXIT_VALUE("Framework-143", "DataX 被 Kill 了"),;
+    CALL_DATAX_SERVICE_FAILED("Framework-18", "请求 DataX Service 出错."),
+    KILLED_EXIT_VALUE("Framework-143", "Job 收到了 Kill 命令."),;
 
     private final String code;
 
