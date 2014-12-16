@@ -113,7 +113,7 @@ public class DistributeScheduler extends AbstractScheduler {
 
         if (isAllTaskGroupFinished) {
             throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
-                    "DataX 被 Kill 了");
+                    "Job 收到了 Kill 命令.");
         }
 
     }
