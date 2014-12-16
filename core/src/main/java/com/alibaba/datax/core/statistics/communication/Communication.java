@@ -253,7 +253,8 @@ public class Communication extends BaseObject implements Cloneable {
     }
 
     /**
-     * 合并state，按Fail优先于Run优先于Success的顺序合并
+     * 合并state，优先级： (Failed | Killed) > Running > Success
+     * 这里不会出现 Killing 状态，killing 状态只在 Job 自身状态上才有.
      */
     public synchronized State mergeStateFrom(final Communication otherComm) {
         State retState = this.getState();

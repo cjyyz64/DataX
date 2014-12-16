@@ -298,29 +298,28 @@ public class JobContainer extends AbstractContainer {
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
 
-        // 判断是否为分布式模式运行
-        if (taskGroupConfigs != null && taskGroupConfigs.size() > 1) {
-            if ("local".equalsIgnoreCase(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE))) {
+        // 运行模式的判断
+        String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
 
-                for (Configuration taskGroupConfig : taskGroupConfigs) {
-                    flushLocalConfig(taskGroupConfig);
-                }
-                flushLocalConfig(this.configuration);
-
-                LOG.info("Running by Local Mode.");
-            } else {
-                // 分布式运行模式
-                for (Configuration taskGroupConfig : taskGroupConfigs) {
-                    flushDistributeConfig(taskGroupConfig);
-                }
-                flushDistributeConfig(this.configuration);
-
-                LOG.info("Running by Distribute Mode.");
+        // 如果指定为分布式，但是实际 taskGroup 只有一个，那么强制采用 local 模式运行
+        boolean forceToLocal = "distribute".equalsIgnoreCase(jobMode)
+                && taskGroupConfigs.size() == 1;
+        if ("local".equalsIgnoreCase(jobMode) || forceToLocal) {
+            for (Configuration taskGroupConfig : taskGroupConfigs) {
+                flushLocalConfig(taskGroupConfig);
             }
-        } else {
-            LOG.info("Running by Standalone Mode.");
-        }
+            flushLocalConfig(this.configuration);
 
+            LOG.info("Running by Local Mode.");
+        } else if ("distribute".equalsIgnoreCase(jobMode)) {
+            // 分布式运行模式
+            for (Configuration taskGroupConfig : taskGroupConfigs) {
+                flushDistributeConfig(taskGroupConfig);
+            }
+            flushDistributeConfig(this.configuration);
+
+            LOG.info("Running by Distribute Mode.");
+        }
 
         String schedulerClassName = this.configuration.getString(
                 CoreConstant.DATAX_CORE_SCHEDULER_CLASS);
