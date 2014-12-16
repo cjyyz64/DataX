@@ -35,9 +35,9 @@ public class JobContainerCollector extends AbstractContainerCollector {
         this.jobId = configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
         this.dataXServiceAddress = configuration.getString(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
+                CoreConstant.DATAX_CORE_DATAXSERVER_ADDRESS);
         this.dataXServiceTimeout = configuration.getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 3000);
+                CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 3000);
         Validate.isTrue(StringUtils.isNotBlank(this.dataXServiceAddress),
                 "在[local container collector]模式下，job的汇报地址不能为空");
     }

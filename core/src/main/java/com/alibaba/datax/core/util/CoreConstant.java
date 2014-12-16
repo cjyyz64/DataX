@@ -29,9 +29,9 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL = "core.container.taskGroup.reportInterval";
 
-    public static final String DATAX_CORE_DATAXSERVICE_ADDRESS = "core.dataXService.address";
+    public static final String DATAX_CORE_DATAXSERVER_ADDRESS = "core.dataXServer.address";
 
-    public static final String DATAX_CORE_DATAXSERVICE_TIMEOUT = "core.dataXService.timeout";
+    public static final String DATAX_CORE_DATAXSERVER_TIMEOUT = "core.dataXServer.timeout";
 
 	public static final String DATAX_CORE_SCHEDULER_CLASS = "core.scheduler.class";
 
