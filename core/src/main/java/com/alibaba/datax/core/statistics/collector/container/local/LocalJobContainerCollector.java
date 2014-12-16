@@ -41,19 +41,30 @@ public class LocalJobContainerCollector extends AbstractContainerCollector {
         }
     }
 
+    /**
+     * 和 DistributeJobContainerCollector 的 report 实现一样
+     */
     @Override
     public void report(Communication communication) {
-        String message = CommunicationManager.Jsonify.getSnapshot(communication);
+        JobStatus jobStatus = new JobStatus();
 
-        JobStatus jobStatus = DataxServiceUtil.convertToJobStatus(message);
+        jobStatus.setStage(communication.getLongCounter("stage").intValue());
+        jobStatus.setTotalRecords(communication.getLongCounter("totalReadRecords"));
+        jobStatus.setTotalBytes(communication.getLongCounter("totalReadBytes"));
+
+        jobStatus.setSpeedRecords(communication.getLongCounter("recordSpeed"));
+        jobStatus.setSpeedBytes(communication.getLongCounter("byteSpeed"));
+
+
+        jobStatus.setErrorRecords(communication.getLongCounter("totalErrorRecords"));
+        jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
 
         DataxServiceUtil.updateJobInfo(this.jobId, jobStatus);
-        LOG.info(message);
+        LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
     }
 
     @Override
     public Communication collect() {
-        // local 模式下，还需要考虑 killing,wait 等状态的合并
         return LocalTaskGroupCommunication.getJobCommunication();
     }
 

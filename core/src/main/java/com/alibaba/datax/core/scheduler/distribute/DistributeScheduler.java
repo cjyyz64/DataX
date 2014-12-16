@@ -10,6 +10,8 @@ import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +19,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class DistributeScheduler extends AbstractScheduler {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(DistributeScheduler.class);
 
     @Override
     protected void startAllTaskGroup(List<Configuration> configurations) {
@@ -33,8 +37,10 @@ public class DistributeScheduler extends AbstractScheduler {
 
     @Override
     protected void dealFailedStat(ContainerCollector frameworkCollector, Throwable throwable) {
+        LOG.error("有任务失败，DataX 尝试终止整个任务.");
+
         long beginTime = System.currentTimeMillis();
-        long maxKillTime = TimeUnit.HOURS.toMillis(8);
+        long maxKillTime = TimeUnit.HOURS.toMillis(1);
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
 
@@ -81,6 +87,8 @@ public class DistributeScheduler extends AbstractScheduler {
 
     @Override
     protected void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks) {
+        LOG.error("收到 [杀作业] 的命令，DataX 尝试杀掉其他运行中的任务，然后退出整个作业.");
+
         Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
 
         for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {

@@ -157,16 +157,6 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static JobStatus convertToJobStatus(String info) {
-        if (StringUtils.isBlank(info)) {
-            throw new IllegalArgumentException("can not convert null/empty to JobStatus.");
-        }
-
-        JobStatus jobStatus = SerializationUtil.gson2Object(info, JobStatus.class);
-
-        return jobStatus;
-    }
-
     /**
      * TODO 统计数据指标  update?
      */

@@ -102,13 +102,15 @@ public class CommunicationManager {
         public static String getSnapshot(final Communication communication) {
             StringBuilder sb = new StringBuilder();
             sb.append("Total ");
-            sb.append(getTotal(communication));
+            sb.append(getTotalRecords(communication));
+            sb.append(", ");
+            sb.append(getTotalBytes(communication));
             sb.append(" | ");
             sb.append("Speed ");
             sb.append(getSpeed(communication));
             sb.append(" | ");
             sb.append("Error ");
-            sb.append(getError(communication));
+            sb.append(getErrorRecord(communication));
             sb.append(" | ");
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
@@ -199,8 +201,8 @@ public class CommunicationManager {
             return new Pair<String, Long>("errorBytes", communication.getLongCounter(TOTAL_ERROR_BYTES));
         }
 
-        private static Pair<String, Double> getStage(final Communication communication) {
-            return new Pair<String, Double>("stage", communication.getDoubleCounter(STAGE));
+        private static Pair<String, Long> getStage(final Communication communication) {
+            return new Pair<String, Long>("stage", communication.getLongCounter(STAGE));
         }
 
         private static Pair<String, Double> getPercentage(final Communication communication) {
