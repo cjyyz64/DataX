@@ -15,16 +15,20 @@ import java.io.IOException;
 /**
  * Created by hongjiao.hj on 2014/12/9.
  */
-public class HttpClientUtil {
+public final class HttpClientUtil {
 
     private CloseableHttpClient httpClient;
 
     private volatile static HttpClientUtil clientUtil;
 
     // TODO 后续这两个参数可以放到配置文件，构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
-    private final int TIMEOUT_SECONDS = 60;
+    private static int HTTP_TIMEOUT_INMILLIONSECONDS;
 
     private final int POOL_SIZE = 20;
+
+    public static void setHttpTimeoutInMillionSeconds(int httpTimeoutInMillionSeconds){
+        HTTP_TIMEOUT_INMILLIONSECONDS = httpTimeoutInMillionSeconds;
+    }
 
     public static HttpClientUtil getHttpClientUtil() {
         if (null == clientUtil) {
@@ -38,10 +42,6 @@ public class HttpClientUtil {
     }
 
     private HttpClientUtil() {
-        init();
-    }
-
-    private void init() {
         initApacheHttpClient();
     }
 
@@ -51,8 +51,8 @@ public class HttpClientUtil {
 
     // 创建包含connection pool与超时设置的client
     private void initApacheHttpClient() {
-        RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(TIMEOUT_SECONDS * 1000)
-                .setConnectTimeout(TIMEOUT_SECONDS * 1000).setConnectionRequestTimeout(TIMEOUT_SECONDS * 1000)
+        RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(HTTP_TIMEOUT_INMILLIONSECONDS)
+                .setConnectTimeout(HTTP_TIMEOUT_INMILLIONSECONDS).setConnectionRequestTimeout(HTTP_TIMEOUT_INMILLIONSECONDS)
                 .setStaleConnectionCheckEnabled(true).build();
 
         httpClient = HttpClientBuilder.create().setMaxConnTotal(POOL_SIZE).setMaxConnPerRoute(POOL_SIZE)

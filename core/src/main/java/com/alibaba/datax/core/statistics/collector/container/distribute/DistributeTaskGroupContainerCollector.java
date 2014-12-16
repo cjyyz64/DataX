@@ -18,9 +18,6 @@ public class DistributeTaskGroupContainerCollector extends AbstractTaskGroupCont
         super(configuration);
     }
 
-    // 用于计算 speed
-    private Communication oldCommuication;
-
     /**
      * 注意：这里的 report，是用于 每一个 taskGroup 搜集自身对应的 task 的状态，然后汇报到 DataxService.
      */
@@ -40,6 +37,8 @@ public class DistributeTaskGroupContainerCollector extends AbstractTaskGroupCont
         taskGroupStatus.setErrorRecords(CommunicationManager.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationManager.getTotalErrorBytes(communication));
         taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
+
+        LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
 
         DataxServiceUtil.updateTaskGroupInfo(super.jobId, super.taskGroupId, taskGroupStatus);
     }
