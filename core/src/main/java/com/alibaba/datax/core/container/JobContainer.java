@@ -114,16 +114,13 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            Communication communication =
-                    super.getContainerCollector().collect();
-
-            // 汇报前的状态，不需要手动进行设置
-//            communication.setState(State.FAILED);
-            communication.setThrowable(e);
-
             ContainerCollector containerCollector = super.getContainerCollector();
-
             if (containerCollector != null) {
+                Communication communication =
+                        super.getContainerCollector().collect();
+                // 汇报前的状态，不需要手动进行设置
+                // communication.setState(State.FAILED);
+                communication.setThrowable(e);
                 super.getContainerCollector().report(communication);
             }
 
