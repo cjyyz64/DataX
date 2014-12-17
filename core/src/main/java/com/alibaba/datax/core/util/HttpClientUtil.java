@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  * Created by hongjiao.hj on 2014/12/9.
  */
-public final class HttpClientUtil {
+public class HttpClientUtil {
 
     private CloseableHttpClient httpClient;
 
