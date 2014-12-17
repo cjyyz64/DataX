@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 对于 standalone 和 local 模式下 taskGroup 的 communication 也需要集中到一个地方
  * 用 LocalTaskGroupCommunication 来充当该两种模式下的communication集中地
  */
-public class LocalTaskGroupCommunication {
+public class LocalTaskGroupCommunicationManager {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 
