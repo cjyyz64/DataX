@@ -15,6 +15,7 @@ import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
 import com.alibaba.datax.core.scheduler.local.LocalScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeJobContainerCollector;
 import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeTaskGroupContainerCollector;
 import com.alibaba.datax.core.statistics.collector.container.local.LocalJobContainerCollector;
@@ -120,7 +121,12 @@ public class JobContainer extends AbstractContainer {
             // 汇报前的状态，不需要手动进行设置
 //            communication.setState(State.FAILED);
             communication.setThrowable(e);
-            super.getContainerCollector().report(communication);
+
+            ContainerCollector containerCollector = super.getContainerCollector();
+
+            if (containerCollector != null) {
+                super.getContainerCollector().report(communication);
+            }
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
