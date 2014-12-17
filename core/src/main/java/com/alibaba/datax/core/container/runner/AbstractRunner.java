@@ -21,8 +21,8 @@ public abstract class AbstractRunner {
 
     private int taskId;
 
-    public AbstractRunner(AbstractTaskPlugin abstractTaskPlugin) {
-        this.plugin = abstractTaskPlugin;
+    public AbstractRunner(AbstractTaskPlugin taskPlugin) {
+        this.plugin = taskPlugin;
     }
 
     public void destroy() {
