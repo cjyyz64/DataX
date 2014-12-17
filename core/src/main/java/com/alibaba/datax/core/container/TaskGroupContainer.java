@@ -18,6 +18,7 @@ import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -232,7 +233,7 @@ public class TaskGroupContainer extends AbstractContainer {
         public TaskExecutor(Configuration taskConf) {
             // 获取该taskExecutor的配置
             this.taskConfig = taskConf;
-            org.apache.commons.lang.Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER)
+            Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER)
                             && null != this.taskConfig.getConfiguration(CoreConstant.JOB_WRITER),
                     "[reader|writer]的插件参数不能为空!");
 
@@ -245,8 +246,7 @@ public class TaskGroupContainer extends AbstractContainer {
              */
             this.taskCommunication = containerCollector
                     .getCommunication(taskId);
-            org.apache.commons.lang.Validate.notNull(
-                    this.taskCommunication,
+            Validate.notNull(this.taskCommunication,
                     String.format("taskId[%d]的Communication没有注册过", taskId));
             this.channel = ClassUtil.instantiate(channelClazz,
                     Channel.class, configuration);
@@ -255,7 +255,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成writerThread
              */
-            WriterRunner writerRunner = (WriterRunner) generateRunner(false);
+            WriterRunner writerRunner = (WriterRunner) generateRunner(PluginType.WRITER);
             this.writerThread = new Thread(writerRunner,
                     String.format("%d-%d-%d-writer",
                             jobId, taskGroupId, this.taskId));
@@ -267,7 +267,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成readerThread
              */
-            ReaderRunner readerRunner = (ReaderRunner) generateRunner(true);
+            ReaderRunner readerRunner = (ReaderRunner) generateRunner(PluginType.READER);
             this.readerThread = new Thread(readerRunner,
                     String.format("%d-%d-%d-reader",
                             jobId, taskGroupId, this.taskId));
@@ -300,36 +300,42 @@ public class TaskGroupContainer extends AbstractContainer {
             }
         }
 
-        private AbstractRunner generateRunner(boolean isReader) {
+        private AbstractRunner generateRunner(PluginType pluginType) {
             AbstractRunner newRunner = null;
-            if (isReader) {
-                newRunner = LoadUtil.loadPluginRunner(PluginType.READER,
-                        this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
-                newRunner.setJobConf(this.taskConfig.getConfiguration(
-                        CoreConstant.JOB_READER_PARAMETER));
-                ((ReaderRunner) newRunner).setRecordSender(
-                        new BufferedRecordExchanger(this.channel));
-                /**
-                 * 设置taskPlugin的collector，用来处理脏数据和job/task通信
-                 */
-                newRunner.setTaskPluginCollector(ClassUtil.instantiate(
-                        taskCollectorClass, AbstractTaskPluginCollector.class,
-                        configuration, this.taskCommunication,
-                        PluginType.READER));
-            } else {
-                newRunner = LoadUtil.loadPluginRunner(PluginType.WRITER,
-                        this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
-                newRunner.setJobConf(this.taskConfig
-                        .getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
-                ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(
-                        this.channel));
-                /**
-                 * 设置taskPlugin的collector，用来处理脏数据和job/task通信
-                 */
-                newRunner.setTaskPluginCollector(ClassUtil.instantiate(
-                        taskCollectorClass, AbstractTaskPluginCollector.class,
-                        configuration, this.taskCommunication,
-                        PluginType.WRITER));
+
+            switch (pluginType) {
+                case READER:
+                    newRunner = LoadUtil.loadPluginRunner(pluginType,
+                            this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
+                    newRunner.setJobConf(this.taskConfig.getConfiguration(
+                            CoreConstant.JOB_READER_PARAMETER));
+                    ((ReaderRunner) newRunner).setRecordSender(
+                            new BufferedRecordExchanger(this.channel));
+                    /**
+                     * 设置taskPlugin的collector，用来处理脏数据和job/task通信
+                     */
+                    newRunner.setTaskPluginCollector(ClassUtil.instantiate(
+                            taskCollectorClass, AbstractTaskPluginCollector.class,
+                            configuration, this.taskCommunication,
+                            PluginType.READER));
+                    break;
+                case WRITER:
+                    newRunner = LoadUtil.loadPluginRunner(pluginType,
+                            this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
+                    newRunner.setJobConf(this.taskConfig
+                            .getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
+                    ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(
+                            this.channel));
+                    /**
+                     * 设置taskPlugin的collector，用来处理脏数据和job/task通信
+                     */
+                    newRunner.setTaskPluginCollector(ClassUtil.instantiate(
+                            taskCollectorClass, AbstractTaskPluginCollector.class,
+                            configuration, this.taskCommunication,
+                            PluginType.WRITER));
+                    break;
+                default:
+                    throw DataXException.asDataXException(FrameworkErrorCode.ARGUMENT_ERROR, "Cant generateRunner for:" + pluginType);
             }
 
             newRunner.setTaskGroupId(taskGroupId);
