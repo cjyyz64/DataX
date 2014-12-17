@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
  */
 public class DataxServiceTest {
 
+
     private String url = "http://localhost:8080/";
 
     @Test
@@ -58,6 +59,7 @@ public class DataxServiceTest {
                         "    \"message\": \"Kill task group succeeded.\",\n" +
                         "    \"data\": null\n" +
                         "}");
+
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(),"httpClientUtil",httpClientUtil);
         Result result = DataxServiceUtil.killTaskGroup(148L,1);
@@ -74,6 +76,7 @@ public class DataxServiceTest {
                         "    \"message\": \"\",\n" +
                         "    \"data\": 40\n" +
                         "}");
+
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(),"httpClientUtil",httpClientUtil);
         Integer state = DataxServiceUtil.getJobInfo(148L).getData();
@@ -90,6 +93,7 @@ public class DataxServiceTest {
                         "    \"message\": \"testUpdateJobStatus succeeded.\",\n" +
                         "    \"data\": null\n" +
                         "}");
+
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(), "httpClientUtil", httpClientUtil);
         JobStatus jobStatus = new JobStatus();
