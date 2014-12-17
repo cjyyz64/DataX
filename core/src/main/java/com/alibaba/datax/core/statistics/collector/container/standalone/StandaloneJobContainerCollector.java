@@ -4,7 +4,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
+import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
@@ -28,7 +28,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
         for (Configuration config : configurationList) {
             int taskGroupId = config.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            LocalTaskGroupCommunication.registerTaskGroupCommunication(
+            LocalTaskGroupCommunicationManager.registerTaskGroupCommunication(
                     taskGroupId, new Communication());
         }
     }
@@ -42,7 +42,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public Communication collect() {
-        return LocalTaskGroupCommunication.getJobCommunication();
+        return LocalTaskGroupCommunicationManager.getJobCommunication();
     }
 
     @Override
@@ -54,7 +54,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
     public Communication getCommunication(int taskGroupId) {
         Validate.isTrue(taskGroupId >= 0, "注册的taskGroupId不能小于0");
 
-        return LocalTaskGroupCommunication
+        return LocalTaskGroupCommunicationManager
                 .getTaskGroupCommunication(taskGroupId);
     }
 
@@ -64,7 +64,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
 
         List retList = new ArrayList();
         for (int taskGroupId : taskGroupIds) {
-            Communication communication = LocalTaskGroupCommunication
+            Communication communication = LocalTaskGroupCommunicationManager
                     .getTaskGroupCommunication(taskGroupId);
             if (communication != null) {
                 retList.add(communication);
@@ -76,7 +76,7 @@ public class StandaloneJobContainerCollector extends AbstractContainerCollector 
 
     @Override
     public Map<Integer, Communication> getCommunicationsMap() {
-        return LocalTaskGroupCommunication
+        return LocalTaskGroupCommunicationManager
                 .getTaskGroupCommunicationMap();
     }
 

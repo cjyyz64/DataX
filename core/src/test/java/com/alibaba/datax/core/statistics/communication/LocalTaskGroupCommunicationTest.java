@@ -13,9 +13,9 @@ public class LocalTaskGroupCommunicationTest {
 
     @Before
     public void setUp() {
-        LocalTaskGroupCommunication.clear();
+        LocalTaskGroupCommunicationManager.clear();
         for (int index = 0; index < taskGroupNumber; index++) {
-            LocalTaskGroupCommunication.registerTaskGroupCommunication(
+            LocalTaskGroupCommunicationManager.registerTaskGroupCommunication(
                     index, new Communication());
         }
     }
@@ -23,29 +23,29 @@ public class LocalTaskGroupCommunicationTest {
     @Test
     public void LocalCommunicationTest() {
         Communication jobCommunication =
-                LocalTaskGroupCommunication.getJobCommunication();
+                LocalTaskGroupCommunicationManager.getJobCommunication();
         Assert.assertTrue(jobCommunication.getState().equals(State.RUNNING));
 
-        for (int index : LocalTaskGroupCommunication.getTaskGroupIdSet()) {
-            Communication communication = LocalTaskGroupCommunication
+        for (int index : LocalTaskGroupCommunicationManager.getTaskGroupIdSet()) {
+            Communication communication = LocalTaskGroupCommunicationManager
                     .getTaskGroupCommunication(index);
             communication.setState(State.SUCCEEDED);
-            LocalTaskGroupCommunication.updateTaskGroupCommunication(
+            LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(
                     index, communication);
         }
 
-        jobCommunication = LocalTaskGroupCommunication.getJobCommunication();
+        jobCommunication = LocalTaskGroupCommunicationManager.getJobCommunication();
         Assert.assertTrue(jobCommunication.getState().equals(State.SUCCEEDED));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void noTaskGroupIdForUpdate() {
-        LocalTaskGroupCommunication.updateTaskGroupCommunication(
+        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(
                 this.taskGroupNumber + 1, new Communication());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void noTaskGroupIdForGet() {
-        LocalTaskGroupCommunication.getTaskGroupCommunication(-1);
+        LocalTaskGroupCommunicationManager.getTaskGroupCommunication(-1);
     }
 }

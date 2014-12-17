@@ -7,7 +7,7 @@ import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
 import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
+import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
 import org.junit.Assert;
@@ -260,7 +260,7 @@ public class JobContainerTest extends CaseInitializer {
         Communication communication = new Communication();
         communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
         communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 100);
-        LocalTaskGroupCommunication.updateTaskGroupCommunication(0, communication);
+        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
@@ -282,7 +282,7 @@ public class JobContainerTest extends CaseInitializer {
         communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
         communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 80);
         communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 20);
-        LocalTaskGroupCommunication.updateTaskGroupCommunication(0, communication);
+        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
@@ -302,7 +302,7 @@ public class JobContainerTest extends CaseInitializer {
         communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
         communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 98);
         communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 2);
-        LocalTaskGroupCommunication.updateTaskGroupCommunication(0, communication);
+        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
