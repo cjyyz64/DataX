@@ -53,14 +53,14 @@ public abstract class AbstractScheduler implements Scheduler {
             while (true) {
                 /**
                  * step 1: collect job stat
-                 * step 2: getReport info
+                 * step 2: getReport info, then report it
                  * step 3: errorLimit do check
-                 * step 4: dealFailedStat(frameworkCollector, throwable);
-                 * step 5: dealSucceedStat(frameworkCollector, lastJobContainerCommunication, totalTasks);
-                 * step 6: dealKillingStat(frameworkCollector, totalTasks);
+                 * step 4: dealSucceedStat();
+                 * step 5: dealKillingStat();
+                 * step 6: dealFailedStat();
                  * step 7: refresh last job stat, and then sleep for next while
                  *
-                 * above step, some ones should report info to DS
+                 * above steps, some ones should report info to DS
                  *
                  */
                 Communication nowJobContainerCommunication = jobCollector.collect();
