@@ -3,7 +3,7 @@ package com.alibaba.datax.core.transport.channel.memory;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.util.communication.Communication;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

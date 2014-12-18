@@ -15,13 +15,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
+import com.alibaba.datax.core.statistics.container.ContainerCollector;
+import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.State;

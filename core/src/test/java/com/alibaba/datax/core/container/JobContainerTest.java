@@ -1,13 +1,14 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.job.JobContainer;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
-import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
+import com.alibaba.datax.core.job.scheduler.distribute.DistributeScheduler;
+import com.alibaba.datax.core.job.scheduler.standalone.StandAloneScheduler;
+import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
 import org.junit.Assert;

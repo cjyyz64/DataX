@@ -6,8 +6,9 @@ import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.AbstractContainer;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.job.JobContainer;
+import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.util.*;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -44,13 +45,9 @@ public class Engine {
 
         AbstractContainer container;
         if (isJob) {
-            container = ClassUtil.instantiate(allConf
-                            .getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_CLASS),
-                    AbstractContainer.class, allConf);
+            container = new JobContainer(allConf);
         } else {
-            container = ClassUtil.instantiate(allConf
-                            .getString(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS),
-                    AbstractContainer.class, allConf);
+            container = new TaskGroupContainer(allConf);
         }
 
         container.start();
