@@ -44,7 +44,7 @@ public final class DataxServiceUtil {
             Type type = new TypeToken<Result<Integer>>() {
             }.getType();
             Result<Integer> result = SerializationUtil.gson2Object(resJson, type);
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("getJobInfo error, jobId=[%s], http result:[%s].", jobId, resJson));
             }
@@ -69,7 +69,7 @@ public final class DataxServiceUtil {
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
 
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("updateJobInfo error, jobId=[%s], jobStatus=[%s], http result:[%s].", jobId, jobStatus, resJson));
             }
@@ -94,7 +94,7 @@ public final class DataxServiceUtil {
             }.getType();
             Result<List<TaskGroup>> result = SerializationUtil.longDateGson2Object(resJson, type);
 
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("getTaskGroupInJob error, jobId=[%s], http result:[%s].", jobId, resJson));
             }
@@ -119,7 +119,7 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup, resJson));
             }
@@ -139,7 +139,7 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("killTaskGroup error, jobId=[%s], taskGroupId=[%s], http result:[%s].", jobId, taskGroupId, resJson));
             }
@@ -166,7 +166,7 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
-            if (!result.getIsSuccess()) {
+            if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("updateTaskGroupInfo error, jobId=[%s], taskGroupId=[%s], TaskGroupStatus=[%s], http result:[%s].", jobId, taskGroupId, taskGroupStatus, resJson));
             }

@@ -46,7 +46,7 @@ public class DataxServiceTest {
 
         ReflectUtil.setField(new DataxServiceUtil(),"httpClientUtil",httpClientUtil);
         Result result = DataxServiceUtil.startTaskGroup(148l,taskGroup);
-        Assert.assertTrue(result.getIsSuccess());
+        Assert.assertTrue(result.isSuccess());
     }
 
     @Test
@@ -63,7 +63,7 @@ public class DataxServiceTest {
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(),"httpClientUtil",httpClientUtil);
         Result result = DataxServiceUtil.killTaskGroup(148L,1);
-        Assert.assertTrue(result.getIsSuccess());
+        Assert.assertTrue(result.isSuccess());
     }
 
     @Test
