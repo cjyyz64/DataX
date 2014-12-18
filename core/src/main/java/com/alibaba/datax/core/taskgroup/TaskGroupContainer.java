@@ -4,17 +4,24 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.statistics.container.communicator.taskgroup.DistributeTGContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.taskgroup.LocalTGContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.taskgroup.StandaloneTGContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.task.AbstractTaskPluginCollector;
 import com.alibaba.datax.core.taskgroup.runner.AbstractRunner;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
-import com.alibaba.datax.core.util.*;
+import com.alibaba.datax.core.util.ClassUtil;
+import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +58,9 @@ public class TaskGroupContainer extends AbstractContainer {
 
     public TaskGroupContainer(Configuration configuration) {
         super(configuration);
-        super.setContainerCollector(ObjectFactory.createAContainerCollector(configuration));
+
+        initCommunicator(configuration);
+
         this.jobId = this.configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
         this.taskGroupId = this.configuration.getInt(
@@ -61,6 +70,18 @@ public class TaskGroupContainer extends AbstractContainer {
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CLASS);
         this.taskCollectorClass = this.configuration.getString(
                 CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_TASKCLASS);
+    }
+
+    private void initCommunicator(Configuration configuration) {
+        //TODO 修改 communicator的factory
+        String runMode = configuration.getString("runMode");
+        if (StringUtils.equalsIgnoreCase(runMode, "local")) {
+            super.setContainerCommunicator(new LocalTGContainerCommunicator(configuration));
+        } else if (StringUtils.equalsIgnoreCase(runMode, "distribute")) {
+            super.setContainerCommunicator(new DistributeTGContainerCommunicator(configuration));
+        } else {
+            super.setContainerCommunicator(new StandaloneTGContainerCommunicator(configuration));
+        }
     }
 
     public long getJobId() {
@@ -103,7 +124,7 @@ public class TaskGroupContainer extends AbstractContainer {
             for (int i = 0; i < channelNumber; i++) {
                 taskExecutors.add(null);
             }
-            this.containerCollector.registerCommunication(taskConfigs);
+            this.containerCommunicator.registerCommunication(taskConfigs);
 
             int taskCountInThisTaskGroup = taskConfigs.size();
             LOG.info(String.format(
@@ -116,14 +137,14 @@ public class TaskGroupContainer extends AbstractContainer {
             Communication lastTaskGroupContainerCommunication = new Communication();
 
             while (true) {
-                State taskExecutorTotalState = this.containerCollector.collectState();
+                State taskExecutorTotalState = this.containerCommunicator.collectState();
                 // 发现该taskGroup下taskExecutor的总状态失败则汇报错误
                 if (taskExecutorTotalState == State.FAILED) {
-                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
                     Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-                    this.containerCollector.report(reportCommunication);
+                    this.containerCommunicator.report(reportCommunication);
 
                     throw DataXException.asDataXException(
                             FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, reportCommunication.getThrowable());
@@ -155,11 +176,11 @@ public class TaskGroupContainer extends AbstractContainer {
                 if (taskIndex >= taskConfigs.size() && isAllTaskDone
                         && taskExecutorTotalState == State.SUCCEEDED) {
                     // 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
-                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
                     Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCollector.report(reportCommunication);
+                    this.containerCommunicator.report(reportCommunication);
 
                     LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
                     break;
@@ -168,11 +189,11 @@ public class TaskGroupContainer extends AbstractContainer {
                 // 如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
                 long now = System.currentTimeMillis();
                 if (now - lastReportTimeStamp > reportIntervalInMillSec) {
-                    nowTaskGroupContainerCommunication = this.containerCollector.collect();
+                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
                     Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCollector.report(reportCommunication);
+                    this.containerCommunicator.report(reportCommunication);
 
                     lastReportTimeStamp = now;
                 }
@@ -182,19 +203,19 @@ public class TaskGroupContainer extends AbstractContainer {
             }
 
             //最后还要汇报一次
-            nowTaskGroupContainerCommunication = this.containerCollector.collect();
+            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
             nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
             Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-            this.containerCollector.report(reportCommunication);
+            this.containerCommunicator.report(reportCommunication);
         } catch (Throwable e) {
-            nowTaskGroupContainerCommunication = this.containerCollector.collect();
+            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
             if (nowTaskGroupContainerCommunication.getThrowable() == null) {
                 nowTaskGroupContainerCommunication.setThrowable(e);
             }
             nowTaskGroupContainerCommunication.setState(State.FAILED);
-            this.containerCollector.report(nowTaskGroupContainerCommunication);
+            this.containerCommunicator.report(nowTaskGroupContainerCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
@@ -238,7 +259,7 @@ public class TaskGroupContainer extends AbstractContainer {
              * 由taskId得到该taskExecutor的Communication
              * 要传给readerRunner和writerRunner，同时要传给channel作统计用
              */
-            this.taskCommunication = containerCollector
+            this.taskCommunication = containerCommunicator
                     .getCommunication(taskId);
             Validate.notNull(this.taskCommunication,
                     String.format("taskId[%d]的Communication没有注册过", taskId));

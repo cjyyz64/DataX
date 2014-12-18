@@ -8,9 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class SingleProcessReporter extends AbstractReporter {
+public class ProcessInnerReporter extends AbstractReporter {
     private static final Logger LOG = LoggerFactory
-            .getLogger(SingleProcessReporter.class);
+            .getLogger(ProcessInnerReporter.class);
 
 
     // how to init it ? TODO

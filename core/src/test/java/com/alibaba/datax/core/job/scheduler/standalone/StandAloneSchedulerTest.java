@@ -1,15 +1,16 @@
 package com.alibaba.datax.core.job.scheduler.standalone;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.alibaba.datax.core.statistics.container.collector.container.standalone.StandaloneTaskGroupContainerCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.ExecuteMode;
+import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
+import com.alibaba.datax.core.util.CoreConstant;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.util.CoreConstant;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-2.
@@ -35,18 +36,14 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 							11);
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 			configuration.set(CoreConstant.DATAX_JOB_CONTENT, internal);
-			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS,
-					StandAloneTestTaskGroupContainer.class.getName());
+			configuration.set("runMode", ExecuteMode.STANDALONE.getValue());
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
-			configuration
-					.set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-							StandaloneTaskGroupContainerCollector.class.getName());
 			jobList.add(configuration);
 
 		}
 
-		StandAloneScheduler scheduler = new StandAloneScheduler();
-		scheduler.schedule(jobList, new StandAloneTestJobCollector(
-				Configuration.newDefault()));
+		//TODO mock
+		ProcessInnerScheduler scheduler = new ProcessInnerScheduler();
+		scheduler.schedule(jobList, new StandAloneJobContainerCommunicator(Configuration.newDefault()));
 	}
 }

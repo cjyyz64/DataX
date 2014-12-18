@@ -5,7 +5,7 @@ import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
 import com.alibaba.datax.core.statistics.container.report.AbstractReporter;
 import com.alibaba.datax.core.util.CoreConstant;
 
-public abstract class AbstractContainerCollector implements ContainerCollector {
+public abstract class AbstractContainerCommunicator implements ContainerCommunicator {
     private Configuration configuration;
     private AbstractCollector collector;
     private AbstractReporter reporter;
@@ -25,17 +25,21 @@ public abstract class AbstractContainerCollector implements ContainerCollector {
         return reporter;
     }
 
+    public void setCollector(AbstractCollector collector) {
+        this.collector = collector;
+    }
+
+    public void setReporter(AbstractReporter reporter) {
+        this.reporter = reporter;
+    }
+
     public Long getJobId() {
         return jobId;
     }
 
-    public AbstractContainerCollector(Configuration configuration, AbstractCollector collector, AbstractReporter reporter_temp) {
+    public AbstractContainerCommunicator(Configuration configuration) {
         this.configuration = configuration;
-        this.collector = collector;
-        this.reporter = reporter_temp;
-
-        this.jobId = configuration.getLong(
-                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        this.jobId = configuration.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
     }
 
 }

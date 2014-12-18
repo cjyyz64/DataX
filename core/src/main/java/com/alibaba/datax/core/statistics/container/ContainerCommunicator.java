@@ -7,7 +7,7 @@ import com.alibaba.datax.dataxservice.face.domain.State;
 import java.util.List;
 import java.util.Map;
 
-public interface ContainerCollector {
+public interface ContainerCommunicator {
     void registerCommunication(List<Configuration> configurationList);
 
     void report(Communication communication);

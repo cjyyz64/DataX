@@ -20,7 +20,7 @@ import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.container.ContainerCollector;
+import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.ConfigParser;
@@ -80,7 +80,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
 
-        ContainerCollector collector = taskGroupContainer.getContainerCollector();
+        ContainerCommunicator collector = taskGroupContainer.getContainerCommunicator();
         while (true) {
             State totalTaskState = collector.collectState();
             if (totalTaskState.isRunning()) {

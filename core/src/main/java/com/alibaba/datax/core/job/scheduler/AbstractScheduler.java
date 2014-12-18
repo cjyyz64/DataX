@@ -3,7 +3,7 @@ package com.alibaba.datax.core.job.scheduler;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.ErrorRecordChecker;
-import com.alibaba.datax.core.statistics.container.ContainerCollector;
+import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.core.util.CoreConstant;
@@ -30,7 +30,7 @@ public abstract class AbstractScheduler {
     }
 
     public void schedule(List<Configuration> configurations,
-                         ContainerCollector jobCollector) {
+                         ContainerCommunicator jobCollector) {
         Validate.notNull(configurations,
                 "scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
@@ -100,9 +100,9 @@ public abstract class AbstractScheduler {
 
     protected abstract void startAllTaskGroup(List<Configuration> configurations);
 
-    protected abstract void dealFailedStat(ContainerCollector frameworkCollector, Throwable throwable);
+    protected abstract void dealFailedStat(ContainerCommunicator frameworkCollector, Throwable throwable);
 
-    protected abstract void dealKillingStat(ContainerCollector frameworkCollector, int totalTasks);
+    protected abstract void dealKillingStat(ContainerCommunicator frameworkCollector, int totalTasks);
 
     private int calculateTaskCount(List<Configuration> configurations) {
         int totalTasks = 0;
