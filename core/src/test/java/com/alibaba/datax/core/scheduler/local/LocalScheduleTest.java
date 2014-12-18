@@ -65,7 +65,7 @@ public class LocalScheduleTest {
         communication.setState(State.SUCCEEDED);
         PowerMockito.when(jobContainerCollector.collect()).
                 thenReturn(communication);
-        PowerMockito.doThrow(new RuntimeException("no")).when(jobContainerCollector).report(communication);
-
+        PowerMockito.doNothing().when(jobContainerCollector).report(communication);
+        scheduler.schedule(configurationList,jobContainerCollector);
     }
 }
