@@ -49,6 +49,7 @@ chmod -R 0757 %{_prefix}/lib
 chmod -R 0757 %{_prefix}/log
 chmod -R 0757 %{_prefix}/plugin
 chmod -R 0757 %{_prefix}/script
+chmod -R 0757 %{_prefix}/hook
 
 
 %files
