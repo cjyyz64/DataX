@@ -8,7 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.CoreConstant;
