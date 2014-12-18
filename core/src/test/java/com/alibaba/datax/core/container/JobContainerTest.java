@@ -1,11 +1,10 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.job.scheduler.distribute.DistributeScheduler;
-import com.alibaba.datax.core.job.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
@@ -49,8 +48,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test(expected = Exception.class)
     public void testStartException() {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                DistributeScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
         jobContainer.start();
@@ -59,8 +57,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test
     public void testInitNormal() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                StandAloneScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.STANDALONE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
 
@@ -76,8 +73,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test(expected = Exception.class)
     public void testInitException() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                DistributeScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
         Method initMethod = jobContainer.getClass()

@@ -9,13 +9,14 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.ErrorRecordChecker;
+import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
-import com.alibaba.datax.core.job.scheduler.MutilProcessScheduler;
-import com.alibaba.datax.core.job.scheduler.SingleProcessScheduler;
-import com.alibaba.datax.core.statistics.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.container.collector.job.DistributeContainerCollector;
-import com.alibaba.datax.core.statistics.container.collector.job.LocalJobContainerCollecor;
-import com.alibaba.datax.core.statistics.container.collector.job.StandAloneJobContainerCollecor;
+import com.alibaba.datax.core.job.scheduler.DsScheduler;
+import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
+import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.util.*;
 import com.alibaba.datax.core.util.communication.Communication;
@@ -109,14 +110,14 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            ContainerCollector containerCollector = super.getContainerCollector();
+            ContainerCommunicator containerCollector = super.getContainerCommunicator();
             if (containerCollector != null) {
                 Communication communication =
-                        super.getContainerCollector().collect();
+                        super.getContainerCommunicator().collect();
                 // 汇报前的状态，不需要手动进行设置
                 // communication.setState(State.FAILED);
                 communication.setThrowable(e);
-                super.getContainerCollector().report(communication);
+                super.getContainerCommunicator().report(communication);
             }
 
             throw DataXException.asDataXException(
@@ -159,7 +160,7 @@ public class JobContainer extends AbstractContainer {
                 String.format("job-%d", this.jobId));
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
-                this.getContainerCollector());
+                this.getContainerCommunicator());
         this.jobReader = this.initJobReader(jobPluginCollector);
         this.jobWriter = this.initJobWriter(jobPluginCollector);
     }
@@ -298,56 +299,37 @@ public class JobContainer extends AbstractContainer {
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
-        String runMode = null;
+        ExecuteMode runMode = null;
         AbstractScheduler scheduler;
         try {
             // 运行模式的判断
             String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
 
             // 如果指定为分布式，但是实际 taskGroup 只有一个，那么强制采用 local 模式运行
-            boolean forceToLocal = "distribute".equalsIgnoreCase(jobMode)
-                    && taskGroupConfigs.size() == 1;
-            if ("local".equalsIgnoreCase(jobMode) || forceToLocal) {
-
-                runMode = "local";
-                for (Configuration taskGroupConfig : taskGroupConfigs) {
-                    taskGroupConfig.set("runMode", runMode);
-                }
-
-                scheduler = initLocalScheduler(this.configuration);
-
-                LOG.info("Running by Local Mode.");
-            } else if ("distribute".equalsIgnoreCase(jobMode)) {
-                // 分布式运行模式
-                runMode = "distribute";
-
-                for (Configuration taskGroupConfig : taskGroupConfigs) {
-                    taskGroupConfig.set("runMode", runMode);
-                }
-
-                scheduler = initDistributeScheduler(this.configuration);
-
-                LOG.info("Running by Distribute Mode.");
+            boolean forceToLocal = ExecuteMode.isDistribute(jobMode) && taskGroupConfigs.size() == 1;
+            if (ExecuteMode.isLocal(jobMode) || forceToLocal) {
+                runMode = ExecuteMode.LOCAL;
+            } else if (ExecuteMode.isDistribute(jobMode)) {
+                runMode = ExecuteMode.DISTRIBUTE;
             } else {
-                runMode = "standalone";
-
-                for (Configuration taskGroupConfig : taskGroupConfigs) {
-                    taskGroupConfig.set("runMode", runMode);
-                }
-
-                scheduler = initStandaloneScheduler(this.configuration);
-                LOG.info("Running by Standalone Mode.");
+                runMode = ExecuteMode.STANDALONE;
             }
 
+            //设置runmode
+            for (Configuration taskGroupConfig : taskGroupConfigs) {
+                taskGroupConfig.set("runMode", runMode.getValue());
+            }
+            scheduler = initLocalScheduler(this.configuration);
+            LOG.info("Running by {} Mode.", runMode);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
 
-            super.setContainerCollector(ClassUtil.instantiate(
+            super.setContainerCommunicator(ClassUtil.instantiate(
                     configuration.getString(
                             CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
-                    ContainerCollector.class, configuration));
+                    ContainerCommunicator.class, configuration));
 
-            scheduler.schedule(taskGroupConfigs, super.getContainerCollector());
+            scheduler.schedule(taskGroupConfigs, super.getContainerCommunicator());
 
             this.endTransferTimeStamp = System.currentTimeMillis();
         } catch (Exception e) {
@@ -364,24 +346,18 @@ public class JobContainer extends AbstractContainer {
     }
 
     private AbstractScheduler initLocalScheduler(Configuration configuration) {
-        super.setContainerCollector(new LocalJobContainerCollecor(configuration, ObjectFactory.createACollector(configuration), ObjectFactory.createAReporter(configuration)));
-
-        AbstractScheduler scheduler = new SingleProcessScheduler();
-        return scheduler;
+        super.setContainerCommunicator(new LocalJobContainerCommunicator(configuration));
+        return new ProcessInnerScheduler();
     }
 
     private AbstractScheduler initDistributeScheduler(Configuration configuration) {
-        super.setContainerCollector(new DistributeContainerCollector(configuration, ObjectFactory.createACollector(configuration), ObjectFactory.createAReporter(configuration)));
-
-        AbstractScheduler scheduler = new MutilProcessScheduler();
-        return scheduler;
+        super.setContainerCommunicator(new DistributeJobContainerCommunicator(configuration));
+        return new DsScheduler();
     }
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
-        super.setContainerCollector(new StandAloneJobContainerCollecor(configuration, ObjectFactory.createACollector(configuration), ObjectFactory.createAReporter(configuration)));
-
-        AbstractScheduler scheduler = new SingleProcessScheduler();
-        return scheduler;
+        super.setContainerCommunicator(new StandAloneJobContainerCommunicator(configuration));
+        return new ProcessInnerScheduler();
     }
 
     private void post() {
@@ -407,11 +383,11 @@ public class JobContainer extends AbstractContainer {
             transferCosts = 1L;
         }
 
-        if (super.getContainerCollector() == null) {
+        if (super.getContainerCommunicator() == null) {
             return;
         }
 
-        Communication communication = super.getContainerCollector().collect();
+        Communication communication = super.getContainerCommunicator().collect();
         communication.setTimestamp(this.endTimeStamp);
 
         Communication tempComm = new Communication();
@@ -425,7 +401,7 @@ public class JobContainer extends AbstractContainer {
 //        communication.setLongCounter("totalReadBytes", CommunicationManager.getTotalReadBytes(communication));
 //        communication.setLongCounter("totalReadRecords", CommunicationManager.getTotalReadRecords(communication));
 
-        super.getContainerCollector().report(reportCommunication);
+        super.getContainerCommunicator().report(reportCommunication);
 
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
@@ -740,7 +716,7 @@ public class JobContainer extends AbstractContainer {
      * @param
      */
     private void checkLimit() {
-        Communication communication = super.getContainerCollector().collect();
+        Communication communication = super.getContainerCommunicator().collect();
         errorLimit.checkRecordLimit(communication);
         errorLimit.checkPercentageLimit(communication);
     }

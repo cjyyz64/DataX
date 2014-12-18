@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public class MultiProcessReporter extends AbstractReporter {
+public class DsReporter extends AbstractReporter {
     private static final Logger LOG = LoggerFactory
-            .getLogger(MultiProcessReporter.class);
+            .getLogger(DsReporter.class);
 
     // how to init it ? TODO
     private Map<Integer, Communication> taskGroupCommunicationMap;

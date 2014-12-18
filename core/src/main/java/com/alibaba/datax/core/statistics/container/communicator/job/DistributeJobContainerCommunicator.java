@@ -1,19 +1,21 @@
-package com.alibaba.datax.core.statistics.container.collector.job;
+package com.alibaba.datax.core.statistics.container.communicator.job;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.AbstractContainerCollector;
-import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
-import com.alibaba.datax.core.statistics.container.report.AbstractReporter;
+import com.alibaba.datax.core.statistics.container.AbstractContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.collector.DsCollector;
+import com.alibaba.datax.core.statistics.container.report.DsReporter;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
 import java.util.Map;
 
-public class DistributeContainerCollector extends AbstractContainerCollector {
+public class DistributeJobContainerCommunicator extends AbstractContainerCommunicator {
 
-    public DistributeContainerCollector(Configuration configuration, AbstractCollector collector, AbstractReporter reporter_temp) {
-        super(configuration, collector, reporter_temp);
+    public DistributeJobContainerCommunicator(Configuration configuration) {
+        super(configuration);
+        super.setCollector(new DsCollector());
+        super.setReporter(new DsReporter());
     }
 
     @Override

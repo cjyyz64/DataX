@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MultiProcessCollector extends AbstractCollector {
+public class DsCollector extends AbstractCollector {
 
     private Map<Integer, Communication> taskGroupCommunicationMap;
     private Map<Integer, Communication> taskCommunicationMap;

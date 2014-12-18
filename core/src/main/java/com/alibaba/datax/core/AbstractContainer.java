@@ -1,6 +1,6 @@
 package com.alibaba.datax.core;
 
-import com.alibaba.datax.core.statistics.container.ContainerCollector;
+import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
 import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import org.apache.commons.lang.Validate;
@@ -13,7 +13,7 @@ import com.alibaba.datax.common.util.Configuration;
 public abstract class AbstractContainer {
     protected Configuration configuration;
 
-    protected ContainerCollector containerCollector;
+    protected ContainerCommunicator containerCommunicator;
 
     public AbstractContainer(Configuration configuration) {
         Validate.notNull(configuration, "Configuration can not be null.");
@@ -32,12 +32,12 @@ public abstract class AbstractContainer {
         return configuration;
     }
 
-    public ContainerCollector getContainerCollector() {
-        return containerCollector;
+    public ContainerCommunicator getContainerCommunicator() {
+        return containerCommunicator;
     }
 
-    public void setContainerCollector(ContainerCollector containerCollector) {
-        this.containerCollector = containerCollector;
+    public void setContainerCommunicator(ContainerCommunicator containerCommunicator) {
+        this.containerCommunicator = containerCommunicator;
     }
 
     public abstract void start();
