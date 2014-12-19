@@ -1,11 +1,10 @@
 package com.alibaba.datax.core;
 
-import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import org.apache.commons.lang.Validate;
-
-import com.alibaba.datax.common.util.Configuration;
 
 /**
  * 执行容器的抽象类，持有该容器全局的配置 configuration
@@ -13,7 +12,7 @@ import com.alibaba.datax.common.util.Configuration;
 public abstract class AbstractContainer {
     protected Configuration configuration;
 
-    protected ContainerCommunicator containerCommunicator;
+    protected AbstractContainerCommunicator containerCommunicator;
 
     public AbstractContainer(Configuration configuration) {
         Validate.notNull(configuration, "Configuration can not be null.");
@@ -32,11 +31,11 @@ public abstract class AbstractContainer {
         return configuration;
     }
 
-    public ContainerCommunicator getContainerCommunicator() {
+    public AbstractContainerCommunicator getContainerCommunicator() {
         return containerCommunicator;
     }
 
-    public void setContainerCommunicator(ContainerCommunicator containerCommunicator) {
+    public void setContainerCommunicator(AbstractContainerCommunicator containerCommunicator) {
         this.containerCommunicator = containerCommunicator;
     }
 

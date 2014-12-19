@@ -7,14 +7,11 @@ import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollect
 import com.alibaba.datax.core.statistics.container.report.DsReporter;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
-import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
 import com.alibaba.datax.dataxservice.face.domain.State;
-import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +23,7 @@ public class LocalJobContainerCommunicator extends AbstractContainerCommunicator
         super(configuration);
         super.setCollector(new ProcessInnerCollector(configuration.getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID)));
-        super.setReporter(new DsReporter());
+        super.setReporter(new DsReporter(super.getJobId()));
     }
 
     @Override
@@ -45,26 +42,15 @@ public class LocalJobContainerCommunicator extends AbstractContainerCommunicator
     }
 
     @Override
+    public Communication getCommunication(Integer taskGroupId) {
+        return TGCommunicationMapHolder.getTaskGroupCommunication(taskGroupId);
+    }
+
+    @Override
     public void report(Communication communication) {
         super.getReporter().reportJobCommunication(super.getJobId(), communication);
 
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
-    }
-
-    @Override
-    public List<Communication> getCommunications(List<Integer> taskGroupIds) {
-        Validate.notNull(taskGroupIds, "传入的 taskGroupIds 不能为null");
-
-        List retList = new ArrayList();
-        for (int taskGroupId : taskGroupIds) {
-            Communication communication = LocalTaskGroupCommunicationManager
-                    .getTaskGroupCommunication(taskGroupId);
-            if (communication != null) {
-                retList.add(communication);
-            }
-        }
-
-        return retList;
     }
 
     @Override

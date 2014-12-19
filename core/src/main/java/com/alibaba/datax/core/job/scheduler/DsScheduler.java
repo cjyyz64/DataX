@@ -2,11 +2,11 @@ package com.alibaba.datax.core.job.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
-import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class DsScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealFailedStat(ContainerCommunicator frameworkCollector, Throwable throwable) {
+    protected void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
         LOG.error("有 TaskGroup 失败，DataX 尝试终止整个任务.");
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
@@ -63,7 +63,7 @@ public class DsScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealKillingStat(ContainerCommunicator frameworkCollector, int totalTasks) {
+    protected void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
         LOG.error("收到 [杀作业] 的命令，DataX 尝试杀掉其他运行中的任务，然后退出整个作业.");
 
         Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationMap();
