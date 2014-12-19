@@ -4,9 +4,6 @@ import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 
-/**
- * Created by jingxing on 14-8-25.
- */
 public class CoreConstant {
     // --------------------------- 全局使用的变量(最好按照逻辑顺序，调整下成员变量顺序)
     // --------------------------------
@@ -21,11 +18,6 @@ public class CoreConstant {
 
     public static final String DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL = "core.container.job.reportInterval";
 
-    //TODO delete it
-//	public static final String DATAX_CORE_CONTAINER_JOB_CLASS = "core.container.job.class";
-
-//    public static final String DATAX_CORE_CONTAINER_TASKGROUP_CLASS = "core.container.taskGroup.class";
-
     public static final String DATAX_CORE_CONTAINER_TASKGROUP_ID = "core.container.taskGroup.id";
 
     public static final String DATAX_CORE_CONTAINER_TASKGROUP_SLEEPINTERVAL = "core.container.taskGroup.sleepInterval";
@@ -35,8 +27,6 @@ public class CoreConstant {
     public static final String DATAX_CORE_DATAXSERVICE_ADDRESS = "core.dataXService.address";
 
     public static final String DATAX_CORE_DATAXSERVICE_TIMEOUT = "core.dataXService.timeout";
-
-    public static final String DATAX_CORE_SCHEDULER_CLASS = "core.scheduler.class";
 
     public static final String DATAX_CORE_TRANSPORT_CHANNEL_CLASS = "core.transport.channel.class";
 
@@ -51,10 +41,6 @@ public class CoreConstant {
     public static final String DATAX_CORE_TRANSPORT_EXCHANGER_BUFFERSIZE = "core.transport.exchanger.bufferSize";
 
     public static final String DATAX_CORE_TRANSPORT_RECORD_CLASS = "core.transport.record.class";
-
-    public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS = "core.statistics.collector.container.jobClass";
-
-    public static final String DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS = "core.statistics.collector.container.taskGroupClass";
 
     public static final String DATAX_CORE_STATISTICS_COLLECTOR_PLUGIN_TASKCLASS = "core.statistics.collector.plugin.taskClass";
 

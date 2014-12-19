@@ -16,7 +16,7 @@ import com.alibaba.datax.core.scaffold.RecordProducer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 
 public class MemoryChannelTest extends CaseInitializer {
     private Channel channel;

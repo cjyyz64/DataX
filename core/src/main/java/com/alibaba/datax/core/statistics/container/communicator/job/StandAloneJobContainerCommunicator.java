@@ -1,17 +1,19 @@
 package com.alibaba.datax.core.statistics.container.communicator.job;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.statistics.container.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollector;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
-import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
+import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +23,8 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
 
     public StandAloneJobContainerCommunicator(Configuration configuration) {
         super(configuration);
-        super.setCollector(new ProcessInnerCollector());
+        super.setCollector(new ProcessInnerCollector(configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID)));
         super.setReporter(new ProcessInnerReporter());
     }
 
@@ -45,28 +48,30 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
      */
     @Override
     public void report(Communication communication) {
-        super.getReporter().updateJobCommunication(super.getJobId(), communication);
+        super.getReporter().reportJobCommunication(super.getJobId(), communication);
 
         LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
     }
 
     @Override
-    public Communication getCommunication(int taskGroupId) {
-        Validate.isTrue(taskGroupId >= 0, "注册的taskGroupId不能小于0");
+    public List<Communication> getCommunications(List<Integer> taskGroupIds) {
+        Validate.notNull(taskGroupIds, "传入的 taskGroupIds 不能为null");
 
-        return LocalTaskGroupCommunicationManager
-                .getTaskGroupCommunication(taskGroupId);
+        List retList = new ArrayList();
+        for (int taskGroupId : taskGroupIds) {
+            Validate.isTrue(taskGroupId >= 0, "注册的 taskGroupId 不能小于0");
+            Communication communication = super.getCollector().getTaskCommunicationMap()
+                    .get(taskGroupId);
+            if (null != communication) {
+                retList.add(communication);
+            }
+        }
+
+        return retList;
     }
 
     @Override
-    public List<Communication> getCommunications(List<Integer> ids) {
-        return null;
-    }
-
-
-    @Override
-    public Map<Integer, Communication> getCommunicationsMap() {
-        return LocalTaskGroupCommunicationManager
-                .getTaskGroupCommunicationMap();
+    public Map<Integer, Communication> getCommunicationMap() {
+        return TGCommunicationMapHolder.getTaskGroupCommunicationMap();
     }
 }

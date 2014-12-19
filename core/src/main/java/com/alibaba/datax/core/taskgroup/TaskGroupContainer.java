@@ -4,6 +4,8 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.DistributeTGContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.LocalTGContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.StandaloneTGContainerCommunicator;
@@ -14,14 +16,12 @@ import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.util.ClassUtil;
-import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.fastjson.JSON;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +29,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jingxing on 14-8-24.
- */
 public class TaskGroupContainer extends AbstractContainer {
     private static final Logger LOG = LoggerFactory
             .getLogger(TaskGroupContainer.class);
@@ -74,14 +71,15 @@ public class TaskGroupContainer extends AbstractContainer {
 
     private void initCommunicator(Configuration configuration) {
         //TODO 修改 communicator的factory
-        String runMode = configuration.getString("runMode");
-        if (StringUtils.equalsIgnoreCase(runMode, "local")) {
+        String executeMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
+        if (ExecuteMode.isLocal(executeMode)) {
             super.setContainerCommunicator(new LocalTGContainerCommunicator(configuration));
-        } else if (StringUtils.equalsIgnoreCase(runMode, "distribute")) {
+        } else if (ExecuteMode.isDistribute(executeMode)) {
             super.setContainerCommunicator(new DistributeTGContainerCommunicator(configuration));
         } else {
             super.setContainerCommunicator(new StandaloneTGContainerCommunicator(configuration));
         }
+
     }
 
     public long getJobId() {

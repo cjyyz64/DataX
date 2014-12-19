@@ -1,17 +1,16 @@
 package com.alibaba.datax.core.transport.channel;
 
-import java.util.Collection;
-
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.SleepQuiet;
 import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.util.communication.CommunicationManager;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.SleepQuiet;
+import java.util.Collection;
 
 /**
  *

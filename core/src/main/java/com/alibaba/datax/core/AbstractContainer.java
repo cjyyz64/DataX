@@ -1,7 +1,7 @@
 package com.alibaba.datax.core;
 
 import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import org.apache.commons.lang.Validate;
 
