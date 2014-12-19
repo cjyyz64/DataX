@@ -91,6 +91,7 @@ public class JobContainer extends AbstractContainer {
     public void start() {
         LOG.info("DataX jobContainer starts job.");
 
+        boolean hasException = false;
         try {
             this.startTimeStamp = System.currentTimeMillis();
 
@@ -108,6 +109,8 @@ public class JobContainer extends AbstractContainer {
             LOG.info("DataX jobId [{}] completed successfully.",
                     this.jobId);
         } catch (Throwable e) {
+            hasException = true;
+
             if (e instanceof OutOfMemoryError) {
                 this.destroy();
                 System.gc();
@@ -128,7 +131,9 @@ public class JobContainer extends AbstractContainer {
         } finally {
             this.destroy();
             this.endTimeStamp = System.currentTimeMillis();
-            this.logStatistics();
+            if (!hasException) {
+                this.logStatistics();
+            }
         }
     }
 

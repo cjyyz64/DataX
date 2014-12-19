@@ -151,7 +151,7 @@ public class Engine {
             Engine.entry(args);
         } catch (Throwable e) {
             exitCode = 1;
-            LOG.error("经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
+            LOG.error("\n\n经DataX智能分析,该任务最可能的错误原因是:\n" + ExceptionTracker.trace(e));
 
             if (e instanceof DataXException) {
                 DataXException tempException = (DataXException) e;
