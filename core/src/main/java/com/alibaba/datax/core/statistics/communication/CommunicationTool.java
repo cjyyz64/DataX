@@ -9,10 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by jingxing on 14/11/8.
  * 这里主要是业务层面的处理
  */
-public class CommunicationManager {
+public final class CommunicationTool {
     public static final String STAGE = "stage";
     public static final String BYTE_SPEED = "byteSpeed";
     public static final String RECORD_SPEED = "recordSpeed";

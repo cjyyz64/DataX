@@ -4,7 +4,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -254,8 +254,8 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 100);
 //        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
@@ -275,9 +275,9 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 80);
-        communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 20);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 80);
+        communication.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 20);
 //        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
@@ -295,9 +295,9 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 98);
-        communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 2);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 98);
+        communication.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 2);
 //        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()

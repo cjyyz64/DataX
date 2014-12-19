@@ -3,7 +3,7 @@ package com.alibaba.datax.core.statistics.container.communicator.taskgroup;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.container.report.DsReporter;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +24,6 @@ public class DistributeTGContainerCommunicator extends AbstractTGContainerCommun
     public void report(Communication communication) {
         super.getReporter().reportTGCommunication(super.taskGroupId, communication);
 
-        LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
+        LOG.info(CommunicationTool.Stringify.getSnapshot(communication));
     }
 }

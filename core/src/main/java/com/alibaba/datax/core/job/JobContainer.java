@@ -22,7 +22,7 @@ import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -402,7 +402,7 @@ public class JobContainer extends AbstractContainer {
         Communication tempComm = new Communication();
         tempComm.setTimestamp(this.startTransferTimeStamp);
 
-        Communication reportCommunication = CommunicationManager.getReportCommunication(communication, tempComm, this.totalStage);
+        Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
 
 //        communication.setLongCounter(CommunicationManager.BYTE_SPEED, CommunicationManager.getTotalReadBytes(communication) / transferCosts);
 //        communication.setLongCounter(CommunicationManager.RECORD_SPEED, CommunicationManager.getTotalReadRecords(communication) / transferCosts);
@@ -425,16 +425,16 @@ public class JobContainer extends AbstractContainer {
                 "任务总计耗时",
                 String.valueOf(totalCosts) + "s",
                 "任务平均流量",
-                StrUtil.stringify(communication.getLongCounter(CommunicationManager.READ_SUCCEED_BYTES)
+                StrUtil.stringify(communication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES)
                         / transferCosts)
                         + "/s",
                 "记录写入速度",
-                String.valueOf(communication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS)
+                String.valueOf(communication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS)
                         / transferCosts)
                         + "rec/s", "读出记录总数",
-                String.valueOf(CommunicationManager.getTotalReadRecords(communication)),
+                String.valueOf(CommunicationTool.getTotalReadRecords(communication)),
                 "读写失败总数",
-                String.valueOf(CommunicationManager.getTotalErrorRecords(communication))));
+                String.valueOf(CommunicationTool.getTotalErrorRecords(communication))));
     }
 
     /**

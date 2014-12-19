@@ -8,7 +8,7 @@ import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
@@ -73,7 +73,7 @@ public abstract class AbstractScheduler {
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
-                Communication reportCommunication = CommunicationManager
+                Communication reportCommunication = CommunicationTool
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
                 this.containerCommunicator.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);

@@ -2,7 +2,7 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
@@ -199,11 +199,11 @@ public final class DataxServiceUtil {
         }
 
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
         communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
 
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
         communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
 
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
