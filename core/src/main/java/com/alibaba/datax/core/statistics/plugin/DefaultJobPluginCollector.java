@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.statistics.plugin;
 
 import com.alibaba.datax.common.plugin.JobPluginCollector;
-import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 
 import java.util.List;
@@ -11,9 +11,9 @@ import java.util.Map;
  * Created by jingxing on 14-9-9.
  */
 public final class DefaultJobPluginCollector implements JobPluginCollector {
-    private ContainerCommunicator jobCollector;
+    private AbstractContainerCommunicator jobCollector;
 
-    public DefaultJobPluginCollector(ContainerCommunicator containerCollector) {
+    public DefaultJobPluginCollector(AbstractContainerCommunicator containerCollector) {
         this.jobCollector = containerCollector;
     }
 

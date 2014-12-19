@@ -2,15 +2,12 @@ package com.alibaba.datax.core.statistics.container.communicator.taskgroup;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.common.CoreConstant;
-import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollector;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -19,8 +16,6 @@ import java.util.Map;
  * 主要是 taskCommunicationMap 记录了 taskExecutor 的 communication 属性
  */
 public abstract class AbstractTGContainerCommunicator extends AbstractContainerCommunicator {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(AbstractTGContainerCommunicator.class);
 
     protected long jobId;
 
@@ -68,24 +63,7 @@ public abstract class AbstractTGContainerCommunicator extends AbstractContainerC
     public final Communication getCommunication(Integer taskId) {
         Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
 
-        return this.getCommunicationMap().get(taskId);
-    }
-
-    @Override
-    public final List<Communication> getCommunications(List<Integer> taskIds) {
-        Validate.notNull(taskIds, "传入的taskIds不能为null");
-
-        List retList = new ArrayList();
-        for (int taskId : taskIds) {
-            Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
-            Communication communication = super.getCollector().getTaskCommunicationMap()
-                    .get(taskId);
-            if (null != communication) {
-                retList.add(communication);
-            }
-        }
-
-        return retList;
+        return super.getCollector().getTaskCommunication(taskId);
     }
 
     @Override

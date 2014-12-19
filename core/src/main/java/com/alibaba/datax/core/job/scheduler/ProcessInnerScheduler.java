@@ -2,7 +2,7 @@ package com.alibaba.datax.core.job.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.taskgroup.runner.TaskGroupContainerRunner;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
@@ -28,7 +28,7 @@ public class ProcessInnerScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealFailedStat(ContainerCommunicator frameworkCollector, Throwable throwable) {
+    protected void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
         this.taskGroupContainerExecutorService.shutdownNow();
         throw DataXException.asDataXException(
                 FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
@@ -36,7 +36,7 @@ public class ProcessInnerScheduler extends AbstractScheduler {
 
 
     @Override
-    protected void dealKillingStat(ContainerCommunicator frameworkCollector, int totalTasks) {
+    protected void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
         //通过进程退出返回码标示状态
         this.taskGroupContainerExecutorService.shutdownNow();
         throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,

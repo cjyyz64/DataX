@@ -14,12 +14,14 @@ import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.DsScheduler;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
-import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
-import com.alibaba.datax.core.util.*;
+import com.alibaba.datax.core.util.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import org.apache.commons.lang.Validate;
@@ -111,7 +113,7 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            ContainerCommunicator containerCollector = super.getContainerCommunicator();
+            AbstractContainerCommunicator containerCollector = super.getContainerCommunicator();
             if (containerCollector != null) {
                 Communication communication =
                         super.getContainerCommunicator().collect();
