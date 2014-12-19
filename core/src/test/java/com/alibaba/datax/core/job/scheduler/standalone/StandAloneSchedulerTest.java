@@ -5,7 +5,7 @@ import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 

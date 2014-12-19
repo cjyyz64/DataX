@@ -1,12 +1,14 @@
 package com.alibaba.datax.core.statistics.container.communicator.taskgroup;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.statistics.container.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollector;
-import com.alibaba.datax.core.util.CoreConstant;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +18,11 @@ import java.util.Map;
  * 该类是用于处理 taskGroupContainer 的 communication 的收集汇报的父类
  * 主要是 taskCommunicationMap 记录了 taskExecutor 的 communication 属性
  */
-public class AbstractTGContainerCommunicator extends AbstractContainerCommunicator {
-    private Map<Integer, Communication> taskCommunicationMap;
+public abstract class AbstractTGContainerCommunicator extends AbstractContainerCommunicator {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(AbstractTGContainerCommunicator.class);
+
+    protected long jobId;
 
     /**
      * 由于taskGroupContainer是进程内部调度
@@ -29,21 +34,16 @@ public class AbstractTGContainerCommunicator extends AbstractContainerCommunicat
 
     public AbstractTGContainerCommunicator(Configuration configuration) {
         super(configuration);
-        super.setCollector(new ProcessInnerCollector());
+        this.jobId = configuration.getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+        super.setCollector(new ProcessInnerCollector(this.jobId));
         this.taskGroupId = configuration.getInt(
                 CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
     }
 
     @Override
     public void registerCommunication(List<Configuration> configurationList) {
-        this.taskCommunicationMap = super.getCollector().registerTaskCommunication(configurationList);
-    }
-
-    @Override
-    public final Communication getCommunication(int taskId) {
-        Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
-
-        return this.taskCommunicationMap.get(taskId);
+        super.getCollector().registerTaskCommunication(configurationList);
     }
 
     @Override
@@ -57,11 +57,18 @@ public class AbstractTGContainerCommunicator extends AbstractContainerCommunicat
         communication.setState(State.SUCCEEDED);
 
         for (Communication taskCommunication :
-                this.taskCommunicationMap.values()) {
+                super.getCollector().getTaskCommunicationMap().values()) {
             communication.mergeStateFrom(taskCommunication);
         }
 
         return communication.getState();
+    }
+
+    @Override
+    public final Communication getCommunication(Integer taskId) {
+        Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
+
+        return this.getCommunicationMap().get(taskId);
     }
 
     @Override
@@ -71,7 +78,7 @@ public class AbstractTGContainerCommunicator extends AbstractContainerCommunicat
         List retList = new ArrayList();
         for (int taskId : taskIds) {
             Validate.isTrue(taskId >= 0, "注册的taskId不能小于0");
-            Communication communication = this.taskCommunicationMap
+            Communication communication = super.getCollector().getTaskCommunicationMap()
                     .get(taskId);
             if (null != communication) {
                 retList.add(communication);
@@ -82,13 +89,8 @@ public class AbstractTGContainerCommunicator extends AbstractContainerCommunicat
     }
 
     @Override
-    public void report(Communication communication) {
-        super.getReporter().updateTGCommication(this.taskGroupId, communication);
-    }
-
-    @Override
-    public final Map<Integer, Communication> getCommunicationsMap() {
-        return taskCommunicationMap;
+    public final Map<Integer, Communication> getCommunicationMap() {
+        return super.getCollector().getTaskCommunicationMap();
     }
 
 }

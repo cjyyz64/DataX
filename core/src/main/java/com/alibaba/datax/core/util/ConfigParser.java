@@ -7,6 +7,13 @@ import com.alibaba.datax.common.exception.DataXException;
 import org.apache.commons.lang.StringUtils;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.CoreConstant;
+import org.apache.commons.lang.StringUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class ConfigParser {
     /**

@@ -4,7 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.dataxservice.face.domain.State;
@@ -39,7 +39,7 @@ public class DsScheduler extends AbstractScheduler {
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
 
-        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
+        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationMap();
         for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
             State taskGroupState = entry.getValue().getState();
             Integer taskGroupId = entry.getKey();
@@ -66,7 +66,7 @@ public class DsScheduler extends AbstractScheduler {
     protected void dealKillingStat(ContainerCommunicator frameworkCollector, int totalTasks) {
         LOG.error("收到 [杀作业] 的命令，DataX 尝试杀掉其他运行中的任务，然后退出整个作业.");
 
-        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationsMap();
+        Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationMap();
 
         for (Map.Entry<Integer, Communication> entry : taskGroupInJob.entrySet()) {
             if (entry.getValue().getState().isRunning()) {

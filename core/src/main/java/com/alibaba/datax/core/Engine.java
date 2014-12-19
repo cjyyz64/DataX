@@ -6,6 +6,7 @@ import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.util.LoadUtil;

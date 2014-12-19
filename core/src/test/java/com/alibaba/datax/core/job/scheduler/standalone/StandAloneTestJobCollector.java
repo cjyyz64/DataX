@@ -6,7 +6,6 @@ import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by jingxing on 14-9-4.
@@ -33,8 +32,8 @@ public class StandAloneTestJobCollector extends AbstractCollector {
     }
 
     @Override
-    public Map<Integer, Communication> registerTaskCommunication(List<Configuration> taskConfigurationList) {
-        return null;
+    public void registerTaskCommunication(List<Configuration> taskConfigurationList) {
+
     }
 
     @Override

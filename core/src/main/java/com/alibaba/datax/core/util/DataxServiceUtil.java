@@ -121,13 +121,13 @@ public final class DataxServiceUtil {
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
-                        String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup, resJson));
+                        String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup.toSimpleString(), resJson));
             }
 
             return result;
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
-                    String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s].", jobId, taskGroup), e);
+                    String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s].", jobId, taskGroup.toSimpleString()), e);
         }
     }
 

@@ -7,10 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * TODO delete it
- */
-public class TGCommunicationMapHolder {
+public final class TGCommunicationMapHolder {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 

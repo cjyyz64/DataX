@@ -9,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.ErrorRecordChecker;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.DsScheduler;
@@ -300,7 +301,7 @@ public class JobContainer extends AbstractContainer {
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
-        ExecuteMode runMode = null;
+        ExecuteMode executeMode = null;
         AbstractScheduler scheduler;
         try {
             // 运行模式的判断
@@ -309,32 +310,29 @@ public class JobContainer extends AbstractContainer {
             // 如果指定为分布式，但是实际 taskGroup 只有一个，那么强制采用 local 模式运行
             boolean forceToLocal = ExecuteMode.isDistribute(jobMode) && taskGroupConfigs.size() == 1;
             if (ExecuteMode.isLocal(jobMode) || forceToLocal) {
-                runMode = ExecuteMode.LOCAL;
+                executeMode = ExecuteMode.LOCAL;
+                scheduler = initLocalScheduler(this.configuration);
             } else if (ExecuteMode.isDistribute(jobMode)) {
-                runMode = ExecuteMode.DISTRIBUTE;
+                executeMode = ExecuteMode.DISTRIBUTE;
+                scheduler = initDistributeScheduler(this.configuration);
             } else {
-                runMode = ExecuteMode.STANDALONE;
+                executeMode = ExecuteMode.STANDALONE;
+                scheduler = initStandaloneScheduler(this.configuration);
             }
 
-            //设置runmode
+            //设置 executeMode
             for (Configuration taskGroupConfig : taskGroupConfigs) {
-                taskGroupConfig.set("runMode", runMode.getValue());
+                taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, executeMode.getValue());
             }
-            scheduler = initLocalScheduler(this.configuration);
-            LOG.info("Running by {} Mode.", runMode);
+            LOG.info("Running by {} Mode.", executeMode);
 
             this.startTransferTimeStamp = System.currentTimeMillis();
-
-            super.setContainerCommunicator(ClassUtil.instantiate(
-                    configuration.getString(
-                            CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_JOBCLASS),
-                    ContainerCommunicator.class, configuration));
 
             scheduler.schedule(taskGroupConfigs, super.getContainerCommunicator());
 
             this.endTransferTimeStamp = System.currentTimeMillis();
         } catch (Exception e) {
-            LOG.error("运行scheduler 模式为[[{}]]出错", runMode);
+            LOG.error("运行scheduler 模式[{}]出错.", executeMode);
             this.endTransferTimeStamp = System.currentTimeMillis();
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);

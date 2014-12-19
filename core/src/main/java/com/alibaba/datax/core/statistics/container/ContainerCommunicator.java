@@ -10,15 +10,19 @@ import java.util.Map;
 public interface ContainerCommunicator {
     void registerCommunication(List<Configuration> configurationList);
 
-    void report(Communication communication);
-
     Communication collect();
+
+    void report(Communication communication);
 
     State collectState();
 
-    Communication getCommunication(int id);
+    Communication getCommunication(Integer id);
 
     List<Communication> getCommunications(List<Integer> ids);
 
-    Map<Integer, Communication> getCommunicationsMap();
+    /**
+     * 当 实现是 TGContainerCommunicator 时，返回的 Map: key=taskId, value=Communication
+     * 当 实现是 JobContainerCommunicator 时，返回的 Map: key=taskGroupId, value=Communication
+     */
+    Map<Integer, Communication> getCommunicationMap();
 }

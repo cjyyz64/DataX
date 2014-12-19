@@ -7,7 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;

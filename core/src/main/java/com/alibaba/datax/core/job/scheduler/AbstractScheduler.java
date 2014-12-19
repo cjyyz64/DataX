@@ -6,7 +6,7 @@ import com.alibaba.datax.core.ErrorRecordChecker;
 import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.common.CoreConstant;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.dataxservice.face.domain.Result;
