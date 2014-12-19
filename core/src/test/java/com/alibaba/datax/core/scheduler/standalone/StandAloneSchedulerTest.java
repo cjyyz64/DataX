@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.job.scheduler.standalone;
+package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;

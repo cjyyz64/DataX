@@ -1,18 +1,12 @@
 package com.alibaba.datax.core.scheduler.local;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.TaskGroupContainer;
-
-import com.alibaba.datax.core.statistics.collector.container.distribute.DistributeTaskGroupContainerCollector;
-import com.alibaba.datax.core.statistics.collector.container.local.LocalJobContainerCollector;
+import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.util.CoreConstant;
-
+import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.State;
-
 import org.apache.commons.lang3.RandomUtils;
-
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
 
@@ -29,7 +23,10 @@ public class LocalScheduleTest {
     public void testSchedule() throws Exception {
         int taskGraoupNumber = 10;
 
-        LocalScheduler scheduler = new LocalScheduler();
+        LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
+                mock(LocalJobContainerCommunicator.class);
+
+        ProcessInnerScheduler scheduler = new ProcessInnerScheduler(localJobContainerCommunicator);
 
         List<Configuration> configurationList = new ArrayList<Configuration>();
 
@@ -48,24 +45,18 @@ public class LocalScheduleTest {
                             11);
             configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
             configuration.set(CoreConstant.DATAX_JOB_CONTENT, configurations);
-            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CLASS,
-                    TaskGroupContainer.class.getName());
+
             configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
-            configuration
-                    .set(CoreConstant.DATAX_CORE_STATISTICS_COLLECTOR_CONTAINER_TASKGROUPCLASS,
-                            DistributeTaskGroupContainerCollector.class.getName());
+
             configurationList.add(configuration);
         }
-
-        LocalJobContainerCollector jobContainerCollector =
-                PowerMockito.mock(LocalJobContainerCollector.class);
 
 
         Communication communication = new Communication();
         communication.setState(State.SUCCEEDED);
-        PowerMockito.when(jobContainerCollector.collect()).
+        PowerMockito.when(localJobContainerCommunicator.collect()).
                 thenReturn(communication);
-        PowerMockito.doNothing().when(jobContainerCollector).report(communication);
-        scheduler.schedule(configurationList,jobContainerCollector);
+        PowerMockito.doNothing().when(localJobContainerCommunicator).report(communication);
+        scheduler.schedule(configurationList);
     }
 }
