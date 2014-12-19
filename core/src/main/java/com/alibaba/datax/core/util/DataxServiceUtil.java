@@ -2,7 +2,7 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
@@ -121,13 +121,13 @@ public final class DataxServiceUtil {
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
-                        String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup, resJson));
+                        String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup.toSimpleString(), resJson));
             }
 
             return result;
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
-                    String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s].", jobId, taskGroup), e);
+                    String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s].", jobId, taskGroup.toSimpleString()), e);
         }
     }
 
@@ -199,22 +199,21 @@ public final class DataxServiceUtil {
         }
 
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
         communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
 
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
         communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
 
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
         communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
 
         String errorMessage = taskGroup.getErrorMessage();
-        if (StringUtils.isBlank(errorMessage)) {
-            communication.setThrowable(null);
-        } else {
+        if (StringUtils.isNotBlank(errorMessage)) {
             communication.setThrowable(new Throwable(errorMessage));
         }
+
         return communication;
     }
 

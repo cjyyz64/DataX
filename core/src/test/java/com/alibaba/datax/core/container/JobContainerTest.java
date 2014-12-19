@@ -1,15 +1,14 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.scheduler.distribute.DistributeScheduler;
-import com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,8 +47,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test(expected = Exception.class)
     public void testStartException() {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                DistributeScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
         jobContainer.start();
@@ -58,8 +56,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test
     public void testInitNormal() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                StandAloneScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.STANDALONE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
 
@@ -75,8 +72,7 @@ public class JobContainerTest extends CaseInitializer {
     @Test(expected = Exception.class)
     public void testInitException() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set(CoreConstant.DATAX_CORE_SCHEDULER_CLASS,
-                DistributeScheduler.class.getName());
+        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
         JobContainer jobContainer = new JobContainer(
                 this.configuration);
         Method initMethod = jobContainer.getClass()
@@ -258,9 +254,9 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 100);
-        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 100);
+//        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
@@ -279,10 +275,10 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 80);
-        communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 20);
-        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 80);
+        communication.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 20);
+//        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
@@ -299,10 +295,10 @@ public class JobContainerTest extends CaseInitializer {
                 this.configuration);
 
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 98);
-        communication.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 2);
-        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 98);
+        communication.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 2);
+//        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");

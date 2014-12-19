@@ -1,12 +1,12 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import org.apache.commons.lang.StringUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
-
-import com.alibaba.datax.common.util.Configuration;
 
 public final class ConfigParser {
 	/**

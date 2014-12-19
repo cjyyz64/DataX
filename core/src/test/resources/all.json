@@ -48,7 +48,7 @@
                     "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
                 },
                 "plugin": {
-                    "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",
+                    "taskClass": "com.alibaba.datax.core.statistics.plugin.task.StdoutPluginCollector",
                     "maxDirtyNumber": 1000
                 }
             }

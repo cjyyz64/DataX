@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.scaffold.base;
 
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.StringUtils;
 import org.junit.BeforeClass;
 

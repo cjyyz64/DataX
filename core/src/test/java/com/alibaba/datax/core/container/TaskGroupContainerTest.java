@@ -1,15 +1,15 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunicationManager;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
+import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
@@ -55,9 +55,9 @@ public class TaskGroupContainerTest extends CaseInitializer {
         }
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
 
-        LocalTaskGroupCommunicationManager.clear();
-        LocalTaskGroupCommunicationManager.registerTaskGroupCommunication(
-                1, new Communication());
+//        LocalTaskGroupCommunicationManager.clear();
+//        LocalTaskGroupCommunicationManager.registerTaskGroupCommunication(
+//                1, new Communication());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
 
-        ContainerCollector collector = taskGroupContainer.getContainerCollector();
+        AbstractContainerCommunicator collector = taskGroupContainer.getContainerCommunicator();
         while (true) {
             State totalTaskState = collector.collectState();
             if (totalTaskState.isRunning()) {
