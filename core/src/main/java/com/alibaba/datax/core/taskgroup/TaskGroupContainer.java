@@ -5,7 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.DistributeTGContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.LocalTGContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.taskgroup.StandaloneTGContainerCommunicator;
@@ -140,7 +140,7 @@ public class TaskGroupContainer extends AbstractContainer {
                 if (taskExecutorTotalState == State.FAILED) {
                     nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
-                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
                     this.containerCommunicator.report(reportCommunication);
 
@@ -177,7 +177,7 @@ public class TaskGroupContainer extends AbstractContainer {
                     nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
-                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     this.containerCommunicator.report(reportCommunication);
 
                     LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
@@ -190,7 +190,7 @@ public class TaskGroupContainer extends AbstractContainer {
                     nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
-                    Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                     this.containerCommunicator.report(reportCommunication);
 
                     lastReportTimeStamp = now;
@@ -204,7 +204,7 @@ public class TaskGroupContainer extends AbstractContainer {
             nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
             nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
 
-            Communication reportCommunication = CommunicationManager.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+            Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
             this.containerCommunicator.report(reportCommunication);
         } catch (Throwable e) {
             nowTaskGroupContainerCommunication = this.containerCommunicator.collect();

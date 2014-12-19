@@ -3,7 +3,7 @@ package com.alibaba.datax.core.job.scheduler;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import org.junit.Test;
 
 public class ErrorRecordLimitTest {
@@ -12,7 +12,7 @@ public class ErrorRecordLimitTest {
         ErrorRecordChecker errLimit = new ErrorRecordChecker(0L, 0.5);
         errLimit.checkRecordLimit(new Communication() {
             {
-                this.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 1);
+                this.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 1);
             }
         });
     }
@@ -22,7 +22,7 @@ public class ErrorRecordLimitTest {
         ErrorRecordChecker errLimit = new ErrorRecordChecker(1L, 0.5);
         errLimit.checkRecordLimit(new Communication() {
             {
-                this.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 1);
+                this.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 1);
             }
         });
     }
@@ -33,8 +33,8 @@ public class ErrorRecordLimitTest {
         ErrorRecordChecker errLimit = new ErrorRecordChecker(1L, 0.05);
         errLimit.checkPercentageLimit(new Communication() {
             {
-                this.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-                this.setLongCounter(CommunicationManager.WRITE_FAILED_RECORDS, 50);
+                this.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+                this.setLongCounter(CommunicationTool.WRITE_FAILED_RECORDS, 50);
             }
         });
     }

@@ -6,7 +6,7 @@ import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollect
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
     public void report(Communication communication) {
         super.getReporter().reportJobCommunication(super.getJobId(), communication);
 
-        LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
+        LOG.info(CommunicationTool.Stringify.getSnapshot(communication));
     }
 
     @Override

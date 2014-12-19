@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.statistics.plugin.task;
 
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
@@ -60,14 +60,14 @@ public abstract class AbstractTaskPluginCollector extends TaskPluginCollector {
 
         if (this.pluginType.equals(PluginType.READER)) {
             this.communication.increaseCounter(
-                    CommunicationManager.READ_FAILED_RECORDS, 1);
+                    CommunicationTool.READ_FAILED_RECORDS, 1);
             this.communication.increaseCounter(
-                    CommunicationManager.READ_FAILED_BYTES, dirtyRecord.getByteSize());
+                    CommunicationTool.READ_FAILED_BYTES, dirtyRecord.getByteSize());
         } else if (this.pluginType.equals(PluginType.WRITER)) {
             this.communication.increaseCounter(
-                    CommunicationManager.WRITE_FAILED_RECORDS, 1);
+                    CommunicationTool.WRITE_FAILED_RECORDS, 1);
             this.communication.increaseCounter(
-                    CommunicationManager.WRITE_FAILED_BYTES, dirtyRecord.getByteSize());
+                    CommunicationTool.WRITE_FAILED_BYTES, dirtyRecord.getByteSize());
         } else {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR,

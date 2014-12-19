@@ -2,7 +2,7 @@ package com.alibaba.datax.core.statistics.container.report;
 
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 
@@ -38,14 +38,14 @@ public class DsReporter extends AbstractReporter {
         // 不能设置 state，否则会收到 DataXService 的报错：State should be updated be alisa ONLY.
         // taskGroupStatus.setState(communication.getState());
         taskGroupStatus.setStage(communication.getLongCounter("stage").intValue());
-        taskGroupStatus.setTotalRecords(CommunicationManager.getTotalReadRecords(communication));
-        taskGroupStatus.setTotalBytes(CommunicationManager.getTotalReadBytes(communication));
+        taskGroupStatus.setTotalRecords(CommunicationTool.getTotalReadRecords(communication));
+        taskGroupStatus.setTotalBytes(CommunicationTool.getTotalReadBytes(communication));
 
-        taskGroupStatus.setSpeedRecords(communication.getLongCounter(CommunicationManager.RECORD_SPEED));
-        taskGroupStatus.setSpeedBytes(communication.getLongCounter(CommunicationManager.BYTE_SPEED));
+        taskGroupStatus.setSpeedRecords(communication.getLongCounter(CommunicationTool.RECORD_SPEED));
+        taskGroupStatus.setSpeedBytes(communication.getLongCounter(CommunicationTool.BYTE_SPEED));
 
-        taskGroupStatus.setErrorRecords(CommunicationManager.getTotalErrorRecords(communication));
-        taskGroupStatus.setErrorBytes(CommunicationManager.getTotalErrorBytes(communication));
+        taskGroupStatus.setErrorRecords(CommunicationTool.getTotalErrorRecords(communication));
+        taskGroupStatus.setErrorBytes(CommunicationTool.getTotalErrorBytes(communication));
 
         taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
 

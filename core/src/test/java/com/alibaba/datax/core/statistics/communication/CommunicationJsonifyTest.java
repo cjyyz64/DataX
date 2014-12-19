@@ -13,23 +13,23 @@ public class CommunicationJsonifyTest {
     @Test
     public void testJsonGetSnapshot() {
         Communication communication = new Communication();
-        communication.setLongCounter(CommunicationManager.STAGE, 10);
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS, 100);
-        communication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES, 102400);
-        communication.setLongCounter(CommunicationManager.BYTE_SPEED, 10240);
-        communication.setLongCounter(CommunicationManager.RECORD_SPEED, 100);
-        communication.setDoubleCounter(CommunicationManager.PERCENTAGE, 0.1);
+        communication.setLongCounter(CommunicationTool.STAGE, 10);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES, 102400);
+        communication.setLongCounter(CommunicationTool.BYTE_SPEED, 10240);
+        communication.setLongCounter(CommunicationTool.RECORD_SPEED, 100);
+        communication.setDoubleCounter(CommunicationTool.PERCENTAGE, 0.1);
         communication.setState(State.RUNNING);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS, 99);
-        communication.setLongCounter(CommunicationManager.WRITE_RECEIVED_BYTES, 102300);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 99);
+        communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_BYTES, 102300);
 
-        String jsonString = CommunicationManager.Jsonify.getSnapshot(communication);
+        String jsonString = CommunicationTool.Jsonify.getSnapshot(communication);
         JSONObject metricJson = JSON.parseObject(jsonString);
 
-        Assert.assertEquals(communication.getLongCounter(CommunicationManager.RECORD_SPEED),
+        Assert.assertEquals(communication.getLongCounter(CommunicationTool.RECORD_SPEED),
                 metricJson.getLong("speedRecords"));
         Assert.assertTrue(
-                Math.abs(communication.getDoubleCounter(CommunicationManager.PERCENTAGE)
+                Math.abs(communication.getDoubleCounter(CommunicationTool.PERCENTAGE)
                         - metricJson.getDouble("stage")) <= 0.001);
     }
 }

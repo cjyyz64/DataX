@@ -3,7 +3,7 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -50,7 +50,7 @@ public final class ErrorRecordChecker {
             return;
         }
 
-        long errorNumber = CommunicationManager.getTotalErrorRecords(communication);
+        long errorNumber = CommunicationTool.getTotalErrorRecords(communication);
         if (recordLimit < errorNumber) {
             LOG.debug(
                     String.format("Error-limit set to %d, error count check.",
@@ -69,8 +69,8 @@ public final class ErrorRecordChecker {
         LOG.debug(String.format(
                 "Error-limit set to %f, error percent check.", percentageLimit));
 
-        long total = CommunicationManager.getTotalReadRecords(communication);
-        long error = CommunicationManager.getTotalErrorRecords(communication);
+        long total = CommunicationTool.getTotalReadRecords(communication);
+        long error = CommunicationTool.getTotalErrorRecords(communication);
 
         if (total > 0 && ((double) error / (double) total) > percentageLimit) {
             throw DataXException.asDataXException(
