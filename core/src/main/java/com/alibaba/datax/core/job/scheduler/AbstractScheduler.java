@@ -3,7 +3,7 @@ package com.alibaba.datax.core.job.scheduler;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.ErrorRecordChecker;
-import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.core.common.CoreConstant;

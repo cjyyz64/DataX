@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.AbstractContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
 import com.alibaba.datax.core.statistics.container.report.AbstractReporter;
 

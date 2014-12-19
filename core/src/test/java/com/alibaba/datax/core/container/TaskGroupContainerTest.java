@@ -6,7 +6,7 @@ import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.common.CoreConstant;
