@@ -19,7 +19,7 @@ public class ProcessInnerScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void startAllTaskGroup(List<Configuration> configurations) {
+    public void startAllTaskGroup(List<Configuration> configurations) {
         this.taskGroupContainerExecutorService = Executors
                 .newFixedThreadPool(configurations.size());
 
@@ -32,7 +32,7 @@ public class ProcessInnerScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
+    public void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
         this.taskGroupContainerExecutorService.shutdownNow();
         throw DataXException.asDataXException(
                 FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, throwable);
@@ -40,7 +40,7 @@ public class ProcessInnerScheduler extends AbstractScheduler {
 
 
     @Override
-    protected void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
+    public void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
         //通过进程退出返回码标示状态
         this.taskGroupContainerExecutorService.shutdownNow();
         throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
