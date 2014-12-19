@@ -8,6 +8,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.container.util.ClassLoaderSwapper;
+import com.alibaba.datax.core.container.util.HookInvoker;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
@@ -25,10 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -102,8 +100,9 @@ public class JobContainer extends AbstractContainer {
             LOG.debug("jobContainer starts to do post ...");
             this.post();
 
-            LOG.info("DataX jobId [{}] completed successfully.",
-                    this.jobId);
+            LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
+
+            this.invokeHooks();
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 this.destroy();
@@ -206,7 +205,7 @@ public class JobContainer extends AbstractContainer {
             // 在byte流控情况下，单个Channel流量最大值必须设置，否则报错！
             Long channelLimitedByteSpeed = this.configuration
                     .getLong(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE);
-            if(channelLimitedByteSpeed==null || channelLimitedByteSpeed <= 0) {
+            if (channelLimitedByteSpeed == null || channelLimitedByteSpeed <= 0) {
                 DataXException.asDataXException(
                         FrameworkErrorCode.CONFIG_ERROR,
                         "在有总bps限速条件下，单个channel的bps值不能为空，也不能为非正数");
@@ -215,19 +214,19 @@ public class JobContainer extends AbstractContainer {
             needChannelNumberByByte =
                     (int) (globalLimitedByteSpeed / channelLimitedByteSpeed);
             needChannelNumberByByte =
-                    needChannelNumberByByte>0 ? needChannelNumberByByte : 1;
+                    needChannelNumberByByte > 0 ? needChannelNumberByByte : 1;
             LOG.info("Job set Max-Byte-Speed to " + globalLimitedByteSpeed + " bytes.");
         }
 
         boolean isRecordLimit = (this.configuration.getInt(
                 CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 0)) > 0;
-        if(isRecordLimit) {
+        if (isRecordLimit) {
             long globalLimitedRecordSpeed = this.configuration.getInt(
                     CoreConstant.DATAX_JOB_SETTING_SPEED_RECORD, 100000);
 
             Long channelLimitedRecordSpeed = this.configuration.getLong(
                     CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD);
-            if(channelLimitedRecordSpeed==null || channelLimitedRecordSpeed <= 0) {
+            if (channelLimitedRecordSpeed == null || channelLimitedRecordSpeed <= 0) {
                 DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR,
                         "在有总tps限速条件下，单个channel的tps值不能为空，也不能为非正数");
             }
@@ -235,16 +234,16 @@ public class JobContainer extends AbstractContainer {
             needChannelNumberByRecord =
                     (int) (globalLimitedRecordSpeed / channelLimitedRecordSpeed);
             needChannelNumberByRecord =
-                    needChannelNumberByRecord>0 ? needChannelNumberByRecord : 1;
+                    needChannelNumberByRecord > 0 ? needChannelNumberByRecord : 1;
             LOG.info("Job set Max-Record-Speed to " + globalLimitedRecordSpeed + " records.");
         }
 
         // 取较小值
-        this.needChannelNumber = needChannelNumberByByte<needChannelNumberByRecord ?
+        this.needChannelNumber = needChannelNumberByByte < needChannelNumberByRecord ?
                 needChannelNumberByByte : needChannelNumberByRecord;
 
         // 如果从byte或record上设置了needChannelNumber则退出
-        if(this.needChannelNumber < Integer.MAX_VALUE) {
+        if (this.needChannelNumber < Integer.MAX_VALUE) {
             return;
         }
 
@@ -655,5 +654,14 @@ public class JobContainer extends AbstractContainer {
         Communication communication = super.getContainerCollector().collect();
         errorLimit.checkRecordLimit(communication);
         errorLimit.checkPercentageLimit(communication);
+    }
+
+    /**
+     * 调用外部hook
+     */
+    private void invokeHooks() {
+        Communication comm = super.getContainerCollector().collect();
+        HookInvoker invoker = new HookInvoker(CoreConstant.DATAX_HOME + "/hook", configuration, comm.getCounter());
+        invoker.invokeAll();
     }
 }

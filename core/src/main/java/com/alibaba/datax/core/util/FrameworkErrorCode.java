@@ -13,6 +13,8 @@ public enum FrameworkErrorCode implements ErrorCode {
 	ARGUMENT_ERROR("Framework-01", "DataX引擎运行错误，该问题通常是由于内部编程错误引起，请联系DataX开发团队解决 ."),
 	RUNTIME_ERROR("Framework-02", "DataX引擎运行过程出错，具体原因请参看DataX运行结束时的错误诊断信息  ."),
 	CONFIG_ERROR("Framework-03", "DataX引擎配置错误，该问题通常是由于DataX安装错误引起，请联系您的运维解决 ."),
+    HOOK_LOAD_ERROR("Framework-04", "加载外部Hook出现错误，通常是由于DataX安装引起的"),
+    HOOK_FAIL_ERROR("Framework-05", "执行外部Hook出现错误"),
 
 	PLUGIN_INSTALL_ERROR("Framework-10", "DataX插件安装错误, 该问题通常是由于DataX安装错误引起，请联系您的运维解决 ."),
 	PLUGIN_NOT_FOUND("Framework-11", "DataX插件配置错误, 该问题通常是由于DataX安装错误引起，请联系您的运维解决 ."),
@@ -20,7 +22,7 @@ public enum FrameworkErrorCode implements ErrorCode {
 	PLUGIN_RUNTIME_ERROR("Framework-13", "DataX插件运行时出错, 具体原因请参看DataX运行结束时的错误诊断信息 ."),
 	PLUGIN_DIRTY_DATA_LIMIT_EXCEED("Framework-14", "DataX传输脏数据超过用户预期，该错误通常是由于源端数据存在较多业务脏数据导致，请仔细检查DataX汇报的脏数据日志信息, 或者您可以适当调大脏数据阈值 ."),
 	PLUGIN_SPLIT_ERROR("Framework-15", "DataX插件切分出错, 该问题通常是由于DataX各个插件编程错误引起，请联系DataX开发团队解决"),
-	;
+    ;
 
 	private final String code;
 
