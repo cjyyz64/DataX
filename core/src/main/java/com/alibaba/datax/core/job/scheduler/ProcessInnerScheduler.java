@@ -2,7 +2,7 @@ package com.alibaba.datax.core.job.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.taskgroup.runner.TaskGroupContainerRunner;
 import com.alibaba.datax.core.util.FrameworkErrorCode;

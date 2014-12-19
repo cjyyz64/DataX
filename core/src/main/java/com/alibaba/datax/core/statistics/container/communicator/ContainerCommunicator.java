@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.statistics.container;
+package com.alibaba.datax.core.statistics.container.communicator;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.communication.Communication;

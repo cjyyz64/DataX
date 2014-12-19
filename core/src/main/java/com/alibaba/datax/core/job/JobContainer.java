@@ -14,7 +14,7 @@ import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.DsScheduler;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
-import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;

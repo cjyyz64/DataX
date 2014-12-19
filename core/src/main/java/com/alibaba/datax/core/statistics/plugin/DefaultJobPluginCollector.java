@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.statistics.plugin;
 
 import com.alibaba.datax.common.plugin.JobPluginCollector;
-import com.alibaba.datax.core.statistics.container.ContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.ContainerCommunicator;
 import com.alibaba.datax.core.util.communication.Communication;
 
 import java.util.List;
