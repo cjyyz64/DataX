@@ -6,21 +6,16 @@ import com.alibaba.datax.core.statistics.container.AbstractContainerCommunicator
 import com.alibaba.datax.core.statistics.container.collector.DsCollector;
 import com.alibaba.datax.core.statistics.container.report.DsReporter;
 import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.core.util.communication.LocalTaskGroupCommunicationManager;
 import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class DistributeJobContainerCommunicator extends AbstractContainerCommunicator {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(DistributeJobContainerCommunicator.class);
 
     public DistributeJobContainerCommunicator(Configuration configuration) {
         super(configuration);
@@ -43,8 +38,6 @@ public class DistributeJobContainerCommunicator extends AbstractContainerCommuni
     @Override
     public void report(Communication communication) {
         super.getReporter().reportJobCommunication(super.getJobId(), communication);
-
-        LOG.info(CommunicationManager.Stringify.getSnapshot(communication));
     }
 
 
