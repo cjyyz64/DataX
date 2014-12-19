@@ -1,11 +1,11 @@
 package com.alibaba.datax.core.job.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 
@@ -43,7 +43,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		}
 
 		//TODO mock
-		ProcessInnerScheduler scheduler = new ProcessInnerScheduler();
-		scheduler.schedule(jobList, new StandAloneJobContainerCommunicator(Configuration.newDefault()));
+		ProcessInnerScheduler scheduler = new ProcessInnerScheduler(new StandAloneJobContainerCommunicator(Configuration.newDefault()));
+		scheduler.schedule(jobList);
 	}
 }

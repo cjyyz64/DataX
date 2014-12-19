@@ -8,9 +8,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
-import com.alibaba.datax.core.ErrorRecordChecker;
-import com.alibaba.datax.core.common.CoreConstant;
-import com.alibaba.datax.core.common.ExecuteMode;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.DsScheduler;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
@@ -19,11 +17,13 @@ import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJo
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
-import com.alibaba.datax.core.util.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.LoadUtil;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -334,7 +334,7 @@ public class JobContainer extends AbstractContainer {
 
             this.startTransferTimeStamp = System.currentTimeMillis();
 
-            scheduler.schedule(taskGroupConfigs, super.getContainerCommunicator());
+            scheduler.schedule(taskGroupConfigs);
 
             this.endTransferTimeStamp = System.currentTimeMillis();
         } catch (Exception e) {
@@ -351,18 +351,24 @@ public class JobContainer extends AbstractContainer {
     }
 
     private AbstractScheduler initLocalScheduler(Configuration configuration) {
-        super.setContainerCommunicator(new LocalJobContainerCommunicator(configuration));
-        return new ProcessInnerScheduler();
+        AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
+        super.setContainerCommunicator(containerCommunicator);
+
+        return new ProcessInnerScheduler(containerCommunicator);
     }
 
     private AbstractScheduler initDistributeScheduler(Configuration configuration) {
-        super.setContainerCommunicator(new DistributeJobContainerCommunicator(configuration));
-        return new DsScheduler();
+        AbstractContainerCommunicator containerCommunicator = new DistributeJobContainerCommunicator(configuration);
+        super.setContainerCommunicator(containerCommunicator);
+
+        return new DsScheduler(containerCommunicator);
     }
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
-        super.setContainerCommunicator(new StandAloneJobContainerCommunicator(configuration));
-        return new ProcessInnerScheduler();
+        AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
+        super.setContainerCommunicator(containerCommunicator);
+
+        return new ProcessInnerScheduler(containerCommunicator);
     }
 
     private void post() {

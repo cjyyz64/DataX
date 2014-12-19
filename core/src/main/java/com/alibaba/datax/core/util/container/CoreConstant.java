@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.common;
+package com.alibaba.datax.core.util.container;
 
 import org.apache.commons.lang.StringUtils;
 

@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.container.report;
 
-import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.Communication;
 
 public abstract class AbstractReporter {
 

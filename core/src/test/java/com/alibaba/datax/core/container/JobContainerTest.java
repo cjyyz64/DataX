@@ -1,14 +1,14 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.common.ExecuteMode;
 import com.alibaba.datax.core.job.JobContainer;
-import com.alibaba.datax.core.util.LoadUtil;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

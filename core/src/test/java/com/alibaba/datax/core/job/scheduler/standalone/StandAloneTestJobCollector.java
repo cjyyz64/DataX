@@ -2,7 +2,7 @@ package com.alibaba.datax.core.job.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
-import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;

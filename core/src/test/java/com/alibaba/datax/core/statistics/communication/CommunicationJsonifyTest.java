@@ -1,7 +1,5 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;

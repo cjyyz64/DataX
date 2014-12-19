@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.alibaba.datax.common.constant.PluginType;
-import com.alibaba.datax.core.util.LoadUtil;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.scaffold.ConfigurationProducer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.fastjson.JSON;

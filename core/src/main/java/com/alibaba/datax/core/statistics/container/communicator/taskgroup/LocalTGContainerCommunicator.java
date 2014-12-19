@@ -2,7 +2,7 @@ package com.alibaba.datax.core.statistics.container.communicator.taskgroup;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
-import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.Communication;
 
 public class LocalTGContainerCommunicator extends AbstractTGContainerCommunicator {
 

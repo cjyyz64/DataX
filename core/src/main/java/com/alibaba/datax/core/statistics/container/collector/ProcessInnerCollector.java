@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.statistics.container.collector;
 
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 
 public class ProcessInnerCollector extends AbstractCollector {
 
@@ -11,7 +11,7 @@ public class ProcessInnerCollector extends AbstractCollector {
 
     @Override
     public Communication collectFromTaskGroup() {
-        return TGCommunicationMapHolder.getJobCommunication();
+        return LocalTGCommunicationManager.getJobCommunication();
     }
 
 }

@@ -2,13 +2,13 @@ package com.alibaba.datax.core.job.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.ErrorRecordChecker;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang.Validate;
@@ -23,14 +23,19 @@ public abstract class AbstractScheduler {
 
     private ErrorRecordChecker errorLimit;
 
+    private AbstractContainerCommunicator containerCommunicator;
+
     private Long jobId;
 
     public Long getJobId() {
         return jobId;
     }
 
-    public void schedule(List<Configuration> configurations,
-                         AbstractContainerCommunicator jobCollector) {
+    public AbstractScheduler(AbstractContainerCommunicator containerCommunicator) {
+        this.containerCommunicator = containerCommunicator;
+    }
+
+    public void schedule(List<Configuration> configurations) {
         Validate.notNull(configurations,
                 "scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
@@ -44,7 +49,7 @@ public abstract class AbstractScheduler {
         /**
          * 给 taskGroupContainer 的 Communication 注册
          */
-        jobCollector.registerCommunication(configurations);
+        this.containerCommunicator.registerCommunication(configurations);
 
         int totalTasks = calculateTaskCount(configurations);
         startAllTaskGroup(configurations);
@@ -64,13 +69,13 @@ public abstract class AbstractScheduler {
                  * above steps, some ones should report info to DS
                  *
                  */
-                Communication nowJobContainerCommunication = jobCollector.collect();
+                Communication nowJobContainerCommunication = this.containerCommunicator.collect();
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                jobCollector.report(reportCommunication);
+                this.containerCommunicator.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
 
@@ -80,9 +85,9 @@ public abstract class AbstractScheduler {
                 }
 
                 if (isJobKilling(this.getJobId())) {
-                    dealKillingStat(jobCollector, totalTasks);
+                    dealKillingStat(this.containerCommunicator, totalTasks);
                 } else if (reportCommunication.getState() == State.FAILED) {
-                    dealFailedStat(jobCollector, nowJobContainerCommunication.getThrowable());
+                    dealFailedStat(this.containerCommunicator, nowJobContainerCommunication.getThrowable());
                 }
 
                 lastJobContainerCommunication = nowJobContainerCommunication;

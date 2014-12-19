@@ -7,7 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
-import com.alibaba.datax.core.util.LoadUtil;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
