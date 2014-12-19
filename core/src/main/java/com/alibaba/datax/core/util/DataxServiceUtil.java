@@ -210,11 +210,10 @@ public final class DataxServiceUtil {
         communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
 
         String errorMessage = taskGroup.getErrorMessage();
-        if (StringUtils.isBlank(errorMessage)) {
-            communication.setThrowable(null);
-        } else {
+        if (StringUtils.isNotBlank(errorMessage)) {
             communication.setThrowable(new Throwable(errorMessage));
         }
+
         return communication;
     }
 
