@@ -63,6 +63,10 @@ public class CommunicationManager {
         now.setLongCounter(RECORD_SPEED, recordsSpeed);
         now.setDoubleCounter(PERCENTAGE, now.getLongCounter(STAGE) / (double) totalStage);
 
+        if (old.getThrowable() != null) {
+            now.setThrowable(old.getThrowable());
+        }
+
         return now;
     }
 
