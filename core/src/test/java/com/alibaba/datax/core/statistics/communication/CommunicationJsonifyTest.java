@@ -28,8 +28,7 @@ public class CommunicationJsonifyTest {
 
         Assert.assertEquals(communication.getLongCounter(CommunicationTool.RECORD_SPEED),
                 metricJson.getLong("speedRecords"));
-        Assert.assertTrue(
-                Math.abs(communication.getDoubleCounter(CommunicationTool.PERCENTAGE)
-                        - metricJson.getDouble("stage")) <= 0.001);
+        Assert.assertEquals(communication.getDoubleCounter(CommunicationTool.PERCENTAGE),
+                metricJson.getDouble("percentage"));
     }
 }

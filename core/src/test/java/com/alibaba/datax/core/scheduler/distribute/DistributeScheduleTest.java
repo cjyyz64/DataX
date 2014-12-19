@@ -16,6 +16,8 @@ import org.apache.commons.lang3.RandomUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -34,7 +36,6 @@ import static org.mockito.Matchers.*;
 @PrepareForTest(DataxServiceUtil.class)
 public class DistributeScheduleTest {
 
-
     @Test
     public void testStartAllTaskGroup() {
         PowerMockito.mockStatic(DataxServiceUtil.class);
@@ -43,9 +44,14 @@ public class DistributeScheduleTest {
         result.setData("启动成功");
         result.setReturnCode(200);
         result.isSuccess();
-        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class))).
-                thenReturn(result);
-        DsScheduler scheduler = PowerMockito.mock(DsScheduler.class);
+
+        Object object;
+
+        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class)))
+                .thenReturn(result);
+        DistributeJobContainerCommunicator distributeJobContainerCommunicator =
+                PowerMockito.mock(DistributeJobContainerCommunicator.class);
+        DsScheduler scheduler = new DsScheduler(distributeJobContainerCommunicator);
 
         List<Configuration> taskGroupConfigurations = new ArrayList<Configuration>();
         Configuration configuration = PowerMockito.mock(Configuration.class);
@@ -57,7 +63,6 @@ public class DistributeScheduleTest {
     @Test
     public void testDealFailedStat() throws NoSuchFieldException, IllegalAccessException {
         PowerMockito.mockStatic(DataxServiceUtil.class);
-
         Result result = new Result();
         result.setData("KILL成功");
         result.setReturnCode(200);
@@ -65,46 +70,43 @@ public class DistributeScheduleTest {
         PowerMockito.when(DataxServiceUtil.killTaskGroup(anyLong(), anyInt())).
                 thenReturn(result);
 
-        DsScheduler scheduler = PowerMockito.mock(DsScheduler.class);
-        Configuration configuration = PowerMockito.mock(Configuration.class);
-
-        DistributeJobContainerCommunicator containerCollector = new DistributeJobContainerCommunicator(configuration);
+        DistributeJobContainerCommunicator containerCommunicator =
+                PowerMockito.mock(DistributeJobContainerCommunicator.class);
+        DsScheduler scheduler = new DsScheduler(containerCommunicator);
 
         ConcurrentHashMap<Integer,Communication> map = new ConcurrentHashMap<Integer,Communication>();
         Communication communication = new Communication();
         communication.setState(State.RUNNING);
         map.put(1, communication);
 
-        ReflectUtil.setField(containerCollector,"taskGroupCommunicationMap",map);
+        PowerMockito.when(containerCommunicator.getCommunicationMap())
+                .thenReturn(map);
 
-        scheduler.dealFailedStat(containerCollector, null);
+        scheduler.dealFailedStat(containerCommunicator, null);
     }
 
     @Test
     public void testDealKillingStat() throws NoSuchFieldException, IllegalAccessException {
         PowerMockito.mockStatic(DataxServiceUtil.class);
-
         Result result = new Result();
         result.setData("KILL成功");
         result.setReturnCode(200);
         result.isSuccess();
-        PowerMockito.when(DataxServiceUtil.killTaskGroup(anyLong(), anyInt())).
-                thenReturn(result);
+        PowerMockito.when(DataxServiceUtil.killTaskGroup(anyLong(), anyInt()))
+                .thenReturn(result);
 
-        DsScheduler scheduler = PowerMockito.mock(DsScheduler.class);
-        Configuration configuration = PowerMockito.mock(Configuration.class);
-
-        DistributeJobContainerCommunicator containerCollector = new DistributeJobContainerCommunicator(configuration);
+        DistributeJobContainerCommunicator communicator = PowerMockito.mock(DistributeJobContainerCommunicator.class);
+        DsScheduler scheduler = new DsScheduler(communicator);
 
         ConcurrentHashMap<Integer,Communication> map = new ConcurrentHashMap<Integer,Communication>();
         Communication communication = new Communication();
         communication.setState(State.RUNNING);
         map.put(1, communication);
-
-        ReflectUtil.setField(containerCollector,"taskGroupCommunicationMap",map);
+        PowerMockito.when(communicator.getCommunicationMap())
+                .thenReturn(map);
 
         try {
-            scheduler.dealKillingStat(containerCollector, 2);
+            scheduler.dealKillingStat(communicator, 2);
         } catch (DataXException e) {
             Assert.assertTrue(e.getErrorCode().equals(FrameworkErrorCode.KILL_JOB_TIMEOUT_ERROR));
         }
