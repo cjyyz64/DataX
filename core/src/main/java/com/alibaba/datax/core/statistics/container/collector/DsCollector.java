@@ -6,7 +6,6 @@ import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 
 import java.util.List;
-import java.util.Map;
 
 public class DsCollector extends AbstractCollector {
 
@@ -25,11 +24,6 @@ public class DsCollector extends AbstractCollector {
         }
 
         return TGCommunicationMapHolder.getJobCommunication();
-    }
-
-    @Override
-    public Map<Integer, Communication> getTGCommunicationMap() {
-        return null;
     }
 
 }

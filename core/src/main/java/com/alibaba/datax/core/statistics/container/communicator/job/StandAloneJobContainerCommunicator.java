@@ -7,7 +7,6 @@ import com.alibaba.datax.core.statistics.container.communicator.AbstractContaine
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
 import com.alibaba.datax.core.util.communication.Communication;
 import com.alibaba.datax.core.util.communication.CommunicationManager;
-import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,11 +52,11 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
 
     @Override
     public Communication getCommunication(Integer taskGroupId) {
-        return TGCommunicationMapHolder.getTaskGroupCommunication(taskGroupId);
+        return super.getCollector().getTGCommunication(taskGroupId);
     }
 
     @Override
     public Map<Integer, Communication> getCommunicationMap() {
-        return TGCommunicationMapHolder.getTaskGroupCommunicationMap();
+        return super.getCollector().getTGCommunicationMap();
     }
 }

@@ -55,7 +55,13 @@ public abstract class AbstractCollector {
 
     public abstract Communication collectFromTaskGroup();
 
-    public abstract Map<Integer, Communication> getTGCommunicationMap();
+    public Map<Integer, Communication> getTGCommunicationMap() {
+        return TGCommunicationMapHolder.getTaskGroupCommunicationMap();
+    }
+
+    public Communication getTGCommunication(Integer taskGroupId) {
+        return TGCommunicationMapHolder.getTaskGroupCommunication(taskGroupId);
+    }
 
     public Communication getTaskCommunication(Integer taskId) {
         return this.taskCommunicationMap.get(taskId);
