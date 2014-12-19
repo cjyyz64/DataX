@@ -25,7 +25,7 @@ public class DsScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void startAllTaskGroup(List<Configuration> taskGroupConfigurations) {
+    public void startAllTaskGroup(List<Configuration> taskGroupConfigurations) {
 
         for (Configuration taskGroupConfig : taskGroupConfigurations) {
             taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_MODEL, "taskGroup");
@@ -38,7 +38,7 @@ public class DsScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
+    public void dealFailedStat(AbstractContainerCommunicator frameworkCollector, Throwable throwable) {
         LOG.error("有 TaskGroup 失败，DataX 尝试终止整个任务.");
 
         Map<Integer, State> taskGroupCurrentStateMap = new HashMap<Integer, State>();
@@ -67,7 +67,7 @@ public class DsScheduler extends AbstractScheduler {
     }
 
     @Override
-    protected void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
+    public void dealKillingStat(AbstractContainerCommunicator frameworkCollector, int totalTasks) {
         LOG.error("收到 [杀作业] 的命令，DataX 尝试杀掉其他运行中的任务，然后退出整个作业.");
 
         Map<Integer, Communication> taskGroupInJob = frameworkCollector.getCommunicationMap();

@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.job.scheduler;
+package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
