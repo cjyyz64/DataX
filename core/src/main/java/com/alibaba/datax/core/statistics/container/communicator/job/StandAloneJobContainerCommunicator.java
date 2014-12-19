@@ -1,12 +1,12 @@
 package com.alibaba.datax.core.statistics.container.communicator.job;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.statistics.container.collector.ProcessInnerCollector;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

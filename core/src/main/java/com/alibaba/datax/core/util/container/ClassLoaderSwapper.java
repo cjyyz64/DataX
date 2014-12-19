@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.util;
+package com.alibaba.datax.core.util.container;
 
 /**
  * Created by jingxing on 14-8-29.

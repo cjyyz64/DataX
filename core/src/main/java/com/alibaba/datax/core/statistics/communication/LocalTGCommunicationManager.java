@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.util.communication;
+package com.alibaba.datax.core.statistics.communication;
 
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang3.Validate;
@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class TGCommunicationMapHolder {
+public final class LocalTGCommunicationManager {
     private static Map<Integer, Communication> taskGroupCommunicationMap =
             new ConcurrentHashMap<Integer, Communication>();
 

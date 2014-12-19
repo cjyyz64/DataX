@@ -3,7 +3,7 @@ package com.alibaba.datax.core.transport.channel.memory;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +16,7 @@ import com.alibaba.datax.core.scaffold.RecordProducer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 
 public class MemoryChannelTest extends CaseInitializer {
     private Channel channel;

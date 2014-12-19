@@ -2,11 +2,11 @@ package com.alibaba.datax.core.job.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.slf4j.Logger;
@@ -19,6 +19,10 @@ import java.util.Map;
 public class DsScheduler extends AbstractScheduler {
     private static final Logger LOG = LoggerFactory
             .getLogger(DsScheduler.class);
+
+    public DsScheduler(AbstractContainerCommunicator containerCommunicator){
+        super(containerCommunicator);
+    }
 
     @Override
     protected void startAllTaskGroup(List<Configuration> taskGroupConfigurations) {

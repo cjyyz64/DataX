@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.util.communication;
+package com.alibaba.datax.core.statistics.communication;
 
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.fastjson.JSON;

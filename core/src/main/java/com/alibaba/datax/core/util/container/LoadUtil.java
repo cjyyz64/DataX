@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.util;
+package com.alibaba.datax.core.util.container;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
@@ -9,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.taskgroup.runner.AbstractRunner;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;

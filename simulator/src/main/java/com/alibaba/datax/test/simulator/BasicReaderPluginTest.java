@@ -6,7 +6,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
-import com.alibaba.datax.core.util.LoadUtil;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;

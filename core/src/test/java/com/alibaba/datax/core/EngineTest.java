@@ -3,7 +3,7 @@ package com.alibaba.datax.core;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.LoadUtil;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import org.junit.Before;
 import org.junit.Test;
 

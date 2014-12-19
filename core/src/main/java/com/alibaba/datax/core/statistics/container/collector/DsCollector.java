@@ -1,8 +1,8 @@
 package com.alibaba.datax.core.statistics.container.collector;
 
 import com.alibaba.datax.core.util.DataxServiceUtil;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 
 import java.util.List;
@@ -19,11 +19,11 @@ public class DsCollector extends AbstractCollector {
         List<TaskGroup> taskGroupInJob = DataxServiceUtil.getTaskGroupInJob(super.getJobId()).getData();
 
         for (TaskGroup taskGroup : taskGroupInJob) {
-            TGCommunicationMapHolder.updateTaskGroupCommunication(taskGroup.getTaskGroupId(),
+            LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroup.getTaskGroupId(),
                     DataxServiceUtil.convertTaskGroupToCommunication(taskGroup));
         }
 
-        return TGCommunicationMapHolder.getJobCommunication();
+        return LocalTGCommunicationManager.getJobCommunication();
     }
 
 }

@@ -1,11 +1,10 @@
-package com.alibaba.datax.core;
+package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
-import com.alibaba.datax.core.common.CoreConstant;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

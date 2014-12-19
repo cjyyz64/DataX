@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.constant;
 
-import com.alibaba.datax.core.common.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.junit.Test;
 
 public class CoreConstantTest {

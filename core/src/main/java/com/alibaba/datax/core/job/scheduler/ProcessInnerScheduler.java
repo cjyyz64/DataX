@@ -14,6 +14,10 @@ import java.util.concurrent.Executors;
 public class ProcessInnerScheduler extends AbstractScheduler {
     private ExecutorService taskGroupContainerExecutorService;
 
+    public ProcessInnerScheduler(AbstractContainerCommunicator containerCommunicator) {
+        super(containerCommunicator);
+    }
+
     @Override
     protected void startAllTaskGroup(List<Configuration> configurations) {
         this.taskGroupContainerExecutorService = Executors

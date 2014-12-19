@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.statistics.container.collector;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.common.CoreConstant;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.TGCommunicationMapHolder;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
@@ -30,7 +30,7 @@ public abstract class AbstractCollector {
         for (Configuration config : taskGroupConfigurationList) {
             int taskGroupId = config.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
-            TGCommunicationMapHolder.registerTaskGroupCommunication(taskGroupId, new Communication());
+            LocalTGCommunicationManager.registerTaskGroupCommunication(taskGroupId, new Communication());
         }
     }
 
@@ -56,11 +56,11 @@ public abstract class AbstractCollector {
     public abstract Communication collectFromTaskGroup();
 
     public Map<Integer, Communication> getTGCommunicationMap() {
-        return TGCommunicationMapHolder.getTaskGroupCommunicationMap();
+        return LocalTGCommunicationManager.getTaskGroupCommunicationMap();
     }
 
     public Communication getTGCommunication(Integer taskGroupId) {
-        return TGCommunicationMapHolder.getTaskGroupCommunication(taskGroupId);
+        return LocalTGCommunicationManager.getTaskGroupCommunication(taskGroupId);
     }
 
     public Communication getTaskCommunication(Integer taskId) {

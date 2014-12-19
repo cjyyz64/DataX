@@ -1,8 +1,8 @@
 package com.alibaba.datax.core.statistics.container.report;
 
 import com.alibaba.datax.core.util.DataxServiceUtil;
-import com.alibaba.datax.core.util.communication.Communication;
-import com.alibaba.datax.core.util.communication.CommunicationManager;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationManager;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 
