@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.reader.hbasereader.util;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.reader.hbasereader.*;
 import com.alibaba.fastjson.JSON;
@@ -193,9 +194,9 @@ public class HbaseProxy {
             // need to extract rowkey info
             if (this.isNeedRowkey()) {
                 if (this.isBinaryRowkey()) {
-                    line.addField(Bytes.toStringBinary(result.getRow()));
+                    line.addColumn(new StringColumn(Bytes.toStringBinary(result.getRow())));
                 } else {
-                    line.addField(new String(result.getRow(), encode));
+                    line.addColumn(new StringColumn(new String(result.getRow(), encode)));
                 }
             }
 
@@ -204,7 +205,8 @@ public class HbaseProxy {
             for (int i = 0; i < this.families.length; i++) {
                 byte[] value = result.getValue(this.families[i], this.columns[i]);
                 if (null == value || 0 == value.length) {
-                    line.addField(null);
+                    //TODO
+                    line.addColumn(null);
                 } else {
                     tempValueType = columnType[i];
                     if (tempValueType.equals("string")) {
@@ -222,17 +224,18 @@ public class HbaseProxy {
                     } else if (tempValueType.equals("boolean")) {
                         tempValue = String.valueOf(Bytes.toBoolean(value));
                     }
-                    line.addField(tempValue);
+
+                    line.addColumn(new StringColumn(tempValue));
                 }
             }
         } catch (Exception e) {
             // 注意，这里catch的异常，期望是byte数组转换失败的情况。而实际上，string的byte数组，转成整数类型是不容易报错的。但是转成double类型容易报错。
-            line.clear();
+//            line.clear();
 
             if (this.isBinaryRowkey()) {
-                line.addField(Bytes.toStringBinary(result.getRow()));
+                line.addColumn(new StringColumn(Bytes.toStringBinary(result.getRow())));
             } else {
-                line.addField(new String(result.getRow(), encode));
+                line.addColumn(new StringColumn(new String(result.getRow(), encode)));
             }
             throw e;
         }

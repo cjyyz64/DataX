@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.hbasereader.util;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.commons.lang.StringUtils;
@@ -14,24 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class HbaseSplitUtil {
+
     private final static Logger LOG = LoggerFactory
             .getLogger(HbaseSplitUtil.class);
 
     private final static boolean IS_DEBUG = LOG.isDebugEnabled();
 
-    private String table = null;
-    private String hbaseConfig = null;
-    private String startRowkey = null;
-    private String endRowkey = null;
-    private boolean isBinaryRowkey = false;
-    private HbaseProxy proxy = null;
-
-    private static void init(Configuration configuration) {
-
-    }
-
-    private String getStartKey(byte[] startRowkeyByte, byte[] regionStarKey,
-                               boolean isBinaryRowkey) {
+    private static String getStartKey(byte[] startRowkeyByte, byte[] regionStarKey,
+                                      boolean isBinaryRowkey) {
         if (startRowkeyByte == null) {// 由于之前处理过，所以传入的userStartKey不可能为null
             throw new IllegalArgumentException(
                     "userStartKey should not be null!");
@@ -56,8 +47,8 @@ public final class HbaseSplitUtil {
 
     }
 
-    private String getEndKey(byte[] endRowkeyByte, byte[] regionEndKey,
-                             boolean isBinaryRowkey) {
+    private static String getEndKey(byte[] endRowkeyByte, byte[] regionEndKey,
+                                    boolean isBinaryRowkey) {
         if (endRowkeyByte == null) {// 由于之前处理过，所以传入的userStartKey不可能为null
             throw new IllegalArgumentException("userEndKey should not be null!");
         }
@@ -87,8 +78,50 @@ public final class HbaseSplitUtil {
         return retEndRowkey;
     }
 
-    public List<Configuration> split(Configuration param, byte[] startRowkeyByte,
-                                     byte[] endRowkeyByte, Pair<byte[][], byte[][]> regionRanges) {
+    public static List<Configuration> split(Configuration configuration, HbaseProxy hbaseProxy) {
+        List<Configuration> ret;
+
+        String startRowkey = configuration.getString(Key.START_ROWKEY);
+        String endRowKey = configuration.getString(Key.END_ROWKEY);
+
+        //TODO
+        boolean isBinaryRowkey = configuration.getBool("");
+
+        try {
+            Pair<byte[][], byte[][]> regionRanges = hbaseProxy.getStartEndKeys();
+            if (null == regionRanges) {
+                //TODO 报错 return
+                throw DataXException.asDataXException(null, "");
+            }
+
+            byte[] startRowkeyByte = parseRowKeyByte(startRowkey,
+                    isBinaryRowkey);
+            byte[] endRowkeyByte = parseRowKeyByte(endRowKey,
+                    isBinaryRowkey);
+
+			/* 如果配置了start-rowkey和end-rowkey，需要确保：start-rowkey<=end-rowkey */
+            if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
+                    && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
+                throw new IllegalArgumentException(String.format(
+                        "startkey %s cannot be larger than endkey %s .",
+                        startRowkey, endRowKey));
+            }
+
+            ret = doSplit(configuration, startRowkeyByte, endRowkeyByte,
+                    regionRanges, isBinaryRowkey);
+
+            LOG.info(String.format("HBaseReader doSplit job into %d sub-jobs .",
+                    ret.size()));
+
+            return ret;
+
+        } catch (IOException e) {
+            throw DataXException.asDataXException(null, "");
+        }
+    }
+
+    public static List<Configuration> doSplit(Configuration param, byte[] startRowkeyByte,
+                                              byte[] endRowkeyByte, Pair<byte[][], byte[][]> regionRanges, boolean isBinaryRowkey) {
 
         List<Configuration> pluginParamList = new ArrayList<Configuration>();
 
@@ -123,18 +156,18 @@ public final class HbaseSplitUtil {
             Configuration p = param.clone();
 
             String thisStartKey = getStartKey(startRowkeyByte, regionStartKey,
-                    this.isBinaryRowkey);
+                    isBinaryRowkey);
 
             String thisEndKey = getEndKey(endRowkeyByte, regionEndKey,
-                    this.isBinaryRowkey);
+                    isBinaryRowkey);
 
-            p.putValue(Key.START_ROWKEY, thisStartKey);
-            p.putValue(Key.END_ROWKEY, thisEndKey);
+            p.set(Key.START_ROWKEY, thisStartKey);
+            p.set(Key.END_ROWKEY, thisEndKey);
 
             if (IS_DEBUG) {
                 LOG.debug("start-rowkey:[{}],end-rowkey:[{}] .",
-                        p.getValue(Key.START_ROWKEY, ""),
-                        p.getValue(Key.END_ROWKEY, ""));
+                        p.getString(Key.START_ROWKEY, ""),
+                        p.getString(Key.END_ROWKEY, ""));
             }
 
             pluginParamList.add(p);
@@ -143,62 +176,12 @@ public final class HbaseSplitUtil {
         return pluginParamList;
     }
 
-    public static  List<Configuration> split(Configuration configuration) {
-        this.init(configuration);
-
-        List<Configuration> ret = new ArrayList<Configuration>();
-
-        try {
-            this.proxy = HbaseProxy.newProxy(hbaseConfig, table);
-            Pair<byte[][], byte[][]> regionRanges = proxy.getStartEndKeys();
-            if (null == regionRanges) {
-                ret = super.split();
-                return ret;
-            }
-
-            byte[] startRowkeyByte = parseRowKeyByte(this.startRowkey,
-                    this.isBinaryRowkey);
-            byte[] endRowkeyByte = parseRowKeyByte(this.endRowkey,
-                    this.isBinaryRowkey);
-
-			/* 如果配置了start-rowkey和end-rowkey，需要确保：start-rowkey<=end-rowkey */
-            if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
-                    && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
-                throw new IllegalArgumentException(String.format(
-                        "startkey %s cannot be larger than endkey %s .",
-                        startRowkey, endRowkey));
-            }
-
-            ret = split(getPluginParam(), startRowkeyByte, endRowkeyByte,
-                    regionRanges);
-
-            LOG.info(String.format("HBaseReader split job into %d sub-jobs .",
-                    ret.size()));
-
-            return ret;
-
-        } catch (IOException e) {
-            LOG.warn("HBase try to split table failed, use non-split mechanism.");
-            ret = super.split();
-        } finally {
-            try {
-                if (null != proxy) {
-                    proxy.close();
-                }
-            } catch (IOException e) {
-				/* swallow exception */
-            }
-        }
-
-        return ret;
-    }
-
-    private byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
+    private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
         byte[] retRowKey = null;
         if (StringUtils.isBlank(rowkey)) {
             retRowKey = HConstants.EMPTY_BYTE_ARRAY;
         } else {
-            if (this.isBinaryRowkey) {
+            if (isBinaryRowkey) {
                 retRowKey = Bytes.toBytesBinary(rowkey);
             } else {
                 retRowKey = Bytes.toBytes(rowkey);

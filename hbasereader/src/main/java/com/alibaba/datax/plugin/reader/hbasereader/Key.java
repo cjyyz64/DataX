@@ -5,7 +5,7 @@ public final class Key {
     public final static String HBASE_CONFIG = "hbaseConfig";
 
     /**
-     * mode 可以取 normal 或者 mutiVersion 两个值，默认为 normal。二者区别非常大
+     * mode 可以取 normal 或者 multiVersion 两个值，默认为 normal。二者区别非常大
      */
     public final static String MODE = "mode";
 
@@ -26,5 +26,7 @@ public final class Key {
     public final static String START_ROWKEY = "startRowkey";
 
     public final static String END_ROWKEY = "endRowkey";
+
+    public final static String ROWKEY_TYPE = "rowkeyType";
 
 }
