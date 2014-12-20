@@ -165,6 +165,9 @@ public class CommunicationManager {
             pair = getErrorRecords(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
+            pair = getErrorBytes(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
             pair = getErrorMessage(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
@@ -189,6 +192,10 @@ public class CommunicationManager {
 
         private static Pair<String, Long> getErrorRecords(final Communication communication) {
             return new Pair<String, Long>("errorRecords", communication.getLongCounter(TOTAL_ERROR_RECORDS));
+        }
+
+        private static Pair<String, Long> getErrorBytes(final Communication communication) {
+            return new Pair<String, Long>("errorBytes", communication.getLongCounter(TOTAL_ERROR_BYTES));
         }
 
         private static Pair<String, Double> getStage(final Communication communication) {
