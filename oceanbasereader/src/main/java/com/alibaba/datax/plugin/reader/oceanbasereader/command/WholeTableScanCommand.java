@@ -25,14 +25,14 @@ public class WholeTableScanCommand implements Command {
 		meetRowkeyExist(context.rowkey(),select.columns);
 		String sql = String.format("%s limit %s", select, context.limit());
 		ResultSetHandler<String> handler = new SendToWriterHandler(context);
-		String condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
+		String condition = OBDataSource.execute(context.url(), sql, handler);
 		while (!"".equals(condition)) {
             if(select.where == null){
                 sql = String.format("%s where %s limit %s", select, condition, context.limit());
             }else {
                 sql = String.format("%s and %s limit %s", select, condition, context.limit());
             }
-			condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
+			condition = OBDataSource.execute(context.url(), sql, handler);
 		}
 		log.info("Case[whole table scan] end");
 	}

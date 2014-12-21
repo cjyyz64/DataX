@@ -24,7 +24,7 @@ public enum IndexJudgeCommand implements Command{
 		public void execute(final Context context) throws Exception {
 			log.info("Case[prefix scan]");
 			String sqlWithWeakConsistencyHint = context.orginalAst().toString();
-			OBDataSource.execute(context.url(), sqlWithWeakConsistencyHint, context.timeout(), new ResultSetHandler<Void>() {
+			OBDataSource.execute(context.url(), sqlWithWeakConsistencyHint, new ResultSetHandler<Void>() {
                 @Override
                 public Void callback(ResultSet result) throws Exception {
                     context.sendToWriter(result);
@@ -51,11 +51,11 @@ public enum IndexJudgeCommand implements Command{
 			this.checkSelectMustContainEntry(entry.name, select.columns);
 			String sql = String.format("%s limit 1000", select);
 			ResultSetHandler<String> handler = new SendToWriterHandler(context,entry);
-			String condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
+			String condition = OBDataSource.execute(context.url(), sql, handler);
 			while(!"".equals(condition)){
 				select.where.accept(new ModifyConditionVisitor(entry.name, condition));
 				sql = String.format("%s limit 1000", select);
-				condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
+				condition = OBDataSource.execute(context.url(), sql, handler);
 			}
 		}
 
