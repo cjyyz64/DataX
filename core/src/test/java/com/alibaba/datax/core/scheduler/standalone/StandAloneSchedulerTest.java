@@ -3,14 +3,21 @@ package com.alibaba.datax.core.scheduler.standalone;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
+import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
+import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+import static org.mockito.Matchers.any;
 
 /**
  * Created by jingxing on 14-9-2.
@@ -19,7 +26,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 	private int randomSize = 20;
 
 	@Test
-	public void testSchedule() {
+	public void testSchedule() throws NoSuchFieldException, IllegalAccessException {
 		int jobNumber = 10;
 		List<Configuration> jobList = new ArrayList<Configuration>();
 
@@ -41,9 +48,23 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 			jobList.add(configuration);
 
 		}
+        LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
+                mock(LocalJobContainerCommunicator.class);
+        ProcessInnerScheduler scheduler = new ProcessInnerScheduler(localJobContainerCommunicator);
 
-		//TODO mock
-		ProcessInnerScheduler scheduler = new ProcessInnerScheduler(new StandAloneJobContainerCommunicator(Configuration.newDefault()));
+        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
+        ReflectUtil.setField(scheduler, "taskGroupContainerExecutorService", taskGroupContainerExecutorService);
+        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
+        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
+
+
+
+        Communication communication = new Communication();
+        communication.setState(State.SUCCEEDED);
+        PowerMockito.when(localJobContainerCommunicator.collect()).
+                thenReturn(communication);
+        PowerMockito.doNothing().when(localJobContainerCommunicator).report(communication);
+
 		scheduler.schedule(jobList);
 	}
 }

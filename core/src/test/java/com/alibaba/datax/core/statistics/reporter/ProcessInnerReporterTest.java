@@ -8,7 +8,6 @@ import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Test;
 
-
 import java.util.concurrent.ConcurrentHashMap;
 
 
