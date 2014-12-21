@@ -49,12 +49,12 @@ public enum IndexJudgeCommand implements Command{
 			Preconditions.checkNotNull(entry,"not meet index scan case");
 			SelectExpression select = context.orginalAst();
 			this.checkSelectMustContainEntry(entry.name, select.columns);
-			String sql = String.format("%s limit 1000", select);
+			String sql = String.format("%s limit %s", select, context.limit());
 			ResultSetHandler<String> handler = new SendToWriterHandler(context,entry);
 			String condition = OBDataSource.execute(context.url(), sql, handler);
 			while(!"".equals(condition)){
 				select.where.accept(new ModifyConditionVisitor(entry.name, condition));
-				sql = String.format("%s limit 1000", select);
+				sql = String.format("%s limit %s", select, context.limit());
 				condition = OBDataSource.execute(context.url(), sql, handler);
 			}
 		}
