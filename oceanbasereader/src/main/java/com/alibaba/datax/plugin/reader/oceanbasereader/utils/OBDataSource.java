@@ -23,7 +23,8 @@ public final class OBDataSource {
 		if (datasources.containsKey(url)){
             datasources.get(url).increaseReference();
         }else{
-            DataSourceHolder holder = new DataSourceHolder(url);
+            long timeout = configuration.getInt(Key.TIMEOUT, 5);
+            DataSourceHolder holder = new DataSourceHolder(url,timeout);
             datasources.put(url,holder);
             log.info(String.format("init datasource success [%s]",url));
         }
@@ -41,7 +42,7 @@ public final class OBDataSource {
         }
 	}
 
-	public static <T> T execute(String url, String sql, int timeout, ResultSetHandler<T> handler) throws Exception {
+	public static <T> T execute(String url, String sql, ResultSetHandler<T> handler) throws Exception {
 		int retry = 0;
 		while(retry++ <= 3){
 			Connection connection = null;
@@ -51,10 +52,6 @@ public final class OBDataSource {
                 DataSourceHolder holder = datasources.get(url);
                 Preconditions.checkState(holder != null,"can't fetch [%s] datasource",url);
 				connection = holder.datasource.getConnection();
-				statement = connection.createStatement();
-				log.debug("datax set ob_query_timeout to {} us", timeout);
-				statement.execute(String.format("set ob_query_timeout = %s", timeout));
-				statement.close();
 				statement = connection.createStatement();
 				log.debug("start execute {}", sql);
 				result = statement.executeQuery(sql);
@@ -72,16 +69,23 @@ public final class OBDataSource {
         private int reference;
         private final DataSource datasource;
 
-        public DataSourceHolder(final String url) throws Exception{
+        public DataSourceHolder(final String url,final long timeout) throws Exception{
             this.reference = 1;
             this.datasource = new OceanbaseDataSourceProxy(){
                 {
                     this.setConfigURL(url);
+                    this.setConnectionProperties(connectionProperties());
                     this.init();
                 }
 
                 public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
                     return null;//for > JDK6 compile
+                }
+
+                private String connectionProperties(){
+                    long ms = timeout * 60 * 60 * 1000;
+                    long us = ms * 1000;
+                    return String.format("socketTimeout=%d;sessionVariables=ob_query_timeout=%d",ms,us);
                 }
             };
         }

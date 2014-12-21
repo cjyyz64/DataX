@@ -15,7 +15,7 @@ public class LowVersionCommand implements Command {
 	public void execute(final Context context) throws Exception {
 		log.info("OceanBaseJDBCReader start to query. Target OceanBase Version 0.4.");
 		String sql = context.originalSQL();
-		OBDataSource.execute(context.url(), sql, context.timeout(), new ResultSetHandler<Void>() {
+		OBDataSource.execute(context.url(), sql, new ResultSetHandler<Void>() {
             @Override
             public Void callback(ResultSet result) throws Exception {
                 context.sendToWriter(result);
