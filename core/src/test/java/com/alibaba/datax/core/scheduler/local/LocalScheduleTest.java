@@ -4,6 +4,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
+import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang3.RandomUtils;
@@ -12,6 +13,9 @@ import org.powermock.api.mockito.PowerMockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+
+import static org.mockito.Matchers.any;
 
 
 /**
@@ -51,8 +55,14 @@ public class LocalScheduleTest {
             configurationList.add(configuration);
         }
 
+        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
+        ReflectUtil.setField(scheduler,"taskGroupContainerExecutorService",taskGroupContainerExecutorService);
+        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
+        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
+
 
         Communication communication = new Communication();
+        communication.setLongCounter("totalBytes",1024);
         communication.setState(State.SUCCEEDED);
         PowerMockito.when(localJobContainerCommunicator.collect()).
                 thenReturn(communication);

@@ -1,9 +1,9 @@
 package com.alibaba.datax.core.scheduler;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.util.ErrorRecordChecker;
 import org.junit.Test;
 
 public class ErrorRecordLimitTest {
