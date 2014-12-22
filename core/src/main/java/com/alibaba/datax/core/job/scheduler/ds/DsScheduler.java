@@ -1,12 +1,14 @@
-package com.alibaba.datax.core.job.scheduler;
+package com.alibaba.datax.core.job.scheduler.ds;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.slf4j.Logger;
@@ -91,5 +93,11 @@ public class DsScheduler extends AbstractScheduler {
             throw DataXException.asDataXException(FrameworkErrorCode.KILLED_EXIT_VALUE,
                     "Job 收到了 Kill 命令.");
         }
+    }
+
+    @Override
+    public boolean isJobKilling(Long jobId) {
+        Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
+        return jobInfo.getData() == State.KILLING.value();
     }
 }

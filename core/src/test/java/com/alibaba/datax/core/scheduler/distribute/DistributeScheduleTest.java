@@ -2,7 +2,7 @@ package com.alibaba.datax.core.scheduler.distribute;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.scheduler.DsScheduler;
+import com.alibaba.datax.core.job.scheduler.ds.DsScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;

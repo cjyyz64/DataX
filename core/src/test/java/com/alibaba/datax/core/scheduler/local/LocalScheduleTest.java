@@ -1,7 +1,8 @@
 package com.alibaba.datax.core.scheduler.local;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.LocalScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.ProcessInnerScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.util.ReflectUtil;
@@ -9,6 +10,7 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.util.ArrayList;
@@ -30,7 +32,7 @@ public class LocalScheduleTest {
         LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
                 mock(LocalJobContainerCommunicator.class);
 
-        ProcessInnerScheduler scheduler = new ProcessInnerScheduler(localJobContainerCommunicator);
+        ProcessInnerScheduler scheduler = new LocalScheduler(localJobContainerCommunicator);
 
         List<Configuration> configurationList = new ArrayList<Configuration>();
 

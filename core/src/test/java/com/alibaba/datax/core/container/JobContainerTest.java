@@ -5,13 +5,16 @@ import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.powermock.api.mockito.PowerMockito;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -69,6 +72,7 @@ public class JobContainerTest extends CaseInitializer {
                 .longValue());
     }
 
+    //todo:没跑过
     @Test(expected = Exception.class)
     public void testInitException() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
@@ -78,7 +82,7 @@ public class JobContainerTest extends CaseInitializer {
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("init");
         initMethod.setAccessible(true);
-        initMethod.invoke(jobContainer, new Object[] {});
+        initMethod.invoke(jobContainer, new Object[]{});
     }
 
     @SuppressWarnings("unchecked")
@@ -257,6 +261,10 @@ public class JobContainerTest extends CaseInitializer {
         communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, 100);
         communication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS, 100);
 //        LocalTaskGroupCommunicationManager.updateTaskGroupCommunication(0, communication);
+
+        AbstractContainerCommunicator communicator = PowerMockito.mock(AbstractContainerCommunicator.class);
+        jobContainer.setContainerCommunicator(communicator);
+        PowerMockito.when(communicator.collect()).thenReturn(communication);
 
         Method initMethod = jobContainer.getClass()
                 .getDeclaredMethod("checkLimit");
