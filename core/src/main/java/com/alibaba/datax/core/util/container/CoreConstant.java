@@ -81,7 +81,7 @@ public class CoreConstant {
 
     public static final String JOB_WRITER_PARAMETER = "writer.parameter";
 
-    public static final String JOB_TASK_ID = "taskId";
+    public static final String TASK_ID = "taskId";
 
     // ----------------------------- 环境变量 ---------------------------------
 

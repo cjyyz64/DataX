@@ -36,7 +36,7 @@ public abstract class AbstractCollector {
 
     public void registerTaskCommunication(List<Configuration> taskConfigurationList) {
         for (Configuration taskConfig : taskConfigurationList) {
-            int taskId = taskConfig.getInt(CoreConstant.JOB_TASK_ID);
+            int taskId = taskConfig.getInt(CoreConstant.TASK_ID);
             this.taskCommunicationMap.put(taskId, new Communication());
         }
     }

@@ -120,7 +120,7 @@ public class JobContainerTest extends CaseInitializer {
             Assert.assertNotNull("reader name not null",
                     sliceConfig.getString(CoreConstant.JOB_WRITER_PARAMETER));
             Assert.assertTrue("has slice id",
-                    sliceConfig.getInt(CoreConstant.JOB_TASK_ID) >= 0);
+                    sliceConfig.getInt(CoreConstant.TASK_ID) >= 0);
         }
     }
 

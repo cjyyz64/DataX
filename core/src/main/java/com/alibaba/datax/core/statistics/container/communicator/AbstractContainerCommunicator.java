@@ -48,16 +48,6 @@ public abstract class AbstractContainerCommunicator {
         this.jobId = configuration.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
     }
 
-//    public Communication getCommunication(Integer taskGroupId) {
-//        Validate.isTrue(taskGroupId >= 0, "注册的taskGroupId不能小于0");
-//
-//        return this.getCommunicationMap().get(taskGroupId);
-//    }
-
-//    public Map<Integer, Communication> getTaskCommunicationMap() {
-//        return this.collector.getTaskCommunicationMap();
-//    }
-
 
     public abstract void registerCommunication(List<Configuration> configurationList);
 

@@ -251,7 +251,7 @@ public class TaskGroupContainer extends AbstractContainer {
                     "[reader|writer]的插件参数不能为空!");
 
             // 得到taskId
-            this.taskId = this.taskConfig.getInt(CoreConstant.JOB_TASK_ID);
+            this.taskId = this.taskConfig.getInt(CoreConstant.TASK_ID);
 
             /**
              * 由taskId得到该taskExecutor的Communication

@@ -25,7 +25,7 @@ public class CommunicationTest {
         long now = System.currentTimeMillis();
         comm.setTimestamp(now);
 
-        Assert.assertEquals(longValue, (long)comm.getLongCounter("long"));
+        Assert.assertEquals(longValue, (long) comm.getLongCounter("long"));
         Assert.assertEquals(doubleValue, comm.getDoubleCounter("double"), 0.01);
         Assert.assertTrue(State.SUCCEEDED.equals(comm.getState()));
         Assert.assertTrue(comm.getThrowable() instanceof RuntimeException);
@@ -37,7 +37,7 @@ public class CommunicationTest {
 
         long delta = 5;
         comm.increaseCounter(longKey, delta);
-        Assert.assertEquals(delta, (long)comm.getLongCounter(longKey));
+        Assert.assertEquals(delta, (long) comm.getLongCounter(longKey));
 
         String messageKey = "message";
         comm.addMessage(messageKey, "message1");
@@ -71,7 +71,7 @@ public class CommunicationTest {
 
         Communication comm1 = comm0.clone();
 
-        Assert.assertEquals(longValue, (long)comm1.getLongCounter(longKey));
+        Assert.assertEquals(longValue, (long) comm1.getLongCounter(longKey));
         Assert.assertEquals(timestamp, comm1.getTimestamp());
         Assert.assertTrue(comm0.getState().equals(comm1.getState()));
     }
@@ -93,10 +93,33 @@ public class CommunicationTest {
         comm2.addMessage("message", "message2");
 
         Communication comm = comm1.mergeFrom(comm2);
-        Assert.assertEquals(10, (long)comm.getLongCounter("long"));
+        Assert.assertEquals(10, (long) comm.getLongCounter("long"));
         Assert.assertEquals(10.2, comm.getDoubleCounter("double"), 0.01);
         Assert.assertTrue(State.FAILED.equals(comm.getState()));
         Assert.assertTrue(comm.getThrowable() instanceof RuntimeException);
         Assert.assertEquals(2, comm.getMessage("message").size());
+    }
+
+    @Test
+    public void testMergeStateFrom() {
+        Communication comm1 = new Communication();
+        Communication comm2 = new Communication();
+
+        comm1.setState(State.FAILED, true);
+        comm2.setState(State.KILLED, true);
+        Assert.assertTrue(comm1.mergeStateFrom(comm2) == State.FAILED);
+
+        comm1.setState(State.RUNNING, true);
+        comm2.setState(State.SUCCEEDED, true);
+        Assert.assertTrue(comm1.mergeStateFrom(comm2) == State.RUNNING);
+
+        comm1.setState(State.FAILED, true);
+        comm2.setState(State.SUCCEEDED, true);
+        Assert.assertTrue(comm1.mergeStateFrom(comm2) == State.FAILED);
+
+        comm1.setState(State.SUBMITTING, true);
+        comm2.setState(State.SUCCEEDED, true);
+        Assert.assertTrue(comm1.mergeStateFrom(comm2) == State.RUNNING);
+
     }
 }
