@@ -45,7 +45,7 @@ mkdir -p .%{_prefix}
 cp -r ${BASE_DIR}/dqchook/target/datax/hook/dqc/* .%{_prefix}/
 
 %post
-chmod -R 0757 %{_prefix}
+chmod -R 0755 %{_prefix}
 
 
 %files
