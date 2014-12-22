@@ -57,10 +57,10 @@ public class LocalScheduleTest {
             configurationList.add(configuration);
         }
 
-        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
-        ReflectUtil.setField(scheduler,"taskGroupContainerExecutorService",taskGroupContainerExecutorService);
-        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
-        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
+//        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
+//        ReflectUtil.setField(scheduler,"taskGroupContainerExecutorService",taskGroupContainerExecutorService);
+//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
+//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
 
 
         Communication communication = new Communication();
