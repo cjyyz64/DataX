@@ -144,27 +144,13 @@ public class JobContainer extends AbstractContainer {
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
 
         if (this.jobId < 0) {
-//            boolean isStandAloneMode = this.configuration.getString(
-//                    CoreConstant.DATAX_CORE_SCHEDULER_CLASS).equalsIgnoreCase(
-//                    StandAloneScheduler.class.getName());
-            // standalone模式下默认jobId=0
-
-            // TODO
-            boolean isStandAloneMode = true;
-            if (isStandAloneMode) {
-                LOG.info("Set jobId = 0");
-                this.jobId = 0;
-                this.configuration.set(
-                        CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
-                        this.jobId);
-            } else {
-                throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
-                        "在[local|distribute]模式下没有设置jobId.");
-            }
+            LOG.info("Set jobId = 0");
+            this.jobId = 0;
+            this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
+                    this.jobId);
         }
 
-        Thread.currentThread().setName(
-                String.format("job-%d", this.jobId));
+        Thread.currentThread().setName("job-" + this.jobId);
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
                 this.getContainerCommunicator());
@@ -329,7 +315,17 @@ public class JobContainer extends AbstractContainer {
             for (Configuration taskGroupConfig : taskGroupConfigs) {
                 taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, executeMode.getValue());
             }
+
+            if (executeMode == ExecuteMode.LOCAL || executeMode == ExecuteMode.DISTRIBUTE) {
+                if (this.jobId <= 0) {
+                    throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+                            "在[ local | distribute ]模式下必须设置jobId，并且其值 > 0 .");
+                }
+            }
+
             LOG.info("Running by {} Mode.", executeMode);
+
+            Thread.currentThread().setName("");
 
             this.startTransferTimeStamp = System.currentTimeMillis();
 
