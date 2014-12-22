@@ -60,7 +60,7 @@
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
-        
+
     </modules>
 
     <dependencyManagement>
