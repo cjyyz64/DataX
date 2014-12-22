@@ -9,7 +9,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
@@ -22,9 +21,6 @@ import java.net.URI;
 
 import static org.mockito.Matchers.any;
 
-/**
- * Created by hongjiao.hj on 2014/12/22.
- */
 public class HttpClientUtilTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientUtilTest.class);
@@ -79,7 +75,6 @@ public class HttpClientUtilTest {
     }
 
 
-
     @Test
     public void testExecuteAndGetWithRetry() throws Exception {
         String url = "http://127.0.0.1/:8080";
@@ -111,9 +106,25 @@ public class HttpClientUtilTest {
                 .when(httpClientUtil).executeAndGet(any(HttpRequestBase.class));
 
 
-       String str =  httpClientUtil.executeAndGetWithRetry(httpRequestBase,3,100l);
-       Assert.assertEquals(str,"成功");
+        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 3, 100l);
+        Assert.assertEquals(str, "成功");
 
     }
+
+//    单独运行可以成功
+//    private String url = "http://aBadAddress:8080/";
+//
+//    @Rule
+//    public ExpectedException expectedException = ExpectedException.none();
+//
+//    @Test
+//    public void testExecuteAndGetWithRetry_exception() throws Exception {
+//        HttpRequestBase httpRequestBase = new HttpGet(url);
+//
+//        HttpClientUtil httpClientUtil = HttpClientUtil.getHttpClientUtil();
+//
+//        expectedException.expect(UnknownHostException.class);
+//        httpClientUtil.executeAndGetWithRetry(httpRequestBase, 3, 1000L);
+//    }
 
 }
