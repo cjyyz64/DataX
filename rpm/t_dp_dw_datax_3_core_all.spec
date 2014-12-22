@@ -55,4 +55,6 @@ chmod -R 0757 %{_prefix}/script
 %defattr(755,admin,cug-tbdp)
 %config(noreplace) %{_prefix}/conf/core.json
 %config(noreplace) %{_prefix}/conf/logback.xml
+%config(noreplace) %{_prefix}/hook/dqc/dqc.properties
+
 %{_prefix}
