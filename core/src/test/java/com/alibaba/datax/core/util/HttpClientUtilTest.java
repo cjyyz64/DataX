@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.common.exception.DataXException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpStatus;
 import org.apache.http.StatusLine;
@@ -75,7 +76,6 @@ public class HttpClientUtilTest {
     }
 
 
-
     @Test
     public void testExecuteAndGetWithRetry() throws Exception {
         String url = "http://127.0.0.1/:8080";
@@ -110,6 +110,12 @@ public class HttpClientUtilTest {
         String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 4, 1000l);
         Assert.assertEquals(str, "成功");
 
+        try {
+            httpClientUtil.executeAndGetWithRetry(httpRequestBase, 2, 1000l);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof DataXException);
+        }
+        httpClientUtil.destroy();
     }
 
 //    单独运行可以成功
