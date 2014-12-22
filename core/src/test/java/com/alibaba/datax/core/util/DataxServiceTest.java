@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
@@ -161,5 +162,23 @@ public class DataxServiceTest {
         taskGroupStatus.setTaskGroupId(1);
         taskGroupStatus.setSpeedRecords(9999L);
         DataxServiceUtil.updateTaskGroupInfo(148L, 1, taskGroupStatus);
+    }
+
+    @Test
+    public void testConvertTaskGroupToCommunication() {
+        TaskGroup taskGroup = new TaskGroup();
+        taskGroup.setJobId(1L);
+        taskGroup.setTaskGroupId(1);
+        taskGroup.setSpeedBytes(null);
+        taskGroup.setTotalRecords(null);
+        taskGroup.setTotalBytes(null);
+        taskGroup.setErrorRecords(null);
+        taskGroup.setErrorBytes(null);
+
+        Communication communication = DataxServiceUtil.convertTaskGroupToCommunication(taskGroup);
+        Assert.assertTrue(communication.getLongCounter("totalRecords").equals(taskGroup.getTotalRecords()));
+        Assert.assertTrue(communication.getLongCounter("totalBytes").equals(taskGroup.getTotalBytes()));
+        Assert.assertTrue(communication.getLongCounter("errorRecords").equals(taskGroup.getErrorRecords()));
+        Assert.assertTrue(communication.getLongCounter("errorBytes").equals(taskGroup.getErrorBytes()));
     }
 }
