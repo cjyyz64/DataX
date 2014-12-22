@@ -32,7 +32,7 @@ import static org.mockito.Matchers.*;
  * Created by hongjiao.hj on 2014/12/17.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(DataxServiceUtil.class)
+@PrepareForTest({DataxServiceUtil.class,Thread.class})
 public class DistributeScheduleTest {
 
     @Test
@@ -166,10 +166,8 @@ public class DistributeScheduleTest {
     }
 
 
-    @Rule
-    public ExpectedException expectedEx = ExpectedException.none();
     @Test
-    public void testSchedule_Exception() {
+    public void testSchedule_Exception() throws InterruptedException {
         int taskGraoupNumber = 10;
 
         DistributeJobContainerCommunicator distributeJobContainerCommunicator = PowerMockito.
@@ -216,11 +214,17 @@ public class DistributeScheduleTest {
         Communication communication = new Communication();
         communication.setState(State.SUCCEEDED);
         PowerMockito.when(distributeJobContainerCommunicator.collect()).
-                thenThrow(new Exception("test.."));
+                thenReturn(communication);
 
-        expectedEx.expect(Exception.class);
-        expectedEx.expectMessage("test..");
-        scheduler.schedule(configurationList);
 
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.doThrow(new InterruptedException("interrupt")).when(Thread.class);
+        Thread.sleep(anyLong());
+
+        try {
+            scheduler.schedule(configurationList);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().equals("interrupt"));
+        }
     }
 }

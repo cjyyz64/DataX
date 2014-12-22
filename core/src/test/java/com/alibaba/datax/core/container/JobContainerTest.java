@@ -47,6 +47,7 @@ public class JobContainerTest extends CaseInitializer {
         jobContainer.start();
     }
 
+    //todo:没跑过
     @Test(expected = Exception.class)
     public void testStartException() {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
 
 /**
  * Created by jingxing on 14-9-2.
@@ -55,15 +56,9 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 
         StandAloneJobContainerCommunicator standAloneJobContainerCommunicator = PowerMockito.
                 mock(StandAloneJobContainerCommunicator.class);
-        ProcessInnerScheduler scheduler = new StandAloneScheduler(standAloneJobContainerCommunicator);
+        ProcessInnerScheduler scheduler = PowerMockito.spy(new StandAloneScheduler(standAloneJobContainerCommunicator));
 
-//        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
-//        ReflectUtil.setField(scheduler, "taskGroupContainerExecutorService", taskGroupContainerExecutorService);
-//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
-//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
-       // PowerMockito.when(scheduler.startAllTaskGroup();)
-
-
+        PowerMockito.doNothing().when(scheduler).startAllTaskGroup(anyListOf(Configuration.class));
 
         Communication communication = new Communication();
         communication.setState(State.SUCCEEDED);
