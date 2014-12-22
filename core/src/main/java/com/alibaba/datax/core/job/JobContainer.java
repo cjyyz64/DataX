@@ -565,7 +565,7 @@ public class JobContainer extends AbstractContainer {
                     this.writerPluginName);
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerTasksConfigs.get(i));
-            taskConfig.set(CoreConstant.JOB_TASK_ID, i);
+            taskConfig.set(CoreConstant.TASK_ID, i);
             contentConfigs.add(taskConfig);
         }
 

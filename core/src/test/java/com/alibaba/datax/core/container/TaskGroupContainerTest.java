@@ -65,7 +65,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
         List<Configuration> jobContents = new ArrayList<Configuration>();
         for (int i = 0; i < this.taskNumber; i++) {
             Configuration newJobContent = jobContent.clone();
-            newJobContent.set(CoreConstant.JOB_TASK_ID, i);
+            newJobContent.set(CoreConstant.TASK_ID, i);
             jobContents.add(newJobContent);
         }
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
