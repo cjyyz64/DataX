@@ -107,7 +107,7 @@ public class HttpClientUtilTest {
                 .when(httpClientUtil).executeAndGet(any(HttpRequestBase.class));
 
 
-        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 3, 1000l);
+        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 4, 1000l);
         Assert.assertEquals(str, "成功");
 
     }
