@@ -14,7 +14,7 @@
         }
     },
     "core": {
-        "dataXService": {
+        "dataXServer": {
             "address": "http://localhost:7001/api",
             "timeout": 3000
         },

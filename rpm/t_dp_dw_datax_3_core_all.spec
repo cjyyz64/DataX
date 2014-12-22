@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
-Version:201412191645
+Version:201412191510
 Release: %(echo $RELEASE)%{?dist}
 
 Summary: datax 3 core
@@ -49,7 +49,6 @@ chmod -R 0757 %{_prefix}/lib
 chmod -R 0757 %{_prefix}/log
 chmod -R 0757 %{_prefix}/plugin
 chmod -R 0757 %{_prefix}/script
-chmod -R 0757 %{_prefix}/hook
 
 
 %files
