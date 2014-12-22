@@ -42,7 +42,7 @@ public class DQCHook implements Hook {
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    CommonErrorCode.HOOK_INTERNAL_ERROR, "DQC 检查运行时出错!");
+                    CommonErrorCode.HOOK_INTERNAL_ERROR, "DQC 检查运行时出错!", e);
         }
     }
 
@@ -58,7 +58,12 @@ public class DQCHook implements Hook {
     private DQCCheckInfo getInfoForCheck(Configuration jobConf, Map<String, Number> msg) {
         DQCCheckInfo info = new DQCCheckInfo();
         Map<String, String> env = System.getenv();
-        info.setSkynetId(Integer.valueOf(env.get("SKYNET_ID")));
+        try {
+            info.setSkynetId(Integer.valueOf(env.get("SKYNET_ID")));
+        }catch (NumberFormatException e) {
+            LOG.warn("invalid SKYNET_ID: {}", env.get("SKYNET_ID"));
+            info.setSkynetId(-1);
+        }
         info.setSkynetBizDate(env.get("SKYNET_BIZDATE"));
         info.setSkynetOnDuty(env.get("SKYNET_ONDUTY"));
         info.setSkynetSysEnv(env.get("SKYNET_SYSTEM_ENV"));
