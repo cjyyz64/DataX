@@ -37,8 +37,9 @@ cd ${OLDPWD}/../
 
 %install
 mkdir -p .%{_prefix}
-#(cd $OLDPWD/../target/; tar -xzf datax.tar.gz)
 cp -rf $OLDPWD/../target/datax/datax/* .%{_prefix}/
+# make dir for hook
+mkdir %{_prefix}/hook
 
 %post
 chmod -R 0755 %{_prefix}/bin
