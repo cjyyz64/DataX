@@ -61,8 +61,8 @@ public class DQCHook implements Hook {
         try {
             info.setSkynetId(Integer.valueOf(env.get("SKYNET_ID")));
         }catch (NumberFormatException e) {
-            LOG.warn("invalid SKYNET_ID: {}", env.get("SKYNET_ID"));
-            info.setSkynetId(-1);
+            LOG.warn("Invalid SKYNET_ID: {}, set it tu null", env.get("SKYNET_ID"));
+            info.setSkynetId(null);
         }
         info.setSkynetBizDate(env.get("SKYNET_BIZDATE"));
         info.setSkynetOnDuty(env.get("SKYNET_ONDUTY"));
