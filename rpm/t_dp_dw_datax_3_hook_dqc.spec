@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_hook_dqc
 Packager:xiafei.qiuxf
-Version: 1.0.0
+Version:201412222001
 Release: 1
 
 Summary: datax 3 dqc hook
