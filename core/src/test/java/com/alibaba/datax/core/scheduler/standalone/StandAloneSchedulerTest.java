@@ -1,7 +1,8 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.ProcessInnerScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
@@ -50,7 +51,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		}
         LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
                 mock(LocalJobContainerCommunicator.class);
-        ProcessInnerScheduler scheduler = new ProcessInnerScheduler(localJobContainerCommunicator);
+        ProcessInnerScheduler scheduler = new StandAloneScheduler(localJobContainerCommunicator);
 
         ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
         ReflectUtil.setField(scheduler, "taskGroupContainerExecutorService", taskGroupContainerExecutorService);

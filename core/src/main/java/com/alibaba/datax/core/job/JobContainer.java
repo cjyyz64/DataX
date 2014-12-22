@@ -8,10 +8,11 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.job.scheduler.*;
+import com.alibaba.datax.core.job.scheduler.ds.DsScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.LocalScheduler;
+import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
-import com.alibaba.datax.core.job.scheduler.DsScheduler;
-import com.alibaba.datax.core.job.scheduler.ProcessInnerScheduler;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
@@ -354,7 +355,7 @@ public class JobContainer extends AbstractContainer {
         AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
 
-        return new ProcessInnerScheduler(containerCommunicator);
+        return new LocalScheduler(containerCommunicator);
     }
 
     private AbstractScheduler initDistributeScheduler(Configuration configuration) {
@@ -368,7 +369,7 @@ public class JobContainer extends AbstractContainer {
         AbstractContainerCommunicator containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
 
-        return new ProcessInnerScheduler(containerCommunicator);
+        return new StandAloneScheduler(containerCommunicator);
     }
 
     private void post() {

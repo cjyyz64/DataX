@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
@@ -55,9 +56,10 @@ public class TaskGroupContainerTest extends CaseInitializer {
         }
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
 
-//        LocalTaskGroupCommunicationManager.clear();
-//        LocalTaskGroupCommunicationManager.registerTaskGroupCommunication(
-//                1, new Communication());
+        LocalTGCommunicationManager.clear();
+        LocalTGCommunicationManager.registerTaskGroupCommunication(
+                1, new Communication());
+
     }
 
     @Test

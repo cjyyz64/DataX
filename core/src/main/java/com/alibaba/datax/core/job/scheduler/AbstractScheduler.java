@@ -118,8 +118,10 @@ public abstract class AbstractScheduler {
         return totalTasks;
     }
 
-    private boolean isJobKilling(Long jobId) {
-        Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
-        return jobInfo.getData() == State.KILLING.value();
-    }
+//    private boolean isJobKilling(Long jobId) {
+//        Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
+//        return jobInfo.getData() == State.KILLING.value();
+//    }
+
+    protected  abstract  boolean isJobKilling(Long jobId);
 }
