@@ -7,7 +7,6 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
@@ -47,16 +46,6 @@ public class JobContainerTest extends CaseInitializer {
         jobContainer.start();
     }
 
-    //todo:没跑过
-    @Test(expected = Exception.class)
-    public void testStartException() {
-        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
-        JobContainer jobContainer = new JobContainer(
-                this.configuration);
-        jobContainer.start();
-    }
-
     @Test
     public void testInitNormal() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
@@ -71,19 +60,6 @@ public class JobContainerTest extends CaseInitializer {
         Assert.assertEquals("default job id = 0", 0l, this.configuration
                 .getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID)
                 .longValue());
-    }
-
-    //todo:没跑过
-    @Test(expected = Exception.class)
-    public void testInitException() throws Exception {
-        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
-        this.configuration.set("runMode", ExecuteMode.DISTRIBUTE.getValue());
-        JobContainer jobContainer = new JobContainer(
-                this.configuration);
-        Method initMethod = jobContainer.getClass()
-                .getDeclaredMethod("init");
-        initMethod.setAccessible(true);
-        initMethod.invoke(jobContainer, new Object[]{});
     }
 
     @SuppressWarnings("unchecked")
