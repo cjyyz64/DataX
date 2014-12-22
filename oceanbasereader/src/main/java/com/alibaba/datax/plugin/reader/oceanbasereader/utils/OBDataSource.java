@@ -85,6 +85,7 @@ public final class OBDataSource {
                 private String connectionProperties(){
                     long ms = timeout * 60 * 60 * 1000;
                     long us = ms * 1000;
+                    log.debug(String.format("set timeout to %s minutes", timeout));
                     return String.format("socketTimeout=%d;sessionVariables=ob_query_timeout=%d",ms,us);
                 }
             };
