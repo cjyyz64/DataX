@@ -1,5 +1,7 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.RetryUtil;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -11,6 +13,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
 public class HttpClientUtil {
 
@@ -110,28 +113,17 @@ public class HttpClientUtil {
         return entiStr;
     }
 
-    public String executeAndGetWithRetry(HttpRequestBase httpRequestBase, int retryTimes, long retryInterval)
-            throws Exception {
+    public String executeAndGetWithRetry(final HttpRequestBase httpRequestBase, final int retryTimes, final long retryInterval) {
         try {
-            return executeAndGet(httpRequestBase);
-        } catch (Exception e) {
-            System.out.println("开始重试http请求");
-        }
-
-        Exception finalException = null;
-        int count = 0;
-        while (count < retryTimes) {
-            try {
-                return executeAndGet(httpRequestBase);
-            } catch (Exception e) {
-                count++;
-                if (count >= retryTimes) {
-                    finalException = e;
+            return RetryUtil.executeWithRetry(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    return executeAndGet(httpRequestBase);
                 }
-                SleepQuiet.sleepAndSkipInterrupt(retryInterval);
-                System.out.println("重试第" + count + "次...");
-            }
+            }, retryTimes, retryInterval, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
         }
-        throw finalException;
     }
+
 }
