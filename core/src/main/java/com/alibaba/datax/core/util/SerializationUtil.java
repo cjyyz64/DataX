@@ -32,11 +32,6 @@ public class SerializationUtil {
         }
     }
 
-
-    public static JsonObject string2JsObj(String jsonStr) {
-        return gson.fromJson(jsonStr, JsonElement.class).getAsJsonObject();
-    }
-
     public static String gson2String(Object object) {
         return gson.toJson(object);
     }
@@ -51,11 +46,5 @@ public class SerializationUtil {
             LOGGER.warn("Gson string to object error, string : {} to object type {}", jsonString, type);
             throw  e;
         }
-    }
-
-    public static String formateDate(Date date) {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");// "yyyy-MM-dd"
-        String date_ = sdf.format(date);
-        return date_;
     }
 }
