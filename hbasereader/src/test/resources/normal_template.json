@@ -54,23 +54,14 @@
             ],
             "range": {
                 // 执行 startRowKey 和 endRowKey 的范围，如果不指定，则表示全表读取
-                "startRowkey": [
-                    {
-                        // type 类型如果为 bytes，则调用Bytes.toBytesBinary(String rowKey)
-                        // type 类型如果为 string，则调用Bytes.toBytes(String rowKey)
-                        "type": "bytes",
-                        "value": "\\x0001"
-                    }
-                ],
-                "region": "",
-                "endRowkey": [
-                    {
-                        "type": "bytes",
-                        "value": "\\xffff"
-                    }
-                ]
-            }
+                "startRowkey": "\\x0001",
+                "endRowkey": "\\xffff",
 
+                // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
+                // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
+                // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "isBinaryRowKey":true
+            }
         }
     }
 }

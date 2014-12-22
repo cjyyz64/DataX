@@ -27,6 +27,6 @@ public final class Key {
 
     public final static String END_ROWKEY = "endRowkey";
 
-    public final static String ROWKEY_TYPE = "rowkeyType";
+    public final static String IS_BINARY_ROWKEY = "isBinaryRowkey";
 
 }

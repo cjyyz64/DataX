@@ -3,7 +3,8 @@ package com.alibaba.datax.plugin.reader.hbasereader.util;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.plugin.reader.hbasereader.*;
+import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
+import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -69,12 +70,10 @@ public class HbaseProxy {
 
         this.config = new Configuration(conf);
         this.config.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
-        htable = com.alibaba.datax.plugin.reader.hbasereader.HTableFactory.createHTable(this.config, tableName);
-        admin = com.alibaba.datax.plugin.reader.hbasereader.HTableFactory.createHBaseAdmin(this.config);
+        htable = HTableFactory.createHTable(this.config, tableName);
+        admin = HTableFactory.createHBaseAdmin(this.config);
 
-        if (!this.check()) {
-            throw new IllegalStateException("DataX try to build HBaseProxy failed !");
-        }
+        this.check();
     }
 
     private Configuration getHbaseConf(String hbaseConf) {
@@ -126,10 +125,15 @@ public class HbaseProxy {
         this.endKey = endKey;
     }
 
+    public void prepare(String[] columns) throws IOException{
+        this.scan = new Scan();
+        this.scan.setCacheBlocks(false);
+
+    }
     /*
      * Must be sure that column is in format like 'family: column'
      */
-    public void prepare(String[] columns) throws IOException {
+    public void prepare_old(String[] columns) throws IOException {
         this.scan = new Scan();
         this.scan.setCacheBlocks(false);
 
@@ -253,7 +257,7 @@ public class HbaseProxy {
         }
     }
 
-    private boolean check() throws DataXException, IOException {
+    private void check() throws DataXException, IOException {
         if (!admin.isMasterRunning()) {
             throw new IllegalStateException("HBase master is not running!");
         }
@@ -269,8 +273,6 @@ public class HbaseProxy {
             throw new IllegalStateException("HBase table " + Bytes.toString(htable.getTableName())
                     + " is disable!");
         }
-
-        return true;
     }
 
 }

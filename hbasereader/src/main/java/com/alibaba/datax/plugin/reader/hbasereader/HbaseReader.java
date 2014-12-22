@@ -8,68 +8,102 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class HbaseReader extends Reader {
     public static class Job extends Reader.Job {
         private final static Logger LOG = LoggerFactory
                 .getLogger(Job.class);
+
         private Configuration originalConfig;
 
         private String hbaseConfig;
         private String mode;
         private String table;
-        private List<String> columns;
+        private List<Map> column;
         private String encoding;
         private String startRowkey;
         private String endRowKey;
-
-        private String rowkeyType;
         private boolean isBinaryRowkey;
 
-        private HbaseProxy proxy = null;
+        private HbaseProxy hbaseProxy = null;
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
             this.hbaseConfig = this.originalConfig.getNecessaryValue(Key.HBASE_CONFIG, HbaseReaderErrorCode.TEMP);
-            this.mode = this.originalConfig.getString(Key.MODE, "normal");
-            if (!this.mode.equalsIgnoreCase("normal") && !this.mode.equalsIgnoreCase("multiVersion")) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "mode 仅能配置为 normal 或者 multiVersion .");
-            }
+
+            this.mode = dealMode(this.originalConfig);
             this.originalConfig.set(Key.MODE, this.mode);
 
-            this.table = this.originalConfig.getNecessaryValue((Key.TABLE), HbaseReaderErrorCode.TEMP);
-            this.columns = this.originalConfig.getList(Key.COLUMN, String.class);
-            this.encoding = this.originalConfig.getString(Key.ENCODING, "utf-8");
-            this.startRowkey = this.originalConfig.getString(Key.START_ROWKEY);
-            this.endRowKey = this.originalConfig.getString(Key.END_ROWKEY);
+            this.table = this.originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.TEMP);
+            this.column = this.originalConfig.getList(Key.COLUMN, Map.class);
+            List<HbaseColumnCell> hbaseColumnCells = HbaseReader.parseColumn(this.column);
 
-            this.rowkeyType = this.originalConfig.getString(Key.ROWKEY_TYPE);
-            if (!this.rowkeyType.equalsIgnoreCase("bytes") && !this.rowkeyType.equalsIgnoreCase("string")) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "rowkeyType 仅能配置为 bytes 或者 string .");
+
+            this.encoding = this.originalConfig.getString(Key.ENCODING, "utf-8");
+
+            Triple<String, String, Boolean> triple = dealRowkeyRange(this.originalConfig);
+            if (triple != null) {
+                this.startRowkey = triple.getLeft();
+                this.endRowKey = triple.getMiddle();
+                this.isBinaryRowkey = triple.getRight();
+
+                this.originalConfig.set(Constant.HAS_RANGE_CONFIG, true);
+            }
+        }
+
+        private Triple<String, String, Boolean> dealRowkeyRange(Configuration originalConfig) {
+            Map<String, Object> range = originalConfig.getMap(Constant.RANGE);
+            if (range == null) {
+                return null;
             }
 
-            this.isBinaryRowkey = "bytes".equalsIgnoreCase(this.rowkeyType);
+            String startRowkey = (String) range.get(Key.START_ROWKEY);
+            String endRowkey = (String) range.get(Key.END_ROWKEY);
+            Boolean isBinaryRowkey;
+            Object isBinaryRowkeyTemp = range.get(Key.IS_BINARY_ROWKEY);
+            if (startRowkey != null || endRowkey != null) {
+                if (isBinaryRowkeyTemp == null) {
+                    throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您配置了rowkey 的范围，则必须配置 isBinaryRowkey，本项可以配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+                }
+
+                if ("true".equalsIgnoreCase(isBinaryRowkeyTemp.toString())) {
+                    isBinaryRowkey = true;
+                } else if ("false".equalsIgnoreCase(isBinaryRowkeyTemp.toString())) {
+                    isBinaryRowkey = false;
+                } else {
+                    throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "isBinaryRowkey，只能配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+                }
+            }
+            return ImmutableTriple.of(startRowkey, endRowkey, isBinaryRowkey);
+        }
+
+        private String dealMode(Configuration originalConfig) {
+            String mode = originalConfig.getString(Key.MODE, "normal");
+            if (!mode.equalsIgnoreCase("normal") && !mode.equalsIgnoreCase("multiVersion")) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "mode 仅能配置为 normal 或者 multiVersion .");
+            }
+
+            return mode;
         }
 
         @Override
         public void prepare() {
-            //TODO conn to hbase, faile fast
             try {
-                proxy = HbaseProxy.newProxy(this.hbaseConfig, this.table);
-                proxy.setEncode(this.encoding);
-                proxy.setBinaryRowkey(this.isBinaryRowkey);
+                hbaseProxy = HbaseProxy.newProxy(this.hbaseConfig, this.table);
+                hbaseProxy.setEncode(this.encoding);
+                hbaseProxy.setBinaryRowkey(this.isBinaryRowkey);
             } catch (IOException e) {
                 try {
-                    if (null != proxy) {
-                        proxy.close();
+                    if (null != hbaseProxy) {
+                        hbaseProxy.close();
                     }
                 } catch (IOException e1) {
                 }
@@ -79,8 +113,7 @@ public class HbaseReader extends Reader {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            //TODO  adviceNumber?
-            return HbaseSplitUtil.split(this.originalConfig, this.proxy);
+            return HbaseSplitUtil.split(this.originalConfig, this.hbaseProxy);
         }
 
 
@@ -91,9 +124,9 @@ public class HbaseReader extends Reader {
 
         @Override
         public void destroy() {
-            if (null != this.proxy) {
+            if (null != this.hbaseProxy) {
                 try {
-                    proxy.close();
+                    hbaseProxy.close();
                 } catch (Exception e) {
                     //
                 }
@@ -106,7 +139,6 @@ public class HbaseReader extends Reader {
         private String columnTypeAndNames = null;
         private String hbaseConf = null;
         // private String rowkeyRange = null;
-        private boolean needRowkey = false;
         private boolean isBinaryRowkey = false;
         private HbaseProxy hbaseProxy = null;
         private String[] columnTypes = null;
@@ -120,7 +152,7 @@ public class HbaseReader extends Reader {
 
             this.columnTypeAndNames = taskConfig.getString(Key.COLUMN);
 
-            this.isBinaryRowkey = "bytes".equalsIgnoreCase(taskConfig.getString(Key.ROWKEY_TYPE));
+            this.isBinaryRowkey = taskConfig.getBool(Key.IS_BINARY_ROWKEY);
 
             HbaseColumnConfig hbaseColumnConfig = new HbaseColumnConfig();
             parseColumn(columnTypeAndNames, hbaseColumnConfig);
@@ -200,7 +232,6 @@ public class HbaseReader extends Reader {
             }
         }
 
-
         private void parseColumn(String columnTypeAndNames,
                                  HbaseColumnConfig hbaseColumnConfig) {
             String[] columnArray = columnTypeAndNames.split(",");
@@ -266,5 +297,19 @@ public class HbaseReader extends Reader {
         }
 
 
+    }
+
+    public static List<HbaseColumnCell> parseColumn(List<Map> column) {
+        List<HbaseColumnCell> hbaseColumnCells = new ArrayList<HbaseColumnCell>();
+
+        for (Map<String, String> aColumn : column) {
+            String type = aColumn.get("type");
+            String columnName = aColumn.get("name");
+            String columnValue = aColumn.get("value");
+            HbaseColumnCell oneColumnCell = new HbaseColumnCell.Builder(ColumnType.valueOf(type)).columnName(columnName).columnValue(columnValue).build();
+            hbaseColumnCells.add(oneColumnCell);
+        }
+
+        return hbaseColumnCells;
     }
 }

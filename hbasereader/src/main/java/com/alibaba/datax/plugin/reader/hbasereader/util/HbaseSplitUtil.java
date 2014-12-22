@@ -103,15 +103,15 @@ public final class HbaseSplitUtil {
             if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
                     && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
                 throw new IllegalArgumentException(String.format(
-                        "startkey %s cannot be larger than endkey %s .",
+                        "startRowkey %s 不得大于 endRowkey %s .",
                         startRowkey, endRowKey));
             }
 
             ret = doSplit(configuration, startRowkeyByte, endRowkeyByte,
                     regionRanges, isBinaryRowkey);
 
-            LOG.info(String.format("HBaseReader doSplit job into %d sub-jobs .",
-                    ret.size()));
+            LOG.info("HBaseReader doSplit job into {} tasks .",
+                    ret.size());
 
             return ret;
 
@@ -165,7 +165,7 @@ public final class HbaseSplitUtil {
             p.set(Key.END_ROWKEY, thisEndKey);
 
             if (IS_DEBUG) {
-                LOG.debug("start-rowkey:[{}],end-rowkey:[{}] .",
+                LOG.debug("startRowkey:[{}],endRowkey:[{}] .",
                         p.getString(Key.START_ROWKEY, ""),
                         p.getString(Key.END_ROWKEY, ""));
             }
@@ -177,7 +177,7 @@ public final class HbaseSplitUtil {
     }
 
     private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
-        byte[] retRowKey = null;
+        byte[] retRowKey;
         if (StringUtils.isBlank(rowkey)) {
             retRowKey = HConstants.EMPTY_BYTE_ARRAY;
         } else {
