@@ -1,9 +1,9 @@
-Name: t_dp_dw_datax_3_core_all
+Name: t_dp_dw_datax_3_hook_dqc
 Packager:xiafei.qiuxf
-Version:201412221146
+Version:201412221040
 Release: %(echo $RELEASE)%{?dist}
 
-Summary: datax 3 core
+Summary: datax 3 dqc hook
 URL: http://gitlab.alibaba-inc.com/datax/datax
 Group: t_dp
 License: Commercial
@@ -14,7 +14,7 @@ BuildArch: noarch
 
 %description
 CodeUrl: http://gitlab.alibaba-inc.com/datax/datax
-datax core
+datax dqc hook
 %{_svn_path}
 %{_svn_revision}
 
@@ -33,28 +33,21 @@ rm -rf %{_prefix}/plugins/
 %build
 cd ${OLDPWD}/../
 
+/home/ads/tools/apache-maven-3.0.3/bin/mvn install -N
+/home/ads/tools/apache-maven-3.0.3/bin/mvn install -pl common -DskipTests
+cd dqchook
 /home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
+cd -
 
 %install
 mkdir -p .%{_prefix}
-#(cd $OLDPWD/../target/; tar -xzf datax.tar.gz)
 cp -rf $OLDPWD/../target/datax/datax/* .%{_prefix}/
 
 %post
-chmod -R 0755 %{_prefix}/bin
-chmod -R 0757 %{_prefix}/conf
-chmod -R 0757 %{_prefix}/job
-chmod -R 0757 %{_prefix}/lib
-chmod -R 0757 %{_prefix}/log
-chmod -R 0757 %{_prefix}/plugin
-chmod -R 0757 %{_prefix}/script
 chmod -R 0757 %{_prefix}/hook
 
 
 %files
 %defattr(755,admin,cug-tbdp)
-%config(noreplace) %{_prefix}/conf/core.json
-%config(noreplace) %{_prefix}/conf/logback.xml
 %config(noreplace) %{_prefix}/hook/dqc/dqc.properties
-
 %{_prefix}
