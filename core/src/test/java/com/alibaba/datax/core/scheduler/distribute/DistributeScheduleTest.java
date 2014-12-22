@@ -13,7 +13,9 @@ import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -159,6 +161,65 @@ public class DistributeScheduleTest {
         PowerMockito.when(distributeJobContainerCommunicator.collect()).
                 thenReturn(communication);
 
+        scheduler.schedule(configurationList);
+
+    }
+
+
+    @Rule
+    public ExpectedException expectedEx = ExpectedException.none();
+    @Test
+    public void testSchedule_Exception() {
+        int taskGraoupNumber = 10;
+
+        DistributeJobContainerCommunicator distributeJobContainerCommunicator = PowerMockito.
+                mock(DistributeJobContainerCommunicator.class);
+        DsScheduler scheduler = new DsScheduler(distributeJobContainerCommunicator);
+
+        List<Configuration> configurationList = new ArrayList<Configuration>();
+
+        List<Configuration> configurations = new ArrayList<Configuration>();
+
+
+        int length = RandomUtils.nextInt(0, 20)+1;
+        for (int i = 0; i < length; i++) {
+            configurations.add(Configuration.newDefault());
+        }
+
+        for (int i = 0; i < taskGraoupNumber; i++) {
+            Configuration configuration = Configuration.newDefault();
+            configuration
+                    .set(CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL,
+                            11);
+            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
+            configuration.set(CoreConstant.DATAX_JOB_CONTENT, configurations);
+            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
+
+            configurationList.add(configuration);
+        }
+
+        PowerMockito.mockStatic(DataxServiceUtil.class);
+        Result result = new Result();
+        result.setData("启动成功");
+        result.setReturnCode(200);
+        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class))).
+                thenReturn(result);
+
+        Result<Integer> result2 = new Result<Integer>();
+        result2.setData(0);
+        result2.setReturnCode(200);
+        result2.isSuccess();
+        PowerMockito.when(DataxServiceUtil.getJobInfo(anyLong())).
+                thenReturn(result2);
+
+
+        Communication communication = new Communication();
+        communication.setState(State.SUCCEEDED);
+        PowerMockito.when(distributeJobContainerCommunicator.collect()).
+                thenThrow(new Exception("test.."));
+
+        expectedEx.expect(Exception.class);
+        expectedEx.expectMessage("test..");
         scheduler.schedule(configurationList);
 
     }

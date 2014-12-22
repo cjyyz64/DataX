@@ -5,7 +5,9 @@ import com.alibaba.datax.core.job.scheduler.processinner.ProcessInnerScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
+import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
@@ -28,7 +30,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 
 	@Test
 	public void testSchedule() throws NoSuchFieldException, IllegalAccessException {
-		int jobNumber = 10;
+		int taskNumber = 10;
 		List<Configuration> jobList = new ArrayList<Configuration>();
 
 		List<Configuration> internal = new ArrayList<Configuration>();
@@ -37,34 +39,37 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 			internal.add(Configuration.newDefault());
 		}
 
-		for (int i = 0; i < jobNumber; i++) {
+        LocalTGCommunicationManager.clear();
+		for (int i = 0; i < taskNumber; i++) {
 			Configuration configuration = Configuration.newDefault();
 			configuration
 					.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL,
 							11);
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 			configuration.set(CoreConstant.DATAX_JOB_CONTENT, internal);
-			configuration.set("runMode", ExecuteMode.STANDALONE.getValue());
+			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, ExecuteMode.STANDALONE.getValue());
 			configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, i);
 			jobList.add(configuration);
-
+            LocalTGCommunicationManager.registerTaskGroupCommunication(i,new Communication());
 		}
-        LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
-                mock(LocalJobContainerCommunicator.class);
-        ProcessInnerScheduler scheduler = new StandAloneScheduler(localJobContainerCommunicator);
 
-        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
-        ReflectUtil.setField(scheduler, "taskGroupContainerExecutorService", taskGroupContainerExecutorService);
-        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
-        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
+        StandAloneJobContainerCommunicator standAloneJobContainerCommunicator = PowerMockito.
+                mock(StandAloneJobContainerCommunicator.class);
+        ProcessInnerScheduler scheduler = new StandAloneScheduler(standAloneJobContainerCommunicator);
+
+//        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
+//        ReflectUtil.setField(scheduler, "taskGroupContainerExecutorService", taskGroupContainerExecutorService);
+//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
+//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
+       // PowerMockito.when(scheduler.startAllTaskGroup();)
 
 
 
         Communication communication = new Communication();
         communication.setState(State.SUCCEEDED);
-        PowerMockito.when(localJobContainerCommunicator.collect()).
+        PowerMockito.when(standAloneJobContainerCommunicator.collect()).
                 thenReturn(communication);
-        PowerMockito.doNothing().when(localJobContainerCommunicator).report(communication);
+        PowerMockito.doNothing().when(standAloneJobContainerCommunicator).report(communication);
 
 		scheduler.schedule(jobList);
 	}
