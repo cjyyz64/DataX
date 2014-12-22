@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.*;
 
 
 /**
@@ -32,7 +32,7 @@ public class LocalScheduleTest {
         LocalJobContainerCommunicator localJobContainerCommunicator = PowerMockito.
                 mock(LocalJobContainerCommunicator.class);
 
-        ProcessInnerScheduler scheduler = new LocalScheduler(localJobContainerCommunicator);
+        ProcessInnerScheduler scheduler = PowerMockito.spy(new LocalScheduler(localJobContainerCommunicator));
 
         List<Configuration> configurationList = new ArrayList<Configuration>();
 
@@ -57,11 +57,7 @@ public class LocalScheduleTest {
             configurationList.add(configuration);
         }
 
-//        ExecutorService taskGroupContainerExecutorService = PowerMockito.mock(ExecutorService.class);
-//        ReflectUtil.setField(scheduler,"taskGroupContainerExecutorService",taskGroupContainerExecutorService);
-//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).execute((Runnable) any());
-//        PowerMockito.doNothing().when(taskGroupContainerExecutorService).shutdown();
-
+        PowerMockito.doNothing().when(scheduler).startAllTaskGroup(anyListOf(Configuration.class));
 
         Communication communication = new Communication();
         communication.setLongCounter("totalBytes",1024);
