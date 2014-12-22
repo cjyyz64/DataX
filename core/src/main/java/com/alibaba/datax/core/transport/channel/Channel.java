@@ -2,10 +2,9 @@ package com.alibaba.datax.core.transport.channel;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.util.SleepQuiet;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +12,9 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 
 /**
- *
  * Created by jingxing on 14-8-25.
- *
+ * <p/>
  * 统计和限速都在这里
- *
  */
 public abstract class Channel {
 
@@ -182,7 +179,7 @@ public abstract class Channel {
         if (interval - this.flowControlInterval >= 0) {
             long byteLimitSleepTime = 0;
             long recordLimitSleepTime = 0;
-            if(isChannelByteSpeedLimit) {
+            if (isChannelByteSpeedLimit) {
                 long currentByteSpeed = (CommunicationTool.getTotalReadBytes(currentCommunication) -
                         CommunicationTool.getTotalReadBytes(lastCommunication)) * 1000 / interval;
                 if (currentByteSpeed > this.byteSpeed) {
@@ -192,10 +189,10 @@ public abstract class Channel {
                 }
             }
 
-            if(isChannelRecordSpeedLimit) {
+            if (isChannelRecordSpeedLimit) {
                 long currentRecordSpeed = (CommunicationTool.getTotalReadRecords(currentCommunication) -
                         CommunicationTool.getTotalReadRecords(lastCommunication)) * 1000 / interval;
-                if(currentRecordSpeed > this.recordSpeed) {
+                if (currentRecordSpeed > this.recordSpeed) {
                     // 计算根据recordLimit得到的休眠时间
                     recordLimitSleepTime = currentRecordSpeed * interval / this.recordSpeed
                             - interval;
@@ -203,10 +200,14 @@ public abstract class Channel {
             }
 
             // 休眠时间取较大值
-            long sleepTime = byteLimitSleepTime<recordLimitSleepTime ?
+            long sleepTime = byteLimitSleepTime < recordLimitSleepTime ?
                     recordLimitSleepTime : byteLimitSleepTime;
-            if(sleepTime > 0) {
-                SleepQuiet.sleep(sleepTime);
+            if (sleepTime > 0) {
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
 
             lastCommunication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES,
