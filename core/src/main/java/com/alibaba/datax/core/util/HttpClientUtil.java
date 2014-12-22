@@ -12,21 +12,18 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 
-/**
- * Created by hongjiao.hj on 2014/12/9.
- */
 public class HttpClientUtil {
 
     private CloseableHttpClient httpClient;
 
     private volatile static HttpClientUtil clientUtil;
 
-    // TODO 后续这两个参数可以放到配置文件，构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
+    //构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
     private static int HTTP_TIMEOUT_INMILLIONSECONDS;
 
     private final int POOL_SIZE = 20;
 
-    public static void setHttpTimeoutInMillionSeconds(int httpTimeoutInMillionSeconds){
+    public static void setHttpTimeoutInMillionSeconds(int httpTimeoutInMillionSeconds) {
         HTTP_TIMEOUT_INMILLIONSECONDS = httpTimeoutInMillionSeconds;
     }
 
