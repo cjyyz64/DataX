@@ -22,7 +22,10 @@ public class HbaseColumnCell {
         this.columnType = builder.columnType;
 
         //columnName 和 columnValue 必须有一个为 null
-        Validate.isTrue(builder.columnName == null || builder.columnValue == null, "Hbasereader  中，column 不能同时配置列名称和列值.");
+        Validate.isTrue(builder.columnName == null || builder.columnValue == null, "Hbasereader  中，column 不能同时配置 列名称 和 列值,二者选其一.");
+
+        //columnName 和 columnValue 不能都为 null
+        Validate.isTrue(builder.columnName == null && builder.columnValue == null, "Hbasereader  中，column 需要配置 列名称 或者 列值, 二者选其一.");
 
         if (builder.columnName != null) {
             this.isConstant = false;

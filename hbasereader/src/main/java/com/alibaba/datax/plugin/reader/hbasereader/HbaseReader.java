@@ -37,17 +37,23 @@ public class HbaseReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.hbaseConfig = this.originalConfig.getNecessaryValue(Key.HBASE_CONFIG, HbaseReaderErrorCode.TEMP);
+
+            this.hbaseConfig = this.originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
+                    HbaseReaderErrorCode.TEMP);
 
             this.mode = dealMode(this.originalConfig);
             this.originalConfig.set(Key.MODE, this.mode);
 
             this.table = this.originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.TEMP);
             this.column = this.originalConfig.getList(Key.COLUMN, Map.class);
-            List<HbaseColumnCell> hbaseColumnCells = HbaseReader.parseColumn(this.column);
+            if (this.column == null) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "必须配置 Hbasereader 的 column 配置项.");
+            }
 
+            this.checkColumn(this.column);
 
             this.encoding = this.originalConfig.getString(Key.ENCODING, "utf-8");
+            this.originalConfig.set(Key.ENCODING, this.encoding);
 
             Triple<String, String, Boolean> triple = dealRowkeyRange(this.originalConfig);
             if (triple != null) {
@@ -132,6 +138,10 @@ public class HbaseReader extends Reader {
                 }
             }
         }
+
+        private void checkColumn(List<Map> column) {
+            parseColumn(column);
+        }
     }
 
     public static class Task extends Reader.Task {
@@ -142,7 +152,10 @@ public class HbaseReader extends Reader {
         private boolean isBinaryRowkey = false;
         private HbaseProxy hbaseProxy = null;
         private String[] columnTypes = null;
+
         private String[] columnFamilyAndQualifier = null;
+
+        private List<HbaseColumnCell> hbaseColumnCells
 
         @Override
         public void init() {
