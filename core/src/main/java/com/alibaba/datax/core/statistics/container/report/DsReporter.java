@@ -26,6 +26,7 @@ public class DsReporter extends AbstractReporter {
 
         jobStatus.setErrorRecords(communication.getLongCounter("totalErrorRecords"));
         jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
+        jobStatus.setPercentage(communication.getDoubleCounter("percentage"));
 
         jobStatus.setErrorMessage(communication.getThrowableMessage());
         DataxServiceUtil.updateJobInfo(jobId, jobStatus);
