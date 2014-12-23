@@ -66,7 +66,8 @@ public final class DataxServiceUtil {
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
 
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
+            // 这里重试次数为9，则能避免 DataXService 在7分钟不可用时，任务不会因此而失败.
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 9, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
 
             if (!result.isSuccess()) {
@@ -88,7 +89,7 @@ public final class DataxServiceUtil {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
             httpGet.setURI(new URI(url));
 
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 3, 1000l);
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
 
             Type type = new TypeToken<Result<List<TaskGroup>>>() {
             }.getType();
@@ -137,7 +138,7 @@ public final class DataxServiceUtil {
             HttpDelete httpDelete = HttpClientUtil.getDeleteRequest();
             httpDelete.setURI(new URI(url));
 
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 3, 1000l);
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 9, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
@@ -164,7 +165,7 @@ public final class DataxServiceUtil {
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
 
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 3, 1000l);
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 9, 1000l);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
