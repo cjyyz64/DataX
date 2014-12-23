@@ -10,6 +10,7 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
@@ -114,6 +115,34 @@ public class HttpClientUtilTest {
             httpClientUtil.executeAndGetWithRetry(httpRequestBase, 2, 1000l);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof DataXException);
+        }
+        httpClientUtil.destroy();
+    }
+
+    /**
+     * 和测试方法一样：testExecuteAndGetWithRetry()，只是换了一种写法，直接采用 Mockito 进行验证的。
+     */
+    @Test
+    public void testExecuteAndGetWithRetry2() throws Exception {
+        String url = "http://127.0.0.1/:8080";
+        HttpRequestBase httpRequestBase = new HttpGet(url);
+
+        HttpClientUtil httpClientUtil = Mockito.spy(HttpClientUtil.getHttpClientUtil());
+
+        Mockito.doThrow(new Exception("one")).doThrow(new Exception("two")).doThrow(new Exception("three")).doReturn("成功").when(httpClientUtil).executeAndGet(httpRequestBase);
+
+        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 4, 1000l);
+        Assert.assertEquals(str, "成功");
+
+
+        Mockito.reset(httpClientUtil);
+
+        Mockito.doThrow(new Exception("one")).doThrow(new Exception("two")).doThrow(new Exception("three")).doReturn("成功").when(httpClientUtil).executeAndGet(httpRequestBase);
+        try {
+            httpClientUtil.executeAndGetWithRetry(httpRequestBase, 2, 1000l);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof DataXException);
+            Assert.assertTrue(e.getMessage().contains("two"));
         }
         httpClientUtil.destroy();
     }
