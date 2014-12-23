@@ -325,8 +325,6 @@ public class JobContainer extends AbstractContainer {
 
             LOG.info("Running by {} Mode.", executeMode);
 
-            Thread.currentThread().setName("");
-
             this.startTransferTimeStamp = System.currentTimeMillis();
 
             scheduler.schedule(taskGroupConfigs);
