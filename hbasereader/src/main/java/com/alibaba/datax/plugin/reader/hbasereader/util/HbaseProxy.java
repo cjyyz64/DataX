@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
@@ -32,14 +33,10 @@ public class HbaseProxy {
 
     private HTable htable;
     private HBaseAdmin admin;
-    private String encoding = "UTF-8";
-    private boolean isBinaryRowkey = false;
+    private String encoding;
+    private boolean isBinaryRowkey;
     private byte[] startKey = null;
     private byte[] endKey = null;
-
-    private byte[][] families = null;
-
-    private byte[][] columns = null;
 
     private Result lastResult = null;
     private Scan scan;
@@ -80,13 +77,22 @@ public class HbaseProxy {
         String startRowkey = rangeInfo.getLeft();
         String endRowkey = rangeInfo.getRight();
 
-        if (this.isBinaryRowkey) {
-            this.startKey = startRowkey == null ? null : Bytes.toBytesBinary(startRowkey);
-            this.endKey = endRowkey == null ? null : Bytes.toBytesBinary(endRowkey);
+        this.startKey = parseRowKeyByte(startRowkey, this.isBinaryRowkey);
+        this.endKey = parseRowKeyByte(endRowkey, this.isBinaryRowkey);
+    }
+
+    private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
+        byte[] retRowKey;
+        if (org.apache.commons.lang.StringUtils.isBlank(rowkey)) {
+            retRowKey = HConstants.EMPTY_BYTE_ARRAY;
         } else {
-            this.startKey = startRowkey == null ? null : Bytes.toBytes(startRowkey);
-            this.endKey = endRowkey == null ? null : Bytes.toBytes(endRowkey);
+            if (isBinaryRowkey) {
+                retRowKey = Bytes.toBytesBinary(rowkey);
+            } else {
+                retRowKey = Bytes.toBytes(rowkey);
+            }
         }
+        return retRowKey;
     }
 
     private Configuration getHbaseConf(String hbaseConf) {
@@ -144,43 +150,6 @@ public class HbaseProxy {
 
         this.htable.setScannerCaching(SCAN_CACHE);
         this.resultScanner = this.htable.getScanner(this.scan);
-    }
-
-    /*
-     * Must be sure that column is in format like 'family: column'
-     */
-    public void prepare_old(String[] columns) throws IOException {
-        this.scan = new Scan();
-        this.scan.setCacheBlocks(false);
-
-        if (this.startKey != null) {
-            LOG.info(
-                    "HBaseReader set startkey to {} .",
-                    this.isBinaryRowkey ? Bytes.toStringBinary(this.startKey) : Bytes
-                            .toString(this.startKey));
-            scan.setStartRow(startKey);
-        }
-        if (this.endKey != null) {
-            LOG.info(
-                    "HBaseReader set endkey to {} .",
-                    this.isBinaryRowkey ? Bytes.toStringBinary(this.endKey) : Bytes
-                            .toString(this.endKey));
-            scan.setStopRow(endKey);
-        }
-
-        this.families = new byte[columns.length][];
-        this.columns = new byte[columns.length][];
-
-        int idx = 0;
-        for (String column : columns) {
-            this.families[idx] = column.split(":")[0].trim().getBytes();
-            this.columns[idx] = column.split(":")[1].trim().getBytes();
-            scan.addColumn(this.families[idx], this.columns[idx]);
-            idx++;
-        }
-
-        htable.setScannerCaching(SCAN_CACHE);
-        this.resultScanner = htable.getScanner(this.scan);
     }
 
 
@@ -352,6 +321,14 @@ public class HbaseProxy {
             throw new IllegalStateException("HBase table " + Bytes.toString(htable.getTableName())
                     + " is disable!");
         }
+    }
+
+    public byte[] getStartKey() {
+        return startKey;
+    }
+
+    public byte[] getEndKey() {
+        return endKey;
     }
 
 }

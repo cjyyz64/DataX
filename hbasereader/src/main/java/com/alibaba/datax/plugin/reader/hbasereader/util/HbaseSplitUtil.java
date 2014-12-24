@@ -2,11 +2,8 @@ package com.alibaba.datax.plugin.reader.hbasereader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.hbasereader.Constant;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
@@ -24,17 +21,7 @@ public final class HbaseSplitUtil {
 
     public static List<Configuration> split(Configuration configuration, HbaseProxy hbaseProxy) {
         List<Configuration> resultConfigurations;
-
-        String startRowkey = null;
-        String endRowKey = null;
-        boolean isBinaryRowkey = false;
-
-        if (configuration.getBool(Constant.HAS_RANGE_CONFIG)) {
-            Triple<String, String, Boolean> rangeInfo = hbaseProxy.getRangeInfo();
-            startRowkey = rangeInfo.getLeft();
-            endRowKey = rangeInfo.getMiddle();
-            isBinaryRowkey = rangeInfo.getRight();
-        }
+        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         try {
             Pair<byte[][], byte[][]> regionRanges = hbaseProxy.getStartEndKeys();
@@ -42,21 +29,19 @@ public final class HbaseSplitUtil {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "获取源头 Hbase 表自身 startKey/endKey 失败.");
             }
 
-            byte[] startRowkeyByte = parseRowKeyByte(startRowkey, isBinaryRowkey);
-            byte[] endRowkeyByte = parseRowKeyByte(endRowKey, isBinaryRowkey);
+            byte[] startRowkeyByte = hbaseProxy.getStartKey();
+            byte[] endRowkeyByte = hbaseProxy.getEndKey();
 
 			/* 如果配置了start-rowkey和end-rowkey，需要确保：start-rowkey<=end-rowkey */
             if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
                     && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
-                throw new IllegalArgumentException(String.format(
-                        "startRowkey %s 不得大于 endRowkey %s .",
-                        startRowkey, endRowKey));
+                throw new IllegalArgumentException("startRowkey 不得大于 endRowkey.");
             }
 
             resultConfigurations = doSplit(configuration, startRowkeyByte, endRowkeyByte,
                     regionRanges, isBinaryRowkey);
 
-            LOG.info("HBaseReader split job into {} tasks .", resultConfigurations.size());
+            LOG.info("HBaseReader split job into {} tasks.", resultConfigurations.size());
 
             return resultConfigurations;
         } catch (Exception e) {
@@ -107,7 +92,7 @@ public final class HbaseSplitUtil {
 
             p.set(Key.START_ROWKEY, thisStartKey);
             p.set(Key.END_ROWKEY, thisEndKey);
-            p.set(Key.IS_BINARY_ROWKEY,isBinaryRowkey);
+            p.set(Key.IS_BINARY_ROWKEY, isBinaryRowkey);
 
             if (IS_DEBUG) {
                 LOG.debug("startRowkey:[{}],endRowkey:[{}] .",
@@ -119,20 +104,6 @@ public final class HbaseSplitUtil {
         }
 
         return configurations;
-    }
-
-    private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
-        byte[] retRowKey;
-        if (StringUtils.isBlank(rowkey)) {
-            retRowKey = HConstants.EMPTY_BYTE_ARRAY;
-        } else {
-            if (isBinaryRowkey) {
-                retRowKey = Bytes.toBytesBinary(rowkey);
-            } else {
-                retRowKey = Bytes.toBytes(rowkey);
-            }
-        }
-        return retRowKey;
     }
 
     private static String getEndKey(byte[] endRowkeyByte, byte[] regionEndKey,
