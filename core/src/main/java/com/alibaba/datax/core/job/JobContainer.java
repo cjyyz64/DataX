@@ -122,7 +122,13 @@ public class JobContainer extends AbstractContainer {
                 // 汇报前的状态，不需要手动进行设置
                 // communication.setState(State.FAILED);
                 communication.setThrowable(e);
-                super.getContainerCommunicator().report(communication);
+                communication.setTimestamp(this.endTimeStamp);
+
+                Communication tempComm = new Communication();
+                tempComm.setTimestamp(this.startTransferTimeStamp);
+
+                Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
+                super.getContainerCommunicator().report(reportCommunication);
             }
 
             throw DataXException.asDataXException(
