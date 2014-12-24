@@ -29,9 +29,9 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL = "core.container.taskGroup.reportInterval";
 
-    public static final String DATAX_CORE_DATAXSERVICE_ADDRESS = "core.dataXService.address";
+    public static final String DATAX_CORE_DATAXSERVER_ADDRESS = "core.dataXServer.address";
 
-    public static final String DATAX_CORE_DATAXSERVICE_TIMEOUT = "core.dataXService.timeout";
+    public static final String DATAX_CORE_DATAXSERVER_TIMEOUT = "core.dataXServer.timeout";
 
 	public static final String DATAX_CORE_SCHEDULER_CLASS = "core.scheduler.class";
 
@@ -67,6 +67,8 @@ public class CoreConstant {
 
 	public static final String DATAX_JOB_CONTENT = "job.content";
 
+    public static final String DATAX_JOB_SETTING_KEYVERSION = "job.setting.keyVersion";
+
 	public static final String DATAX_JOB_SETTING_SPEED_BYTE = "job.setting.speed.byte";
 
     public static final String DATAX_JOB_SETTING_SPEED_RECORD = "job.setting.speed.record";
@@ -94,6 +96,20 @@ public class CoreConstant {
 
 	public static final String JOB_TASK_ID = "taskId";
 
+    // ----------------------------- 安全模块变量 ------------------
+
+    public static final String LAST_KEYVERSION = "last.keyVersion";
+
+    public static final String LAST_PUBLICKEY = "last.publicKey";
+
+    public static final String LAST_PRIVATEKEY = "last.privateKey";
+
+    public static final String CURRENT_KEYVERSION = "current.keyVersion";
+
+    public static final String CURRENT_PUBLICKEY = "current.publicKey";
+
+    public static final String CURRENT_PRIVATEKEY = "current.privateKey";
+
 	// ----------------------------- 环境变量 ---------------------------------
 
 	public static String DATAX_HOME = System.getProperty("datax.home");
@@ -103,6 +119,9 @@ public class CoreConstant {
 
 	public static String DATAX_CONF_LOG_PATH = StringUtils.join(new String[] {
 			DATAX_HOME, "conf", "logback.xml" }, File.separator);
+
+    public static String DATAX_SECRET_PATH = StringUtils.join(new String[] {
+            DATAX_HOME, "conf", ".secret.properties" }, File.separator);
 
 	public static String DATAX_PLUGIN_HOME = StringUtils.join(new String[] {
 			DATAX_HOME, "plugin" }, File.separator);

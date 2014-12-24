@@ -76,28 +76,21 @@ public class StandAloneScheduler implements Scheduler {
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
-                if (nowJobContainerCommunication.getState() == State.FAIL) {
-                    taskGroupContainerExecutorService.shutdownNow();
-                    throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                            nowJobContainerCommunication.getThrowable());
-                }
-
                 Communication reportCommunication = CommunicationManager
                         .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
                 frameworkCollector.report(reportCommunication);
                 errorLimit.checkRecordLimit(reportCommunication);
 
-                if (taskGroupContainerExecutorService.isTerminated()
-                        && !hasTaskGroupException(reportCommunication)) {
-                    // 结束前还需统计一次，准确统计
-                    nowJobContainerCommunication = frameworkCollector.collect();
-                    nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
-                    reportCommunication = CommunicationManager
-                            .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                    frameworkCollector.report(reportCommunication);
-                    LOG.info("Scheduler accomplished all jobs.");
+                if (reportCommunication.getState() == State.SUCCESS) {
+                    LOG.info("Scheduler accomplished all tasks.");
                     break;
+                }
+
+                if (reportCommunication.getState() == State.FAIL) {
+                    taskGroupContainerExecutorService.shutdownNow();
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
+                            nowJobContainerCommunication.getThrowable());
                 }
 
                 lastJobContainerCommunication = nowJobContainerCommunication;
@@ -117,15 +110,5 @@ public class StandAloneScheduler implements Scheduler {
                 TaskGroupContainer.class, configuration);
 
         return new TaskGroupContainerRunner(taskGroupContainer);
-    }
-
-    private boolean hasTaskGroupException(Communication communication) {
-        if(!communication.getState().equals(State.SUCCESS)) {
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.PLUGIN_RUNTIME_ERROR,
-                    communication.getThrowable());
-        }
-
-        return false;
     }
 }

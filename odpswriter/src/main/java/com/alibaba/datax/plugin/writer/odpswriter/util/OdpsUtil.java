@@ -263,7 +263,7 @@ public class OdpsUtil {
 
         String taskName = "datax_odpswriter_trunacte_" + UUID.randomUUID().toString().replace('-', '_');
 
-        LOG.info("Try to start sqlTtask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
+        LOG.info("Try to start sqlTask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
         Task task = new SqlTask(taskName, query);
         JobInstance instance = Job.run(project, task);
         instance.waitForCompletion();

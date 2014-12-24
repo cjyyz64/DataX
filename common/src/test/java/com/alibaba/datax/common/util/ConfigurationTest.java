@@ -624,4 +624,24 @@ public class ConfigurationTest {
         Configuration.from(conf.toJSON());
     }
 
+    @Test
+    public void test_secretKey() {
+        Configuration config = Configuration.newDefault();
+
+        String keyPath1 = "a.b.c";
+        String keyPath2 = "a.b.c[2].d";
+        config.addSecretKeyPath(keyPath1);
+        config.addSecretKeyPath(keyPath2);
+
+        Assert.assertTrue(config.isSecretPath(keyPath1));
+        Assert.assertTrue(config.isSecretPath(keyPath2));
+
+        Configuration configClone = config.clone();
+        Assert.assertTrue(configClone.isSecretPath(keyPath1));
+        Assert.assertTrue(configClone.isSecretPath(keyPath2));
+
+        config.setSecretKeyPathSet(new HashSet<String>());
+        Assert.assertTrue(configClone.isSecretPath(keyPath1));
+        Assert.assertTrue(configClone.isSecretPath(keyPath2));
+    }
 }

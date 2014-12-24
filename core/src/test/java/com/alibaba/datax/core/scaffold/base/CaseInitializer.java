@@ -32,5 +32,8 @@ public class CaseInitializer {
 
         CoreConstant.DATAX_JOB_HOME = StringUtils.join(new String[] {
                 CoreConstant.DATAX_HOME, "job" }, File.separator);
+
+        CoreConstant.DATAX_SECRET_PATH = StringUtils.join(new String[] {
+                CoreConstant.DATAX_HOME, "conf", ".secret.properties" }, File.separator);
 	}
 }
