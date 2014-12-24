@@ -11,7 +11,7 @@
                     "name": "mysqlreader",
                     "parameter": {
                         "username": "root",
-                        "password": "root",
+                        "password": "123456",
                         "check-slave":true,
                         "column": [
                             "db_id",
@@ -37,10 +37,11 @@
                         "connection": [
                             {
                                 "table": [
-                                    "db_info"
+                                    "users"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
+                                    "jdbc:mysql://10.232.130.7:3306/test",
+                                    "jdbc:mysql://10.232.130.6:3306/test"
                                 ]
                             }
                         ]
