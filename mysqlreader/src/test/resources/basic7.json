@@ -12,7 +12,7 @@
                     "parameter": {
                         "username": "root",
                         "password": "123456",
-                        "check-slave":true,
+                        "checkSlave":true,
                         "column": [
                             "db_id",
                             "db_type",
