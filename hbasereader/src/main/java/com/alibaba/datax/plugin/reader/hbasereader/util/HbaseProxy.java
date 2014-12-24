@@ -7,6 +7,7 @@ import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.*;
@@ -27,11 +28,11 @@ public class HbaseProxy {
     private static final String META_SCANNER_CACHING = "100";
 
     private Configuration config;
+    private Triple<String, String, Boolean> rangeInfo;
 
     private HTable htable;
     private HBaseAdmin admin;
     private String encode = "UTF-8";
-    private boolean needRowkey = false;
     private boolean isBinaryRowkey = false;
     private byte[] startKey = null;
     private byte[] endKey = null;
@@ -45,35 +46,41 @@ public class HbaseProxy {
 
     private Result lastResult = null;
 
-    public boolean isNeedRowkey() {
-        return needRowkey;
+    public Triple<String, String, Boolean> getRangeInfo() {
+        return rangeInfo;
     }
 
-    public void setNeedRowkey(boolean needRowkey) {
-        this.needRowkey = needRowkey;
+    public static HbaseProxy newProxy(String hbaseConf, String tableName, Triple<String, String, Boolean> rangeInfo,String encoding) throws IOException {
+        return new HbaseProxy(hbaseConf, tableName, rangeInfo,encoding);
     }
 
-    public boolean isBinaryRowkey() {
-        return isBinaryRowkey;
-    }
-
-    public void setBinaryRowkey(boolean isBinaryRowkey) {
-        this.isBinaryRowkey = isBinaryRowkey;
-    }
-
-    public static HbaseProxy newProxy(String hbase_conf, String tableName) throws IOException {
-        return new HbaseProxy(hbase_conf, tableName);
-    }
-
-    private HbaseProxy(String hbaseConf, String tableName) throws IOException {
+    private HbaseProxy(String hbaseConf, String tableName, Triple<String, String, Boolean> rangeInfo,String encoding) throws IOException {
         Configuration conf = getHbaseConf(hbaseConf);
-
         this.config = new Configuration(conf);
         this.config.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
         htable = HTableFactory.createHTable(this.config, tableName);
         admin = HTableFactory.createHBaseAdmin(this.config);
 
         this.check();
+
+        this.encode = encoding;
+        this.rangeInfo = rangeInfo;
+        dealRangeInfo(this.rangeInfo);
+    }
+
+    private void dealRangeInfo(Triple<String, String, Boolean> rangeInfo) {
+        if (this.rangeInfo != null) {
+            this.isBinaryRowkey = this.rangeInfo.getRight();
+            String startRowkey = rangeInfo.getLeft();
+            String endRowkey = rangeInfo.getMiddle();
+            if (this.isBinaryRowkey) {
+                this.startKey = Bytes.toBytesBinary(startRowkey);
+                this.endKey = Bytes.toBytesBinary(endRowkey);
+            } else {
+                this.startKey = Bytes.toBytes(startRowkey);
+                this.endKey = Bytes.toBytes(endRowkey);
+            }
+        }
     }
 
     private Configuration getHbaseConf(String hbaseConf) {
@@ -104,32 +111,12 @@ public class HbaseProxy {
         return this.htable.getStartEndKeys();
     }
 
-    public HTable getHtable() {
-        return this.htable;
-    }
-
-    public void setEncode(String encode) {
-        this.encode = encode;
-    }
-
-    public void setStartRange(byte[] startKey) {
-        this.startKey = startKey;
-    }
-
-    public void setEndRange(byte[] endKey) {
-        this.endKey = endKey;
-    }
-
-    public void setStartEndRange(byte[] startKey, byte[] endKey) {
-        this.startKey = startKey;
-        this.endKey = endKey;
-    }
-
-    public void prepare(String[] columns) throws IOException{
+    public void prepare(String[] columns) throws IOException {
         this.scan = new Scan();
         this.scan.setCacheBlocks(false);
 
     }
+
     /*
      * Must be sure that column is in format like 'family: column'
      */
@@ -140,14 +127,14 @@ public class HbaseProxy {
         if (this.startKey != null) {
             LOG.info(
                     "HBaseReader set startkey to {} .",
-                    this.isBinaryRowkey() ? Bytes.toStringBinary(this.startKey) : Bytes
+                    this.isBinaryRowkey ? Bytes.toStringBinary(this.startKey) : Bytes
                             .toString(this.startKey));
             scan.setStartRow(startKey);
         }
         if (this.endKey != null) {
             LOG.info(
                     "HBaseReader set endkey to {} .",
-                    this.isBinaryRowkey() ? Bytes.toStringBinary(this.endKey) : Bytes
+                    this.isBinaryRowkey ? Bytes.toStringBinary(this.endKey) : Bytes
                             .toString(this.endKey));
             scan.setStopRow(endKey);
         }
