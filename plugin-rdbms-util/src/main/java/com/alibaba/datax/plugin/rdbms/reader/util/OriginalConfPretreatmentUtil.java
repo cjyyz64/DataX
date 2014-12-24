@@ -54,7 +54,7 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealJdbcAndTable(Configuration originalConfig) {
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
-        boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE);
+        boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,

@@ -23,7 +23,7 @@ public final class Key {
 
     public final static String PRE_SQL = "preSql";
 
-    public final static String CHECK_SLAVE = "check-slave";
+    public final static String CHECK_SLAVE = "checkSlave";
 
 	public final static String SESSION = "session";
 }
