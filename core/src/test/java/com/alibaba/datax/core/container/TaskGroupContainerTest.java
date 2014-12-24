@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.alibaba.datax.core.faker.FakeLongTimeWriter;
+import com.alibaba.datax.core.faker.FakeOneReader;
 import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
@@ -105,5 +107,25 @@ public class TaskGroupContainerTest extends CaseInitializer {
                 FakeExceptionWriter.class.getName());
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
+    }
+
+    @Test
+    public void testLongTimeWriter() {
+        this.configuration.set("plugin.writer.fakewriter.class",
+                FakeOneReader.class.getName());
+        this.configuration.set("plugin.writer.fakewriter.class",
+                FakeLongTimeWriter.class.getName());
+        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
+                1);
+        Configuration jobContent = this.configuration.getListConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT).get(0);
+        List<Configuration> jobContents = new ArrayList<Configuration>();
+        jobContents.add(jobContent);
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
+
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
+        taskGroupContainer.start();
+        Assert.assertTrue(State.SUCCESS ==
+                taskGroupContainer.getContainerCollector().collect().getState());
     }
 }
