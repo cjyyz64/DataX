@@ -15,13 +15,13 @@ import java.util.Map;
 public final class HbaseUtil {
 
     public static void doPretreatment(Configuration originalConfig) {
-        String hbaseConfig = originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
+        originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
                 HbaseReaderErrorCode.TEMP);
 
         String mode = HbaseUtil.dealMode(originalConfig);
         originalConfig.set(Key.MODE, mode);
 
-        String table = originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.TEMP);
+        originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.TEMP);
         List<Map> column = originalConfig.getList(Key.COLUMN, Map.class);
 
         if (column == null) {
@@ -33,7 +33,10 @@ public final class HbaseUtil {
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
         originalConfig.set(Key.ENCODING, encoding);
 
-        Pair<String, String> rangeInfo = HbaseUtil.dealRowkeyRange(originalConfig);
+        Boolean isBinaryRowkey = originalConfig.getBool(Key.IS_BINARY_ROWKEY);
+        if (isBinaryRowkey == null) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP,"Hbasereader 中必须配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 本项可以配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+        }
     }
 
     public static Pair<String, String> dealRowkeyRange(Configuration originalConfig) {

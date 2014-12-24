@@ -196,7 +196,7 @@ public class HbaseReader extends Reader {
         HbaseColumnCell oneColumnCell = null;
 
         for (Map<String, String> aColumn : column) {
-            ColumnType type = ColumnType.valueOf(aColumn.get("type"));
+            ColumnType type = ColumnType.getByTypeName(aColumn.get("type"));
             String columnName = aColumn.get("name");
             String columnValue = aColumn.get("value");
             String dateformat = aColumn.get("format");

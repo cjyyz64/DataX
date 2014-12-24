@@ -43,6 +43,7 @@
         <module>txtfilereader</module>
         <module>streamreader</module>
         <module>oceanbasereader</module>
+        <module>hbasereader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -52,12 +53,11 @@
         <module>streamwriter</module>
         <module>otswriter</module>
         <module>oraclewriter</module>
-		<module>postgresqlwriter</module>
+        <module>postgresqlwriter</module>
 
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
-        <module>hbasereader</module>
 
     </modules>
 

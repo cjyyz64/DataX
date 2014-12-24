@@ -31,7 +31,7 @@ public class HbaseColumnCell {
         Validate.isTrue(builder.columnName == null || builder.columnValue == null, "Hbasereader  中，column 不能同时配置 列名称 和 列值,二者选其一.");
 
         //columnName 和 columnValue 不能都为 null
-        Validate.isTrue(builder.columnName == null && builder.columnValue == null, "Hbasereader  中，column 需要配置 列名称 或者 列值, 二者选其一.");
+        Validate.isTrue(builder.columnName != null || builder.columnValue != null, "Hbasereader  中，column 需要配置 列名称 或者 列值, 二者选其一.");
 
         if (builder.columnName != null) {
             this.isConstant = false;

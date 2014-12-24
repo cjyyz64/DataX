@@ -1,5 +1,9 @@
 package com.alibaba.datax.plugin.reader.hbasereader;
 
+import com.alibaba.datax.common.exception.DataXException;
+
+import java.util.Arrays;
+
 public enum ColumnType {
     STRING("string"),
     BYTES("bytes"),
@@ -9,8 +13,7 @@ public enum ColumnType {
     LONG("long"),
     FLOAT("float"),
     DOUBLE("double"),
-    DATE("date"),
-    ;
+    DATE("date"),;
 
     private String typeName;
 
@@ -22,4 +25,16 @@ public enum ColumnType {
     public String toString() {
         return this.typeName;
     }
+
+    public static ColumnType getByTypeName(String typeName) {
+        for (ColumnType columnType : values()) {
+            if (columnType.typeName.equalsIgnoreCase(typeName)) {
+                return columnType;
+            }
+        }
+
+        throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP,
+                String.format("Hbasereader 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
+    }
+
 }
