@@ -1,22 +1,22 @@
 package com.alibaba.datax.plugin.reader.hbasereader.util;
 
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.reader.hbasereader.*;
 import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
-import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.fastjson.JSON;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
+import org.apache.http.impl.cookie.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -28,58 +28,64 @@ public class HbaseProxy {
     private static final String META_SCANNER_CACHING = "100";
 
     private Configuration config;
-    private Triple<String, String, Boolean> rangeInfo;
+    private org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo;
 
     private HTable htable;
     private HBaseAdmin admin;
-    private String encode = "UTF-8";
+    private String encoding = "UTF-8";
     private boolean isBinaryRowkey = false;
     private byte[] startKey = null;
     private byte[] endKey = null;
-    private Scan scan = null;
 
     private byte[][] families = null;
 
     private byte[][] columns = null;
 
-    private ResultScanner rs = null;
-
     private Result lastResult = null;
+    private Scan scan;
+    private ResultScanner resultScanner;
 
-    public Triple<String, String, Boolean> getRangeInfo() {
-        return rangeInfo;
+    public static HbaseProxy newProxy(com.alibaba.datax.common.util.Configuration configuration) {
+        String hbaseConfig = configuration.getString(Key.HBASE_CONFIG);
+        String tableName = configuration.getString(Key.TABLE);
+        String encoding = configuration.getString(Key.ENCODING);
+
+        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
+
+        org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo = HbaseUtil.dealRowkeyRange(configuration);
+
+        return new HbaseProxy(hbaseConfig, tableName, rangeInfo, encoding, isBinaryRowkey);
     }
 
-    public static HbaseProxy newProxy(String hbaseConf, String tableName, Triple<String, String, Boolean> rangeInfo,String encoding) throws IOException {
-        return new HbaseProxy(hbaseConf, tableName, rangeInfo,encoding);
-    }
-
-    private HbaseProxy(String hbaseConf, String tableName, Triple<String, String, Boolean> rangeInfo,String encoding) throws IOException {
+    private HbaseProxy(String hbaseConf, String tableName, org.apache.commons.lang3.tuple.Pair rangeInfo, String encoding, boolean isBinaryRowkey) {
         Configuration conf = getHbaseConf(hbaseConf);
         this.config = new Configuration(conf);
+
         this.config.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
-        htable = HTableFactory.createHTable(this.config, tableName);
-        admin = HTableFactory.createHBaseAdmin(this.config);
+        try {
+            htable = HTableFactory.createHTable(this.config, tableName);
+            admin = HTableFactory.createHBaseAdmin(this.config);
 
-        this.check();
-
-        this.encode = encoding;
+            this.check();
+        } catch (Exception e) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
+        }
+        this.encoding = encoding;
+        this.isBinaryRowkey = isBinaryRowkey;
         this.rangeInfo = rangeInfo;
         dealRangeInfo(this.rangeInfo);
     }
 
-    private void dealRangeInfo(Triple<String, String, Boolean> rangeInfo) {
-        if (this.rangeInfo != null) {
-            this.isBinaryRowkey = this.rangeInfo.getRight();
-            String startRowkey = rangeInfo.getLeft();
-            String endRowkey = rangeInfo.getMiddle();
-            if (this.isBinaryRowkey) {
-                this.startKey = Bytes.toBytesBinary(startRowkey);
-                this.endKey = Bytes.toBytesBinary(endRowkey);
-            } else {
-                this.startKey = Bytes.toBytes(startRowkey);
-                this.endKey = Bytes.toBytes(endRowkey);
-            }
+    private void dealRangeInfo(org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo) {
+        String startRowkey = rangeInfo.getLeft();
+        String endRowkey = rangeInfo.getRight();
+
+        if (this.isBinaryRowkey) {
+            this.startKey = startRowkey == null ? null : Bytes.toBytesBinary(startRowkey);
+            this.endKey = endRowkey == null ? null : Bytes.toBytesBinary(endRowkey);
+        } else {
+            this.startKey = startRowkey == null ? null : Bytes.toBytes(startRowkey);
+            this.endKey = endRowkey == null ? null : Bytes.toBytes(endRowkey);
         }
     }
 
@@ -111,10 +117,33 @@ public class HbaseProxy {
         return this.htable.getStartEndKeys();
     }
 
-    public void prepare(String[] columns) throws IOException {
+    public void prepare(List<HbaseColumnCell> hbaseColumnCells) throws Exception {
         this.scan = new Scan();
-        this.scan.setCacheBlocks(false);
+        scan.setCacheBlocks(false);
 
+        if (this.startKey != null) {
+            LOG.info("HBaseReader set startkey to {} .", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding));
+            this.scan.setStartRow(startKey);
+        }
+        if (this.endKey != null) {
+            LOG.info(
+                    "HBaseReader set endkey to {} .", bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
+            this.scan.setStopRow(endKey);
+        }
+
+        boolean isConstant;
+        boolean isRowkeyColumn;
+        for (HbaseColumnCell cell : hbaseColumnCells) {
+            isConstant = cell.isConstant();
+            isRowkeyColumn = this.isRowkeyColumn(cell.getColumnName());
+
+            if (!isConstant && !isRowkeyColumn) {
+                this.scan.addColumn(cell.getCf(), cell.getQualifier());
+            }
+        }
+
+        this.htable.setScannerCaching(SCAN_CACHE);
+        this.resultScanner = this.htable.getScanner(this.scan);
     }
 
     /*
@@ -151,96 +180,159 @@ public class HbaseProxy {
         }
 
         htable.setScannerCaching(SCAN_CACHE);
-        this.rs = htable.getScanner(this.scan);
+        this.resultScanner = htable.getScanner(this.scan);
     }
 
-    /**
-     * @param columnType 只包含column的type，不包含rowkey的type，事实上，目前DataX中rowkey只支持string类型
-     * @throws Exception
-     */
-    public boolean fetchLine(Record line, String[] columnType) throws Exception {
-        if (null == this.rs) {
-            throw new IllegalStateException("HBase Client try to fetch data failed .");
-        }
+
+    public boolean fetchLine(Record record, List<HbaseColumnCell> hbaseColumnCells) throws Exception {
 
         Result result;
         try {
-            result = this.rs.next();
+            result = this.resultScanner.next();
         } catch (IOException e) {
             if (this.lastResult != null) {
-                this.scan.setStartRow(lastResult.getRow());
+                this.scan.setStartRow(this.lastResult.getRow());
             }
-            this.rs = htable.getScanner(this.scan);
-            result = this.rs.next();
+            this.resultScanner = htable.getScanner(scan);
+            result = this.resultScanner.next();
             if (this.lastResult != null && Bytes.equals(this.lastResult.getRow(), result.getRow())) {
-                result = this.rs.next();
+                result = this.resultScanner.next();
             }
         }
         if (null == result) {
             return false;
         }
-        lastResult = result;
+        this.lastResult = result;
 
         try {
-            // need to extract rowkey info
-            if (this.isNeedRowkey()) {
-                if (this.isBinaryRowkey()) {
-                    line.addColumn(new StringColumn(Bytes.toStringBinary(result.getRow())));
-                } else {
-                    line.addColumn(new StringColumn(new String(result.getRow(), encode)));
-                }
-            }
+            byte[] tempValue;
+            String columnName;
+            ColumnType columnType;
 
-            String tempValue = "";
-            String tempValueType = "";
-            for (int i = 0; i < this.families.length; i++) {
-                byte[] value = result.getValue(this.families[i], this.columns[i]);
-                if (null == value || 0 == value.length) {
-                    //TODO
-                    line.addColumn(null);
+            byte[] cf;
+            byte[] qualifier;
+
+            for (HbaseColumnCell cell : hbaseColumnCells) {
+                columnType = cell.getColumnType();
+                if (cell.isConstant()) {
+                    // 对常量字段的处理
+                    fillRecordWithConstantValue(record, cell);
                 } else {
-                    tempValueType = columnType[i];
-                    if (tempValueType.equals("string")) {
-                        tempValue = new String(value, encode);
-                    } else if (tempValueType.equals("int")) {
-                        tempValue = String.valueOf(Bytes.toInt(value));
-                    } else if (tempValueType.equals("long")) {
-                        tempValue = String.valueOf(Bytes.toLong(value));
-                    } else if (tempValueType.equals("short")) {
-                        tempValue = String.valueOf(Bytes.toShort(value));
-                    } else if (tempValueType.equals("float")) {
-                        tempValue = String.valueOf(Bytes.toFloat(value));
-                    } else if (tempValueType.equals("double")) {
-                        tempValue = String.valueOf(Bytes.toDouble(value));
-                    } else if (tempValueType.equals("boolean")) {
-                        tempValue = String.valueOf(Bytes.toBoolean(value));
+                    // 根据列名称获取值
+                    // 对 rowkey 的读取，需要考虑 isBinaryRowkey；而对普通字段的读取，isBinaryRowkey 无影响
+
+                    columnName = cell.getColumnName();
+
+                    if (isRowkeyColumn(columnName)) {
+                        doFillRecord(result.getRow(), columnType, this.isBinaryRowkey,
+                                this.encoding, cell.getDateformat(), record);
+                    } else {
+                        cf = cell.getCf();
+                        qualifier = cell.getQualifier();
+                        tempValue = result.getValue(cf, qualifier);
+
+                        doFillRecord(tempValue, columnType, false, this.encoding,
+                                cell.getDateformat(), record);
                     }
-
-                    line.addColumn(new StringColumn(tempValue));
                 }
             }
         } catch (Exception e) {
             // 注意，这里catch的异常，期望是byte数组转换失败的情况。而实际上，string的byte数组，转成整数类型是不容易报错的。但是转成double类型容易报错。
-//            line.clear();
 
-            if (this.isBinaryRowkey()) {
-                line.addColumn(new StringColumn(Bytes.toStringBinary(result.getRow())));
-            } else {
-                line.addColumn(new StringColumn(new String(result.getRow(), encode)));
-            }
+            record.setColumn(0, new StringColumn(this.bytesToString(result.getRow(), this.isBinaryRowkey, this.encoding)));
+
             throw e;
         }
 
         return true;
     }
 
-    public void close() throws IOException {
-        if (null != rs) {
-            rs.close();
+    private boolean isRowkeyColumn(String columnName) {
+        return "rowkey".equalsIgnoreCase(columnName);
+    }
+
+    private void doFillRecord(byte[] byteArray, ColumnType columnType, boolean isBinaryRowkey, String encoding, String dateformat, Record record) throws Exception {
+        switch (columnType) {
+            case BOOLEAN:
+                record.addColumn(new BoolColumn(Bytes.toBoolean(byteArray)));
+                break;
+            case SHORT:
+                record.addColumn(new LongColumn(String.valueOf(Bytes.toShort(byteArray))));
+                break;
+            case INT:
+                record.addColumn(new LongColumn(Bytes.toInt(byteArray)));
+                break;
+            case LONG:
+                record.addColumn(new LongColumn(Bytes.toLong(byteArray)));
+                break;
+            case BYTES:
+                record.addColumn(new BytesColumn(byteArray));
+                break;
+            case FLOAT:
+                record.addColumn(new DoubleColumn(Bytes.toFloat(byteArray)));
+                break;
+            case DOUBLE:
+                record.addColumn(new DoubleColumn(Bytes.toDouble(byteArray)));
+                break;
+            case STRING:
+                record.addColumn(new StringColumn(bytesToString(byteArray, isBinaryRowkey, encoding)));
+                break;
+
+            case DATE:
+                String dateValue = this.bytesToString(byteArray, isBinaryRowkey, encoding);
+                record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
+                break;
+            default:
+                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "");
         }
-        if (null != htable) {
+    }
+
+
+    private String bytesToString(byte[] byteArray, boolean isBinaryRowkey, String encoding) throws Exception {
+        if (isBinaryRowkey) {
+            return Bytes.toStringBinary(byteArray);
+        } else {
+            return new String(byteArray, this.encoding);
+        }
+    }
+
+    private void fillRecordWithConstantValue(Record record, HbaseColumnCell cell) throws Exception {
+        String constantValue = cell.getColumnValue();
+        ColumnType columnType = cell.getColumnType();
+        switch (columnType) {
+            case BOOLEAN:
+                record.addColumn(new BoolColumn(constantValue));
+                break;
+            case SHORT:
+            case INT:
+            case LONG:
+                record.addColumn(new LongColumn(constantValue));
+                break;
+            case BYTES:
+                record.addColumn(new BytesColumn(constantValue.getBytes("utf-8")));
+                break;
+            case FLOAT:
+            case DOUBLE:
+                record.addColumn(new DoubleColumn(constantValue));
+                break;
+            case STRING:
+                record.addColumn(new StringColumn(constantValue));
+                break;
+            case DATE:
+                record.addColumn(new DateColumn(DateUtils.parseDate(constantValue, new String[]{cell.getDateformat()})));
+                break;
+            default:
+                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "");
+        }
+    }
+
+    public void close() throws IOException {
+        if (this.resultScanner != null) {
+            this.resultScanner.close();
+        }
+        if (this.htable != null) {
             htable.close();
-            com.alibaba.datax.plugin.reader.hbasereader.HTableFactory.closeHtable();
+            HTableFactory.closeHtable();
         }
     }
 

@@ -7,14 +7,12 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
+import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.hadoop.hbase.thrift.generated.Hbase;
+import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 public class HbaseReader extends Reader {
@@ -23,91 +21,18 @@ public class HbaseReader extends Reader {
                 .getLogger(Job.class);
 
         private Configuration originalConfig;
-
-        private String hbaseConfig;
-        private String mode;
-        private String table;
-        private List<Map> column;
-        private String encoding;
-
-        private Triple<String, String, Boolean> rangeInfo;
         private HbaseProxy hbaseProxy = null;
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
 
-            this.hbaseConfig = this.originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
-                    HbaseReaderErrorCode.TEMP);
-
-            this.mode = dealMode(this.originalConfig);
-            this.originalConfig.set(Key.MODE, this.mode);
-
-            this.table = this.originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.TEMP);
-            this.column = this.originalConfig.getList(Key.COLUMN, Map.class);
-            if (this.column == null) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "必须配置 Hbasereader 的 column 配置项.");
-            }
-
-            this.checkColumn(this.column);
-
-            this.encoding = this.originalConfig.getString(Key.ENCODING, "utf-8");
-            this.originalConfig.set(Key.ENCODING, this.encoding);
-
-            this.rangeInfo = dealRowkeyRange(this.originalConfig);
-            this.originalConfig.set(Constant.HAS_RANGE_CONFIG, rangeInfo != null);
-        }
-
-        private Triple<String, String, Boolean> dealRowkeyRange(Configuration originalConfig) {
-            Map<String, Object> range = originalConfig.getMap(Constant.RANGE);
-            if (range == null) {
-                return null;
-            }
-
-            String startRowkey = (String) range.get(Key.START_ROWKEY);
-            String endRowkey = (String) range.get(Key.END_ROWKEY);
-            Boolean isBinaryRowkey;
-            Object isBinaryRowkeyTemp = range.get(Key.IS_BINARY_ROWKEY);
-            if (startRowkey != null || endRowkey != null) {
-                if (isBinaryRowkeyTemp == null) {
-                    throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您配置了rowkey 的范围，则必须配置 isBinaryRowkey，本项可以配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
-                }
-
-                if ("true".equalsIgnoreCase(isBinaryRowkeyTemp.toString())) {
-                    isBinaryRowkey = true;
-                } else if ("false".equalsIgnoreCase(isBinaryRowkeyTemp.toString())) {
-                    isBinaryRowkey = false;
-                } else {
-                    throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "isBinaryRowkey，只能配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
-                }
-            }
-            return ImmutableTriple.of(startRowkey, endRowkey, isBinaryRowkey);
-        }
-
-        private String dealMode(Configuration originalConfig) {
-            String mode = originalConfig.getString(Key.MODE, "normal");
-            if (!mode.equalsIgnoreCase("normal") && !mode.equalsIgnoreCase("multiVersion")) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP,
-                        "mode 仅能配置为 normal 或者 multiVersion .");
-            }
-
-            return mode;
+            HbaseUtil.doPretreatment(this.originalConfig);
         }
 
         @Override
         public void prepare() {
-            try {
-                this.hbaseProxy = HbaseProxy.newProxy(this.hbaseConfig, this.table,
-                        this.rangeInfo, this.encoding);
-            } catch (IOException e) {
-                try {
-                    if (null != hbaseProxy) {
-                        hbaseProxy.close();
-                    }
-                } catch (IOException e1) {
-                }
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
-            }
+            this.hbaseProxy = HbaseProxy.newProxy(this.originalConfig);
         }
 
         @Override
@@ -132,81 +57,49 @@ public class HbaseReader extends Reader {
             }
         }
 
-        private void checkColumn(List<Map> column) {
-            HbaseReader.parseColumn(column);
-        }
     }
 
     public static class Task extends Reader.Task {
         private Configuration taskConfig;
 
-        private String tableName = null;
-        private String columnTypeAndNames = null;
-        private String hbaseConf = null;
-        // private String rowkeyRange = null;
-        private boolean isBinaryRowkey = false;
         private HbaseProxy hbaseProxy = null;
 
-        private List<HbaseColumnCell> hbaseColumnCells;
         private List<Map> column;
+        private List<HbaseColumnCell> hbaseColumnCells;
 
         @Override
         public void init() {
             this.taskConfig = super.getPluginJobConf();
-            this.tableName = this.taskConfig.getString(Key.TABLE);
-            this.hbaseConf = this.taskConfig.getString(Key.HBASE_CONFIG);
 
             this.column = this.taskConfig.getList(Key.COLUMN, Map.class);
             this.hbaseColumnCells = HbaseReader.parseColumn(this.column);
-
-            Triple<String, String, Boolean> rangeInfo = ImmutableTriple.of(this.taskConfig.getString(Key.START_ROWKEY), this.taskConfig.getString(Key.END_ROWKEY), this.taskConfig.getBool(Key.IS_BINARY_ROWKEY));
-
-            String encoding = this.taskConfig.getString(Key.ENCODING);
-
-            try {
-                this.hbaseProxy = HbaseProxy.newProxy(hbaseConf, tableName, rangeInfo, encoding);
-            } catch (IOException e) {
-                try {
-                    if (this.hbaseProxy != null) {
-                        this.hbaseProxy.close();
-                    }
-                } catch (IOException e1) {
-                }
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
-            }
         }
 
         @Override
         public void prepare() {
-            super.prepare();
+            this.hbaseProxy = HbaseProxy.newProxy(this.taskConfig);
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
-
-            //TODO
-            String[] columnFamilyAndQualifier = null;
-
             try {
-                this.hbaseProxy.prepare(columnFamilyAndQualifier);
+                this.hbaseProxy.prepare(this.hbaseColumnCells);
             } catch (Exception e) {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
             }
 
-            Record line = recordSender.createRecord();
+            Record record = recordSender.createRecord();
             boolean fetchOK = true;
             while (true) {
                 try {
-                    fetchOK = this.hbaseProxy.fetchLine(line, this.columnTypes);
+                    fetchOK = this.hbaseProxy.fetchLine(record, this.hbaseColumnCells);
                 } catch (Exception e) {
-//                    LOG.warn(String.format("Bad line rowkey:[%s] for Reason:[%s]",
-//                            line == null ? null : line.toString(','),
-//                            e.getMessage()), e);
+                    super.getTaskPluginCollector().collectDirtyRecord(record, e);
                     continue;
                 }
                 if (fetchOK) {
-                    recordSender.sendToWriter(line);
-                    line = recordSender.createRecord();
+                    recordSender.sendToWriter(record);
+                    record = recordSender.createRecord();
                 } else {
                     break;
                 }
@@ -300,11 +193,32 @@ public class HbaseReader extends Reader {
     public static List<HbaseColumnCell> parseColumn(List<Map> column) {
         List<HbaseColumnCell> hbaseColumnCells = new ArrayList<HbaseColumnCell>();
 
+        HbaseColumnCell oneColumnCell = null;
+
         for (Map<String, String> aColumn : column) {
-            String type = aColumn.get("type");
+            ColumnType type = ColumnType.valueOf(aColumn.get("type"));
             String columnName = aColumn.get("name");
             String columnValue = aColumn.get("value");
-            HbaseColumnCell oneColumnCell = new HbaseColumnCell.Builder(ColumnType.valueOf(type)).columnName(columnName).columnValue(columnValue).build();
+            String dateformat = aColumn.get("format");
+
+            if (type == ColumnType.DATE) {
+                Validate.isTrue(dateformat != null, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
+                oneColumnCell = new HbaseColumnCell
+                        .Builder(type)
+                        .columnName(columnName)
+                        .columnValue(columnValue)
+                        .dateformat(dateformat)
+                        .build();
+            } else {
+                Validate.isTrue(dateformat == null, "Hbasereader 的列配置中，如果类型不为时间，则不需要指定时间格式.");
+
+                oneColumnCell = new HbaseColumnCell
+                        .Builder(type)
+                        .columnName(columnName)
+                        .columnValue(columnValue)
+                        .build();
+            }
+
             hbaseColumnCells.add(oneColumnCell);
         }
 

@@ -8,7 +8,9 @@ public enum ColumnType {
     INT("int"),
     LONG("long"),
     FLOAT("float"),
-    DOUBLE("double"),;
+    DOUBLE("double"),
+    DATE("date"),
+    ;
 
     private String typeName;
 
