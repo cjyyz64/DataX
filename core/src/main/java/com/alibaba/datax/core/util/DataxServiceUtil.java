@@ -183,6 +183,10 @@ public final class DataxServiceUtil {
     public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
         Communication communication = new Communication();
         communication.setState(taskGroup.getState());
+        if(taskGroup.getStage() == null) {
+            taskGroup.setStage(0);
+        }
+
         if (taskGroup.getTotalRecords() == null) {
             taskGroup.setTotalRecords(0L);
         }
@@ -199,16 +203,27 @@ public final class DataxServiceUtil {
             taskGroup.setErrorBytes(0L);
         }
 
+        communication.setLongCounter("stage",taskGroup.getStage());
+
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
-        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS, taskGroup.getTotalRecords());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS,
+                taskGroup.getTotalRecords()-taskGroup.getErrorRecords());
         communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
 
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
-        communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES, taskGroup.getTotalBytes());
+        communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES,
+                taskGroup.getTotalBytes()-taskGroup.getErrorBytes());
         communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
 
+        communication.setLongCounter("readFailedRecords",taskGroup.getErrorRecords());
+        communication.setLongCounter("writeFailedRecords",0);
+        communication.setLongCounter("totalErrorRecords",taskGroup.getErrorRecords());
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
+
+        communication.setLongCounter("readFailedBytes",taskGroup.getErrorBytes());
+        communication.setLongCounter("writeFailedBytes",0);
         communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
+        communication.setLongCounter("totalErrorBytes",taskGroup.getErrorBytes());
 
         String errorMessage = taskGroup.getErrorMessage();
         if (StringUtils.isNotBlank(errorMessage)) {
