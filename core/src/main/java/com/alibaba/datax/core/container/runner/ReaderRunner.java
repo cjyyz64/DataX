@@ -45,8 +45,9 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
 			recordSender.flush();
 			LOG.debug("task reader starts to do post ...");
 			taskReader.post();
-			// automatic flush
-			super.markSuccess();
+            // 这里不能标记为成功，成功的标志由 writerRunner 来标志
+            // 否则可能导致reader先结束，而writer还没有结束的严重bug
+			// super.markSuccess();
 		} catch (Throwable e) {
 			LOG.error("Reader runner Received Exceptions:", e);
 			super.markFail(e);

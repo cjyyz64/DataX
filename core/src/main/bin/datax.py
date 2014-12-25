@@ -172,7 +172,10 @@ def add_core_config_for_http(job_json_content, job_path):
     job_id = get_jobId_from_http(job_path)
     if job_id:
         job_json_content = json.loads(job_json_content)
-        job_json_content["core"] = {"container":{"job":{"id":job_id}}}
+        if not job_json_content.has_key("core"):
+            job_json_content["core"] = {"container":{"job":{"id":job_id}}}
+        else:
+            job_json_content["core"]["container"] = {"job":{"id":job_id}}
     else:
         return None
 
