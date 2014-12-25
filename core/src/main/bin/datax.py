@@ -37,7 +37,7 @@ from string import Template
 
 ########## 全局配置 ###########
 RET_STATE = {
-    "KILL": -2,
+    "KILL": 143,
     "FAIL": -1,
     "OK": 0,
     "RUN": 1,
