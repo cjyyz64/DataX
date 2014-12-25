@@ -258,10 +258,14 @@ public class HbaseProxy {
 
 
     private String bytesToString(byte[] byteArray, boolean isBinaryRowkey, String encoding) throws Exception {
+        if (byteArray == null) {
+            return null;
+        }
+
         if (isBinaryRowkey) {
             return Bytes.toStringBinary(byteArray);
         } else {
-            return new String(byteArray, this.encoding);
+            return new String(byteArray, encoding);
         }
     }
 
