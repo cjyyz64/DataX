@@ -6,6 +6,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 用于对 Reader/Writer 自身的 Log 级别进行设置的工具类
+ */
 public final class LogUtil {
 
     private static final String LOG_LEVEL_FLAG = "logLevel";
@@ -14,9 +17,9 @@ public final class LogUtil {
         private static String readerLogLevel;
 
         // 只调用一次
-        public static void initLoglevel(Class clazz, Configuration configuration) {
+        public static Logger initLoglevel(Class clazz, Configuration configuration) {
             readerLogLevel = LogUtil.getLoglevel(configuration);
-            LogUtil.getLogger(clazz, readerLogLevel);
+            return LogUtil.getLogger(clazz, readerLogLevel);
         }
 
         public static Logger getLogger(Class clazz) {
@@ -57,7 +60,8 @@ public final class LogUtil {
         }
 
         if (logger instanceof ch.qos.logback.classic.Logger) {
-            ((ch.qos.logback.classic.Logger) logger).setLevel(Level.toLevel(logLevel));
+            ((ch.qos.logback.classic.Logger) logger).setLevel(Level.toLevel(logLevel,
+                    Level.INFO));
         }
     }
 

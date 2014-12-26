@@ -92,9 +92,7 @@ public final class HbaseSplitUtil {
             p.set(Key.END_ROWKEY, thisEndKey);
 
             if (IS_DEBUG) {
-                LOG.debug("startRowkey:[{}],endRowkey:[{}] .",
-                        p.getString(Key.START_ROWKEY, ""),
-                        p.getString(Key.END_ROWKEY, ""));
+                LOG.debug("startRowkey:[{}], endRowkey:[{}] .", thisStartKey, thisEndKey);
             }
 
             configurations.add(p);

@@ -1,12 +1,13 @@
 package com.alibaba.datax.plugin.reader.hbasereader;
 
+import com.alibaba.datax.common.base.BaseObject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
  * 描述 hbasereader 插件中，column 配置中的一个单元项实体
  */
-public class HbaseColumnCell {
+public class HbaseColumnCell extends BaseObject{
     private ColumnType columnType;
 
     // columnName 格式为：列族:列名

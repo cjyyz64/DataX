@@ -5,21 +5,18 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.hbasereader.util.LogUtil;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
-import org.apache.commons.lang.StringUtils;
+import com.alibaba.datax.plugin.reader.hbasereader.util.LogUtil;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class HbaseReader extends Reader {
     public static class Job extends Reader.Job {
-        private final static Logger LOG = LoggerFactory
-                .getLogger(Job.class);
+        private static Logger LOG;
 
         private Configuration originalConfig;
         private HbaseProxy hbaseProxy = null;
@@ -27,9 +24,11 @@ public class HbaseReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            LogUtil.ReaderLog.initLoglevel(Job.class, this.originalConfig);
+            LOG = LogUtil.ReaderLog.initLoglevel(Job.class, this.originalConfig);
 
             HbaseUtil.doPretreatment(this.originalConfig);
+
+            LOG.debug("After init(), now originalConfig is:{}", this.originalConfig);
         }
 
         @Override
@@ -121,70 +120,6 @@ public class HbaseReader extends Reader {
                     this.hbaseProxy.close();
                 } catch (Exception e) {
                     //
-                }
-            }
-        }
-
-        private void parseColumn(String columnTypeAndNames,
-                                 HbaseColumnConfig hbaseColumnConfig) {
-            String[] columnArray = columnTypeAndNames.split(",");
-            int columnLength = columnArray.length;
-            if (columnLength < 1) {
-//                throw new DataXException(
-//                        String.format("Configed Hbase column=[%s] is empty !",
-//                                columnTypeAndNames));
-            }
-
-            hbaseColumnConfig.columnTypes = new String[columnLength];
-            hbaseColumnConfig.columnFamilyAndQualifiers = new String[columnLength];
-
-            String tempColumn = null;
-            String[] tempColumnArray = null;
-            for (int i = 0; i < columnLength; i++) {
-                tempColumn = columnArray[i].trim();
-                if (StringUtils.isBlank(tempColumn)) {
-//                    throw new DataXException(String.format(
-//                            "Configed Hbase column=[%s] has empty value!",
-//                            columnTypeAndNames));
-                }
-                tempColumnArray = tempColumn.split("\\|");
-
-                if (2 != tempColumnArray.length) {
-//                    throw new DataXException(
-//                            String.format(
-//                                    "Wrong Format:[%s], Right Format:type|family:qualifier",
-//                                    tempColumn));
-                }
-
-                hbaseColumnConfig.columnTypes[i] = tempColumnArray[0].trim()
-                        .toLowerCase();
-
-                String columnFamilyAndQualifier = tempColumnArray[1].trim();
-                hbaseColumnConfig.columnFamilyAndQualifiers[i] = columnFamilyAndQualifier;
-
-                if (!columnFamilyAndQualifier.contains(":")) {
-                    throw new IllegalArgumentException(
-                            String.format(
-                                    "Column %s must be like 'family:qualifier'",
-                                    tempColumn));
-                }
-            }
-        }
-
-        private void checkColumnTypes(String[] tempColumnTypes) {
-            Set<String> hbaseColumnTypeSet = new HashSet<String>();
-            hbaseColumnTypeSet.add("boolean");
-            hbaseColumnTypeSet.add("short");
-            hbaseColumnTypeSet.add("int");
-            hbaseColumnTypeSet.add("long");
-            hbaseColumnTypeSet.add("float");
-            hbaseColumnTypeSet.add("double");
-            hbaseColumnTypeSet.add("string");
-            for (String type : tempColumnTypes) {
-                if (!hbaseColumnTypeSet.contains(type.trim().toLowerCase())) {
-//                    throw new DataXException(String.format(
-//                            "Unsupported hbase type[%s], only support types:%s .",
-//                            type, hbaseColumnTypeSet));
                 }
             }
         }
