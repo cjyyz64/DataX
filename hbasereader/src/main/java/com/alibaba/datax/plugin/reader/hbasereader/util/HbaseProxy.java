@@ -14,7 +14,6 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.http.impl.cookie.DateUtils;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -22,9 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class HbaseProxy {
-    private final static Logger LOG = LoggerFactory.getLogger(HbaseProxy.class);
-
-    private static final int SCAN_CACHE = 256;
+    private final static Logger LOG = LogUtil.ReaderLog.getLogger(HbaseProxy.class);
 
     private static final String META_SCANNER_CACHING = "100";
 
@@ -40,22 +37,26 @@ public class HbaseProxy {
 
     private Result lastResult = null;
     private Scan scan;
+    private int scanCache;
     private ResultScanner resultScanner;
 
     public static HbaseProxy newProxy(com.alibaba.datax.common.util.Configuration configuration) {
-        String hbaseConfig = configuration.getString(Key.HBASE_CONFIG);
-        String tableName = configuration.getString(Key.TABLE);
-        String encoding = configuration.getString(Key.ENCODING);
-
-        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
-
         org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo = HbaseUtil.dealRowkeyRange(configuration);
 
-        return new HbaseProxy(hbaseConfig, tableName, rangeInfo, encoding, isBinaryRowkey);
+        return new HbaseProxy(configuration, rangeInfo);
     }
 
-    private HbaseProxy(String hbaseConf, String tableName, org.apache.commons.lang3.tuple.Pair rangeInfo, String encoding, boolean isBinaryRowkey) {
-        Configuration conf = getHbaseConf(hbaseConf);
+    private HbaseProxy(com.alibaba.datax.common.util.Configuration configuration,
+                       org.apache.commons.lang3.tuple.Pair rangeInfo) {
+
+        String userConfiguredHbaseSiteConfig = configuration.getString(Key.HBASE_CONFIG);
+        String tableName = configuration.getString(Key.TABLE);
+        this.encoding = configuration.getString(Key.ENCODING);
+        this.isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
+
+        this.scanCache = configuration.getInt(Key.SCAN_CACHE, Constant.DEFAULT_SCAN_CACHE);
+
+        Configuration conf = getHbaseConf(userConfiguredHbaseSiteConfig);
         this.config = new Configuration(conf);
 
         this.config.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
@@ -67,8 +68,7 @@ public class HbaseProxy {
         } catch (Exception e) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
         }
-        this.encoding = encoding;
-        this.isBinaryRowkey = isBinaryRowkey;
+
         this.rangeInfo = rangeInfo;
         dealRangeInfo(this.rangeInfo);
     }
@@ -148,7 +148,7 @@ public class HbaseProxy {
             }
         }
 
-        this.htable.setScannerCaching(SCAN_CACHE);
+        this.scan.setCaching(this.scanCache);
         this.resultScanner = this.htable.getScanner(this.scan);
     }
 

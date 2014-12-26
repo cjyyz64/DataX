@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.hbasereader.util.LogUtil;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
@@ -26,6 +27,7 @@ public class HbaseReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
+            LogUtil.ReaderLog.initLoglevel(Job.class, this.originalConfig);
 
             HbaseUtil.doPretreatment(this.originalConfig);
         }

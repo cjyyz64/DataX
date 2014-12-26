@@ -29,4 +29,6 @@ public final class Key {
 
     public final static String IS_BINARY_ROWKEY = "isBinaryRowkey";
 
+    public final static String SCAN_CACHE = "scanCache";
+
 }
