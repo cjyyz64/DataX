@@ -103,12 +103,18 @@ public class HttpClientUtilTest {
                 System.out.println("失败第3次");
                 return new Exception("失败第3次");
             }
+        }).doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                System.out.println("失败第4次");
+                return new Exception("失败第4次");
+            }
         })
                 .doReturn("成功")
                 .when(httpClientUtil).executeAndGet(any(HttpRequestBase.class));
 
 
-        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 4, 1000l);
+        String str = httpClientUtil.executeAndGetWithRetry(httpRequestBase, 5, 1000l);
         Assert.assertEquals(str, "成功");
 
         try {
