@@ -118,7 +118,9 @@ public final class DataxServiceUtil {
             jsonEntity.setContentType("application/json");
             httpPost.setEntity(jsonEntity);
 
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
+            //String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
+            //提交taskGroup不重试,防止重跑
+            String resJson = httpClientUtil.executeAndGet(httpPost);
             Result result = SerializationUtil.gson2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
