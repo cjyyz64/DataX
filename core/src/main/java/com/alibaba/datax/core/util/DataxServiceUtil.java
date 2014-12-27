@@ -61,7 +61,7 @@ public final class DataxServiceUtil {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(jobStatus));
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(jobStatus), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
@@ -113,7 +113,7 @@ public final class DataxServiceUtil {
             HttpPost httpPost = HttpClientUtil.getPostRequest();
             httpPost.setURI(new URI(url));
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroup));
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroup), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPost.setEntity(jsonEntity);
@@ -162,7 +162,7 @@ public final class DataxServiceUtil {
             httpPut.setURI(new URI(url));
 
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroupStatus));
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroupStatus), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
@@ -185,7 +185,7 @@ public final class DataxServiceUtil {
     public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
         Communication communication = new Communication();
         communication.setState(taskGroup.getState());
-        if(taskGroup.getStage() == null) {
+        if (taskGroup.getStage() == null) {
             taskGroup.setStage(0);
         }
 
@@ -205,27 +205,27 @@ public final class DataxServiceUtil {
             taskGroup.setErrorBytes(0L);
         }
 
-        communication.setLongCounter("stage",taskGroup.getStage());
+        communication.setLongCounter("stage", taskGroup.getStage());
 
         communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
         communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS,
-                taskGroup.getTotalRecords()-taskGroup.getErrorRecords());
+                taskGroup.getTotalRecords() - taskGroup.getErrorRecords());
         communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
 
         communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
         communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES,
-                taskGroup.getTotalBytes()-taskGroup.getErrorBytes());
+                taskGroup.getTotalBytes() - taskGroup.getErrorBytes());
         communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
 
-        communication.setLongCounter("readFailedRecords",taskGroup.getErrorRecords());
-        communication.setLongCounter("writeFailedRecords",0);
-        communication.setLongCounter("totalErrorRecords",taskGroup.getErrorRecords());
+        communication.setLongCounter("readFailedRecords", taskGroup.getErrorRecords());
+        communication.setLongCounter("writeFailedRecords", 0);
+        communication.setLongCounter("totalErrorRecords", taskGroup.getErrorRecords());
         communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
 
-        communication.setLongCounter("readFailedBytes",taskGroup.getErrorBytes());
-        communication.setLongCounter("writeFailedBytes",0);
+        communication.setLongCounter("readFailedBytes", taskGroup.getErrorBytes());
+        communication.setLongCounter("writeFailedBytes", 0);
         communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
-        communication.setLongCounter("totalErrorBytes",taskGroup.getErrorBytes());
+        communication.setLongCounter("totalErrorBytes", taskGroup.getErrorBytes());
 
         String errorMessage = taskGroup.getErrorMessage();
         if (StringUtils.isNotBlank(errorMessage)) {
