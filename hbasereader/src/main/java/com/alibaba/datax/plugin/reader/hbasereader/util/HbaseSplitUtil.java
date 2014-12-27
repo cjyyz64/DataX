@@ -17,6 +17,9 @@ public final class HbaseSplitUtil {
 
     private final static boolean IS_DEBUG = LOG.isDebugEnabled();
 
+    /**
+     * TODO start/end rowkey 相等，没有数据？
+     */
     public static List<Configuration> split(Configuration configuration, HbaseProxy hbaseProxy) {
         List<Configuration> resultConfigurations;
         boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);

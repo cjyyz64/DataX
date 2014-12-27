@@ -28,7 +28,7 @@ public class HbaseReader extends Reader {
 
             HbaseUtil.doPretreatment(this.originalConfig);
 
-            LOG.debug("After init(), now originalConfig is:{}", this.originalConfig);
+            LOG.debug("After init(), now originalConfig is:\n{}\n", this.originalConfig);
         }
 
         @Override
