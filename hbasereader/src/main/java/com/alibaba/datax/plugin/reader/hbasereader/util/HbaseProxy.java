@@ -26,7 +26,6 @@ public class HbaseProxy {
     private static final String META_SCANNER_CACHING = "100";
 
     private Configuration config;
-    private org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo;
 
     private HTable htable;
     private HBaseAdmin admin;
@@ -41,13 +40,11 @@ public class HbaseProxy {
     private ResultScanner resultScanner;
 
     public static HbaseProxy newProxy(com.alibaba.datax.common.util.Configuration configuration) {
-        org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo = HbaseUtil.dealRowkeyRange(configuration);
 
-        return new HbaseProxy(configuration, rangeInfo);
+        return new HbaseProxy(configuration);
     }
 
-    private HbaseProxy(com.alibaba.datax.common.util.Configuration configuration,
-                       org.apache.commons.lang3.tuple.Pair rangeInfo) {
+    private HbaseProxy(com.alibaba.datax.common.util.Configuration configuration) {
 
         String userConfiguredHbaseSiteConfig = configuration.getString(Key.HBASE_CONFIG);
         String tableName = configuration.getString(Key.TABLE);
@@ -69,13 +66,8 @@ public class HbaseProxy {
             throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
         }
 
-        this.rangeInfo = rangeInfo;
-        dealRangeInfo(this.rangeInfo);
-    }
-
-    private void dealRangeInfo(org.apache.commons.lang3.tuple.Pair<String, String> rangeInfo) {
-        String startRowkey = rangeInfo.getLeft();
-        String endRowkey = rangeInfo.getRight();
+        String startRowkey = configuration.getString(Key.START_ROWKEY);
+        String endRowkey = configuration.getString(Key.END_ROWKEY);
 
         this.startKey = parseRowKeyByte(startRowkey, this.isBinaryRowkey);
         this.endKey = parseRowKeyByte(endRowkey, this.isBinaryRowkey);
@@ -127,15 +119,10 @@ public class HbaseProxy {
         this.scan = new Scan();
         scan.setCacheBlocks(false);
 
-        if (this.startKey != null) {
-            LOG.info("HBaseReader set startkey to {} .", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding));
-            this.scan.setStartRow(startKey);
-        }
-        if (this.endKey != null) {
-            LOG.info(
-                    "HBaseReader set endkey to {} .", bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
-            this.scan.setStopRow(endKey);
-        }
+        this.scan.setStartRow(startKey);
+        this.scan.setStopRow(endKey);
+
+        LOG.info("The task set startkey=[{}], endkey=[{}] .", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding), bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
 
         boolean isConstant;
         boolean isRowkeyColumn;

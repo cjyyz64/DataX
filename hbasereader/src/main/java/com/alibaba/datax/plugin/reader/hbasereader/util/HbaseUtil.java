@@ -6,8 +6,6 @@ import com.alibaba.datax.plugin.reader.hbasereader.Constant;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReader;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -35,15 +33,19 @@ public final class HbaseUtil {
 
         Boolean isBinaryRowkey = originalConfig.getBool(Key.IS_BINARY_ROWKEY);
         if (isBinaryRowkey == null) {
-            throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP,"Hbasereader 中必须配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 本项可以配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+            throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "Hbasereader 中必须配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 本项可以配置为 true 或者 false. 分别对应于 DataX 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
         }
-    }
 
-    public static Pair<String, String> dealRowkeyRange(Configuration originalConfig) {
         String startRowkey = originalConfig.getString(Constant.RANGE + "." + Key.START_ROWKEY);
-        String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
+        if (startRowkey != null) {
+            originalConfig.set(Key.START_ROWKEY, startRowkey);
+        }
 
-        return ImmutablePair.of(startRowkey, endRowkey);
+
+        String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
+        if (endRowkey != null) {
+            originalConfig.set(Key.END_ROWKEY, encoding);
+        }
     }
 
     private static String dealMode(Configuration originalConfig) {
