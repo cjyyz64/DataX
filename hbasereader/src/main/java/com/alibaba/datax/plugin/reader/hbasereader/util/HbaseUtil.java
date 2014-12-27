@@ -44,7 +44,7 @@ public final class HbaseUtil {
 
         String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
         if (endRowkey != null) {
-            originalConfig.set(Key.END_ROWKEY, encoding);
+            originalConfig.set(Key.END_ROWKEY, endRowkey);
         }
     }
 
