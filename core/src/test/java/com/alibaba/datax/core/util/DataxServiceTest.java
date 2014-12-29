@@ -31,7 +31,7 @@ public class DataxServiceTest {
     public void testStartTaskGroup() throws Exception {
 
         HttpClientUtil httpClientUtil = Mockito.mock(HttpClientUtil.class);
-        when(httpClientUtil.executeAndGetWithRetry(any(HttpRequestBase.class),anyInt(),anyLong()))
+        when(httpClientUtil.executeAndGet(any(HttpRequestBase.class)))
                 .thenReturn("{\n" +
                         "    \"isSuccess\": true,\n" +
                         "    \"errorCode\": 200,\n" +
