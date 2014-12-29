@@ -92,6 +92,7 @@ public final class OdpsSplitUtil {
         long end = 0;
 
         long step = count / adviceNum;
+        long remainder = count % adviceNum;
 
         // 先进行处理，以免 while 死循环
         if (step == 0) {
@@ -107,7 +108,7 @@ public final class OdpsSplitUtil {
 
 
         while (end < count) {
-            end = start + step;
+            end = start + step + (remainder > 0 ? 1 : 0);
             if (end > count) {
                 end = count;
             }
@@ -139,6 +140,7 @@ public final class OdpsSplitUtil {
         long end = 0;
 
         long step = count / adviceNum;
+        long remainder = count % adviceNum;
 
         // 先进行处理，以免 while 死循环
         if (step == 0) {
@@ -154,7 +156,7 @@ public final class OdpsSplitUtil {
         }
 
         while (end < count) {
-            end = start + step;
+            end = start + step + (remainder > 0 ? 1 : 0);
             if (end > count) {
                 end = count;
             }
