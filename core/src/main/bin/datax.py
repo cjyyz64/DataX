@@ -376,7 +376,7 @@ if __name__ == "__main__":
         sys.exit(RET_STATE["OK"])
 
     # 尝试获取读取url的认证信息
-    auth_user, auth_pass = get_auth_info('%s/conf/.security.properties' % DATAX_HOME)
+    auth_user, auth_pass = get_auth_info('%s/conf/.secret.properties' % DATAX_HOME)
 
     # 获取job配置文件
     job_path, is_resaved_json = get_json_job_path(options.jobid, options.mode, options.taskgroup, args[0].strip(),
