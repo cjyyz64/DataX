@@ -167,10 +167,4 @@ public class Common {
         outputParam.set(Key.OTS_ACCESSKEY, "*************");
         return outputParam.toJSON();
     }
-    
-    public static String OTSConfToNoSensitiveString(OTSConf conf) {
-        OTSConf tmpConf = conf;
-        tmpConf.setAccessKey("*************");
-        return GsonParser.confToJson(tmpConf);
-    }
 }
