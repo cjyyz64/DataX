@@ -6,16 +6,13 @@ import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 import org.apache.http.client.methods.HttpRequestBase;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.List;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.when;
 
 
