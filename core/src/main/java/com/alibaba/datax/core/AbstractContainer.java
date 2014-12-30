@@ -18,9 +18,9 @@ public abstract class AbstractContainer {
         Validate.notNull(configuration, "Configuration can not be null.");
 
         String dataxServiceUrl = configuration.getString(
-                CoreConstant.DATAX_CORE_DATAXSERVER_ADDRESS);
+                CoreConstant.DATAX_CORE_DATAXSERVICE_ADDRESS);
         int httpTimeOutInMillionSeconds = configuration.getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
+                CoreConstant.DATAX_CORE_DATAXSERVICE_TIMEOUT, 5000);
 
         DataxServiceUtil.init(dataxServiceUrl, httpTimeOutInMillionSeconds);
 
