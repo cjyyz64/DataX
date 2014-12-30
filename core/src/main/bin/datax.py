@@ -74,7 +74,8 @@ def get_ip():
 
 def get_option_parser():
     parser = OptionParser(usage = get_usage())
-    parser.add_option('-g', '--gen', action="store_true", dest="gen", help='generate job config file.')
+    parser.add_option('-g', '--gen', action="store_true", dest="gen", he:q
+    lp='generate job config file.')
     parser.add_option('-d', '--delete', action="store_true", dest="delete", help='delete tmp job config file.')
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')

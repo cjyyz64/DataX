@@ -1,5 +1,6 @@
 package com.alibaba.datax.core.util;
 
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
@@ -19,7 +20,7 @@ import static org.mockito.Mockito.when;
 /**
  * Created by hongjiao.hj on 2014/12/17.
  */
-public class DataxServiceTest {
+public class DataxServiceTest extends CaseInitializer {
 
 
     private String url = "http://localhost:8080/";
@@ -140,6 +141,10 @@ public class DataxServiceTest {
 
         Result<List<TaskGroup>> result = DataxServiceUtil.getTaskGroupInJob(152L);
         Assert.assertTrue(result.getData().get(0).getResourceGroup().equals("datax_distribute"));
+        /*String url = "http://localhost:8080/";
+        DataxServiceUtil.init(url,3000);
+        Result<List<TaskGroup>> result = DataxServiceUtil.getTaskGroupInJob(148L);
+        System.out.println(result);*/
     }
 
     @Test
