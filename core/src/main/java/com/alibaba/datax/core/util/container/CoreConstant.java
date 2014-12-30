@@ -130,9 +130,4 @@ public class CoreConstant {
 	public static String DATAX_JOB_HOME = StringUtils.join(new String[] {
 			DATAX_HOME, "job" }, File.separator);
 
-    public static String DATAX_SECRET_A = StringUtils.join(new String[] {
-            DATAX_HOME, "conf", "secret.txt"}, File.separator);
-    public static String DATAX_SECRET_PATH = StringUtils.join(new String[]{
-            DATAX_HOME, "conf", ".secret.properties"}, File.separator);
-
 }

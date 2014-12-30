@@ -105,15 +105,13 @@ public final class CommunicationTool {
         public static String getSnapshot(final Communication communication) {
             StringBuilder sb = new StringBuilder();
             sb.append("Total ");
-            sb.append(getTotalRecords(communication));
-            sb.append(", ");
-            sb.append(getTotalBytes(communication));
+            sb.append(getTotal(communication));
             sb.append(" | ");
             sb.append("Speed ");
             sb.append(getSpeed(communication));
             sb.append(" | ");
             sb.append("Error ");
-            sb.append(getErrorRecord(communication));
+            sb.append(getError(communication));
             sb.append(" | ");
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
