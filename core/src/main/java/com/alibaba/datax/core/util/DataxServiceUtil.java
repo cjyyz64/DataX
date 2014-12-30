@@ -18,6 +18,7 @@ import org.apache.http.entity.StringEntity;
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.List;
+import java.util.Properties;
 
 
 public final class DataxServiceUtil {
@@ -28,6 +29,9 @@ public final class DataxServiceUtil {
     public static void init(String dataxServiceUrl, int httpTimeOutInMillionSeconds) {
         DATAX_SERVICE_URL = dataxServiceUrl;
         HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
+
+        Properties prob  = PropertyUtil.getPropertUtil();
+        HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
 
         httpClientUtil = HttpClientUtil.getHttpClientUtil();
     }

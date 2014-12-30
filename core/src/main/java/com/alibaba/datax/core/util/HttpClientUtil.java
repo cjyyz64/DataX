@@ -19,7 +19,10 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
+
 public class HttpClientUtil {
+
+    private static CredentialsProvider provider;
 
     private CloseableHttpClient httpClient;
 
@@ -53,18 +56,29 @@ public class HttpClientUtil {
         destroyApacheHttpClient();
     }
 
+    public static void setBasicAuth(String username, String password) {
+        provider = new BasicCredentialsProvider();
+        provider.setCredentials(AuthScope.ANY,
+                new UsernamePasswordCredentials(username,password));
+    }
+
     // 创建包含connection pool与超时设置的client
     private void initApacheHttpClient() {
         RequestConfig requestConfig = RequestConfig.custom().setSocketTimeout(HTTP_TIMEOUT_INMILLIONSECONDS)
                 .setConnectTimeout(HTTP_TIMEOUT_INMILLIONSECONDS).setConnectionRequestTimeout(HTTP_TIMEOUT_INMILLIONSECONDS)
                 .setStaleConnectionCheckEnabled(true).build();
 
-        CredentialsProvider provider = new BasicCredentialsProvider();
-        provider.setCredentials(AuthScope.ANY,new UsernamePasswordCredentials("datax","datax"));
-
-        httpClient = HttpClientBuilder.create().setMaxConnTotal(POOL_SIZE).setMaxConnPerRoute(POOL_SIZE)
-                .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(provider).build();
-
+//        Properties prob  = PropertyUtil.getPropertUtil();
+//        CredentialsProvider provider = new BasicCredentialsProvider();
+//        provider.setCredentials(AuthScope.ANY,
+//                new UsernamePasswordCredentials(prob.getProperty("auth.user"),prob.getProperty("auth.pass")));
+          if(null == provider) {
+              httpClient = HttpClientBuilder.create().setMaxConnTotal(POOL_SIZE).setMaxConnPerRoute(POOL_SIZE)
+                      .setDefaultRequestConfig(requestConfig).build();
+          } else {
+              httpClient = HttpClientBuilder.create().setMaxConnTotal(POOL_SIZE).setMaxConnPerRoute(POOL_SIZE)
+                      .setDefaultRequestConfig(requestConfig).setDefaultCredentialsProvider(provider).build();
+          }
     }
 
     private void destroyApacheHttpClient() {
