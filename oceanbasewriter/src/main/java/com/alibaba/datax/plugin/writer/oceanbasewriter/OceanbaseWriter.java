@@ -10,8 +10,7 @@ import com.alibaba.datax.plugin.writer.oceanbasewriter.strategy.Strategy;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.ActiveMemPercentChecker;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.ConfigurationChecker;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.OBDataSource;
-import com.alibaba.fastjson.JSONObject;
-import com.google.common.collect.Lists;
+import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.TaskSplitter;
 
 import java.util.List;
 
@@ -20,21 +19,7 @@ public class OceanbaseWriter extends Writer {
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            Configuration configuration = this.getPluginJobConf();
-            List<JSONObject> connections = configuration.getList(Key.CONNECTION, JSONObject.class);
-            for (JSONObject connection : connections){
-                Configuration slice = Configuration.from(connection);
-                String table = slice.getString(Key.TABLE);
-                String url = slice.getString(Key.CONFIG_URL);
-                configuration.set(Key.TABLE, table);
-                configuration.set(Key.CONFIG_URL, url);
-                configuration.remove(Key.CONNECTION);
-            }
-            List<Configuration> configurations = Lists.newArrayList();
-            for (int index = 0; index < mandatoryNumber; index++){
-                    configurations.add(configuration.clone());
-            }
-            return configurations;
+            return TaskSplitter.split(this.getPluginJobConf(),mandatoryNumber);
         }
 
         @Override
