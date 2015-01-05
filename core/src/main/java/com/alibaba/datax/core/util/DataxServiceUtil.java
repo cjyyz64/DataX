@@ -7,7 +7,8 @@ import com.alibaba.datax.dataxservice.face.domain.JobStatus;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
-import com.google.gson.reflect.TypeToken;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -30,7 +31,7 @@ public final class DataxServiceUtil {
         DATAX_SERVICE_URL = dataxServiceUrl;
         HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
 
-        Properties prob  = PropertyUtil.getPropertUtil();
+        Properties prob  = PropertyUtil.getPropertyUtil();
         HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
 
         httpClientUtil = HttpClientUtil.getHttpClientUtil();
@@ -45,9 +46,9 @@ public final class DataxServiceUtil {
             httpGet.setURI(new URI(url));
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 3, 1000l);
 
-            Type type = new TypeToken<Result<Integer>>() {
+            Type type = new TypeReference<Result<Integer>>() {
             }.getType();
-            Result<Integer> result = SerializationUtil.gson2Object(resJson, type);
+            Result<Integer> result = SerializationUtil.json2Object(resJson, type);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("getJobInfo error, jobId=[%s], http result:[%s].", jobId, resJson));
@@ -65,14 +66,14 @@ public final class DataxServiceUtil {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(jobStatus), "UTF-8");
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.object2Json(jobStatus), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
 
             // 这里重试次数为9，则能避免 DataXService 在7分钟不可用时，任务不会因此而失败.
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 9, 1000l);
-            Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            Result result = SerializationUtil.json2Object(resJson, Result.class);
 
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
@@ -95,9 +96,14 @@ public final class DataxServiceUtil {
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
 
-            Type type = new TypeToken<Result<List<TaskGroup>>>() {
-            }.getType();
-            Result<List<TaskGroup>> result = SerializationUtil.longDateGson2Object(resJson, type);
+//            Type type = new TypeReference<Result<List<TaskGroup>>>() {
+//            }.getType();
+////            Result<List<TaskGroup>> result = SerializationUtil.json2Object(resJson, type);
+            Result<List<TaskGroup>> result = JSON.parseObject(resJson,
+                    new TypeReference<Result<List<TaskGroup>>>(){});
+
+//            Result<List<TaskGroup>> result = SerializationUtil.json2Object(resJson,
+//                    new TypeReference<Result<List<TaskGroup>>>(){}.getType());
 
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
@@ -117,7 +123,7 @@ public final class DataxServiceUtil {
             HttpPost httpPost = HttpClientUtil.getPostRequest();
             httpPost.setURI(new URI(url));
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroup), "UTF-8");
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.object2Json(taskGroup), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPost.setEntity(jsonEntity);
@@ -125,7 +131,7 @@ public final class DataxServiceUtil {
             //String resJson = httpClientUtil.executeAndGetWithRetry(httpPost, 3, 1000l);
             //提交taskGroup不重试,防止重跑
             String resJson = httpClientUtil.executeAndGet(httpPost);
-            Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            Result result = SerializationUtil.json2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("startTaskGroup error, jobId=[%s], taskGroup=[%s], http result:[%s].", jobId, taskGroup.toSimpleString(), resJson));
@@ -145,7 +151,7 @@ public final class DataxServiceUtil {
             httpDelete.setURI(new URI(url));
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpDelete, 9, 1000l);
-            Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            Result result = SerializationUtil.json2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("killTaskGroup error, jobId=[%s], taskGroupId=[%s], http result:[%s].", jobId, taskGroupId, resJson));
@@ -166,13 +172,13 @@ public final class DataxServiceUtil {
             httpPut.setURI(new URI(url));
 
 
-            StringEntity jsonEntity = new StringEntity(SerializationUtil.gson2String(taskGroupStatus), "UTF-8");
+            StringEntity jsonEntity = new StringEntity(SerializationUtil.object2Json(taskGroupStatus), "UTF-8");
             jsonEntity.setContentEncoding("UTF-8");
             jsonEntity.setContentType("application/json");
             httpPut.setEntity(jsonEntity);
 
             String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 9, 1000l);
-            Result result = SerializationUtil.gson2Object(resJson, Result.class);
+            Result result = SerializationUtil.json2Object(resJson, Result.class);
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                         String.format("updateTaskGroupInfo error, jobId=[%s], taskGroupId=[%s], TaskGroupStatus=[%s], http result:[%s].", jobId, taskGroupId, taskGroupStatus, resJson));

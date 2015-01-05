@@ -12,7 +12,7 @@ import java.util.Properties;
 public class PropertyUtil {
 
     public static Properties prop = new Properties();
-    public static Properties getPropertUtil() {
+    public static Properties getPropertyUtil() {
         String path = CoreConstant.DATAX_SECRET_PATH;
         try {
             prop.load(new FileInputStream(path));

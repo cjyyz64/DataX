@@ -68,7 +68,7 @@ public class HttpClientUtil {
                 .setConnectTimeout(HTTP_TIMEOUT_INMILLIONSECONDS).setConnectionRequestTimeout(HTTP_TIMEOUT_INMILLIONSECONDS)
                 .setStaleConnectionCheckEnabled(true).build();
 
-//        Properties prob  = PropertyUtil.getPropertUtil();
+//        Properties prob  = PropertyUtil.getPropertyUtil();
 //        CredentialsProvider provider = new BasicCredentialsProvider();
 //        provider.setCredentials(AuthScope.ANY,
 //                new UsernamePasswordCredentials(prob.getProperty("auth.user"),prob.getProperty("auth.pass")));
