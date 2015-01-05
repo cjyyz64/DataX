@@ -105,27 +105,23 @@ public final class CommunicationTool {
         public static String getSnapshot(final Communication communication) {
             StringBuilder sb = new StringBuilder();
             sb.append("Total ");
-            sb.append(getTotalRecords(communication));
-            sb.append(", ");
-            sb.append(getTotalBytes(communication));
+            sb.append(getTotal(communication));
             sb.append(" | ");
             sb.append("Speed ");
             sb.append(getSpeed(communication));
             sb.append(" | ");
             sb.append("Error ");
-            sb.append(getErrorRecord(communication));
+            sb.append(getError(communication));
             sb.append(" | ");
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
             return sb.toString();
         }
 
-        private static String getTotalRecords(final Communication communication) {
-            return String.format("%d records", communication.getLongCounter(TOTAL_READ_RECORDS));
-        }
-
-        private static String getTotalBytes(final Communication communication) {
-            return String.format("%d bytes", communication.getLongCounter(TOTAL_READ_BYTES));
+        private static String getTotal(final Communication communication) {
+            return String.format("%d records, %d bytes",
+                    communication.getLongCounter(TOTAL_READ_RECORDS),
+                    communication.getLongCounter(TOTAL_READ_BYTES));
         }
 
         private static String getSpeed(final Communication communication) {
@@ -134,8 +130,10 @@ public final class CommunicationTool {
                     communication.getLongCounter(RECORD_SPEED));
         }
 
-        private static String getErrorRecord(final Communication communication) {
-            return String.format("%d records", communication.getLongCounter(TOTAL_ERROR_RECORDS));
+        private static String getError(final Communication communication) {
+            return String.format("%d records, %d bytes",
+                    communication.getLongCounter(TOTAL_ERROR_RECORDS),
+                    communication.getLongCounter(TOTAL_ERROR_BYTES));
         }
 
         private static String getPercentage(final Communication communication) {
@@ -168,6 +166,9 @@ public final class CommunicationTool {
             pair = getErrorRecords(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
+            pair = getErrorBytes(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
             pair = getErrorMessage(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
@@ -195,6 +196,10 @@ public final class CommunicationTool {
 
         private static Pair<String, Long> getErrorRecords(final Communication communication) {
             return new Pair<String, Long>("errorRecords", communication.getLongCounter(TOTAL_ERROR_RECORDS));
+        }
+
+        private static Pair<String, Long> getErrorBytes(final Communication communication) {
+            return new Pair<String, Long>("errorBytes", communication.getLongCounter(TOTAL_ERROR_BYTES));
         }
 
         private static Pair<String, Long> getStage(final Communication communication) {

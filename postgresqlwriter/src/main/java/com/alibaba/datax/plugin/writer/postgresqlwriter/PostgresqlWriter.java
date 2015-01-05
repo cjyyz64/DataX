@@ -14,7 +14,7 @@ import java.util.List;
 public class PostgresqlWriter extends Writer {
 	private static final DataBaseType DATABASE_TYPE = DataBaseType.PostgreSQL;
 
-	public static class Master extends Writer.Job {
+	public static class Job extends Writer.Job {
 		private Configuration originalConfig = null;
 		private CommonRdbmsWriter.Job commonRdbmsWriterMaster;
 
@@ -55,7 +55,7 @@ public class PostgresqlWriter extends Writer {
 
 	}
 
-	public static class Slave extends Writer.Task {
+	public static class Task extends Writer.Task {
 		private Configuration writerSliceConfig;
 		private CommonRdbmsWriter.Task commonRdbmsWriterSlave;
 

@@ -61,10 +61,6 @@ public class Context {
         }
 	}
 
-	public int timeout(){
-		return configuration.getInt(Key.TIMEOUT, 5) * 60 * 60 * 1000 * 1000;
-	}
-	
 	public boolean lowVersion() throws Exception {
 		ResultSetHandler<Boolean> handler = new ResultSetHandler<Boolean>() {
 			@Override
@@ -74,8 +70,7 @@ public class Context {
 				return version.contains("0.4");
 			}
 		};
-		return OBDataSource.execute(this.url(), "show variables like 'version_comment'",
-                this.timeout(), handler);
+		return OBDataSource.execute(this.url(), "show variables like 'version_comment'", handler);
 	}
 
 	public Index rowkey() throws Exception {
@@ -94,7 +89,7 @@ public class Context {
 				return builder.build();
 			}
 		};
-		return OBDataSource.execute(this.url(),String.format("desc %s", table()), this.timeout(), handler);
+		return OBDataSource.execute(this.url(),String.format("desc %s", table()), handler);
 	}
 
 	private Map<String, String> columnAndType() throws Exception {
@@ -111,7 +106,7 @@ public class Context {
 				return map;
 			}
 		};
-		return OBDataSource.execute(this.url(),String.format("desc %s", table()), this.timeout(), handler);
+		return OBDataSource.execute(this.url(),String.format("desc %s", table()), handler);
 	}
 
 	public Set<Index> secondaryIndex() throws Exception {
@@ -143,7 +138,7 @@ public class Context {
 			}
 		};
 		return OBDataSource.execute(
-				this.url(), String.format("show index from %s", table()), timeout(), handler);
+				this.url(), String.format("show index from %s", table()), handler);
 	}
 
 	public Set<Index> index() throws Exception {

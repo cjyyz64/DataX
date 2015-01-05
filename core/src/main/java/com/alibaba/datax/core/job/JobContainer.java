@@ -8,22 +8,23 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
-import com.alibaba.datax.core.job.scheduler.*;
+import com.alibaba.datax.core.container.util.HookInvoker;
+import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.ds.DsScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.LocalScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
-import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
-import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -107,8 +108,9 @@ public class JobContainer extends AbstractContainer {
             LOG.debug("jobContainer starts to do post ...");
             this.post();
 
-            LOG.info("DataX jobId [{}] completed successfully.",
-                    this.jobId);
+            LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
+
+            this.invokeHooks();
         } catch (Throwable e) {
             hasException = true;
 
@@ -731,5 +733,14 @@ public class JobContainer extends AbstractContainer {
         Communication communication = super.getContainerCommunicator().collect();
         errorLimit.checkRecordLimit(communication);
         errorLimit.checkPercentageLimit(communication);
+    }
+
+    /**
+     * 调用外部hook
+     */
+    private void invokeHooks() {
+        Communication comm = super.getContainerCommunicator().collect();
+        HookInvoker invoker = new HookInvoker(CoreConstant.DATAX_HOME + "/hook", configuration, comm.getCounter());
+        invoker.invokeAll();
     }
 }

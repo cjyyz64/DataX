@@ -179,21 +179,13 @@ def add_core_config_for_http(job_id, mode, task_group_id, job_json_content, job_
 
         if not job_json_content.has_key("core"):
             job_json_content["core"] = {"container":{"job":{}}}
-
+        elif not job_json_content["core"].has_key("container"):
+            job_json_content["core"]["container"] = {"job":{}}
+            
         if job_id:
             job_json_content["core"]["container"]["job"]["id"] = job_id
         if mode:
             job_json_content["core"]["container"]["job"]["mode"] = mode
-
-        # if not job_json_content.has_key("core"):
-        #     job_json_content["core"]["container"]["job"]["id"] = job_id
-        #
-        # core_container_job_content_map = job_json_content["core"]["container"]["job"]
-        # if not core_container_job_content_map.has_key("id"):
-        #     job_json_content["core"]["container"]["job"]["id"] = job_id
-        #
-        # if not core_container_job_content_map.has_key("mode"):
-        #     job_json_content["core"]["container"]["job"]["mode"] = mode
 
     else:
         return None

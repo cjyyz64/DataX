@@ -1,7 +1,7 @@
 {
-    "endpoint":"http://10.101.168.117",
-    "accessid":"dataxaccessid",
-    "accesskey":"dataxaccesskey",
-    "instance-name":"dataxtest",
-    "ag-ip":"10.101.168.117"
+    "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
+    "accessid":"5GbtIurEnFZDWMih",
+    "accesskey":"IJ5Eq4aRsMQu8JczndW6v78wYMsJIP",
+    "instance-name":"datax3",
+    "ag-ip":""
 }

@@ -23,7 +23,9 @@ public final class DBUtil {
 
 	public static String chooseJdbcUrl(final DataBaseType dataBaseType,
 			final List<String> jdbcUrls, final String username,
-			final String password, final List<String> preSql) {
+			final String password, final List<String> preSql,
+            final boolean checkSlave) {
+
 		if (null == jdbcUrls || jdbcUrls.isEmpty()) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONF_ERROR,
@@ -45,7 +47,7 @@ public final class DBUtil {
 										url, username, password, preSql);
 							} else {
 								connOK = testConnWithoutRetry(dataBaseType,
-										url, username, password);
+										url, username, password, checkSlave);
 							}
 							if (connOK) {
 								return url;
@@ -63,6 +65,37 @@ public final class DBUtil {
 		}
 
 	}
+    private static boolean isSlaveBehind(Connection conn){
+        try{
+            ResultSet rs = query(conn, "SHOW VARIABLES LIKE 'read_only'");
+            if(rs.next()){
+                String readOnly = rs.getString("Value");
+                if("ON".equalsIgnoreCase(readOnly)){ //备库
+                    ResultSet rs1 = query(conn, "SHOW SLAVE STATUS");
+                    if(rs1.next()){
+                        String ioRunning = rs1.getString("Slave_IO_Running");
+                        String sqlRunning = rs1.getString("Slave_SQL_Running");
+                        long secondsBehindMaster = rs1.getLong("Seconds_Behind_Master");
+                        if("Yes".equalsIgnoreCase(ioRunning) && "Yes".equalsIgnoreCase(sqlRunning)){
+                            ResultSet rs2 = query(conn, "SELECT TIMESTAMPDIFF(SECOND, CURDATE(), NOW())");
+                            rs2.next();
+                            long secondsOfDay = rs2.getLong(1);
+                            return secondsBehindMaster > secondsOfDay;
+                        }else{
+                            return true;
+                        }
+                    }else{
+                        LOG.warn("SHOW SLAVE STATUS has no result");
+                    }
+                }
+            }else{
+                LOG.warn("SHOW VARIABLES like 'read_only' has no result");
+            }
+        }catch (Exception e) {
+            LOG.warn("checkSlave failed, errorMessage:[{}].", e.getMessage());
+        }
+        return false;
+    }
 
 	/**
 	 * Get direct JDBC connection
@@ -115,6 +148,8 @@ public final class DBUtil {
 	 */
 	public static ResultSet query(Connection conn, String sql, int fetchSize)
 			throws SQLException {
+		// make sure autocommit is off
+		conn.setAutoCommit(false);
 		Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
 				ResultSet.CONCUR_READ_ONLY);
 		stmt.setFetchSize(fetchSize);
@@ -274,21 +309,28 @@ public final class DBUtil {
 	}
 
 	public static boolean testConnWithoutRetry(DataBaseType dataBaseType,
-			String url, String user, String pass) {
-		Connection connection = null;
-		try {
-			connection = connect(dataBaseType, url, user, pass);
-			if (null != connection) {
-				return true;
-			}
-		} catch (Exception e) {
-			LOG.warn("test connection of [{}] failed, for {}.", url,
-					e.getMessage());
-		} finally {
-			DBUtil.closeDBResources(null, connection);
-		}
+			String url, String user, String pass, boolean checkSlave) {
+        Connection connection = null;
+        //dataBaseType.MySql
+        if(dataBaseType.equals(dataBaseType.MySql) && checkSlave){
+            connection = connect(dataBaseType, url, user, pass);
+            boolean connOk = !isSlaveBehind(connection);
+            return connOk;
+        }else{
+            try {
+                connection = connect(dataBaseType, url, user, pass);
+                if (null != connection) {
+                    return true;
+                }
+            } catch (Exception e) {
+                LOG.warn("test connection of [{}] failed, for {}.", url,
+                        e.getMessage());
+            } finally {
+                DBUtil.closeDBResources(null, connection);
+            }
 
-		return false;
+            return false;
+        }
 	}
 
 	public static boolean testConnWithoutRetry(DataBaseType dataBaseType,

@@ -52,7 +52,7 @@ public class OTSErrorMessage {
     
     public static final String COLUMN_CONVERSION_ERROR = "Column coversion error, src type : %s, src value: %s, expect type: %s .";
     
-    public static final String PK_COLUMN_VALUE_IS_NULL_ERROR = "The column of record is NULL, primary key name : %d .";
+    public static final String PK_COLUMN_VALUE_IS_NULL_ERROR = "The column of record is NULL, primary key name : %s .";
     
     public static final String PK_STRONG_LENGTH_ERROR = "The length of pk string value is more than configuration, conf: %d, input: %d .";
     

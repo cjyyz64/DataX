@@ -127,6 +127,19 @@ public class MysqlReaderTest extends BasicReaderPluginTest {
             System.out.println(r);
         }
     }
+
+    @TestLogger(log = "测试basic7.json. 配置两个jdbcUrl（第一个为slave jdbcUrl，第二个为master jdbcUrl）一个table,运行时，会选择第一个jdbcUrl并通过程序自动生成 queryS1ql 进行数据读取.")
+    @Test
+    public void testBasic7() {
+        List<Record> noteRecordForTest = new ArrayList<Record>();
+
+        List<Configuration> subjobs = super.doReaderTest("basic7.json", 0,
+                noteRecordForTest);
+
+        Assert.assertEquals(1, subjobs.size());
+//        Assert.assertTrue("记录总数应该是：每张表4条记录，一共1张表，共计4条记录.",
+//                noteRecordForTest.size() == 0);
+    }
 	
 
 	@Override

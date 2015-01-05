@@ -1,16 +1,18 @@
 package com.alibaba.datax.core.container;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
-import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.faker.FakeExceptionReader;
 import com.alibaba.datax.core.faker.FakeExceptionWriter;
+import com.alibaba.datax.core.faker.FakeLongTimeWriter;
+import com.alibaba.datax.core.faker.FakeOneReader;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
@@ -106,5 +108,25 @@ public class TaskGroupContainerTest extends CaseInitializer {
                 FakeExceptionWriter.class.getName());
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
+    }
+
+    @Test
+    public void testLongTimeWriter() {
+        this.configuration.set("plugin.writer.fakewriter.class",
+                FakeOneReader.class.getName());
+        this.configuration.set("plugin.writer.fakewriter.class",
+                FakeLongTimeWriter.class.getName());
+        this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL,
+                1);
+        Configuration jobContent = this.configuration.getListConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT).get(0);
+        List<Configuration> jobContents = new ArrayList<Configuration>();
+        jobContents.add(jobContent);
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
+
+        TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
+        taskGroupContainer.start();
+        Assert.assertTrue(State.SUCCEEDED ==
+                taskGroupContainer.getContainerCommunicator().collect().getState());
     }
 }

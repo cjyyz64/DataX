@@ -63,7 +63,7 @@ public class ResultSetReadProxy {
 				// for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
 				case Types.DATE:
 					if (metaData.getColumnTypeName(i).equalsIgnoreCase("year")) {
-						record.addColumn(new StringColumn(rs.getString(i)));
+						record.addColumn(new LongColumn(rs.getInt(i)));
 					} else {
 						record.addColumn(new DateColumn(rs.getDate(i)));
 					}

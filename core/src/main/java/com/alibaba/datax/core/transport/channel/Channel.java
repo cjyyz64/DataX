@@ -18,7 +18,7 @@ import java.util.Collection;
  */
 public abstract class Channel {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Channel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Channel.class);
 
     protected int taskGroupId;
 
@@ -55,9 +55,9 @@ public abstract class Channel {
 
         synchronized (isFirstPrint) {
             if (isFirstPrint) {
-                Channel.LOGGER.info("Channel set byte_speed_limit to " + byteSpeed
+                Channel.LOG.info("Channel set byte_speed_limit to " + byteSpeed
                         + (byteSpeed <= 0 ? ", No bps activated." : "."));
-                Channel.LOGGER.info("Channel set record_speed_limit to " + recordSpeed
+                Channel.LOG.info("Channel set record_speed_limit to " + recordSpeed
                         + (recordSpeed <= 0 ? ", No tps activated." : "."));
                 isFirstPrint = false;
             }

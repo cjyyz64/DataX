@@ -369,7 +369,6 @@ public class CommonRdbmsWriter {
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                    case Types.BIT:
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
                         break;
@@ -378,8 +377,11 @@ public class CommonRdbmsWriter {
                     case Types.DATE:
                         if (this.resultSetMetaData.getRight().get(i)
                                 .equalsIgnoreCase("year")) {
-                            preparedStatement.setString(i + 1, record.getColumn(i)
-                                    .asString());
+                            if (record.getColumn(i).asBigInteger() == null) {
+                                preparedStatement.setString(i + 1, null);
+                            } else {
+                                preparedStatement.setInt(i + 1, record.getColumn(i).asBigInteger().intValue());
+                            }
                         } else {
                             java.sql.Date sqlDate = null;
                             try {
@@ -435,8 +437,8 @@ public class CommonRdbmsWriter {
                                 .asBytes());
                         break;
                     case Types.BOOLEAN:
-                        preparedStatement.setBoolean(i + 1, record.getColumn(i)
-                                .asBoolean());
+                    case Types.BIT:
+                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
                         break;
                     default:
                         throw DataXException

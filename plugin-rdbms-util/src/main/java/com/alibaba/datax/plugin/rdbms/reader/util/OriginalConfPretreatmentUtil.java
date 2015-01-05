@@ -54,6 +54,7 @@ public final class OriginalConfPretreatmentUtil {
     private static void dealJdbcAndTable(Configuration originalConfig) {
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
+        boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
@@ -72,7 +73,7 @@ public final class OriginalConfPretreatmentUtil {
             List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
             String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
-                    username, password, preSql);
+                    username, password, preSql, checkSlave);
 
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
 

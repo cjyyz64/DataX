@@ -54,6 +54,9 @@
         <module>oraclewriter</module>
 		<module>postgresqlwriter</module>
 
+        <!--hook-->
+        <module>dqchook</module>
+
         <!-- some support module -->
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
