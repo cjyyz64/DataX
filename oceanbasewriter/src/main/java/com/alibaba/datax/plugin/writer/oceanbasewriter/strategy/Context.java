@@ -76,7 +76,7 @@ public class Context {
 			}
 		};
 		try {
-			return OBDataSource.executeQuery(String.format("desc %s", table()), handler);
+			return OBDataSource.executeQuery(url(), String.format("desc %s", table()), handler);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(OceanbaseErrorCode.DESC,e);
 		}

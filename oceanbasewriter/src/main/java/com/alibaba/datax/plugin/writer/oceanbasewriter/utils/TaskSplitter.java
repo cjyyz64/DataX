@@ -13,16 +13,20 @@ import java.util.List;
 public class TaskSplitter {
 
     public static List<Configuration> split(Configuration configuration,int mandatoryNumber){
-        List<Configuration> slices = Lists.newArrayList();
-        List<JSONObject> connections = configuration.getList(Key.CONNECTION,JSONObject.class);
-        for (JSONObject connection : connections){
-            slices.addAll(slice(connection, configuration));
-        }
-        int tableNumber = slices.size();
+        List<Configuration> tasks = TaskSplitter.split(configuration);
+        int tableNumber = tasks.size();
         if (tableNumber != mandatoryNumber && tableNumber != 1) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
                     String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
                             tableNumber, mandatoryNumber));
+        }
+        return tasks;
+    }
+    public static List<Configuration> split(Configuration configuration){
+        List<Configuration> slices = Lists.newArrayList();
+        List<JSONObject> connections = configuration.getList(Key.CONNECTION,JSONObject.class);
+        for (JSONObject connection : connections){
+            slices.addAll(slice(connection, configuration));
         }
         return slices;
     }

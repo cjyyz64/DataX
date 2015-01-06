@@ -16,7 +16,9 @@ public final class Key {
     public final static String WRITE_MODE = "writeMode";
 
 	public final static String ADVANCE = "dsl";
-	
+
+    public final static String PRE_SQL = "preSql";
+
 	public final static String ACTIVE_MEM_PERCENT = "activeMemPercent";
 
 }

@@ -7,10 +7,7 @@ import com.alibaba.datax.plugin.writer.oceanbasewriter.column.ColumnMeta;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.column.ColumnMetaFactory;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.strategy.Context;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.strategy.Strategy;
-import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.ActiveMemPercentChecker;
-import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.ConfigurationChecker;
-import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.OBDataSource;
-import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.TaskSplitter;
+import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.*;
 
 import java.util.List;
 
@@ -28,7 +25,16 @@ public class OceanbaseWriter extends Writer {
         }
 
         @Override
-        public void destroy() { }
+        public void prepare() {
+            try {
+                TaskPrepare.master(this.getPluginJobConf());
+            }catch (Exception e){
+                throw new RuntimeException("master prepare error",e);
+            }
+        }
+
+        @Override
+        public void destroy() {}
     }
 
     public static class Slave extends Writer.Slave{
@@ -56,9 +62,18 @@ public class OceanbaseWriter extends Writer {
         }
 
         @Override
+        public void prepare() {
+            try {
+                TaskPrepare.slave(this.getPluginJobConf());
+            }catch (Exception e){
+                throw new RuntimeException("slave prepare error",e);
+            }
+        }
+
+        @Override
         public void destroy() {
             try {
-                OBDataSource.destory();
+                OBDataSource.destroy(this.getPluginJobConf());
             } catch (Exception e) {
                 throw new RuntimeException("destroy OB datasource error",e);
             }

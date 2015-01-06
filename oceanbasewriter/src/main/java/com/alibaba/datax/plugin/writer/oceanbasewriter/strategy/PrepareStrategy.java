@@ -25,7 +25,8 @@ public class PrepareStrategy extends Strategy {
 	@Override
 	protected void write(List<Record> lines) throws Exception {
 		handler.lines(lines);
-		OBDataSource.execute(handler);
+        String url = context.url();
+		OBDataSource.execute(url, handler);
 	}
 
 	private String sql(int rownum) {
