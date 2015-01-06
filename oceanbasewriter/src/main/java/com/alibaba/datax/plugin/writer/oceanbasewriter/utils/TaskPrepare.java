@@ -19,10 +19,10 @@ public class TaskPrepare {
 
     private static final Logger log = LoggerFactory.getLogger(TaskPrepare.class);
 
-    public static void master(Configuration configuration) throws Exception{
+    public static void job(Configuration configuration) throws Exception{
         List<String> prepareSQL = configuration.getList(Key.PRE_SQL, Collections.<String>emptyList(), String.class);
         if(prepareSQL.isEmpty()) return;
-        log.info("master prepare start");
+        log.info("job prepare start");
         List<Configuration> tasks = TaskSplitter.split(configuration);
         if(tasks.size() == 1) {
             configuration.remove(Key.PRE_SQL);
@@ -31,17 +31,17 @@ public class TaskPrepare {
             Helper.delete(conf, prepareSQL);
             OBDataSource.destroy(conf);
         }
-        log.info("master prepare end");
+        log.info("job prepare end");
     }
 
-    public static void slave(Configuration configuration) throws Exception{
+    public static void task(Configuration configuration) throws Exception{
         List<String> prepareSQL = configuration.getList(Key.PRE_SQL, Collections.<String>emptyList(),String.class);
         if(prepareSQL.isEmpty()) return;
-        log.info("slave[{}] prepare start",Thread.currentThread().getName());
+        log.info("task[{}] prepare start",Thread.currentThread().getName());
         OBDataSource.init(configuration);
         Helper.delete(configuration,prepareSQL);
         OBDataSource.destroy(configuration);
-        log.info("slave[{}] prepare end",Thread.currentThread().getName());
+        log.info("task[{}] prepare end",Thread.currentThread().getName());
     }
 
     private static class Helper{

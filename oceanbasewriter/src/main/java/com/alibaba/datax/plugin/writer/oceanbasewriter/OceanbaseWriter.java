@@ -12,7 +12,7 @@ import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.*;
 import java.util.List;
 
 public class OceanbaseWriter extends Writer {
-    public static class Master extends Writer.Master{
+    public static class Job extends Writer.Job{
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
@@ -27,9 +27,9 @@ public class OceanbaseWriter extends Writer {
         @Override
         public void prepare() {
             try {
-                TaskPrepare.master(this.getPluginJobConf());
+                TaskPrepare.job(this.getPluginJobConf());
             }catch (Exception e){
-                throw new RuntimeException("master prepare error",e);
+                throw new RuntimeException("job prepare error",e);
             }
         }
 
@@ -37,12 +37,12 @@ public class OceanbaseWriter extends Writer {
         public void destroy() {}
     }
 
-    public static class Slave extends Writer.Slave{
+    public static class Task extends Writer.Task{
 
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
             try {
-                Context context = new Context(this.getPluginJobConf(), recordReceiver,this.getSlavePluginCollector());
+                Context context = new Context(this.getPluginJobConf(), recordReceiver,this.getTaskPluginCollector());
                 ActiveMemPercentChecker.launchDaemon(context);
                 List<ColumnMeta> columns = ColumnMetaFactory.ColumnMeta(context);
                 Strategy strategy = Strategy.instance(context, columns);
@@ -64,9 +64,9 @@ public class OceanbaseWriter extends Writer {
         @Override
         public void prepare() {
             try {
-                TaskPrepare.slave(this.getPluginJobConf());
+                TaskPrepare.task(this.getPluginJobConf());
             }catch (Exception e){
-                throw new RuntimeException("slave prepare error",e);
+                throw new RuntimeException("task prepare error",e);
             }
         }
 

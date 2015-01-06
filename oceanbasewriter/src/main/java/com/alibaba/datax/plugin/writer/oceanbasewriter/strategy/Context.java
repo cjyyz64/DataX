@@ -3,7 +3,7 @@ package com.alibaba.datax.plugin.writer.oceanbasewriter.strategy;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
-import com.alibaba.datax.common.plugin.SlavePluginCollector;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.Key;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.OceanbaseErrorCode;
@@ -20,14 +20,14 @@ public class Context {
 	
 	public final RecordReceiver recordReceiver;
 	private final Configuration configuration;
-    private final SlavePluginCollector slavePluginCollector;
+    private final TaskPluginCollector taskPluginCollector;
 	public static volatile boolean permit = true;
 	public static final long daemon_check_interval = 30 * 1000;
 	
-	public Context(Configuration configuration, RecordReceiver recordReceiver, SlavePluginCollector slavePluginCollector) {
+	public Context(Configuration configuration, RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector) {
 		this.recordReceiver = recordReceiver;
 		this.configuration = configuration;
-        this.slavePluginCollector = slavePluginCollector;
+        this.taskPluginCollector = taskPluginCollector;
 	}
 
 	public String url(){
@@ -86,7 +86,7 @@ public class Context {
 
 	public void reportFail(Record record,Exception e){
         failNumber.incrementAndGet();
-        this.slavePluginCollector.collectDirtyRecord(record,e);
+        this.taskPluginCollector.collectDirtyRecord(record,e);
 	}
 
     public long failNumber(){
