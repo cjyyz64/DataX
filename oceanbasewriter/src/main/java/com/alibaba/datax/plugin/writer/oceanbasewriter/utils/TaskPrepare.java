@@ -37,11 +37,11 @@ public class TaskPrepare {
     public static void slave(Configuration configuration) throws Exception{
         List<String> prepareSQL = configuration.getList(Key.PRE_SQL, Collections.<String>emptyList(),String.class);
         if(prepareSQL.isEmpty()) return;
-        OBDataSource.init(configuration);
         log.info("slave[{}] prepare start",Thread.currentThread().getName());
+        OBDataSource.init(configuration);
         Helper.delete(configuration,prepareSQL);
-        log.info("slave[{}] prepare end",Thread.currentThread().getName());
         OBDataSource.destroy(configuration);
+        log.info("slave[{}] prepare end",Thread.currentThread().getName());
     }
 
     private static class Helper{
