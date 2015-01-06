@@ -37,7 +37,8 @@ public class Rowkey implements Iterable<Rowkey.Entry> {
 				@Override
 				public String convert(ResultSet result, String column)
 						throws SQLException {
-					return "'" + super.convert(result, column) + "'";
+                    String value = super.convert(result, column);
+					return value == null ? null : "'" + value + "'";
 				}
 			},
 			TIMESTAMP {
@@ -45,7 +46,7 @@ public class Rowkey implements Iterable<Rowkey.Entry> {
 				public String convert(ResultSet result, String column)
 						throws SQLException {
                     Timestamp timestamp = result.getTimestamp(column);
-					return String.format("timestamp'%s'",timestamp);
+					return timestamp == null ? null : String.format("timestamp'%s'",timestamp);
 				}
 			},
 			NUMBER, UNKNOW, BOOL {
