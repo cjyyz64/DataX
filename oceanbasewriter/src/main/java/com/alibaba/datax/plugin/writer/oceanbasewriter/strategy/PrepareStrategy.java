@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PrepareStrategy extends Strategy {
 
-	private static final ConcurrentMap<Integer,String> SQL = new ConcurrentHashMap<Integer, String>(2);
+	private final ConcurrentMap<Integer,String> SQL = new ConcurrentHashMap<Integer, String>(2);
 	private final Handler handler = new Handler();
 	
 	public PrepareStrategy(Context context, List<ColumnMeta> columns) {
