@@ -116,6 +116,33 @@
                 </configuration>
             </plugin>
 
+            <!--run python tests-->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.3.2</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <executable>python</executable>
+                            <workingDirectory>src/test/bin</workingDirectory>
+                            <arguments>
+                                <!--<argument>-m</argument>-->
+                                <!--<argumment>unittest</argumment>-->
+                                <argument>xml_converter_test.py</argument>
+                            </arguments>
+                            <environmentVariables>
+                                <PYTHONPATH>../../main/bin</PYTHONPATH>
+                            </environmentVariables>
+                        </configuration>
+                        <id>python-test</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
