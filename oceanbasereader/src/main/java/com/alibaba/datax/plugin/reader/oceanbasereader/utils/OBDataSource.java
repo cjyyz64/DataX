@@ -66,7 +66,7 @@ public final class OBDataSource {
 	}
 
     private static class DataSourceHolder {
-        private int reference;
+        private volatile int reference;
         private final DataSource datasource;
 
         public DataSourceHolder(final String url,final long timeout) throws Exception{
@@ -91,19 +91,19 @@ public final class OBDataSource {
             };
         }
 
-        public void increaseReference(){
+        public synchronized void increaseReference(){
             this.reference ++;
         }
 
-        public void decreaseReference(){
+        public synchronized void decreaseReference(){
             this.reference --;
         }
 
-        public boolean canClose(){
+        public synchronized boolean canClose(){
             return reference == 0;
         }
 
-        public void close() throws Exception{
+        public synchronized void close() throws Exception{
             if(this.canClose())
                 ((OceanbaseDataSourceProxy) datasource).destroy();
         }
