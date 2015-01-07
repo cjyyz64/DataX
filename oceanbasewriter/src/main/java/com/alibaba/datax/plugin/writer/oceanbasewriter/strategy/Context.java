@@ -55,7 +55,7 @@ public class Context {
 	}
 
     public String writeMode(){
-        return this.configuration.getString(Key.WRITE_MODE);
+        return this.configuration.getString(Key.WRITE_MODE,"replace");
     }
 	
 	public Map<String, String> columnType() {
