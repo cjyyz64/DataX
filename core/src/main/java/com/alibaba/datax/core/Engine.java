@@ -1,28 +1,25 @@
 package com.alibaba.datax.core;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
+import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.ConfigurationValidate;
+import com.alibaba.datax.core.util.ExceptionTracker;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.core.util.*;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
@@ -54,28 +51,6 @@ public class Engine {
         container.start();
     }
 
-    /**
-     * configure log environment.
-     *
-     * @param jobId DataX job id.
-     */
-    private static void confLog(String jobId) throws Exception {
-        java.util.Calendar c = java.util.Calendar.getInstance();
-        java.text.SimpleDateFormat f = new java.text.SimpleDateFormat(
-                "yyyyMMddHHmmss");
-        String logFile = String.format("%s.%s", jobId, f.format(c.getTime()));
-        System.setProperty("log.file", logFile);
-
-        ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
-        LoggerContext loggerContext = (LoggerContext) loggerFactory;
-        loggerContext.reset();
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(loggerContext);
-        configurator.doConfigure(new File(CoreConstant.DATAX_CONF_LOG_PATH)
-                .toURI().toURL());
-        LOG.info(String.format("log file : %s", logFile));
-    }
-
     private static String copyRight() {
         String title = "\nDataX, From Alibaba ! \nCopyright (C) 2010-2014, Alibaba Group. All Rights Reserved.\n";
         return title;
@@ -103,32 +78,18 @@ public class Engine {
     public static void entry(final String[] args) throws Throwable {
         Options options = new Options();
         options.addOption("job", true, "Job Config .");
-        options.addOption("help", false, "Show help .");
+        options.addOption("mode", true, "Job Runtime Mode.");
 
         BasicParser parser = new BasicParser();
         CommandLine cl = parser.parse(options, args);
 
-        if (cl.hasOption("help")) {
-            HelpFormatter f = new HelpFormatter();
-            f.printHelp("OptionsTip", options);
-            System.exit(0);
-        }
-
-        // TODO: add help info.
-        if (!cl.hasOption("job")) {
-            System.err.printf(String.format(
-                    "Usage: %s/bin/datax.py job.json .",
-                    CoreConstant.DATAX_HOME));
-            return;
-        }
-
         String jobPath = cl.getOptionValue("job");
-        Configuration configuration = ConfigParser.parse(jobPath);
+        String jobMode = cl.getOptionValue("mode");
 
-        String jobId = configuration.getString(
-                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
-                UUID.randomUUID().toString());
-        Engine.confLog(jobId);
+        Configuration configuration = ConfigParser.parse(jobPath);
+        if (StringUtils.isNotBlank(jobMode)) {
+            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, jobMode);
+        }
 
         LOG.info("\n" + Engine.copyRight());
 

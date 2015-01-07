@@ -78,7 +78,7 @@ public class ConfigParserTest extends CaseInitializer {
         config.set(writerParamPath+".*long", 200);
 
         Method processSecretKeyMethod = ConfigParser.class.getDeclaredMethod(
-                "processSecretKey", Configuration.class);
+                "decryptSecretKey", Configuration.class);
         processSecretKeyMethod.setAccessible(true);
         config = (Configuration)processSecretKeyMethod
                 .invoke(null, config);

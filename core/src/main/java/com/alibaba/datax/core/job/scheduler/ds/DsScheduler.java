@@ -3,6 +3,7 @@ package com.alibaba.datax.core.job.scheduler.ds;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
+import com.alibaba.datax.core.util.SecretUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
 import com.alibaba.datax.core.util.DataxServiceUtil;
@@ -30,6 +31,9 @@ public class DsScheduler extends AbstractScheduler {
     public void startAllTaskGroup(List<Configuration> taskGroupConfigurations) {
 
         for (Configuration taskGroupConfig : taskGroupConfigurations) {
+            // 对 taskGroupConfig 进行加密处理
+            taskGroupConfig = SecretUtil.encryptSecretKey(taskGroupConfig);
+
             taskGroupConfig.set(CoreConstant.DATAX_CORE_CONTAINER_MODEL, "taskGroup");
             TaskGroup taskGroup = new TaskGroup();
             taskGroup.setJobId(super.getJobId());

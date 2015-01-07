@@ -1053,4 +1053,8 @@ public class Configuration {
 	private static String toJSONString(final Object object) {
 		return JSON.toJSONString(object);
 	}
+
+	public Set<String> getSecretKeyPathSet() {
+		return secretKeyPathSet;
+	}
 }

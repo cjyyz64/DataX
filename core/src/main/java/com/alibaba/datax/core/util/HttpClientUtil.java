@@ -17,6 +17,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.Callable;
 
 
@@ -37,9 +38,12 @@ public class HttpClientUtil {
         HTTP_TIMEOUT_INMILLIONSECONDS = httpTimeoutInMillionSeconds;
     }
 
-    public static HttpClientUtil getHttpClientUtil() {
+    public static synchronized HttpClientUtil getHttpClientUtil() {
         if (null == clientUtil) {
             synchronized (HttpClientUtil.class) {
+                Properties prob  = SecretUtil.getSecurityProperties();
+                HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
+
                 if (null == clientUtil) {
                     clientUtil = new HttpClientUtil();
                 }
