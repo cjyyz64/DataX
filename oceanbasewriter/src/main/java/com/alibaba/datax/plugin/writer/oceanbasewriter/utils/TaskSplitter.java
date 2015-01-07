@@ -15,7 +15,12 @@ public class TaskSplitter {
     public static List<Configuration> split(Configuration configuration,int mandatoryNumber){
         List<Configuration> tasks = TaskSplitter.split(configuration);
         int tableNumber = tasks.size();
-        if (tableNumber != mandatoryNumber && tableNumber != 1) {
+        if (tableNumber == 1){
+            Configuration conf = tasks.get(0);
+            while (tasks.size() < mandatoryNumber){
+                tasks.add(conf);
+            }
+        } else if (tableNumber != mandatoryNumber) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
                     String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
                             tableNumber, mandatoryNumber));
