@@ -42,7 +42,7 @@ public class TerminalParser {
 	public static final Parser<?> TOKENIZER = Parsers.or(
 			Terminals.StringLiteral.SINGLE_QUOTE_TOKENIZER,
 			PredefinedVariable.TOKENIZER, Terminals.DecimalLiteral.TOKENIZER,
-			TERMS.tokenizer());// ¹Ø¼ü×ÖµÄparser¸úÔ¤¶¨Òå±äÁ¿parserË³Ğò²»¿ÉÒÔµ÷»»
+			TERMS.tokenizer());// å…³é”®å­—çš„parserè·Ÿé¢„å®šä¹‰å˜é‡parseré¡ºåºä¸å¯ä»¥è°ƒæ¢
 
 
 }
