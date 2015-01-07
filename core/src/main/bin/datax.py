@@ -17,7 +17,7 @@ DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
 LOGBACK_FILE = ("%s/conf/logback.xml") % (DATAX_HOME)
 DEFAULT_JVM = "-Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log" % (DATAX_HOME)
-DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
+DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
     DATAX_HOME, LOGBACK_FILE)
 ENGINE_COMMAND = "java -server ${jvm} %s -classpath %s  ${params} com.alibaba.datax.core.Engine -mode ${mode} -job ${job}" % (
     DEFAULT_PROPERTY_CONF, CLASS_PATH)
