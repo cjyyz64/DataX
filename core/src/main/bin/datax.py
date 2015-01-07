@@ -59,7 +59,7 @@ def register_signal():
 
 
 def getOptionParser():
-    usage = "usage: %prog [options] job.yml"
+    usage = "usage: %prog [options] job-url-or-path"
     parser = OptionParser(usage=usage)
 
     prodEnvOptionGroup = OptionGroup(parser, "Product Env Options",
