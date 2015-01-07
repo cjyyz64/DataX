@@ -31,6 +31,9 @@ import java.util.Properties;
 public class SecretUtil {
     private static Properties properties;
 
+    // Key：keyVersion   value:left:privateKey, right:publicKey
+    private static Map<String, Pair<String, String>> versionKeyMap;
+
     private static final String ENCODING = "UTF-8";
 
     private static final String KEY_ALGORITHM = "RSA";
@@ -179,7 +182,7 @@ public class SecretUtil {
             return configuration;
         }
 
-        Map<String,Pair<String,String>> versionKeyMap = getPrivateKeyMap();
+        Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
 
         String publicKey = versionKeyMap.get(keyVersion).getRight();
         // keyVersion要求的私钥没有配置
@@ -213,7 +216,7 @@ public class SecretUtil {
             return config;
         }
 
-        Map<String,Pair<String,String>> versionKeyMap = getPrivateKeyMap();
+        Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
         String privateKey = versionKeyMap.get(keyVersion).getLeft();
         // keyVersion要求的私钥没有配置
         if (StringUtils.isBlank(privateKey)) {
@@ -243,51 +246,51 @@ public class SecretUtil {
         return config;
     }
 
-    private static Map<String,Pair<String,String>> getPrivateKeyMap() {
-        // Key：keyVersion   value:left:privateKey, right:publicKey
-        Map<String,Pair<String,String>> versionKeyMap = new HashMap<String, Pair<String, String>>();
+    private static synchronized Map<String, Pair<String, String>> getPrivateKeyMap() {
+        if (versionKeyMap == null) {
+            versionKeyMap = new HashMap<String, Pair<String, String>>();
+            Properties properties = SecretUtil.getSecurityProperties();
 
-        Properties properties = SecretUtil.getSecurityProperties();
+            String lastKeyVersion = properties.getProperty(
+                    CoreConstant.LAST_KEYVERSION);
+            String lastPublicKey = properties.getProperty(
+                    CoreConstant.LAST_PUBLICKEY);
+            String lastPrivateKey = properties.getProperty(
+                    CoreConstant.LAST_PRIVATEKEY);
+            if (StringUtils.isNotBlank(lastKeyVersion)) {
+                if (StringUtils.isBlank(lastPublicKey) ||
+                        StringUtils.isBlank(lastPrivateKey)) {
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.SECRET_ERROR,
+                            "DataX配置要求加解密，但上次配置的公私钥对存在为空的情况"
+                    );
+                }
 
-        String lastKeyVersion = properties.getProperty(
-                CoreConstant.LAST_KEYVERSION);
-        String lastPublicKey = properties.getProperty(
-                CoreConstant.LAST_PUBLICKEY);
-        String lastPrivateKey = properties.getProperty(
-                CoreConstant.LAST_PRIVATEKEY);
-        if (StringUtils.isNotBlank(lastKeyVersion)) {
-            if (StringUtils.isBlank(lastPublicKey) ||
-                    StringUtils.isBlank(lastPrivateKey)) {
-                throw DataXException.asDataXException(
-                        FrameworkErrorCode.SECRET_ERROR,
-                        "DataX配置要求加解密，但上次配置的公私钥对存在为空的情况"
-                );
+                versionKeyMap.put(lastKeyVersion, ImmutablePair.of(lastPrivateKey, lastPublicKey));
             }
 
-            versionKeyMap.put(lastKeyVersion, ImmutablePair.of(lastPrivateKey,lastPublicKey));
-        }
+            String currentKeyVersion = properties.getProperty(
+                    CoreConstant.CURRENT_KEYVERSION);
+            String currentPublicKey = properties.getProperty(
+                    CoreConstant.CURRENT_PUBLICKEY);
+            String currentPrivateKey = properties.getProperty(
+                    CoreConstant.CURRENT_PRIVATEKEY);
+            if (StringUtils.isNotBlank(currentKeyVersion)) {
+                if (StringUtils.isBlank(currentPublicKey) ||
+                        StringUtils.isBlank(currentPrivateKey)) {
+                    throw DataXException.asDataXException(
+                            FrameworkErrorCode.SECRET_ERROR,
+                            "DataX配置要求加解密，但当前配置的公私钥对存在为空的情况");
+                }
 
-        String currentKeyVersion = properties.getProperty(
-                CoreConstant.CURRENT_KEYVERSION);
-        String currentPublicKey = properties.getProperty(
-                CoreConstant.CURRENT_PUBLICKEY);
-        String currentPrivateKey = properties.getProperty(
-                CoreConstant.CURRENT_PRIVATEKEY);
-        if (StringUtils.isNotBlank(currentKeyVersion)) {
-            if (StringUtils.isBlank(currentPublicKey) ||
-                    StringUtils.isBlank(currentPrivateKey)) {
-                throw DataXException.asDataXException(
-                        FrameworkErrorCode.SECRET_ERROR,
-                        "DataX配置要求加解密，但当前配置的公私钥对存在为空的情况");
+                versionKeyMap.put(currentKeyVersion, ImmutablePair.of(currentPrivateKey, currentPublicKey));
             }
 
-            versionKeyMap.put(currentKeyVersion, ImmutablePair.of(currentPrivateKey,currentPublicKey));
-        }
-
-        if (versionKeyMap.size() <= 0) {
-            throw DataXException.asDataXException(
-                    FrameworkErrorCode.SECRET_ERROR,
-                    "DataX配置要求加解密，但无法找到公私钥");
+            if (versionKeyMap.size() <= 0) {
+                throw DataXException.asDataXException(
+                        FrameworkErrorCode.SECRET_ERROR,
+                        "DataX配置要求加解密，但无法找到公私钥");
+            }
         }
 
         return versionKeyMap;
