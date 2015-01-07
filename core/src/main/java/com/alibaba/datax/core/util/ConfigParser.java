@@ -3,13 +3,12 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.apache.http.client.methods.HttpGet;
 
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,30 +39,33 @@ public final class ConfigParser {
         return SecretUtil.decryptSecretKey(config);
     }
 
-    /**
-     * jobResource 如果是本地文件，必须以 file 开头作为其 protocol
-     */
     private static String getJobContent(String jobResource) {
         String jobContent = null;
 
-        try {
-            URL url = new URL(jobResource);
-            String protocol = url.getProtocol();
-            Validate.notNull(protocol);
+        boolean isJobResourceFromHttp = jobResource.trim().toLowerCase().startsWith("http");
 
-            if (protocol.toLowerCase().contains("http")) {
+        if (isJobResourceFromHttp) {
+            try {
+                URL url = new URL(jobResource);
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
+
                 jobContent = HttpClientUtil.getHttpClientUtil().executeAndGetWithRetry(httpGet, 3, 1000l);
-            } else if (protocol.toLowerCase().contains("file")) {
-                jobContent = IOUtils.toString(new FileInputStream(url.getFile()));
-            } else {
-                throw new Exception("unsupported protocol:" + protocol);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
-        } catch (Exception e) {
-            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
+        } else {
+            // jobResource 是本地文件绝对路径
+            try {
+                jobContent = FileUtils.readFileToString(new File(jobResource));
+            } catch (IOException e) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
+            }
         }
 
+        if (jobContent == null) {
+            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource);
+        }
         return jobContent;
     }
 

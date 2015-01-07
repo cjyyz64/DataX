@@ -120,8 +120,8 @@ def buildStartCommand(options, args):
     jobResource = args[0]
     if not isUrl(jobResource):
         jobResource = os.path.abspath(jobResource)
-        if not jobResource.startswith("file://"):
-            jobResource = "file://" + jobResource
+        if jobResource.lower().startswith("file://"):
+            jobResource = jobResource[len("file://"):]
 
     jobParams = ("-Dlog.file.name=%s") % (jobResource[-20:].replace('/', '-').replace('.', '-'))
     if options.params:
