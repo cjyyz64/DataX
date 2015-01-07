@@ -40,7 +40,7 @@ public final class ConfigParser {
     }
 
     private static String getJobContent(String jobResource) {
-        String jobContent = null;
+        String jobContent;
 
         boolean isJobResourceFromHttp = jobResource.trim().toLowerCase().startsWith("http");
 
