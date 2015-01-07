@@ -27,6 +27,8 @@ import java.util.Set;
 public class Engine {
     private static final Logger LOG = LoggerFactory.getLogger(Engine.class);
 
+    private static String RUNTIME_MODE;
+
     /* check job model (job/task) first */
     public void start(Configuration allConf) {
 
@@ -43,6 +45,7 @@ public class Engine {
 
         AbstractContainer container;
         if (isJob) {
+            allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
             container = new JobContainer(allConf);
         } else {
             container = new TaskGroupContainer(allConf);
@@ -84,12 +87,9 @@ public class Engine {
         CommandLine cl = parser.parse(options, args);
 
         String jobPath = cl.getOptionValue("job");
-        String jobMode = cl.getOptionValue("mode");
+        RUNTIME_MODE = cl.getOptionValue("mode");
 
         Configuration configuration = ConfigParser.parse(jobPath);
-        if (StringUtils.isNotBlank(jobMode)) {
-            configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, jobMode);
-        }
 
         LOG.info("\n" + Engine.copyRight());
 
