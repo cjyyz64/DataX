@@ -1,29 +1,22 @@
 package com.alibaba.datax.plugin.reader.txtfilereader;
 
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.unstructuredstorage.UnstructuredStorageReaderUtil;
-import com.google.common.collect.Sets;
-
+import com.alibaba.datax.plugin.unstructuredstorage.Key;
+import com.alibaba.datax.plugin.unstructuredstorage.UnstructuredStorageErrorCode;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -31,94 +24,43 @@ import java.util.regex.Pattern;
  */
 public class TxtFileReader extends Reader {
 	public static class Job extends Reader.Job {
-		private static final Logger LOG = LoggerFactory.getLogger(Job.class);
+		private static final Logger LOG = LoggerFactory
+				.getLogger(Job.class);
 
-		private Configuration originConfig = null;
+		private Configuration readerOriginConfig = null;
 
-		private List<String> path = null;
+		private String path = null;
 
 		private List<String> sourceFiles;
 
-		private Map<String, Pattern> pattern;
+		private Pattern pattern;
 
-		private Map<String, Boolean> isRegexPath;
+		private boolean isRegexPath;
 
 		@Override
 		public void init() {
-			this.originConfig = this.getPluginJobConf();
-			this.pattern = new HashMap<String, Pattern>();
-			this.isRegexPath = new HashMap<String, Boolean>();
-			this.validateParameter();
+			LOG.debug("init() begin...");
+			this.readerOriginConfig = this.getPluginJobConf();
+			this.validate();
+			LOG.debug("init() ok and end...");
 		}
 
-		private void validateParameter() {
-			path = this.originConfig.getList(Key.PATH, String.class);
-			if (null == path || path.size() == 0) {
-				throw DataXException.asDataXException(
-						TxtFileReaderErrorCode.REQUIRED_VALUE,
-						"您需要指定待读取的源目录或文件");
-			}
-
-			String charset = this.originConfig
-					.getString(
-							com.alibaba.datax.plugin.unstructuredstorage.Key.CHARSET,
-							com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_CHARSET);
+		// TODO validate column
+		private void validate() {
+			path = this.readerOriginConfig.getNecessaryValue( com.alibaba.datax.plugin.reader.txtfilereader.Key.PATH,
+					UnstructuredStorageErrorCode.CONFIG_INVALID_EXCEPTION);
+			String charset = this.readerOriginConfig.getString(Key.CHARSET,
+					com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_CHARSET);
 			try {
 				Charsets.toCharset(charset);
 			} catch (UnsupportedCharsetException uce) {
 				throw DataXException.asDataXException(
-						TxtFileReaderErrorCode.ILLEGAL_VALUE,
+						UnstructuredStorageErrorCode .CONFIG_INVALID_EXCEPTION,
 						String.format("不支持的编码格式 : [%s]", charset), uce);
 			} catch (Exception e) {
 				throw DataXException.asDataXException(
-						TxtFileReaderErrorCode.ILLEGAL_VALUE,
+						UnstructuredStorageErrorCode .CONFIG_INVALID_EXCEPTION,
 						String.format("运行配置异常 : %s", e.getMessage()), e);
-			}
-
-			// column: 1. index type 2.value type 3.when type is Data, may have
-			// format
-			List<Configuration> columns = this.originConfig
-					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN);
-			if (null != columns && columns.size() != 0) {
-				for (Configuration eachColumnConf : columns) {
-					eachColumnConf
-							.getNecessaryValue(
-									com.alibaba.datax.plugin.unstructuredstorage.Key.TYPE,
-									TxtFileReaderErrorCode.REQUIRED_VALUE);
-					Integer columnIndex = eachColumnConf
-							.getInt(com.alibaba.datax.plugin.unstructuredstorage.Key.INDEX);
-					String columnValue = eachColumnConf
-							.getString(com.alibaba.datax.plugin.unstructuredstorage.Key.VALUE);
-
-					if (null == columnIndex && null == columnValue) {
-						throw DataXException.asDataXException(
-								TxtFileReaderErrorCode.NO_INDEX_VALUE,
-								"由于您配置了type, 则至少需要配置 index 或 value");
-					}
-
-					if (null != columnIndex && null != columnValue) {
-						throw DataXException.asDataXException(
-								TxtFileReaderErrorCode.MIXED_INDEX_VALUE,
-								"您混合配置了index, value, 每一列同时仅能选择其中一种");
-					}
-
-				}
-			}
-
-			// only support compress: lzo,lzop,gzip,bzip
-			String compress = this.originConfig
-					.getString(com.alibaba.datax.plugin.unstructuredstorage.Key.COMPRESS);
-			if (null != compress) {
-				Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
-						"gzip", "bzip");
-				if (!supportedCompress.contains(compress.toLowerCase().trim())) {
-					throw DataXException
-							.asDataXException(
-									TxtFileReaderErrorCode.ILLEGAL_VALUE,
-									String.format(
-											"仅支持 lzo, lzop, gzip, bzip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
-											compress));
-				}
 			}
 
 		}
@@ -127,24 +69,20 @@ public class TxtFileReader extends Reader {
 		public void prepare() {
 			LOG.debug("prepare()");
 			// warn:make sure this regex string
-			// warn:no need trim
-			for (String eachPath : this.path) {
-				String regexString = eachPath.replace("*", ".*").replace("?",
-						".?");
-				Pattern patt = Pattern.compile(regexString);
-				this.pattern.put(eachPath, patt);
-				this.sourceFiles = this.buildSourceTargets();
-			}
-
-			LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
+			String regexString = this.path.replace("*", ".*")
+					.replace("?", ".?");
+			pattern = Pattern.compile(regexString);
+			this.sourceFiles = this.buildSourceTargets();
 		}
 
 		@Override
 		public void post() {
+			LOG.debug("post()");
 		}
 
 		@Override
 		public void destroy() {
+			LOG.debug("destroy()");
 		}
 
 		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定
@@ -153,13 +91,13 @@ public class TxtFileReader extends Reader {
 			LOG.debug("split() begin...");
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
-			// warn:每个slice拖且仅拖一个文件,
+			//warn:每个slice拖且仅拖一个文件,
 			int splitNumber = this.sourceFiles.size();
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
 					this.sourceFiles, splitNumber);
 			for (List<String> files : splitedSourceFiles) {
-				Configuration splitedConfig = this.originConfig.clone();
+				Configuration splitedConfig = this.readerOriginConfig.clone();
 				splitedConfig.set(Constant.SOURCE_FILES, files);
 				readerSplitConfigs.add(splitedConfig);
 			}
@@ -169,69 +107,73 @@ public class TxtFileReader extends Reader {
 
 		// validate the path, path must be a absolute path
 		private List<String> buildSourceTargets() {
-			// for eath path
-			Set<String> toBeReadFiles = new HashSet<String>();
-			for (String eachPath : this.path) {
-				int endMark;
-				for (endMark = 0; endMark < eachPath.length(); endMark++) {
-					if ('*' != eachPath.charAt(endMark)
-							&& '?' != eachPath.charAt(endMark)) {
-						continue;
-					} else {
-						this.isRegexPath.put(eachPath, true);
-						break;
-					}
-				}
-				String parentDirectory;
-				if (this.isRegexPath.get(eachPath)) {
-					int lastDirSeparator = eachPath.substring(0, endMark)
-							.lastIndexOf(IOUtils.DIR_SEPARATOR);
-					parentDirectory = eachPath.substring(0,
-							lastDirSeparator + 1);
+			int endMark;
+			for (endMark = 0; endMark < this.path.length(); endMark++) {
+				if ('*' != this.path.charAt(endMark)
+						&& '?' != this.path.charAt(endMark)) {
 				} else {
-					parentDirectory = eachPath;
+					this.isRegexPath = true;
+					break;
 				}
-				this.buildSourceTargetsEathPath(eachPath, parentDirectory,
-						toBeReadFiles);
 			}
-			return Arrays.asList(toBeReadFiles.toArray(new String[0]));
+
+			String parentDirectory;
+			if (this.isRegexPath) {
+				int lastDirSeparator = this.path.substring(0, endMark)
+						.lastIndexOf(IOUtils.DIR_SEPARATOR);
+				parentDirectory = this.path.substring(0, lastDirSeparator + 1);
+			} else {
+				parentDirectory = this.path;
+			}
+
+			return this.buildSourceTargets(parentDirectory);
 		}
 
-		private void buildSourceTargetsEathPath(String regexPath,
-				String parentDirectory, Set<String> toBeReadFiles) {
+		private List<String> buildSourceTargets(String parentDirectory) {
 			// 检测目录是否存在，错误情况更明确
 			try {
 				File dir = new File(parentDirectory);
 				boolean isExists = dir.exists();
 				if (!isExists) {
-					String message = String.format("您设定的目录不存在 : [%s]",
+					String message = String.format("设定的目录不存在 : [%s]",
 							parentDirectory);
 					LOG.error(message);
 					throw DataXException.asDataXException(
-							TxtFileReaderErrorCode.FILE_NOT_EXISTS, message);
+							UnstructuredStorageErrorCode.FILE_NOT_EXISTS, message);
 				}
 			} catch (SecurityException se) {
-				String message = String.format("您没有权限创建目录 : [%s]",
+				String message = String.format("没有权限创建目录 : [%s]",
 						parentDirectory);
 				LOG.error(message);
 				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.SECURITY_NOT_ENOUGH, message);
 			}
 
-			directoryRover(regexPath, parentDirectory, toBeReadFiles);
+			List<String> sourceFiles = new ArrayList<String>();
+			buildSourceTargets(sourceFiles, parentDirectory);
+			return sourceFiles;
 		}
 
-		private void directoryRover(String regexPath, String parentDirectory,
-				Set<String> toBeReadFiles) {
+		private void buildSourceTargets(List<String> result,
+										String parentDirectory) {
 			File directory = new File(parentDirectory);
-			// is a normal file
+			// 是文件
 			if (!directory.isDirectory()) {
-				if (this.isTargetFile(regexPath, directory.getAbsolutePath())) {
-					toBeReadFiles.add(parentDirectory);
+				if (this.isTargetFile(directory.getAbsolutePath())) {
+					result.add(parentDirectory);
 					LOG.info(String.format(
 							"add file [%s] as a candidate to read",
 							parentDirectory));
-
+					// 文件数量限制
+					if (result.size() > Constant.MAX_FILE_READ) {
+						throw DataXException
+								.asDataXException(
+										TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+										String.format(
+												"读取文件数量  [%d] 超过最大限制 > [%d]",
+												result.size(),
+												Constant.MAX_FILE_READ));
+					}
 				}
 			} else {
 				// 是目录
@@ -240,36 +182,25 @@ public class TxtFileReader extends Reader {
 					File[] files = directory.listFiles();
 					if (null != files) {
 						for (File subFileNames : files) {
-							directoryRover(regexPath,
-									subFileNames.getAbsolutePath(),
-									toBeReadFiles);
+							buildSourceTargets(result,
+									subFileNames.getAbsolutePath());
 						}
 					} else {
-						// TODO warn: 对于没有权限的文件，是直接throw DataXException
-						String message = String.format("您没有权限查看目录 : [%s]",
-								directory);
-						LOG.error(message);
-						throw DataXException.asDataXException(
-								TxtFileReaderErrorCode.SECURITY_NOT_ENOUGH,
-								message);
+						// warn: 对于没有权限的文件，是直接throw DataXException 还是仅仅LOG.warn
+						LOG.warn(String.format("没有权限查看目录 : [%s]", directory));
 					}
 
 				} catch (SecurityException e) {
-					String message = String.format("您没有权限查看目录 : [%s]",
-							directory);
-					LOG.error(message);
-					throw DataXException.asDataXException(
-							TxtFileReaderErrorCode.SECURITY_NOT_ENOUGH,
-							message, e);
+					LOG.warn(e.getMessage());
 				}
 			}
 		}
 
 		// 正则过滤
-		private boolean isTargetFile(String regexPath, String absoluteFilePath) {
-			if (this.isRegexPath.get(regexPath)) {
-				return this.pattern.get(regexPath).matcher(absoluteFilePath)
-						.matches();
+		private boolean isTargetFile(String absoluteFilePath) {
+			LOG.info(absoluteFilePath);
+			if (this.isRegexPath) {
+				return this.pattern.matcher(absoluteFilePath).matches();
 			} else {
 				return true;
 			}
@@ -277,7 +208,7 @@ public class TxtFileReader extends Reader {
 		}
 
 		private <T> List<List<T>> splitSourceFiles(final List<T> sourceList,
-				int adviceNumber) {
+												   int adviceNumber) {
 			List<List<T>> splitedList = new ArrayList<List<T>>();
 			int averageLength = sourceList.size() / adviceNumber;
 			averageLength = averageLength == 0 ? 1 : averageLength;
@@ -295,15 +226,37 @@ public class TxtFileReader extends Reader {
 	}
 
 	public static class Task extends Reader.Task {
-		private static Logger LOG = LoggerFactory.getLogger(Task.class);
+		private static Logger LOG = LoggerFactory
+				.getLogger(Task.class);
 
 		private Configuration readerSliceConfig;
+
+		private List<Configuration> column;
+
+		private String charset;
+
+		private String fieldDelimiter;
+
+		private boolean skipHeader;
+
 		private List<String> sourceFiles;
 
 		@Override
 		public void init() {
+			LOG.debug("init()");
+
 			this.readerSliceConfig = this.getPluginJobConf();
 
+			this.column = this.readerSliceConfig
+					.getListConfiguration(Key.COLUMN);
+
+			this.charset = this.readerSliceConfig.getString(Key.CHARSET,
+					com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_CHARSET);
+			this.fieldDelimiter = this.readerSliceConfig.getString(
+					Key.FIELD_DELIMITER,
+					com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_FIELD_DELIMITER_STR);
+			this.skipHeader = this.readerSliceConfig.getBool(Key.SKIP_HEADER,
+					com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_SKIP_HEADER);
 			this.sourceFiles = this.readerSliceConfig.getList(
 					Constant.SOURCE_FILES, String.class);
 
@@ -311,42 +264,196 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void prepare() {
-
+			LOG.debug("prepare()");
 		}
 
 		@Override
 		public void post() {
-
+			LOG.debug("post()");
 		}
 
 		@Override
 		public void destroy() {
-
+			LOG.debug("destroy()");
 		}
 
+		// warn: sock 文件无法read
 		@Override
 		public void startRead(RecordSender recordSender) {
-			LOG.debug("start read source files...");
+			LOG.debug("start startRead()");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
-				InputStream inputStream;
+
 				try {
-					inputStream = new FileInputStream(fileName);
-					UnstructuredStorageReaderUtil.readFromStream(inputStream,
-							fileName, this.readerSliceConfig, recordSender,
-							this.getTaskPluginCollector());
+					this.readFromFile(fileName, recordSender);
 					recordSender.flush();
-				} catch (FileNotFoundException e) {
-					// warn: sock 文件无法read,能影响所有文件的传输,需要用户自己保证
-					String message = String.format(
-							"could not read file : [%s]", fileName);
-					LOG.error(message);
-					throw DataXException.asDataXException(
-							TxtFileReaderErrorCode.OPEN_FILE_ERROR, message);
+				} catch (Exception e) {
+					// 一个文件失败，不能影响所有文件的传输
+					LOG.warn(String.format("could not read file : [%s]",
+							fileName));
 				}
 			}
-			LOG.debug("end read source files...");
+			LOG.debug("end startRead()");
 		}
 
+		// TODO readLine lineDelimiter 字符 or 字符串
+		private void readFromFile(String fileName, RecordSender recordSender) {
+			BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new InputStreamReader(
+						new FileInputStream(fileName), this.charset));
+
+				boolean isHeader = true;
+
+				String fetchLine = null;
+				while ((fetchLine = reader.readLine()) != null) {
+
+					if (isHeader) {
+						isHeader = false;
+						if (this.skipHeader) {
+							continue;
+						}
+					}
+
+					String[] sourceLine = StringUtils.split(fetchLine,
+							this.fieldDelimiter);
+					// 未配置column 全为String
+					if (null == this.column || 0 == this.column.size()) {
+						this.generateAndSendStringRecord(recordSender,
+								sourceLine);
+					} else {
+						// 根据用户配置column生成
+						this.generateAndSendConfigRecord(recordSender,
+								sourceLine);
+					}
+				}
+			} catch (UnsupportedEncodingException uee) {
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
+						String.format("不支持的编码格式 : [%]", this.charset), uee);
+			} catch (FileNotFoundException fnfe) {
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.FILE_NOT_EXISTS,
+						String.format("无法找到文件 : [%s]", fileName), fnfe);
+			} catch (IOException ioe) {
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.READ_FILE_IO_ERROR,
+						String.format("读取文件错误 : [%s]", fileName), ioe);
+			} catch (Exception e) {
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+						String.format("运行时异常 : %s", e.getMessage()), e);
+			} finally {
+				IOUtils.closeQuietly(reader);
+			}
+		}
+
+
+		// 创建都为String类型column的record（注意，参数 record 要是没有任何字段的纯粹的 record）
+		private Record generateStringRecord(String[] sourceLine,Record record) {
+			Column columnGenerated = null;
+
+			for (String columnValue : sourceLine) {
+				columnGenerated = new StringColumn(columnValue);
+				record.addColumn(columnGenerated);
+			}
+
+			return record;
+		}
+
+		// 创建都为String类型column的record
+		private Record generateAndSendStringRecord(RecordSender recordSender,
+												   String[] sourceLine) {
+
+			Record record = recordSender.createRecord();
+			record = this.generateStringRecord(sourceLine,record);
+
+			recordSender.sendToWriter(record);
+			return record;
+		}
+
+		private Record generateAndSendConfigRecord(RecordSender recordSender,
+												   String[] sourceLine) {
+			// 根据用户配置column生成
+			Record record;
+			Column columnGenerated;
+			try {
+				record = recordSender.createRecord();
+				for (Configuration conf : this.column) {
+					columnGenerated = this.generateColumn(conf, sourceLine);
+					record.addColumn(columnGenerated);
+				}
+
+				recordSender.sendToWriter(record);
+				return record;
+
+			} catch (DataXException dxe) {
+				// 脏数据处理,不发送给下游，只记录即可
+				record = recordSender.createRecord();
+				record = this.generateStringRecord(sourceLine, record);
+
+				this.getTaskPluginCollector().collectDirtyRecord(record,
+						dxe.getMessage());
+
+				return record;
+			} catch (Exception e) {
+				throw DataXException.asDataXException(
+						TxtFileReaderErrorCode.RUNTIME_EXCEPTION,
+						String.format("运行时异常 : %s", e.getMessage()));
+			}
+		}
+
+		private Column generateColumn(Configuration columnConfig,
+									  String[] sourceLine) {
+			String columnType = columnConfig.getNecessaryValue(Key.TYPE,
+					UnstructuredStorageErrorCode.NOT_SUPPORT_TYPE);
+			Integer columnIndex = columnConfig.getInt(Key.INDEX);
+			String columnConst = columnConfig.getString(Key.VALUE);
+
+			String columnValue = null;
+
+			try {
+				if (null != columnIndex) {
+					columnValue = sourceLine[columnIndex];
+				} else {
+					columnValue = columnConst;
+				}
+
+				if ("string".equalsIgnoreCase(columnType)
+						|| "char".equalsIgnoreCase(columnType)) {
+					return new StringColumn(columnValue);
+				} else if ("long".equalsIgnoreCase(columnType)) {
+					return new LongColumn(Long.parseLong(columnValue));
+				} else if ("int".equalsIgnoreCase(columnType)) {
+					return new LongColumn(Integer.parseInt(columnValue));
+				} else if ("float".equalsIgnoreCase(columnType)) {
+					return new DoubleColumn(Float.parseFloat(columnValue));
+				} else if ("double".equalsIgnoreCase(columnType)) {
+					return new DoubleColumn(Double.parseDouble(columnValue));
+				} else if ("bool".equalsIgnoreCase(columnType)) {
+					return new BoolColumn(Boolean.parseBoolean(columnValue));
+				} else if ("date".equalsIgnoreCase(columnType)) {
+					return new DateColumn(Long.parseLong(columnValue));
+				} else if ("byte".equalsIgnoreCase(columnType)) {
+					return new BytesColumn(((String) columnValue).getBytes());
+				} else {
+					String errorMessage = String.format("不支持的列类型 :[%s]",
+							columnType);
+					LOG.error(errorMessage);
+					throw DataXException.asDataXException(
+							UnstructuredStorageErrorCode.NOT_SUPPORT_TYPE,
+							errorMessage);
+				}
+			} catch (IndexOutOfBoundsException ioe) {
+				throw DataXException.asDataXException(
+						UnstructuredStorageErrorCode.CONFIG_INVALID_EXCEPTION,
+						String.format("索引下标越界 : [%s]", columnIndex));
+			} catch (NumberFormatException nfe) {
+				throw DataXException.asDataXException(
+						UnstructuredStorageErrorCode.NOT_SUPPORT_TYPE,
+						String.format("数字格式错误 : %s", nfe.getMessage()), nfe);
+			}
+		}
 	}
+
 }
