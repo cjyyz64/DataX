@@ -155,14 +155,14 @@ public class OssReader extends Reader {
             String compress = this.readerOriginConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.COMPRESS);
             if (null != compress) {
-                Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
-                        "gzip", "bzip2","zip","tgz");
+                Set<String> supportedCompress = Sets.newHashSet(
+                        "gzip", "bzip2");
                 if (!supportedCompress.contains(compress.toLowerCase().trim())) {
                     throw DataXException
                             .asDataXException(
                                     OssReaderErrorCode.ILLEGAL_VALUE,
                                     String.format(
-                                            "仅支持 lzo, lzop, gzip, bzip2 zip tgz 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+                                            "仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
                                             compress));
                 }
             }
