@@ -1,16 +1,11 @@
 package com.alibaba.datax.plugin.unstructuredstorage;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Scanner;
-
+import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.csvreader.CsvReader;
 import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
 import org.anarres.lzo.LzopInputStream;
@@ -34,18 +29,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
-import com.alibaba.datax.common.util.Configuration;
-import com.csvreader.CsvReader;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Scanner;
 
 public class UnstructuredStorageReaderUtil {
 	private static final Logger LOG = LoggerFactory
@@ -141,14 +129,12 @@ public class UnstructuredStorageReaderUtil {
 						columnValue = columnConst;
 					}
 					Type type = Type.valueOf(columnType.toUpperCase());
-
+                    if (columnValue.equals(nullFormat)) {
+                        columnValue = null;
+                    }
 					switch (type) {
 					case STRING:
-						if (columnValue.equals(nullFormat)) {
-							columnGenerated = new StringColumn(null);
-						} else {
-							columnGenerated = new StringColumn(columnValue);
-						}
+                        columnGenerated = new StringColumn(columnValue);
 						break;
 					case LONG:
 						columnGenerated = new LongColumn(columnValue);
@@ -160,19 +146,24 @@ public class UnstructuredStorageReaderUtil {
 						columnGenerated = new BoolColumn(columnValue);
 						break;
 					case DATE:
-						String formatString = columnConfig
-								.getString(Key.FORMAT);
-						if (null != formatString) {
-							// 用户自己配置的格式转换
-							SimpleDateFormat format = new SimpleDateFormat(
-									formatString);
-							columnGenerated = new DateColumn(
-									format.parse(columnValue));
-						} else {
-							// 框架尝试转换
-							columnGenerated = new DateColumn(new StringColumn(
-									columnValue).asDate());
-						}
+                        if (columnValue == null) {
+                            Date date =null;
+                            columnGenerated = new DateColumn(date);
+                        } else {
+                            String formatString = columnConfig
+                                    .getString(Key.FORMAT);
+                            if (null != formatString) {
+                                // 用户自己配置的格式转换
+                                SimpleDateFormat format = new SimpleDateFormat(
+                                        formatString);
+                                columnGenerated = new DateColumn(
+                                        format.parse(columnValue));
+                            } else {
+                                // 框架尝试转换
+                                columnGenerated = new DateColumn(new StringColumn(
+                                        columnValue).asDate());
+                            }
+                        }
 						break;
 					default:
 						String errorMessage = String.format(
@@ -289,6 +280,7 @@ public class UnstructuredStorageReaderUtil {
 					reader = new BufferedReader(new InputStreamReader(
 							tarArchiveInputStream, charset));
 				} else if ("zip".equalsIgnoreCase(compress)) {
+                    LOG.debug("Use zip decompress");
 					ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -334,13 +326,13 @@ public class UnstructuredStorageReaderUtil {
 		List<Configuration> column = readerSliceConfig
 				.getListConfiguration(Key.COLUMN);
 		String charset = readerSliceConfig.getString(Key.CHARSET,
-				Constant.DEFAULT_CHARSET);
+                Constant.DEFAULT_CHARSET);
 		char fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
-				Constant.DEFAULT_FIELD_DELIMITER);
+                Constant.DEFAULT_FIELD_DELIMITER);
 		Boolean skipHeader = readerSliceConfig.getBool(Key.SKIP_HEADER,
-				Constant.DEFAULT_SKIP_HEADER);
+                Constant.DEFAULT_SKIP_HEADER);
 		String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT,
-				Constant.DEFAULT_NULL_FORMAT);
+                Constant.DEFAULT_NULL_FORMAT);
 
 		// every line logic
 		try {

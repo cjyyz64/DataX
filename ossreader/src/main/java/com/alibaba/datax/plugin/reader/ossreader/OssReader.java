@@ -52,6 +52,41 @@ public class OssReader extends Reader {
                         "您需要指定 endpoint");
             }
 
+            String accessId = this.readerOriginConfig.getString(Key.ACCESSID);
+            if (null == accessId || accessId.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 accessId");
+            }
+
+            String accessKey = this.readerOriginConfig.getString(Key.ACCESSKEY);
+            if (null == accessKey || accessKey.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 accessKey");
+            }
+
+            String bucket = this.readerOriginConfig.getString(Key.BUCKET);
+            if (null == bucket || endpoint.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 endpoint");
+            }
+
+            String object = this.readerOriginConfig.getString(Key.OBJECT);
+            if (null == object || object.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 object");
+            }
+
+            String fieldDelimiter = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.Key.FIELD_DELIMITER);
+            if (null == fieldDelimiter || fieldDelimiter.length() == 0) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                        "您需要指定 fieldDelimiter");
+            }
+
             String charset = this.readerOriginConfig
                     .getString(
                             Key.ENCODING,
@@ -68,48 +103,66 @@ public class OssReader extends Reader {
                         String.format("运行配置异常 : %s", e.getMessage()), e);
             }
 
-            // column: 1. index type 2.value type 3.when type is Data, may have
-            // format
-            List<Configuration> columns = this.readerOriginConfig
-                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN);
-            if (null != columns && columns.size() != 0) {
-                for (Configuration eachColumnConf : columns) {
-                    eachColumnConf
-                            .getNecessaryValue(
-                                    com.alibaba.datax.plugin.unstructuredstorage.Key.TYPE,
-                                    OssReaderErrorCode.REQUIRED_VALUE);
-                    Integer columnIndex = eachColumnConf
-                            .getInt(com.alibaba.datax.plugin.unstructuredstorage.Key.INDEX);
-                    String columnValue = eachColumnConf
-                            .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.VALUE);
 
-                    if (null == columnIndex && null == columnValue) {
-                        throw DataXException.asDataXException(
-                                OssReaderErrorCode.NO_INDEX_VALUE,
-                                "由于您配置了type, 则至少需要配置 index 或 value");
+            // 检测是column 是否为 ["*"] 若是则填为空
+            List<String> column = this.readerOriginConfig
+                    .getList(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN,String.class);
+            if (null != column && 1 == column.size() && "*".equals(column.get(0))) {
+                readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN,new ArrayList<String>());
+            } else {
+                // column: 1. index type 2.value type 3.when type is Data, may have
+                // format
+                List<Configuration> columns = this.readerOriginConfig
+                        .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN);
+
+                if (null == columns || columns.size() == 0) {
+                    throw DataXException.asDataXException(
+                            OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+                            "您需要指定 columns");
+                }
+
+                if (null != columns && columns.size() != 0) {
+                    for (Configuration eachColumnConf : columns) {
+                        eachColumnConf
+                                .getNecessaryValue(
+                                        com.alibaba.datax.plugin.unstructuredstorage.Key.TYPE,
+                                        OssReaderErrorCode.REQUIRED_VALUE);
+                        Integer columnIndex = eachColumnConf
+                                .getInt(com.alibaba.datax.plugin.unstructuredstorage.Key.INDEX);
+                        String columnValue = eachColumnConf
+                                .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.VALUE);
+
+                        if (null == columnIndex && null == columnValue) {
+                            throw DataXException.asDataXException(
+                                    OssReaderErrorCode.NO_INDEX_VALUE,
+                                    "由于您配置了type, 则至少需要配置 index 或 value");
+                        }
+
+                        if (null != columnIndex && null != columnValue) {
+                            throw DataXException.asDataXException(
+                                    OssReaderErrorCode.MIXED_INDEX_VALUE,
+                                    "您混合配置了index, value, 每一列同时仅能选择其中一种");
+                        }
+
                     }
-
-                    if (null != columnIndex && null != columnValue) {
-                        throw DataXException.asDataXException(
-                                OssReaderErrorCode.MIXED_INDEX_VALUE,
-                                "您混合配置了index, value, 每一列同时仅能选择其中一种");
-                    }
-
                 }
             }
+
+
+
 
             // only support compress: lzo,lzop,gzip,bzip
             String compress = this.readerOriginConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.COMPRESS);
             if (null != compress) {
                 Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
-                        "gzip", "bzip");
+                        "gzip", "bzip2","zip","tgz");
                 if (!supportedCompress.contains(compress.toLowerCase().trim())) {
                     throw DataXException
                             .asDataXException(
                                     OssReaderErrorCode.ILLEGAL_VALUE,
                                     String.format(
-                                            "仅支持 lzo, lzop, gzip, bzip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+                                            "仅支持 lzo, lzop, gzip, bzip2 zip tgz 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
                                             compress));
                 }
             }
@@ -213,17 +266,17 @@ public class OssReader extends Reader {
             String object = readerSliceConfig.getString(Key.OBJECT);
             OSSClient client = OssUtil.initOssClient(readerSliceConfig);
 
-            try {
+//            try {
                 OSSObject ossObject = client.getObject(readerSliceConfig.getString(Key.BUCKET), object);
                 InputStream objectStream = ossObject.getObjectContent();
                 UnstructuredStorageReaderUtil.readFromStream(objectStream,
                         object, this.readerSliceConfig, recordSender,
                         this.getTaskPluginCollector());
                 recordSender.flush();
-            } catch (IllegalArgumentException e){
-                throw DataXException.asDataXException(
-                        OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
-            }
+//            } catch (IllegalArgumentException e){
+//                throw DataXException.asDataXException(
+//                        OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
+//            }
         }
 
         @Override
