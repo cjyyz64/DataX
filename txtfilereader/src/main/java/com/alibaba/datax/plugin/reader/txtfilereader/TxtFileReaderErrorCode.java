@@ -6,11 +6,16 @@ import com.alibaba.datax.common.spi.ErrorCode;
  * Created by haiwei.luo on 14-9-20.
  */
 public enum TxtFileReaderErrorCode implements ErrorCode {
-	RUNTIME_EXCEPTION("TxtFileReader-00", "运行时异常"), FILE_EXCEPTION(
-			"TxtFileReader-01", "文件读取异常"), CONFIG_INVALID_EXCEPTION(
-			"TxtFileReader-02", "参数配置错误"), NOT_SUPPORT_TYPE("TxtFileReader-03",
-			"不支持的类型"), CAST_VALUE_TYPE_ERROR("TxtFileReader-04", "无法完成指定类型的转换"), SECURITY_EXCEPTION(
-			"TxtFileReader-05", "缺少权限"), ;
+	REQUIRED_VALUE("TxtFileReader-00", "您缺失了必须填写的参数值."),
+	ILLEGAL_VALUE("TxtFileReader-01", "您填写的参数值不合法."),
+	MIXED_INDEX_VALUE("TxtFileReader-02", "您的列信息配置同时包含了index,value."),
+	NO_INDEX_VALUE("TxtFileReader-03","您明确的配置列信息,但未填写相应的index,value."),
+	FILE_NOT_EXISTS("TxtFileReader-04", "您配置的目录文件路径不存在."),
+	OPEN_FILE_WITH_CHARSET_ERROR("TxtFileReader-05", "您配置的文件编码和实际文件编码不符合."),
+	OPEN_FILE_ERROR("TxtFileReader-06", "您配置的文件在打开时异常,建议您检查源目录是否有隐藏文件,管道文件等特殊文件."),
+	READ_FILE_IO_ERROR("TxtFileReader-07", "您配置的文件在读取时出现IO异常."),
+	SECURITY_NOT_ENOUGH("TxtFileReader-08", "您缺少权限执行相应的文件操作."),
+	RUNTIME_EXCEPTION("TxtFileReader-10", "出现运行时异常, 请联系我们");
 
 	private final String code;
 	private final String description;

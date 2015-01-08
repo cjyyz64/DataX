@@ -674,7 +674,7 @@ public class Configuration {
 	public Configuration clone() {
 		Configuration config = Configuration
 				.from(Configuration.toJSONString(this.getInternal()));
-        config.addSecretKeyPath(this.getKeys());
+        config.addSecretKeyPath(this.secretKeyPathSet);
         return config;
 	}
 

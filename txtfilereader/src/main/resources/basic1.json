@@ -1,24 +1,35 @@
 {
     "job": {
+        "setting": {},
         "content": [
             {
                 "reader": {
-                    "name": "txtfilereader",
+                    "name": "TxtFileReader",
                     "parameter": {
-						"path": "/home/haiweiluo/work/app-dsc",
+                        "path": ["/tmp/a"],
                         "column": [
-                        ],
-                        "charset": "UTF-8",
-                        "fieldDelimiter": "\t"
+                            {
+                                "type": "int",
+                                "index": 0
+                            },
+                            {
+                                "type": "string",
+                                "value": "alibaba"
+                            },
+                            {
+                                "type": "date",
+                                "index": 1,
+                                "format": "yyyy-mm-dd"
+                            }
+                        ]
                     }
                 },
                 "writer": {
                     "name": "txtfilewriter",
                     "parameter": {
-                        "path": "/home/haiweiluo/job_data/sink_data/",
+                        "path": "/home/usr/dest/",
                         "charset": "UTF-8",
                         "fieldDelimiter": "\t",
-						"truncate":"true"
                     }
                 }
             }

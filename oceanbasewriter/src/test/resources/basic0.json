@@ -1,0 +1,34 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "oceanbasewriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "nop":"\2",
+                        "column": [
+                            "i1",
+                            "v1",
+                            "n1",
+                            "t1",
+                            "b1"
+                        ],
+                        "connection": [
+                            {
+                                "table": "datax",
+                                "configUrl": "http://obconsole.test.alibaba-inc.com/ob-config/config.co?dataId=daily_ob5"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
