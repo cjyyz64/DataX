@@ -47,7 +47,7 @@ def suicide(signum, e):
         child_process.send_signal(signal.SIGQUIT)
         time.sleep(1)
         child_process.kill()
-    print >> "DataX Process was killed ! you did ?"
+    print >> sys.stderr, "DataX Process was killed ! you did ?"
     sys.exit(RET_STATE["KILL"])
 
 
