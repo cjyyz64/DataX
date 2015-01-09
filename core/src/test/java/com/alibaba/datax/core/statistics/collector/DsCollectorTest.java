@@ -10,6 +10,7 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,21 +38,21 @@ public class DsCollectorTest {
         map.put(taskGroupId_1, new Communication());
         ReflectUtil.setField(new LocalTGCommunicationManager(), "taskGroupCommunicationMap", map);
 
-        Result<List<TaskGroup>> result = new Result<List<TaskGroup>>();
-        List<TaskGroup> taskGroups = new ArrayList<TaskGroup>();
-        TaskGroup taskGroup = new TaskGroup();
-        taskGroup.setJobId(jobId);
-        taskGroup.setTaskGroupId(taskGroupId_1);
-        taskGroup.setTotalBytes(1024L);
-        taskGroups.add(taskGroup);
+        Result<List<TaskGroupStatus>> result = new Result<List<TaskGroupStatus>>();
+        List<TaskGroupStatus> taskGroupStatusList = new ArrayList<TaskGroupStatus>();
+        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        taskGroupStatus.setJobId(jobId);
+        taskGroupStatus.setTaskGroupId(taskGroupId_1);
+        taskGroupStatus.setTotalBytes(1024L);
+        taskGroupStatusList.add(taskGroupStatus);
 
         Communication communication = new Communication();
         communication.setLongCounter("totalBytes", 1024);
 
-        result.setData(taskGroups);
+        result.setData(taskGroupStatusList);
         PowerMockito.mockStatic(DataxServiceUtil.class);
-        PowerMockito.when(DataxServiceUtil.getTaskGroupInJob(jobId)).thenReturn(result);
-        PowerMockito.when(DataxServiceUtil.convertTaskGroupToCommunication(taskGroup)).thenReturn(communication);
+        PowerMockito.when(DataxServiceUtil.getTaskGroupStatusInJob(jobId)).thenReturn(result);
+        PowerMockito.when(DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus)).thenReturn(communication);
 
         Communication comm = dsCollector.collectFromTaskGroup();
         Assert.assertTrue(comm.getLongCounter("totalBytes") == 1024);

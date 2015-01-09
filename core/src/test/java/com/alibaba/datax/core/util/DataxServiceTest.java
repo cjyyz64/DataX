@@ -168,19 +168,19 @@ public class DataxServiceTest extends CaseInitializer {
 
     @Test
     public void testConvertTaskGroupToCommunication() {
-        TaskGroup taskGroup = new TaskGroup();
-        taskGroup.setJobId(1L);
-        taskGroup.setTaskGroupId(1);
-        taskGroup.setSpeedBytes(null);
-        taskGroup.setTotalRecords(null);
-        taskGroup.setTotalBytes(null);
-        taskGroup.setErrorRecords(null);
-        taskGroup.setErrorBytes(null);
+        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        taskGroupStatus.setJobId(1L);
+        taskGroupStatus.setTaskGroupId(1);
+        taskGroupStatus.setSpeedBytes(null);
+        taskGroupStatus.setTotalRecords(null);
+        taskGroupStatus.setTotalBytes(null);
+        taskGroupStatus.setErrorRecords(null);
+        taskGroupStatus.setErrorBytes(null);
 
-        Communication communication = DataxServiceUtil.convertTaskGroupToCommunication(taskGroup);
-        Assert.assertTrue(communication.getLongCounter("totalRecords").equals(taskGroup.getTotalRecords()));
-        Assert.assertTrue(communication.getLongCounter("totalBytes").equals(taskGroup.getTotalBytes()));
-        Assert.assertTrue(communication.getLongCounter("errorRecords").equals(taskGroup.getErrorRecords()));
-        Assert.assertTrue(communication.getLongCounter("errorBytes").equals(taskGroup.getErrorBytes()));
+        Communication communication = DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus);
+        Assert.assertTrue(communication.getLongCounter("totalRecords").equals(taskGroupStatus.getTotalRecords()));
+        Assert.assertTrue(communication.getLongCounter("totalBytes").equals(taskGroupStatus.getTotalBytes()));
+        Assert.assertTrue(communication.getLongCounter("errorRecords").equals(taskGroupStatus.getErrorRecords()));
+        Assert.assertTrue(communication.getLongCounter("errorBytes").equals(taskGroupStatus.getErrorBytes()));
     }
 }

@@ -108,6 +108,29 @@ public final class DataxServiceUtil {
         }
     }
 
+    public static Result<List<TaskGroupStatus>> getTaskGroupStatusInJob(Long jobId) {
+        String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup/status";
+
+        try {
+            HttpGet httpGet = HttpClientUtil.getGetRequest();
+            httpGet.setURI(new URI(url));
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
+
+            Result<List<TaskGroupStatus>> result = JSON.parseObject(resJson,
+                    new TypeReference<Result<List<TaskGroupStatus>>>(){});
+
+            if (!result.isSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("getTaskGroupStatusInJob error, jobId=[%s], http result:[%s].", jobId, resJson));
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                    String.format("getTaskGroupStatusInJob error, jobId=[%s]", jobId), e);
+        }
+    }
+
     public static Result startTaskGroup(Long jobId, TaskGroup taskGroup) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup";
         try {
@@ -190,52 +213,52 @@ public final class DataxServiceUtil {
     }
 
 
-    public static Communication convertTaskGroupToCommunication(TaskGroup taskGroup) {
+    public static Communication convertTaskGroupToCommunication(TaskGroupStatus taskGroupStatus) {
         Communication communication = new Communication();
-        communication.setState(taskGroup.getState());
-        if (taskGroup.getStage() == null) {
-            taskGroup.setStage(0);
+        communication.setState(taskGroupStatus.getState());
+        if (taskGroupStatus.getStage() == null) {
+            taskGroupStatus.setStage(0);
         }
 
-        if (taskGroup.getTotalRecords() == null) {
-            taskGroup.setTotalRecords(0L);
+        if (taskGroupStatus.getTotalRecords() == null) {
+            taskGroupStatus.setTotalRecords(0L);
         }
 
-        if (taskGroup.getTotalBytes() == null) {
-            taskGroup.setTotalBytes(0L);
+        if (taskGroupStatus.getTotalBytes() == null) {
+            taskGroupStatus.setTotalBytes(0L);
         }
 
-        if (taskGroup.getErrorRecords() == null) {
-            taskGroup.setErrorRecords(0L);
+        if (taskGroupStatus.getErrorRecords() == null) {
+            taskGroupStatus.setErrorRecords(0L);
         }
 
-        if (taskGroup.getErrorBytes() == null) {
-            taskGroup.setErrorBytes(0L);
+        if (taskGroupStatus.getErrorBytes() == null) {
+            taskGroupStatus.setErrorBytes(0L);
         }
 
-        communication.setLongCounter("stage", taskGroup.getStage());
+        communication.setLongCounter("stage", taskGroupStatus.getStage());
 
-        communication.setLongCounter("totalRecords", taskGroup.getTotalRecords());
+        communication.setLongCounter("totalRecords", taskGroupStatus.getTotalRecords());
         communication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS,
-                taskGroup.getTotalRecords() - taskGroup.getErrorRecords());
-        communication.setLongCounter("totalReadRecords", taskGroup.getTotalRecords());
+                taskGroupStatus.getTotalRecords() - taskGroupStatus.getErrorRecords());
+        communication.setLongCounter("totalReadRecords", taskGroupStatus.getTotalRecords());
 
-        communication.setLongCounter("totalBytes", taskGroup.getTotalBytes());
+        communication.setLongCounter("totalBytes", taskGroupStatus.getTotalBytes());
         communication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES,
-                taskGroup.getTotalBytes() - taskGroup.getErrorBytes());
-        communication.setLongCounter("totalReadBytes", taskGroup.getTotalBytes());
+                taskGroupStatus.getTotalBytes() - taskGroupStatus.getErrorBytes());
+        communication.setLongCounter("totalReadBytes", taskGroupStatus.getTotalBytes());
 
-        communication.setLongCounter("readFailedRecords", taskGroup.getErrorRecords());
+        communication.setLongCounter("readFailedRecords", taskGroupStatus.getErrorRecords());
         communication.setLongCounter("writeFailedRecords", 0);
-        communication.setLongCounter("totalErrorRecords", taskGroup.getErrorRecords());
-        communication.setLongCounter("errorRecords", taskGroup.getErrorRecords());
+        communication.setLongCounter("totalErrorRecords", taskGroupStatus.getErrorRecords());
+        communication.setLongCounter("errorRecords", taskGroupStatus.getErrorRecords());
 
-        communication.setLongCounter("readFailedBytes", taskGroup.getErrorBytes());
+        communication.setLongCounter("readFailedBytes", taskGroupStatus.getErrorBytes());
         communication.setLongCounter("writeFailedBytes", 0);
-        communication.setLongCounter("errorBytes", taskGroup.getErrorBytes());
-        communication.setLongCounter("totalErrorBytes", taskGroup.getErrorBytes());
+        communication.setLongCounter("errorBytes", taskGroupStatus.getErrorBytes());
+        communication.setLongCounter("totalErrorBytes", taskGroupStatus.getErrorBytes());
 
-        String errorMessage = taskGroup.getErrorMessage();
+        String errorMessage = taskGroupStatus.getErrorMessage();
         if (StringUtils.isNotBlank(errorMessage)) {
             communication.setThrowable(new Throwable(errorMessage));
         }
