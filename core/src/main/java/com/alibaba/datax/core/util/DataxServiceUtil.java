@@ -40,7 +40,7 @@ public final class DataxServiceUtil {
         try {
             HttpGet httpGet = HttpClientUtil.getGetRequest();
             httpGet.setURI(new URI(url));
-            String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 3, 1000l);
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
 
             Type type = new TypeReference<Result<Integer>>() {}.getType();
             Result<Integer> result = JSON.parseObject(resJson,type);

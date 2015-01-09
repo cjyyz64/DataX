@@ -50,7 +50,7 @@ public final class ConfigParser {
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
 
-                jobContent = HttpClientUtil.getHttpClientUtil().executeAndGetWithRetry(httpGet, 3, 1000l);
+                jobContent = HttpClientUtil.getHttpClientUtil().executeAndGetWithRetry(httpGet, 9, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
