@@ -91,8 +91,6 @@ public class OtsReaderMasterProxy {
         List<PrimaryKeyValue> points = ReaderModelParser.parsePrimaryKey(ParamChecker.checkListAndGet(rangeMap, Key.RANGE_SPLIT));
         ParamChecker.checkInputSplitPoints(meta, range, direction, points);
         conf.setRangeSplit(points);
-
-        LOG.info("User input conf : {}", Common.OTSConfToNoSensitiveString(conf));
     }
 
     public List<Configuration> split(int num) throws Exception {

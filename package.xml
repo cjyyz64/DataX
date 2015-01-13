@@ -90,6 +90,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>ossreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>streamreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -101,6 +108,13 @@
         <!-- writer -->
         <fileSet>
             <directory>mysqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>oceanbasewriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

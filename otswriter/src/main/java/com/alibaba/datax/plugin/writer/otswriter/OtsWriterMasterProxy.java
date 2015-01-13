@@ -73,8 +73,6 @@ public class OtsWriterMasterProxy {
         
         conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, conf.getOperation() == OTSOpType.PUT_ROW ? false : true)));
         ParamChecker.checkAttribute(conf.getAttributeColumn());
-
-        LOG.info("User input conf : {}", Common.OTSConfToNoSensitiveString(conf));
     }
     
     public List<Configuration> split(int mandatoryNumber){

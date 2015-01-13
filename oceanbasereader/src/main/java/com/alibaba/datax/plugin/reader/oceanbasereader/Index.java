@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -36,20 +37,23 @@ public class Index implements Iterable<Index.Entry> {
 				@Override
 				public String convert(ResultSet result, String column)
 						throws SQLException {
-					return "'" + super.convert(result, column) + "'";
+                    String value = super.convert(result, column);
+					return value == null ? null : String.format("'%s'",value);
 				}
 			},
 			TIMESTAMP {
 				@Override
 				public String convert(ResultSet result, String column)
 						throws SQLException {
-					return "timestamp'" + super.convert(result, column) + "'";
+                    Timestamp timestamp = result.getTimestamp(column);
+					return timestamp == null ? null : String.format("timestamp'%s'",timestamp);
 				}
 			},
 			NUMBER, UNKNOW, BOOL {
 				@Override
 				public String convert(ResultSet result, String column)
 						throws SQLException {
+                    if (result.getObject(column) == null) return null;
 					return String.valueOf(result.getBoolean(column));
 				}
 			};

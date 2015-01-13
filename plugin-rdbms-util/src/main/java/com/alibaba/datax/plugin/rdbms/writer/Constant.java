@@ -4,7 +4,7 @@ package com.alibaba.datax.plugin.rdbms.writer;
  * 用于插件解析用户配置时，需要进行标识（MARK）的常量的声明.
  */
 public final class Constant {
-    public static final int DEFAULT_BATCH_SIZE = 256;
+    public static final int DEFAULT_BATCH_SIZE = 1024;
 
     public static String TABLE_NAME_PLACEHOLDER = "@table";
 

@@ -1,27 +1,30 @@
 {
     "job": {
-        "setting": {
-            "speed": 10,
-            "errorLimit" : 
-        },
+        "setting": {},
         "content": [
             {
                 "reader": {
-                    "name": "txtfilereader",
+                    "name": "TxtFileReader",
                     "parameter": {
-                        "path": "/home/usr/source",
+                        "path": ["/tmp/a", "/tmp/b"],
                         "column": [
                             {
                                 "type": "int",
-                                "index": 1
+                                "index": 0
                             },
                             {
-                                "type": "String",
+                                "type": "string",
                                 "value": "alibaba"
+                            },
+                            {
+                                "type": "date",
+                                "index": 1,
+                                "format": "yyyy-mm-dd"
                             }
                         ],
                         "charset": "UTF-8",
-                        "fieldDelimiter": "\t"
+                        "fieldDelimiter": ",",
+                        "compress": "gzip"
                     }
                 },
                 "writer": {
