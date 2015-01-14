@@ -4,7 +4,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.*;
 
@@ -623,5 +625,50 @@ public class ConfigurationTest {
         // 依然能够转回来
         Configuration.from(conf.toJSON());
     }
+
+    @Test
+    public void test_secretKey() {
+        Configuration config = Configuration.newDefault();
+
+        String keyPath1 = "a.b.c";
+        String keyPath2 = "a.b.c[2].d";
+        config.addSecretKeyPath(keyPath1);
+        config.addSecretKeyPath(keyPath2);
+
+        Assert.assertTrue(config.isSecretPath(keyPath1));
+        Assert.assertTrue(config.isSecretPath(keyPath2));
+
+        Configuration configClone = config.clone();
+        Assert.assertTrue(configClone.isSecretPath(keyPath1));
+        Assert.assertTrue(configClone.isSecretPath(keyPath2));
+
+        config.setSecretKeyPathSet(new HashSet<String>());
+        Assert.assertTrue(configClone.isSecretPath(keyPath1));
+        Assert.assertTrue(configClone.isSecretPath(keyPath2));
+    }
+
+	@Rule
+	public ExpectedException expectedEx = ExpectedException.none();
+
+	@Test
+	public void test_get_list() {
+		Configuration configuration = Configuration
+				.from(ConfigurationTest.class.getClassLoader()
+						.getResourceAsStream("all.json"));
+//		System.out.println(configuration.toJSON());
+
+		List noPathNameThis = configuration.get("job.no_path_named_this", List.class);
+		Assert.assertNull(noPathNameThis);
+
+		noPathNameThis = configuration.getList("job.no_path_named_this", String.class);
+		Assert.assertNull(noPathNameThis);
+
+		System.out.println(configuration.getString("job.setting"));
+
+		expectedEx.expect(IllegalArgumentException.class);
+		expectedEx.expectMessage("cant convert to type");
+		List aStringCantConvertToList = configuration.getList("job.setting");
+
+	}
 
 }

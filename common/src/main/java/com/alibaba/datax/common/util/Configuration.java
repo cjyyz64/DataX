@@ -52,6 +52,13 @@ import java.util.*;
  */
 public class Configuration {
 
+    /**
+     * 对于加密的keyPath，需要记录下来
+     * 为的是后面分布式情况下将该值加密后抛到DataXServer中
+     */
+    private Set<String> secretKeyPathSet =
+            new HashSet<String>();
+
 	private Object root = null;
 
 	/**
@@ -665,9 +672,40 @@ public class Configuration {
 	 * 拷贝当前Configuration，注意，这里使用了深拷贝，避免冲突
 	 */
 	public Configuration clone() {
-		return Configuration
+		Configuration config = Configuration
 				.from(Configuration.toJSONString(this.getInternal()));
+        config.addSecretKeyPath(this.secretKeyPathSet);
+        return config;
 	}
+
+    /**
+     * 按照configuration要求格式的path
+     * 比如：
+     * a.b.c
+     * a.b[2].c
+     * @param path
+     */
+    public void addSecretKeyPath(String path) {
+        if(StringUtils.isNotBlank(path)) {
+            this.secretKeyPathSet.add(path);
+        }
+    }
+
+    public void addSecretKeyPath(Set<String> pathSet) {
+        if(pathSet != null) {
+            this.secretKeyPathSet.addAll(pathSet);
+        }
+    }
+
+    public void setSecretKeyPathSet(Set<String> keyPathSet) {
+        if(keyPathSet != null) {
+            this.secretKeyPathSet = keyPathSet;
+        }
+    }
+
+    public boolean isSecretPath(String path) {
+        return this.secretKeyPathSet.contains(path);
+    }
 
 	@SuppressWarnings("unchecked")
 	void getKeysRecursive(final Object current, String path, Set<String> collect) {
@@ -1014,5 +1052,9 @@ public class Configuration {
 
 	private static String toJSONString(final Object object) {
 		return JSON.toJSONString(object);
+	}
+
+	public Set<String> getSecretKeyPathSet() {
+		return secretKeyPathSet;
 	}
 }

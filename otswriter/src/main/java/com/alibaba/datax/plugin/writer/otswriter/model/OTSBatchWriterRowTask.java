@@ -148,6 +148,7 @@ public class OTSBatchWriterRowTask implements Runnable {
                     List<OTSLine> newLines = new ArrayList<OTSLine>();
                     for (LineAndError re : errors) {
                         if (RetryHelper.canRetry(re.getError().getCode())) {
+                            LOG.warn("Retry for '{}'", re.getError().getMessage());
                             newLines.add(re.getLine());
                         } else {
                             LOG.error("Can not retry, record row to collector. {}", re.getError().getMessage());

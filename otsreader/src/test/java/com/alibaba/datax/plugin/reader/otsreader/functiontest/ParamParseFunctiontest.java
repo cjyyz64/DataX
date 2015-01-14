@@ -66,7 +66,7 @@ public class ParamParseFunctiontest {
         Configuration p = Utils.loadConf();
         conf.setEndpoint(p.getString("endpoint"));
         conf.setAccessId(p.getString("accessid"));
-        conf.setAccesskey(p.getString("accesskey"));
+        conf.setAccessKey(p.getString("accesskey"));
         conf.setInstanceName(p.getString("instance-name"));
         conf.setTableName(tableName);
 
@@ -127,7 +127,7 @@ public class ParamParseFunctiontest {
 
         assertEquals(p.getString(Key.OTS_ENDPOINT), proxy.getConf().getEndpoint());
         assertEquals(p.getString(Key.OTS_ACCESSID), proxy.getConf().getAccessId());
-        assertEquals(p.getString(Key.OTS_ACCESSKEY), proxy.getConf().getAccesskey());
+        assertEquals(p.getString(Key.OTS_ACCESSKEY), proxy.getConf().getAccessKey());
         assertEquals(p.getString(Key.OTS_INSTANCE_NAME), proxy.getConf().getInstanceName());
         assertEquals(tableName, proxy.getConf().getTableName());
         assertEquals(18, proxy.getConf().getRetry());
@@ -279,7 +279,7 @@ public class ParamParseFunctiontest {
         // 输入：accessKey字段不存在
         // 期望：异常退出
         {
-            readerConf.getConf().setAccesskey(null);
+            readerConf.getConf().setAccessKey(null);
             Configuration p = Configuration.from(readerConf.toString());
             try {
                 proxy.init(p);
@@ -292,7 +292,7 @@ public class ParamParseFunctiontest {
         // 输入：accessKey字段的值为空字符串
         // 期望：异常退出
         {
-            readerConf.getConf().setAccesskey("");
+            readerConf.getConf().setAccessKey("");
             Configuration p = Configuration.from(readerConf.toString());
             try {
                 proxy.init(p);

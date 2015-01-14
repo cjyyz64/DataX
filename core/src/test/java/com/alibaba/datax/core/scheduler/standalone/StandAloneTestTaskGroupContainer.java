@@ -1,7 +1,7 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.TaskGroupContainer;
+import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
 
 /**
  * Created by jingxing on 14-9-4.

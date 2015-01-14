@@ -399,7 +399,6 @@ public class Utils {
                     return false;
                 }
                 switch (c1.getType()) {
-                case NULL: break;
                 case STRING: 
                     if (!(c1.asString().equals(c2.asString()))) {
                         LOG.error("not equal. {} != {}", c1.asString(), c2.asString());

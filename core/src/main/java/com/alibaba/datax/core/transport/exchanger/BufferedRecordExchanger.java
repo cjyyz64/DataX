@@ -10,7 +10,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;

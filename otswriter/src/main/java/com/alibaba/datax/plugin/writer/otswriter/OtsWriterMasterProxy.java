@@ -12,6 +12,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf.RestrictConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParamChecker;
 import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
@@ -34,7 +35,7 @@ public class OtsWriterMasterProxy {
      * @throws Exception
      */
     public void init(Configuration param) throws Exception {
-        //LOG.info("OTSWriter master parameter : {}", param.toJSON());
+        LOG.info("OTSWriter master parameter : {}", Common.configurtionToNoSensitiveString(param));
         
         // 默认参数
         conf.setRetry(param.getInt(OTSConst.RETRY, 18));
@@ -72,8 +73,6 @@ public class OtsWriterMasterProxy {
         
         conf.setAttributeColumn(WriterModelParser.parseOTSAttrColumnList(ParamChecker.checkListAndGet(param, Key.COLUMN, conf.getOperation() == OTSOpType.PUT_ROW ? false : true)));
         ParamChecker.checkAttribute(conf.getAttributeColumn());
-
-        //LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
     }
     
     public List<Configuration> split(int mandatoryNumber){

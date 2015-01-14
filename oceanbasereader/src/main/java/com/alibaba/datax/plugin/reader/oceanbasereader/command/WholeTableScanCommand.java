@@ -5,6 +5,7 @@ import com.alibaba.datax.plugin.reader.oceanbasereader.ast.Expression;
 import com.alibaba.datax.plugin.reader.oceanbasereader.ast.SelectExpression;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.OBDataSource;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.ResultSetHandler;
+import com.alibaba.datax.plugin.reader.oceanbasereader.utils.Tablet;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
@@ -23,16 +24,13 @@ public class WholeTableScanCommand implements Command {
 		log.info("Case[whole table scan] start");
 		SelectExpression select = context.orginalAst();
 		meetRowkeyExist(context.rowkey(),select.columns);
-		String sql = String.format("%s limit %s", select, context.limit());
+        Tablet tablet = context.tablet();
+		String sql = tablet.sql(select, null, context.limit());
 		ResultSetHandler<String> handler = new SendToWriterHandler(context);
-		String condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
-		while (!"".equals(condition)) {
-            if(select.where == null){
-                sql = String.format("%s where %s limit %s", select, condition, context.limit());
-            }else {
-                sql = String.format("%s and %s limit %s", select, condition, context.limit());
-            }
-			condition = OBDataSource.execute(context.url(), sql, context.timeout(), handler);
+		String boundRowkey = OBDataSource.execute(context.url(), sql, handler);
+		while (!"".equals(boundRowkey) && !tablet.endkey.equals(boundRowkey)) {
+            sql = tablet.sql(select, boundRowkey, context.limit());
+			boundRowkey = OBDataSource.execute(context.url(), sql, handler);
 		}
 		log.info("Case[whole table scan] end");
 	}
@@ -71,25 +69,16 @@ public class WholeTableScanCommand implements Command {
 			if (!result.isAfterLast())
 				return "";
 			result.last();
-			String left = "(";
-			for (Index.Entry entry : rowkey) {
+			String rowkey = "(";
+			for (Index.Entry entry : this.rowkey) {
 				if (entry.position == 1) {
-					left += entry.name;
+					rowkey += entry.type.convert(result, entry.name);
 				} else {
-					left += ("," + entry.name);
+					rowkey += ("," + entry.type.convert(result, entry.name));
 				}
 			}
-			left += ")";
-			String right = "(";
-			for (Index.Entry entry : rowkey) {
-				if (entry.position == 1) {
-					right += entry.type.convert(result, entry.name);
-				} else {
-					right += ("," + entry.type.convert(result, entry.name));
-				}
-			}
-			right += ")";
-			return left + " > " + right;
+			rowkey += ")";
+			return rowkey;
 		}
 	}
 

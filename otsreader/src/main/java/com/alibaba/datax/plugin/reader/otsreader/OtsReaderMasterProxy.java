@@ -55,7 +55,7 @@ public class OtsReaderMasterProxy {
      * @throws Exception
      */
     public void init(Configuration param) throws Exception {        
-        //LOG.info("OTSReader master parameter : {}", param.toJSON());
+        LOG.info("OTSReader master parameter : {}", Common.configurtionToNoSensitiveString(param));
         // 默认参数
         // 每次重试的时间都是上一次的一倍，当sleep时间大于30秒时，Sleep重试时间不在增长。18次能覆盖OTS的Failover时间5分钟
         conf.setRetry(param.getInt(OTSConst.RETRY, 18));
@@ -64,14 +64,14 @@ public class OtsReaderMasterProxy {
         // 必选参数
         conf.setEndpoint(ParamChecker.checkStringAndGet(param, Key.OTS_ENDPOINT)); 
         conf.setAccessId(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSID)); 
-        conf.setAccesskey(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSKEY)); 
+        conf.setAccessKey(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSKEY)); 
         conf.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME)); 
         conf.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME)); 
         
         ots = new OTSClient(
                 this.conf.getEndpoint(),
                 this.conf.getAccessId(),
-                this.conf.getAccesskey(),
+                this.conf.getAccessKey(),
                 this.conf.getInstanceName());
 
         meta = getTableMeta(ots, conf.getTableName());
@@ -91,8 +91,6 @@ public class OtsReaderMasterProxy {
         List<PrimaryKeyValue> points = ReaderModelParser.parsePrimaryKey(ParamChecker.checkListAndGet(rangeMap, Key.RANGE_SPLIT));
         ParamChecker.checkInputSplitPoints(meta, range, direction, points);
         conf.setRangeSplit(points);
-
-        //LOG.info("User input conf : {}", GsonParser.confToJson(this.conf));
     }
 
     public List<Configuration> split(int num) throws Exception {
@@ -123,7 +121,7 @@ public class OtsReaderMasterProxy {
             configuration.set(OTSConst.OTS_DIRECTION, GsonParser.directionToJson(direction));
             configurations.add(configuration);
             
-            LOG.info(configuration.toJSON());
+            LOG.info("Item of Split : {}", Common.configurtionToNoSensitiveString(configuration));
         }
         
         LOG.info("Configuration list count : " + configurations.size());

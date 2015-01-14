@@ -7,7 +7,7 @@ import com.aliyun.openservices.ots.model.PrimaryKeyValue;
 public class OTSConf {
     private String endpoint= null;
     private String accessId = null;
-    private String accesskey = null;
+    private String accessKey = null;
     private String instanceName = null;
     private String tableName = null;
     
@@ -32,11 +32,11 @@ public class OTSConf {
     public void setAccessId(String accessId) {
         this.accessId = accessId;
     }
-    public String getAccesskey() {
-        return accesskey;
+    public String getAccessKey() {
+        return accessKey;
     }
-    public void setAccesskey(String accesskey) {
-        this.accesskey = accesskey;
+    public void setAccessKey(String accesskey) {
+        this.accessKey = accesskey;
     }
     public String getInstanceName() {
         return instanceName;

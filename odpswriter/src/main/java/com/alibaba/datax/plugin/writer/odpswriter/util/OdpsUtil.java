@@ -263,7 +263,7 @@ public class OdpsUtil {
 
         String taskName = "datax_odpswriter_trunacte_" + UUID.randomUUID().toString().replace('-', '_');
 
-        LOG.info("Try to start sqlTtask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
+        LOG.info("Try to start sqlTask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
         Task task = new SqlTask(taskName, query);
         JobInstance instance = Job.run(project, task);
         instance.waitForCompletion();
@@ -401,7 +401,6 @@ public class OdpsUtil {
                     if (!isPartitionExists) {
                         LOG.info("Try to add partition:[{}] in table:[{}] by drop it and then add it..", partition,
                                 table.getName());
-                        OdpsUtil.dropPart(table, partition);
                         OdpsUtil.addPart(table, partition);
                     }
                 }

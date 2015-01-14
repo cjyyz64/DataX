@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.container;
 
-import com.alibaba.datax.core.container.util.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import org.junit.Assert;
 import org.junit.Test;
 

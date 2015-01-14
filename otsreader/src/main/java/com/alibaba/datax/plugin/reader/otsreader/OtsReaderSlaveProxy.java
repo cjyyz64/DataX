@@ -53,6 +53,9 @@ public class OtsReaderSlaveProxy {
         for (Row row : rows) {
             Record line = sender.createRecord();
             line = Common.parseRowToLine(row, columns, line);
+            
+            LOG.debug("Reader send record : {}", line.toString());
+            
             sender.sendToWriter(line);
         }
     }
@@ -86,7 +89,7 @@ public class OtsReaderSlaveProxy {
     public void read(RecordSender sender, Configuration configuration) throws Exception {
         LOG.info("read begin.");
         
-        //LOG.info("OTSReader task parameter: {}", configuration.toJSON());
+        LOG.info("OTSReader task parameter: {}", Common.configurtionToNoSensitiveString(configuration));
         
         OTSConf conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         OTSRange range = GsonParser.jsonToRange(configuration.getString(OTSConst.OTS_RANGE));
@@ -98,7 +101,7 @@ public class OtsReaderSlaveProxy {
         OTSClientAsync ots = new OTSClientAsync(
                 conf.getEndpoint(),
                 conf.getAccessId(),
-                conf.getAccesskey(),
+                conf.getAccessKey(),
                 conf.getInstanceName(),
                 null,
                 configure,
