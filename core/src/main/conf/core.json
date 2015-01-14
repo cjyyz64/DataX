@@ -35,28 +35,19 @@
         },
         "container": {
             "job": {
-                "class": "com.alibaba.datax.core.container.JobContainer",
                 "reportInterval": 10000
             },
             "taskGroup": {
-                "class": "com.alibaba.datax.core.container.TaskGroupContainer",
                 "channel": 5
             }
         },
         "statistics": {
             "collector": {
-                "container": {
-                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.StandaloneJobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.StandaloneTaskGroupContainerCollector"
-                },
                 "plugin": {
                     "taskClass": "com.alibaba.datax.core.statistics.plugin.task.StdoutPluginCollector",
                     "maxDirtyNumber": 1000
                 }
             }
-        },
-        "scheduler": {
-            "class": "com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler"
         }
     }
 }
