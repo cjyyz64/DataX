@@ -78,9 +78,11 @@ def get_option_parser():
     parser.add_option('-j', '--jvm', default="", dest="jvm", help='set jvm parameters.')
     parser.add_option('-p', '--params', default="", help='add DataX runtime parameters.')
     parser.add_option('-D', '--remotedebug', action="store_true", dest="remotedebug", help='use remote debug mode.')
+    parser.add_option('-m', '--mode', action="store_true", dest="mode", help='Job runtime mode.')
 
 
-    return parser
+
+return parser
 
 def get_run_context(options):
     context = {}
