@@ -2,10 +2,10 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.dataxservice.face.domain.JobStatus;
+import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.junit.Assert;
 import org.junit.Test;
@@ -38,7 +38,7 @@ public class DataxServiceTest extends CaseInitializer {
                         "}");
 
         DataxServiceUtil.init(url, 3000);
-        TaskGroup taskGroup = new TaskGroup();
+        TaskGroupDto taskGroup = new TaskGroupDto();
         taskGroup.setJobId(148l);
         taskGroup.setTaskGroupId(1);
         taskGroup.setConfig("abc");
@@ -95,7 +95,7 @@ public class DataxServiceTest extends CaseInitializer {
 
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(), "httpClientUtil", httpClientUtil);
-        JobStatus jobStatus = new JobStatus();
+        JobStatusDto jobStatus = new JobStatusDto();
         jobStatus.setPercentage(0.80);
         DataxServiceUtil.updateJobInfo(148L,jobStatus);
     }
@@ -139,7 +139,7 @@ public class DataxServiceTest extends CaseInitializer {
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(), "httpClientUtil", httpClientUtil);
 
-        Result<List<TaskGroup>> result = DataxServiceUtil.getTaskGroupInJob(152L);
+        Result<List<TaskGroupDto>> result = DataxServiceUtil.getTaskGroupInJob(152L);
         Assert.assertTrue(result.getData().get(0).getResourceGroup().equals("datax_distribute"));
         /*String url = "http://localhost:8080/";
         DataxServiceUtil.init(url,3000);
@@ -159,7 +159,7 @@ public class DataxServiceTest extends CaseInitializer {
                         "}");
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(), "httpClientUtil", httpClientUtil);
-        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        TaskGroupStatusDto taskGroupStatus = new TaskGroupStatusDto();
         taskGroupStatus.setJobId(148L);
         taskGroupStatus.setTaskGroupId(1);
         taskGroupStatus.setSpeedRecords(9999L);
@@ -168,7 +168,7 @@ public class DataxServiceTest extends CaseInitializer {
 
     @Test
     public void testConvertTaskGroupToCommunication() {
-        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        TaskGroupStatusDto taskGroupStatus = new TaskGroupStatusDto();
         taskGroupStatus.setJobId(1L);
         taskGroupStatus.setTaskGroupId(1);
         taskGroupStatus.setSpeedBytes(null);

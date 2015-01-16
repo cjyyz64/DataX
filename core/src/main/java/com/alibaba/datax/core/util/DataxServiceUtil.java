@@ -3,10 +3,10 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
-import com.alibaba.datax.dataxservice.face.domain.JobStatus;
+import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.lang3.StringUtils;
@@ -56,7 +56,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result updateJobInfo(Long jobId, JobStatus jobStatus) {
+    public static Result updateJobInfo(Long jobId, JobStatusDto jobStatus) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/status";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
@@ -85,7 +85,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result<List<TaskGroup>> getTaskGroupInJob(Long jobId) {
+    public static Result<List<TaskGroupDto>> getTaskGroupInJob(Long jobId) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup";
 
         try {
@@ -93,8 +93,8 @@ public final class DataxServiceUtil {
             httpGet.setURI(new URI(url));
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
 
-            Result<List<TaskGroup>> result = JSON.parseObject(resJson,
-                    new TypeReference<Result<List<TaskGroup>>>(){});
+            Result<List<TaskGroupDto>> result = JSON.parseObject(resJson,
+                    new TypeReference<Result<List<TaskGroupDto>>>(){});
 
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
@@ -108,7 +108,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result<List<TaskGroupStatus>> getTaskGroupStatusInJob(Long jobId) {
+    public static Result<List<TaskGroupStatusDto>> getTaskGroupStatusInJob(Long jobId) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup/status";
 
         try {
@@ -116,8 +116,8 @@ public final class DataxServiceUtil {
             httpGet.setURI(new URI(url));
             String resJson = httpClientUtil.executeAndGetWithRetry(httpGet, 9, 1000l);
 
-            Result<List<TaskGroupStatus>> result = JSON.parseObject(resJson,
-                    new TypeReference<Result<List<TaskGroupStatus>>>(){});
+            Result<List<TaskGroupStatusDto>> result = JSON.parseObject(resJson,
+                    new TypeReference<Result<List<TaskGroupStatusDto>>>(){});
 
             if (!result.isSuccess()) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
@@ -131,7 +131,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result startTaskGroup(Long jobId, TaskGroup taskGroup) {
+    public static Result startTaskGroup(Long jobId, TaskGroupDto taskGroup) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup";
         try {
             HttpPost httpPost = HttpClientUtil.getPostRequest();
@@ -183,7 +183,7 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static Result updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatus taskGroupStatus) {
+    public static Result updateTaskGroupInfo(Long jobId, Integer taskGroupId, TaskGroupStatusDto taskGroupStatus) {
         String url = DATAX_SERVICE_URL + "inner/job/" + jobId + "/taskGroup/" + taskGroupId + "/status";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
@@ -213,7 +213,7 @@ public final class DataxServiceUtil {
     }
 
 
-    public static Communication convertTaskGroupToCommunication(TaskGroupStatus taskGroupStatus) {
+    public static Communication convertTaskGroupToCommunication(TaskGroupStatusDto taskGroupStatus) {
         Communication communication = new Communication();
         communication.setState(taskGroupStatus.getState());
         if (taskGroupStatus.getStage() == null) {

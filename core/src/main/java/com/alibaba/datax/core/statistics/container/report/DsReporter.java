@@ -1,10 +1,10 @@
 package com.alibaba.datax.core.statistics.container.report;
 
-import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
-import com.alibaba.datax.dataxservice.face.domain.JobStatus;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
+import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 
 public class DsReporter extends AbstractReporter {
     private Long jobId;
@@ -15,7 +15,7 @@ public class DsReporter extends AbstractReporter {
 
     @Override
     public void reportJobCommunication(Long jobId, Communication communication) {
-        JobStatus jobStatus = new JobStatus();
+        JobStatusDto jobStatus = new JobStatusDto();
 
         jobStatus.setStage(communication.getLongCounter("stage").intValue());
         jobStatus.setTotalRecords(communication.getLongCounter("totalReadRecords"));
@@ -34,7 +34,7 @@ public class DsReporter extends AbstractReporter {
 
     @Override
     public void reportTGCommunication(Integer taskGroupId, Communication communication) {
-        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        TaskGroupStatusDto taskGroupStatus = new TaskGroupStatusDto();
 
         // 不能设置 state，否则会收到 DataXService 的报错：State should be updated be alisa ONLY.
         // taskGroupStatus.setState(communication.getState());
