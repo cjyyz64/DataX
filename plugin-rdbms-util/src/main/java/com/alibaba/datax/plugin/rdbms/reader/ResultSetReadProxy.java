@@ -18,6 +18,7 @@ public class ResultSetReadProxy {
 
 	private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
+	//TODO
 	public static void transportOneRecord(RecordSender recordSender,
 			ResultSet rs, ResultSetMetaData metaData, int columnNumber,
 			TaskPluginCollector taskPluginCollector) {
@@ -96,7 +97,7 @@ public class ResultSetReadProxy {
 							.asDataXException(
 									DBUtilErrorCode.UNSUPPORTED_TYPE,
 									String.format(
-											"DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s].",
+											"您的配置文件中的列配置信息有误. 因为DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s]. 请尝试使用数据库函数将其转换datax支持的类型 或者不同步该字段 .",
 											metaData.getColumnName(i),
 											metaData.getColumnType(i),
 											metaData.getColumnClassName(i)));
@@ -108,6 +109,8 @@ public class ResultSetReadProxy {
 				LOG.debug("read data " + record.toString()
 						+ " occur exception:", e);
 			}
+
+			//TODO 这里识别为脏数据靠谱吗？
 			taskPluginCollector.collectDirtyRecord(record, e);
 			if (e instanceof DataXException) {
 				throw (DataXException) e;

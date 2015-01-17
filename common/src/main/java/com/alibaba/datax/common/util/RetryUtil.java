@@ -57,7 +57,7 @@ public final class RetryUtil {
         if (saveException == null) {
             // 理论上是不会到这里的
             throw DataXException.asDataXException(CommonErrorCode.RETRY_FAIL,
-                    "重试方法多次失败，终止重试 .");
+                    "任务重试多次失败，终止重试 .");
         }
 
         throw saveException;

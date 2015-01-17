@@ -87,6 +87,7 @@ public class CommonRdbmsReader {
 			BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
 		}
 
+		//TODO: 详细区分错误原因，代码可能有bug
 		public void startRead(Configuration readerSliceConfig,
 				RecordSender recordSender,
 				TaskPluginCollector taskPluginCollector, int fetchSize) {
@@ -123,7 +124,7 @@ public class CommonRdbmsReader {
 			} catch (Exception e) {
 				throw DataXException.asDataXException(
 						DBUtilErrorCode.READ_RECORD_FAIL, String.format(
-								"读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
+								"读取数据库失败. 因为根据您配置的相关上下文信息:%s , 执行的语句:[%s]失败. 请检查您的配置并作出修改或者.",
 								BASIC_MESSAGE, querySql), e);
 			} finally {
 				DBUtil.closeDBResources(null, conn);

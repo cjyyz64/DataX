@@ -20,7 +20,7 @@ import java.util.List;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
-
+//TODO 切分报错
     public static List<Configuration> doSplit(Configuration simplifiedConf,
                                               int adviceNumber) {
 
@@ -41,7 +41,7 @@ public final class WriterUtil {
 
         if (tableNumber != adviceNumber) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                    String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
+                    String.format("您的配置文件中的列配置信息有误. 您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s. 请检查您的配置并作出修改.",
                             tableNumber, adviceNumber));
         }
 
@@ -101,7 +101,7 @@ public final class WriterUtil {
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
-                    String.format("执行 Sql:%s 语句失败. 上下文信息是:%s .", currentSql, basicMessage), e);
+                    String.format("您的sql配置有误. 因为根据您的配置执行 Sql:%s 语句失败，相关上下文信息是:%s. 请检查您的配置并作出修改.", currentSql, basicMessage), e);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }
@@ -113,7 +113,7 @@ public final class WriterUtil {
 
 		if (!isWriteModeLegal) {
 			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-				String.format("您所配置的 writeMode:%s 错误. DataX 目前仅支持replace 或 insert 方式.", writeMode));
+				String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
 		}
 
 		String writeDataSqlTemplate = new StringBuilder().append(writeMode)

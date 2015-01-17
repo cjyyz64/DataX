@@ -29,7 +29,7 @@ public class OracleReader extends Reader {
 			if (fetchSize < 1) {
 				throw DataXException
 						.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
-								String.format("fetchSize : [%d] 设置值不能小于 1.",
+								String.format("您的fetchSize配置有误，根据datax的设计，fetchSize : [%d] 设置值不能小于 1.  请检查您的配置并作出修改.",
 										fetchSize));
 			}
 			this.originalConfig.set(

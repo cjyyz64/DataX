@@ -241,7 +241,7 @@ public class CommonRdbmsWriter {
                                 .asDataXException(
                                         DBUtilErrorCode.CONF_ERROR,
                                         String.format(
-                                                "您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置字段.",
+                                                "列配置信息有错误. 因为您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置并作出修改.",
                                                 record.getColumnNumber(),
                                                 this.columnNumber));
                     }
@@ -445,7 +445,7 @@ public class CommonRdbmsWriter {
                                 .asDataXException(
                                         DBUtilErrorCode.UNSUPPORTED_TYPE,
                                         String.format(
-                                                "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
+                                                "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
                                                 this.resultSetMetaData.getLeft()
                                                         .get(i),
                                                 this.resultSetMetaData.getMiddle()

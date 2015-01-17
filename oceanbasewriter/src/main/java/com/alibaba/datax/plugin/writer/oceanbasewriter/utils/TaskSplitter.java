@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class TaskSplitter {
+//TODO
 
     public static List<Configuration> split(Configuration configuration,int mandatoryNumber){
         List<Configuration> tasks = TaskSplitter.split(configuration);
@@ -22,7 +23,7 @@ public class TaskSplitter {
             }
         } else if (tableNumber != mandatoryNumber) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                    String.format("您要写入的目的端的表个数是:%s , 但是根据系统建议需要切分的份数是：%s .",
+                    String.format("您配置的同步切分个数不符合要求. 因为您要写入的目的端的表个数是:%s ,根据datax的智能计算,建议需要切分的份数是：%s. 请检查您的配置并作出修改.",
                             tableNumber, mandatoryNumber));
         }
         return tasks;

@@ -83,14 +83,14 @@ public class OdpsReader extends Reader {
                 // 分区表，需要配置分区
                 if (null == userConfiguredPartitions || userConfiguredPartitions.isEmpty()) {
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format("源头表:%s 为分区表,所以您需要配置其抽取的分区信息. 格式为:pt=hello,ds=hangzhou",
+                            String.format("分区信息没有配置.由于源头表:%s 为分区表,所以您需要配置其抽取的表的分区信息. 格式形如:pt=hello,ds=hangzhou，请您参考此格式修改该配置项.",
                                     table.getName()));
                 } else {
                     List<String> allPartitions = OdpsUtil.getTableAllPartitions(table);
 
                     if (null == allPartitions || allPartitions.isEmpty()) {
                         throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                                String.format("源头表:%s 虽然为分区表, 但其实际分区值并不存在, 请先在源头表生成数据后，再进行数据抽取.",
+                                String.format("分区信息配置错误.源头表:%s 虽然为分区表, 但其实际分区值并不存在. 请确认源头表已经生成该分区，再进行数据抽取.",
                                         table.getName()));
                     }
 
@@ -101,7 +101,7 @@ public class OdpsReader extends Reader {
                         throw DataXException.asDataXException(
                                 OdpsReaderErrorCode.ILLEGAL_VALUE,
                                 String.format(
-                                        "分区配置错误，根据您所配置的分区没有匹配到源头表中的分区. 源头表所有分区是:[\n%s\n], 您配置的分区是:[\n%s\n].",
+                                        "分区配置错误，根据您所配置的分区没有匹配到源头表中的分区. 源头表所有分区是:[\n%s\n], 您配置的分区是:[\n%s\n]. 请您根据实际情况在作出修改. ",
                                         StringUtils.join(allPartitions, "\n"),
                                         StringUtils.join(userConfiguredPartitions, "\n")));
                     }
@@ -112,7 +112,7 @@ public class OdpsReader extends Reader {
                 if (null != userConfiguredPartitions
                         && !userConfiguredPartitions.isEmpty()) {
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format("源头表:%s 为非分区表, 您不能配置分区.", table.getName()));
+                            String.format("分区配置错误，源头表:%s 为非分区表, 您不能配置分区. 请您删除该配置项. ", table.getName()));
                 }
             }
         }
@@ -142,7 +142,7 @@ public class OdpsReader extends Reader {
                 comparedPartitionDepth = comparedPartition.split(",").length;
                 if (comparedPartitionDepth != firstPartitionDepth) {
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format("分区配置错误, 您所配置的分区级数不一样, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的.",
+                            String.format("分区配置错误, 您所配置的分区级数和该表的实际情况不一致, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的. 正确的格式形如"pt=${bizdate}, type=0" ，请您参考示例修改该配置项. ",
                                     firstPartition, firstPartitionDepth, comparedPartition, comparedPartitionDepth));
                 }
             }
@@ -150,7 +150,7 @@ public class OdpsReader extends Reader {
             int tableOriginalPartitionDepth = allStandardPartitions.get(0).split(",").length;
             if (firstPartitionDepth != tableOriginalPartitionDepth) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("分区配置错误, 您所配置的分区:%s 的级数:%s 与您要读取的 ODPS 源头表的分区级数:%s 不相等. DataX 是通过英文逗号判断您所配置的分区级数的.",
+                        String.format("分区配置错误, 您所配置的分区:%s 的级数:%s 与您要读取的 ODPS 源头表的分区级数:%s 不相等. DataX 是通过英文逗号判断您所配置的分区级数的.正确的格式形如\"pt=${bizdate}, type=0\" ，请您参考示例修改该配置项.",
                                 firstPartition, firstPartitionDepth, tableOriginalPartitionDepth));
             }
 
@@ -179,7 +179,7 @@ public class OdpsReader extends Reader {
 
             if (1 == userConfiguredColumns.size()
                     && "*".equals(userConfiguredColumns.get(0))) {
-                LOG.warn("您配置的 ODPS 读取的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
+                LOG.warn("这是一条警告信息，您配置的 ODPS 读取的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错. 建议您把所有需要抽取的列都配置上. ");
                 originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
             }
 

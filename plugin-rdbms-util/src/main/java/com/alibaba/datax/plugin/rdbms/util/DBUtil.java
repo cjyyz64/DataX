@@ -29,7 +29,7 @@ public final class DBUtil {
 		if (null == jdbcUrls || jdbcUrls.isEmpty()) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONF_ERROR,
-					String.format("jdbcURL in [%s] 不能为空.",
+					String.format("您的jdbcUrl的配置信息有错, 因为jdbcUrl[%s]不能为空. 请检查您的配置并作出修改.",
 							StringUtils.join(jdbcUrls, ",")));
 		}
 
@@ -60,7 +60,7 @@ public final class DBUtil {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONN_DB_ERROR,
-					String.format("无法从:%s 中找到可连接的jdbcURL.",
+					String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
 							StringUtils.join(jdbcUrls, ",")), e);
 		}
 
@@ -118,7 +118,7 @@ public final class DBUtil {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONN_DB_ERROR,
-					String.format("获取数据库连接失败. 连接信息是:%s .", jdbcUrl), e);
+					String.format("数据库连接失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", jdbcUrl), e);
 		}
 
 	}
@@ -249,7 +249,7 @@ public final class DBUtil {
 		} catch (SQLException e) {
 			throw DataXException
 					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-							"获取表的所有字段名称时失败.", e);
+							"获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的jdbcUrl和table信息. ", e);
 		} finally {
 			DBUtil.closeDBResources(rs, statement, conn);
 		}
@@ -302,7 +302,7 @@ public final class DBUtil {
 		} catch (SQLException e) {
 			throw DataXException
 					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-							"获取表的字段的元信息时失败.", e);
+							"获取表的字段的元信息时失败. 出现该错误说明底层服务不可用，请联系旺旺:askdatax或者datax团队的同学.", e);
 		} finally {
 			DBUtil.closeDBResources(rs, statement, null);
 		}
@@ -430,7 +430,7 @@ public final class DBUtil {
         } catch (SQLException e) {
             throw DataXException
                     .asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, String
-                                    .format("执行 session 设置失败. 上下文信息是:[%s] .", message),
+                                    .format("session配置有误. 因为根据您的配置执行 session 设置失败. 上下文信息是:[%s]. 请检查您的配置并作出修改.", message),
                             e);
         }
 
@@ -441,7 +441,7 @@ public final class DBUtil {
             } catch (SQLException e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.SET_SESSION_ERROR, String.format(
-                                "执行 session 设置失败. 上下文信息是:[%s] .", message), e);
+                                "session配置有误. 因为根据您的配置执行 session 设置失败. 上下文信息是:[%s]. 请检查您的配置并作出修改.", message), e);
             }
         }
         DBUtil.closeDBResources(stmt, null);
