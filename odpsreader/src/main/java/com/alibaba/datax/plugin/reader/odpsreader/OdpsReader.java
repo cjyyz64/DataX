@@ -142,7 +142,7 @@ public class OdpsReader extends Reader {
                 comparedPartitionDepth = comparedPartition.split(",").length;
                 if (comparedPartitionDepth != firstPartitionDepth) {
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format("分区配置错误, 您所配置的分区级数和该表的实际情况不一致, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的. 正确的格式形如"pt=${bizdate}, type=0" ，请您参考示例修改该配置项. ",
+                            String.format("分区配置错误, 您所配置的分区级数和该表的实际情况不一致, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的. 正确的格式形如\"pt=${bizdate}, type=0\" ，请您参考示例修改该配置项. ",
                                     firstPartition, firstPartitionDepth, comparedPartition, comparedPartitionDepth));
                 }
             }
