@@ -117,19 +117,19 @@ public class OdpsWriterProxy {
 		Record odpsRecord = new Record(destColumnCount);
 
 		int userConfiguredColumnNumber = this.columnPositions.size();
-
+//todo
 		if (sourceColumnCount > userConfiguredColumnNumber) {
 			throw DataXException
 					.asDataXException(
 							OdpsWriterErrorCode.ILLEGAL_VALUE,
 							String.format(
-									"数据源读取的列数是:%s 大于目的端的列数是:%s , DataX 不允许这种行为, 请检查您的配置.",
+									"亲，配置中的源表的列个数和目的端表不一致，源表中您配置的列数是:%s 大于目的端的列数是:%s , 这样会导致源头数据无法正确导入目的端, 请检查您的配置并修改.",
 									sourceColumnCount,
 									userConfiguredColumnNumber));
 		} else if (sourceColumnCount < userConfiguredColumnNumber) {
 			if (printColumnLess) {
 				LOG.warn(
-						"数据源读取的列数是:{} 小于的端的列数是:{} , 二者不匹配. DataX 将对目的端的未对齐的列补空.",
+						"源表的列个数小于目的表的列个数，源表列数是:{} 目的表列数是:{} , 数目不匹配. DataX 会把目的端多出的咧的值设置为空值. 如果这个默认配置不符合您的期望，请保持源表和目的表配置的列数目保持一致",
 						sourceColumnCount, userConfiguredColumnNumber);
 			}
 		}

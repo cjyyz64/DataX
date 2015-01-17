@@ -57,8 +57,8 @@ public class OdpsUtil {
         int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
                 OdpsUtil.MAX_RETRY_TIME);
         if (maxRetryTime < 1) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 其值不能小于1. " +
-                    "推荐的配置方式是给maxRetryTime 配置2-5之间的某个值.");
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1. " +
+                    "推荐的配置方式是给maxRetryTime 配置2-5之间的某个值. 请您检查配置并做出相应修改.");
         }
 
         MAX_RETRY_TIME = maxRetryTime;
@@ -329,7 +329,7 @@ public class OdpsUtil {
             }
             if (!hasColumn) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("ODPS 目的表的列配置错误. 您所配置的列:%s 不存在.", col));
+                        String.format("ODPS 目的表的列配置错误. 由于您所配置的列:%s 不存在，会导致datax无法正常插入数据，请检查该列是否存在，如果存在请检查大小写等配置.", col));
             }
         }
         return retList;
@@ -339,7 +339,7 @@ public class OdpsUtil {
         if (null == schema) {
             throw new IllegalArgumentException("parameter schema can not be null.");
         }
-
+//todo
         List<String> allColumns = new ArrayList<String>();
         Column.Type type = null;
         for (int i = 0, columnCount = schema.getColumnCount(); i < columnCount; i++) {
@@ -347,7 +347,7 @@ public class OdpsUtil {
             type = schema.getColumnType(i);
             if (type == Column.Type.ODPS_ARRAY || type == Column.Type.ODPS_MAP) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.UNSUPPORTED_COLUMN_TYPE,
-                        String.format("DataX 写入 ODPS 表不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. " +
+                        String.format("DataX 写入 ODPS 表不支持该字段类型:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. " +
                                         "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
                                 type));
             }
@@ -373,7 +373,7 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("对分区表:%s 进行 truncate 操作时必须指定需要清空的具体分区值.",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("您没有配置分区信息，因为你配置的表是分区表:%s 如果需要进行 truncate 操作，必须指定需要清空的具体分区. 请修改分区配置，格式形如 pt=${bizdate} .",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
@@ -382,7 +382,7 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("对非分区表:%s 进行 truncate 操作时您不能指定具体分区值.",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("分区信息配置错误，你的ODPS表是非分区表:%s 进行 truncate 操作时不需要指定具体分区值. 请检查您的分区配置，删除该配置项的值.",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
@@ -395,7 +395,7 @@ public class OdpsUtil {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
                     throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("写入分区表:%s 时必须指定具体分区值.", table.getName()));
+                            String.format("您的目的表是分区表，写入分区表:%s 时必须指定具体分区值. 请修改您的分区配置信息，格式形如 格式形如 pt=${bizdate}.", table.getName()));
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
                     if (!isPartitionExists) {
@@ -408,7 +408,7 @@ public class OdpsUtil {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
                     throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("写入非分区表:%s 时您不能指定具体分区值.", table.getName()));
+                            String.format("您的目的表是非分区表，写入非分区表:%s 时不需要指定具体分区值. 请删除分区配置信息", table.getName()));
                 }
             }
         }
