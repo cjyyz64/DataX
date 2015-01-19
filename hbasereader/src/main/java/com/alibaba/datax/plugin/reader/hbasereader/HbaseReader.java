@@ -8,15 +8,17 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
-import com.alibaba.datax.plugin.reader.hbasereader.util.LogUtil;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class HbaseReader extends Reader {
     public static class Job extends Reader.Job {
-        private static Logger LOG;
+        private static Logger LOG = LoggerFactory.getLogger(Job.class);
 
         private Configuration originalConfig;
         private HbaseProxy hbaseProxy = null;
@@ -24,7 +26,6 @@ public class HbaseReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            LOG = LogUtil.ReaderLog.initLoglevel(Job.class, this.originalConfig);
 
             HbaseUtil.doPretreatment(this.originalConfig);
 
@@ -139,7 +140,7 @@ public class HbaseReader extends Reader {
             String dateformat = aColumn.get("format");
 
             if (type == ColumnType.DATE) {
-                Validate.isTrue(dateformat != null, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
+                Validate.notNull(dateformat, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
                 oneColumnCell = new HbaseColumnCell
                         .Builder(type)
                         .columnName(columnName)

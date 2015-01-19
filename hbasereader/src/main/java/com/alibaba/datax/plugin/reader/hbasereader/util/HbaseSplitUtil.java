@@ -8,14 +8,13 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public final class HbaseSplitUtil {
-    private final static Logger LOG = LogUtil.ReaderLog.getLogger(HbaseSplitUtil.class);
-
-    private final static boolean IS_DEBUG = LOG.isDebugEnabled();
+    private final static Logger LOG = LoggerFactory.getLogger(HbaseSplitUtil.class);
 
     /**
      * TODO start/end rowkey 相等，没有数据？
@@ -94,9 +93,7 @@ public final class HbaseSplitUtil {
             p.set(Key.START_ROWKEY, thisStartKey);
             p.set(Key.END_ROWKEY, thisEndKey);
 
-            if (IS_DEBUG) {
-                LOG.debug("startRowkey:[{}], endRowkey:[{}] .", thisStartKey, thisEndKey);
-            }
+            LOG.debug("startRowkey:[{}], endRowkey:[{}] .", thisStartKey, thisEndKey);
 
             configurations.add(p);
         }

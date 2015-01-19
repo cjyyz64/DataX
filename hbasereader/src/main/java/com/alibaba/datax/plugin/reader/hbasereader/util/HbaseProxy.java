@@ -14,6 +14,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.apache.http.impl.cookie.DateUtils;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -21,7 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class HbaseProxy {
-    private final static Logger LOG = LogUtil.ReaderLog.getLogger(HbaseProxy.class);
+    private final static Logger LOG = LoggerFactory.getLogger(HbaseProxy.class);
 
     private static final String META_SCANNER_CACHING = "100";
 
