@@ -9,8 +9,7 @@ import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,9 +37,9 @@ public class DsCollectorTest {
         map.put(taskGroupId_1, new Communication());
         ReflectUtil.setField(new LocalTGCommunicationManager(), "taskGroupCommunicationMap", map);
 
-        Result<List<TaskGroupStatus>> result = new Result<List<TaskGroupStatus>>();
-        List<TaskGroupStatus> taskGroupStatusList = new ArrayList<TaskGroupStatus>();
-        TaskGroupStatus taskGroupStatus = new TaskGroupStatus();
+        Result<List<TaskGroupStatusDto>> result = new Result<List<TaskGroupStatusDto>>();
+        List<TaskGroupStatusDto> taskGroupStatusList = new ArrayList<TaskGroupStatusDto>();
+        TaskGroupStatusDto taskGroupStatus = new TaskGroupStatusDto();
         taskGroupStatus.setJobId(jobId);
         taskGroupStatus.setTaskGroupId(taskGroupId_1);
         taskGroupStatus.setTotalBytes(1024L);

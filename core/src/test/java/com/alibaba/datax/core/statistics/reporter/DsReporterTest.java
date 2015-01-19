@@ -3,9 +3,9 @@ package com.alibaba.datax.core.statistics.reporter;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.report.DsReporter;
 import com.alibaba.datax.core.util.DataxServiceUtil;
-import com.alibaba.datax.dataxservice.face.domain.JobStatus;
+import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatus;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +34,7 @@ public class DsReporterTest {
         final Result result = new Result();
 
         PowerMockito.mockStatic(DataxServiceUtil.class);
-        PowerMockito.when(DataxServiceUtil.updateJobInfo(anyLong(),any(JobStatus.class)))
+        PowerMockito.when(DataxServiceUtil.updateJobInfo(anyLong(),any(JobStatusDto.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
                     public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -58,7 +58,7 @@ public class DsReporterTest {
 
         PowerMockito.mockStatic(DataxServiceUtil.class);
         PowerMockito.when(DataxServiceUtil.updateTaskGroupInfo
-                (anyLong(), anyInt(),any(TaskGroupStatus.class)))
+                (anyLong(), anyInt(),any(TaskGroupStatusDto.class)))
                 .thenAnswer(new Answer<Object>() {
                     @Override
                     public Object answer(InvocationOnMock invocationOnMock) throws Throwable {

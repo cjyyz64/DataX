@@ -10,12 +10,10 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.State;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroup;
+import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -46,7 +44,7 @@ public class DistributeScheduleTest {
 
         Object object;
 
-        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class)))
+        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroupDto.class)))
                 .thenReturn(result);
         DistributeJobContainerCommunicator distributeJobContainerCommunicator =
                 PowerMockito.mock(DistributeJobContainerCommunicator.class);
@@ -145,7 +143,7 @@ public class DistributeScheduleTest {
         Result result = new Result();
         result.setData("启动成功");
         result.setReturnCode(200);
-        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class))).
+        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroupDto.class))).
                 thenReturn(result);
 
         Result<Integer> result2 = new Result<Integer>();
@@ -200,7 +198,7 @@ public class DistributeScheduleTest {
         Result result = new Result();
         result.setData("启动成功");
         result.setReturnCode(200);
-        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroup.class))).
+        PowerMockito.when(DataxServiceUtil.startTaskGroup(anyLong(), any(TaskGroupDto.class))).
                 thenReturn(result);
 
         Result<Integer> result2 = new Result<Integer>();
