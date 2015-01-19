@@ -9,13 +9,15 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.*;
 
 public final class JobAssignUtil {
+    private JobAssignUtil() {
+    }
 
     /**
      * 公平的分配 task 到对应的 taskGroup 中。
      * 公平体现在：会考虑 task 中对资源负载作的 load 标识进行更均衡的作业分配操作。
      * TODO 具体文档举例说明
      */
-    public final static List<Configuration> assignFairly(Configuration configuration, int channelNumber, int channelsPerTaskGroup) {
+    public static List<Configuration> assignFairly(Configuration configuration, int channelNumber, int channelsPerTaskGroup) {
         Validate.isTrue(configuration != null, "框架获得的 Job 不能为 null.");
 
         List<Configuration> contentConfig = configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
@@ -24,9 +26,7 @@ public final class JobAssignUtil {
         Validate.isTrue(channelNumber > 0 && channelsPerTaskGroup > 0,
                 "每个channel的平均task数[averTaskPerChannel]，channel数目[channelNumber]，每个taskGroup的平均channel数[channelsPerTaskGroup]都应该为正数");
 
-        int remainderChannelCount = channelNumber % channelsPerTaskGroup;
-        int taskGroupNumber = channelNumber / channelsPerTaskGroup
-                + (remainderChannelCount > 0 ? 1 : 0);
+        int taskGroupNumber = (int) Math.ceil(1.0 * channelNumber / channelsPerTaskGroup);
 
         Configuration aTaskConfig = contentConfig.get(0);
 
@@ -51,7 +51,7 @@ public final class JobAssignUtil {
         LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap = parseAndGetResourceMarkAndTaskIdMap(contentConfig);
         List<Configuration> taskGroupConfig = doAssign(resourceMarkAndTaskIdMap, configuration, taskGroupNumber);
 
-        // 调整 每个 tg 对应的 Channel 个数（属于优化范畴）
+        // 调整 每个 taskGroup 对应的 Channel 个数（属于优化范畴）
         adjustChannelNumPerTaskGroup(taskGroupConfig, channelNumber);
         return taskGroupConfig;
     }
@@ -82,25 +82,21 @@ public final class JobAssignUtil {
         LinkedHashMap<String, List<Integer>> readerResourceMarkAndTaskIdMap = new LinkedHashMap<String, List<Integer>>();
         LinkedHashMap<String, List<Integer>> writerResourceMarkAndTaskIdMap = new LinkedHashMap<String, List<Integer>>();
 
-        String readerResourceMark = null;
-        String writerResourceMark = null;
-        Configuration aTaskConfig = null;
-        for (int i = 0, len = contentConfig.size(); i < len; i++) {
-            aTaskConfig = contentConfig.get(i);
-
+        for (Configuration aTaskConfig : contentConfig) {
+            int taskId = aTaskConfig.getInt(CoreConstant.JOB_TASK_ID);
             // 把 readerResourceMark 加到 readerResourceMarkAndTaskIdMap 中
-            readerResourceMark = Configuration.from(aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER)).getString(CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
+            String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
             if (readerResourceMarkAndTaskIdMap.get(readerResourceMark) == null) {
                 readerResourceMarkAndTaskIdMap.put(readerResourceMark, new LinkedList<Integer>());
             }
-            readerResourceMarkAndTaskIdMap.get(readerResourceMark).add(aTaskConfig.getInt(CoreConstant.JOB_TASK_ID));
+            readerResourceMarkAndTaskIdMap.get(readerResourceMark).add(taskId);
 
             // 把 writerResourceMark 加到 writerResourceMarkAndTaskIdMap 中
-            writerResourceMark = Configuration.from(aTaskConfig.getString(CoreConstant.JOB_WRITER_PARAMETER)).getString(CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
+            String writerResourceMark = aTaskConfig.getString(CoreConstant.JOB_WRITER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
             if (writerResourceMarkAndTaskIdMap.get(writerResourceMark) == null) {
                 writerResourceMarkAndTaskIdMap.put(writerResourceMark, new LinkedList<Integer>());
             }
-            writerResourceMarkAndTaskIdMap.get(writerResourceMark).add(aTaskConfig.getInt(CoreConstant.JOB_TASK_ID));
+            writerResourceMarkAndTaskIdMap.get(writerResourceMark).add(taskId);
         }
 
         if (readerResourceMarkAndTaskIdMap.size() >= writerResourceMarkAndTaskIdMap.size()) {
@@ -138,7 +134,7 @@ public final class JobAssignUtil {
 
         List<Configuration> result = new LinkedList<Configuration>();
 
-        List<List<Configuration>> taskGroupConfigList = new LinkedList<List<Configuration>>();
+        List<List<Configuration>> taskGroupConfigList = new ArrayList<List<Configuration>>(taskGroupNumber);
         for (int i = 0; i < taskGroupNumber; i++) {
             taskGroupConfigList.add(new LinkedList<Configuration>());
         }
@@ -155,18 +151,18 @@ public final class JobAssignUtil {
 
         int taskGroupIndex = 0;
         for (int i = 0; i < mapValueMaxLength; i++) {
-            for (int j = 0; j < resourceMarks.size(); j++) {
-                if (resourceMarkAndTaskIdMap.get(resourceMarks.get(j)).size() > 0) {
-                    int taskId = resourceMarkAndTaskIdMap.get(resourceMarks.get(j)).get(0);
+            for (String resourceMark : resourceMarks) {
+                if (resourceMarkAndTaskIdMap.get(resourceMark).size() > 0) {
+                    int taskId = resourceMarkAndTaskIdMap.get(resourceMark).get(0);
                     taskGroupConfigList.get(taskGroupIndex % taskGroupNumber).add(contentConfig.get(taskId));
                     taskGroupIndex++;
 
-                    resourceMarkAndTaskIdMap.get(resourceMarks.get(j)).remove(0);
+                    resourceMarkAndTaskIdMap.get(resourceMark).remove(0);
                 }
             }
         }
 
-        Configuration tempTaskGroupConfig = null;
+        Configuration tempTaskGroupConfig;
         for (int i = 0; i < taskGroupNumber; i++) {
             tempTaskGroupConfig = taskGroupTemplate.clone();
             tempTaskGroupConfig.set(CoreConstant.DATAX_JOB_CONTENT, taskGroupConfigList.get(i));
