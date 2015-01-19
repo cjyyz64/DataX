@@ -1,18 +1,17 @@
 package com.alibaba.datax.common.element;
 
-import java.io.File;
-import java.io.IOException;
-import java.sql.Date;
-import java.sql.Time;
-import java.text.ParseException;
-
+import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.alibaba.datax.common.util.Configuration;
+import java.io.File;
+import java.io.IOException;
+import java.sql.Date;
+import java.sql.Time;
+import java.text.ParseException;
 
 public class ColumnCastTest {
 	private Configuration produce() throws IOException {
@@ -30,6 +29,9 @@ public class ColumnCastTest {
 
 		System.out.println(StringCast.asDate(new StringColumn("2014-09-18")));
 		Assert.assertTrue(StringCast.asDate(new StringColumn("2014-09-18"))
+				.getTime() == 1410969600000L);
+
+		Assert.assertTrue(StringCast.asDate(new StringColumn("20140918"))
 				.getTime() == 1410969600000L);
 
 		Assert.assertTrue(StringCast.asDate(new StringColumn("08:00:00"))

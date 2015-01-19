@@ -9,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.container.util.ClassLoaderSwapper;
 import com.alibaba.datax.core.container.util.HookInvoker;
+import com.alibaba.datax.core.container.util.JobAssignUtil;
 import com.alibaba.datax.core.container.util.LoadUtil;
 import com.alibaba.datax.core.scheduler.ErrorRecordLimit;
 import com.alibaba.datax.core.scheduler.Scheduler;
@@ -17,10 +18,7 @@ import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCo
 import com.alibaba.datax.core.statistics.collector.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationManager;
-import com.alibaba.datax.core.util.ClassUtil;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.core.util.*;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -186,9 +184,6 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
                 readerTaskConfigs, writerTaskConfigs);
 
-        Collections.shuffle(contentConfig,
-                new Random(System.currentTimeMillis()));
-
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
     }
 
@@ -282,10 +277,9 @@ public class JobContainer extends AbstractContainer {
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
          */
-        int averTasksPerChannel = taskNumber / this.needChannelNumber;
-        List<Configuration> taskGroupConfigs = distributeTasksToTaskGroup(
-                averTasksPerChannel, this.needChannelNumber,
-                channelsPerTaskGroup);
+
+        List<Configuration> taskGroupConfigs = JobAssignUtil.assignFairly(this.configuration,
+                this.needChannelNumber, channelsPerTaskGroup);
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
@@ -519,6 +513,7 @@ public class JobContainer extends AbstractContainer {
      * 先按平均为3个tasks找4个channel，设置taskGroupId为0，
      * 接下来就像发牌一样轮询分配task到剩下的包含平均channel数的taskGroup中
      *
+     * TODO delete it
      * @param averTaskPerChannel
      * @param channelNumber
      * @param channelsPerTaskGroup
