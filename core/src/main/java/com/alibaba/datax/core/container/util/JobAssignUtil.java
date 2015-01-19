@@ -44,14 +44,16 @@ public final class JobAssignUtil {
                 conf.set(CoreConstant.JOB_READER_PARAMETER + "." +
                         CommonConstant.LOAD_BALANCE_RESOURCE_MARK, "aFakeResourceMarkForLoadBalance");
             }
+            // 是为了避免某些插件没有设置 资源标识 而进行了一次随机打乱操作
+            Collections.shuffle(contentConfig, new Random(System.currentTimeMillis()));
         }
 
         LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap = parseAndGetResourceMarkAndTaskIdMap(contentConfig);
         List<Configuration> taskGroupConfig = doAssign(resourceMarkAndTaskIdMap, configuration, taskGroupNumber);
+
         // 调整 每个 tg 对应的 Channel 个数（属于优化范畴）
         adjustChannelNumPerTaskGroup(taskGroupConfig, channelNumber);
         return taskGroupConfig;
-        //  return List<Configuration> taskGroupConfigs;
     }
 
     private static void adjustChannelNumPerTaskGroup(List<Configuration> taskGroupConfig, int channelNumber) {
@@ -119,11 +121,16 @@ public final class JobAssignUtil {
      * a 库上有表：3, 4
      * c 库上有表：5, 6, 7
      *
-     * 则 shuffle 后的结果为：0, 3, 5, 1, 4, 6, 2, 7
+     * 如果有 4个 taskGroup
+     * 则 assign 后的结果为：
+     * taskGroup-0: 0,  4,
+     * taskGroup-1: 3,  6,
+     * taskGroup-2: 5,  2,
+     * taskGroup-3: 1,  7
+     *
      * </pre>
      */
-    private static List<Configuration> doAssign(LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap,
-                                                Configuration jobConfiguration, int taskGroupNumber) {
+    private static List<Configuration> doAssign(LinkedHashMap<String, List<Integer>> resourceMarkAndTaskIdMap, Configuration jobConfiguration, int taskGroupNumber) {
         List<Configuration> contentConfig = jobConfiguration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 
         Configuration taskGroupTemplate = jobConfiguration.clone();
