@@ -5,6 +5,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.hbase.util.Pair;
 import org.slf4j.Logger;
@@ -16,21 +17,24 @@ import java.util.List;
 public final class HbaseSplitUtil {
     private final static Logger LOG = LoggerFactory.getLogger(HbaseSplitUtil.class);
 
+
     /**
      * TODO start/end rowkey 相等，没有数据？
      */
-    public static List<Configuration> split(Configuration configuration, HbaseProxy hbaseProxy) {
+    public static List<Configuration> split(Configuration configuration) {
+        HTable htable = HbaseUtil.initHtable(configuration);
+
         List<Configuration> resultConfigurations;
         boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         try {
-            Pair<byte[][], byte[][]> regionRanges = hbaseProxy.getStartEndKeys();
+            Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
             if (null == regionRanges) {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "获取源头 Hbase 表自身 startKey/endKey 失败.");
             }
 
-            byte[] startRowkeyByte = hbaseProxy.getStartKey();
-            byte[] endRowkeyByte = hbaseProxy.getEndKey();
+            byte[] startRowkeyByte = HbaseUtil.getStartRowKey(configuration);
+            byte[] endRowkeyByte = HbaseUtil.getEndRowKey(configuration);
 
 			/* 如果配置了start-rowkey和end-rowkey，需要确保：start-rowkey<=end-rowkey */
             if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
@@ -46,8 +50,17 @@ public final class HbaseSplitUtil {
             return resultConfigurations;
         } catch (Exception e) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "切分源头 Hbase 表失败.", e);
+        } finally {
+            if (null != htable) {
+                try {
+                    htable.close();
+                } catch (Exception e) {
+                    //
+                }
+            }
         }
     }
+
 
     private static List<Configuration> doSplit(Configuration config, byte[] startRowkeyByte,
                                                byte[] endRowkeyByte, Pair<byte[][], byte[][]> regionRanges, boolean isBinaryRowkey) {

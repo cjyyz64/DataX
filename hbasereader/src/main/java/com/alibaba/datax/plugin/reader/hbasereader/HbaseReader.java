@@ -5,9 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseProxy;
-import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseSplitUtil;
-import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
+import com.alibaba.datax.plugin.reader.hbasereader.util.*;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +19,6 @@ public class HbaseReader extends Reader {
         private static Logger LOG = LoggerFactory.getLogger(Job.class);
 
         private Configuration originalConfig;
-        private HbaseProxy hbaseProxy = null;
 
         @Override
         public void init() {
@@ -34,12 +31,11 @@ public class HbaseReader extends Reader {
 
         @Override
         public void prepare() {
-            this.hbaseProxy = HbaseProxy.newProxy(this.originalConfig);
         }
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            return HbaseSplitUtil.split(this.originalConfig, this.hbaseProxy);
+            return HbaseSplitUtil.split(this.originalConfig);
         }
 
 
@@ -50,13 +46,6 @@ public class HbaseReader extends Reader {
 
         @Override
         public void destroy() {
-            if (null != this.hbaseProxy) {
-                try {
-                    hbaseProxy.close();
-                } catch (Exception e) {
-                    //
-                }
-            }
         }
 
     }
@@ -64,9 +53,9 @@ public class HbaseReader extends Reader {
     public static class Task extends Reader.Task {
         private Configuration taskConfig;
 
-        private HbaseProxy hbaseProxy = null;
-
+        private HbaseAbstractReader hbaseAbstractReader;
         private List<Map> column;
+        private String mode;
         private List<HbaseColumnCell> hbaseColumnCells;
 
         @Override
@@ -74,18 +63,23 @@ public class HbaseReader extends Reader {
             this.taskConfig = super.getPluginJobConf();
 
             this.column = this.taskConfig.getList(Key.COLUMN, Map.class);
+            this.mode = this.taskConfig.getString(Key.MODE);
+            if ("normal".equalsIgnoreCase(this.mode)) {
+                this.hbaseAbstractReader = new NormalReader(this.taskConfig);
+            } else {
+                this.hbaseAbstractReader = new MutiVersionReader(this.taskConfig);
+            }
             this.hbaseColumnCells = HbaseReader.parseColumn(this.column);
         }
 
         @Override
         public void prepare() {
-            this.hbaseProxy = HbaseProxy.newProxy(this.taskConfig);
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
             try {
-                this.hbaseProxy.prepare(this.hbaseColumnCells);
+                this.hbaseAbstractReader.prepare(this.hbaseColumnCells);
             } catch (Exception e) {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
             }
@@ -94,7 +88,7 @@ public class HbaseReader extends Reader {
             boolean fetchOK = true;
             while (true) {
                 try {
-                    fetchOK = this.hbaseProxy.fetchLine(record, this.hbaseColumnCells);
+                    fetchOK = this.hbaseAbstractReader.fetchLine(record);
                 } catch (Exception e) {
                     super.getTaskPluginCollector().collectDirtyRecord(record, e);
                     continue;
@@ -116,9 +110,9 @@ public class HbaseReader extends Reader {
 
         @Override
         public void destroy() {
-            if (this.hbaseProxy != null) {
+            if (this.hbaseAbstractReader != null) {
                 try {
-                    this.hbaseProxy.close();
+                    this.hbaseAbstractReader.close();
                 } catch (Exception e) {
                     //
                 }

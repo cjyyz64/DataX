@@ -13,9 +13,11 @@ public final class Key {
      * 配合 mode = mutiVersion 时使用，指明需要读取的版本个数。无默认值
      * -1 表示去读全部版本
      * 不能为0，1
-     * >1表示最多读取对应个数的版本数
+     * >1表示最多读取对应个数的版本数(不能超过 Integer 的最大值)
      */
     public final static String MAX_VERSION = "maxVersion";
+
+    public final static String ROWKEY_TYPE = "rowkeyType";
 
     public final static String ENCODING = "encoding";
 
