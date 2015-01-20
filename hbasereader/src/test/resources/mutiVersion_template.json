@@ -4,7 +4,7 @@
         "name": "hbasereader",
         "parameter": {
             // hbase 连接信息
-            "hbase-config": {
+            "hbaseConfig": {
                 "hbase.zookeeper.quorum": "?",
                 "hbase.zookeeper.property.clientPort": "?",
                 "k3": "v3"
