@@ -25,4 +25,7 @@ public interface RecordSender {
 	public void sendToWriter(Record record);
 
 	public void flush();
+
+	public void terminate();
+
 }

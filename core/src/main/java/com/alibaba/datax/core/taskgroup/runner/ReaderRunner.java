@@ -3,7 +3,6 @@ package com.alibaba.datax.core.taskgroup.runner;
 import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
-import com.alibaba.datax.core.transport.record.TerminateRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +39,7 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
             taskReader.prepare();
             LOG.debug("task reader starts to read ...");
             taskReader.startRead(recordSender);
-            recordSender.sendToWriter(TerminateRecord.get());
-            recordSender.flush();
+            recordSender.terminate();
             LOG.debug("task reader starts to do post ...");
             taskReader.post();
             // automatic flush

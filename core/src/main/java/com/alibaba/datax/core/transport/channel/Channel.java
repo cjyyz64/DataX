@@ -4,6 +4,7 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.transport.record.TerminateRecord;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -113,6 +114,12 @@ public abstract class Channel {
         this.statPush(1L, r.getByteSize());
     }
 
+    public void pushTerminate(final TerminateRecord r) {
+        Validate.notNull(r, "record不能为空.");
+        this.doPush(r);
+        // 不统计
+    }
+
     public void pushAll(final Collection<Record> rs) {
         Validate.notNull(rs);
         Validate.noNullElements(rs);
@@ -130,15 +137,6 @@ public abstract class Channel {
         Validate.notNull(rs);
         this.doPullAll(rs);
         this.statPull(rs.size(), this.getByteSize(rs));
-    }
-
-    public void decreaseTerminateRecordMetric() {
-        currentCommunication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS,
-                currentCommunication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS) - 1);
-        currentCommunication.setLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS,
-                currentCommunication.getLongCounter(CommunicationTool.WRITE_RECEIVED_RECORDS) - 1);
-        currentCommunication.setLongCounter(CommunicationTool.STAGE,
-                currentCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
     }
 
     protected abstract void doPush(Record r);

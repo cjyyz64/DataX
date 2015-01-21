@@ -1,19 +1,18 @@
 package com.alibaba.datax.core.transport.exchanger;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang.Validate;
-
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import org.apache.commons.lang.Validate;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
@@ -83,6 +82,12 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 	}
 
 	@Override
+	public void terminate() {
+		flush();
+		this.channel.pushTerminate(TerminateRecord.get());
+	}
+
+	@Override
 	public Record getFromReader() {
 		boolean isEmpty = (this.bufferIndex >= this.buffer.size());
 		if (isEmpty) {
@@ -91,7 +96,6 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 		Record record = this.buffer.get(this.bufferIndex++);
 		if (record instanceof TerminateRecord) {
-			this.channel.decreaseTerminateRecordMetric();
 			record = null;
 		}
 		return record;
