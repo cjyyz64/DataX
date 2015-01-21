@@ -1,8 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.reader.util;
 
+import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -35,7 +37,12 @@ public final class ReaderSplitUtil {
             Configuration sliceConfig = originalSliceConfig.clone();
 
             Configuration connConf = Configuration.from(conns.get(i).toString());
-            sliceConfig.set(Key.JDBC_URL, connConf.getString(Key.JDBC_URL));
+            String jdbcUrl = connConf.getString(Key.JDBC_URL);
+            sliceConfig.set(Key.JDBC_URL, jdbcUrl);
+
+            // 抽取 jdbcUrl 中的 ip/port 进行资源使用的打标，以提供给 core 做有意义的 shuffle 操作
+            sliceConfig.set(CommonConstant.LOAD_BALANCE_RESOURCE_MARK, DataBaseType.parseIpFromJdbcUrl(jdbcUrl));
+
             sliceConfig.remove(Constant.CONN_MARK);
 
             Configuration tempSlice;
@@ -99,4 +106,5 @@ public final class ReaderSplitUtil {
 
         return (int) Math.ceil(tempNum);
     }
+
 }
