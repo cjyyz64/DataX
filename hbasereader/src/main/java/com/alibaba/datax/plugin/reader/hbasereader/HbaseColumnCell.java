@@ -1,13 +1,14 @@
 package com.alibaba.datax.plugin.reader.hbasereader;
 
 import com.alibaba.datax.common.base.BaseObject;
+import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 /**
  * 描述 hbasereader 插件中，column 配置中的一个单元项实体
  */
-public class HbaseColumnCell extends BaseObject{
+public class HbaseColumnCell extends BaseObject {
     private ColumnType columnType;
 
     // columnName 格式为：列族:列名
@@ -39,7 +40,7 @@ public class HbaseColumnCell extends BaseObject{
             this.columnName = builder.columnName;
 
             // 如果 columnName 不是 rowkey，则必须配置为：列族:列名 格式
-            if (!"rowkey".equalsIgnoreCase(this.columnName)) {
+            if (!HbaseUtil.isRowkeyColumn(this.columnName)) {
 
                 String promptInfo = "Hbasereader 中， column 的列配置格式应该是：列族:列名. 您配置的列错误：" + this.columnName;
                 String[] cfAndQualifier = this.columnName.split(":");

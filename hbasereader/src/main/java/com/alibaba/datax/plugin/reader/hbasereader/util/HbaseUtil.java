@@ -28,6 +28,7 @@ public final class HbaseUtil {
                 HbaseReaderErrorCode.REQUIRED_VALUE);
 
         String mode = HbaseUtil.dealMode(originalConfig);
+
         originalConfig.set(Key.MODE, mode);
 
         originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.REQUIRED_VALUE);
@@ -37,7 +38,10 @@ public final class HbaseUtil {
             throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要配置 Hbasereader 的 column 配置项.");
         }
 
-        HbaseUtil.checkColumn(column);
+        List<HbaseColumnCell> hbaseColumnCells = HbaseReader.parseColumn(column);
+        if ("multiVersion".equalsIgnoreCase(mode)) {
+            HbaseUtil.checkHbaseColumnCellForMultiVersionMode(hbaseColumnCells);
+        }
 
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
         originalConfig.set(Key.ENCODING, encoding);
@@ -56,6 +60,23 @@ public final class HbaseUtil {
         String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
         if (endRowkey != null) {
             originalConfig.set(Key.END_ROWKEY, endRowkey);
+        }
+    }
+
+    /**
+     * 检查 多版本 的情况的字段配置：不能有常量，不能配置 rowkey
+     */
+    private static void checkHbaseColumnCellForMultiVersionMode(List<HbaseColumnCell> hbaseColumnCells) {
+        for (HbaseColumnCell cell : hbaseColumnCells) {
+            if (cell.isConstant()) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE,
+                        String.format("多版本读取时，不能配置常量字段。您配置中出现了常量字段:[%s].", cell.toString()));
+            }
+
+            if (HbaseUtil.isRowkeyColumn(cell.getColumnName())) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE,
+                        String.format("多版本读取时，不能配置 rowkey。您配置中出现了rowkey:[%s].", cell.toString()));
+            }
         }
     }
 
@@ -82,10 +103,6 @@ public final class HbaseUtil {
         }
 
         return mode;
-    }
-
-    private static void checkColumn(List<Map> column) {
-        HbaseReader.parseColumn(column);
     }
 
 
@@ -176,5 +193,9 @@ public final class HbaseUtil {
             }
         }
         return retRowKey;
+    }
+
+    public static boolean isRowkeyColumn(String columnName) {
+        return "rowkey".equalsIgnoreCase(columnName);
     }
 }

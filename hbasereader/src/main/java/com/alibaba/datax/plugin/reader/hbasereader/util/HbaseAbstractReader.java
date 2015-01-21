@@ -63,7 +63,7 @@ public abstract class HbaseAbstractReader {
         boolean isRowkeyColumn;
         for (HbaseColumnCell cell : hbaseColumnCells) {
             isConstant = cell.isConstant();
-            isRowkeyColumn = this.isRowkeyColumn(cell.getColumnName());
+            isRowkeyColumn = HbaseUtil.isRowkeyColumn(cell.getColumnName());
 
             if (!isConstant && !isRowkeyColumn) {
                 this.scan.addColumn(cell.getCf(), cell.getQualifier());
@@ -97,10 +97,6 @@ public abstract class HbaseAbstractReader {
         } else {
             return new String(byteArray, encoding);
         }
-    }
-
-    protected boolean isRowkeyColumn(String columnName) {
-        return "rowkey".equalsIgnoreCase(columnName);
     }
 
     protected void doFillRecord(byte[] byteArray, ColumnType columnType, boolean isBinaryRowkey, String encoding, String dateformat, Record record) throws Exception {

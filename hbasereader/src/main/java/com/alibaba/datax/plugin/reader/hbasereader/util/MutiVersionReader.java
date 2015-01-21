@@ -69,8 +69,6 @@ public class MutiVersionReader extends HbaseAbstractReader {
     public void prepare(List<HbaseColumnCell> hbaseColumnCells) throws Exception {
         super.prepare(hbaseColumnCells);
 
-        checkHbaseColumnCell(hbaseColumnCells);
-
         this.userConfigedColumnNameAndCellMap = new HashMap<String, HbaseColumnCell>();
         for (HbaseColumnCell hbaseColumnCell : hbaseColumnCells) {
             this.userConfigedColumnNameAndCellMap.put(hbaseColumnCell.getColumnName(), hbaseColumnCell);
@@ -99,15 +97,6 @@ public class MutiVersionReader extends HbaseAbstractReader {
         this.currentReadPosition++;
 
         return true;
-    }
-
-    private void checkHbaseColumnCell(List<HbaseColumnCell> hbaseColumnCells) {
-        for (HbaseColumnCell cell : hbaseColumnCells) {
-            if (cell.isConstant()) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("多版本读取时，不能配置常量字段。您配置中出现了常量字段:[%s].", cell.toString()));
-            }
-        }
     }
 
     @Override

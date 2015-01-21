@@ -57,7 +57,7 @@ public class NormalReader extends HbaseAbstractReader {
 
                     columnName = cell.getColumnName();
 
-                    if (super.isRowkeyColumn(columnName)) {
+                    if (HbaseUtil.isRowkeyColumn(columnName)) {
                         doFillRecord(result.getRow(), columnType, super.isBinaryRowkey,
                                 super.encoding, cell.getDateformat(), record);
                     } else {
