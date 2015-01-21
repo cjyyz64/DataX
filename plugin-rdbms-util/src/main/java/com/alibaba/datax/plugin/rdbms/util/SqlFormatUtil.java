@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+// TODO delete it
 public class SqlFormatUtil {
 
 	private static final Set<String> BEGIN_CLAUSES = new HashSet<String>();
