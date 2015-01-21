@@ -198,9 +198,6 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
                 readerTaskConfigs, writerTaskConfigs);
 
-        Collections.shuffle(contentConfig,
-                new Random(System.currentTimeMillis()));
-
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
 
         return contentConfig.size();
