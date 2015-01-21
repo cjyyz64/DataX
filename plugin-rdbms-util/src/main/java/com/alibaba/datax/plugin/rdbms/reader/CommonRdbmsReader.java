@@ -24,10 +24,7 @@ public class CommonRdbmsReader {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        private DataBaseType dataBaseType;
-
         public Job(DataBaseType dataBaseType) {
-            this.dataBaseType = dataBaseType;
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
         }
@@ -96,7 +93,7 @@ public class CommonRdbmsReader {
 
             // session config .etc related
             DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             int columnNumber = 0;
             ResultSet rs = null;
@@ -109,6 +106,9 @@ public class CommonRdbmsReader {
                     ResultSetReadProxy.transportOneRecord(recordSender, rs,
                             metaData, columnNumber, taskPluginCollector);
                 }
+
+                LOG.info("Finished read record by Sql: [{}\n] {}.",
+                        querySql, BASIC_MESSAGE);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.READ_RECORD_FAIL, String.format(

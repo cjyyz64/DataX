@@ -112,7 +112,7 @@ public class CommonRdbmsWriter {
                     // 说明有 postSql 配置，则此处删除掉
                     originalConfig.remove(Key.POST_SQL);
 
-                    Connection conn = DBUtil.getConnection(dataBaseType,
+                    Connection conn = DBUtil.getConnection(this.dataBaseType,
                             jdbcUrl, username, password);
 
                     LOG.info(
@@ -182,11 +182,11 @@ public class CommonRdbmsWriter {
         }
 
         public void prepare(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
 
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             int tableNumber = writerSliceConfig.getInt(
                     Constant.TABLE_NUMBER_MARK);
@@ -205,10 +205,10 @@ public class CommonRdbmsWriter {
                                TaskPluginCollector taskPluginCollector) {
             this.taskPluginCollector = taskPluginCollector;
 
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
@@ -260,7 +260,7 @@ public class CommonRdbmsWriter {
                 return;
             }
 
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
