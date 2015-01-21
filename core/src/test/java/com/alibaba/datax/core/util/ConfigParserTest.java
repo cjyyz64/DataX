@@ -3,6 +3,7 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -66,7 +67,7 @@ public class ConfigParserTest extends CaseInitializer {
             break;
         }
 
-        Configuration config = ConfigParser.parse(jobPath);;
+        Configuration config = ConfigParser.parse(jobPath);
         config.set(CoreConstant.DATAX_JOB_SETTING_KEYVERSION,
                 keyVersion);
         config.set(readerParamPath+".*password",
@@ -76,12 +77,7 @@ public class ConfigParserTest extends CaseInitializer {
                 SecretUtil.encrypt(accessKey, secretMap.get(keyVersion)));
         config.set(writerParamPath+".*long", 200);
 
-        Method processSecretKeyMethod = ConfigParser.class.getDeclaredMethod(
-                "processSecretKey", Configuration.class);
-        processSecretKeyMethod.setAccessible(true);
-        config = (Configuration)processSecretKeyMethod
-                .invoke(null, config);
-        processSecretKeyMethod.setAccessible(false);
+        config = SecretUtil.decryptSecretKey(config);
 
         Assert.assertTrue(password.equals(
                 config.getString(readerParamPath+".password")));

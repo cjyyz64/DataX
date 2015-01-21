@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,9 +13,9 @@ public class LocalTaskGroupCommunicationTest {
 
     @Before
     public void setUp() {
-        LocalTaskGroupCommunication.clear();
-        for(int index=0; index< taskGroupNumber; index++) {
-            LocalTaskGroupCommunication.registerTaskGroupCommunication(
+        LocalTGCommunicationManager.clear();
+        for (int index = 0; index < taskGroupNumber; index++) {
+            LocalTGCommunicationManager.registerTaskGroupCommunication(
                     index, new Communication());
         }
     }
@@ -23,29 +23,29 @@ public class LocalTaskGroupCommunicationTest {
     @Test
     public void LocalCommunicationTest() {
         Communication jobCommunication =
-                LocalTaskGroupCommunication.getJobCommunication();
-        Assert.assertTrue(jobCommunication.getState().equals(State.RUN));
+                LocalTGCommunicationManager.getJobCommunication();
+        Assert.assertTrue(jobCommunication.getState().equals(State.RUNNING));
 
-        for(int index : LocalTaskGroupCommunication.getTaskGroupIdSet()) {
-            Communication communication = LocalTaskGroupCommunication
+        for (int index : LocalTGCommunicationManager.getTaskGroupIdSet()) {
+            Communication communication = LocalTGCommunicationManager
                     .getTaskGroupCommunication(index);
-            communication.setState(State.SUCCESS);
-            LocalTaskGroupCommunication.updateTaskGroupCommunication(
+            communication.setState(State.SUCCEEDED);
+            LocalTGCommunicationManager.updateTaskGroupCommunication(
                     index, communication);
         }
 
-        jobCommunication = LocalTaskGroupCommunication.getJobCommunication();
-        Assert.assertTrue(jobCommunication.getState().equals(State.SUCCESS));
+        jobCommunication = LocalTGCommunicationManager.getJobCommunication();
+        Assert.assertTrue(jobCommunication.getState().equals(State.SUCCEEDED));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void noTaskGroupIdForUpdate() {
-        LocalTaskGroupCommunication.updateTaskGroupCommunication(
+        LocalTGCommunicationManager.updateTaskGroupCommunication(
                 this.taskGroupNumber + 1, new Communication());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void noTaskGroupIdForGet() {
-        LocalTaskGroupCommunication.getTaskGroupCommunication(-1);
+        LocalTGCommunicationManager.getTaskGroupCommunication(-1);
     }
 }

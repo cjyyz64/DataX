@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.AbstractContainer;
+import com.alibaba.datax.core.AbstractContainer;
 
 public final class ClassUtilTest {
 	@Test
