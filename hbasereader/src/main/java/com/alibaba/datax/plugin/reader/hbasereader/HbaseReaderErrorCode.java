@@ -5,7 +5,9 @@ import com.alibaba.datax.common.spi.ErrorCode;
 public enum HbaseReaderErrorCode implements ErrorCode {
     REQUIRED_VALUE("HbaseReader-00", "您缺失了必须填写的参数值."),
     ILLEGAL_VALUE("HbaseReader-01", "您配置的值不合法."),
-    TEMP("HbaseReader-01", "temp error code."),
+    PREPAR_READ_ERROR("HbaseReader-02", "准备读取 Hbase 时出错."),
+    SPLIT_ERROR("HbaseReader-03", "切分 Hbase 表时出错."),
+    INIT_TABLE_ERROR("HbaseReader-04", "初始化 Hbase 抽取表时出错."),
 
     ;
 

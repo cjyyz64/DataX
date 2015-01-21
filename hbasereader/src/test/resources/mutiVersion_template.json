@@ -14,11 +14,13 @@
             // 默认为 utf8,可以配置为 utf8,gbk
             "encoding": "utf8",
 
-            // 可能取值为：normal, mutiVersion（这种情况，一定会去读 rowkey,这时不能在 column 中配置 rowkey；不支持常量列）
-            "mode": "mutiVersion",
+            // 可能取值为：normal, multiVersion（这种情况，一定会去读 rowkey,这时不能在 column 中配置 rowkey；不支持常量列. 配合 mode=multiVersion 使用的还有额外两个参数：maxVersion,rowkeyType）
+            "mode": "multiVersion",
             // 约定-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal模式读取数据，而非多版本模式读取，二者差别很大，末尾会展示如果用 normal 模式读取，拼成的 Record 的结果），大于1则表示读取最新的对应个数的版本
             "maxVersion": -1,
 
+          //不支持 Date 类型（是出于这个考虑：如果是时间类型，必然需要配置 dateFormat 格式，引入不必要复杂性）
+            "rowkeyType":"string",
             "column": [
                 {
                     // 表示读取列族为 basicInfo，列名称为 name 的列的数据，

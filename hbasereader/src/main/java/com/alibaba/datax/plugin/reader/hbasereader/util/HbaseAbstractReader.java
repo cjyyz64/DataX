@@ -19,10 +19,6 @@ import java.util.List;
 public abstract class HbaseAbstractReader {
     private final static Logger LOG = LoggerFactory.getLogger(HbaseAbstractReader.class);
 
-    private static final String META_SCANNER_CACHING = "100";
-
-    private org.apache.hadoop.conf.Configuration config;
-
     private byte[] startKey = null;
     private int scanCache;
     private byte[] endKey = null;
@@ -36,19 +32,12 @@ public abstract class HbaseAbstractReader {
     protected ResultScanner resultScanner;
 
     public HbaseAbstractReader(Configuration configuration) {
-        String userConfiguredHbaseSiteConfig = configuration.getString(Key.HBASE_CONFIG);
-        String tableName = configuration.getString(Key.TABLE);
+        this.htable = HbaseUtil.initHtable(configuration);
+
         this.encoding = configuration.getString(Key.ENCODING);
         this.isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         this.scanCache = configuration.getInt(Key.SCAN_CACHE, Constant.DEFAULT_SCAN_CACHE);
-
-        org.apache.hadoop.conf.Configuration conf = HbaseUtil.getHbaseConf(userConfiguredHbaseSiteConfig);
-        this.config = new org.apache.hadoop.conf.Configuration(conf);
-
-        this.config.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
-
-        this.htable = HbaseUtil.initHtable(configuration);
 
         this.startKey = HbaseUtil.getStartRowKey(configuration);
         this.endKey = HbaseUtil.getEndRowKey(configuration);
@@ -56,6 +45,8 @@ public abstract class HbaseAbstractReader {
     }
 
     public abstract boolean fetchLine(Record record) throws Exception;
+
+    public abstract void initScan(Scan scan);
 
     public void prepare(List<HbaseColumnCell> hbaseColumnCells) throws Exception {
         this.hbaseColumnCells = hbaseColumnCells;
@@ -66,7 +57,7 @@ public abstract class HbaseAbstractReader {
         this.scan.setStartRow(startKey);
         this.scan.setStopRow(endKey);
 
-        LOG.info("The task set startkey=[{}], endkey=[{}] .", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding), bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
+        LOG.info("The task set startRowkey=[{}], endRowkey=[{}].", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding), bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
 
         boolean isConstant;
         boolean isRowkeyColumn;
@@ -84,8 +75,6 @@ public abstract class HbaseAbstractReader {
         this.scan.setCaching(this.scanCache);
         this.resultScanner = this.htable.getScanner(this.scan);
     }
-
-    public abstract void initScan(Scan scan);
 
     public void close() throws IOException {
         if (this.resultScanner != null) {
@@ -140,13 +129,12 @@ public abstract class HbaseAbstractReader {
             case STRING:
                 record.addColumn(new StringColumn(bytesToString(byteArray, isBinaryRowkey, encoding)));
                 break;
-
             case DATE:
                 String dateValue = bytesToString(byteArray, isBinaryRowkey, encoding);
                 record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
                 break;
             default:
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "");
+                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
         }
     }
 }

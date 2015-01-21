@@ -33,7 +33,7 @@ public enum ColumnType {
             }
         }
 
-        throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP,
+        throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE,
                 String.format("Hbasereader 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
     }
 

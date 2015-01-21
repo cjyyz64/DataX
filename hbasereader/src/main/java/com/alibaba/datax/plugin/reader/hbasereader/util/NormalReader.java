@@ -112,7 +112,7 @@ public class NormalReader extends HbaseAbstractReader {
                 record.addColumn(new DateColumn(DateUtils.parseDate(constantValue, new String[]{cell.getDateformat()})));
                 break;
             default:
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "");
+                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
         }
     }
 }

@@ -30,7 +30,7 @@ public final class HbaseSplitUtil {
         try {
             Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
             if (null == regionRanges) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "获取源头 Hbase 表自身 startKey/endKey 失败.");
+                throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "获取源头 Hbase 表的 rowkey 范围 失败.");
             }
 
             byte[] startRowkeyByte = HbaseUtil.getStartRowKey(configuration);
@@ -49,7 +49,7 @@ public final class HbaseSplitUtil {
 
             return resultConfigurations;
         } catch (Exception e) {
-            throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, "切分源头 Hbase 表失败.", e);
+            throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "切分源头 Hbase 表失败.", e);
         } finally {
             if (null != htable) {
                 try {

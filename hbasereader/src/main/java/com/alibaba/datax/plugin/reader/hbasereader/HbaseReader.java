@@ -81,7 +81,7 @@ public class HbaseReader extends Reader {
             try {
                 this.hbaseAbstractReader.prepare(this.hbaseColumnCells);
             } catch (Exception e) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.TEMP, e);
+                throw DataXException.asDataXException(HbaseReaderErrorCode.PREPAR_READ_ERROR, e);
             }
 
             Record record = recordSender.createRecord();
