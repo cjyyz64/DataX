@@ -2,7 +2,7 @@ package com.alibaba.datax.core.container.util;
 
 import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.Validate;
 import org.apache.commons.lang3.StringUtils;
 
@@ -83,7 +83,7 @@ public final class JobAssignUtil {
         LinkedHashMap<String, List<Integer>> writerResourceMarkAndTaskIdMap = new LinkedHashMap<String, List<Integer>>();
 
         for (Configuration aTaskConfig : contentConfig) {
-            int taskId = aTaskConfig.getInt(CoreConstant.JOB_TASK_ID);
+            int taskId = aTaskConfig.getInt(CoreConstant.TASK_ID);
             // 把 readerResourceMark 加到 readerResourceMarkAndTaskIdMap 中
             String readerResourceMark = aTaskConfig.getString(CoreConstant.JOB_READER_PARAMETER + "." + CommonConstant.LOAD_BALANCE_RESOURCE_MARK);
             if (readerResourceMarkAndTaskIdMap.get(readerResourceMark) == null) {

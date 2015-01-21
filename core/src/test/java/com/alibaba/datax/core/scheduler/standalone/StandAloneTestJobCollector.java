@@ -1,55 +1,48 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.collector.container.AbstractContainerCollector;
+import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.dataxservice.face.domain.State;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by jingxing on 14-9-4.
  */
-public class StandAloneTestJobCollector extends AbstractContainerCollector {
-    public StandAloneTestJobCollector(Configuration configuration) {
-        super(configuration);
-    }
+public class StandAloneTestJobCollector extends AbstractCollector {
 
-    @Override
     public void registerCommunication(List<Configuration> configurationList) {
         System.out.println("register ok");
     }
 
-    @Override
     public void report(Communication communication) {
         System.out.println("job report 2");
     }
 
-    @Override
     public Communication collect() {
         return new Communication() {{
-            this.setState(State.SUCCESS);
+            this.setState(State.SUCCEEDED);
         }};
     }
 
     @Override
-    public State collectState() {
-        return State.SUCCESS;
+    public void registerTGCommunication(List<Configuration> taskGroupConfigurationList) {
+
     }
 
     @Override
-    public Communication getCommunication(int id) {
+    public void registerTaskCommunication(List<Configuration> taskConfigurationList) {
+
+    }
+
+    @Override
+    public Communication collectFromTask() {
         return null;
     }
 
     @Override
-    public List<Communication> getCommunications(List<Integer> ids) {
-        return null;
-    }
-
-    @Override
-    public Map<Integer, Communication> getCommunicationsMap() {
+    public Communication collectFromTaskGroup() {
         return null;
     }
 }

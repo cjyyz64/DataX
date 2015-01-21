@@ -28,27 +28,18 @@
         },
         "container": {
             "job": {
-                "class": "com.alibaba.datax.core.container.JobContainer"
             },
             "taskGroup": {
-                "class": "com.alibaba.datax.core.container.TaskGroupContainer"
             },
             "model": "master",
         	"id": 1
         },
         "statistics": {
             "collector": {
-                "framework": {
-                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
-                },
                 "plugin": {
                     "maxDirtyNumber": 1000
                 }
             }
-        },
-        "scheduler": {
-            "class": "com.alibaba.datax.core.scheduler.LocalScheduler"
         },
         "plugin": {
             "exchanger": {
