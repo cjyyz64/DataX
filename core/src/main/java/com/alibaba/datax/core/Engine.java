@@ -121,25 +121,27 @@ public class Engine {
 
     /**
      * -1 表示未能解析到 jobId
-     *
+     * <p/>
      * only for dsc & datax 3 update
      */
     private static long parseJobIdFromUrl(String url) {
-        String dscJobUrlPattern = "/job/(\\d{1,})/config";
-        Matcher matcher = Pattern.compile(dscJobUrlPattern).matcher(url);
-        while (matcher.find()) {
-            String tempResult = matcher.group(1);
-            if (tempResult != null) {
-                try {
-                    return Long.parseLong(tempResult);
-                } catch (Exception e) {
-                    return -1;
-                }
+        String dscJobUrlPatternString = "/instance/(\\d{1,})/config.xml";
+        String dsJobUrlPatternString = "/job/(\\d{1,})/config";
 
+        Pattern dscJobUrlPattern = Pattern.compile(dscJobUrlPatternString);
+        Matcher dscUrlMatcher = dscJobUrlPattern.matcher(url);
+
+        if (dscUrlMatcher.find()) {
+            return Long.parseLong(dscUrlMatcher.group(1));
+        } else {
+            Pattern dsJobUrlPattern = Pattern.compile(dsJobUrlPatternString);
+            Matcher dsUrlMatcher = dsJobUrlPattern.matcher(url);
+            if (dsUrlMatcher.find()) {
+                return Long.parseLong(dsUrlMatcher.group(1));
             }
-        }
 
-        return -1;
+            return -1;
+        }
     }
 
     public static void main(String[] args) throws Exception {
