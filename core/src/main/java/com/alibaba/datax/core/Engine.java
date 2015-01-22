@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
@@ -91,6 +93,17 @@ public class Engine {
 
         Configuration configuration = ConfigParser.parse(jobPath);
 
+
+        // only for dsc & datax 3 update
+        long jobId = parseJobIdFromUrl(jobPath);
+
+        boolean isJobFromDSC = jobId != -1;
+        if (!isJobFromDSC && !"standalone".equalsIgnoreCase(RUNTIME_MODE)) {
+            // 非 dsc 下发的作业,其模式只能是 standalone
+            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 dsc 下发的作业,其模式只能是 standalone.");
+        }
+        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
+
         LOG.info("\n" + Engine.copyRight());
 
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
@@ -104,6 +117,29 @@ public class Engine {
         } catch (Throwable e) {
             throw e;
         }
+    }
+
+    /**
+     * -1 表示未能解析到 jobId
+     *
+     * only for dsc & datax 3 update
+     */
+    private static long parseJobIdFromUrl(String url) {
+        String dscJobUrlPattern = "/job/(\\d{1,})/config";
+        Matcher matcher = Pattern.compile(dscJobUrlPattern).matcher(url);
+        while (matcher.find()) {
+            String tempResult = matcher.group(1);
+            if (tempResult != null) {
+                try {
+                    return Long.parseLong(tempResult);
+                } catch (Exception e) {
+                    return -1;
+                }
+
+            }
+        }
+
+        return -1;
     }
 
     public static void main(String[] args) throws Exception {
