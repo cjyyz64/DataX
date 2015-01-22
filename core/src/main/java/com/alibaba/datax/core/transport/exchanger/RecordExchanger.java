@@ -74,4 +74,9 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 	@Override
 	public void flush() {
 	}
+
+	@Override
+	public void terminate() {
+		this.channel.pushTerminate(TerminateRecord.get());
+	}
 }
