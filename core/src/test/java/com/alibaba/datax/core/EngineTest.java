@@ -35,8 +35,8 @@ public class EngineTest extends CaseInitializer {
 		writer.write(jobConfig);
 		writer.flush();
 		writer.close();
-
 		String[] args = { "-job", jobFile, "-mode", "standalone" };
+
 		Engine.entry(args);
 	}
 

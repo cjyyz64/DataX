@@ -238,7 +238,6 @@ public class DoubleColumnTest {
 		System.out.println("double: " + 9801523474.399621d);
 		System.out.println("bigdecimal: " + new BigDecimal(9801523474.399621d).toPlainString());
 		System.out.println("bigdecimal: " + new BigDecimal(String.valueOf(9801523474.399621d)).toPlainString());
-
 		System.out.println(new DoubleColumn(9801523474.399621d).asString());
 		Assert.assertTrue("9801523474.39962".equals(new DoubleColumn(
 				9801523474.399621d).asString()));

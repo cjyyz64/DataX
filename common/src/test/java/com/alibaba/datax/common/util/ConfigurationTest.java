@@ -668,7 +668,6 @@ public class ConfigurationTest {
 		expectedEx.expect(ClassCastException.class);
 		expectedEx.expectMessage("com.alibaba.fastjson.JSONObject cannot be cast to java.util.List");
 		List aStringCantConvertToList = configuration.getList("job.setting");
-
 	}
 
 }
