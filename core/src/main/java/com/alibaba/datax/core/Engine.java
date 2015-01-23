@@ -19,6 +19,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,13 +96,18 @@ public class Engine {
         Configuration configuration = ConfigParser.parse(jobPath);
 
 
-        // only for dsc & datax 3 update
-        long jobId = parseJobIdFromUrl(jobPath);
+        // only for dsc & ds & datax 3 update
+        String dscJobUrlPatternString = "/instance/(\\d{1,})/config.xml";
+        String dsJobUrlPatternString = "/inner/job/(\\d{1,})/config";
+        String dsTaskGroupUrlPatternString = "/inner/job/(\\d{1,})/taskGroup/";
+        List<String> patternStringList = Arrays.asList(dscJobUrlPatternString,
+                dsJobUrlPatternString, dsTaskGroupUrlPatternString);
+        long jobId = parseJobIdFromUrl(patternStringList,jobPath);
 
-        boolean isJobFromDSC = jobId != -1;
-        if (!isJobFromDSC && !"standalone".equalsIgnoreCase(RUNTIME_MODE)) {
-            // 非 dsc 下发的作业,其模式只能是 standalone
-            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 dsc 下发的作业,其模式只能是 standalone.");
+        boolean isStandAloneMode = "standalone".equalsIgnoreCase(RUNTIME_MODE);
+        if (!isStandAloneMode && jobId == -1) {
+            // 如果不是 standalone模式，那么 jobId 一定不能为-1
+            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 standalone 模式必须在 URL 中提供有效的 jobId.");
         }
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
 
@@ -119,29 +126,31 @@ public class Engine {
         }
     }
 
+
     /**
      * -1 表示未能解析到 jobId
-     * <p/>
-     * only for dsc & datax 3 update
+     *
+     *  only for dsc & ds & datax 3 update
      */
-    private static long parseJobIdFromUrl(String url) {
-        String dscJobUrlPatternString = "/instance/(\\d{1,})/config.xml";
-        String dsJobUrlPatternString = "/job/(\\d{1,})/config";
-
-        Pattern dscJobUrlPattern = Pattern.compile(dscJobUrlPatternString);
-        Matcher dscUrlMatcher = dscJobUrlPattern.matcher(url);
-
-        if (dscUrlMatcher.find()) {
-            return Long.parseLong(dscUrlMatcher.group(1));
-        } else {
-            Pattern dsJobUrlPattern = Pattern.compile(dsJobUrlPatternString);
-            Matcher dsUrlMatcher = dsJobUrlPattern.matcher(url);
-            if (dsUrlMatcher.find()) {
-                return Long.parseLong(dsUrlMatcher.group(1));
+    private static long parseJobIdFromUrl(List<String> patternStringList, String url) {
+        long result = -1;
+        for (String patternString : patternStringList) {
+            result = doParseJobIdFromUrl(patternString, url);
+            if (result != -1) {
+                return result;
             }
-
-            return -1;
         }
+        return result;
+    }
+
+    private static long doParseJobIdFromUrl(String patternString, String url) {
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return Long.parseLong(matcher.group(1));
+        }
+
+        return -1;
     }
 
     public static void main(String[] args) throws Exception {
