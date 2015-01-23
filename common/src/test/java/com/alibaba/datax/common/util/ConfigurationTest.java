@@ -665,10 +665,9 @@ public class ConfigurationTest {
 
 		System.out.println(configuration.getString("job.setting"));
 
-		expectedEx.expect(IllegalArgumentException.class);
-		expectedEx.expectMessage("cant convert to type");
+		expectedEx.expect(ClassCastException.class);
+		expectedEx.expectMessage("com.alibaba.fastjson.JSONObject cannot be cast to java.util.List");
 		List aStringCantConvertToList = configuration.getList("job.setting");
-
 	}
 
 }
