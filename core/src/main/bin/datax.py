@@ -125,7 +125,7 @@ def buildStartCommand(options, args):
 
     jobParams = ("-Dlog.file.name=%s") % (jobResource[-20:].replace('/', '_').replace('.', '_'))
     if options.params:
-        jobParams = options.params
+        jobParams = jobParams + " " + options.params
 
     commandMap["jvm"] = tempJVMCommand
     commandMap["params"] = jobParams
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         sys.exit(RET_STATE['FAIL'])
 
     startCommand = buildStartCommand(options, args)
-    print startCommand
+    # print startCommand
 
     child_process = subprocess.Popen(startCommand, shell=True)
     register_signal()

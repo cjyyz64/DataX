@@ -28,9 +28,9 @@ public class LongColumn extends Column {
 					.toBigInteger();
 			super.setRawData(rawData);
 
-			// 当 rawData 为[0-127]时，rawData.bitLength()=1，导致其 byteSize = 0，简单起见，直接认为其长度为 8
-//			super.setByteSize(rawData.bitLength() / 8);
-			super.setByteSize(8);
+			// 当 rawData 为[0-127]时，rawData.bitLength() < 8，导致其 byteSize = 0，简单起见，直接认为其长度为 data.length()
+			// super.setByteSize(rawData.bitLength() / 8);
+			super.setByteSize(data.length());
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
