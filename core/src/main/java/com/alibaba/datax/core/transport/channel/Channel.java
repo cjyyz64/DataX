@@ -117,7 +117,10 @@ public abstract class Channel {
     public void pushTerminate(final TerminateRecord r) {
         Validate.notNull(r, "record不能为空.");
         this.doPush(r);
-        // 不统计
+
+        // 对 stage + 1
+        currentCommunication.setLongCounter(CommunicationTool.STAGE,
+                currentCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
     }
 
     public void pushAll(final Collection<Record> rs) {
