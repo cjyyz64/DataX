@@ -25,6 +25,13 @@ public class MysqlWriterTest extends BasicWriterPluginTest {
 		super.doWriterTest("basic0.json", readerSliceNumber);
 	}
 
+    @TestLogger(log = "测试basic2.json. 配置多个jdbcUrl,多个table,运行时，通过程序自动生成 queryS1ql 进行数据读取.")
+    @Test
+    public void testBasic2() {
+        int readerSliceNumber = 1;
+        super.doWriterTest("basic2.json", readerSliceNumber);
+    }
+
 	@Override
 	protected List<Record> buildDataForWriter() {
 		List<Record> list = new ArrayList<Record>();
