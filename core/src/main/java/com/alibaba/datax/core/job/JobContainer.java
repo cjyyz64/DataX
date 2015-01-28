@@ -118,23 +118,25 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            AbstractContainerCommunicator containerCollector = super.getContainerCommunicator();
 
-            if (containerCollector == null) {
+            if (super.getContainerCommunicator() == null) {
                 // 由于 containerCollector 是在 scheduler() 中初始化的，所以当在 scheduler() 之前出现异常时，需要在此处对 containerCollector 进行初始化
+
+                AbstractContainerCommunicator tempContainerCollector;
                 String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
                 if (ExecuteMode.isDistribute(jobMode)) {
-                    containerCollector = new DistributeJobContainerCommunicator(configuration);
+                    tempContainerCollector = new DistributeJobContainerCommunicator(configuration);
                 } else if (ExecuteMode.isLocal(jobMode)) {
-                    containerCollector = new LocalJobContainerCommunicator(configuration);
+                    tempContainerCollector = new LocalJobContainerCommunicator(configuration);
                 } else {
                     // standalone
-                    containerCollector = new StandAloneJobContainerCommunicator(configuration);
+                    tempContainerCollector = new StandAloneJobContainerCommunicator(configuration);
                 }
+
+                super.setContainerCommunicator(tempContainerCollector);
             }
 
-            Communication communication =
-                    super.getContainerCommunicator().collect();
+            Communication communication = super.getContainerCommunicator().collect();
             // 汇报前的状态，不需要手动进行设置
             // communication.setState(State.FAILED);
             communication.setThrowable(e);
@@ -144,7 +146,7 @@ public class JobContainer extends AbstractContainer {
             tempComm.setTimestamp(this.startTransferTimeStamp);
 
             Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
-            containerCollector.report(reportCommunication);
+            super.getContainerCommunicator().report(reportCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
