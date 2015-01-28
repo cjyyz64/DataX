@@ -9,6 +9,7 @@
             "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
             "timeFormat": "HH:mm:ss",
             "dateFormat": "yyyy-MM-dd",
+            "extraFormats":["yyyyMMdd"],
             "timeZone": "GMT+8",
             "encoding": "utf-8"
         }
@@ -16,7 +17,7 @@
     "core": {
         "dataXServer": {
             "address": "http://localhost:7001/api",
-            "timeout": 3000
+            "timeout": 10000
         },
         "transport": {
             "channel": {
@@ -35,28 +36,19 @@
         },
         "container": {
             "job": {
-                "class": "com.alibaba.datax.core.container.JobContainer",
                 "reportInterval": 10000
             },
             "taskGroup": {
-                "class": "com.alibaba.datax.core.container.TaskGroupContainer",
                 "channel": 5
             }
         },
         "statistics": {
             "collector": {
-                "container": {
-                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
-                },
                 "plugin": {
-                    "taskClass": "com.alibaba.datax.core.statistics.collector.plugin.task.StdoutPluginCollector",
+                    "taskClass": "com.alibaba.datax.core.statistics.plugin.task.StdoutPluginCollector",
                     "maxDirtyNumber": 1000
                 }
             }
-        },
-        "scheduler": {
-            "class": "com.alibaba.datax.core.scheduler.standalone.StandAloneScheduler"
         }
     }
 }

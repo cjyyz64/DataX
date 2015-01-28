@@ -6,6 +6,16 @@
             "DATAX_HOME": "/home/admin"
         }
     },
+    "common": {
+        "column": {
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "extraFormats":["yyyyMMdd"],
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
+        }
+    },
     "core": {
         "channel": {
             "class": "com.alibaba.datax.core.MemoryChannel",
@@ -18,27 +28,18 @@
         },
         "container": {
             "job": {
-                "class": "com.alibaba.datax.core.container.JobContainer"
             },
             "taskGroup": {
-                "class": "com.alibaba.datax.core.container.TaskGroupContainer"
             },
             "model": "master",
         	"id": 1
         },
         "statistics": {
             "collector": {
-                "framework": {
-                    "jobClass": "com.alibaba.datax.core.statistics.collector.container.standalone.JobContainerCollector",
-                    "taskGroupClass": "com.alibaba.datax.core.statistics.collector.container.standalone.TaskGroupContainerCollector"
-                },
                 "plugin": {
                     "maxDirtyNumber": 1000
                 }
             }
-        },
-        "scheduler": {
-            "class": "com.alibaba.datax.core.scheduler.LocalScheduler"
         },
         "plugin": {
             "exchanger": {

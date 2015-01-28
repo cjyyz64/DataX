@@ -62,7 +62,7 @@ public class PostgresqlWriter extends Writer {
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(){
+			this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(DATABASE_TYPE){
 				@Override
 				public String calcValueHolder(String columnType){
 					if("serial".equalsIgnoreCase(columnType)){

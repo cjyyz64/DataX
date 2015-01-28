@@ -1,6 +1,6 @@
 package com.alibaba.datax.core.scaffold.base;
 
-import com.alibaba.datax.core.util.CoreConstant;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.StringUtils;
 import org.junit.BeforeClass;
 
@@ -34,6 +34,6 @@ public class CaseInitializer {
                 CoreConstant.DATAX_HOME, "job" }, File.separator);
 
         CoreConstant.DATAX_SECRET_PATH = StringUtils.join(new String[] {
-                CoreConstant.DATAX_HOME, "conf", ".secret.properties" }, File.separator);
+                CoreConstant.DATAX_HOME, "conf", ".secret.properties"}, File.separator);
 	}
 }

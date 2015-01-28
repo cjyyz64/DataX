@@ -9,6 +9,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.Hook;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.JarLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

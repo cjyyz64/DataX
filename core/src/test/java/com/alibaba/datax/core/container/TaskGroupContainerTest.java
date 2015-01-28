@@ -1,26 +1,26 @@
 package com.alibaba.datax.core.container;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.faker.FakeExceptionReader;
+import com.alibaba.datax.core.faker.FakeExceptionWriter;
 import com.alibaba.datax.core.faker.FakeLongTimeWriter;
 import com.alibaba.datax.core.faker.FakeOneReader;
-import com.alibaba.datax.core.statistics.collector.container.ContainerCollector;
+import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.core.statistics.communication.LocalTaskGroupCommunication;
-import com.alibaba.datax.core.util.State;
+import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
+import com.alibaba.datax.core.statistics.container.communicator.AbstractContainerCommunicator;
+import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
+import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.State;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.container.util.LoadUtil;
-import com.alibaba.datax.core.faker.FakeExceptionReader;
-import com.alibaba.datax.core.faker.FakeExceptionWriter;
-import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.CoreConstant;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-4.
@@ -53,14 +53,15 @@ public class TaskGroupContainerTest extends CaseInitializer {
         List<Configuration> jobContents = new ArrayList<Configuration>();
         for (int i = 0; i < this.taskNumber; i++) {
             Configuration newJobContent = jobContent.clone();
-            newJobContent.set(CoreConstant.JOB_TASK_ID, i);
+            newJobContent.set(CoreConstant.TASK_ID, i);
             jobContents.add(newJobContent);
         }
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, jobContents);
 
-        LocalTaskGroupCommunication.clear();
-        LocalTaskGroupCommunication.registerTaskGroupCommunication(
+        LocalTGCommunicationManager.clear();
+        LocalTGCommunicationManager.registerTaskGroupCommunication(
                 1, new Communication());
+
     }
 
     @Test
@@ -68,10 +69,10 @@ public class TaskGroupContainerTest extends CaseInitializer {
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
 
-        ContainerCollector collector = taskGroupContainer.getContainerCollector();
+        AbstractContainerCommunicator collector = taskGroupContainer.getContainerCommunicator();
         while (true) {
             State totalTaskState = collector.collectState();
-            if(totalTaskState.isRunning()) {
+            if (totalTaskState.isRunning()) {
                 Thread.sleep(1000);
             } else {
                 break;
@@ -90,7 +91,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
 
         State state = totalTaskCommunication.getState();
 
-        Assert.assertTrue("task finished", state.equals(State.SUCCESS));
+        Assert.assertTrue("task finished", state.equals(State.SUCCEEDED));
     }
 
     @Test(expected = RuntimeException.class)
@@ -125,7 +126,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
 
         TaskGroupContainer taskGroupContainer = new TaskGroupContainer(this.configuration);
         taskGroupContainer.start();
-        Assert.assertTrue(State.SUCCESS ==
-                taskGroupContainer.getContainerCollector().collect().getState());
+        Assert.assertTrue(State.SUCCEEDED ==
+                taskGroupContainer.getContainerCommunicator().collect().getState());
     }
 }

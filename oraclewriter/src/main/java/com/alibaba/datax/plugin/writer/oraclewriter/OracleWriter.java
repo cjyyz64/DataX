@@ -68,7 +68,7 @@ public class OracleWriter extends Writer {
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task();
+			this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE);
 			this.commonRdbmsWriterTask.init(this.writerSliceConfig);
 		}
 

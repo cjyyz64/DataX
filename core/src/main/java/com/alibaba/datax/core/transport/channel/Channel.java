@@ -1,24 +1,21 @@
 package com.alibaba.datax.core.transport.channel;
 
-import java.util.Collection;
-
-import com.alibaba.datax.core.statistics.communication.CommunicationManager;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
+import com.alibaba.datax.core.transport.record.TerminateRecord;
+import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.CoreConstant;
-import com.alibaba.datax.core.util.SleepQuiet;
+import java.util.Collection;
 
 /**
- *
  * Created by jingxing on 14-8-25.
- *
+ * <p/>
  * 统计和限速都在这里
- *
  */
 public abstract class Channel {
 
@@ -117,6 +114,15 @@ public abstract class Channel {
         this.statPush(1L, r.getByteSize());
     }
 
+    public void pushTerminate(final TerminateRecord r) {
+        Validate.notNull(r, "record不能为空.");
+        this.doPush(r);
+
+        // 对 stage + 1
+        currentCommunication.setLongCounter(CommunicationTool.STAGE,
+                currentCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
+    }
+
     public void pushAll(final Collection<Record> rs) {
         Validate.notNull(rs);
         Validate.noNullElements(rs);
@@ -134,15 +140,6 @@ public abstract class Channel {
         Validate.notNull(rs);
         this.doPullAll(rs);
         this.statPull(rs.size(), this.getByteSize(rs));
-    }
-
-    public void decreaseTerminateRecordMetric() {
-        currentCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS,
-                currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS) - 1);
-        currentCommunication.setLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS,
-                currentCommunication.getLongCounter(CommunicationManager.WRITE_RECEIVED_RECORDS) - 1);
-        currentCommunication.setLongCounter(CommunicationManager.STAGE,
-                currentCommunication.getLongCounter(CommunicationManager.STAGE) + 1);
     }
 
     protected abstract void doPush(Record r);
@@ -166,9 +163,9 @@ public abstract class Channel {
     }
 
     private void statPush(long recordSize, long byteSize) {
-        currentCommunication.increaseCounter(CommunicationManager.READ_SUCCEED_RECORDS,
+        currentCommunication.increaseCounter(CommunicationTool.READ_SUCCEED_RECORDS,
                 recordSize);
-        currentCommunication.increaseCounter(CommunicationManager.READ_SUCCEED_BYTES,
+        currentCommunication.increaseCounter(CommunicationTool.READ_SUCCEED_BYTES,
                 byteSize);
 
         boolean isChannelByteSpeedLimit = (this.byteSpeed > 0);
@@ -183,9 +180,9 @@ public abstract class Channel {
         if (interval - this.flowControlInterval >= 0) {
             long byteLimitSleepTime = 0;
             long recordLimitSleepTime = 0;
-            if(isChannelByteSpeedLimit) {
-                long currentByteSpeed = (CommunicationManager.getTotalReadBytes(currentCommunication) -
-                        CommunicationManager.getTotalReadBytes(lastCommunication)) * 1000 / interval;
+            if (isChannelByteSpeedLimit) {
+                long currentByteSpeed = (CommunicationTool.getTotalReadBytes(currentCommunication) -
+                        CommunicationTool.getTotalReadBytes(lastCommunication)) * 1000 / interval;
                 if (currentByteSpeed > this.byteSpeed) {
                     // 计算根据byteLimit得到的休眠时间
                     byteLimitSleepTime = currentByteSpeed * interval / this.byteSpeed
@@ -193,10 +190,10 @@ public abstract class Channel {
                 }
             }
 
-            if(isChannelRecordSpeedLimit) {
-                long currentRecordSpeed = (CommunicationManager.getTotalReadRecords(currentCommunication) -
-                        CommunicationManager.getTotalReadRecords(lastCommunication)) * 1000 / interval;
-                if(currentRecordSpeed > this.recordSpeed) {
+            if (isChannelRecordSpeedLimit) {
+                long currentRecordSpeed = (CommunicationTool.getTotalReadRecords(currentCommunication) -
+                        CommunicationTool.getTotalReadRecords(lastCommunication)) * 1000 / interval;
+                if (currentRecordSpeed > this.recordSpeed) {
                     // 计算根据recordLimit得到的休眠时间
                     recordLimitSleepTime = currentRecordSpeed * interval / this.recordSpeed
                             - interval;
@@ -204,28 +201,32 @@ public abstract class Channel {
             }
 
             // 休眠时间取较大值
-            long sleepTime = byteLimitSleepTime<recordLimitSleepTime ?
+            long sleepTime = byteLimitSleepTime < recordLimitSleepTime ?
                     recordLimitSleepTime : byteLimitSleepTime;
-            if(sleepTime > 0) {
-                SleepQuiet.sleep(sleepTime);
+            if (sleepTime > 0) {
+                try {
+                    Thread.sleep(sleepTime);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
             }
 
-            lastCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_BYTES,
-                    currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_BYTES));
-            lastCommunication.setLongCounter(CommunicationManager.READ_FAILED_BYTES,
-                    currentCommunication.getLongCounter(CommunicationManager.READ_FAILED_BYTES));
-            lastCommunication.setLongCounter(CommunicationManager.READ_SUCCEED_RECORDS,
-                    currentCommunication.getLongCounter(CommunicationManager.READ_SUCCEED_RECORDS));
-            lastCommunication.setLongCounter(CommunicationManager.READ_FAILED_RECORDS,
-                    currentCommunication.getLongCounter(CommunicationManager.READ_FAILED_RECORDS));
+            lastCommunication.setLongCounter(CommunicationTool.READ_SUCCEED_BYTES,
+                    currentCommunication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES));
+            lastCommunication.setLongCounter(CommunicationTool.READ_FAILED_BYTES,
+                    currentCommunication.getLongCounter(CommunicationTool.READ_FAILED_BYTES));
+            lastCommunication.setLongCounter(CommunicationTool.READ_SUCCEED_RECORDS,
+                    currentCommunication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS));
+            lastCommunication.setLongCounter(CommunicationTool.READ_FAILED_RECORDS,
+                    currentCommunication.getLongCounter(CommunicationTool.READ_FAILED_RECORDS));
             lastCommunication.setTimestamp(nowTimestamp);
         }
     }
 
     private void statPull(long recordSize, long byteSize) {
         currentCommunication.increaseCounter(
-                CommunicationManager.WRITE_RECEIVED_RECORDS, recordSize);
+                CommunicationTool.WRITE_RECEIVED_RECORDS, recordSize);
         currentCommunication.increaseCounter(
-                CommunicationManager.WRITE_RECEIVED_BYTES, byteSize);
+                CommunicationTool.WRITE_RECEIVED_BYTES, byteSize);
     }
 }

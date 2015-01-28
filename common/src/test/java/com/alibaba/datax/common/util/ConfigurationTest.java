@@ -4,7 +4,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.*;
 
@@ -644,4 +646,28 @@ public class ConfigurationTest {
         Assert.assertTrue(configClone.isSecretPath(keyPath1));
         Assert.assertTrue(configClone.isSecretPath(keyPath2));
     }
+
+	@Rule
+	public ExpectedException expectedEx = ExpectedException.none();
+
+	@Test
+	public void test_get_list() {
+		Configuration configuration = Configuration
+				.from(ConfigurationTest.class.getClassLoader()
+						.getResourceAsStream("all.json"));
+//		System.out.println(configuration.toJSON());
+
+		List noPathNameThis = configuration.get("job.no_path_named_this", List.class);
+		Assert.assertNull(noPathNameThis);
+
+		noPathNameThis = configuration.getList("job.no_path_named_this", String.class);
+		Assert.assertNull(noPathNameThis);
+
+		System.out.println(configuration.getString("job.setting"));
+
+		expectedEx.expect(ClassCastException.class);
+		expectedEx.expectMessage("com.alibaba.fastjson.JSONObject cannot be cast to java.util.List");
+		List aStringCantConvertToList = configuration.getList("job.setting");
+	}
+
 }

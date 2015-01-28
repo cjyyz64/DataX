@@ -81,6 +81,8 @@ public final class OriginalConfPretreatmentUtil {
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.JDBC_URL), jdbcUrl);
 
+            LOG.info("Available jdbcUrl:{}.",jdbcUrl);
+
             if (isTableMode) {
                 // table 方式
                 // 对每一个connection 上配置的table 项进行解析(已对表名称进行了 ` 处理的)
