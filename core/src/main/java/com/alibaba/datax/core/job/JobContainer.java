@@ -33,9 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -121,20 +119,32 @@ public class JobContainer extends AbstractContainer {
             }
 
             AbstractContainerCommunicator containerCollector = super.getContainerCommunicator();
-            if (containerCollector != null) {
-                Communication communication =
-                        super.getContainerCommunicator().collect();
-                // 汇报前的状态，不需要手动进行设置
-                // communication.setState(State.FAILED);
-                communication.setThrowable(e);
-                communication.setTimestamp(this.endTimeStamp);
 
-                Communication tempComm = new Communication();
-                tempComm.setTimestamp(this.startTransferTimeStamp);
-
-                Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
-                super.getContainerCommunicator().report(reportCommunication);
+            if (containerCollector == null) {
+                // 由于 containerCollector 是在 scheduler() 中初始化的，所以当在 scheduler() 之前出现异常时，需要在此处对 containerCollector 进行初始化
+                String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
+                if (ExecuteMode.isDistribute(jobMode)) {
+                    containerCommunicator = new DistributeJobContainerCommunicator(configuration);
+                } else if (ExecuteMode.isLocal(jobMode)) {
+                    containerCommunicator = new LocalJobContainerCommunicator(configuration);
+                } else {
+                    // standalone
+                    containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
+                }
             }
+
+            Communication communication =
+                    super.getContainerCommunicator().collect();
+            // 汇报前的状态，不需要手动进行设置
+            // communication.setState(State.FAILED);
+            communication.setThrowable(e);
+            communication.setTimestamp(this.endTimeStamp);
+
+            Communication tempComm = new Communication();
+            tempComm.setTimestamp(this.startTransferTimeStamp);
+
+            Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
+            super.getContainerCommunicator().report(reportCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
@@ -350,18 +360,18 @@ public class JobContainer extends AbstractContainer {
         this.checkLimit();
     }
 
-    private AbstractScheduler initLocalScheduler(Configuration configuration) {
-        AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
-        super.setContainerCommunicator(containerCommunicator);
-
-        return new LocalScheduler(containerCommunicator);
-    }
-
     private AbstractScheduler initDistributeScheduler(Configuration configuration) {
         AbstractContainerCommunicator containerCommunicator = new DistributeJobContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
 
         return new DsScheduler(containerCommunicator);
+    }
+
+    private AbstractScheduler initLocalScheduler(Configuration configuration) {
+        AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
+        super.setContainerCommunicator(containerCommunicator);
+
+        return new LocalScheduler(containerCommunicator);
     }
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
