@@ -144,7 +144,7 @@ public class JobContainer extends AbstractContainer {
             tempComm.setTimestamp(this.startTransferTimeStamp);
 
             Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
-            super.getContainerCommunicator().report(reportCommunication);
+            containerCollector.report(reportCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
