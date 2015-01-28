@@ -124,12 +124,12 @@ public class JobContainer extends AbstractContainer {
                 // 由于 containerCollector 是在 scheduler() 中初始化的，所以当在 scheduler() 之前出现异常时，需要在此处对 containerCollector 进行初始化
                 String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
                 if (ExecuteMode.isDistribute(jobMode)) {
-                    containerCommunicator = new DistributeJobContainerCommunicator(configuration);
+                    containerCollector = new DistributeJobContainerCommunicator(configuration);
                 } else if (ExecuteMode.isLocal(jobMode)) {
-                    containerCommunicator = new LocalJobContainerCommunicator(configuration);
+                    containerCollector = new LocalJobContainerCommunicator(configuration);
                 } else {
                     // standalone
-                    containerCommunicator = new StandAloneJobContainerCommunicator(configuration);
+                    containerCollector = new StandAloneJobContainerCommunicator(configuration);
                 }
             }
 
