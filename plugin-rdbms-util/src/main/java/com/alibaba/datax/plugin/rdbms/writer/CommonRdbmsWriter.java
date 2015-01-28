@@ -344,7 +344,6 @@ public class CommonRdbmsWriter {
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
                     case Types.SMALLINT:
-                    case Types.TINYINT:
                     case Types.INTEGER:
                     case Types.BIGINT:
                     case Types.NUMERIC:
@@ -355,6 +354,15 @@ public class CommonRdbmsWriter {
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
                         break;
+                    //warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean
+					case Types.TINYINT:
+						Long forBoolValue = record.getColumn(i).asLong();
+						if (null == forBoolValue) {
+							preparedStatement.setString(i + 1, null);
+						} else {
+							preparedStatement.setString(i + 1, forBoolValue.toString());
+						}
+						break;
 
                     // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                     case Types.DATE:
