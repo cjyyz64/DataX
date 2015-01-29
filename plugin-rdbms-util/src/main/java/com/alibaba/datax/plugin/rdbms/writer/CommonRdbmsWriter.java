@@ -352,16 +352,16 @@ public class CommonRdbmsWriter {
                                 .asString());
                         break;
                         
-                    //warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean
+                    //it's better to add this transfer
                     case Types.SMALLINT:
                     case Types.INTEGER:
                     case Types.BIGINT:
                     case Types.TINYINT:
-                    	Long forBoolValue = record.getColumn(i).asLong();
-                    	if (null == forBoolValue) {
+                    	Long longValue = record.getColumn(i).asLong();
+                    	if (null == longValue) {
                     		preparedStatement.setString(i + 1, null);
                     	} else {
-                    		preparedStatement.setString(i + 1, forBoolValue.toString());
+                    		preparedStatement.setString(i + 1, longValue.toString());
                     	}
                     	break;
 
@@ -430,7 +430,17 @@ public class CommonRdbmsWriter {
                         break;
                     case Types.BOOLEAN:
                     case Types.BIT:
-                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
+                    	//warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean
+                    	if (this.resultSetMetaData.getRight().get(i).equalsIgnoreCase("tinyint")) { 
+                    		Long forBoolValue = record.getColumn(i).asLong();
+                        	if (null == forBoolValue) {
+                        		preparedStatement.setString(i + 1, null);
+                        	} else {
+                        		preparedStatement.setString(i + 1, forBoolValue.toString());
+                        	}
+                    	} else {
+                    		preparedStatement.setString(i + 1, record.getColumn(i).asString());
+                    	}
                         break;
                     default:
                         throw DataXException
