@@ -112,10 +112,9 @@ public class UnstructuredStorageWriterUtil {
 											"仅支持 lzo, lzop, gzip, bzip2, pack200, xz, ar, cpio, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
-
-				UnstructuredStorageWriterUtil.doWriteToStream(writer, context,
-						config, record, taskPluginCollector);
 			}
+			UnstructuredStorageWriterUtil.doWriteToStream(writer, context,
+					config, record, taskPluginCollector);
 		} catch (UnsupportedEncodingException uee) {
 			throw DataXException
 					.asDataXException(
