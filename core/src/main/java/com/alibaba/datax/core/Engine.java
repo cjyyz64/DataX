@@ -79,7 +79,7 @@ public class Engine {
             }
         }
 
-        return jobConf.beautify();
+        return configuration.beautify();
     }
 
     public static void entry(final String[] args) throws Throwable {
@@ -112,6 +112,7 @@ public class Engine {
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
 
         LOG.info("\n" + Engine.copyRight());
+        
 
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 

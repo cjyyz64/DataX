@@ -128,10 +128,7 @@ public class UnstructuredStorageWriterUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR,
 					String.format("流写入错误 : [%]", context), e);
-		} finally {
-			IOUtils.closeQuietly(writer);
-		}
-
+		} 
 	}
 
 	private static void doWriteToStream(BufferedWriter writer, String contex,
