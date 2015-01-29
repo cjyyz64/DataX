@@ -110,6 +110,9 @@ public final class DBUtil {
 
     /**
      * 检查表是否具有insert 权限
+     * insert on *.* 或者 insert on database.* 时验证通过
+     * 当insert on database.tableName时，确保tableList中的所有table有insert 权限，验证通过
+     * 其它验证都不通过
      *
      * @author ZiChi
      * @version 1.0 2015-01-28
@@ -138,13 +141,12 @@ public final class DBUtil {
                     String tableName = params[3];
                     if(!tableName.equals("*") && tableNames.contains(tableName))
                         tableNames.remove(tableName);
-                    else{
-                        if(grantRecord.contains("INSERT")) {
-                            if (grantRecord.contains("*.*"))
-                                return true;
-                            else if (grantRecord.contains(dbPattern)) {
-                                return true;
-                            }
+                }else{
+                    if(grantRecord.contains("INSERT")) {
+                        if (grantRecord.contains("*.*"))
+                            return true;
+                        else if (grantRecord.contains(dbPattern)) {
+                            return true;
                         }
                     }
                 }

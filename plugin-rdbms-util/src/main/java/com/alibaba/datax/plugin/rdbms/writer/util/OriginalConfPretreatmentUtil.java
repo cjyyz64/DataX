@@ -78,12 +78,14 @@ public final class OriginalConfPretreatmentUtil {
                 throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
-            boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
+            /*mysql 类型，检查insert 权限*/
+            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
+                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
 
-            if(!hasInsertPri){
-                throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
+                if(!hasInsertPri){
+                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
+                }
             }
-
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
