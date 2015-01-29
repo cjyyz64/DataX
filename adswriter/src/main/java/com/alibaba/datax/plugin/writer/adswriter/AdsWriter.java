@@ -1,11 +1,10 @@
-package com.alibaba.datax.plugin.writer.mysqlwriter;
+package com.alibaba.datax.plugin.writer.adswriter;
+
+import java.util.List;
 
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-
-import java.util.List;
 
 
 //TODO writeProxy
