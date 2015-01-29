@@ -343,9 +343,6 @@ public class CommonRdbmsWriter {
                     case Types.LONGVARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
-                    case Types.SMALLINT:
-                    case Types.INTEGER:
-                    case Types.BIGINT:
                     case Types.NUMERIC:
                     case Types.DECIMAL:
                     case Types.FLOAT:
@@ -355,7 +352,10 @@ public class CommonRdbmsWriter {
                                 .asString());
                         break;
                         
-                    //warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean  
+                    //warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean
+                    case Types.SMALLINT:
+                    case Types.INTEGER:
+                    case Types.BIGINT:
                     case Types.TINYINT:
                     	Long forBoolValue = record.getColumn(i).asLong();
                     	if (null == forBoolValue) {
