@@ -9,6 +9,7 @@ import com.google.common.collect.Sets;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,6 @@ public class TxtFileReader extends Reader {
 
 		private Map<String, Boolean> isRegexPath;
 
-		
 		@Override
 		public void init() {
 			this.originConfig = this.getPluginJobConf();
@@ -52,15 +52,25 @@ public class TxtFileReader extends Reader {
 			this.validateParameter();
 		}
 
-		
 		private void validateParameter() {
-			// TODO Compatible with the old version, path is a string before
-			// this.originConfig.getNecessaryValue(Key.PATH,TxtFileReaderErrorCode.REQUIRED_VALUE);
-			path = this.originConfig.getList(Key.PATH, String.class);
-			if (null == path || path.size() == 0) {
+			// Compatible with the old version, path is a string before
+			String pathInString = this.originConfig.getNecessaryValue(Key.PATH,
+					TxtFileReaderErrorCode.REQUIRED_VALUE);
+			if (StringUtils.isBlank(pathInString)) {
 				throw DataXException.asDataXException(
 						TxtFileReaderErrorCode.REQUIRED_VALUE,
 						"您需要指定待读取的源目录或文件");
+			}
+			if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
+				path = new ArrayList<String>();
+				path.add(pathInString);
+			} else {
+				path = this.originConfig.getList(Key.PATH, String.class);
+				if (null == path || path.size() == 0) {
+					throw DataXException.asDataXException(
+							TxtFileReaderErrorCode.REQUIRED_VALUE,
+							"您需要指定待读取的源目录或文件");
+				}
 			}
 
 			String encoding = this.originConfig
@@ -135,7 +145,6 @@ public class TxtFileReader extends Reader {
 
 		}
 
-		
 		@Override
 		public void prepare() {
 			LOG.debug("prepare()");
@@ -151,17 +160,14 @@ public class TxtFileReader extends Reader {
 
 			LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
 		}
-		
 
 		@Override
 		public void post() {
 		}
 
-		
 		@Override
 		public void destroy() {
 		}
-		
 
 		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定此意图
 		@Override
@@ -213,7 +219,6 @@ public class TxtFileReader extends Reader {
 			}
 			return Arrays.asList(toBeReadFiles.toArray(new String[0]));
 		}
-		
 
 		private void buildSourceTargetsEathPath(String regexPath,
 				String parentDirectory, Set<String> toBeReadFiles) {
@@ -239,7 +244,6 @@ public class TxtFileReader extends Reader {
 			directoryRover(regexPath, parentDirectory, toBeReadFiles);
 		}
 
-		
 		private void directoryRover(String regexPath, String parentDirectory,
 				Set<String> toBeReadFiles) {
 			File directory = new File(parentDirectory);
@@ -325,25 +329,21 @@ public class TxtFileReader extends Reader {
 			this.sourceFiles = this.readerSliceConfig.getList(
 					Constant.SOURCE_FILES, String.class);
 		}
-		
 
 		@Override
 		public void prepare() {
 
 		}
-		
 
 		@Override
 		public void post() {
 
 		}
-		
 
 		@Override
 		public void destroy() {
 
 		}
-		
 
 		@Override
 		public void startRead(RecordSender recordSender) {
