@@ -430,7 +430,7 @@ public class CommonRdbmsWriter {
                         break;
                     case Types.BOOLEAN:
                     case Types.BIT:
-                    	preparedStatement.setString(i + 1, record.getColumn(i).asString());
+                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
                         break;
                     default:
                         throw DataXException
