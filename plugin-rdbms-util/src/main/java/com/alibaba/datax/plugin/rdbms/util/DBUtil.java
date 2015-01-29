@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -65,6 +67,15 @@ public final class DBUtil {
 		}
 
 	}
+
+    /**
+     * 检查slave的库中的数据是否已到凌晨00:00
+     * 如果slave同步的数据还未到00:00返回false
+     * 否则范围true
+     *
+     * @author ZiChi
+     * @version 1.0 2014-12-01
+     */
     private static boolean isSlaveBehind(Connection conn){
         try{
             ResultSet rs = query(conn, "SHOW VARIABLES LIKE 'read_only'");
@@ -94,6 +105,57 @@ public final class DBUtil {
         }catch (Exception e) {
             LOG.warn("checkSlave failed, errorMessage:[{}].", e.getMessage());
         }
+        return false;
+    }
+
+    /**
+     * 检查表是否具有insert 权限
+     * insert on *.* 或者 insert on database.* 时验证通过
+     * 当insert on database.tableName时，确保tableList中的所有table有insert 权限，验证通过
+     * 其它验证都不通过
+     *
+     * @author ZiChi
+     * @version 1.0 2015-01-28
+     */
+    public static boolean hasInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList){
+        /*准备参数*/
+        String[] urls = jdbcURL.split("/");
+        String dbName;
+        if(urls != null && urls.length !=0) {
+            dbName = urls[3];
+        }
+        else
+            return false;
+
+        String dbPattern = "`"+dbName+"`.*";
+        Collection<String> tableNames = new HashSet<String>(tableList.size());
+        tableNames.addAll(tableList);
+
+        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
+        try{
+            ResultSet rs = query(connection, "SHOW GRANTS FOR "+userName);
+            while(rs.next()){
+                String grantRecord = rs.getString("Grants for "+userName+"@%");
+                String[] params= grantRecord.split("\\`");
+                if(params != null && params.length >= 3){
+                    String tableName = params[3];
+                    if(!tableName.equals("*") && tableNames.contains(tableName))
+                        tableNames.remove(tableName);
+                }else{
+                    if(grantRecord.contains("INSERT")) {
+                        if (grantRecord.contains("*.*"))
+                            return true;
+                        else if (grantRecord.contains(dbPattern)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }catch(Exception e){
+            LOG.warn("Check the database has the Insert Privilege failed, errorMessage:[{}]",e.getMessage());
+        }
+        if(tableNames.isEmpty())
+            return true;
         return false;
     }
 
