@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.unstructuredstorage;
+package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
@@ -72,267 +72,146 @@ public class UnstructuredStorageReaderUtil {
 	 * @return 分隔符分隔后的字符串数，
 	 * */
 	public static String[] splitOneLine(String inputLine, String delimiter) {
-		String[] sourceLine = StringUtils.split(inputLine, delimiter);
-		return sourceLine;
+		String[] splitedResult = StringUtils.split(inputLine, delimiter);
+		return splitedResult;
 	}
 
-	public static Record transportOneRecord(RecordSender recordSender,
-			List<Configuration> columnConfigs, String[] sourceLine,
-			String nullFormat, TaskPluginCollector taskPluginCollector) {
-		Record record = recordSender.createRecord();
-		Column columnGenerated = null;
-		// 创建都为String类型column的record（注意，参数 record 要是没有任何字段column设置的纯粹的 record）
-		if (null == columnConfigs || columnConfigs.size() == 0) {
-			for (String columnValue : sourceLine) {
-				if (columnValue.equals(nullFormat)) {
-					columnGenerated = new StringColumn(null);
-				} else {
-					columnGenerated = new StringColumn(columnValue);
-				}
-				record.addColumn(columnGenerated);
-			}
-		} else {
-			for (Configuration columnConfig : columnConfigs) {
-				String columnType = columnConfig.getNecessaryValue(Key.TYPE,
-						UnstructuredStorageErrorCode.CONFIG_INVALID_EXCEPTION);
-				Integer columnIndex = columnConfig.getInt(Key.INDEX);
-				String columnConst = columnConfig.getString(Key.VALUE);
-
-				String columnValue = null;
-
-				try {
-					if (null == columnIndex && null == columnConst) {
-						throw DataXException.asDataXException(
-								UnstructuredStorageErrorCode.NO_INDEX_VALUE,
-								"由于您配置了type, 则至少需要配置 index 或 value");
-					}
-
-					if (null != columnIndex && null != columnConst) {
-						throw DataXException.asDataXException(
-								UnstructuredStorageErrorCode.MIXED_INDEX_VALUE,
-								"您混合配置了index, value, 每一列同时仅能选择其中一种");
-					}
-
-					if (null != columnIndex) {
-						if (columnIndex >= sourceLine.length) {
-							String message = String.format(
-									"您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列",
-									sourceLine.length, columnIndex + 1);
-							LOG.error(message);
-							throw DataXException.asDataXException(
-									UnstructuredStorageErrorCode.ILLEGAL_VALUE,
-									message);
-						}
-
-						columnValue = sourceLine[columnIndex];
-					} else {
-						columnValue = columnConst;
-					}
-					Type type = Type.valueOf(columnType.toUpperCase());
-                    if (columnValue.equals(nullFormat)) {
-                        columnValue = null;
-                    }
-					switch (type) {
-					case STRING:
-                        columnGenerated = new StringColumn(columnValue);
-						break;
-					case LONG:
-						columnGenerated = new LongColumn(columnValue);
-						break;
-					case DOUBLE:
-						columnGenerated = new DoubleColumn(columnValue);
-						break;
-					case BOOLEAN:
-						columnGenerated = new BoolColumn(columnValue);
-						break;
-					case DATE:
-                        if (columnValue == null) {
-                            Date date =null;
-                            columnGenerated = new DateColumn(date);
-                        } else {
-                            String formatString = columnConfig
-                                    .getString(Key.FORMAT);
-                            if (null != formatString) {
-                                // 用户自己配置的格式转换
-                                SimpleDateFormat format = new SimpleDateFormat(
-                                        formatString);
-                                columnGenerated = new DateColumn(
-                                        format.parse(columnValue));
-                            } else {
-                                // 框架尝试转换
-                                columnGenerated = new DateColumn(new StringColumn(
-                                        columnValue).asDate());
-                            }
-                        }
-						break;
-					default:
-						String errorMessage = String.format(
-								"您配置的列类型暂不支持 : [%s]", columnType);
-						LOG.error(errorMessage);
-						throw DataXException.asDataXException(
-								UnstructuredStorageErrorCode.NOT_SUPPORT_TYPE,
-								errorMessage);
-					}
-
-					record.addColumn(columnGenerated);
-
-				} catch (IndexOutOfBoundsException ioe) {
-					throw DataXException.asDataXException(
-							UnstructuredStorageErrorCode.ILLEGAL_VALUE,
-							String.format("您配置的索引下标越界 : [%s]", columnIndex));
-				} catch (Exception e) {
-					// 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
-					taskPluginCollector.collectDirtyRecord(record,
-							e.getMessage());
-				}
-			}
-		}
-		recordSender.sendToWriter(record);
-		return record;
-	}
-
-	public static void readFromStream(InputStream inputStream,
-			String description, Configuration readerSliceConfig,
-			RecordSender recordSender, TaskPluginCollector taskPluginCollector) {
+	public static void readFromStream(InputStream inputStream, String context,
+			Configuration readerSliceConfig, RecordSender recordSender,
+			TaskPluginCollector taskPluginCollector) {
 		String compress = readerSliceConfig.getString(Key.COMPRESS, null);
-		String charset = readerSliceConfig.getString(Key.CHARSET,
+		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_CHARSET);
 		BufferedReader reader = null;
 		// compress logic
 		try {
 			if (null == compress) {
 				reader = new BufferedReader(new InputStreamReader(inputStream,
-						charset));
-				UnstructuredStorageReaderUtil.doReadFromStream(reader,
-						description, readerSliceConfig, recordSender,
-						taskPluginCollector);
+						encoding));
 			} else {
 				if ("lzo".equalsIgnoreCase(compress)) {
 					LzoInputStream lzoInputStream = new LzoInputStream(
 							inputStream, new LzoDecompressor1z_safe());
 					reader = new BufferedReader(new InputStreamReader(
-							lzoInputStream, charset));
+							lzoInputStream, encoding));
 				} else if ("lzop".equalsIgnoreCase(compress)) {
 					LzoInputStream lzopInputStream = new LzopInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							lzopInputStream, charset));
+							lzopInputStream, encoding));
 				} else if ("gzip".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new GzipCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("bzip2".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new BZip2CompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("lzma".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new LZMACompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("pack200".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new Pack200CompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("snappy".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new SnappyCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("xz".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new XZCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							compressorInputStream, charset));
+							compressorInputStream, encoding));
 				} else if ("ar".equalsIgnoreCase(compress)) {
 					ArArchiveInputStream arArchiveInputStream = new ArArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							arArchiveInputStream, charset));
+							arArchiveInputStream, encoding));
 				} else if ("arj".equalsIgnoreCase(compress)) {
 					ArjArchiveInputStream arjArchiveInputStream = new ArjArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							arjArchiveInputStream, charset));
+							arjArchiveInputStream, encoding));
 				} else if ("cpio".equalsIgnoreCase(compress)) {
 					CpioArchiveInputStream cpioArchiveInputStream = new CpioArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							cpioArchiveInputStream, charset));
+							cpioArchiveInputStream, encoding));
 				} else if ("dump".equalsIgnoreCase(compress)) {
 					DumpArchiveInputStream dumpArchiveInputStream = new DumpArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							dumpArchiveInputStream, charset));
+							dumpArchiveInputStream, encoding));
 				} else if ("jar".equalsIgnoreCase(compress)) {
 					JarArchiveInputStream jarArchiveInputStream = new JarArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							jarArchiveInputStream, charset));
-				} else if ("sevenz".equalsIgnoreCase(compress)) {
-					// TODO
+							jarArchiveInputStream, encoding));
 				} else if ("tar".equalsIgnoreCase(compress)) {
 					TarArchiveInputStream tarArchiveInputStream = new TarArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							tarArchiveInputStream, charset));
+							tarArchiveInputStream, encoding));
 				} else if ("zip".equalsIgnoreCase(compress)) {
-                    LOG.debug("Use zip decompress");
+					LOG.debug("Use zip decompress");
 					ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
-							zipArchiveInputStream, charset));
+							zipArchiveInputStream, encoding));
 				} else {
 					throw DataXException
 							.asDataXException(
-									UnstructuredStorageErrorCode.ILLEGAL_VALUE,
+									UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 lzo, lzop, gzip, bzip2, lzma, pack200, snappy, xz 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 lzo, lzop, gzip, bzip2, lzma, pack200, snappy, xz, ar, arj, cpio, dump, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
-
-				UnstructuredStorageReaderUtil.doReadFromStream(reader,
-						description, readerSliceConfig, recordSender,
-						taskPluginCollector);
 			}
+			UnstructuredStorageReaderUtil.doReadFromStream(reader, context,
+					readerSliceConfig, recordSender, taskPluginCollector);
 		} catch (UnsupportedEncodingException uee) {
-			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
-					String.format("不支持的编码格式 : [%]", charset), uee);
+			throw DataXException
+					.asDataXException(
+							UnstructuredStorageReaderErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
+							String.format("不支持的编码格式 : [%]", encoding), uee);
 		} catch (NullPointerException e) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.RUNTIME_EXCEPTION,
+					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					"运行时错误, 请联系我们", e);
 		} catch (ArchiveException e) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.READ_FILE_IO_ERROR,
-					String.format("压缩文件流读取错误 : [%]", description), e);
+					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
+					String.format("压缩文件流读取错误 : [%]", context), e);
 		} catch (IOException e) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.READ_FILE_IO_ERROR,
-					String.format("流读取错误 : [%]", description), e);
+					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
+					String.format("流读取错误 : [%]", context), e);
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}
 
 	}
 
-	private static void doReadFromStream(BufferedReader reader,
-			String description, Configuration readerSliceConfig,
-			RecordSender recordSender, TaskPluginCollector taskPluginCollector) {
+	private static void doReadFromStream(BufferedReader reader, String context,
+			Configuration readerSliceConfig, RecordSender recordSender,
+			TaskPluginCollector taskPluginCollector) {
 		List<Configuration> column = readerSliceConfig
 				.getListConfiguration(Key.COLUMN);
-		String charset = readerSliceConfig.getString(Key.CHARSET,
-                Constant.DEFAULT_CHARSET);
+		String encoding = readerSliceConfig.getString(Key.ENCODING,
+				Constant.DEFAULT_CHARSET);
 		char fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
-                Constant.DEFAULT_FIELD_DELIMITER);
+				Constant.DEFAULT_FIELD_DELIMITER);
 		Boolean skipHeader = readerSliceConfig.getBool(Key.SKIP_HEADER,
-                Constant.DEFAULT_SKIP_HEADER);
+				Constant.DEFAULT_SKIP_HEADER);
 		String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT,
-                Constant.DEFAULT_NULL_FORMAT);
+				Constant.DEFAULT_NULL_FORMAT);
 
 		// every line logic
 		try {
@@ -347,24 +226,148 @@ public class UnstructuredStorageReaderUtil {
 						column, splitedStrs, nullFormat, taskPluginCollector);
 			}
 		} catch (UnsupportedEncodingException uee) {
-			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
-					String.format("不支持的编码格式 : [%]", charset), uee);
+			throw DataXException
+					.asDataXException(
+							UnstructuredStorageReaderErrorCode.OPEN_FILE_WITH_CHARSET_ERROR,
+							String.format("不支持的编码格式 : [%]", encoding), uee);
 		} catch (FileNotFoundException fnfe) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.FILE_NOT_EXISTS,
-					String.format("无法找到文件 : [%s]", description), fnfe);
+					UnstructuredStorageReaderErrorCode.FILE_NOT_EXISTS,
+					String.format("无法找到文件 : [%s]", context), fnfe);
 		} catch (IOException ioe) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.READ_FILE_IO_ERROR,
-					String.format("读取文件错误 : [%s]", description), ioe);
+					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
+					String.format("读取文件错误 : [%s]", context), ioe);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
-					UnstructuredStorageErrorCode.RUNTIME_EXCEPTION,
+					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					String.format("运行时异常 : %s", e.getMessage()), e);
 		} finally {
 			IOUtils.closeQuietly(reader);
 		}
+	}
+
+	private static Record transportOneRecord(RecordSender recordSender,
+			List<Configuration> columnConfigs, String[] sourceLine,
+			String nullFormat, TaskPluginCollector taskPluginCollector) {
+		Record record = recordSender.createRecord();
+		Column columnGenerated = null;
+		// TODO ['*']
+		// 创建都为String类型column的record
+		if (null == columnConfigs || columnConfigs.size() == 0) {
+			for (String columnValue : sourceLine) {
+				// not equalsIgnoreCase
+				if (columnValue.equals(nullFormat)) {
+					columnGenerated = new StringColumn(null);
+				} else {
+					columnGenerated = new StringColumn(columnValue);
+				}
+				record.addColumn(columnGenerated);
+			}
+		} else {
+			for (Configuration columnConfig : columnConfigs) {
+				String columnType = columnConfig
+						.getNecessaryValue(
+								Key.TYPE,
+								UnstructuredStorageReaderErrorCode.CONFIG_INVALID_EXCEPTION);
+				Integer columnIndex = columnConfig.getInt(Key.INDEX);
+				String columnConst = columnConfig.getString(Key.VALUE);
+
+				String columnValue = null;
+
+				try {
+					if (null == columnIndex && null == columnConst) {
+						throw DataXException
+								.asDataXException(
+										UnstructuredStorageReaderErrorCode.NO_INDEX_VALUE,
+										"由于您配置了type, 则至少需要配置 index 或 value");
+					}
+
+					if (null != columnIndex && null != columnConst) {
+						throw DataXException
+								.asDataXException(
+										UnstructuredStorageReaderErrorCode.MIXED_INDEX_VALUE,
+										"您混合配置了index, value, 每一列同时仅能选择其中一种");
+					}
+
+					if (null != columnIndex) {
+						if (columnIndex >= sourceLine.length) {
+							String message = String.format(
+									"您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列",
+									sourceLine.length, columnIndex + 1);
+							LOG.error(message);
+							throw DataXException
+									.asDataXException(
+											UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+											message);
+						}
+
+						columnValue = sourceLine[columnIndex];
+					} else {
+						columnValue = columnConst;
+					}
+					Type type = Type.valueOf(columnType.toUpperCase());
+					if (columnValue.equals(nullFormat)) {
+						columnValue = null;
+					}
+					switch (type) {
+					case STRING:
+						columnGenerated = new StringColumn(columnValue);
+						break;
+					case LONG:
+						columnGenerated = new LongColumn(columnValue);
+						break;
+					case DOUBLE:
+						columnGenerated = new DoubleColumn(columnValue);
+						break;
+					case BOOLEAN:
+						columnGenerated = new BoolColumn(columnValue);
+						break;
+					case DATE:
+						if (columnValue == null) {
+							Date date = null;
+							columnGenerated = new DateColumn(date);
+						} else {
+							String formatString = columnConfig
+									.getString(Key.FORMAT);
+							if (null != formatString) {
+								// 用户自己配置的格式转换
+								SimpleDateFormat format = new SimpleDateFormat(
+										formatString);
+								columnGenerated = new DateColumn(
+										format.parse(columnValue));
+							} else {
+								// 框架尝试转换
+								columnGenerated = new DateColumn(
+										new StringColumn(columnValue).asDate());
+							}
+						}
+						break;
+					default:
+						String errorMessage = String.format(
+								"您配置的列类型暂不支持 : [%s]", columnType);
+						LOG.error(errorMessage);
+						throw DataXException
+								.asDataXException(
+										UnstructuredStorageReaderErrorCode.NOT_SUPPORT_TYPE,
+										errorMessage);
+					}
+
+					record.addColumn(columnGenerated);
+
+				} catch (IndexOutOfBoundsException ioe) {
+					throw DataXException.asDataXException(
+							UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+							String.format("您配置的索引下标越界 : [%s]", columnIndex));
+				} catch (Exception e) {
+					// 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
+					taskPluginCollector.collectDirtyRecord(record,
+							e.getMessage());
+				}
+			}
+		}
+		recordSender.sendToWriter(record);
+		return record;
 	}
 
 	private enum Type {
