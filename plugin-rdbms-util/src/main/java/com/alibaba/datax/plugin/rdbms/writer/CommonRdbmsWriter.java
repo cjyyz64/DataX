@@ -344,7 +344,6 @@ public class CommonRdbmsWriter {
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
                     case Types.SMALLINT:
-                    case Types.TINYINT:
                     case Types.INTEGER:
                     case Types.BIGINT:
                     case Types.NUMERIC:
@@ -355,6 +354,16 @@ public class CommonRdbmsWriter {
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
                         break;
+                        
+                    //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
+                    case Types.TINYINT:
+                    	Long longValue = record.getColumn(i).asLong();
+                    	if (null == longValue) {
+                    		preparedStatement.setString(i + 1, null);
+                    	} else {
+                    		preparedStatement.setString(i + 1, longValue.toString());
+                    	}
+                    	break;
 
                     // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                     case Types.DATE:
