@@ -343,6 +343,9 @@ public class CommonRdbmsWriter {
                     case Types.LONGVARCHAR:
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
+                    case Types.SMALLINT:
+                    case Types.INTEGER:
+                    case Types.BIGINT:
                     case Types.NUMERIC:
                     case Types.DECIMAL:
                     case Types.FLOAT:
@@ -352,10 +355,7 @@ public class CommonRdbmsWriter {
                                 .asString());
                         break;
                         
-                    //it's better to add this transfer
-                    case Types.SMALLINT:
-                    case Types.INTEGER:
-                    case Types.BIGINT:
+                    //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
                     case Types.TINYINT:
                     	Long longValue = record.getColumn(i).asLong();
                     	if (null == longValue) {
@@ -430,17 +430,7 @@ public class CommonRdbmsWriter {
                         break;
                     case Types.BOOLEAN:
                     case Types.BIT:
-                    	//warn: this is for database like mysql: boolean is actually tinyint(1), so string "true"|"false" couldn't insert into boolean
-                    	if (this.resultSetMetaData.getRight().get(i).equalsIgnoreCase("tinyint")) { 
-                    		Long forBoolValue = record.getColumn(i).asLong();
-                        	if (null == forBoolValue) {
-                        		preparedStatement.setString(i + 1, null);
-                        	} else {
-                        		preparedStatement.setString(i + 1, forBoolValue.toString());
-                        	}
-                    	} else {
-                    		preparedStatement.setString(i + 1, record.getColumn(i).asString());
-                    	}
+                    	preparedStatement.setString(i + 1, record.getColumn(i).asString());
                         break;
                     default:
                         throw DataXException
