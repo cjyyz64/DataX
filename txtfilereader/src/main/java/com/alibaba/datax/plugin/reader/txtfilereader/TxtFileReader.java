@@ -9,6 +9,7 @@ import com.google.common.collect.Sets;
 
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -205,13 +206,15 @@ public class TxtFileReader extends Reader {
 						break;
 					}
 				}
+
 				String parentDirectory;
-				if (this.isRegexPath.get(eachPath)) {
+				if (BooleanUtils.isTrue(this.isRegexPath.get(eachPath))) {
 					int lastDirSeparator = eachPath.substring(0, endMark)
 							.lastIndexOf(IOUtils.DIR_SEPARATOR);
 					parentDirectory = eachPath.substring(0,
 							lastDirSeparator + 1);
 				} else {
+					this.isRegexPath.put(eachPath, false);
 					parentDirectory = eachPath;
 				}
 				this.buildSourceTargetsEathPath(eachPath, parentDirectory,
