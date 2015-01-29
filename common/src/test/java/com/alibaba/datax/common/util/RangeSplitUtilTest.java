@@ -1,14 +1,84 @@
-package com.alibaba.datax.plugin.rdbms.util;
+package com.alibaba.datax.common.util;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 
 public class RangeSplitUtilTest {
+
+    @Test
+    public void testSplitString() {
+        int expectSliceNumber = 3;
+
+        String left = "00468374-8cdb-11e4-a66a-008cfac1c3b8";
+        String right = "fcbc8a79-8427-11e4-a66a-008cfac1c3b8";
+
+        String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+
+        Assert.assertTrue(result.length - 1 == expectSliceNumber);
+        System.out.println(Arrays.toString(result));
+    }
+
+    @Test
+    public void testSplitStringRandom() {
+        String left = RandomStringUtils.randomAlphanumeric(40);
+        String right = RandomStringUtils.randomAlphanumeric(40);
+
+        for (int expectSliceNumber = 1; expectSliceNumber < 100; expectSliceNumber++) {
+            String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+
+            Assert.assertTrue(result.length - 1 == expectSliceNumber);
+
+            String[] clonedResult = result.clone();
+            Collections.sort(Arrays.asList(result));
+
+            Assert.assertTrue(Arrays.toString(clonedResult).equals(Arrays.toString(result)));
+
+            System.out.println(result);
+        }
+    }
+
+    //TODO
+    @Test
+    public void testLong_00() {
+        long count = 0;
+        long left = 0;
+        long right = count - 1;
+        int expectSliceNumber = 3;
+        long[] result = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
+
+        result[result.length - 1]++;
+        for (int i = 0; i < result.length - 1; i++) {
+            System.out.println("start:" + result[i] + " count:" + (result[i + 1] - result[i]));
+        }
+
+//        Assert.assertTrue(result.length - 1 == expectSliceNumber);
+        System.out.println(Arrays.toString(result));
+    }
+
+    @Test
+    public void testLong_01() {
+        long count = 8;
+        long left = 0;
+        long right = count - 1;
+        int expectSliceNumber = 3;
+        long[] result = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
+
+        result[result.length - 1]++;
+        for (int i = 0; i < result.length - 1; i++) {
+            System.out.println("start:" + result[i] + " count:" + (result[i + 1] - result[i]));
+        }
+
+        Assert.assertTrue(result.length - 1 == expectSliceNumber);
+        System.out.println(Arrays.toString(result));
+    }
 
     @Test
     public void testLong() {
@@ -57,7 +127,6 @@ public class RangeSplitUtilTest {
 
         String[] result = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
         System.out.println(ToStringBuilder.reflectionToString(result, ToStringStyle.SIMPLE_STYLE));
-        System.out.println(RangeSplitUtil.splitAndWrap(left, right, expectSliceNumber, "id", "'", DataBaseType.MySql));
 
     }
 
@@ -81,11 +150,6 @@ public class RangeSplitUtilTest {
                 expectSliceNumber ? expectSliceNumber : -1));
     }
 
-
-    @SuppressWarnings("unused")
-    private boolean doCheck(long[] result, long left, long right) {
-        return doCheck(result, left, right, -1);
-    }
 
     private boolean doCheck(long[] result, long left,
                             long right, int expectSliceNumber) {
