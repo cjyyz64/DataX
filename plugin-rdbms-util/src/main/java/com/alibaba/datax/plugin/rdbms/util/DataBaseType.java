@@ -16,7 +16,8 @@ public enum DataBaseType {
     SQLServer("sqlserver", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
     PostgreSQL("postgresql", "org.postgresql.Driver"),
     Sybase("sybase", "com.sybase.jdbc2.jdbc.SybDriver (com.sybase.jdbc3.jdbc.SybDriver)"),
-    DB2("db2", "com.ibm.db2.jcc.DB2Driver"),;
+    DB2("db2", "com.ibm.db2.jcc.DB2Driver"),
+    ADS("ads","com.mysql.jdbc.Driver");
 
     private String typeName;
     private String driverClassName;
