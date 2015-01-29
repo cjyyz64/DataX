@@ -7,7 +7,7 @@ import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.RangeSplitUtil;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsRangeSplitWrap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -60,14 +60,14 @@ public class SingleTableSplitUtil {
         boolean isLongType = Constant.PK_TYPE_LONG.equals(configuration
                 .getString(Constant.PK_TYPE));
 
-        List<String> rangeList = null;
+        List<String> rangeList;
         if (isStringType) {
-            rangeList = RangeSplitUtil.splitAndWrap(
+            rangeList = RdbmsRangeSplitWrap.splitAndWrap(
                     String.valueOf(minMaxPK.getLeft()),
                     String.valueOf(minMaxPK.getRight()), adviceNum,
                     splitPkName, "'", DATABASE_TYPE);
         } else if (isLongType) {
-            rangeList = RangeSplitUtil.splitAndWrap(
+            rangeList = RdbmsRangeSplitWrap.splitAndWrap(
                     Long.parseLong(minMaxPK.getLeft().toString()),
                     Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
                     splitPkName);
@@ -76,7 +76,7 @@ public class SingleTableSplitUtil {
                     "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
         }
 
-        String tempQuerySql = null;
+        String tempQuerySql;
         List<String> allQuerySql = new ArrayList<String>();
 
         if (null != rangeList) {
@@ -113,7 +113,7 @@ public class SingleTableSplitUtil {
 
     public static String buildQuerySql(String column, String table,
                                           String where) {
-        String querySql = null;
+        String querySql;
 
         if (StringUtils.isBlank(where)) {
             querySql = String.format(Constant.QUERY_SQL_TEMPLATE_WHITOUT_WHERE,

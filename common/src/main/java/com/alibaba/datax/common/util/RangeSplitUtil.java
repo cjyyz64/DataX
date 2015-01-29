@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.rdbms.util;
+package com.alibaba.datax.common.util;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -6,24 +6,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import java.math.BigInteger;
 import java.util.*;
 
+/**
+ * 提供通用的根据数字范围、字符串范围等进行切分的通用功能.
+ */
 public final class RangeSplitUtil {
-
-    public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
-                                            String columnName, String quote, DataBaseType dataBaseType) {
-        String[] tempResult = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
-        return RangeWrapUtil.wrapRange(tempResult, columnName, quote, dataBaseType);
-    }
-
-    public static List<String> splitAndWrap(long left, long right, int expectSliceNumber, String columnName) {
-        long[] tempResult = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
-        return RangeWrapUtil.wrapRange(tempResult, columnName);
-    }
-
-    public static List<String> splitAndWrap(BigInteger left, BigInteger right, int expectSliceNumber, String columnName) {
-        BigInteger[] tempResult = RangeSplitUtil.doBigIntegerSplit(left, right, expectSliceNumber);
-        return RangeWrapUtil.wrapRange(tempResult, columnName);
-    }
-
 
     public static String[] doAsciiStringSplit(String left, String right, int expectSliceNumber) {
         int radix = 128;
@@ -57,12 +43,12 @@ public final class RangeSplitUtil {
     public static BigInteger[] doBigIntegerSplit(BigInteger left, BigInteger right, int expectSliceNumber) {
         if (expectSliceNumber < 1) {
             throw new IllegalArgumentException(String.format(
-                    "expectSliceNumber can not <1. detail:expectSliceNumber=[%s].", expectSliceNumber));
+                    "切分份数不能小于1. 此处:expectSliceNumber=[%s].", expectSliceNumber));
         }
 
         if (null == left || null == right) {
             throw new IllegalArgumentException(String.format(
-                    "parameter left and right can not be null. detail:left=[%s],right=[%s].", left, right));
+                    "对 BigInteger 进行切分时，其左右区间不能为 null. 此处:left=[%s],right=[%s].", left, right));
         }
 
         if (left.compareTo(right) == 0) {
@@ -82,7 +68,9 @@ public final class RangeSplitUtil {
             BigInteger remainder = endAndStartGap.remainder(BigInteger.valueOf(expectSliceNumber));
 
             //remainder 不可能超过expectSliceNumber,所以不需要检查remainder的 Integer 的范围
-            if (step.intValue() == 0) {
+
+            // 这里不能 step.intVlue()==0 是由于有可能溢出
+            if (step.compareTo(BigInteger.ZERO) == 0) {
                 expectSliceNumber = remainder.intValue();
             }
 
@@ -116,7 +104,7 @@ public final class RangeSplitUtil {
      */
     public static BigInteger stringToBigInteger(String aString, int radix) {
         if (null == aString) {
-            throw new IllegalArgumentException("parameter aString can not be null.");
+            throw new IllegalArgumentException("参数 bigInteger 不能为空.");
         }
 
         checkIfBetweenRange(radix, 1, 128);
@@ -124,13 +112,13 @@ public final class RangeSplitUtil {
         BigInteger result = BigInteger.ZERO;
         BigInteger radixBigInteger = BigInteger.valueOf(radix);
 
-        int tempChar = -1;
+        int tempChar;
         int k = 0;
 
         for (int i = aString.length() - 1; i >= 0; i--) {
             tempChar = aString.charAt(i);
             if (tempChar >= 128) {
-                throw new IllegalArgumentException("parameter aString can not contains Non-Ascii character.");
+                throw new IllegalArgumentException(String.format("根据字符串进行切分时仅支持 ASCII 字符串，而字符串:[%s]非 ASCII 字符串.", aString));
             }
             result = result.add(BigInteger.valueOf(tempChar).multiply(radixBigInteger.pow(k)));
             k++;
@@ -144,7 +132,7 @@ public final class RangeSplitUtil {
      */
     private static String bigIntegerToString(BigInteger bigInteger, int radix) {
         if (null == bigInteger) {
-            throw new IllegalArgumentException("parameter bigInteger can not be null.");
+            throw new IllegalArgumentException("参数 bigInteger 不能为空.");
         }
 
         checkIfBetweenRange(radix, 1, 128);
@@ -175,8 +163,8 @@ public final class RangeSplitUtil {
 //        String msg = String.format("%s 转为 %s 进制，结果为：%s", bigInteger.longValue(), radix, list);
 //        System.out.println(msg);
 
-        for (int i = 0, len = list.size(); i < len; i++) {
-            resultStringBuilder.append(map.get(list.get(i)));
+        for (Integer aList : list) {
+            resultStringBuilder.append(map.get(aList));
         }
 
         return resultStringBuilder.toString();
@@ -188,14 +176,13 @@ public final class RangeSplitUtil {
      */
     public static Pair<Character, Character> getMinAndMaxCharacter(String aString) {
         if (!isPureAscii(aString)) {
-            throw new IllegalArgumentException(String.format(
-                    "parameter aString not pure ascii. detail:aString=[%s].", aString));
+            throw new IllegalArgumentException(String.format("根据字符串进行切分时仅支持 ASCII 字符串，而字符串:[%s]非 ASCII 字符串.", aString));
         }
 
         char min = aString.charAt(0);
         char max = min;
 
-        char temp = 0;
+        char temp;
         for (int i = 1, len = aString.length(); i < len; i++) {
             temp = aString.charAt(i);
             min = min < temp ? min : temp;
