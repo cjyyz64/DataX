@@ -309,12 +309,9 @@ public class TxtFileWriter extends Writer {
 				File newFile = new File(fileFullPath);
 				newFile.createNewFile();
 				outputStream = new FileOutputStream(newFile);
-				Record record;
-				while ((record = lineReceiver.getFromReader()) != null) {
-					UnstructuredStorageWriterUtil.writeToStream(outputStream,
-							this.writerSliceConfig, this.fileName, record,
-							this.getTaskPluginCollector());
-				}
+				UnstructuredStorageWriterUtil.writeToStream(lineReceiver,
+						outputStream, this.writerSliceConfig, this.fileName,
+						this.getTaskPluginCollector());
 			} catch (SecurityException se) {
 				throw DataXException.asDataXException(
 						TxtFileWriterErrorCode.SECURITY_NOT_ENOUGH,

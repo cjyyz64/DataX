@@ -78,8 +78,9 @@ public class Engine {
                 jobConf.set(key, jobConf.getString(key).replaceAll(".", "*"));
             }
         }
+        
 
-        return configuration.beautify();
+        return configuration.getConfiguration("job").beautify();
     }
 
     public static void entry(final String[] args) throws Throwable {

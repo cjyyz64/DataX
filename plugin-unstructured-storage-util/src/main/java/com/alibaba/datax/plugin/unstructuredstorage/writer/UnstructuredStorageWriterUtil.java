@@ -26,6 +26,7 @@ import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 
@@ -34,8 +35,8 @@ public class UnstructuredStorageWriterUtil {
 
 	}
 
-	public static void writeToStream(OutputStream outputStream,
-			Configuration config, String context, Record record,
+	public static void writeToStream(RecordReceiver lineReceiver,
+			OutputStream outputStream, Configuration config, String context,
 			TaskPluginCollector taskPluginCollector) {
 		String encoding = config.getString(Key.ENCODING,
 				Constant.DEFAULT_CHARSET);
@@ -113,8 +114,8 @@ public class UnstructuredStorageWriterUtil {
 											compress));
 				}
 			}
-			UnstructuredStorageWriterUtil.doWriteToStream(writer, context,
-					config, record, taskPluginCollector);
+			UnstructuredStorageWriterUtil.doWriteToStream(lineReceiver, writer,
+					context, config, taskPluginCollector);
 		} catch (UnsupportedEncodingException uee) {
 			throw DataXException
 					.asDataXException(
@@ -128,11 +129,13 @@ public class UnstructuredStorageWriterUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR,
 					String.format("流写入错误 : [%]", context), e);
-		} 
+		}finally{
+			IOUtils.closeQuietly(writer);
+		}
 	}
 
-	private static void doWriteToStream(BufferedWriter writer, String contex,
-			Configuration config, Record record,
+	private static void doWriteToStream(RecordReceiver lineReceiver,
+			BufferedWriter writer, String contex, Configuration config,
 			TaskPluginCollector taskPluginCollector) throws IOException {
 
 		String nullFormat = config.getString(Key.NULL_FORMAT,
@@ -141,10 +144,14 @@ public class UnstructuredStorageWriterUtil {
 		String dateFormat = config.getString(Key.FORMAT);
 		char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
-		String line = UnstructuredStorageWriterUtil.transportOneRecord(record,
-				nullFormat, dateFormat, fieldDelimiter, taskPluginCollector);
 
-		writer.write(line);
+		Record record = null;
+		while ((record = lineReceiver.getFromReader()) != null) {
+			String line = UnstructuredStorageWriterUtil.transportOneRecord(
+					record, nullFormat, dateFormat, fieldDelimiter,
+					taskPluginCollector);
+			writer.write(line);
+		}
 	}
 
 	private static String transportOneRecord(Record record, String nullFormat,
