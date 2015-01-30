@@ -5,6 +5,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,10 +19,11 @@ public class ResultSetReadProxy {
 			.getLogger(ResultSetReadProxy.class);
 
 	private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+	private static final byte[] EMPTY_CHAR_ARRAY = new byte[0];
 
 	//TODO
-	public static void transportOneRecord(RecordSender recordSender,
-			ResultSet rs, ResultSetMetaData metaData, int columnNumber,
+	public static void transportOneRecord(RecordSender recordSender, ResultSet rs, 
+			ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding, 
 			TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 
@@ -36,7 +39,14 @@ public class ResultSetReadProxy {
 				case Types.LONGVARCHAR:
 				case Types.NVARCHAR:
 				case Types.LONGNVARCHAR:
-					record.addColumn(new StringColumn(rs.getString(i)));
+					String rawData;
+					if(StringUtils.isBlank(mandatoryEncoding)){
+						rawData = rs.getString(i);
+					}else{
+						rawData = new String((rs.getBytes(i) == null ? EMPTY_CHAR_ARRAY : 
+							rs.getBytes(i)), mandatoryEncoding);
+					}
+					record.addColumn(new StringColumn(rawData));
 					break;
 
 				case Types.SMALLINT:
