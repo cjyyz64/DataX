@@ -30,6 +30,11 @@
             <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>odpswriter</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
