@@ -91,7 +91,7 @@ public class OssReader extends Reader {
             String charset = this.readerOriginConfig
                     .getString(
                             Key.ENCODING,
-                            com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_CHARSET);
+                            com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
             try {
                 Charsets.toCharset(charset);
             } catch (UnsupportedCharsetException uce) {

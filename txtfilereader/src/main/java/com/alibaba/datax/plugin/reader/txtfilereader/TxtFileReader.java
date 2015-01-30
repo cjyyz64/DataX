@@ -77,17 +77,27 @@ public class TxtFileReader extends Reader {
 			String encoding = this.originConfig
 					.getString(
 							com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
-							com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_CHARSET);
-			try {
-				Charsets.toCharset(encoding);
-			} catch (UnsupportedCharsetException uce) {
-				throw DataXException.asDataXException(
-						TxtFileReaderErrorCode.ILLEGAL_VALUE,
-						String.format("不支持您配置的编码格式 : [%s]", encoding), uce);
-			} catch (Exception e) {
-				throw DataXException.asDataXException(
-						TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("编码配置异常, 请联系我们: %s", e.getMessage()), e);
+							com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
+			if (StringUtils.isBlank(encoding)) {
+				this.originConfig
+						.remove(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING);
+			} else {
+				try {
+					encoding = encoding.trim();
+					this.originConfig
+							.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+									encoding);
+					Charsets.toCharset(encoding);
+				} catch (UnsupportedCharsetException uce) {
+					throw DataXException.asDataXException(
+							TxtFileReaderErrorCode.ILLEGAL_VALUE,
+							String.format("不支持您配置的编码格式 : [%s]", encoding), uce);
+				} catch (Exception e) {
+					throw DataXException.asDataXException(
+							TxtFileReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+							String.format("编码配置异常, 请联系我们: %s", e.getMessage()),
+							e);
+				}
 			}
 
 			// column: 1. index type 2.value type 3.when type is Date, may have
@@ -123,25 +133,36 @@ public class TxtFileReader extends Reader {
 								TxtFileReaderErrorCode.MIXED_INDEX_VALUE,
 								"您混合配置了index, value, 每一列同时仅能选择其中一种");
 					}
-
+					if (null != columnIndex && columnIndex < 0) {
+						throw DataXException.asDataXException(
+								TxtFileReaderErrorCode.ILLEGAL_VALUE, String
+										.format("index需要大于等于0, 您配置的index为[%s]",
+												columnIndex));
+					}
 				}
 			}
 
 			// only support compress types
 			String compress = this.originConfig
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
-			if (null != compress) {
-				Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
-						"gzip", "bzip2", "lzma", "pack200", "snappy", "xz",
-						"ar", "arj", "cpio", "dump", "jar", "tar", "zip");
-				if (!supportedCompress.contains(compress.toLowerCase().trim())) {
+			if (StringUtils.isBlank(compress)) {
+				this.originConfig
+						.remove(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
+			} else {
+				Set<String> supportedCompress = Sets
+						.newHashSet("gzip", "bzip2");
+				compress = compress.toLowerCase().trim();
+				if (!supportedCompress.contains(compress)) {
 					throw DataXException
 							.asDataXException(
 									TxtFileReaderErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 lzo, lzop, gzip, bzip2, lzma, pack200, snappy, xz, ar, arj, cpio, dump, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
+				this.originConfig
+						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,
+								compress);
 			}
 
 		}

@@ -80,8 +80,14 @@ public class UnstructuredStorageReaderUtil {
 			Configuration readerSliceConfig, RecordSender recordSender,
 			TaskPluginCollector taskPluginCollector) {
 		String compress = readerSliceConfig.getString(Key.COMPRESS, null);
+		if (StringUtils.isBlank(compress)) {
+			compress = null;
+		}
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
-				Constant.DEFAULT_CHARSET);
+				Constant.DEFAULT_ENCODING);
+		if (StringUtils.isBlank(encoding)) {
+			encoding = Constant.DEFAULT_ENCODING;
+		}
 		BufferedReader reader = null;
 		// compress logic
 		try {
@@ -205,7 +211,14 @@ public class UnstructuredStorageReaderUtil {
 		List<Configuration> column = readerSliceConfig
 				.getListConfiguration(Key.COLUMN);
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
-				Constant.DEFAULT_CHARSET);
+				Constant.DEFAULT_ENCODING);
+		String delimiterInStr = readerSliceConfig
+				.getString(Key.FIELD_DELIMITER);
+		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+			throw DataXException.asDataXException(
+					UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+					String.format("仅仅支持单字符切分, 您配置的切分为 : [%]", context));
+		}
 		char fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 		Boolean skipHeader = readerSliceConfig.getBool(Key.SKIP_HEADER,
@@ -216,10 +229,11 @@ public class UnstructuredStorageReaderUtil {
 		// every line logic
 		try {
 			String fetchLine = null;
+			if (skipHeader) {
+				fetchLine = reader.readLine();
+				LOG.info("Header line has been skiped.");
+			}
 			while ((fetchLine = reader.readLine()) != null) {
-				if (skipHeader) {
-					continue;
-				}
 				String[] splitedStrs = UnstructuredStorageReaderUtil
 						.splitOneLine(fetchLine, fieldDelimiter);
 				UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
@@ -252,7 +266,6 @@ public class UnstructuredStorageReaderUtil {
 			String nullFormat, TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 		Column columnGenerated = null;
-		// TODO ['*']
 		// 创建都为String类型column的record
 		if (null == columnConfigs || columnConfigs.size() == 0) {
 			for (String columnValue : sourceLine) {

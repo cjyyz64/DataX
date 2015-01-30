@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,22 +101,35 @@ public class TxtFileWriter extends Writer {
 					.getString(
 							com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
 							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_CHARSET);
-			try {
-				Charsets.toCharset(encoding);
-			} catch (UnsupportedCharsetException uce) {
-				throw DataXException.asDataXException(
-						TxtFileWriterErrorCode.ILLEGAL_VALUE,
-						String.format("不支持您配置的编码格式:[%s]", encoding), uce);
-			} catch (Exception e) {
-				throw DataXException.asDataXException(
-						TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-						String.format("编码配置异常, 请联系我们: %s", e.getMessage()), e);
+			if (StringUtils.isBlank(encoding)) {
+				this.writerSliceConfig
+						.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING);
+			} else {
+				try {
+					encoding = encoding.trim();
+					this.writerSliceConfig
+							.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
+									encoding);
+					Charsets.toCharset(encoding);
+				} catch (UnsupportedCharsetException uce) {
+					throw DataXException.asDataXException(
+							TxtFileWriterErrorCode.ILLEGAL_VALUE,
+							String.format("不支持您配置的编码格式:[%s]", encoding), uce);
+				} catch (Exception e) {
+					throw DataXException.asDataXException(
+							TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
+							String.format("编码配置异常, 请联系我们: %s", e.getMessage()),
+							e);
+				}
 			}
 
 			// only support compress types
 			String compress = this.writerSliceConfig
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
-			if (null != compress) {
+			if (StringUtils.isBlank(compress)) {
+				this.writerSliceConfig
+						.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
+			} else {
 				Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
 						"gzip", "bzip2", "pack200", "xz", "ar", "cpio", "jar",
 						"tar", "zip");
