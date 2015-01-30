@@ -1,0 +1,369 @@
+/**
+ * 
+ */
+package com.alibaba.datax.plugin.writer.adswriter;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
+import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
+import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+
+public class AdsHelper {
+
+    private String adsURL;
+    private String userName;
+    private String password;
+    private String schema;
+
+    public AdsHelper() {
+    }
+
+    public AdsHelper(String adsUrl, String userName, String password, String schema) {
+        this.adsURL = adsUrl;
+        this.userName = userName;
+        this.password = password;
+        this.schema = schema;
+    }
+
+    public String getAdsURL() {
+        return adsURL;
+    }
+
+    public void setAdsURL(String adsURL) {
+        this.adsURL = adsURL;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getSchema() {
+        return schema;
+    }
+
+    public void setSchema(String schema) {
+        this.schema = schema;
+    }
+
+    /**
+     * Obtain the table meta information.
+     * 
+     * @param table The table
+     * @return The table meta information
+     * @throws AdsException
+     */
+    public TableInfo getTableInfo(String table) throws AdsException {
+
+        if (table == null) {
+            throw new AdsException(AdsException.ADS_TABLEMETA_TABLE_NULL, "Table is null.", null);
+        }
+
+        if (adsURL == null) {
+            throw new AdsException(AdsException.ADS_CONN_URL_NOT_SET, "ADS JDBC connection URL was not set.", null);
+        }
+
+        if (userName == null) {
+            throw new AdsException(AdsException.ADS_CONN_USERNAME_NOT_SET,
+                    "ADS JDBC connection user name was not set.", null);
+        }
+
+        if (password == null) {
+            throw new AdsException(AdsException.ADS_CONN_PASSWORD_NOT_SET, "ADS JDBC connection password was not set.",
+                    null);
+        }
+
+        if (schema == null) {
+            throw new AdsException(AdsException.ADS_CONN_SCHEMA_NOT_SET, "ADS JDBC connection schema was not set.",
+                    null);
+        }
+
+        String sql = "select ordinal_position,column_name,data_type,type_name,column_comment from information_schema.columns where table_schema='"
+                + schema + "' and table_name='" + table + "' and is_deleted=0";
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+
+            Properties connectionProps = new Properties();
+            connectionProps.put("user", userName);
+            connectionProps.put("password", password);
+            connection = DriverManager.getConnection(url, connectionProps);
+            statement = connection.createStatement();
+
+            rs = statement.executeQuery(sql);
+
+            TableInfo tableInfo = new TableInfo();
+            List<ColumnInfo> columnInfoList = new ArrayList<ColumnInfo>();
+            while (rs.next()) {
+                ColumnInfo columnInfo = new ColumnInfo();
+                columnInfo.setOrdinal(rs.getInt(1));
+                columnInfo.setName(rs.getString(2));
+                columnInfo.setDataType(ColumnDataType.getDataType(rs.getInt(3)));
+                columnInfo.setComment(rs.getString(5));
+                columnInfoList.add(columnInfo);
+            }
+            tableInfo.setColumns(columnInfoList);
+            tableInfo.setTableSchema(schema);
+            tableInfo.setTableName(table);
+
+            return tableInfo;
+
+        } catch (ClassNotFoundException e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } catch (Exception e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Submit LOAD DATA command.
+     * 
+     * @param table The target ADS table
+     * @param sourcePath The source path
+     * @param overwrite
+     * @return
+     * @throws AdsException
+     */
+    public String loadData(String table, String sourcePath, boolean overwrite) throws AdsException {
+
+        if (table == null) {
+            throw new AdsException(AdsException.ADS_LOADDATA_TABLE_NULL, "ADS LOAD DATA table is null.", null);
+        }
+
+        if (sourcePath == null) {
+            throw new AdsException(AdsException.ADS_LOADDATA_SOURCEPATH_NULL, "ADS LOAD DATA source path is null.",
+                    null);
+        }
+
+        if (adsURL == null) {
+            throw new AdsException(AdsException.ADS_CONN_URL_NOT_SET, "ADS JDBC connection URL was not set.", null);
+        }
+
+        if (userName == null) {
+            throw new AdsException(AdsException.ADS_CONN_USERNAME_NOT_SET,
+                    "ADS JDBC connection user name was not set.", null);
+        }
+
+        if (password == null) {
+            throw new AdsException(AdsException.ADS_CONN_PASSWORD_NOT_SET, "ADS JDBC connection password was not set.",
+                    null);
+        }
+
+        if (schema == null) {
+            throw new AdsException(AdsException.ADS_CONN_SCHEMA_NOT_SET, "ADS JDBC connection schema was not set.",
+                    null);
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("LOAD DATA FROM ");
+        if (sourcePath.startsWith("'") && sourcePath.endsWith("'")) {
+            sb.append(sourcePath);
+        } else {
+            sb.append("'" + sourcePath + "'");
+        }
+        if (overwrite) {
+            sb.append(" OVERWRITE");
+        }
+        sb.append(" INTO TABLE ");
+        sb.append(schema + "." + table);
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+
+            Properties connectionProps = new Properties();
+            connectionProps.put("user", userName);
+            connectionProps.put("password", password);
+            connection = DriverManager.getConnection(url, connectionProps);
+            statement = connection.createStatement();
+
+            rs = statement.executeQuery(sb.toString());
+
+            String jobId = null;
+            while (rs.next()) {
+                jobId = rs.getString(1);
+            }
+
+            if (jobId == null) {
+                throw new AdsException(AdsException.ADS_LOADDATA_JOBID_NOT_AVAIL,
+                        "Job id is not available for the submitted LOAD DATA." + jobId, null);
+            }
+
+            return jobId;
+
+        } catch (ClassNotFoundException e) {
+            throw new AdsException(AdsException.ADS_LOADDATA_FAILED, e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new AdsException(AdsException.ADS_LOADDATA_FAILED, e.getMessage(), e);
+        } catch (Exception e) {
+            throw new AdsException(AdsException.ADS_LOADDATA_FAILED, e.getMessage(), e);
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * Check the load data job status.
+     * 
+     * @param jobId The job id to
+     * @return true if load data job succeeded, false if load data job failed.
+     * @throws AdsException
+     */
+    public boolean checkLoadDataJobStatus(String jobId) throws AdsException {
+
+        if (adsURL == null) {
+            throw new AdsException(AdsException.ADS_CONN_URL_NOT_SET, "ADS JDBC connection URL was not set.", null);
+        }
+
+        if (userName == null) {
+            throw new AdsException(AdsException.ADS_CONN_USERNAME_NOT_SET,
+                    "ADS JDBC connection user name was not set.", null);
+        }
+
+        if (password == null) {
+            throw new AdsException(AdsException.ADS_CONN_PASSWORD_NOT_SET, "ADS JDBC connection password was not set.",
+                    null);
+        }
+
+        if (schema == null) {
+            throw new AdsException(AdsException.ADS_CONN_SCHEMA_NOT_SET, "ADS JDBC connection schema was not set.",
+                    null);
+        }
+
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+
+            Properties connectionProps = new Properties();
+            connectionProps.put("user", userName);
+            connectionProps.put("password", password);
+            connection = DriverManager.getConnection(url, connectionProps);
+            statement = connection.createStatement();
+
+            String sql = "select state from information_schema.job_instances where job_id like '" + jobId + "'";
+            rs = statement.executeQuery(sql);
+
+            String state = null;
+            while (rs.next()) {
+                state = rs.getString(1);
+            }
+
+            if (state == null) {
+                throw new AdsException(AdsException.JOB_NOT_EXIST, "Target job does not exist for id: " + jobId, null);
+            }
+
+            if (state.equals("SUCCEEDED")) {
+                return true;
+            } else if (state.equals("FAILED")) {
+                throw new AdsException(AdsException.JOB_FAILED, "Job failed.", null);
+            } else {
+                return false;
+            }
+
+        } catch (ClassNotFoundException e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } catch (Exception e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } finally {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                }
+            }
+        }
+
+    }
+}
