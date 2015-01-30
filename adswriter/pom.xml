@@ -38,12 +38,16 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>simulator</artifactId>
             <version>${datax-project-version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.aliyun.odps.internal</groupId>
+            <artifactId>odps-api-sdk</artifactId>
+            <version>s13.0.0-rc4</version>
         </dependency>
     </dependencies>
 

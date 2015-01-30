@@ -1,14 +1,14 @@
 package com.alibaba.datax.plugin.writer.adswriter;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.DataType;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Table meta helper for ADS writer.
@@ -25,7 +25,7 @@ public class TableMetaHelper {
      * Create temporary ODPS table.
      * 
      * @param tableMeta table meta
-     * @param life cycle for temporary table
+     * @param lifeCycle for temporary table
      * @return ODPS temporary table meta
      */
     public static TableMeta createTempODPSTable(TableInfo tableMeta, int lifeCycle) {

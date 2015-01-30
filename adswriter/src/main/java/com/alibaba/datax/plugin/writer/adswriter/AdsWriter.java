@@ -21,9 +21,20 @@ public class AdsWriter extends Writer {
         public void init() {
 
 //            this.originalConfig = super.getPluginJobConf();
+
 //            //创建odps表
 //            Configuration newConf = generate();
 //            super.setPluginConf(newConf);
+            String project = null;
+            String accessKey = null;
+            String partition = null;
+            String tunnelServer = null;
+            String truncat = null;
+            String odpsServer = null;
+            String table = null;
+            String accessId = null;
+            List<String> column = null;
+
 
         }
 
