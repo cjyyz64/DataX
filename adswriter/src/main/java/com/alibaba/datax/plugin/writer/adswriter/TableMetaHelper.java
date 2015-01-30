@@ -78,8 +78,8 @@ public class TableMetaHelper {
     }
 
     private static String generateTempTableName(String tableSchema, String tableName) {
-        return tableSchema + "__" + tableName + "_" + System.currentTimeMillis()
-                + java.util.concurrent.ThreadLocalRandom.current().nextInt(1000);
+        int randNum = 1000 + java.util.concurrent.ThreadLocalRandom.current().nextInt(1000);
+        return tableSchema + "__" + tableName + "_" + System.currentTimeMillis() + randNum;
     }
 
 }
