@@ -80,7 +80,8 @@ public class TxtFileReader extends Reader {
 							com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
 			if (StringUtils.isBlank(encoding)) {
 				this.originConfig
-						.remove(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING);
+						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+								null);
 			} else {
 				try {
 					encoding = encoding.trim();
@@ -147,7 +148,8 @@ public class TxtFileReader extends Reader {
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
 			if (StringUtils.isBlank(compress)) {
 				this.originConfig
-						.remove(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
+						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,
+								null);
 			} else {
 				Set<String> supportedCompress = Sets
 						.newHashSet("gzip", "bzip2");

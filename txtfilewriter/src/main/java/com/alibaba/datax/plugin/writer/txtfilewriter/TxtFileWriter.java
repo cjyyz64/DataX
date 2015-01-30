@@ -103,7 +103,8 @@ public class TxtFileWriter extends Writer {
 							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_CHARSET);
 			if (StringUtils.isBlank(encoding)) {
 				this.writerSliceConfig
-						.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING);
+						.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
+								null);
 			} else {
 				try {
 					encoding = encoding.trim();
@@ -128,7 +129,8 @@ public class TxtFileWriter extends Writer {
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
 			if (StringUtils.isBlank(compress)) {
 				this.writerSliceConfig
-						.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
+						.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS,
+								null);
 			} else {
 				Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
 						"gzip", "bzip2", "pack200", "xz", "ar", "cpio", "jar",
