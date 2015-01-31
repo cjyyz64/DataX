@@ -45,10 +45,17 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.aliyun.odps.internal</groupId>
-            <artifactId>odps-api-sdk</artifactId>
-            <version>s13.0.0-rc4</version>
+            <groupId>com.aliyun.odps</groupId>
+            <artifactId>odps-sdk-core-internal</artifactId>
+            <version>0.13.2</version>
         </dependency>
+        <dependency>
+            <groupId>com.aliyun.odps</groupId>
+            <artifactId>odps-sdk-core</artifactId>
+            <version>0.13.2</version>
+            <classifier>sources</classifier>
+        </dependency>
+
     </dependencies>
 
     <build>

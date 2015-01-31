@@ -1,9 +1,16 @@
 package com.alibaba.datax.plugin.writer.adswriter;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
+import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriter;
+import com.aliyun.odps.Odps;
+import com.aliyun.odps.account.Account;
+import com.aliyun.odps.account.AliyunAccount;
 
 import java.util.List;
 
@@ -16,26 +23,53 @@ public class AdsWriter extends Writer {
 
         private OdpsWriter.Job odpsWriterProxy = new OdpsWriter.Job();
         private Configuration originalConfig = null;
+        private AdsHelper adsHelper;
+        private final int ODPSOVERTIME = 10000;
 
         @Override
         public void init() {
 
-//            this.originalConfig = super.getPluginJobConf();
-
-//            //创建odps表
-//            Configuration newConf = generate();
-//            super.setPluginConf(newConf);
-            String project = null;
-            String accessKey = null;
-            String partition = null;
-            String tunnelServer = null;
-            String truncat = null;
-            String odpsServer = null;
-            String table = null;
-            String accessId = null;
-            List<String> column = null;
+            this.originalConfig = super.getPluginJobConf();
+            AdsUtil.checkNecessaryConfig(this.originalConfig);
+            this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);
 
 
+            //Get endpoint,accessId,accessKey,project等参数,创建ODPSConnection实例
+            String endPoint = this.originalConfig.getString(Key.ODPS_SERVER);
+            String accessId = this.originalConfig.getString(Key.ACCESS_ID);
+            String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+            Account odpsAccount = new AliyunAccount(accessId,accessKey);
+            Odps odps = new Odps(odpsAccount);
+            odps.setEndpoint(endPoint);
+
+            try {
+                String adsTable = originalConfig.getString(Key.TABLE);
+                int lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
+                TableInfo tableInfo = adsHelper.getTableInfo(adsTable);
+                TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
+//                //创建odps表
+//                String sql = AdsUtil.generateSQL(tableInfo);
+//                Instance instance = SQLTask.run(odps,sql);
+//                String id = instance.getId();
+//                boolean terminated = false;
+//                int time = 0;
+//                while(!terminated && time < ODPSOVERTIME)
+//                {
+//                    Thread.sleep(1000);
+//                    terminated = instance.isTerminated();
+//                    time += 1000;
+//                }
+            } catch (AdsException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR,e);
+            }
+//            catch (OdpsException e) {
+//                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+//            } catch (InterruptedException e) {
+//                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+//            }
+
+            Configuration newConf = AdsUtil.generateConf(this.originalConfig);
+            super.setPluginConf(newConf);
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
@@ -58,6 +92,25 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
+            String table = null;
+            String sourcePath = null;
+            boolean overwrite = false;
+            try {
+                String id = adsHelper.loadData(table,sourcePath,overwrite);
+                boolean terminated = false;
+                int time = 0;
+                while(!terminated && time < ODPSOVERTIME)
+                {
+                    Thread.sleep(1000);
+                    terminated = adsHelper.checkLoadDataJobStatus(id);
+                    time += 1000;
+                }
+            } catch (AdsException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
+            } catch (InterruptedException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+            }
+
         }
 
         @Override
