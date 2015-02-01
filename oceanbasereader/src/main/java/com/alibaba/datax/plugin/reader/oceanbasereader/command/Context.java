@@ -76,11 +76,11 @@ public class Context {
 	}
 
 	public void sendToWriter(ResultSet result) throws SQLException {
-        ResultSetMetaData metaData = result.getMetaData();
-        int columnNumber = metaData.getColumnCount();
-        while (result.next()){
-            ResultSetReadProxy.transportOneRecord(recordSender, result, metaData, columnNumber, slavePluginCollector);
-        }
+		ResultSetMetaData metaData = result.getMetaData();
+		int columnNumber = metaData.getColumnCount();
+		while (result.next()) {
+			ResultSetReadProxy.transportOneRecord(recordSender, result, metaData, columnNumber, null, slavePluginCollector);
+		}
 	}
 
 	public boolean lowVersion() throws Exception {

@@ -1,14 +1,11 @@
 package com.alibaba.datax.core.statistics.communication;
 
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-/**
- * Created by jingxing on 14/12/1.
- */
 public class CommunicationJsonifyTest {
     @Test
     public void testJsonGetSnapshot() {

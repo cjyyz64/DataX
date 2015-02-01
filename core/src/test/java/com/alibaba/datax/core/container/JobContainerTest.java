@@ -9,7 +9,7 @@ import com.alibaba.datax.core.statistics.container.communicator.AbstractContaine
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,9 +20,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jingxing on 14-9-2.
- */
 public class JobContainerTest extends CaseInitializer {
     private Configuration configuration;
 

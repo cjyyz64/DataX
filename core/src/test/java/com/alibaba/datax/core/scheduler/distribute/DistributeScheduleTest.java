@@ -9,8 +9,8 @@ import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,9 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.mockito.Matchers.*;
 
 
-/**
- * Created by hongjiao.hj on 2014/12/17.
- */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DataxServiceUtil.class,Thread.class})
 public class DistributeScheduleTest {

@@ -8,8 +8,8 @@ import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by hongjiao.hj on 2014/12/21.
- */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(DataxServiceUtil.class)
 public class DsCollectorTest {
