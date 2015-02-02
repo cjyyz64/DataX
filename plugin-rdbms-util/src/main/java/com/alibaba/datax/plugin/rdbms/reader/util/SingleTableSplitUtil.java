@@ -116,7 +116,7 @@ public class SingleTableSplitUtil {
         String querySql;
 
         if (StringUtils.isBlank(where)) {
-            querySql = String.format(Constant.QUERY_SQL_TEMPLATE_WHITOUT_WHERE,
+            querySql = String.format(Constant.QUERY_SQL_TEMPLATE_WITHOUT_WHERE,
                     column, table);
         } else {
             querySql = String.format(Constant.QUERY_SQL_TEMPLATE, column,
