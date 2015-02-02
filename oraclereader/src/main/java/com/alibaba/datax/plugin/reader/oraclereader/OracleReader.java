@@ -79,8 +79,9 @@ public class OracleReader extends Reader {
 
 				List<String> tables = connConf.getList(com.alibaba.datax.plugin.rdbms.reader.Key.TABLE, String.class);
 				if (isTableMode && conns.size() == 1 && tables.size() == 1) {
-					String column = connConf.getString(com.alibaba.datax.plugin.rdbms.reader.Key.COLUMN);
-					connConf.set(com.alibaba.datax.plugin.rdbms.reader.Key.COLUMN, hint + column);
+					// 小心，需要对 originalConfig 进行操作，以改写其 column，而不是对 originalConfig 进行操作
+					String column = originalConfig.getString(com.alibaba.datax.plugin.rdbms.reader.Key.COLUMN);
+					originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Key.COLUMN, hint + column);
 					LOG.info("Use hint:{}.", hint);
 				} else {
 					throw DataXException.asDataXException(OracleReaderErrorCode.HINT_ERROR, "当且仅当非 querySql 模式读取 oracle 单表时才能配置 HINT.");
