@@ -4,12 +4,9 @@ import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang.Validate;
 
-/**
- * Created by jingxing on 14-9-1.
- */
 public abstract class AbstractRunner {
     private AbstractTaskPlugin plugin;
 

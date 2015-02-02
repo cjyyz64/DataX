@@ -1,0 +1,36 @@
+{
+    "username": "cdo_tsp",
+    "password": "hello1234",
+    "column": [
+        "id",
+        "description",
+        "task_type",
+        "db_port",
+        "db_role",
+        "db_name",
+        "db_username",
+        "db_password",
+        "db_modify_time",
+        "db_modify_user",
+        "db_description",
+        "db_tddl_info",
+        "on_line_flag"
+    ],
+    "splitPk": "id",
+    "where": "",
+    "session": {
+        "character_set_client": "utf8",
+        "character_set_results": "utf8",
+        "character_set_connection": "utf8"
+    },
+    "connection": [
+        {
+            "table": [
+                "tsp_file"
+            ],
+            "jdbcUrl": [
+                "jdbc:mysql://10.249.193.139:3306/cdo_tsp"
+            ]
+        }
+    ]
+}

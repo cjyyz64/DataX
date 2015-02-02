@@ -5,24 +5,18 @@ import com.alibaba.datax.core.job.scheduler.processinner.LocalScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.ProcessInnerScheduler;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
-import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyListOf;
 
 
-/**
- * Created by hongjiao.hj on 2014/12/17.
- */
 public class LocalScheduleTest {
 
     @Test

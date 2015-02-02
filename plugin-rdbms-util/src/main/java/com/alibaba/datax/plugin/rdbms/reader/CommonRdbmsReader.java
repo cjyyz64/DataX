@@ -61,6 +61,7 @@ public class CommonRdbmsReader {
         private String username;
         private String password;
         private String jdbcUrl;
+        private String mandatoryEncoding;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
@@ -76,6 +77,7 @@ public class CommonRdbmsReader {
             this.username = readerSliceConfig.getString(Key.USERNAME);
             this.password = readerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
+            this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
         }
@@ -104,7 +106,7 @@ public class CommonRdbmsReader {
 
                 while (rs.next()) {
                     ResultSetReadProxy.transportOneRecord(recordSender, rs,
-                            metaData, columnNumber, taskPluginCollector);
+                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
                 }
 
                 LOG.info("Finished read record by Sql: [{}\n] {}.",

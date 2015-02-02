@@ -52,24 +52,25 @@ public final class ReaderSplitUtil {
                 // 已在之前进行了扩展和`处理，可以直接使用
                 List<String> tables = connConf.getList(Key.TABLE, String.class);
 
-                Validate.isTrue(null != tables && !tables.isEmpty(),
-                        "您读取数据库表配置错误.");
+                Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
 
                 String splitPk = originalSliceConfig.getString(Key.SPLIT_PK, null);
 
                 //最终切分份数不一定等于 eachTableShouldSplittedNumber
                 boolean needSplitTable = eachTableShouldSplittedNumber > 1
                         && StringUtils.isNotBlank(splitPk);
-
                 if (needSplitTable) {
+                    if (tables.size() == 1) {
+                        //如果是单表的，主键切分num=num*2+1
+                        eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 2 + 1;
+                    }
                     // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
 
                         List<Configuration> splittedSlices = SingleTableSplitUtil
-                                .splitSingleTable(tempSlice,
-                                        eachTableShouldSplittedNumber);
+                                .splitSingleTable(tempSlice, eachTableShouldSplittedNumber);
 
                         splittedConfigs.addAll(splittedSlices);
                     }
