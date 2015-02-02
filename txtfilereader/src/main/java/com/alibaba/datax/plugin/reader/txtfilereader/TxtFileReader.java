@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.google.common.collect.Sets;
 
@@ -165,6 +166,14 @@ public class TxtFileReader extends Reader {
 				this.originConfig
 						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,
 								compress);
+			}
+
+			String delimiterInStr = this.originConfig
+					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
+			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+				throw DataXException.asDataXException(
+						UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+						String.format("仅仅支持单字符切分, 您配置的切分为 : [%]"));
 			}
 
 		}
