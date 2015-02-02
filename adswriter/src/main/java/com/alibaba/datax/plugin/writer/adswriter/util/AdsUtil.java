@@ -1,11 +1,9 @@
 package com.alibaba.datax.plugin.writer.adswriter.util;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
-import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriterErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,18 +36,18 @@ public class AdsUtil {
         originalConfig.getNecessaryValue(Key.SCHEMA,
                 AdsWriterErrorCode.REQUIRED_VALUE);
 
-        if (null == originalConfig.getList(Key.COLUMN) ||
-                originalConfig.getList(com.alibaba.datax.plugin.writer.odpswriter.Key.COLUMN, String.class).isEmpty()) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表的列信息. " +
-                    "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
-        }
-
-        // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
-        Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
-        if (null == truncate) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表前是否清空表/分区. " +
-                    "正确的配置方式是给 truncate 配置上true 或者 false.");
-        }
+//        if (null == originalConfig.getList(Key.COLUMN) ||
+//                originalConfig.getList(com.alibaba.datax.plugin.writer.odpswriter.Key.COLUMN, String.class).isEmpty()) {
+//            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表的列信息. " +
+//                    "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
+//        }
+//
+//        // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
+//        Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
+//        if (null == truncate) {
+//            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "您未配置写入 ODPS 目的表前是否清空表/分区. " +
+//                    "正确的配置方式是给 truncate 配置上true 或者 false.");
+//        }
     }
 
     /*生成AdsHelp实例
