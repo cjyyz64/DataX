@@ -115,16 +115,10 @@ public class TxtFileReader extends Reader {
 			}
 			if (null != columns && columns.size() != 0) {
 				for (Configuration eachColumnConf : columns) {
-					String columnType = eachColumnConf
+					eachColumnConf
 							.getNecessaryValue(
 									com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE,
 									TxtFileReaderErrorCode.REQUIRED_VALUE);
-					// 兼容int->long
-					if ("int".equalsIgnoreCase(columnType)) {
-						eachColumnConf
-								.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE,
-										"LONG");
-					}
 					Integer columnIndex = eachColumnConf
 							.getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.INDEX);
 					String columnValue = eachColumnConf
