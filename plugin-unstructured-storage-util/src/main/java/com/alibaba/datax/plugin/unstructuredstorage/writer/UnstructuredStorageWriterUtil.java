@@ -24,6 +24,7 @@ import org.apache.commons.io.IOUtils;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -129,7 +130,7 @@ public class UnstructuredStorageWriterUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR,
 					String.format("流写入错误 : [%]", context), e);
-		}finally{
+		} finally {
 			IOUtils.closeQuietly(writer);
 		}
 	}
@@ -163,7 +164,7 @@ public class UnstructuredStorageWriterUtil {
 			Column column;
 			for (int i = 0; i < recordLength; i++) {
 				column = record.getColumn(i);
-				if (null != column) {
+				if (0 != column.getByteSize()) {
 					boolean isDateColumn = column instanceof DateColumn;
 					if (!isDateColumn) {
 						sb.append(column.asString());
