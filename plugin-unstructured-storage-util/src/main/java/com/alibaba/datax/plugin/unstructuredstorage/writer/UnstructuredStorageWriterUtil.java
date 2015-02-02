@@ -164,7 +164,7 @@ public class UnstructuredStorageWriterUtil {
 			Column column;
 			for (int i = 0; i < recordLength; i++) {
 				column = record.getColumn(i);
-				if (0 != column.getByteSize()) {
+				if (null != column.getRawData()) {
 					boolean isDateColumn = column instanceof DateColumn;
 					if (!isDateColumn) {
 						sb.append(column.asString());
