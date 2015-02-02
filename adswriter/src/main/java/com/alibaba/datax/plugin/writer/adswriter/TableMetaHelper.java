@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Table meta helper for ADS writer.
@@ -78,7 +79,7 @@ public class TableMetaHelper {
     }
 
     private static String generateTempTableName(String tableSchema, String tableName) {
-        int randNum = 1000 + java.util.concurrent.ThreadLocalRandom.current().nextInt(1000);
+        int randNum = 1000 + new Random(System.currentTimeMillis()).nextInt(1000);
         return tableSchema + "__" + tableName + "_" + System.currentTimeMillis() + randNum;
     }
 
