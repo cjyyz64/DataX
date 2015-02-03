@@ -41,8 +41,6 @@ public final class OriginalConfPretreatmentUtil {
     }
 
     private static void simplifyConf(Configuration originalConfig) {
-        String username = originalConfig.getString(Key.USERNAME);
-        String password = originalConfig.getString(Key.PASSWORD);
         List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
 
@@ -50,6 +48,16 @@ public final class OriginalConfPretreatmentUtil {
 
         for (int i = 0, len = connections.size(); i < len; i++) {
             Configuration connConf = Configuration.from(connections.get(i).toString());
+
+            String jdbcUrl = connConf.getString(Key.JDBC_URL);
+            if (StringUtils.isBlank(jdbcUrl)) {
+                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
+            }
+
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
+
+            originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
+                    jdbcUrl);
 
             List<String> tables = connConf.getList(Key.TABLE, String.class);
 
@@ -71,25 +79,14 @@ public final class OriginalConfPretreatmentUtil {
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.TABLE), expandedTables);
-
-            String jdbcUrl = connConf.getString(Key.JDBC_URL);
-
-            if (StringUtils.isBlank(jdbcUrl)) {
-                throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
-            }
-
             /*mysql 类型，检查insert 权限*/
-            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
-                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
-
-                if(!hasInsertPri){
-                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
-                }
-            }
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
-
-            originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
-                    jdbcUrl);
+//            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
+//                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
+//
+//                if(!hasInsertPri){
+//                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
+//                }
+//            }
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);

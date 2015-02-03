@@ -69,7 +69,7 @@ public final class RangeSplitUtil {
 
             //remainder 不可能超过expectSliceNumber,所以不需要检查remainder的 Integer 的范围
 
-            // 这里不能 step.intVlue()==0 是由于有可能溢出
+            // 这里不能 step.intValue()==0，因为可能溢出
             if (step.compareTo(BigInteger.ZERO) == 0) {
                 expectSliceNumber = remainder.intValue();
             }
