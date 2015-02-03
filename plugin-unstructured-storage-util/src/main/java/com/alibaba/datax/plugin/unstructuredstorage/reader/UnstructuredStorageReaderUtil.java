@@ -85,6 +85,15 @@ public class UnstructuredStorageReaderUtil {
 		}
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
+		List<Configuration> column = readerSliceConfig
+				.getListConfiguration(Key.COLUMN);
+		// handle ["*"] -> [], null
+		if (null != column && 1 == column.size()
+				&& "\"*\"".equals(column.get(0).toString())) {
+			readerSliceConfig.set(Key.COLUMN, null);
+			column = null;
+		}
+
 		BufferedReader reader = null;
 		// compress logic
 		try {
@@ -216,6 +225,10 @@ public class UnstructuredStorageReaderUtil {
 					UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 					String.format("仅仅支持单字符切分, 您配置的切分为 : [%]", context));
 		}
+		if (null == delimiterInStr) {
+			LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
+					Constant.DEFAULT_FIELD_DELIMITER));
+		}
 
 		// warn: default value ',', fieldDelimiter could be \n(lineDelimiter)
 		// for no fieldDelimiter
@@ -271,6 +284,7 @@ public class UnstructuredStorageReaderUtil {
 			String nullFormat, TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 		Column columnGenerated = null;
+
 		// 创建都为String类型column的record
 		if (null == columnConfigs || columnConfigs.size() == 0) {
 			for (String columnValue : sourceLine) {

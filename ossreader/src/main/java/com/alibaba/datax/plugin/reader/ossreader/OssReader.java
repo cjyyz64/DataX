@@ -108,7 +108,7 @@ public class OssReader extends Reader {
             // 检测是column 是否为 ["*"] 若是则填为空
             List<String> column = this.readerOriginConfig
                     .getList(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,String.class);
-            if (null != column && 1 == column.size() && "*".equals(column.get(0))) {
+            if (null != column && 1 == column.size() && "\"*\"".equals(column.get(0).toString())) {
                 readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,new ArrayList<String>());
             } else {
                 // column: 1. index type 2.value type 3.when type is Data, may have

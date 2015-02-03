@@ -108,7 +108,7 @@ public class TxtFileReader extends Reader {
 					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
 			// handle ["*"]
 			if (null != columns && 1 == columns.size()
-					&& "*".equals(columns.get(0))) {
+					&& "\"*\"".equals(columns.get(0).toString())) {
 				this.originConfig
 						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
 								null);
@@ -175,7 +175,8 @@ public class TxtFileReader extends Reader {
 			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(
 						UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-						String.format("仅仅支持单字符切分, 您配置的切分为 : [%]"));
+						String.format("仅仅支持单字符切分, 您配置的切分为 : [%]",
+								delimiterInStr));
 			}
 
 		}
