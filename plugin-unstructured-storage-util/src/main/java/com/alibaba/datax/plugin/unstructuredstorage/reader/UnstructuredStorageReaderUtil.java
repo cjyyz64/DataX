@@ -85,6 +85,11 @@ public class UnstructuredStorageReaderUtil {
 		}
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
+		// handle blank encoding
+		if (StringUtils.isBlank(encoding)) {
+			encoding = Constant.DEFAULT_ENCODING;
+		}
+
 		List<Configuration> column = readerSliceConfig
 				.getListConfiguration(Key.COLUMN);
 		// handle ["*"] -> [], null
@@ -101,6 +106,7 @@ public class UnstructuredStorageReaderUtil {
 				reader = new BufferedReader(new InputStreamReader(inputStream,
 						encoding));
 			} else {
+				// TODO compress
 				if ("lzo".equalsIgnoreCase(compress)) {
 					LzoInputStream lzoInputStream = new LzoInputStream(
 							inputStream, new LzoDecompressor1z_safe());

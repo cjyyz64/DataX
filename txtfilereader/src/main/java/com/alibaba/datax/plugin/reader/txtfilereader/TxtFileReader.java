@@ -175,7 +175,7 @@ public class TxtFileReader extends Reader {
 			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(
 						UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-						String.format("仅仅支持单字符切分, 您配置的切分为 : [%]",
+						String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]",
 								delimiterInStr));
 			}
 

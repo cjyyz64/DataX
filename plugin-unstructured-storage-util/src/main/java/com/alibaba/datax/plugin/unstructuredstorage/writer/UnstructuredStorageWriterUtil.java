@@ -49,6 +49,7 @@ public class UnstructuredStorageWriterUtil {
 				writer = new BufferedWriter(new OutputStreamWriter(
 						outputStream, encoding));
 			} else {
+				// TODO compress
 				if ("lzo".equalsIgnoreCase(compress)) {
 
 					LzoOutputStream lzoOutputStream = new LzoOutputStream(
