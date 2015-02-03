@@ -112,6 +112,7 @@ public class TxtFileReader extends Reader {
 				this.originConfig
 						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
 								null);
+				columns = null;
 			}
 			if (null != columns && columns.size() != 0) {
 				for (Configuration eachColumnConf : columns) {
