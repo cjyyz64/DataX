@@ -94,7 +94,7 @@ public class AdsHelper {
         }
 
         String sql = "select ordinal_position,column_name,data_type,type_name,column_comment from information_schema.columns where table_schema='"
-                + schema + "' and table_name='" + table + "' and is_deleted=0";
+                + schema + "' and table_name='" + table + "' order by ordinal_position";
 
         Connection connection = null;
         Statement statement = null;

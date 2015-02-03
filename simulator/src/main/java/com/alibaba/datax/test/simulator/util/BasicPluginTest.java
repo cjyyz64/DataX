@@ -34,7 +34,7 @@ public abstract class BasicPluginTest {
 
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<String>();
-        commands.add("mvn");
+        commands.add("mvn.bat");
         commands.add("install");
         commands.add("-Dmaven.test.skip=true");
         pb.command(commands);

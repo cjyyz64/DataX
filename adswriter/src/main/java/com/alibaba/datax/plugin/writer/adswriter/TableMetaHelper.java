@@ -43,6 +43,7 @@ public class TableMetaHelper {
             tempColumn.setName(column.getName());
             tempColumn.setType(toODPSDataType(column.getDataType()));
             tempColumn.setComment(column.getComment());
+            tempColumns.add(tempColumn);
         }
         tempTable.setCols(tempColumns);
         tempTable.setPartitionKeys(null);
