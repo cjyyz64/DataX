@@ -7,7 +7,7 @@ public class Key {
 	// must have
 	public static final String WRITE_MODE = "writeMode";
 
-	// not must , default ,
+	// not must , not default ,
 	public static final String FIELD_DELIMITER = "fieldDelimiter";
 
 	// not must, default UTF-8
@@ -16,7 +16,7 @@ public class Key {
 	// not must, default no compress
 	public static final String COMPRESS = "compress";
 
-	// not must, default \N
+	// not must, not default \N
 	public static final String NULL_FORMAT = "nullFormat";
 
 	// not must, date format

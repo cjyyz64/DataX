@@ -170,6 +170,7 @@ public class TxtFileReader extends Reader {
 
 			String delimiterInStr = this.originConfig
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
+			// warn: if have, length must be one
 			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(
 						UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
@@ -180,7 +181,7 @@ public class TxtFileReader extends Reader {
 
 		@Override
 		public void prepare() {
-			LOG.debug("prepare()");
+			LOG.debug("prepare() begin...");
 			// warn:make sure this regex string
 			// warn:no need trim
 			for (String eachPath : this.path) {

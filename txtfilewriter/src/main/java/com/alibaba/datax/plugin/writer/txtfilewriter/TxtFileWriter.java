@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.writer.txtfilewriter;
 
-import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -132,15 +131,14 @@ public class TxtFileWriter extends Writer {
 						.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS,
 								null);
 			} else {
-				Set<String> supportedCompress = Sets.newHashSet("lzo", "lzop",
-						"gzip", "bzip2", "pack200", "xz", "ar", "cpio", "jar",
-						"tar", "zip");
+				Set<String> supportedCompress = Sets
+						.newHashSet("gzip", "bzip2");
 				if (!supportedCompress.contains(compress.toLowerCase().trim())) {
 					throw DataXException
 							.asDataXException(
 									TxtFileWriterErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 lzo, lzop, gzip, bzip2, pack200, xz, ar, cpio, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
 			}

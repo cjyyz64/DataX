@@ -85,9 +85,6 @@ public class UnstructuredStorageReaderUtil {
 		}
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
-		if (StringUtils.isBlank(encoding)) {
-			encoding = Constant.DEFAULT_ENCODING;
-		}
 		BufferedReader reader = null;
 		// compress logic
 		try {
@@ -166,7 +163,6 @@ public class UnstructuredStorageReaderUtil {
 					reader = new BufferedReader(new InputStreamReader(
 							tarArchiveInputStream, encoding));
 				} else if ("zip".equalsIgnoreCase(compress)) {
-					LOG.debug("Use zip decompress");
 					ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -212,6 +208,7 @@ public class UnstructuredStorageReaderUtil {
 				.getListConfiguration(Key.COLUMN);
 		String encoding = readerSliceConfig.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
+		Character fieldDelimiter = null;
 		String delimiterInStr = readerSliceConfig
 				.getString(Key.FIELD_DELIMITER);
 		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
@@ -219,23 +216,31 @@ public class UnstructuredStorageReaderUtil {
 					UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 					String.format("仅仅支持单字符切分, 您配置的切分为 : [%]", context));
 		}
-		char fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
+
+		// warn: default value ',', fieldDelimiter could be \n(lineDelimiter)
+		// for no fieldDelimiter
+		fieldDelimiter = readerSliceConfig.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 		Boolean skipHeader = readerSliceConfig.getBool(Key.SKIP_HEADER,
 				Constant.DEFAULT_SKIP_HEADER);
-		String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT,
-				Constant.DEFAULT_NULL_FORMAT);
-
+		// warn: no default value '\N'
+		String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT);
 		// every line logic
 		try {
 			String fetchLine = null;
+			// TODO lineDelimiter
 			if (skipHeader) {
 				fetchLine = reader.readLine();
 				LOG.info("Header line has been skiped.");
 			}
 			while ((fetchLine = reader.readLine()) != null) {
-				String[] splitedStrs = UnstructuredStorageReaderUtil
-						.splitOneLine(fetchLine, fieldDelimiter);
+				String[] splitedStrs = null;
+				if (null == fieldDelimiter) {
+					splitedStrs = new String[] { fetchLine };
+				} else {
+					splitedStrs = UnstructuredStorageReaderUtil.splitOneLine(
+							fetchLine, fieldDelimiter);
+				}
 				UnstructuredStorageReaderUtil.transportOneRecord(recordSender,
 						column, splitedStrs, nullFormat, taskPluginCollector);
 			}
@@ -269,7 +274,7 @@ public class UnstructuredStorageReaderUtil {
 		// 创建都为String类型column的record
 		if (null == columnConfigs || columnConfigs.size() == 0) {
 			for (String columnValue : sourceLine) {
-				// not equalsIgnoreCase
+				// not equalsIgnoreCase, it's all ok if nullFormat is null
 				if (columnValue.equals(nullFormat)) {
 					columnGenerated = new StringColumn(null);
 				} else {
@@ -305,14 +310,12 @@ public class UnstructuredStorageReaderUtil {
 
 					if (null != columnIndex) {
 						if (columnIndex >= sourceLine.length) {
-							String message = String.format(
-									"您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列",
-									sourceLine.length, columnIndex + 1);
-							LOG.error(message);
-							throw DataXException
-									.asDataXException(
-											UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-											message);
+							String message = String
+									.format("您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列, 数据详情[%s]",
+											sourceLine.length, columnIndex + 1,
+											sourceLine);
+							LOG.warn(message);
+							throw new IndexOutOfBoundsException(message);
 						}
 
 						columnValue = sourceLine[columnIndex];
@@ -320,6 +323,7 @@ public class UnstructuredStorageReaderUtil {
 						columnValue = columnConst;
 					}
 					Type type = Type.valueOf(columnType.toUpperCase());
+					// it's all ok if nullFormat is null
 					if (columnValue.equals(nullFormat)) {
 						columnValue = null;
 					}
@@ -369,9 +373,8 @@ public class UnstructuredStorageReaderUtil {
 					record.addColumn(columnGenerated);
 
 				} catch (IndexOutOfBoundsException ioe) {
-					throw DataXException.asDataXException(
-							UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-							String.format("您配置的索引下标越界 : [%s]", columnIndex));
+					taskPluginCollector.collectDirtyRecord(record,
+							ioe.getMessage());
 				} catch (Exception e) {
 					// 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
 					taskPluginCollector.collectDirtyRecord(record,

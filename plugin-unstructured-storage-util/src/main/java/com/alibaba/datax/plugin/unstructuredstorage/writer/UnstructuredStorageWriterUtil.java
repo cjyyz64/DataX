@@ -24,7 +24,6 @@ import org.apache.commons.io.IOUtils;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.NullColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -139,10 +138,10 @@ public class UnstructuredStorageWriterUtil {
 			BufferedWriter writer, String contex, Configuration config,
 			TaskPluginCollector taskPluginCollector) throws IOException {
 
-		String nullFormat = config.getString(Key.NULL_FORMAT,
-				Constant.DEFAULT_NULL_FORMAT);
+		String nullFormat = config.getString(Key.NULL_FORMAT);
 
 		String dateFormat = config.getString(Key.FORMAT);
+		// warn: fieldDelimiter could be '' for no fieldDelimiter
 		char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 
@@ -187,6 +186,7 @@ public class UnstructuredStorageWriterUtil {
 						}
 					}
 				} else {
+					// warn: it's all ok if nullFormat is null
 					sb.append(nullFormat);
 				}
 				if (i != recordLength - 1) {
