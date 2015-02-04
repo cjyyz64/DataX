@@ -81,7 +81,7 @@ public class TxtFileWriter extends Writer {
 											path));
 				}
 				if (!dir.exists()) {
-					boolean createdOk = dir.mkdir();
+					boolean createdOk = dir.mkdirs();
 					if (!createdOk) {
 						throw DataXException
 								.asDataXException(
@@ -182,7 +182,7 @@ public class TxtFileWriter extends Writer {
 			} else if ("error".equals(writeMode)) {
 				LOG.info(String.format(
 						"由于您配置了writeMode error, 开始检查 [%s] 下面的内容", path));
-				// warn: check two times about exists, mkdir
+				// warn: check two times about exists, mkdirs
 				File dir = new File(path);
 				try {
 					if (dir.exists()) {
@@ -204,7 +204,7 @@ public class TxtFileWriter extends Writer {
 													path));
 						}
 					} else {
-						boolean createdOk = dir.mkdir();
+						boolean createdOk = dir.mkdirs();
 						if (!createdOk) {
 							throw DataXException
 									.asDataXException(
