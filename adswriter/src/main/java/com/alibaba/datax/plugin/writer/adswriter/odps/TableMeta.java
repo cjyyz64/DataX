@@ -90,6 +90,7 @@ public class TableMeta {
         if (lifeCycle > 0) {
             builder.append("LIFECYCLE " + lifeCycle).append(" ");
         }
+        builder.append(";");
         return builder.toString();
     }
 
