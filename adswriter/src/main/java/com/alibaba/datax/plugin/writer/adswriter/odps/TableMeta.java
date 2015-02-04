@@ -105,7 +105,7 @@ public class TableMeta {
     private String toDDL(List<FieldSchema> cols) {
         StringBuilder builder = new StringBuilder();
         Iterator<FieldSchema> iter = cols.iterator();
-        builder.append(iter.next());
+        builder.append(iter.next().toDDL());
         while (iter.hasNext()) {
             builder.append(",").append(iter.next().toDDL());
         }
