@@ -43,6 +43,8 @@ public class AdsWriter extends Writer {
             String accessId = this.originalConfig.getString(Key.ACCESS_ID);
             String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
             String project = this.originalConfig.getString(Key.PROJECT);
+            String odpsTableName;
+            TableMeta tableMeta;
             Account odpsAccount = new AliyunAccount(accessId,accessKey);
             Odps odps = new Odps(odpsAccount);
             odps.setEndpoint(endPoint);
@@ -51,7 +53,8 @@ public class AdsWriter extends Writer {
                 String adsTable = originalConfig.getString(Key.TABLE);
                 int lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
                 TableInfo tableInfo = adsHelper.getTableInfo(adsTable);
-                TableMeta tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
+                tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
+                odpsTableName = tableMeta.getTableName();
                 String sql = tableMeta.toDDL();
 //                //创建odps表
                 Instance instance = SQLTask.run(odps,project,sql,null,null);
@@ -72,7 +75,7 @@ public class AdsWriter extends Writer {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
 
-            Configuration newConf = AdsUtil.generateConf(this.originalConfig);
+            Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
             super.setPluginConf(newConf);
         }
 

@@ -3,9 +3,13 @@ package com.alibaba.datax.plugin.writer.adswriter.util;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
-import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
+import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by judy.lt on 2015/1/30.
@@ -25,16 +29,21 @@ public class AdsUtil {
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.SCHEMA,
                 AdsWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.Life_CYCLE,
+                AdsWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.TABLE,
+                AdsWriterErrorCode.REQUIRED_VALUE);
 
         //检查ODPS必要参数
-        originalConfig.getNecessaryValue(Key.ADS_URL,
+        originalConfig.getNecessaryValue(Key.ODPS_SERVER,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.USERNAME,
+        originalConfig.getNecessaryValue(Key.ACCESS_ID,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.PASSWORD,
+        originalConfig.getNecessaryValue(Key.ACCESS_KEY,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.SCHEMA,
+        originalConfig.getNecessaryValue(Key.PROJECT,
                 AdsWriterErrorCode.REQUIRED_VALUE);
+
 
 //        if (null == originalConfig.getList(Key.COLUMN) ||
 //                originalConfig.getList(com.alibaba.datax.plugin.writer.odpswriter.Key.COLUMN, String.class).isEmpty()) {
@@ -61,17 +70,21 @@ public class AdsUtil {
         return new AdsHelper(adsUrl,userName,password,schema);
     }
 
-    /*TODO 生成ODPS CreateTable的SQL语句
-    * */
-    public static String generateSQL(TableInfo tableInfo){
-        return null;
-    }
-
     /*TODO 生成ODPSWriter Plugin所需要的配置文件
     * */
-    public static Configuration generateConf(Configuration originalConfig){
+    public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
         /*TODO 需要的参数还却column list*/
-        return null;
+        Configuration newConfig = originalConfig;
+        newConfig.set(Key.TABLE,odpsTableName);
+        List<FieldSchema> cols = tableMeta.getCols();
+        List<String> allColumns = new ArrayList();
+        if(cols != null && !cols.isEmpty()){
+            for(FieldSchema col:cols){
+                allColumns.add(col.getName());
+            }
+        }
+        newConfig.set(Key.COLUMN,allColumns);
+        return newConfig;
     }
 
 }
