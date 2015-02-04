@@ -53,10 +53,10 @@ public class FieldSchema {
      */
     public String toDDL() {
         StringBuilder builder = new StringBuilder();
-        builder.append(name).append(" ").append(type).append(" ");
+        builder.append(name).append(" ").append(type);
         String comment = this.comment;
         if (comment != null && comment.length() > 0) {
-            builder.append("COMMENT \"" + comment + "\" ");
+            builder.append(" ").append("COMMENT \"" + comment + "\"");
         }
         return builder.toString();
     }

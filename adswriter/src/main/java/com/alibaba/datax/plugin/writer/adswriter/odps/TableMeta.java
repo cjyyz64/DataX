@@ -107,7 +107,7 @@ public class TableMeta {
         Iterator<FieldSchema> iter = cols.iterator();
         builder.append(iter.next().toDDL());
         while (iter.hasNext()) {
-            builder.append(",").append(iter.next().toDDL());
+            builder.append(", ").append(iter.next().toDDL());
         }
         return builder.toString();
     }
