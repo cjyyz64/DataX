@@ -107,13 +107,16 @@ public class TxtFileReader extends Reader {
 			List<Configuration> columns = this.originConfig
 					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
 			// handle ["*"]
-			if (null != columns && 1 == columns.size()
-					&& "\"*\"".equals(columns.get(0).toString())) {
-				this.originConfig
-						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
-								null);
-				columns = null;
+			if (null != columns && 1 == columns.size()) {
+				String columnsInStr = columns.get(0).toString();
+				if ("\"*\"".equals(columnsInStr) || "'*'".equals(columnsInStr)) {
+					this.originConfig
+							.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
+									null);
+					columns = null;
+				}
 			}
+
 			if (null != columns && columns.size() != 0) {
 				for (Configuration eachColumnConf : columns) {
 					eachColumnConf

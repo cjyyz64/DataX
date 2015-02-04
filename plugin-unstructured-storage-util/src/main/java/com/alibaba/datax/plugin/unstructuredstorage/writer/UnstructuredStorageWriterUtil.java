@@ -142,7 +142,7 @@ public class UnstructuredStorageWriterUtil {
 		String nullFormat = config.getString(Key.NULL_FORMAT);
 
 		String dateFormat = config.getString(Key.FORMAT);
-		// warn: fieldDelimiter could be '' for no fieldDelimiter
+		// TODO: fieldDelimiter could be '' for no fieldDelimiter
 		char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 
