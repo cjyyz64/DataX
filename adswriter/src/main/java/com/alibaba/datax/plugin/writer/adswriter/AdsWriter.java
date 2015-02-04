@@ -1,9 +1,11 @@
 package com.alibaba.datax.plugin.writer.adswriter;
 
+import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.util.container.*;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
@@ -76,14 +78,14 @@ public class AdsWriter extends Writer {
             }
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
-            super.setPluginJobConf(newConf);
-            this.odpsWriterProxy.init();
-//            odpsWriterProxy.setPluginConf(newConf);
+            odpsWriterProxy.setPluginJobConf(newConf);
+            odpsWriterProxy.init();
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
+
             //倒数据到odps表中
             this.odpsWriterProxy.prepare();
             this.odpsWriterProxy.split(3);
