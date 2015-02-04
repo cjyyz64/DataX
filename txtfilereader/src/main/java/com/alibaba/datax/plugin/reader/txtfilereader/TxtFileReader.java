@@ -212,8 +212,8 @@ public class TxtFileReader extends Reader {
 			List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
 			// warn:每个slice拖且仅拖一个文件,
-			// int splitNumber = this.sourceFiles.size();
-			int splitNumber = adviceNumber;
+			// int splitNumber = adviceNumber;
+			int splitNumber = this.sourceFiles.size();
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
 					this.sourceFiles, splitNumber);
