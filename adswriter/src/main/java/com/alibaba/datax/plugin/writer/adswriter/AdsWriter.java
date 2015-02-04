@@ -77,6 +77,7 @@ public class AdsWriter extends Writer {
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
             super.setPluginConf(newConf);
+            odpsWriterProxy.setPluginConf(newConf);
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
