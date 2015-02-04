@@ -1,11 +1,9 @@
 package com.alibaba.datax.plugin.writer.adswriter;
 
-import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.container.*;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
