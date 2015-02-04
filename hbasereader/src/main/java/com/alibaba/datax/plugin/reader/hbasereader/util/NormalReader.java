@@ -6,10 +6,10 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.ColumnType;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseColumnCell;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.http.impl.cookie.DateUtils;
 
 import java.io.IOException;
 
