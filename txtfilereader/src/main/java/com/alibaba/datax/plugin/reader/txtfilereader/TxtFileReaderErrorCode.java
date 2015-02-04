@@ -15,6 +15,7 @@ public enum TxtFileReaderErrorCode implements ErrorCode {
 	OPEN_FILE_ERROR("TxtFileReader-06", "您配置的文件在打开时异常,建议您检查源目录是否有隐藏文件,管道文件等特殊文件."),
 	READ_FILE_IO_ERROR("TxtFileReader-07", "您配置的文件在读取时出现IO异常."),
 	SECURITY_NOT_ENOUGH("TxtFileReader-08", "您缺少权限执行相应的文件操作."),
+	CONFIG_INVALID_EXCEPTION("TxtFileReader-09", "您的参数配置错误."),
 	RUNTIME_EXCEPTION("TxtFileReader-10", "出现运行时异常, 请联系我们");
 
 	private final String code;

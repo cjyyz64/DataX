@@ -24,10 +24,7 @@ public class CommonRdbmsReader {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        private DataBaseType dataBaseType;
-
         public Job(DataBaseType dataBaseType) {
-            this.dataBaseType = dataBaseType;
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
         }
@@ -64,6 +61,7 @@ public class CommonRdbmsReader {
         private String username;
         private String password;
         private String jdbcUrl;
+        private String mandatoryEncoding;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
@@ -79,6 +77,7 @@ public class CommonRdbmsReader {
             this.username = readerSliceConfig.getString(Key.USERNAME);
             this.password = readerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
+            this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 
             BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
         }
@@ -96,7 +95,7 @@ public class CommonRdbmsReader {
 
             // session config .etc related
             DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             int columnNumber = 0;
             ResultSet rs = null;
@@ -107,8 +106,11 @@ public class CommonRdbmsReader {
 
                 while (rs.next()) {
                     ResultSetReadProxy.transportOneRecord(recordSender, rs,
-                            metaData, columnNumber, taskPluginCollector);
+                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
                 }
+
+                LOG.info("Finished read record by Sql: [{}\n] {}.",
+                        querySql, BASIC_MESSAGE);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.READ_RECORD_FAIL, String.format(

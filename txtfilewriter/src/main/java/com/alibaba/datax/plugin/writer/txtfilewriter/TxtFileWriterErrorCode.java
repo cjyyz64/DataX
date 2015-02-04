@@ -6,9 +6,13 @@ import com.alibaba.datax.common.spi.ErrorCode;
  * Created by haiwei.luo on 14-9-17.
  */
 public enum TxtFileWriterErrorCode implements ErrorCode {
-	RUNTIME_EXCEPTION("TxtFileWriter-00", "运行时异常"), FILE_EXCEPTION(
-			"TxtFileWriter-01", "写文件异常"), CONFIG_INVALID_EXCEPTION(
-			"TxtFileWriter-02", "参数配置错误"), ;
+	
+	CONFIG_INVALID_EXCEPTION("TxtFileWriter-00", "您的参数配置错误."),
+	REQUIRED_VALUE("TxtFileWriter-01", "您缺失了必须填写的参数值."),
+	ILLEGAL_VALUE("TxtFileWriter-02", "您填写的参数值不合法."),
+	Write_FILE_ERROR("TxtFileWriter-03", "您配置的目标文件在写入时异常."),
+	Write_FILE_IO_ERROR("TxtFileWriter-04", "您配置的文件在写入时出现IO异常."),
+	SECURITY_NOT_ENOUGH("TxtFileWriter-05", "您缺少权限执行相应的文件写入操作.");
 
 	private final String code;
 	private final String description;

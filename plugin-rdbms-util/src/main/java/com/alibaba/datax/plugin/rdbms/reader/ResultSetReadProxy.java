@@ -5,6 +5,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,9 +19,11 @@ public class ResultSetReadProxy {
 			.getLogger(ResultSetReadProxy.class);
 
 	private static final boolean IS_DEBUG = LOG.isDebugEnabled();
+	private static final byte[] EMPTY_CHAR_ARRAY = new byte[0];
 
-	public static void transportOneRecord(RecordSender recordSender,
-			ResultSet rs, ResultSetMetaData metaData, int columnNumber,
+	//TODO
+	public static void transportOneRecord(RecordSender recordSender, ResultSet rs, 
+			ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding, 
 			TaskPluginCollector taskPluginCollector) {
 		Record record = recordSender.createRecord();
 
@@ -35,7 +39,14 @@ public class ResultSetReadProxy {
 				case Types.LONGVARCHAR:
 				case Types.NVARCHAR:
 				case Types.LONGNVARCHAR:
-					record.addColumn(new StringColumn(rs.getString(i)));
+					String rawData;
+					if(StringUtils.isBlank(mandatoryEncoding)){
+						rawData = rs.getString(i);
+					}else{
+						rawData = new String((rs.getBytes(i) == null ? EMPTY_CHAR_ARRAY : 
+							rs.getBytes(i)), mandatoryEncoding);
+					}
+					record.addColumn(new StringColumn(rawData));
 					break;
 
 				case Types.SMALLINT:
@@ -96,7 +107,7 @@ public class ResultSetReadProxy {
 							.asDataXException(
 									DBUtilErrorCode.UNSUPPORTED_TYPE,
 									String.format(
-											"DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s].",
+											"您的配置文件中的列配置信息有误. 因为DataX 不支持数据库读取这种字段类型. 字段名:[%s], 字段名称:[%s], 字段Java类型:[%s]. 请尝试使用数据库函数将其转换datax支持的类型 或者不同步该字段 .",
 											metaData.getColumnName(i),
 											metaData.getColumnType(i),
 											metaData.getColumnClassName(i)));
@@ -108,6 +119,8 @@ public class ResultSetReadProxy {
 				LOG.debug("read data " + record.toString()
 						+ " occur exception:", e);
 			}
+
+			//TODO 这里识别为脏数据靠谱吗？
 			taskPluginCollector.collectDirtyRecord(record, e);
 			if (e instanceof DataXException) {
 				throw (DataXException) e;

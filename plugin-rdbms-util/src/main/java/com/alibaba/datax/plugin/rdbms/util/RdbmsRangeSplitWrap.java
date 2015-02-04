@@ -1,12 +1,29 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.alibaba.datax.common.util.RangeSplitUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class RangeWrapUtil {
+public final class RdbmsRangeSplitWrap {
+
+    public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
+                                            String columnName, String quote, DataBaseType dataBaseType) {
+        String[] tempResult = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+        return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName, quote, dataBaseType);
+    }
+
+    public static List<String> splitAndWrap(long left, long right, int expectSliceNumber, String columnName) {
+        long[] tempResult = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
+        return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName);
+    }
+
+    public static List<String> splitAndWrap(BigInteger left, BigInteger right, int expectSliceNumber, String columnName) {
+        BigInteger[] tempResult = RangeSplitUtil.doBigIntegerSplit(left, right, expectSliceNumber);
+        return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName);
+    }
 
     public static List<String> wrapRange(long[] rangeResult, String columnName) {
         String[] rangeStr = new String[rangeResult.length];

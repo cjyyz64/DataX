@@ -1,16 +1,14 @@
 package com.alibaba.datax.common.element;
 
-import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.TimeZone;
-
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.FastDateFormat;
-
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.FastDateFormat;
+
+import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.util.*;
 
 public final class ColumnCast {
 
@@ -47,6 +45,8 @@ class StringCast {
 
 	static String timeFormat = "HH:mm:ss";
 
+	static List<String> extraFormats = Collections.emptyList();
+
 	static String timeZone = "GMT+8";
 
 	static FastDateFormat dateFormatter;
@@ -66,8 +66,11 @@ class StringCast {
 				"common.column.dateFormat", StringCast.dateFormat);
 		StringCast.timeFormat = configuration.getString(
 				"common.column.timeFormat", StringCast.timeFormat);
+		StringCast.extraFormats = configuration.getList(
+				"common.column.extraFormats", Collections.<String>emptyList(), String.class);
+
 		StringCast.timeZone = configuration.getString("common.column.timeZone",
-				StringCast.timeFormat);
+				StringCast.timeZone);
 		StringCast.timeZoner = TimeZone.getTimeZone(StringCast.timeZone);
 
 		StringCast.datetimeFormatter = FastDateFormat.getInstance(
@@ -88,15 +91,29 @@ class StringCast {
 
 		try {
 			return StringCast.datetimeFormatter.parse(column.asString());
-		} catch (Exception unused) {
+		} catch (ParseException ignored) {
 		}
 
 		try {
 			return StringCast.dateFormatter.parse(column.asString());
-		} catch (Exception unused) {
+		} catch (ParseException ignored) {
 		}
 
-		return StringCast.timeFormatter.parse(column.asString());
+		ParseException e;
+		try {
+			return StringCast.timeFormatter.parse(column.asString());
+		} catch (ParseException ignored) {
+			e = ignored;
+		}
+
+		for (String format : StringCast.extraFormats) {
+			try{
+				return FastDateFormat.getInstance(format, StringCast.timeZoner).parse(column.asString());
+			} catch (ParseException ignored){
+				e = ignored;
+			}
+		}
+		throw e;
 	}
 
 	static byte[] asBytes(final StringColumn column)

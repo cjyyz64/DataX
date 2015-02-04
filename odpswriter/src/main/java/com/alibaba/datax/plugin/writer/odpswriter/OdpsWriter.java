@@ -61,7 +61,7 @@ public class OdpsWriter extends Writer {
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
+                        String.format("账号类型错误，因为你的账号 [%s] 不是datax目前支持的账号类型，目前仅支持aliyun, taobao账号，请修改您的账号信息.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
 
@@ -70,7 +70,7 @@ public class OdpsWriter extends Writer {
             boolean emptyAsNull = this.originalConfig.getBool(Key.EMPTY_AS_NULL, false);
             this.originalConfig.set(Key.EMPTY_AS_NULL, emptyAsNull);
             if (emptyAsNull) {
-                LOG.warn(" 由于您的作业配置了写入 ODPS 的目的表时emptyAsNull=true, 所以 DataX将会把长度为0的空字符串作为 java 的 null 写入 ODPS.");
+                LOG.warn("这是一条需要注意的信息 由于您的作业配置了写入 ODPS 的目的表时emptyAsNull=true, 所以 DataX将会把长度为0的空字符串作为 java 的 null 写入 ODPS.");
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
@@ -220,7 +220,7 @@ public class OdpsWriter extends Writer {
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是[1-512]之间的整数.", this.blockSizeInMB));
+                        String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是[1-512]之间的整数. 请修改此参数的值为该区间内的数值", this.blockSizeInMB));
             }
 
             if (IS_DEBUG) {

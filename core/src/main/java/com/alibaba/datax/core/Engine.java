@@ -19,7 +19,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Engine是DataX入口类，该类负责初始化Job或者Task的运行容器，并运行插件的Job或者Task逻辑
@@ -74,24 +78,50 @@ public class Engine {
                 jobConf.set(key, jobConf.getString(key).replaceAll(".", "*"));
             }
         }
+        
 
-        return jobConf.beautify();
+        return configuration.getConfiguration("job").beautify();
     }
 
     public static void entry(final String[] args) throws Throwable {
         Options options = new Options();
-        options.addOption("job", true, "Job Config .");
-        options.addOption("mode", true, "Job Runtime Mode.");
+        options.addOption("job", true, "Job config.");
+        options.addOption("jobid", true, "Job unique id.");
+        options.addOption("mode", true, "Job runtime mode.");
 
         BasicParser parser = new BasicParser();
         CommandLine cl = parser.parse(options, args);
 
         String jobPath = cl.getOptionValue("job");
+
+        // 如果用户没有明确指定jobid, 则 datax.py 会指定 jobid 默认值为-1
+        String jobIdString = cl.getOptionValue("jobid");
         RUNTIME_MODE = cl.getOptionValue("mode");
 
         Configuration configuration = ConfigParser.parse(jobPath);
 
+        long jobId;
+        if (!"-1".equalsIgnoreCase(jobIdString)) {
+            jobId = Long.parseLong(jobIdString);
+        } else {
+            // only for dsc & ds & datax 3 update
+            String dscJobUrlPatternString = "/instance/(\\d{1,})/config.xml";
+            String dsJobUrlPatternString = "/inner/job/(\\d{1,})/config";
+            String dsTaskGroupUrlPatternString = "/inner/job/(\\d{1,})/taskGroup/";
+            List<String> patternStringList = Arrays.asList(dscJobUrlPatternString,
+                    dsJobUrlPatternString, dsTaskGroupUrlPatternString);
+            jobId = parseJobIdFromUrl(patternStringList, jobPath);
+        }
+
+        boolean isStandAloneMode = "standalone".equalsIgnoreCase(RUNTIME_MODE);
+        if (!isStandAloneMode && jobId == -1) {
+            // 如果不是 standalone 模式，那么 jobId 一定不能为-1
+            throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 standalone 模式必须在 URL 中提供有效的 jobId.");
+        }
+        configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
+
         LOG.info("\n" + Engine.copyRight());
+        
 
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 
@@ -104,6 +134,33 @@ public class Engine {
         } catch (Throwable e) {
             throw e;
         }
+    }
+
+
+    /**
+     * -1 表示未能解析到 jobId
+     *
+     *  only for dsc & ds & datax 3 update
+     */
+    private static long parseJobIdFromUrl(List<String> patternStringList, String url) {
+        long result = -1;
+        for (String patternString : patternStringList) {
+            result = doParseJobIdFromUrl(patternString, url);
+            if (result != -1) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    private static long doParseJobIdFromUrl(String patternString, String url) {
+        Pattern pattern = Pattern.compile(patternString);
+        Matcher matcher = pattern.matcher(url);
+        if (matcher.find()) {
+            return Long.parseLong(matcher.group(1));
+        }
+
+        return -1;
     }
 
     public static void main(String[] args) throws Exception {

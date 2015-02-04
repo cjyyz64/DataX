@@ -29,7 +29,7 @@ public final class OriginalConfPretreatmentUtil {
         int batchSize = originalConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
         if (batchSize < 1) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE, String.format(
-                    "您所配置的写入数据库表的 batchSize:%s 不能小于1. 推荐配置范围为：[100-1000], 该值越大, 内存溢出可能性越大.",
+                    "您的batchSize配置有误. 您所配置的写入数据库表的 batchSize:%s 不能小于1. 推荐配置范围为：[100-1000], 该值越大, 内存溢出可能性越大. 请检查您的配置并作出修改.",
                     batchSize));
         }
 
@@ -55,6 +55,7 @@ public final class OriginalConfPretreatmentUtil {
             }
 
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
+
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
                     jdbcUrl);
 
@@ -62,7 +63,7 @@ public final class OriginalConfPretreatmentUtil {
 
             if (null == tables || tables.isEmpty()) {
                 throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE,
-                        "您未配置写入数据库表的表名称.");
+                        "您未配置写入数据库表的表名称. 根据配置DataX找不到您配置的表. 请检查您的配置并作出修改.");
             }
 
             // 对每一个connection 上配置的table 项进行解析
@@ -71,13 +72,21 @@ public final class OriginalConfPretreatmentUtil {
 
             if (null == expandedTables || expandedTables.isEmpty()) {
                 throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                        "您配置的写入数据库表名称错误.");
+                        "您配置的写入数据库表名称错误. DataX找不到您配置的表，请检查您的配置并作出修改.");
             }
 
             tableNum += expandedTables.size();
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.TABLE), expandedTables);
+            /*mysql 类型，检查insert 权限*/
+//            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
+//                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
+//
+//                if(!hasInsertPri){
+//                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
+//                }
+//            }
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
@@ -87,7 +96,7 @@ public final class OriginalConfPretreatmentUtil {
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                    "您未配置写入数据库表的列名称.");
+                    "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
             String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                     Constant.CONN_MARK, Key.JDBC_URL));
@@ -104,13 +113,13 @@ public final class OriginalConfPretreatmentUtil {
                     StringUtils.join(allColumns, ","));
 
             if (1 == userConfiguredColumns.size() && "*".equals(userConfiguredColumns.get(0))) {
-                LOG.warn("您配置的写入数据库表的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。");
+                LOG.warn("您的配置文件中的列配置信息存在风险. 因为您配置的写入数据库表的列为*，当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错。请检查您的配置并作出修改.");
 
                 // 回填其值，需要以 String 的方式转交后续处理
                 originalConfig.set(Key.COLUMN, allColumns);
             } else if (userConfiguredColumns.size() > allColumns.size()) {
                 throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                        String.format("您所配置的写入数据库表的字段个数:%s 大于目的表的字段总个数:%s .",
+                        String.format("您的配置文件中的列配置信息有误. 因为您所配置的写入数据库表的字段个数:%s 大于目的表的总字段总个数:%s. 请检查您的配置并作出修改.",
                                 userConfiguredColumns.size(), allColumns.size()));
             } else {
                 // 确保用户配置的 column 不重复

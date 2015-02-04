@@ -19,7 +19,13 @@ public class BoolColumn extends Column {
 	public BoolColumn(final String data) {
 		this(true);
 		this.validate(data);
-		super.setRawData(null == data ? null : Boolean.valueOf(data));
+		if (null == data) {
+			this.setRawData(null);
+			this.setByteSize(0);
+		} else {
+			this.setRawData(Boolean.valueOf(data));
+			this.setByteSize(1);
+		}
 		return;
 	}
 

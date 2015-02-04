@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="log.dir" value="${user.dir}/log/" />
-    <timestamp key="byMillionSecond" datePattern="HHmmss.SSS"/>
+    <property name="log.dir" value="${datax.home}/log/" />
+    <timestamp key="ymd" datePattern="yyyy-MM-dd"/>
+    <timestamp key="byMillionSecond" datePattern="HH_mm_ss.SSS"/>
 
     <!-- 控制台输出 -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -12,7 +13,18 @@
         </encoder>
     </appender>
 
-    <!-- 按照每天生成日志文件 -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <encoder>UTF-8</encoder>
+        <file>${log.dir}/${ymd}/${log.file.name}-${byMillionSecond}.log</file>
+        <append>false</append>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{0} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <!-- 按照每天生成日志文件(对 DataX 不适应，DataX 是一个进程一个日志) -->
+    <!--
     <appender name="FILE"
               class="ch.qos.logback.core.rolling.RollingFileAppender">
         <Encoding>UTF-8</Encoding>
@@ -25,7 +37,7 @@
             </pattern>
         </encoder>
     </appender>
-
+    -->
     <!-- 按照每天生成日志文件(给用户查看进度使用的)
     <appender name="USER_FILE"
               class="ch.qos.logback.core.rolling.RollingFileAppender">

@@ -112,7 +112,7 @@ public class CommonRdbmsWriter {
                     // 说明有 postSql 配置，则此处删除掉
                     originalConfig.remove(Key.POST_SQL);
 
-                    Connection conn = DBUtil.getConnection(dataBaseType,
+                    Connection conn = DBUtil.getConnection(this.dataBaseType,
                             jdbcUrl, username, password);
 
                     LOG.info(
@@ -182,11 +182,11 @@ public class CommonRdbmsWriter {
         }
 
         public void prepare(Configuration writerSliceConfig) {
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
 
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             int tableNumber = writerSliceConfig.getInt(
                     Constant.TABLE_NUMBER_MARK);
@@ -205,10 +205,10 @@ public class CommonRdbmsWriter {
                                TaskPluginCollector taskPluginCollector) {
             this.taskPluginCollector = taskPluginCollector;
 
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, BASIC_MESSAGE);
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
@@ -226,7 +226,7 @@ public class CommonRdbmsWriter {
                                 .asDataXException(
                                         DBUtilErrorCode.CONF_ERROR,
                                         String.format(
-                                                "您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置字段.",
+                                                "列配置信息有错误. 因为您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置并作出修改.",
                                                 record.getColumnNumber(),
                                                 this.columnNumber));
                     }
@@ -260,7 +260,7 @@ public class CommonRdbmsWriter {
                 return;
             }
 
-            Connection connection = DBUtil.getConnection(dataBaseType,
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
                     this.jdbcUrl, username, password);
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
@@ -344,7 +344,6 @@ public class CommonRdbmsWriter {
                     case Types.NVARCHAR:
                     case Types.LONGNVARCHAR:
                     case Types.SMALLINT:
-                    case Types.TINYINT:
                     case Types.INTEGER:
                     case Types.BIGINT:
                     case Types.NUMERIC:
@@ -355,6 +354,16 @@ public class CommonRdbmsWriter {
                         preparedStatement.setString(i + 1, record.getColumn(i)
                                 .asString());
                         break;
+                        
+                    //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
+                    case Types.TINYINT:
+                    	Long longValue = record.getColumn(i).asLong();
+                    	if (null == longValue) {
+                    		preparedStatement.setString(i + 1, null);
+                    	} else {
+                    		preparedStatement.setString(i + 1, longValue.toString());
+                    	}
+                    	break;
 
                     // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
                     case Types.DATE:
@@ -428,7 +437,7 @@ public class CommonRdbmsWriter {
                                 .asDataXException(
                                         DBUtilErrorCode.UNSUPPORTED_TYPE,
                                         String.format(
-                                                "DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s].",
+                                                "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
                                                 this.resultSetMetaData.getLeft()
                                                         .get(i),
                                                 this.resultSetMetaData.getMiddle()

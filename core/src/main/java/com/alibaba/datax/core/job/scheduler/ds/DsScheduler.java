@@ -10,8 +10,8 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.SecretUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.State;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

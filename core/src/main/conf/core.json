@@ -9,6 +9,7 @@
             "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
             "timeFormat": "HH:mm:ss",
             "dateFormat": "yyyy-MM-dd",
+            "extraFormats":["yyyyMMdd"],
             "timeZone": "GMT+8",
             "encoding": "utf-8"
         }
@@ -16,7 +17,7 @@
     "core": {
         "dataXServer": {
             "address": "http://localhost:7001/api",
-            "timeout": 5000
+            "timeout": 10000
         },
         "transport": {
             "channel": {

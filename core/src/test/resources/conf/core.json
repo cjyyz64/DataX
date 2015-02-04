@@ -6,6 +6,16 @@
             "DATAX_HOME": "/home/admin"
         }
     },
+    "common": {
+        "column": {
+            "datetimeFormat": "yyyy-MM-dd HH:mm:ss",
+            "timeFormat": "HH:mm:ss",
+            "dateFormat": "yyyy-MM-dd",
+            "extraFormats":["yyyyMMdd"],
+            "timeZone": "GMT+8",
+            "encoding": "utf-8"
+        }
+    },
     "core": {
         "channel": {
             "class": "com.alibaba.datax.core.MemoryChannel",

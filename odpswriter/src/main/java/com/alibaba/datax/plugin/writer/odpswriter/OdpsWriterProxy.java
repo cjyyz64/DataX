@@ -17,170 +17,166 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class OdpsWriterProxy {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(OdpsWriterProxy.class);
+    private static final Logger LOG = LoggerFactory
+            .getLogger(OdpsWriterProxy.class);
 
-	private volatile boolean printColumnLess = true;// 是否打印对于源头字段数小于odps目的表的行的日志
+    private volatile boolean printColumnLess;// 是否打印对于源头字段数小于 ODPS 目的表的行的日志
 
-	private TaskPluginCollector taskPluginCollector;
+    private TaskPluginCollector taskPluginCollector;
 
-	private Upload slaveUpload;
+    private Upload slaveUpload;
+    private RecordSchema schema;
+    private ByteArrayOutputStream byteArrayOutputStream;
+    private int max_buffer_length;
+    private ProtobufRecordWriter protobufRecordWriter;
+    private AtomicLong blockId;
 
-	private int blockSizeInMB;
+    private List<Integer> columnPositions;
+    private List<Column.Type> tableOriginalColumnTypeList;
+    private boolean emptyAsNull;
 
-	private RecordSchema schema;
+    public OdpsWriterProxy(Upload slaveUpload, int blockSizeInMB,
+                           AtomicLong blockId, List<Integer> columnPositions,
+                           TaskPluginCollector taskPluginCollector, boolean emptyAsNull)
+            throws IOException {
+        this.slaveUpload = slaveUpload;
+        this.schema = this.slaveUpload.getSchema();
+        this.tableOriginalColumnTypeList = OdpsUtil
+                .getTableOriginalColumnTypeList(this.schema);
 
-	private ByteArrayOutputStream byteArrayOutputStream;
+        this.byteArrayOutputStream = new ByteArrayOutputStream(
+                (blockSizeInMB + 1) * 1024 * 1024);
+        this.protobufRecordWriter = new ProtobufRecordWriter(schema,
+                byteArrayOutputStream);
+        this.blockId = blockId;
+        this.columnPositions = columnPositions;
+        this.taskPluginCollector = taskPluginCollector;
+        this.emptyAsNull = emptyAsNull;
 
-	private int max_buffer_length;
+        // 初始化与 buffer 区相关的值
+        this.max_buffer_length = blockSizeInMB * 1024 * 1024;
+        printColumnLess = true;
+    }
 
-	private ProtobufRecordWriter protobufRecordWriter;
+    public void writeOneRecord(
+            com.alibaba.datax.common.element.Record dataXRecord,
+            List<Long> blocks) throws Exception {
 
-	private AtomicLong blockId;
+        Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
 
-	private List<Integer> columnPositions;
+        if (null == record) {
+            return;
+        }
 
-	private List<Column.Type> tableOriginalColumnTypeList;
+        protobufRecordWriter.write(record);
 
-	private boolean emptyAsNull;
+        if (byteArrayOutputStream.size() >= max_buffer_length) {
+            protobufRecordWriter.close();
+            OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
+                    this.byteArrayOutputStream, blockId.get());
+            LOG.info("write block {} ok.", blockId.get());
 
-	public OdpsWriterProxy(Upload slaveUpload, int blockSizeInMB,
-			AtomicLong blockId, List<Integer> columnPositions,
-			TaskPluginCollector taskPluginCollector, boolean emptyAsNull)
-			throws IOException {
-		this.slaveUpload = slaveUpload;
-		this.blockSizeInMB = blockSizeInMB;
-		this.schema = this.slaveUpload.getSchema();
-		this.tableOriginalColumnTypeList = OdpsUtil
-				.getTableOriginalColumnTypeList(this.schema);
+            blocks.add(blockId.get());
+            byteArrayOutputStream.reset();
+            protobufRecordWriter = new ProtobufRecordWriter(schema,
+                    byteArrayOutputStream);
 
-		this.byteArrayOutputStream = new ByteArrayOutputStream(
-				(this.blockSizeInMB + 1) * 1024 * 1024);
-		this.protobufRecordWriter = new ProtobufRecordWriter(schema,
-				byteArrayOutputStream);
-		this.blockId = blockId;
-		this.columnPositions = columnPositions;
-		this.taskPluginCollector = taskPluginCollector;
-		this.emptyAsNull = emptyAsNull;
+            this.blockId.incrementAndGet();
+        }
+    }
 
-		// 初始化与 buffer 区相关的值
+    public void writeRemainingRecord(List<Long> blocks) throws Exception {
+        // complete protobuf stream, then write to http
+        protobufRecordWriter.close();
+        if (byteArrayOutputStream.size() != 0) {
+            OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
+                    this.byteArrayOutputStream, blockId.get());
+            LOG.info("write block {} ok.", blockId.get());
 
-		this.max_buffer_length = this.blockSizeInMB * 1024 * 1024;
-	}
+            blocks.add(blockId.get());
+            // reset the buffer for next block
+            byteArrayOutputStream.reset();
+        }
+    }
 
-	public void writeOneRecord(
-			com.alibaba.datax.common.element.Record dataXRecord,
-			List<Long> blocks) throws Exception {
+    public Record dataxRecordToOdpsRecord(
+            com.alibaba.datax.common.element.Record dataXRecord,
+            RecordSchema schema) throws Exception {
+        int sourceColumnCount = dataXRecord.getColumnNumber();
+        int destColumnCount = schema.getColumnCount();
+        Record odpsRecord = new Record(destColumnCount);
 
-		Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
+        int userConfiguredColumnNumber = this.columnPositions.size();
+//todo
+        if (sourceColumnCount > userConfiguredColumnNumber) {
+            throw DataXException
+                    .asDataXException(
+                            OdpsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format(
+                                    "亲，配置中的源表的列个数和目的端表不一致，源表中您配置的列数是:%s 大于目的端的列数是:%s , 这样会导致源头数据无法正确导入目的端, 请检查您的配置并修改.",
+                                    sourceColumnCount,
+                                    userConfiguredColumnNumber));
+        } else if (sourceColumnCount < userConfiguredColumnNumber) {
+            if (printColumnLess) {
+                LOG.warn(
+                        "源表的列个数小于目的表的列个数，源表列数是:{} 目的表列数是:{} , 数目不匹配. DataX 会把目的端多出的咧的值设置为空值. 如果这个默认配置不符合您的期望，请保持源表和目的表配置的列数目保持一致.",
+                        sourceColumnCount, userConfiguredColumnNumber);
+            }
+            printColumnLess = false;
+        }
 
-		if (null == record) {
-			return;
-		}
+        int currentIndex;
+        int sourceIndex = 0;
+        try {
+            com.alibaba.datax.common.element.Column columnValue;
 
-		protobufRecordWriter.write(record);
+            for (; sourceIndex < sourceColumnCount; sourceIndex++) {
+                currentIndex = columnPositions.get(sourceIndex);
+                Column.Type type = this.tableOriginalColumnTypeList
+                        .get(currentIndex);
+                columnValue = dataXRecord.getColumn(sourceIndex);
 
-		if (byteArrayOutputStream.size() >= max_buffer_length) {
-			protobufRecordWriter.close();
-			OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-					this.byteArrayOutputStream, blockId.get());
-			LOG.info("write block {} ok.", blockId.get());
+                if (columnValue == null) {
+                    break;
+                }
 
-			blocks.add(blockId.get());
-			byteArrayOutputStream.reset();
-			protobufRecordWriter = new ProtobufRecordWriter(schema,
-					byteArrayOutputStream);
+                switch (type) {
+                    case ODPS_STRING:
+                        if (this.emptyAsNull && "".equals(columnValue.asString())) {
+                            break;
+                        } else {
+                            odpsRecord.setString(currentIndex,
+                                    columnValue.asString());
+                        }
+                        break;
+                    case ODPS_BIGINT:
+                        odpsRecord.setBigint(currentIndex, columnValue.asLong());
+                        break;
+                    case ODPS_BOOLEAN:
+                        odpsRecord
+                                .setBoolean(currentIndex, columnValue.asBoolean());
+                        break;
+                    case ODPS_DATETIME:
+                        odpsRecord.setDatetime(currentIndex, columnValue.asDate());
+                        break;
+                    case ODPS_DOUBLE:
+                        odpsRecord.setDouble(currentIndex, columnValue.asDouble());
+                        break;
+                    default:
+                        break;
+                }
+            }
 
-			this.blockId.incrementAndGet();
-		}
-	}
+            return odpsRecord;
+        } catch (Exception e) {
+            String message = String.format(
+                    "写入 ODPS 目的表时遇到了脏数据, 因为源端第[%s]个字段, 具体值[%s] 的数据不符合 ODPS 对应字段的格式要求，请检查该数据并作出修改 或者您可以增大阀值，忽略这条记录.", sourceIndex,
+                    dataXRecord.getColumn(sourceIndex));
+            this.taskPluginCollector.collectDirtyRecord(dataXRecord, e,
+                    message);
 
-	public void writeRemainingRecord(List<Long> blocks) throws Exception {
-		// complete protobuf stream, then write to http
-		protobufRecordWriter.close();
-		if (byteArrayOutputStream.size() != 0) {
-			OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-					this.byteArrayOutputStream, blockId.get());
-			LOG.info("write block {} ok.", blockId.get());
+            return null;
+        }
 
-			blocks.add(blockId.get());
-			// reset the buffer for next block
-			byteArrayOutputStream.reset();
-		}
-	}
-
-	public Record dataxRecordToOdpsRecord(
-			com.alibaba.datax.common.element.Record dataXRecord,
-			RecordSchema schema) throws Exception {
-		int sourceColumnCount = dataXRecord.getColumnNumber();
-		int destColumnCount = schema.getColumnCount();
-		Record odpsRecord = new Record(destColumnCount);
-
-		int userConfiguredColumnNumber = this.columnPositions.size();
-
-		if (sourceColumnCount > userConfiguredColumnNumber) {
-			throw DataXException
-					.asDataXException(
-							OdpsWriterErrorCode.ILLEGAL_VALUE,
-							String.format(
-									"数据源读取的列数是:%s 大于目的端的列数是:%s , DataX 不允许这种行为, 请检查您的配置.",
-									sourceColumnCount,
-									userConfiguredColumnNumber));
-		} else if (sourceColumnCount < userConfiguredColumnNumber) {
-			if (printColumnLess) {
-				LOG.warn(
-						"数据源读取的列数是:{} 小于的端的列数是:{} , 二者不匹配. DataX 将对目的端的未对齐的列补空.",
-						sourceColumnCount, userConfiguredColumnNumber);
-			}
-		}
-
-		int currentIndex = -1;
-		int sourceIndex = 0;
-		com.alibaba.datax.common.element.Column columnValue = null;
-		try {
-			for (int len = sourceColumnCount; sourceIndex < len; sourceIndex++) {
-				currentIndex = columnPositions.get(sourceIndex);
-				Column.Type type = this.tableOriginalColumnTypeList
-						.get(currentIndex);
-				columnValue = dataXRecord.getColumn(sourceIndex);
-
-				switch (type) {
-				case ODPS_STRING:
-					if (this.emptyAsNull && "".equals(columnValue.asString())) {
-						break;
-					} else {
-						odpsRecord.setString(currentIndex,
-								columnValue.asString());
-					}
-					break;
-				case ODPS_BIGINT:
-					odpsRecord.setBigint(currentIndex, columnValue.asLong());
-					break;
-				case ODPS_BOOLEAN:
-					odpsRecord
-							.setBoolean(currentIndex, columnValue.asBoolean());
-					break;
-				case ODPS_DATETIME:
-					odpsRecord.setDatetime(currentIndex, columnValue.asDate());
-					break;
-				case ODPS_DOUBLE:
-					odpsRecord.setDouble(currentIndex, columnValue.asDouble());
-					break;
-				default:
-					break;
-				}
-			}
-
-			return odpsRecord;
-		} catch (Exception e) {
-			String message = String.format(
-					"写入 ODPS 目的表时遇到了脏数据, 在源端第[%s]个字段, 具体值[%s].", sourceIndex,
-					dataXRecord.getColumn(sourceIndex));
-			this.taskPluginCollector.collectDirtyRecord(dataXRecord, e,
-					message);
-
-			return null;
-		}
-
-	}
+    }
 }

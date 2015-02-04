@@ -30,7 +30,7 @@ public final class OdpsUtil {
 
         if (null == originalConfig.getList(Key.COLUMN) ||
                 originalConfig.getList(Key.COLUMN, String.class).isEmpty()) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.REQUIRED_VALUE, "您未配置读取源头表的列信息. " +
+            throw DataXException.asDataXException(OdpsReaderErrorCode.REQUIRED_VALUE, "datax获取不到源表的列信息， 由于您未配置读取源头表的列信息. datax无法知道该抽取表的哪些字段的数据 " +
                     "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
         }
 

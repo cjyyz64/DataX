@@ -1,12 +1,12 @@
 package com.alibaba.datax.test.simulator.util;
 
-import java.io.PrintWriter;
-import java.util.List;
-
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.core.transport.record.TerminateRecord;
+
+import java.io.PrintWriter;
+import java.util.List;
 
 public class RecordSenderForTest implements RecordSender {
 	private PrintWriter printWriter;
@@ -47,6 +47,11 @@ public class RecordSenderForTest implements RecordSender {
 		if (null != this.printWriter) {
 			this.printWriter.flush();
 		}
+	}
+
+	@Override
+	public void terminate() {
+		this.printWriter.write(TerminateRecord.get().toString() + "\n");
 	}
 
 }

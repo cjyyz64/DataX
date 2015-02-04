@@ -9,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.container.util.HookInvoker;
+import com.alibaba.datax.core.container.util.JobAssignUtil;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
 import com.alibaba.datax.core.job.scheduler.ds.DsScheduler;
 import com.alibaba.datax.core.job.scheduler.processinner.LocalScheduler;
@@ -25,16 +26,14 @@ import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -119,21 +118,35 @@ public class JobContainer extends AbstractContainer {
                 System.gc();
             }
 
-            AbstractContainerCommunicator containerCollector = super.getContainerCommunicator();
-            if (containerCollector != null) {
-                Communication communication =
-                        super.getContainerCommunicator().collect();
-                // 汇报前的状态，不需要手动进行设置
-                // communication.setState(State.FAILED);
-                communication.setThrowable(e);
-                communication.setTimestamp(this.endTimeStamp);
 
-                Communication tempComm = new Communication();
-                tempComm.setTimestamp(this.startTransferTimeStamp);
+            if (super.getContainerCommunicator() == null) {
+                // 由于 containerCollector 是在 scheduler() 中初始化的，所以当在 scheduler() 之前出现异常时，需要在此处对 containerCollector 进行初始化
 
-                Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
-                super.getContainerCommunicator().report(reportCommunication);
+                AbstractContainerCommunicator tempContainerCollector;
+                String jobMode = configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE);
+                if (ExecuteMode.isDistribute(jobMode)) {
+                    tempContainerCollector = new DistributeJobContainerCommunicator(configuration);
+                } else if (ExecuteMode.isLocal(jobMode)) {
+                    tempContainerCollector = new LocalJobContainerCommunicator(configuration);
+                } else {
+                    // standalone
+                    tempContainerCollector = new StandAloneJobContainerCommunicator(configuration);
+                }
+
+                super.setContainerCommunicator(tempContainerCollector);
             }
+
+            Communication communication = super.getContainerCommunicator().collect();
+            // 汇报前的状态，不需要手动进行设置
+            // communication.setState(State.FAILED);
+            communication.setThrowable(e);
+            communication.setTimestamp(this.endTimeStamp);
+
+            Communication tempComm = new Communication();
+            tempComm.setTimestamp(this.startTransferTimeStamp);
+
+            Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
+            super.getContainerCommunicator().report(reportCommunication);
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
@@ -196,9 +209,6 @@ public class JobContainer extends AbstractContainer {
          */
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
                 readerTaskConfigs, writerTaskConfigs);
-
-        Collections.shuffle(contentConfig,
-                new Random(System.currentTimeMillis()));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
 
@@ -295,10 +305,9 @@ public class JobContainer extends AbstractContainer {
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
          */
-        int averTasksPerChannel = taskNumber / this.needChannelNumber;
-        List<Configuration> taskGroupConfigs = distributeTasksToTaskGroup(
-                averTasksPerChannel, this.needChannelNumber,
-                channelsPerTaskGroup);
+
+        List<Configuration> taskGroupConfigs = JobAssignUtil.assignFairly(this.configuration,
+                this.needChannelNumber, channelsPerTaskGroup);
 
         LOG.info("Scheduler starts [{}] taskGroups.", taskGroupConfigs.size());
 
@@ -353,18 +362,18 @@ public class JobContainer extends AbstractContainer {
         this.checkLimit();
     }
 
-    private AbstractScheduler initLocalScheduler(Configuration configuration) {
-        AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
-        super.setContainerCommunicator(containerCommunicator);
-
-        return new LocalScheduler(containerCommunicator);
-    }
-
     private AbstractScheduler initDistributeScheduler(Configuration configuration) {
         AbstractContainerCommunicator containerCommunicator = new DistributeJobContainerCommunicator(configuration);
         super.setContainerCommunicator(containerCommunicator);
 
         return new DsScheduler(containerCommunicator);
+    }
+
+    private AbstractScheduler initLocalScheduler(Configuration configuration) {
+        AbstractContainerCommunicator containerCommunicator = new LocalJobContainerCommunicator(configuration);
+        super.setContainerCommunicator(containerCommunicator);
+
+        return new LocalScheduler(containerCommunicator);
     }
 
     private AbstractScheduler initStandaloneScheduler(Configuration configuration) {
@@ -598,6 +607,7 @@ public class JobContainer extends AbstractContainer {
      * 先按平均为3个tasks找4个channel，设置taskGroupId为0，
      * 接下来就像发牌一样轮询分配task到剩下的包含平均channel数的taskGroup中
      *
+     * TODO delete it
      * @param averTaskPerChannel
      * @param channelNumber
      * @param channelsPerTaskGroup

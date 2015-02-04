@@ -19,7 +19,7 @@ LOGBACK_FILE = ("%s/conf/logback.xml") % (DATAX_HOME)
 DEFAULT_JVM = "-Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log" % (DATAX_HOME)
 DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.qos.logback.core.status.NopStatusListener -Ddatax.home=%s -Dlogback.configurationFile=%s" % (
     DATAX_HOME, LOGBACK_FILE)
-ENGINE_COMMAND = "java -server ${jvm} %s -classpath %s  ${params} com.alibaba.datax.core.Engine -mode ${mode} -job ${job}" % (
+ENGINE_COMMAND = "java -server ${jvm} %s -classpath %s  ${params} com.alibaba.datax.core.Engine -mode ${mode} -jobid ${jobid} -job ${job}" % (
     DEFAULT_PROPERTY_CONF, CLASS_PATH)
 REMOTE_DEBUG_CONFIG = "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999"
 
@@ -67,6 +67,8 @@ def getOptionParser():
                                      "Make sure these options can be used in Product Env.")
     prodEnvOptionGroup.add_option("-j", "--jvm", metavar="<jvm parameters>", dest="jvmParameters", action="store",
                                   default=DEFAULT_JVM, help="Set jvm parameters if necessary.")
+    prodEnvOptionGroup.add_option("--jobid", metavar="<job unique id>", dest="jobid", action="store", default="-1",
+                                  help="Set job unique id when running by Distribute/Local Mode.")
     prodEnvOptionGroup.add_option("-m", "--mode", metavar="<job runtime mode>",
                                   action="store", default="standalone",
                                   help="Set job runtime mode such as: standalone, local, distribute. "
@@ -125,7 +127,10 @@ def buildStartCommand(options, args):
 
     jobParams = ("-Dlog.file.name=%s") % (jobResource[-20:].replace('/', '_').replace('.', '_'))
     if options.params:
-        jobParams = options.params
+        jobParams = jobParams + " " + options.params
+
+    if options.jobid:
+        commandMap["jobid"] = options.jobid
 
     commandMap["jvm"] = tempJVMCommand
     commandMap["params"] = jobParams
@@ -142,7 +147,7 @@ if __name__ == "__main__":
         sys.exit(RET_STATE['FAIL'])
 
     startCommand = buildStartCommand(options, args)
-    print startCommand
+    # print startCommand
 
     child_process = subprocess.Popen(startCommand, shell=True)
     register_signal()
