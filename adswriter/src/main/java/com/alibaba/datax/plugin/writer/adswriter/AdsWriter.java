@@ -5,12 +5,16 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriter;
+import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
+import com.aliyun.odps.OdpsException;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
+import com.aliyun.odps.task.SQLTask;
 
 import java.util.List;
 
@@ -38,6 +42,7 @@ public class AdsWriter extends Writer {
             String endPoint = this.originalConfig.getString(Key.ODPS_SERVER);
             String accessId = this.originalConfig.getString(Key.ACCESS_ID);
             String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+            String project = this.originalConfig.getString(Key.PROJECT);
             Account odpsAccount = new AliyunAccount(accessId,accessKey);
             Odps odps = new Odps(odpsAccount);
             odps.setEndpoint(endPoint);
@@ -46,27 +51,26 @@ public class AdsWriter extends Writer {
                 String adsTable = originalConfig.getString(Key.TABLE);
                 int lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
                 TableInfo tableInfo = adsHelper.getTableInfo(adsTable);
-                TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
+                TableMeta tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
+                String sql = tableMeta.toDDL();
 //                //创建odps表
-//                String sql = AdsUtil.generateSQL(tableInfo);
-//                Instance instance = SQLTask.run(odps,sql);
-//                String id = instance.getId();
-//                boolean terminated = false;
-//                int time = 0;
-//                while(!terminated && time < ODPSOVERTIME)
-//                {
-//                    Thread.sleep(1000);
-//                    terminated = instance.isTerminated();
-//                    time += 1000;
-//                }
+                Instance instance = SQLTask.run(odps,project,sql,null,null);
+                String id = instance.getId();
+                boolean terminated = false;
+                int time = 0;
+                while(!terminated && time < ODPSOVERTIME)
+                {
+                    Thread.sleep(1000);
+                    terminated = instance.isTerminated();
+                    time += 1000;
+                }
             } catch (AdsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR,e);
+            }catch (OdpsException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+            } catch (InterruptedException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
-//            catch (OdpsException e) {
-//                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
-//            } catch (InterruptedException e) {
-//                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
-//            }
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig);
             super.setPluginConf(newConf);

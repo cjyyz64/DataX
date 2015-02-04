@@ -3,8 +3,10 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.TableMetaHelper;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
-import junit.framework.Assert;
 import org.junit.Test;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Created by judy.lt on 2015/2/3.
@@ -25,10 +27,10 @@ public class AdsWriteUnitTest {
             TableMeta tableMeta = TableMetaHelper.createTempODPSTable(tableInfo, lifeCycle);
             String sql = tableMeta.toDDL();
             System.out.println(sql);
-            Assert.assertNotNull(sql);
+            assertNotNull(sql);
         }catch (AdsException e){
             System.out.println(e);
-            Assert.assertNull(e);
+            assertNull(e);
 
 
     }
