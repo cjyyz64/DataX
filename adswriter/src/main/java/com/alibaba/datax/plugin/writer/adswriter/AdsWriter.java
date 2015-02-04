@@ -76,7 +76,7 @@ public class AdsWriter extends Writer {
             }
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
-            super.setPluginConf(newConf);
+            super.setPluginJobConf(newConf);
             this.odpsWriterProxy.init();
 //            odpsWriterProxy.setPluginConf(newConf);
         }
@@ -85,8 +85,6 @@ public class AdsWriter extends Writer {
         @Override
         public void prepare() {
             //倒数据到odps表中
-
-
             this.odpsWriterProxy.prepare();
             this.odpsWriterProxy.split(3);
             this.odpsWriterProxy.post();
