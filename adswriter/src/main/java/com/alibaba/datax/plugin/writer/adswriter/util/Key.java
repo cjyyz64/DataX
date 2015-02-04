@@ -11,7 +11,7 @@ public final class Key {
 
     public final static String SCHEMA = "schema";
 
-    public final static String TABLE = "adsTable";
+    public final static String TABLE = "table";
 
     public final static String ODPS_SERVER = "odpsServer";
 
