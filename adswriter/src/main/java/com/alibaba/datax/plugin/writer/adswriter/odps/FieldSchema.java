@@ -56,7 +56,7 @@ public class FieldSchema {
         builder.append(name).append(" ").append(type).append(" ");
         String comment = this.comment;
         if (comment != null && comment.length() > 0) {
-            builder.append("COMMENT '" + comment + "' ");
+            builder.append("COMMENT \"" + comment + "\" ");
         }
         return builder.toString();
     }

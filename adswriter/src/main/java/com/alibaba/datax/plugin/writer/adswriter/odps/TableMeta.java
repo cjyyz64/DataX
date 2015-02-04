@@ -88,7 +88,7 @@ public class TableMeta {
         }
         String comment = this.comment;
         if (comment != null && comment.length() > 0) {
-            builder.append("COMMENT '" + comment + "' ");
+            builder.append("COMMENT \"" + comment + "\" ");
         }
         List<FieldSchema> partitionKeys = this.partitionKeys;
         if (partitionKeys != null && partitionKeys.size() > 0) {
