@@ -99,7 +99,7 @@ public class TxtFileWriter extends Writer {
 			String encoding = this.writerSliceConfig
 					.getString(
 							com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
-							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_CHARSET);
+							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_ENCODING);
 			if (StringUtils.isBlank(encoding)) {
 				this.writerSliceConfig
 						.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
@@ -141,6 +141,15 @@ public class TxtFileWriter extends Writer {
 											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
+			}
+
+			String delimiterInStr = this.writerSliceConfig
+					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FIELD_DELIMITER);
+			// warn: if have, length must be one
+			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+				throw DataXException.asDataXException(
+						TxtFileWriterErrorCode.ILLEGAL_VALUE, String.format(
+								"仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
 			}
 		}
 

@@ -21,6 +21,9 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DateColumn;
@@ -35,11 +38,20 @@ public class UnstructuredStorageWriterUtil {
 
 	}
 
+	private static final Logger LOG = LoggerFactory
+			.getLogger(UnstructuredStorageWriterUtil.class);
+
 	public static void writeToStream(RecordReceiver lineReceiver,
 			OutputStream outputStream, Configuration config, String context,
 			TaskPluginCollector taskPluginCollector) {
 		String encoding = config.getString(Key.ENCODING,
-				Constant.DEFAULT_CHARSET);
+				Constant.DEFAULT_ENCODING);
+		// handle blank encoding
+		if (StringUtils.isBlank(encoding)) {
+			LOG.warn(String.format("您配置的encoding为[%s], 使用默认值[%s]", encoding,
+					Constant.DEFAULT_ENCODING));
+			encoding = Constant.DEFAULT_ENCODING;
+		}
 		String compress = config.getString(Key.COMPRESS);
 
 		BufferedWriter writer = null;
@@ -142,7 +154,19 @@ public class UnstructuredStorageWriterUtil {
 		String nullFormat = config.getString(Key.NULL_FORMAT);
 
 		String dateFormat = config.getString(Key.FORMAT);
-		// TODO: fieldDelimiter could be '' for no fieldDelimiter
+
+		String delimiterInStr = config.getString(Key.FIELD_DELIMITER);
+		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+			throw DataXException.asDataXException(
+					UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+					String.format("仅仅支持单字符切分, 您配置的切分为 : [%]", delimiterInStr));
+		}
+		if (null == delimiterInStr) {
+			LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
+					Constant.DEFAULT_FIELD_DELIMITER));
+		}
+
+		// warn: fieldDelimiter could not be '' for no fieldDelimiter
 		char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 

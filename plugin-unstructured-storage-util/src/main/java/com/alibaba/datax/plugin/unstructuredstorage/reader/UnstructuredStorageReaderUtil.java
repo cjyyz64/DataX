@@ -89,6 +89,8 @@ public class UnstructuredStorageReaderUtil {
 		// handle blank encoding
 		if (StringUtils.isBlank(encoding)) {
 			encoding = Constant.DEFAULT_ENCODING;
+			LOG.warn(String.format("您配置的encoding为[%s], 使用默认值[%s]", encoding,
+					Constant.DEFAULT_ENCODING));
 		}
 
 		List<Configuration> column = readerSliceConfig
@@ -420,7 +422,7 @@ public class UnstructuredStorageReaderUtil {
 					record.addColumn(columnGenerated);
 
 				}
-				
+
 			} catch (IllegalArgumentException iae) {
 				taskPluginCollector
 						.collectDirtyRecord(record, iae.getMessage());

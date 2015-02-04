@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.unstructuredstorage.writer;
 
 public class Constant {
 
-	public static final String DEFAULT_CHARSET = "UTF-8";
+	public static final String DEFAULT_ENCODING = "UTF-8";
 
 	public static final char DEFAULT_FIELD_DELIMITER = ',';
 
