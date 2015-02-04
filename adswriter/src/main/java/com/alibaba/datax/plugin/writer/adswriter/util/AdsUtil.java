@@ -31,7 +31,7 @@ public class AdsUtil {
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.Life_CYCLE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.TABLE,
+        originalConfig.getNecessaryValue(Key.ADS_TABLE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
 
         //检查ODPS必要参数
