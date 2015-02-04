@@ -63,7 +63,11 @@ public class TableMeta {
 
     @Override
     public String toString() {
-        return toDDL();
+        StringBuilder builder = new StringBuilder();
+        builder.append("TableMeta [tableName=").append(tableName).append(", cols=").append(cols)
+                .append(", partitionKeys=").append(partitionKeys).append(", lifeCycle=").append(lifeCycle)
+                .append(", comment=").append(comment).append("]");
+        return builder.toString();
     }
 
     /**
@@ -81,6 +85,10 @@ public class TableMeta {
         List<FieldSchema> cols = this.cols;
         if (cols != null && cols.size() > 0) {
             builder.append("(").append(toDDL(cols)).append(")").append(" ");
+        }
+        String comment = this.comment;
+        if (comment != null && comment.length() > 0) {
+            builder.append("COMMENT '" + comment + "' ");
         }
         List<FieldSchema> partitionKeys = this.partitionKeys;
         if (partitionKeys != null && partitionKeys.size() > 0) {

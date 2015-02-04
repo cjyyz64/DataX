@@ -42,7 +42,10 @@ public class FieldSchema {
 
     @Override
     public String toString() {
-        return toDDL();
+        StringBuilder builder = new StringBuilder();
+        builder.append("FieldSchema [name=").append(name).append(", type=").append(type).append(", comment=")
+                .append(comment).append("]");
+        return builder.toString();
     }
 
     /**
@@ -50,10 +53,10 @@ public class FieldSchema {
      */
     public String toDDL() {
         StringBuilder builder = new StringBuilder();
-        builder.append(name).append(" ").append(type);
+        builder.append(name).append(" ").append(type).append(" ");
         String comment = this.comment;
         if (comment != null && comment.length() > 0) {
-            builder.append(" ").append("COMMENT " + comment);
+            builder.append("COMMENT '" + comment + "' ");
         }
         return builder.toString();
     }
