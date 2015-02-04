@@ -305,6 +305,7 @@ public class UnstructuredStorageReaderUtil {
 				}
 				record.addColumn(columnGenerated);
 			}
+			recordSender.sendToWriter(record);
 		} else {
 			try {
 				for (Configuration columnConfig : columnConfigs) {
@@ -422,7 +423,7 @@ public class UnstructuredStorageReaderUtil {
 					record.addColumn(columnGenerated);
 
 				}
-
+				recordSender.sendToWriter(record);
 			} catch (IllegalArgumentException iae) {
 				taskPluginCollector
 						.collectDirtyRecord(record, iae.getMessage());
@@ -437,7 +438,7 @@ public class UnstructuredStorageReaderUtil {
 				taskPluginCollector.collectDirtyRecord(record, e.getMessage());
 			}
 		}
-		recordSender.sendToWriter(record);
+		
 		return record;
 	}
 
