@@ -13,7 +13,7 @@ public final class Key {
 
     public final static String TABLE = "table";
 
-    public final static String ADSTABLE = "adsTable";
+    public final static String ADS_TABLE = "adsTable";
 
     public final static String ODPS_SERVER = "odpsServer";
 
@@ -23,23 +23,8 @@ public final class Key {
 
     public final static String Life_CYCLE = "lifeCycle";
 
-    public final static String TUNNEL_SERVER = "tunnelServer";
-
     public final static String PROJECT = "project";
-
-
-    public final static String PARTITION = "partition";
 
     public final static String COLUMN = "column";
 
-    public final static String TRUNCATE = "truncate";
-
-    public final static String MAX_RETRY_TIME = "maxRetryTime";
-
-    public final static String BLOCK_SIZE_IN_MB = "blockSizeInMB";
-
-    //boolean 类型，default:false
-    public final static String EMPTY_AS_NULL = "emptyAsNull";
-
-    public final static String ACCOUNT_TYPE = "accountType";
 }

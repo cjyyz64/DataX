@@ -50,7 +50,7 @@ public class AdsWriter extends Writer {
             odps.setEndpoint(endPoint);
 
             try {
-                String adsTable = originalConfig.getString(Key.ADSTABLE);
+                String adsTable = originalConfig.getString(Key.ADS_TABLE);
                 int lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
                 TableInfo tableInfo = adsHelper.getTableInfo(adsTable);
                 tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);

@@ -75,7 +75,7 @@ public class AdsUtil {
     public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
         /*TODO 需要的参数还却column list*/
         Configuration newConfig = originalConfig;
-        newConfig.set(Key.TABLE,odpsTableName);
+        newConfig.set(Key.TABLE, odpsTableName);
         List<FieldSchema> cols = tableMeta.getCols();
         List<String> allColumns = new ArrayList();
         if(cols != null && !cols.isEmpty()){
