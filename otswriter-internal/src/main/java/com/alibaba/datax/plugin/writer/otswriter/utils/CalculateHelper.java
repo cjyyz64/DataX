@@ -1,0 +1,215 @@
+package com.alibaba.datax.plugin.writer.otswriter.utils;
+
+import java.util.List;
+
+import com.aliyun.openservices.ots.internal.model.Column;
+import com.aliyun.openservices.ots.internal.model.ColumnValue;
+import com.aliyun.openservices.ots.internal.model.PrimaryKey;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
+import com.aliyun.openservices.ots.internal.model.RowDeleteChange;
+import com.aliyun.openservices.ots.internal.model.RowPutChange;
+import com.aliyun.openservices.ots.internal.model.RowUpdateChange;
+import com.aliyun.openservices.ots.internal.utils.Pair;
+
+public class CalculateHelper {
+    public static int getRowPutChangeSize(RowPutChange change) {
+        int primaryKeyTotalSize = 0;
+        int columnTotalSize = 0;
+        
+        // PrimaryKeys Total Size
+        PrimaryKey primaryKey = change.getPrimaryKey();
+        PrimaryKeyColumn[] primaryKeyColumnArray = primaryKey.getPrimaryKeyColumns();
+        PrimaryKeyColumn primaryKeyColumn;
+        byte[] primaryKeyName;
+        PrimaryKeyValue primaryKeyValue;
+        for (int i = 0; i < primaryKeyColumnArray.length; i++) {
+            primaryKeyColumn = primaryKeyColumnArray[i];
+            primaryKeyName = primaryKeyColumn.getNameRawData();
+            primaryKeyValue = primaryKeyColumn.getValue();
+            
+            // += PrimaryKey Name Data
+            primaryKeyTotalSize += primaryKeyName.length;
+            
+            // += PrimaryKey Value Data
+            switch (primaryKeyValue.getType()) {
+            case INTEGER:
+                primaryKeyTotalSize += 8;
+                break;
+            case STRING:
+                primaryKeyTotalSize += primaryKeyValue.asStringInBytes().length;
+                break;
+            case BINARY:
+                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
+                break;
+            default:
+                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
+            }
+        }
+        
+        // Columns Total Size
+        List<Column> columnList = change.getColumnsToPut();
+        for (Column column : columnList) {
+            // += Column Name
+            columnTotalSize += column.getNameRawData().length; 
+            
+            // += Column Value
+            ColumnValue columnValue = column.getValue();
+            switch (columnValue.getType()) {
+            case INTEGER:
+                columnTotalSize += 8;
+                break;
+            case DOUBLE:
+                columnTotalSize += 8; 
+                break;
+            case STRING:
+                columnTotalSize += columnValue.asStringInBytes().length;
+                break;
+            case BINARY:
+                columnTotalSize += columnValue.asBinary().length;
+                break;
+            case BOOLEAN:
+                columnTotalSize += 1; 
+                break;
+            default:
+                throw new RuntimeException("Bug: not support the type : " + columnValue.getType());
+            }
+            
+            // += Timestamp
+            if (column.hasSetTimestamp()) {
+                columnTotalSize += 8;
+            }   
+        }
+        
+        return primaryKeyTotalSize + columnTotalSize; 
+    }
+
+    public static int getRowUpdateChangeSize(RowUpdateChange change) {
+        int primaryKeyTotalSize = 0;
+        int columnPutSize = 0;
+        int columnDeleteSize = 0;
+        
+        // PrimaryKeys Total Size
+        PrimaryKey primaryKey = change.getPrimaryKey();
+        PrimaryKeyColumn[] primaryKeyColumnArray = primaryKey.getPrimaryKeyColumns();
+        PrimaryKeyColumn primaryKeyColumn;
+        byte[] primaryKeyName;
+        PrimaryKeyValue primaryKeyValue;
+        for (int i = 0; i < primaryKeyColumnArray.length; i++) {
+            primaryKeyColumn = primaryKeyColumnArray[i];
+            primaryKeyName = primaryKeyColumn.getNameRawData();
+            primaryKeyValue = primaryKeyColumn.getValue();
+            
+            // += PrimaryKey Name Data
+            primaryKeyTotalSize += primaryKeyName.length;
+            
+            // += PrimaryKey Value Data
+            switch (primaryKeyValue.getType()) {
+            case INTEGER:
+                primaryKeyTotalSize += 8;
+                break;
+            case STRING:
+                primaryKeyTotalSize += primaryKeyValue.asString().getBytes().length; 
+                break;
+            case BINARY:
+                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
+                break;
+            default:
+                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
+            }
+        }
+        
+        // Column Total Size 
+        List<Pair<Column,RowUpdateChange.Type>> updatePairList = change.getColumnsToUpdate();
+        Column column;
+        ColumnValue columnValue;
+        RowUpdateChange.Type type;
+        for (Pair<Column,RowUpdateChange.Type> updatePair : updatePairList) {
+            column = updatePair.getFirst();
+            type = updatePair.getSecond();
+            
+            switch (type) {
+            case DELETE:
+                columnDeleteSize += column.getNameRawData().length;
+                if (column.hasSetTimestamp()) {
+                    columnDeleteSize += 8;
+                } else {
+                    throw new RuntimeException("Bug: not expect branch.");
+                }
+                break;
+            case DELETE_ALL:
+                columnDeleteSize += column.getNameRawData().length;
+                if (column.hasSetTimestamp()) {
+                    throw new RuntimeException("Bug: not expect branch.");
+                }
+                break;
+            case PUT:
+                // Name
+                columnPutSize += column.getNameRawData().length;
+                
+                // Value
+                columnValue = column.getValue();
+                switch (columnValue.getType()) {
+                case INTEGER:
+                    columnPutSize += 8;
+                    break;
+                case DOUBLE:
+                    columnPutSize += 8;
+                    break;
+                case BOOLEAN:
+                    columnPutSize += 1;
+                    break;
+                case STRING:
+                    columnPutSize += columnValue.asStringInBytes().length;
+                    break;
+                case BINARY:
+                    columnPutSize += columnValue.asBinary().length;
+                    break;
+                default:
+                    throw new RuntimeException("Bug: not support the type : " + columnValue.getType());
+                }
+                break;
+            default:
+                throw new RuntimeException("Bug: not support the type : " + type);
+            }
+        }
+        
+        return primaryKeyTotalSize + columnPutSize + columnDeleteSize;
+    }
+    
+    public static int getRowDeleteChangeSize(RowDeleteChange change) {
+        int primaryKeyTotalSize = 0;
+        
+        // PrimaryKeys Total Size
+        PrimaryKey primaryKey = change.getPrimaryKey();
+        PrimaryKeyColumn[] primaryKeyColumnArray = primaryKey.getPrimaryKeyColumns();
+        PrimaryKeyColumn primaryKeyColumn;
+        byte[] primaryKeyName;
+        PrimaryKeyValue primaryKeyValue;
+        for (int i = 0; i < primaryKeyColumnArray.length; i++) {
+            primaryKeyColumn = primaryKeyColumnArray[i];
+            primaryKeyName = primaryKeyColumn.getNameRawData();
+            primaryKeyValue = primaryKeyColumn.getValue();
+            
+            // += PrimaryKey Name Data
+            primaryKeyTotalSize += primaryKeyName.length;
+            
+            // += PrimaryKey Value Data
+            switch (primaryKeyValue.getType()) {
+            case INTEGER:
+                primaryKeyTotalSize += 8;
+                break;
+            case STRING:
+                primaryKeyTotalSize += primaryKeyValue.asStringInBytes().length;
+                break;
+            case BINARY:
+                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
+                break;
+            default:
+                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
+            }
+        }
+        
+        return primaryKeyTotalSize;
+    }
+}

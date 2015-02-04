@@ -1,0 +1,10 @@
+{
+    "endpoint":"http://10.101.204.227:9999",
+    "accessid":"OTSMultiUser199_accessid",
+    "accesskey":"OTSMultiUser199_accesskey",
+    "instance-name":"jingwen-100",
+    "instance-id":"_m46lZZ3lDUr52UjFD",
+    "legacy-instance-name":"wanhong-legcy",
+    "public-instance-name":"wanhong-basic",
+    "ag-ip":""
+}

@@ -1,0 +1,73 @@
+package com.alibaba.datax.plugin.writer.otswriter.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.plugin.writer.otswriter.utils.CalculateHelper;
+import com.aliyun.openservices.ots.internal.model.PrimaryKey;
+import com.aliyun.openservices.ots.internal.model.RowChange;
+import com.aliyun.openservices.ots.internal.model.RowPutChange;
+import com.aliyun.openservices.ots.internal.model.RowUpdateChange;
+
+/**
+ * 改动：
+ * 1.RowChange
+ * @author redchen
+ *
+ */
+public class OTSLine {
+    private int dataSize = 0;
+
+    private PrimaryKey pk = null;
+    private RowChange change = null;
+    
+    private List<Record> records = new ArrayList<Record>();
+    
+    public OTSLine(
+            OTSOpType type, 
+            PrimaryKey pk,
+            List<Record> records,
+            RowChange change) {
+        this.pk = pk;
+        this.change = change;
+        this.records.addAll(records);
+        setSize(this.change);
+    }
+    
+    public OTSLine(
+            PrimaryKey pk,
+            Record record,
+            RowChange change) {
+        this.pk = pk;
+        this.change = change;
+        this.records.add(record);
+        setSize(this.change);
+    }
+    
+    private void setSize(RowChange change) {
+        if (change instanceof RowPutChange) {
+            this.dataSize = CalculateHelper.getRowPutChangeSize((RowPutChange) change);
+        } else if (change instanceof RowUpdateChange) {
+            this.dataSize = CalculateHelper.getRowUpdateChangeSize((RowUpdateChange) change);
+        } else {
+            throw new RuntimeException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, change.getClass().toString(), "RowPutChange or RowUpdateChange"));
+        }
+    }
+    
+    public List<Record> getRecords() {
+        return records;
+    }
+
+    public PrimaryKey getPk() {
+        return pk;
+    }
+
+    public int getDataSize() {
+        return dataSize;
+    }
+
+    public RowChange getRowChange() {
+        return change;
+    }
+}

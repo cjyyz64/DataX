@@ -38,8 +38,8 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
-	<module>postgresqlreader</module>
-	<module>oraclereader</module>
+    	<module>postgresqlreader</module>
+	    <module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
         <module>txtfilereader</module>
@@ -55,6 +55,7 @@
         <module>txtfilewriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>
+        <module>otswriter-internal</module>
         <module>oraclewriter</module>
         <module>oceanbasewriter</module>
 	<module>postgresqlwriter</module>
