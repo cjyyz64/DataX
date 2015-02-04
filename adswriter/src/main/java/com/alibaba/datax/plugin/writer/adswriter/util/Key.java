@@ -13,6 +13,8 @@ public final class Key {
 
     public final static String TABLE = "table";
 
+    public final static String ADSTABLE = "adsTable";
+
     public final static String ODPS_SERVER = "odpsServer";
 
     public final static String ACCESS_ID = "accessId";
