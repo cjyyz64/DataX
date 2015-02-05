@@ -68,7 +68,7 @@ public class DrdsReader extends Reader {
 			if (null == conns || conns.size() != 1) {
 				throw DataXException.asDataXException(
 						DBUtilErrorCode.REQUIRED_VALUE,
-						"您未配置读取数据库jdbcUrl的信息. 正确的配置方式是给 jdbcUrl 配置上您需要读取的连接.");
+						"您未配置读取数据库jdbcUrl的信息. 正确的配置方式是给 jdbcUrl 配置上您需要读取的连接. 请检查您的配置并作出修改.");
 			}
 			Configuration connConf = Configuration
 					.from(conns.get(0).toString());
@@ -81,14 +81,14 @@ public class DrdsReader extends Reader {
 			if (null == jdbcUrls || jdbcUrls.size() != 1) {
 				throw DataXException.asDataXException(
 						DBUtilErrorCode.ILLEGAL_VALUE,
-						"您配置读取数据库jdbcUrl的数量不正确. 正确的配置方式是配置且只配置 1 个目的 jdbcUrl.");
+						"您的jdbcUrl配置信息有误, 因为您配置读取数据库jdbcUrl的数量不正确. 正确的配置方式是配置且只配置 1 个目的 jdbcUrl. 请检查您的配置并作出修改.");
 			}
 			// if have table,only one
 			List<String> tables = connConf.getList(Key.TABLE, String.class);
 			if (null != tables && tables.size() != 1) {
 				throw DataXException
 						.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-								"由于您读取数据库是drds,配置读取源表数目错误. 正确的配置方式是配置且只配置 1 个目的 table.");
+								"您的jdbcUrl配置信息有误. 由于您读取数据库是drds,配置读取源表数目错误. 正确的配置方式是配置且只配置 1 个目的 table. 请检查您的配置并作出修改.");
 
 			}
 			if (null != tables && tables.size() == 1) {
@@ -97,7 +97,7 @@ public class DrdsReader extends Reader {
 				if (null == expandedTables || expandedTables.size() != 1) {
 					throw DataXException
 							.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-									"由于您读取数据库是drds,配置读取源表数目错误. 正确的配置方式是配置且只配置 1 个目的 table.");
+									"您的jdbcUrl配置信息有误. 由于您读取数据库是drds,配置读取源表数目错误. 正确的配置方式是配置且只配置 1 个目的 table. 请检查您的配置并作出修改.");
 				}
 			}
 
@@ -107,7 +107,7 @@ public class DrdsReader extends Reader {
 			if (null != querySqls && querySqls.size() != 1) {
 				throw DataXException
 						.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-								"由于您读取数据库是drds,配置读取querySql数目错误. 正确的配置方式是配置且只配置 1 个目的 querySql.");
+								"您的querySql配置信息有误. 由于您读取数据库是drds, 配置读取querySql数目错误. 正确的配置方式是配置且只配置 1 个 querySql.  请检查您的配置并作出修改.");
 			}
 
 			// warn:other checking about table,querySql in common

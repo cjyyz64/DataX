@@ -6,28 +6,20 @@ import com.alibaba.datax.core.job.scheduler.processinner.StandAloneScheduler;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
-import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
-import com.alibaba.datax.core.util.ReflectUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.dataxservice.face.domain.ExecuteMode;
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 import org.powermock.api.mockito.PowerMockito;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyListOf;
 
-/**
- * Created by jingxing on 14-9-2.
- */
 public class StandAloneSchedulerTest extends CaseInitializer {
-	private int randomSize = 20;
 
 	@Test
 	public void testSchedule() throws NoSuchFieldException, IllegalAccessException {
@@ -35,6 +27,7 @@ public class StandAloneSchedulerTest extends CaseInitializer {
 		List<Configuration> jobList = new ArrayList<Configuration>();
 
 		List<Configuration> internal = new ArrayList<Configuration>();
+		int randomSize = 20;
 		int length = RandomUtils.nextInt(0, randomSize)+1;
 		for (int i = 0; i < length; i++) {
 			internal.add(Configuration.newDefault());

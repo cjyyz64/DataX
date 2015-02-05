@@ -1,17 +1,18 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <groupId>com.alibaba.datax</groupId>
-    <artifactId>datax-all</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-  </parent>
-  
-  <artifactId>txtfilewriter</artifactId>
-  <name>txtfilewriter</name>
-  <description>TxtFileWriter提供了本地写入TEXT功能，建议开发、测试环境使用。</description>
-  <packaging>jar</packaging>
-  
-  <dependencies>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>com.alibaba.datax</groupId>
+		<artifactId>datax-all</artifactId>
+		<version>0.0.1-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>txtfilewriter</artifactId>
+	<name>txtfilewriter</name>
+	<description>TxtFileWriter提供了本地写入TEXT功能，建议开发、测试环境使用。</description>
+	<packaging>jar</packaging>
+
+	<dependencies>
 		<dependency>
 			<groupId>com.alibaba.datax</groupId>
 			<artifactId>datax-common</artifactId>
@@ -24,6 +25,11 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<groupId>com.alibaba.datax</groupId>
+			<artifactId>plugin-unstructured-storage-util</artifactId>
+			<version>${datax-project-version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
@@ -31,8 +37,10 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 		</dependency>
-		
-		
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.alibaba.datax</groupId>
 			<artifactId>simulator</artifactId>
@@ -40,8 +48,8 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-  
-  <build>
+
+	<build>
 		<plugins>
 			<!-- compiler plugin -->
 			<plugin>

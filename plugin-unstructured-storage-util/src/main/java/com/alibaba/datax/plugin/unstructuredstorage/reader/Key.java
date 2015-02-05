@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.unstructuredstorage;
+package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
 /**
  * Created by haiwei.luo on 14-12-5.
@@ -6,7 +6,7 @@ package com.alibaba.datax.plugin.unstructuredstorage;
 public class Key {
 	public static final String COLUMN = "column";
 
-	public static final String CHARSET = "charset";
+	public static final String ENCODING = "encoding";
 
 	public static final String FIELD_DELIMITER = "fieldDelimiter";
 

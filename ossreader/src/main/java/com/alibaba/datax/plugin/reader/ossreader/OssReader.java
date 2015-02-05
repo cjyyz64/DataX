@@ -5,7 +5,8 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.ossreader.util.OssUtil;
-import com.alibaba.datax.plugin.unstructuredstorage.UnstructuredStorageReaderUtil;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.Constant;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
@@ -80,7 +81,7 @@ public class OssReader extends Reader {
                         "您需要指定 object");
             }
 
-            String fieldDelimiter = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.Key.FIELD_DELIMITER);
+            String fieldDelimiter = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
             if (null == fieldDelimiter || fieldDelimiter.length() == 0) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
@@ -90,7 +91,7 @@ public class OssReader extends Reader {
             String charset = this.readerOriginConfig
                     .getString(
                             Key.ENCODING,
-                            com.alibaba.datax.plugin.unstructuredstorage.Constant.DEFAULT_CHARSET);
+                            Constant.DEFAULT_ENCODING);
             try {
                 Charsets.toCharset(charset);
             } catch (UnsupportedCharsetException uce) {
@@ -105,15 +106,15 @@ public class OssReader extends Reader {
 
 
             // 检测是column 是否为 ["*"] 若是则填为空
-            List<String> column = this.readerOriginConfig
-                    .getList(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN,String.class);
-            if (null != column && 1 == column.size() && "*".equals(column.get(0))) {
-                readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN,new ArrayList<String>());
+            List<Configuration> column = this.readerOriginConfig
+                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+            if (null != column && 1 == column.size() && ("\"*\"".equals(column.get(0).toString()) || "'*'".equals(column.get(0).toString()))) {
+                readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,new ArrayList<String>());
             } else {
                 // column: 1. index type 2.value type 3.when type is Data, may have
                 // format
                 List<Configuration> columns = this.readerOriginConfig
-                        .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.Key.COLUMN);
+                        .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
 
                 if (null == columns || columns.size() == 0) {
                     throw DataXException.asDataXException(
@@ -125,12 +126,12 @@ public class OssReader extends Reader {
                     for (Configuration eachColumnConf : columns) {
                         eachColumnConf
                                 .getNecessaryValue(
-                                        com.alibaba.datax.plugin.unstructuredstorage.Key.TYPE,
+                                        com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE,
                                         OssReaderErrorCode.REQUIRED_VALUE);
                         Integer columnIndex = eachColumnConf
-                                .getInt(com.alibaba.datax.plugin.unstructuredstorage.Key.INDEX);
+                                .getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.INDEX);
                         String columnValue = eachColumnConf
-                                .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.VALUE);
+                                .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.VALUE);
 
                         if (null == columnIndex && null == columnValue) {
                             throw DataXException.asDataXException(
@@ -153,7 +154,7 @@ public class OssReader extends Reader {
 
             // only support compress: lzo,lzop,gzip,bzip
             String compress = this.readerOriginConfig
-                    .getString(com.alibaba.datax.plugin.unstructuredstorage.Key.COMPRESS);
+                    .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
             if (null != compress) {
                 Set<String> supportedCompress = Sets.newHashSet(
                         "gzip", "bzip2");

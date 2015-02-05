@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -29,7 +31,7 @@ public final class DBUtil {
 		if (null == jdbcUrls || jdbcUrls.isEmpty()) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONF_ERROR,
-					String.format("jdbcURL in [%s] 不能为空.",
+					String.format("您的jdbcUrl的配置信息有错, 因为jdbcUrl[%s]不能为空. 请检查您的配置并作出修改.",
 							StringUtils.join(jdbcUrls, ",")));
 		}
 
@@ -60,11 +62,20 @@ public final class DBUtil {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONN_DB_ERROR,
-					String.format("无法从:%s 中找到可连接的jdbcURL.",
+					String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
 							StringUtils.join(jdbcUrls, ",")), e);
 		}
 
 	}
+
+    /**
+     * 检查slave的库中的数据是否已到凌晨00:00
+     * 如果slave同步的数据还未到00:00返回false
+     * 否则范围true
+     *
+     * @author ZiChi
+     * @version 1.0 2014-12-01
+     */
     private static boolean isSlaveBehind(Connection conn){
         try{
             ResultSet rs = query(conn, "SHOW VARIABLES LIKE 'read_only'");
@@ -97,6 +108,57 @@ public final class DBUtil {
         return false;
     }
 
+    /**
+     * 检查表是否具有insert 权限
+     * insert on *.* 或者 insert on database.* 时验证通过
+     * 当insert on database.tableName时，确保tableList中的所有table有insert 权限，验证通过
+     * 其它验证都不通过
+     *
+     * @author ZiChi
+     * @version 1.0 2015-01-28
+     */
+    public static boolean hasInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList){
+        /*准备参数*/
+        String[] urls = jdbcURL.split("/");
+        String dbName;
+        if(urls != null && urls.length !=0) {
+            dbName = urls[3];
+        }
+        else
+            return false;
+
+        String dbPattern = "`"+dbName+"`.*";
+        Collection<String> tableNames = new HashSet<String>(tableList.size());
+        tableNames.addAll(tableList);
+
+        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
+        try{
+            ResultSet rs = query(connection, "SHOW GRANTS FOR "+userName);
+            while(rs.next()){
+                String grantRecord = rs.getString("Grants for "+userName+"@%");
+                String[] params= grantRecord.split("\\`");
+                if(params != null && params.length >= 3){
+                    String tableName = params[3];
+                    if(!tableName.equals("*") && tableNames.contains(tableName))
+                        tableNames.remove(tableName);
+                }else{
+                    if(grantRecord.contains("INSERT")) {
+                        if (grantRecord.contains("*.*"))
+                            return true;
+                        else if (grantRecord.contains(dbPattern)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }catch(Exception e){
+            LOG.warn("Check the database has the Insert Privilege failed, errorMessage:[{}]",e.getMessage());
+        }
+        if(tableNames.isEmpty())
+            return true;
+        return false;
+    }
+
 	/**
 	 * Get direct JDBC connection
 	 * <p/>
@@ -118,7 +180,7 @@ public final class DBUtil {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					DBUtilErrorCode.CONN_DB_ERROR,
-					String.format("获取数据库连接失败. 连接信息是:%s .", jdbcUrl), e);
+					String.format("数据库连接失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", jdbcUrl), e);
 		}
 
 	}
@@ -249,7 +311,7 @@ public final class DBUtil {
 		} catch (SQLException e) {
 			throw DataXException
 					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-							"获取表的所有字段名称时失败.", e);
+							"获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的jdbcUrl和table信息. ", e);
 		} finally {
 			DBUtil.closeDBResources(rs, statement, conn);
 		}
@@ -302,7 +364,7 @@ public final class DBUtil {
 		} catch (SQLException e) {
 			throw DataXException
 					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-							"获取表的字段的元信息时失败.", e);
+							"获取表的字段的元信息时失败. 出现该错误说明底层服务不可用，请联系旺旺:askdatax或者datax团队的同学.", e);
 		} finally {
 			DBUtil.closeDBResources(rs, statement, null);
 		}
@@ -430,7 +492,7 @@ public final class DBUtil {
         } catch (SQLException e) {
             throw DataXException
                     .asDataXException(DBUtilErrorCode.SET_SESSION_ERROR, String
-                                    .format("执行 session 设置失败. 上下文信息是:[%s] .", message),
+                                    .format("session配置有误. 因为根据您的配置执行 session 设置失败. 上下文信息是:[%s]. 请检查您的配置并作出修改.", message),
                             e);
         }
 
@@ -441,7 +503,7 @@ public final class DBUtil {
             } catch (SQLException e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.SET_SESSION_ERROR, String.format(
-                                "执行 session 设置失败. 上下文信息是:[%s] .", message), e);
+                                "session配置有误. 因为根据您的配置执行 session 设置失败. 上下文信息是:[%s]. 请检查您的配置并作出修改.", message), e);
             }
         }
         DBUtil.closeDBResources(stmt, null);

@@ -1,15 +1,12 @@
 package com.alibaba.datax.core.scheduler.standalone;
 
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 
 import java.util.List;
 
-/**
- * Created by jingxing on 14-9-4.
- */
 public class StandAloneTestJobCollector extends AbstractCollector {
 
     public void registerCommunication(List<Configuration> configurationList) {

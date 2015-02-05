@@ -4,16 +4,13 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.statistics.container.report.ProcessInnerReporter;
 import com.alibaba.datax.core.util.ReflectUtil;
-import com.alibaba.datax.dataxservice.face.domain.State;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 
-/**
- * Created by hongjiao.hj on 2014/12/21.
- */
 public class ProcessInnerReporterTest {
 
     @Test

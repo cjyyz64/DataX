@@ -22,7 +22,8 @@ public enum DBUtilErrorCode implements ErrorCode {
     TABLE_QUERYSQL_MISSING("DBUtilErrorCode-09", "您配置错误. table和querySql 应该并且只能配置一个."),
 
     // only for writer
-    WRITE_DATA_ERROR("DBUtilErrorCode-05", "往您配置的写入表中写入数据时失败."),;
+    WRITE_DATA_ERROR("DBUtilErrorCode-05", "往您配置的写入表中写入数据时失败."),
+    NO_INSERT_PRIVILEGE("DBUtilErrorCode-05","数据库没有写权限，请联系DBA"),;
 
     private final String code;
 
