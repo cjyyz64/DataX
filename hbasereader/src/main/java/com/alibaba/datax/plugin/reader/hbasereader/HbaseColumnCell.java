@@ -4,6 +4,7 @@ import com.alibaba.datax.common.base.BaseObject;
 import com.alibaba.datax.plugin.reader.hbasereader.util.HbaseUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.hadoop.hbase.util.Bytes;
 
 /**
  * 描述 hbasereader 插件中，column 配置中的一个单元项实体
@@ -30,10 +31,10 @@ public class HbaseColumnCell extends BaseObject {
         this.columnType = builder.columnType;
 
         //columnName 和 columnValue 必须有一个为 null
-        Validate.isTrue(builder.columnName == null || builder.columnValue == null, "Hbasereader  中，column 不能同时配置 列名称 和 列值,二者选其一.");
+        Validate.isTrue(builder.columnName == null || builder.columnValue == null, "Hbasereader 中，column 不能同时配置 列名称 和 列值,二者选其一.");
 
         //columnName 和 columnValue 不能都为 null
-        Validate.isTrue(builder.columnName != null || builder.columnValue != null, "Hbasereader  中，column 需要配置 列名称 或者 列值, 二者选其一.");
+        Validate.isTrue(builder.columnName != null || builder.columnValue != null, "Hbasereader 中，column 需要配置 列名称 或者 列值, 二者选其一.");
 
         if (builder.columnName != null) {
             this.isConstant = false;
@@ -48,43 +49,16 @@ public class HbaseColumnCell extends BaseObject {
                         && StringUtils.isNotBlank(cfAndQualifier[0])
                         && StringUtils.isNotBlank(cfAndQualifier[1]), promptInfo);
 
-                this.cf = cfAndQualifier[0].trim().getBytes();
-                this.qualifier = cfAndQualifier[1].trim().getBytes();
+                this.cf = Bytes.toBytes(cfAndQualifier[0].trim());
+                this.qualifier = Bytes.toBytes(cfAndQualifier[1].trim());
             }
         } else {
             this.isConstant = true;
             this.columnValue = builder.columnValue;
         }
-    }
 
-    public static class Builder {
-        private ColumnType columnType;
-        private String columnName;
-        private String columnValue;
-
-        private String dateformat;
-
-        public Builder(ColumnType columnType) {
-            this.columnType = columnType;
-        }
-
-        public Builder columnName(String columnName) {
-            this.columnName = columnName;
-            return this;
-        }
-
-        public Builder columnValue(String columnValue) {
-            this.columnValue = columnValue;
-            return this;
-        }
-
-        public Builder dateformat(String dateformat) {
-            this.dateformat = dateformat;
-            return this;
-        }
-
-        public HbaseColumnCell build() {
-            return new HbaseColumnCell(this);
+        if (builder.dateformat != null) {
+            this.dateformat = builder.dateformat;
         }
     }
 
@@ -114,5 +88,37 @@ public class HbaseColumnCell extends BaseObject {
 
     public boolean isConstant() {
         return isConstant;
+    }
+
+    // 内部 builder 类
+    public static class Builder {
+        private ColumnType columnType;
+        private String columnName;
+        private String columnValue;
+
+        private String dateformat;
+
+        public Builder(ColumnType columnType) {
+            this.columnType = columnType;
+        }
+
+        public Builder columnName(String columnName) {
+            this.columnName = columnName;
+            return this;
+        }
+
+        public Builder columnValue(String columnValue) {
+            this.columnValue = columnValue;
+            return this;
+        }
+
+        public Builder dateformat(String dateformat) {
+            this.dateformat = dateformat;
+            return this;
+        }
+
+        public HbaseColumnCell build() {
+            return new HbaseColumnCell(this);
+        }
     }
 }

@@ -14,7 +14,6 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +41,7 @@ public class MutiVersionReader extends HbaseAbstractReader {
     private void checkMaxVersion(int maxVersion) {
         if (maxVersion != -1 && maxVersion < 2) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE,
-                    "您配置的为 多版本读取模式（mutiVersion），但是 maxVersion 值不合法。maxVersion 的正确配置方式是： 配合 mode = mutiVersion 时使用，指明需要读取的版本个数。如果为-1: 表示去读全部版本; 不能为0或1; >1 表示最多读取对应个数的版本数(不能超过 Integer 的最大值)");
+                    "您配置的为 多版本读取模式（multiVersion），但是 maxVersion 值不合法。maxVersion 的正确配置方式是： 配合 mode = mutiVersion 时使用，指明需要读取的版本个数。如果为-1: 表示去读全部版本; 不能为0或1; >1 表示最多读取对应个数的版本数(不能超过 Integer 的最大值)");
         }
     }
 
@@ -61,7 +60,7 @@ public class MutiVersionReader extends HbaseAbstractReader {
         record.addColumn(new StringColumn(column));
         record.addColumn(new LongColumn(timestamp));
 
-        super.doFillRecord(keyValue.getValue(), columnCell.getColumnType(), super.isBinaryRowkey,
+        super.doFillRecord(keyValue.getValue(), columnCell.getColumnType(), false,
                 super.encoding, columnCell.getDateformat(), record);
     }
 
@@ -77,9 +76,9 @@ public class MutiVersionReader extends HbaseAbstractReader {
 
     @Override
     public boolean fetchLine(Record record) throws Exception {
-        Result result = null;
+        Result result;
         if (this.kvList.size() == this.currentReadPosition) {
-            result = getNextHbaseRow();
+            result = super.getNextHbaseRow();
             if (result == null) {
                 return false;
             }
@@ -92,41 +91,25 @@ public class MutiVersionReader extends HbaseAbstractReader {
             this.currentReadPosition = 0;
         }
 
-        KeyValue keyValue = this.kvList.get(this.currentReadPosition);
-        convertKVToLine(keyValue, record);
-        this.currentReadPosition++;
+        try {
+            KeyValue keyValue = this.kvList.get(this.currentReadPosition);
+            convertKVToLine(keyValue, record);
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            this.currentReadPosition++;
+        }
 
         return true;
     }
 
     @Override
-    public void initScan(Scan scan) {
+    public void setMaxVersions(Scan scan) {
         if (this.maxVersion == -1 || this.maxVersion == Integer.MAX_VALUE) {
             scan.setMaxVersions();
         } else {
             scan.setMaxVersions(this.maxVersion);
-
         }
     }
 
-    private Result getNextHbaseRow() throws IOException {
-        Result result;
-        try {
-            result = super.resultScanner.next();
-        } catch (IOException e) {
-            if (super.lastResult != null) {
-                super.scan.setStartRow(super.lastResult.getRow());
-            }
-            super.resultScanner = super.htable.getScanner(scan);
-            result = super.resultScanner.next();
-            if (super.lastResult != null && Bytes.equals(super.lastResult.getRow(), result.getRow())) {
-                result = super.resultScanner.next();
-            }
-        }
-
-        super.lastResult = result;
-
-        // nay be null
-        return result;
-    }
 }

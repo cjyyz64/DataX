@@ -9,9 +9,6 @@ import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
-import org.apache.hadoop.hbase.util.Bytes;
-
-import java.io.IOException;
 
 public class NormalReader extends HbaseAbstractReader {
     public NormalReader(Configuration configuration) {
@@ -20,26 +17,15 @@ public class NormalReader extends HbaseAbstractReader {
 
     @Override
     public boolean fetchLine(Record record) throws Exception {
-        Result result;
-        try {
-            result = super.resultScanner.next();
-        } catch (IOException e) {
-            if (super.lastResult != null) {
-                super.scan.setStartRow(super.lastResult.getRow());
-            }
-            super.resultScanner = super.htable.getScanner(scan);
-            result = super.resultScanner.next();
-            if (super.lastResult != null && Bytes.equals(super.lastResult.getRow(), result.getRow())) {
-                result = super.resultScanner.next();
-            }
-        }
+        Result result = super.getNextHbaseRow();
+
         if (null == result) {
             return false;
         }
         super.lastResult = result;
 
         try {
-            byte[] tempValue;
+            byte[] hbaseColumnValue;
             String columnName;
             ColumnType columnType;
 
@@ -63,9 +49,9 @@ public class NormalReader extends HbaseAbstractReader {
                     } else {
                         cf = cell.getCf();
                         qualifier = cell.getQualifier();
-                        tempValue = result.getValue(cf, qualifier);
+                        hbaseColumnValue = result.getValue(cf, qualifier);
 
-                        doFillRecord(tempValue, columnType, false, super.encoding,
+                        doFillRecord(hbaseColumnValue, columnType, false, super.encoding,
                                 cell.getDateformat(), record);
                     }
                 }
@@ -82,7 +68,7 @@ public class NormalReader extends HbaseAbstractReader {
     }
 
     @Override
-    public void initScan(Scan scan) {
+    public void setMaxVersions(Scan scan) {
         // do nothing
     }
 

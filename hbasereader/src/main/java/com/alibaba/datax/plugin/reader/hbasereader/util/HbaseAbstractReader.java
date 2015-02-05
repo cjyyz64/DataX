@@ -46,7 +46,7 @@ public abstract class HbaseAbstractReader {
 
     public abstract boolean fetchLine(Record record) throws Exception;
 
-    public abstract void initScan(Scan scan);
+    public abstract void setMaxVersions(Scan scan);
 
     public void prepare(List<HbaseColumnCell> hbaseColumnCells) throws Exception {
         this.hbaseColumnCells = hbaseColumnCells;
@@ -70,7 +70,7 @@ public abstract class HbaseAbstractReader {
             }
         }
 
-        initScan(this.scan);
+        setMaxVersions(this.scan);
 
         this.scan.setCaching(this.scanCache);
         this.resultScanner = this.htable.getScanner(this.scan);
@@ -132,5 +132,26 @@ public abstract class HbaseAbstractReader {
             default:
                 throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
         }
+    }
+
+    protected Result getNextHbaseRow() throws IOException {
+        Result result;
+        try {
+            result = resultScanner.next();
+        } catch (IOException e) {
+            if (lastResult != null) {
+                scan.setStartRow(lastResult.getRow());
+            }
+            resultScanner = htable.getScanner(scan);
+            result = resultScanner.next();
+            if (lastResult != null && Bytes.equals(lastResult.getRow(), result.getRow())) {
+                result = resultScanner.next();
+            }
+        }
+
+        lastResult = result;
+
+        // nay be null
+        return result;
     }
 }
