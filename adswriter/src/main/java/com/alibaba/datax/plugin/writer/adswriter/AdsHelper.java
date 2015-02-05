@@ -138,21 +138,21 @@ public class AdsHelper {
                 try {
                     rs.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (connection != null) {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
         }
@@ -249,21 +249,21 @@ public class AdsHelper {
                 try {
                     rs.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (connection != null) {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
         }
@@ -325,8 +325,6 @@ public class AdsHelper {
 
             if (state.equals("SUCCEEDED")) {
                 return true;
-            } else if (state.equals("FAILED")) {
-                throw new AdsException(AdsException.JOB_FAILED, "Job failed.", null);
             } else {
                 return false;
             }
@@ -342,21 +340,21 @@ public class AdsHelper {
                 try {
                     rs.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
             if (connection != null) {
                 try {
                     connection.close();
                 } catch (SQLException e) {
-                    throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+                    // Ignore exception
                 }
             }
         }
