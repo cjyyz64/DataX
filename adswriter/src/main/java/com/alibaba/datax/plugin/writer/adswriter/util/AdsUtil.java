@@ -70,7 +70,7 @@ public class AdsUtil {
         return new AdsHelper(adsUrl,userName,password,schema);
     }
 
-    /*TODO 生成ODPSWriter Plugin所需要的配置文件
+    /*生成ODPSWriter Plugin所需要的配置文件
     * */
     public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
         /*TODO 需要的参数还却column list*/
@@ -85,6 +85,14 @@ public class AdsUtil {
         }
         newConfig.set(Key.COLUMN,allColumns);
         return newConfig;
+    }
+
+    /*生成ADS数据倒入时的source_path
+    * */
+    public static String generateSourcePath(String project, String tmpOdpsTableName){
+        StringBuilder builder = new StringBuilder();
+        builder.append("odps://").append(project).append("/").append(tmpOdpsTableName);
+        return builder.toString();
     }
 
 }

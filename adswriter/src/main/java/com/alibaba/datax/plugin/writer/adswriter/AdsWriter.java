@@ -29,6 +29,7 @@ public class AdsWriter extends Writer {
         private Configuration originalConfig = null;
         private AdsHelper adsHelper;
         private final int ODPSOVERTIME = 10000;
+        private String odpsTableName;
 
         @Override
         public void init() {
@@ -43,18 +44,17 @@ public class AdsWriter extends Writer {
             String accessId = this.originalConfig.getString(Key.ACCESS_ID);
             String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
             String project = this.originalConfig.getString(Key.PROJECT);
-            String odpsTableName;
             TableMeta tableMeta;
             Account odpsAccount = new AliyunAccount(accessId,accessKey);
             Odps odps = new Odps(odpsAccount);
             odps.setEndpoint(endPoint);
 
             try {
-                String adsTable = originalConfig.getString(Key.ADS_TABLE);
-                int lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
+                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                int lifeCycle = this.originalConfig.getInt(Key.Life_CYCLE);
                 TableInfo tableInfo = adsHelper.getTableInfo(adsTable);
                 tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
-                odpsTableName = tableMeta.getTableName();
+                this.odpsTableName = tableMeta.getTableName();
                 String sql = tableMeta.toDDL();
 //                //创建odps表
                 Instance instance = SQLTask.run(odps,project,sql,null,null);
@@ -75,7 +75,7 @@ public class AdsWriter extends Writer {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
 
-            Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
+            Configuration newConf = AdsUtil.generateConf(this.originalConfig,this.odpsTableName,tableMeta);
             odpsWriterJobProxy.setPluginJobConf(newConf);
             odpsWriterJobProxy.init();
         }
@@ -96,8 +96,11 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
-            String table = null;
-            String sourcePath = null;
+            String dbName = this.originalConfig.getString(Key.SCHEMA);
+            String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+            String table = dbName+adsTable;
+            String project = this.originalConfig.getString(Key.PROJECT);
+            String sourcePath = AdsUtil.generateSourcePath(project,this.odpsTableName);
             boolean overwrite = false;
             try {
                 String id = adsHelper.loadData(table,sourcePath,overwrite);

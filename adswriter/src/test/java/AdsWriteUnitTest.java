@@ -5,6 +5,7 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.TableMetaHelper;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.OdpsException;
@@ -63,5 +64,13 @@ public class AdsWriteUnitTest {
         } catch (InterruptedException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
         }
+    }
+
+    @Test
+    public void generateSourcePathTest(){
+        String project = "testProject";
+        String tmpOdpsTableName = "tmpOdpsTableName";
+        String sourcePath = AdsUtil.generateSourcePath(project,tmpOdpsTableName);
+        assertNotNull(sourcePath);
     }
 }
