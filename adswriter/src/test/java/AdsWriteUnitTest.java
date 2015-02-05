@@ -73,4 +73,18 @@ public class AdsWriteUnitTest {
         String sourcePath = AdsUtil.generateSourcePath(project,tmpOdpsTableName);
         assertNotNull(sourcePath);
     }
+    @Test
+    public void adsHelpCheckTest() {
+        String adsUrl = "10.101.92.40:9999";
+        String userName = "gq5FDS2IgSWqXzTu";
+        String password = "xNXmuBr4dvn3BNLLzWZEAerpHqREto";
+        String schema = "btest";
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema);
+        String id = "LDDT-dailybuild-btest__builder_test_table2-20150205165450462";
+        try {
+            adsHelper.checkLoadDataJobStatus(id);
+        } catch (AdsException e) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
+        }
+    }
 }

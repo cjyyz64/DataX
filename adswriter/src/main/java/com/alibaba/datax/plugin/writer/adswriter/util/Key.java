@@ -27,4 +27,6 @@ public final class Key {
 
     public final static String COLUMN = "column";
 
+    public final static String PARTITION = "partition";
+
 }

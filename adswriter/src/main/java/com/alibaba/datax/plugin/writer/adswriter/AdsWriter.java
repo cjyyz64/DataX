@@ -60,12 +60,12 @@ public class AdsWriter extends Writer {
                 Instance instance = SQLTask.run(odps,project,sql,null,null);
                 String id = instance.getId();
                 boolean terminated = false;
-                int time = 0;
-                while(!terminated && time < ODPSOVERTIME)
-                {
-                    Thread.sleep(1000);
-                    terminated = instance.isTerminated();
-                    time += 1000;
+                    int time = 0;
+                    while(!terminated && time < ODPSOVERTIME)
+                    {
+                        Thread.sleep(1000);
+                        terminated = instance.isTerminated();
+                        time += 1000;
                 }
             } catch (AdsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR,e);
@@ -98,13 +98,14 @@ public class AdsWriter extends Writer {
         public void post() {
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project = this.originalConfig.getString(Key.PROJECT);
+            String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,this.odpsTableName);
             boolean overwrite = false;
             try {
-                String id = adsHelper.loadData(table,sourcePath,overwrite);
+                String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
                 boolean terminated = false;
                 int time = 0;
-                while(!terminated && time < ODPSOVERTIME)
+                while(!terminated)
                 {
                     Thread.sleep(1000);
                     terminated = adsHelper.checkLoadDataJobStatus(id);
