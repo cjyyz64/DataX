@@ -22,6 +22,13 @@
 			</includes>
 			<outputDirectory>plugin/writer/adswriter</outputDirectory>
 		</fileSet>
+        <fileSet>
+            <directory>src/main/libs</directory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+            <outputDirectory>plugin/writer/adswriter/libs</outputDirectory>
+        </fileSet>
 	</fileSets>
 
 	<dependencySets>
