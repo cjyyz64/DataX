@@ -131,6 +131,8 @@ public class AdsWriter extends Writer {
 
         @Override
         public void init() {
+            writerSliceConfig = super.getPluginJobConf();
+            odpsWriterTaskProxy.setPluginJobConf(writerSliceConfig);
             odpsWriterTaskProxy.init();
         }
 
