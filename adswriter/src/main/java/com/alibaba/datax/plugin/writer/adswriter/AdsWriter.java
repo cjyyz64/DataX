@@ -25,7 +25,7 @@ public class AdsWriter extends Writer {
 
     public static class Job extends Writer.Job {
 
-        private OdpsWriter.Job odpsWriterProxy = new OdpsWriter.Job();
+        private OdpsWriter.Job odpsWriterJobProxy = new OdpsWriter.Job();
         private Configuration originalConfig = null;
         private AdsHelper adsHelper;
         private final int ODPSOVERTIME = 10000;
@@ -76,8 +76,8 @@ public class AdsWriter extends Writer {
             }
 
             Configuration newConf = AdsUtil.generateConf(this.originalConfig,odpsTableName,tableMeta);
-            odpsWriterProxy.setPluginJobConf(newConf);
-            odpsWriterProxy.init();
+            odpsWriterJobProxy.setPluginJobConf(newConf);
+            odpsWriterJobProxy.init();
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
@@ -85,15 +85,12 @@ public class AdsWriter extends Writer {
         public void prepare() {
 
             //倒数据到odps表中
-            this.odpsWriterProxy.prepare();
-            this.odpsWriterProxy.split(3);
-            this.odpsWriterProxy.post();
-            this.odpsWriterProxy.destroy();
+            this.odpsWriterJobProxy.prepare();
         }
 
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            return null;
+            return this.odpsWriterJobProxy.split(mandatoryNumber);
         }
 
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
@@ -117,36 +114,44 @@ public class AdsWriter extends Writer {
             } catch (InterruptedException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
+            this.odpsWriterJobProxy.post();
 
         }
 
         @Override
         public void destroy() {
+            this.odpsWriterJobProxy.destroy();
         }
 
     }
 
     public static class Task extends Writer.Task {
         private Configuration writerSliceConfig;
+        private OdpsWriter.Task odpsWriterTaskProxy = new OdpsWriter.Task();
 
         @Override
         public void init() {
+            odpsWriterTaskProxy.init();
         }
 
         @Override
         public void prepare() {
+            odpsWriterTaskProxy.prepare();
         }
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
+            odpsWriterTaskProxy.startWrite(recordReceiver);
         }
 
         @Override
         public void post() {
+            odpsWriterTaskProxy.post();
         }
 
         @Override
         public void destroy() {
+            odpsWriterTaskProxy.destroy();
         }
     }
 
