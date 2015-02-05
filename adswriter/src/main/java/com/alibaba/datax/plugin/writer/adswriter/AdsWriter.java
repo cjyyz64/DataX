@@ -96,9 +96,7 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
-            String dbName = this.originalConfig.getString(Key.SCHEMA);
-            String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
-            String table = dbName+adsTable;
+            String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project = this.originalConfig.getString(Key.PROJECT);
             String sourcePath = AdsUtil.generateSourcePath(project,this.odpsTableName);
             boolean overwrite = false;
