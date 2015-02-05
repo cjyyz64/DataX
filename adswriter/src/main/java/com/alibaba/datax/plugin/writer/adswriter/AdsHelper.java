@@ -163,12 +163,13 @@ public class AdsHelper {
      * Submit LOAD DATA command.
      * 
      * @param table The target ADS table
+     * @param partition The partition option in the form of "(partition_name,...)"
      * @param sourcePath The source path
      * @param overwrite
      * @return
      * @throws AdsException
      */
-    public String loadData(String table, String sourcePath, boolean overwrite) throws AdsException {
+    public String loadData(String table, String partition, String sourcePath, boolean overwrite) throws AdsException {
 
         if (table == null) {
             throw new AdsException(AdsException.ADS_LOADDATA_TABLE_NULL, "ADS LOAD DATA table is null.", null);
@@ -210,6 +211,9 @@ public class AdsHelper {
         }
         sb.append(" INTO TABLE ");
         sb.append(schema + "." + table);
+        if (partition != null && !partition.trim().equals("")) {
+            sb.append(" PARTITION " + partition);
+        }
 
         Connection connection = null;
         Statement statement = null;
