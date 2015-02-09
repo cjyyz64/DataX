@@ -60,6 +60,8 @@
             // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
             // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
             // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+
+            // 将会影响：range 里的startRowkey/endRowkey 和 column中 name=rowkey，type=string 的行为
             "isBinaryRowkey":true
         }
     }
