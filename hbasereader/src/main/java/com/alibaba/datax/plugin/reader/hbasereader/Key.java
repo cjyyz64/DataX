@@ -5,20 +5,26 @@ public final class Key {
     public final static String HBASE_CONFIG = "hbaseConfig";
 
     /**
-     * mode 可以取 normal 或者 multiVersion 两个值，默认为 normal。二者区别非常大
+     * mode 可以取 normal 或者 multiVersion 两个值，无默认值。二者区别非常大
      */
     public final static String MODE = "mode";
 
     /**
-     * 配合 mode = mutiVersion 时使用，指明需要读取的版本个数。无默认值
+     * 配合 mode = multiVersion 时使用，指明需要读取的版本个数。无默认值
      * -1 表示去读全部版本
      * 不能为0，1
-     * >1表示最多读取对应个数的版本数(不能超过 Integer 的最大值)
+     * >1 表示最多读取对应个数的版本数(不能超过 Integer 的最大值)
      */
     public final static String MAX_VERSION = "maxVersion";
 
+    /**
+     * 配合 mode = multiVersion 时使用
+     */
     public final static String ROWKEY_TYPE = "rowkeyType";
 
+    /**
+     * 默认为 utf8
+     */
     public final static String ENCODING = "encoding";
 
     public final static String TABLE = "table";

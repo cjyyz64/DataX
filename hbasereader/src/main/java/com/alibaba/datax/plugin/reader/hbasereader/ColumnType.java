@@ -21,11 +21,6 @@ public enum ColumnType {
         this.typeName = typeName;
     }
 
-    @Override
-    public String toString() {
-        return this.typeName;
-    }
-
     public static ColumnType getByTypeName(String typeName) {
         for (ColumnType columnType : values()) {
             if (columnType.typeName.equalsIgnoreCase(typeName)) {
@@ -37,4 +32,8 @@ public enum ColumnType {
                 String.format("Hbasereader 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
     }
 
+    @Override
+    public String toString() {
+        return this.typeName;
+    }
 }

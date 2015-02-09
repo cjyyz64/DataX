@@ -39,7 +39,7 @@ public final class HbaseUtil {
         }
 
         List<HbaseColumnCell> hbaseColumnCells = HbaseReader.parseColumn(column);
-        if ("multiVersion".equalsIgnoreCase(mode)) {
+        if (ModeType.isMultiVersionMode(mode)) {
             HbaseUtil.checkHbaseColumnCellForMultiVersionMode(hbaseColumnCells);
         }
 
@@ -81,19 +81,23 @@ public final class HbaseUtil {
     }
 
     private static String dealMode(Configuration originalConfig) {
-        String mode = originalConfig.getString(Key.MODE, "normal");
+        String mode = originalConfig.getString(Key.MODE);
 
-        if ("normal".equalsIgnoreCase(mode)) {
+        if (ModeType.isNormalMode(mode)) {
             // normal 模式读取数据，不需要配置 maxVersion 和 rowkeyType
             String maxVersion = originalConfig.getString(Key.MAX_VERSION);
             Validate.isTrue(maxVersion == null, "您配置的是 normal 模式读取 hbase 中的数据，所以不能配置无关项：maxVersion");
 
             String rowkeyType = originalConfig.getString(Key.ROWKEY_TYPE);
             Validate.isTrue(rowkeyType == null, "您配置的是 normal 模式读取 hbase 中的数据，所以不能配置无关项：rowkeyType");
-        } else if ("multiVersion".equalsIgnoreCase(mode)) {
+        } else if (ModeType.isMultiVersionMode(mode)) {
             // multiVersion 模式读取数据，需要配置 maxVersion 和 rowkeyType
-            String maxVersion = originalConfig.getString(Key.MAX_VERSION);
+            Integer maxVersion = originalConfig.getInt(Key.MAX_VERSION);
             Validate.notNull(maxVersion, "您配置的是 multiVersion 模式读取 hbase 中的数据，所以必须配置：maxVersion");
+
+            int maxVersionValue = maxVersion.intValue();
+            boolean isMaxVersionValid = maxVersionValue == -1 || maxVersionValue > 1;
+            Validate.isTrue(isMaxVersionValid, "您配置的是 multiVersion 模式读取 hbase 中的数据，但是配置 maxVersion 的值错误了. maxVersion规定：-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal 模式读取数据，而非 multiVersion 模式读取，二者差别很大），大于1则表示读取最新的对应个数的版本");
 
             String rowkeyType = originalConfig.getString(Key.ROWKEY_TYPE);
             Validate.notNull(rowkeyType, "您配置的是 multiVersion 模式读取 hbase 中的数据，所以必须配置：rowkeyType");
@@ -114,11 +118,13 @@ public final class HbaseUtil {
 
         Map<String, String> map = null;
         try {
-            map = JSON.parseObject(hbaseConf, map.getClass());
+            map = JSON.parseObject(hbaseConf, Map.class);
         } catch (Exception e) {
             // 用户配置的hbase配置文件路径
-            LOG.warn("您配置的 hbaseConfig 是文件路径:{}, 是不推荐的行为，因为当您的这个任务迁移到其他机器运行时，很可能出现该路径不存在的错误. 建议您把此项配置改成标准的 Hbase 连接信息，请联系 Hbase PE 获取该信息.", hbaseConf);
+            LOG.warn("尝试把您配置的 hbaseConfig: {} 当成文件路径进行解析.", hbaseConf);
             conf.addResource(new Path(hbaseConf));
+
+            LOG.warn("您配置的 hbaseConfig 是文件路径, 是不推荐的行为:因为当您的这个任务迁移到其他机器运行时，很可能出现该路径不存在的错误. 建议您把此项配置改成标准的 Hbase 连接信息，请联系 Hbase PE 获取该信息.");
             return conf;
         }
 
@@ -165,19 +171,15 @@ public final class HbaseUtil {
 
     private static void check(HBaseAdmin admin, HTable htable) throws DataXException, IOException {
         if (!admin.isMasterRunning()) {
-            throw new IllegalStateException("HBase master is not running!");
+            throw new IllegalStateException("HBase master 没有运行, 请检查您的配置 或者 联系 Hbase 管理员.");
         }
         if (!admin.tableExists(htable.getTableName())) {
-            throw new IllegalStateException("HBase table " + Bytes.toString(htable.getTableName())
-                    + " is not existed!");
+            throw new IllegalStateException("HBase源头表" + Bytes.toString(htable.getTableName())
+                    + "不存在, 请检查您的配置 或者 联系 Hbase 管理员.");
         }
-        if (!admin.isTableAvailable(htable.getTableName())) {
-            throw new IllegalStateException("HBase table " + Bytes.toString(htable.getTableName())
-                    + " is not available!");
-        }
-        if (!admin.isTableEnabled(htable.getTableName())) {
-            throw new IllegalStateException("HBase table " + Bytes.toString(htable.getTableName())
-                    + " is disable!");
+        if (!admin.isTableAvailable(htable.getTableName()) || !admin.isTableEnabled(htable.getTableName())) {
+            throw new IllegalStateException("HBase源头表" + Bytes.toString(htable.getTableName())
+                    + " 不可用, 请检查您的配置 或者 联系 Hbase 管理员.");
         }
     }
 
@@ -196,6 +198,6 @@ public final class HbaseUtil {
     }
 
     public static boolean isRowkeyColumn(String columnName) {
-        return "rowkey".equalsIgnoreCase(columnName);
+        return Constant.ROWKEY_FLAG.equalsIgnoreCase(columnName);
     }
 }

@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,8 +64,9 @@ public class HbaseReader extends Reader {
             this.taskConfig = super.getPluginJobConf();
 
             this.column = this.taskConfig.getList(Key.COLUMN, Map.class);
+
             this.mode = this.taskConfig.getString(Key.MODE);
-            if ("normal".equalsIgnoreCase(this.mode)) {
+            if (ModeType.isNormalMode(this.mode)) {
                 this.hbaseAbstractReader = new NormalReader(this.taskConfig);
             } else {
                 this.hbaseAbstractReader = new MutiVersionReader(this.taskConfig);
@@ -85,7 +87,7 @@ public class HbaseReader extends Reader {
             }
 
             Record record = recordSender.createRecord();
-            boolean fetchOK = true;
+            boolean fetchOK;
             while (true) {
                 try {
                     fetchOK = this.hbaseAbstractReader.fetchLine(record);
@@ -125,7 +127,7 @@ public class HbaseReader extends Reader {
     public static List<HbaseColumnCell> parseColumn(List<Map> column) {
         List<HbaseColumnCell> hbaseColumnCells = new ArrayList<HbaseColumnCell>();
 
-        HbaseColumnCell oneColumnCell = null;
+        HbaseColumnCell oneColumnCell;
 
         for (Map<String, String> aColumn : column) {
             ColumnType type = ColumnType.getByTypeName(aColumn.get("type"));
@@ -135,6 +137,9 @@ public class HbaseReader extends Reader {
 
             if (type == ColumnType.DATE) {
                 Validate.notNull(dateformat, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
+
+                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型为时间，则要么是 type + name + format 的组合，要么是type + value + format 的组合. 而您的配置非这两种组合，请检查并修改.");
+
                 oneColumnCell = new HbaseColumnCell
                         .Builder(type)
                         .columnName(columnName)
@@ -143,6 +148,8 @@ public class HbaseReader extends Reader {
                         .build();
             } else {
                 Validate.isTrue(dateformat == null, "Hbasereader 的列配置中，如果类型不为时间，则不需要指定时间格式.");
+
+                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型不是时间，则要么是 type + name 的组合，要么是type + value 的组合. 而您的配置非这两种组合，请检查并修改.");
 
                 oneColumnCell = new HbaseColumnCell
                         .Builder(type)
