@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.csvreader.CsvReader;
+
 import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
 import org.anarres.lzo.LzopInputStream;
@@ -88,6 +89,8 @@ public class UnstructuredStorageReaderUtil {
 		// handle blank encoding
 		if (StringUtils.isBlank(encoding)) {
 			encoding = Constant.DEFAULT_ENCODING;
+			LOG.warn(String.format("您配置的encoding为[%s], 使用默认值[%s]", encoding,
+					Constant.DEFAULT_ENCODING));
 		}
 
 		List<Configuration> column = readerSliceConfig
@@ -302,18 +305,19 @@ public class UnstructuredStorageReaderUtil {
 				}
 				record.addColumn(columnGenerated);
 			}
+			recordSender.sendToWriter(record);
 		} else {
-			for (Configuration columnConfig : columnConfigs) {
-				String columnType = columnConfig
-						.getNecessaryValue(
-								Key.TYPE,
-								UnstructuredStorageReaderErrorCode.CONFIG_INVALID_EXCEPTION);
-				Integer columnIndex = columnConfig.getInt(Key.INDEX);
-				String columnConst = columnConfig.getString(Key.VALUE);
+			try {
+				for (Configuration columnConfig : columnConfigs) {
+					String columnType = columnConfig
+							.getNecessaryValue(
+									Key.TYPE,
+									UnstructuredStorageReaderErrorCode.CONFIG_INVALID_EXCEPTION);
+					Integer columnIndex = columnConfig.getInt(Key.INDEX);
+					String columnConst = columnConfig.getString(Key.VALUE);
 
-				String columnValue = null;
+					String columnValue = null;
 
-				try {
 					if (null == columnIndex && null == columnConst) {
 						throw DataXException
 								.asDataXException(
@@ -352,32 +356,58 @@ public class UnstructuredStorageReaderUtil {
 						columnGenerated = new StringColumn(columnValue);
 						break;
 					case LONG:
-						columnGenerated = new LongColumn(columnValue);
+						try {
+							columnGenerated = new LongColumn(columnValue);
+						} catch (Exception e) {
+							throw new IllegalArgumentException(String.format(
+									"类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+									"LONG"));
+						}
 						break;
 					case DOUBLE:
-						columnGenerated = new DoubleColumn(columnValue);
+						try {
+							columnGenerated = new DoubleColumn(columnValue);
+						} catch (Exception e) {
+							throw new IllegalArgumentException(String.format(
+									"类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+									"DOUBLE"));
+						}
 						break;
 					case BOOLEAN:
-						columnGenerated = new BoolColumn(columnValue);
+						try {
+							columnGenerated = new BoolColumn(columnValue);
+						} catch (Exception e) {
+							throw new IllegalArgumentException(String.format(
+									"类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+									"BOOLEAN"));
+						}
+
 						break;
 					case DATE:
-						if (columnValue == null) {
-							Date date = null;
-							columnGenerated = new DateColumn(date);
-						} else {
-							String formatString = columnConfig
-									.getString(Key.FORMAT);
-							if (null != formatString) {
-								// 用户自己配置的格式转换
-								SimpleDateFormat format = new SimpleDateFormat(
-										formatString);
-								columnGenerated = new DateColumn(
-										format.parse(columnValue));
+						try {
+							if (columnValue == null) {
+								Date date = null;
+								columnGenerated = new DateColumn(date);
 							} else {
-								// 框架尝试转换
-								columnGenerated = new DateColumn(
-										new StringColumn(columnValue).asDate());
+								String formatString = columnConfig
+										.getString(Key.FORMAT);
+								if (null != formatString) {
+									// 用户自己配置的格式转换
+									SimpleDateFormat format = new SimpleDateFormat(
+											formatString);
+									columnGenerated = new DateColumn(
+											format.parse(columnValue));
+								} else {
+									// 框架尝试转换
+									columnGenerated = new DateColumn(
+											new StringColumn(columnValue)
+													.asDate());
+								}
 							}
+						} catch (Exception e) {
+							throw new IllegalArgumentException(String.format(
+									"类型转换错误, 无法将[%s] 转换为[%s]", columnValue,
+									"DATE"));
 						}
 						break;
 					default:
@@ -392,17 +422,23 @@ public class UnstructuredStorageReaderUtil {
 
 					record.addColumn(columnGenerated);
 
-				} catch (IndexOutOfBoundsException ioe) {
-					taskPluginCollector.collectDirtyRecord(record,
-							ioe.getMessage());
-				} catch (Exception e) {
-					// 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
-					taskPluginCollector.collectDirtyRecord(record,
-							e.getMessage());
 				}
+				recordSender.sendToWriter(record);
+			} catch (IllegalArgumentException iae) {
+				taskPluginCollector
+						.collectDirtyRecord(record, iae.getMessage());
+			} catch (IndexOutOfBoundsException ioe) {
+				taskPluginCollector
+						.collectDirtyRecord(record, ioe.getMessage());
+			} catch (Exception e) {
+				if (e instanceof DataXException) {
+					throw (DataXException) e;
+				}
+				// 每一种转换失败都是脏数据处理,包括数字格式 & 日期格式
+				taskPluginCollector.collectDirtyRecord(record, e.getMessage());
 			}
 		}
-		recordSender.sendToWriter(record);
+		
 		return record;
 	}
 

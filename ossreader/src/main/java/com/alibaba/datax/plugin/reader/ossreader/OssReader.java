@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.ossreader.util.OssUtil;
+import com.alibaba.datax.plugin.unstructuredstorage.reader.Constant;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
@@ -87,11 +88,10 @@ public class OssReader extends Reader {
                         "您需要指定 fieldDelimiter");
             }
 
-            //TODO CHECK THIS
             String charset = this.readerOriginConfig
                     .getString(
                             Key.ENCODING,
-                            com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
+                            Constant.DEFAULT_ENCODING);
             try {
                 Charsets.toCharset(charset);
             } catch (UnsupportedCharsetException uce) {
@@ -106,9 +106,9 @@ public class OssReader extends Reader {
 
 
             // 检测是column 是否为 ["*"] 若是则填为空
-            List<String> column = this.readerOriginConfig
-                    .getList(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,String.class);
-            if (null != column && 1 == column.size() && "\"*\"".equals(column.get(0).toString())) {
+            List<Configuration> column = this.readerOriginConfig
+                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+            if (null != column && 1 == column.size() && ("\"*\"".equals(column.get(0).toString()) || "'*'".equals(column.get(0).toString()))) {
                 readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,new ArrayList<String>());
             } else {
                 // column: 1. index type 2.value type 3.when type is Data, may have
