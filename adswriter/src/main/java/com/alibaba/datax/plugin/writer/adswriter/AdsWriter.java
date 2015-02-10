@@ -100,7 +100,7 @@ public class AdsWriter extends Writer {
             String project = this.originalConfig.getString(Key.PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,this.odpsTableName);
-            boolean overwrite = false;
+            boolean overwrite = true;
             try {
                 String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
                 boolean terminated = false;
