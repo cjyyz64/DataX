@@ -18,6 +18,10 @@
         }
     },
     "core": {
+        "dataXServer": {
+            "address": "http://10.189.198.14/",
+            "timeout": 10000
+        },
         "transport": {
             "channel": {
                 "class": "com.alibaba.datax.core.transport.channel.memory.MemoryChannel",

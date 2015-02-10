@@ -1,6 +1,5 @@
-package com.alibaba.datax.common.util;
+package com.alibaba.datax.core.util;
 
-import com.alibaba.datax.common.exception.DataXException;
 import org.hamcrest.core.StringContains;
 import org.junit.Assert;
 import org.junit.Rule;

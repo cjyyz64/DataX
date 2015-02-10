@@ -1,7 +1,6 @@
 package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.RetryUtil;
 import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
