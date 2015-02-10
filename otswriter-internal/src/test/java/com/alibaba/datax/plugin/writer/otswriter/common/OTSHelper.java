@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.aliyun.openservices.ots.internal.ClientException;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.OTSErrorCode;
@@ -20,6 +19,7 @@ import com.aliyun.openservices.ots.internal.model.GetRangeRequest;
 import com.aliyun.openservices.ots.internal.model.GetRangeResult;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.aliyun.openservices.ots.internal.model.RangeRowQueryCriteria;
@@ -88,7 +88,7 @@ public class OTSHelper {
         
         List<String> cc = new ArrayList<String>();
         
-        for (OTSPKColumn col : conf.getPrimaryKeyColumn()) {
+        for (PrimaryKeySchema col : conf.getPrimaryKeyColumn()) {
             begin.add(new PrimaryKeyColumn(col.getName(), PrimaryKeyValue.INF_MIN));
             end.add(new PrimaryKeyColumn(col.getName(), PrimaryKeyValue.INF_MAX));
         }

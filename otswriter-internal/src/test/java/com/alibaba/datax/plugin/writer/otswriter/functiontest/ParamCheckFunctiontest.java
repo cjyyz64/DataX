@@ -26,9 +26,9 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 
@@ -100,7 +100,7 @@ public class ParamCheckFunctiontest extends BaseTest{
         lines.put("primaryKey",   "\"primaryKey\":[{\"name\":\"Uid\", \"type\":\"String\"},{\"name\":\"Pid\", \"type\":\"Int\"},{\"name\":\"Mid\", \"type\":\"Int\"},{\"name\":\"UID\", \"type\":\"String\"}]");
         lines.put("column",       "\"column\":    [{\"name\":\"attr_0\", \"type\":\"String\"}]");
         lines.put("writeMode",    "\"writeMode\":\"putRow\"");
-        lines.put("defaultTimestampInMillionSecond", "\"defaultTimestampInMillionSecond\":1450002101");
+        lines.put("defaultTimestampInMillisecond", "\"defaultTimestampInMillisecond\":1450002101");
         lines.put("mode",         "\"mode\":\"normal\"");
         return lines;
     }
@@ -127,7 +127,7 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals(tableName, conf.getTableName());
             assertEquals(OTSOpType.UPDATE_ROW, conf.getOperation());
             
-            List<OTSPKColumn> pk = conf.getPrimaryKeyColumn();
+            List<PrimaryKeySchema> pk = conf.getPrimaryKeyColumn();
             assertEquals(4, pk.size());
             assertEquals("Uid", pk.get(0).getName());
             assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
@@ -152,8 +152,8 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals(100, conf.getBatchWriteCount());
             assertEquals(5,  conf.getConcurrencyWrite());
             assertEquals(1,   conf.getIoThreadCount());
-            assertEquals(60000, conf.getSocketTimeout());
-            assertEquals(60000, conf.getConnectTimeoutInMillisecond());
+            assertEquals(10000, conf.getSocketTimeout());
+            assertEquals(10000, conf.getConnectTimeoutInMillisecond());
             assertEquals(1024*1024, conf.getRestrictConf().getRequestTotalSizeLimitation());
         }
         
@@ -171,7 +171,7 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals(tableName, conf.getTableName());
             assertEquals(OTSOpType.PUT_ROW, conf.getOperation());
             
-            List<OTSPKColumn> pk = conf.getPrimaryKeyColumn();
+            List<PrimaryKeySchema> pk = conf.getPrimaryKeyColumn();
             assertEquals(4, pk.size());
             assertEquals("Uid", pk.get(0).getName());
             assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
@@ -195,8 +195,8 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals(100, conf.getBatchWriteCount());
             assertEquals(5,  conf.getConcurrencyWrite());
             assertEquals(1,   conf.getIoThreadCount());
-            assertEquals(60000, conf.getSocketTimeout());
-            assertEquals(60000, conf.getConnectTimeoutInMillisecond());
+            assertEquals(10000, conf.getSocketTimeout());
+            assertEquals(10000, conf.getConnectTimeoutInMillisecond());
             assertEquals(1024*1024, conf.getRestrictConf().getRequestTotalSizeLimitation());
         }
     }
@@ -474,9 +474,9 @@ public class ParamCheckFunctiontest extends BaseTest{
      */
     @Test
     public void testCase8() {
-        invalidPrimaryKey("{\"type\":\"String\"}", "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
-        invalidPrimaryKey("{\"name\":\"Uid\"}", "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
-        invalidPrimaryKey("{}", "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
+        invalidPrimaryKey("{\"type\":\"String\"}", "The 'name' fileds is missing in json map of 'column'.");
+        invalidPrimaryKey("{\"name\":\"Uid\"}", "The 'type' fileds is missing in json map of 'column'.");
+        invalidPrimaryKey("{}", "The 'type' fileds is missing in json map of 'column'.");
         invalidPrimaryKey("{\"name\":\"Uid\",\"type\":\"String\", \"value\":\"\"}", "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
         invalidPrimaryKey("{\"name\":\"Uid\", \"type\":\"Integer\"}", "Primary key type only support 'string', 'int' and 'binary', not support 'Integer'.");
         invalidPrimaryKey("{\"name\":\"\", \"type\":\"String\"}", "The name of item can not be a empty string in 'primaryKey'.");
@@ -590,9 +590,9 @@ public class ParamCheckFunctiontest extends BaseTest{
      */
     @Test
     public void testCase9() throws Exception {
-        invalidColumnByNormal("{\"type\":\"String\"}", "The only support 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByNormal("{\"name\":\"Uid\"}", "The only support 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByNormal("{}", "The only support 'name' and 'type' fileds in json map of 'column'.");
+        invalidColumnByNormal("{\"type\":\"String\"}", "The 'name' fileds is missing in json map of 'column'.");
+        invalidColumnByNormal("{\"name\":\"Uid\"}", "The 'type' fileds is missing in json map of 'column'.");
+        invalidColumnByNormal("{}", "The 'type' fileds is missing in json map of 'column'.");
         invalidColumnByNormal("{\"name\":\"Uid\",\"type\":\"String\", \"value\":\"\"}", "The only support 'name' and 'type' fileds in json map of 'column'.");
         invalidColumnByNormal("{\"name\":\"Uid\", \"type\":\"Integer\"}", "Column type only support 'string','int','double','bool' and 'binary', not support 'Integer'.");
         invalidColumnByNormal("{\"name\":\"\", \"type\":\"String\"}", "The name of item can not be a empty string in 'column'.");
@@ -670,42 +670,22 @@ public class ParamCheckFunctiontest extends BaseTest{
      * {\"srcName\":\"Uid\", \"name\":\"old\",  \"type\":\"String\"}{\"srcName\":\"Uid\", \"name\":\"new\",\"type\":\"Int\"}、
      * {\"srcName\":\"old\", \"name\":\"ss\",  \"type\":\"String\"}{\"srcName\":\"new\", \"name\":\"ss\", \"type\":\"String\"}，
      * 129、1000个Column
-     * 期望column解析出错，错误消息符合预期。
+     * 期望column解析正确
      * @throws Exception 
      */
     @Test
     public void testCase10() throws Exception {
-        invalidColumnByMulti("{\"type\":\"String\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"String\", \"value\":\"\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"Integer\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"\",\"type\":\"String\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"attr_0\", \"type\":\"String\"}", "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
+        invalidColumnByMulti("{\"type\":\"String\"}", "The 'name' fileds is missing in json map of 'column'.");
+        invalidColumnByMulti("{\"name\":\"Uid\"}", "The 'type' fileds is missing in json map of 'column'.");
+        invalidColumnByMulti("{}", "The 'type' fileds is missing in json map of 'column'.");
+        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"String\", \"value\":\"\"}", "The 'srcName' fileds is missing in json map of 'column'.");
+        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"Integer\"}", "The 'srcName' fileds is missing in json map of 'column'.");
+        invalidColumnByMulti("{\"name\":\"\",\"type\":\"String\"}", "The name of item can not be a empty string in 'column'.");
+        invalidColumnByMulti("{\"name\":\"attr_0\", \"type\":\"String\"}", "The 'srcName' fileds is missing in json map of 'column'.");
         invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"Uid\",\"type\":\"Integer\"}", "Column type only support 'string','int','double','bool' and 'binary', not support 'Integer'.");
         invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"\",  \"type\":\"String\"}", "The name of item can not be a empty string in 'column'.");
         invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"old\",  \"type\":\"String\"}{\"srcName\":\"Uid\", \"name\":\"new\",\"type\":\"Int\"}", "Duplicate src name in 'column', src name : Uid .");
         invalidColumnByMulti("{\"srcName\":\"old\", \"name\":\"ss\",  \"type\":\"String\"}{\"srcName\":\"new\", \"name\":\"ss\", \"type\":\"String\"}", "Duplicate item in 'column', column name : ss .");
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 129; i++) {
-                sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 128) {
-                    sb.append(",");
-                }
-            }
-            invalidColumnByMulti(sb.toString(), "The input count(129) of column more than max(128).");
-        }
-        {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
-                sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 999) {
-                    sb.append(",");
-                }
-            }
-            invalidColumnByMulti(sb.toString(), "The input count(1000) of column more than max(128).");
-        }
         {
             List<OTSAttrColumn> expect = new ArrayList<OTSAttrColumn>();
             StringBuilder sb = new StringBuilder();
@@ -733,9 +713,9 @@ public class ParamCheckFunctiontest extends BaseTest{
         {
             List<OTSAttrColumn> expect = new ArrayList<OTSAttrColumn>();
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 128; i++) {
+            for (int i = 0; i < 1000; i++) {
                 sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 127) {
+                if (i < 999) {
                     sb.append(",");
                 }
                 expect.add(new OTSAttrColumn("old_"+ i, "Attr_"+ i, ColumnType.STRING));
@@ -970,7 +950,7 @@ public class ParamCheckFunctiontest extends BaseTest{
                 proxy.init(configuration);
                 fail();
             } catch (Exception e) {
-                assertEquals("The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.", e.getMessage());
+                assertEquals("The 'srcName' fileds is missing in json map of 'column'.", e.getMessage());
             }
         }
         {
@@ -987,6 +967,154 @@ public class ParamCheckFunctiontest extends BaseTest{
             } catch (Exception e) {
                 assertEquals("The only support 'name' and 'type' fileds in json map of 'column'.", e.getMessage());
             }
+        }
+    }
+    
+    /**
+     * 用户配置的PK和表中得PK顺序不一致
+     * @throws Exception 
+     */
+    @Test
+    public void testCase19() throws Exception {
+        OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"name\":\"UID\", \"type\":\"String\"},");
+        sb.append("{\"name\":\"Mid\", \"type\":\"Int\"},");
+        sb.append("{\"name\":\"Uid\", \"type\":\"String\"},");
+        sb.append("{\"name\":\"Pid\", \"type\":\"Int\"}");
+        
+        String value = sb.toString();
+        
+        {
+            Map<String, String> lines = this.getMultiVersionLines();
+            lines.put("primaryKey", "\"primaryKey\":["+ value +"]");
+            String json = this.linesToJson(lines);
+            Configuration configuration = Configuration.from(json);
+            proxy.init(configuration);
+            OTSConf conf = proxy.getOTSConf();
+            
+            assertEquals(p.getString("endpoint"), conf.getEndpoint());
+            assertEquals(p.getString("accessid"), conf.getAccessId());
+            assertEquals(p.getString("accesskey"), conf.getAccessKey());
+            assertEquals(p.getString("instance-name"), conf.getInstanceName());
+            assertEquals(tableName, conf.getTableName());
+            assertEquals(OTSOpType.UPDATE_ROW, conf.getOperation());
+            
+            List<PrimaryKeySchema> pk = conf.getPrimaryKeyColumn();
+            assertEquals(4, pk.size());
+            assertEquals("Uid", pk.get(2).getName());
+            assertEquals(PrimaryKeyType.STRING, pk.get(2).getType());
+            assertEquals("Pid", pk.get(3).getName());
+            assertEquals(PrimaryKeyType.INTEGER, pk.get(3).getType());
+            assertEquals("Mid", pk.get(1).getName());
+            assertEquals(PrimaryKeyType.INTEGER, pk.get(1).getType());
+            assertEquals("UID", pk.get(0).getName());
+            assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
+            
+            LinkedHashMap<PrimaryKeySchema, Integer> m = conf.getPkColumnMapping();
+            Set<PrimaryKeySchema> kks = m.keySet();
+            PrimaryKeySchema[] pks = kks.toArray(new PrimaryKeySchema[kks.size()]);
+            
+            assertEquals(4, pks.length);
+            assertEquals("Uid", pks[0].getName());
+            assertEquals(PrimaryKeyType.STRING, pks[0].getType());
+            assertEquals(2, m.get(pks[0]).intValue());
+            
+            assertEquals("Pid", pks[1].getName());
+            assertEquals(PrimaryKeyType.INTEGER, pks[1].getType());
+            assertEquals(3, m.get(pks[1]).intValue());
+            
+            assertEquals("Mid", pks[2].getName());
+            assertEquals(PrimaryKeyType.INTEGER, pks[2].getType());
+            assertEquals(1, m.get(pks[2]).intValue());
+            
+            assertEquals("UID", pks[3].getName());
+            assertEquals(PrimaryKeyType.STRING, pks[3].getType());
+            assertEquals(0, m.get(pks[3]).intValue());
+            
+            List<OTSAttrColumn> attr = conf.getAttributeColumn();
+            assertEquals(1, attr.size());
+            assertEquals("attr:0", attr.get(0).getSrcName());
+            assertEquals("attr_0", attr.get(0).getName());
+            assertEquals(ColumnType.STRING, attr.get(0).getType());
+            
+            assertEquals(-1, conf.getTimestamp());
+            assertEquals(OTSMode.MULTI_VERSION, conf.getMode());
+            
+            assertEquals(18,  conf.getRetry());
+            assertEquals(100, conf.getSleepInMillisecond());
+            assertEquals(100, conf.getBatchWriteCount());
+            assertEquals(5,  conf.getConcurrencyWrite());
+            assertEquals(1,   conf.getIoThreadCount());
+            assertEquals(10000, conf.getSocketTimeout());
+            assertEquals(10000, conf.getConnectTimeoutInMillisecond());
+            assertEquals(1024*1024, conf.getRestrictConf().getRequestTotalSizeLimitation());
+        }
+        
+        {
+            Map<String, String> lines = this.getNormalLines();
+            lines.put("primaryKey", "\"primaryKey\":["+ value +"]");
+            String json = this.linesToJson(lines);
+            Configuration configuration = Configuration.from(json);
+            proxy.init(configuration);
+            OTSConf conf = proxy.getOTSConf();
+            
+            assertEquals(p.getString("endpoint"), conf.getEndpoint());
+            assertEquals(p.getString("accessid"), conf.getAccessId());
+            assertEquals(p.getString("accesskey"), conf.getAccessKey());
+            assertEquals(p.getString("instance-name"), conf.getInstanceName());
+            assertEquals(tableName, conf.getTableName());
+            assertEquals(OTSOpType.PUT_ROW, conf.getOperation());
+            
+            List<PrimaryKeySchema> pk = conf.getPrimaryKeyColumn();
+            assertEquals(4, pk.size());
+            assertEquals("Uid", pk.get(2).getName());
+            assertEquals(PrimaryKeyType.STRING, pk.get(2).getType());
+            assertEquals("Pid", pk.get(3).getName());
+            assertEquals(PrimaryKeyType.INTEGER, pk.get(3).getType());
+            assertEquals("Mid", pk.get(1).getName());
+            assertEquals(PrimaryKeyType.INTEGER, pk.get(1).getType());
+            assertEquals("UID", pk.get(0).getName());
+            assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
+            
+            LinkedHashMap<PrimaryKeySchema, Integer> m = conf.getPkColumnMapping();
+            Set<PrimaryKeySchema> kks = m.keySet();
+            PrimaryKeySchema[] pks = kks.toArray(new PrimaryKeySchema[kks.size()]);
+            
+            assertEquals(4, pks.length);
+            assertEquals("Uid", pks[0].getName());
+            assertEquals(PrimaryKeyType.STRING, pks[0].getType());
+            assertEquals(2, m.get(pks[0]).intValue());
+            
+            assertEquals("Pid", pks[1].getName());
+            assertEquals(PrimaryKeyType.INTEGER, pks[1].getType());
+            assertEquals(3, m.get(pks[1]).intValue());
+            
+            assertEquals("Mid", pks[2].getName());
+            assertEquals(PrimaryKeyType.INTEGER, pks[2].getType());
+            assertEquals(1, m.get(pks[2]).intValue());
+            
+            assertEquals("UID", pks[3].getName());
+            assertEquals(PrimaryKeyType.STRING, pks[3].getType());
+            assertEquals(0, m.get(pks[3]).intValue());
+            
+            List<OTSAttrColumn> attr = conf.getAttributeColumn();
+            assertEquals(1, attr.size());
+            assertEquals("attr_0", attr.get(0).getName());
+            assertEquals(ColumnType.STRING, attr.get(0).getType());
+            
+            assertEquals(1450002101, conf.getTimestamp());
+            assertEquals(OTSMode.NORMAL, conf.getMode());
+            
+            assertEquals(18,  conf.getRetry());
+            assertEquals(100, conf.getSleepInMillisecond());
+            assertEquals(100, conf.getBatchWriteCount());
+            assertEquals(5,  conf.getConcurrencyWrite());
+            assertEquals(1,   conf.getIoThreadCount());
+            assertEquals(10000, conf.getSocketTimeout());
+            assertEquals(10000, conf.getConnectTimeoutInMillisecond());
+            assertEquals(1024*1024, conf.getRestrictConf().getRequestTotalSizeLimitation());
         }
     }
 }

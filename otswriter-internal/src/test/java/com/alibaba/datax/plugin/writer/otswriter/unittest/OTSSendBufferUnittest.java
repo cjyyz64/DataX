@@ -21,12 +21,15 @@ import com.alibaba.datax.plugin.writer.otswriter.common.DataChecker;
 import com.alibaba.datax.plugin.writer.otswriter.common.OTSHelper;
 import com.alibaba.datax.plugin.writer.otswriter.common.OTSRowBuilder;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector;
+import com.alibaba.datax.plugin.writer.otswriter.common.Utils;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
+import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
 import com.aliyun.openservices.ots.internal.MockOTSClient;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
@@ -74,27 +77,27 @@ public class OTSSendBufferUnittest {
         
         OTSConf conf = Conf.getConf(tableName, pk, attr, type);
         conf.setRetry(5);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(10000, exception, prepare);
-        OTSSendBuffer buffer = new OTSSendBuffer(ots, collector, conf);
-        
+        CollectorUtil.init(collector);
+        OTSSendBuffer buffer = new OTSSendBuffer(ots, conf);
         for (Record r :  input) {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPrimaryKeyColumn(), 
+                    conf.getPkColumnMapping(), 
                     conf.getAttributeColumn(), 
                     r,
-                    conf.getTimestamp(),
-                    collector);
+                    conf.getTimestamp());
             buffer.write(line);
         }
         buffer.close();
         
         assertEquals(0, collector.getContent().size());
         assertEquals(true, DataChecker.checkRow(OTSHelper.getAllData(ots, conf), expect, false));
-        assertEquals(true, DataChecker.checkRowsCountPerRequest(rows, ots.getRowsCountPerRequest())); 
+        assertEquals(true, DataChecker.checkRowsCountPerRequest( ots.getRowsCountPerRequest(), rows)); 
     }
     
     public static void testForMultiVersion(
@@ -109,13 +112,26 @@ public class OTSSendBufferUnittest {
         conf.setMode(OTSMode.MULTI_VERSION);
         conf.getAttributeColumn().add(new OTSAttrColumn("attr_1", "attr_1", ColumnType.STRING));
         conf.setRetry(5);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, exception, prepare);
-        OTSSendBuffer buffer = new OTSSendBuffer(ots, collector, conf);
+        CollectorUtil.init(collector);
+        OTSSendBuffer buffer = new OTSSendBuffer(ots, conf);
+        
+        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
+        for (OTSAttrColumn c : conf.getAttributeColumn()) {
+            attrColumnMapping.put(c.getSrcName(), c);
+        }
         
         for (List<Record> en : input) {
-            OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(conf.getTableName(), conf.getOperation(), conf.getPrimaryKeyColumn(), conf.getAttributeColumn(), en, collector);
+            OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
+                    conf.getTableName(), 
+                    conf.getOperation(), 
+                    conf.getPkColumnMapping(), 
+                    attrColumnMapping, 
+                    Common.getPKFromRecord(conf.getPkColumnMapping(), en.get(0)),
+                    en);
             buffer.write(line);
         }
         buffer.close();
@@ -128,20 +144,21 @@ public class OTSSendBufferUnittest {
     public static void testIllegal(Exception exception, Map<PrimaryKey, Row> prepare, OTSOpType type, List<Record> input, List<Record> expect, List<Integer> rows) throws Exception {
         OTSConf conf = Conf.getConf(tableName, pk, attr, type);
         conf.setRetry(5);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, exception, prepare);
-        OTSSendBuffer buffer = new OTSSendBuffer(ots, collector, conf);
+        CollectorUtil.init(collector);
+        OTSSendBuffer buffer = new OTSSendBuffer(ots, conf);
         
         for (Record r :  input) {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPrimaryKeyColumn(), 
+                    conf.getPkColumnMapping(), 
                     conf.getAttributeColumn(), 
                     r,
-                    conf.getTimestamp(),
-                    collector);
+                    conf.getTimestamp());
             buffer.write(line);
         }
         buffer.close();
@@ -163,11 +180,6 @@ public class OTSSendBufferUnittest {
             r.addColumn(new StringColumn("hello"));
             r.addColumn(new StringColumn());
             input.add(r);
-            
-            Row row =  OTSRowBuilder.newInstance()
-                    .addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("hello"))
-                    .toRow();
-            expect.add(row);
         }
         rowsExpect.add(1);
         test(null, null, OTSOpType.PUT_ROW, input, expect, rowsExpect);
@@ -184,11 +196,6 @@ public class OTSSendBufferUnittest {
             r.addColumn(new StringColumn("hello"));
             r.addColumn(new StringColumn());
             input.add(r);
-            
-            Row row =  OTSRowBuilder.newInstance()
-                    .addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("hello"))
-                    .toRow();
-            expect.add(row);
         }
         rowsExpect.add(1);
         test(null, null, OTSOpType.UPDATE_ROW, input, expect, rowsExpect);
@@ -293,6 +300,7 @@ public class OTSSendBufferUnittest {
             expect.add(row);
         }
         rowsExpect.add(100);
+        rowsExpect.add(1);
         test(null, null, OTSOpType.PUT_ROW, input, expect, rowsExpect);
     }
     // 输入：100行数据，采用UpdateRow的方式，无重复数据，期望：该行数据被成功写入，且只调用1次BatchWriteRow接口，每次调用API写入的行数为100（覆盖场景：1.2、3.2、2.1， 测试多行数据正常逻辑是否符合预期）
@@ -339,14 +347,14 @@ public class OTSSendBufferUnittest {
             r.addColumn(new StringColumn("hello_" + i));
             r.addColumn(new StringColumn("world_" + i));
             input.add(r);
-            
             Row row =  OTSRowBuilder.newInstance()
-                    .addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("hello_" + i))
-                    .addAttrColumn("attr_0", ColumnValue.fromString("world_" + i), 1)
+                    .addPrimaryKeyColumn("pk_0", PrimaryKeyValue.fromString("hello_99"))
+                    .addAttrColumn("attr_0", ColumnValue.fromString("world_99"), 1)
                     .toRow();
             expect.add(row);
         }
         rowsExpect.add(100);
+        rowsExpect.add(1);
         test(null, null, OTSOpType.UPDATE_ROW, input, expect, rowsExpect);
     }
     // 150行
@@ -403,7 +411,8 @@ public class OTSSendBufferUnittest {
             expect.add(row);
         }
         rowsExpect.add(100);
-        rowsExpect.add(50);
+        rowsExpect.add(100);
+        rowsExpect.add(1);
         test(null, null, OTSOpType.PUT_ROW, input, expect, rowsExpect);
     }
     
@@ -435,7 +444,6 @@ public class OTSSendBufferUnittest {
     // 输入：150行数据，采用UpdateRow的方式，51行重复数据，期望：该行数据被成功写入，且只调用2次BatchWriteRow接口，每次调用API写入的行数为100、50 （覆盖场景：1.3，3.2、2.2，测试多行数据中又重复的行的计算逻辑是否符合预期）
     @Test
     public void testCase12() throws Exception {
-        
         List<Record> input = new ArrayList<Record>();
         List<Row> expect = new ArrayList<Row>();
         List<Integer> rowsExpect = new ArrayList<Integer>(); // 每轮切分的行数
@@ -461,7 +469,7 @@ public class OTSSendBufferUnittest {
             expect.add(row);
         }
         rowsExpect.add(100);
-        rowsExpect.add(50);
+        rowsExpect.add(100);
         test(null, null, OTSOpType.UPDATE_ROW, input, expect, rowsExpect);
     }
     
@@ -520,7 +528,7 @@ public class OTSSendBufferUnittest {
             rowsExpect.add(2); // 两行数据
         }
         
-        testForMultiVersion(null, null, OTSOpType.PUT_ROW, input, expect, rowsExpect);
+        testForMultiVersion(null, null, OTSOpType.UPDATE_ROW, input, expect, rowsExpect);
     }
     
     // 在Update模式下测试多版本，2行数据，每个Column都有100个版本。期望：数据被成功写入，调用一次BatchWriteRow接口

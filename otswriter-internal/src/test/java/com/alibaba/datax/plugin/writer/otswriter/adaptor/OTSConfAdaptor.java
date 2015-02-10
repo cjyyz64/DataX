@@ -10,7 +10,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -45,7 +45,7 @@ public class OTSConfAdaptor implements JsonDeserializer<OTSConf>, JsonSerializer
         json.add(TIMESTAMP, new JsonPrimitive(src.getTimestamp()));
         
         JsonArray jsonPrimaryKeyArray = new JsonArray();
-        for (OTSPKColumn column : src.getPrimaryKeyColumn()) {
+        for (PrimaryKeySchema column : src.getPrimaryKeyColumn()) {
             jsonPrimaryKeyArray.add(context.serialize(column));
         }
         json.add(PRIMARY_KEY, jsonPrimaryKeyArray);
@@ -74,9 +74,9 @@ public class OTSConfAdaptor implements JsonDeserializer<OTSConf>, JsonSerializer
         conf.setTimestamp(obj.getAsJsonPrimitive(TIMESTAMP).getAsLong());
         
         JsonArray primaryKey = obj.getAsJsonArray(PRIMARY_KEY);
-        List<OTSPKColumn> primaryKeyColumn = new ArrayList<OTSPKColumn>();
+        List<PrimaryKeySchema> primaryKeyColumn = new ArrayList<PrimaryKeySchema>();
         for (Iterator<JsonElement> iter = primaryKey.iterator(); iter.hasNext();) {
-            OTSPKColumn pk = (OTSPKColumn) context.deserialize(iter.next(), OTSPKColumn.class);
+            PrimaryKeySchema pk = (PrimaryKeySchema) context.deserialize(iter.next(), PrimaryKeySchema.class);
             primaryKeyColumn.add(pk);
         }
         conf.setPrimaryKeyColumn(primaryKeyColumn);

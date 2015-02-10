@@ -11,8 +11,8 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 
 /**
@@ -34,27 +34,51 @@ public class WriterModelParser {
         }
     }
     
-    public static OTSPKColumn parseOTSPKColumn(Map<String, Object> column) {
-        if (column.containsKey(OTSConst.NAME) && column.containsKey(OTSConst.TYPE) && column.size() == 2) {
-            Object type = column.get(OTSConst.TYPE);
-            Object name = column.get(OTSConst.NAME);
-            if (type instanceof String && name instanceof String) {
-                String typeStr = (String) type;
-                String nameStr = (String) name;
-                if (nameStr.isEmpty()) {
-                    throw new IllegalArgumentException(OTSErrorMessage.PK_COLUMN_NAME_IS_EMPTY_ERROR);
-                }
-                return new OTSPKColumn(nameStr, parsePrimaryKeyType(typeStr));
-            } else {
-                throw new IllegalArgumentException(OTSErrorMessage.PK_MAP_NAME_TYPE_ERROR);
-            }
+    private static Object columnGetObject(Map<String, Object> column, String key, String error) {
+        Object value = column.get(key);
+        
+        if (value == null) {
+            throw new IllegalArgumentException(error);
+        }
+       
+        return value;
+    }
+    
+    private static String checkString(Object value, String error) {
+        if (!(value instanceof String)) {
+            throw new IllegalArgumentException(error);
+        }
+        return (String)value;
+    }
+    
+    private static void chechStringEmpty(String value, String error) {
+        if (value.isEmpty()) {
+            throw new IllegalArgumentException(error);
+        }
+    }
+    
+    public static PrimaryKeySchema parseOTSPKColumn(Map<String, Object> column) {
+        String typeStr = checkString(
+                columnGetObject(column, OTSConst.TYPE, String.format(OTSErrorMessage.PK_MAP_FILED_MISSING_ERROR, OTSConst.TYPE)),  
+                String.format(OTSErrorMessage.PK_MAP_KEY_TYPE_ERROR, OTSConst.TYPE)
+                );
+        String nameStr = checkString(
+                columnGetObject(column, OTSConst.NAME, String.format(OTSErrorMessage.PK_MAP_FILED_MISSING_ERROR, OTSConst.NAME)),  
+                String.format(OTSErrorMessage.PK_MAP_KEY_TYPE_ERROR, OTSConst.NAME)
+                );
+        
+        chechStringEmpty(typeStr, OTSErrorMessage.PK_COLUMN_TYPE_IS_EMPTY_ERROR);
+        chechStringEmpty(nameStr, OTSErrorMessage.PK_COLUMN_NAME_IS_EMPTY_ERROR);
+        
+        if (column.size() == 2) {
+            return new PrimaryKeySchema(nameStr, parsePrimaryKeyType(typeStr));
         } else {
             throw new IllegalArgumentException(OTSErrorMessage.PK_MAP_INCLUDE_NAME_TYPE_ERROR);
         }
     }
     
-    public static List<OTSPKColumn> parseOTSPKColumnList(List<Object> values) {
-        List<OTSPKColumn> pks = new ArrayList<OTSPKColumn>();
+    public static List<PrimaryKeySchema> parseOTSPKColumnList(List<Object> values) {
+        List<PrimaryKeySchema> pks = new ArrayList<PrimaryKeySchema>();
         for (Object obj : values) {
             if (obj instanceof Map) {
                 @SuppressWarnings("unchecked")
@@ -84,46 +108,39 @@ public class WriterModelParser {
     }
     
     public static OTSAttrColumn parseOTSAttrColumn(Map<String, Object> column, OTSMode mode) {
+        String typeStr = checkString(
+                columnGetObject(column, OTSConst.TYPE, String.format(OTSErrorMessage.ATTR_MAP_FILED_MISSING_ERROR, OTSConst.TYPE)),  
+                String.format(OTSErrorMessage.ATTR_MAP_KEY_TYPE_ERROR, OTSConst.TYPE)
+                );
+        String nameStr = checkString(
+                columnGetObject(column, OTSConst.NAME, String.format(OTSErrorMessage.ATTR_MAP_FILED_MISSING_ERROR, OTSConst.NAME)),  
+                String.format(OTSErrorMessage.ATTR_MAP_KEY_TYPE_ERROR, OTSConst.NAME)
+                );
+        
+        chechStringEmpty(typeStr, OTSErrorMessage.ATTR_COLUMN_TYPE_IS_EMPTY_ERROR);
+        chechStringEmpty(nameStr, OTSErrorMessage.ATTR_COLUMN_NAME_IS_EMPTY_ERROR);
+        
         if (mode == OTSMode.MULTI_VERSION) {
-            if (column.containsKey(OTSConst.SRC_NAME) && column.containsKey(OTSConst.NAME) && column.containsKey(OTSConst.TYPE) && column.size() == 3) {
-                Object type = column.get(OTSConst.TYPE);
-                Object name = column.get(OTSConst.NAME);
-                Object srcName = column.get(OTSConst.SRC_NAME);
-                if (type instanceof String && name instanceof String && srcName instanceof String) {
-                    String typeStr = (String) type;
-                    String nameStr = (String) name;
-                    String srcNameStr = (String) srcName;
-                    if (nameStr.isEmpty() || srcNameStr.isEmpty()) {
-                        throw new IllegalArgumentException(OTSErrorMessage.ATTR_COLUMN_NAME_IS_EMPTY_ERROR);
-                    }
-                    return new OTSAttrColumn(srcNameStr, nameStr, parseColumnType(typeStr));
-                } else {
-                    throw new IllegalArgumentException(OTSErrorMessage.ATTR_MAP_SRCNAME_NAME_TYPE_ERROR);
-                }
+            String srcNameStr = checkString(
+                    columnGetObject(column, OTSConst.SRC_NAME, String.format(OTSErrorMessage.ATTR_MAP_FILED_MISSING_ERROR, OTSConst.SRC_NAME)),  
+                    String.format(OTSErrorMessage.ATTR_MAP_KEY_TYPE_ERROR, OTSConst.SRC_NAME)
+                    );
+            chechStringEmpty(srcNameStr, OTSErrorMessage.ATTR_COLUMN_SRC_NAME_IS_EMPTY_ERROR);
+            if (column.size() == 3) {
+                return new OTSAttrColumn(srcNameStr, nameStr, parseColumnType(typeStr));
             } else {
                 throw new IllegalArgumentException(OTSErrorMessage.ATTR_MAP_INCLUDE_SRCNAME_NAME_TYPE_ERROR);
             }
         } else {
-            if (column.containsKey(OTSConst.NAME) && column.containsKey(OTSConst.TYPE) && column.size() == 2) {
-                Object type = column.get(OTSConst.TYPE);
-                Object name = column.get(OTSConst.NAME);
-                if (type instanceof String && name instanceof String) {
-                    String typeStr = (String) type;
-                    String nameStr = (String) name;
-                    if (nameStr.isEmpty()) {
-                        throw new IllegalArgumentException(OTSErrorMessage.ATTR_COLUMN_NAME_IS_EMPTY_ERROR);
-                    }
-                    return new OTSAttrColumn(nameStr, parseColumnType(typeStr));
-                } else {
-                    throw new IllegalArgumentException(OTSErrorMessage.ATTR_MAP_NAME_TYPE_ERROR);
-                }
+            if (column.size() == 2) {
+                return new OTSAttrColumn(nameStr, parseColumnType(typeStr));
             } else {
                 throw new IllegalArgumentException(OTSErrorMessage.ATTR_MAP_INCLUDE_NAME_TYPE_ERROR);
             }
         }
     }
     
-    private static void checkMultiAttrColumn(List<OTSPKColumn> pk, List<OTSAttrColumn> attrs, OTSMode mode) {
+    private static void checkMultiAttrColumn(List<PrimaryKeySchema> pk, List<OTSAttrColumn> attrs, OTSMode mode) {
         // duplicate column name
         {
             Set<String> pool = new HashSet<String>();
@@ -134,7 +151,7 @@ public class WriterModelParser {
                     pool.add(col.getName());
                 }
             }
-            for (OTSPKColumn col : pk) {
+            for (PrimaryKeySchema col : pk) {
                 if (pool.contains(col.getName())) {
                     throw new IllegalArgumentException(String.format(OTSErrorMessage.MULTI_PK_ATTR_COLUMN_ERROR, col.getName()));
                 } else {
@@ -155,7 +172,7 @@ public class WriterModelParser {
         }
     }
     
-    public static List<OTSAttrColumn> parseOTSAttrColumnList(List<OTSPKColumn> pk, List<Object> values, OTSMode mode, int columnCountLimition) {
+    public static List<OTSAttrColumn> parseOTSAttrColumnList(List<PrimaryKeySchema> pk, List<Object> values, OTSMode mode, int columnCountLimitation) {
         List<OTSAttrColumn> attrs = new ArrayList<OTSAttrColumn>();
         for (Object obj : values) {
             if (obj instanceof Map) {
@@ -167,12 +184,12 @@ public class WriterModelParser {
             }
         }
         checkMultiAttrColumn(pk, attrs, mode);
-        if (attrs.size() > columnCountLimition) {
-            throw new IllegalArgumentException(String.format(OTSErrorMessage.INPUT_COLUMN_COUNT_LIMIT, attrs.size(), columnCountLimition));
+        if (mode == OTSMode.NORMAL && attrs.size() > columnCountLimitation) {
+            throw new IllegalArgumentException(String.format(OTSErrorMessage.INPUT_COLUMN_COUNT_LIMIT, attrs.size(), columnCountLimitation));
         }
         return attrs;
     }
-
+    
     public static OTSOpType parseOTSOpType(String value, OTSMode mode) {
         OTSOpType type = null;
         if (value.equalsIgnoreCase(OTSConst.OTS_OP_TYPE_PUT)) {

@@ -19,10 +19,12 @@ import com.alibaba.datax.plugin.writer.otswriter.common.DataChecker;
 import com.alibaba.datax.plugin.writer.otswriter.common.OTSHelper;
 import com.alibaba.datax.plugin.writer.otswriter.common.OTSRowBuilder;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector;
+import com.alibaba.datax.plugin.writer.otswriter.common.Utils;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSBatchWriteRowTaskManager;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
+import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
 import com.aliyun.openservices.ots.internal.MockOTSClient;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
@@ -57,10 +59,12 @@ public class OTSBatchWriteRowTaskManagerUnittest {
         // 初始化
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.UPDATE_ROW);
         conf.setConcurrencyWrite(concurrency);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, null, null, 10);
-        OTSBatchWriteRowTaskManager manager = new OTSBatchWriteRowTaskManager(ots, collector, conf);
+        CollectorUtil.init(collector);
+        OTSBatchWriteRowTaskManager manager = new OTSBatchWriteRowTaskManager(ots, conf);
         
         List<Row> expect = new ArrayList<Row>();
         
@@ -72,11 +76,10 @@ public class OTSBatchWriteRowTaskManagerUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     tableName, 
                     OTSOpType.UPDATE_ROW, 
-                    conf.getPrimaryKeyColumn(), 
+                    conf.getPkColumnMapping(), 
                     conf.getAttributeColumn(), 
                     r, 
-                    1, 
-                    collector);
+                    1);
             
             List<OTSLine> lines = new ArrayList<OTSLine>();
             lines.add(line);
@@ -126,10 +129,12 @@ public class OTSBatchWriteRowTaskManagerUnittest {
     @Test
     public void testCase5() throws Exception {
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.UPDATE_ROW);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient();
-        OTSBatchWriteRowTaskManager manager = new OTSBatchWriteRowTaskManager(ots, collector, conf);
+        CollectorUtil.init(collector);
+        OTSBatchWriteRowTaskManager manager = new OTSBatchWriteRowTaskManager(ots, conf);
         manager.close();
         
         List<OTSLine> lines = new ArrayList<OTSLine>();
@@ -141,11 +146,10 @@ public class OTSBatchWriteRowTaskManagerUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     tableName, 
                     OTSOpType.UPDATE_ROW, 
-                    conf.getPrimaryKeyColumn(), 
+                    conf.getPkColumnMapping(), 
                     conf.getAttributeColumn(), 
                     r, 
-                    1, 
-                    collector);
+                    1);
             
             lines.add(line);
         }

@@ -35,21 +35,18 @@ public class OtsWriterMasterProxy {
      */
     public void init(Configuration param) throws Exception {
         
-        LOG.info("Configuration : {}", Common.configurtionToNoSensitiveString(param));
-        
         // 默认参数
         conf.setRetry(param.getInt(OTSConst.RETRY, 18));
         conf.setSleepInMillisecond(param.getInt(OTSConst.SLEEP_IN_MILLISECOND, 100));
         conf.setBatchWriteCount(param.getInt(OTSConst.BATCH_WRITE_COUNT, 100));
         conf.setConcurrencyWrite(param.getInt(OTSConst.CONCURRENCY_WRITE, 5));
         conf.setIoThreadCount(param.getInt(OTSConst.IO_THREAD_COUNT, 1));
-        conf.setSocketTimeoutInMillisecond(param.getInt(OTSConst.SOCKET_TIMEOUTIN_MILLISECOND, 60000));
-        conf.setConnectTimeoutInMillisecond(param.getInt(OTSConst.CONNECT_TIMEOUT_IN_MILLISECOND, 60000));
+        conf.setSocketTimeoutInMillisecond(param.getInt(OTSConst.SOCKET_TIMEOUTIN_MILLISECOND, 10000));
+        conf.setConnectTimeoutInMillisecond(param.getInt(OTSConst.CONNECT_TIMEOUT_IN_MILLISECOND, 10000));
         
         RestrictConf restrictConf = conf.new RestrictConf();
         restrictConf.setRequestTotalSizeLimitation(param.getInt(OTSConst.REQUEST_TOTAL_SIZE_LIMITATION, 1024*1024));
         restrictConf.setRowCellCountLimitation(param.getInt(OTSConst.ROW_CELL_COUNT_LIMITATION, 128));
-        restrictConf.setRowColumnCountLimitation(param.getInt(OTSConst.ROW_COLUMN_COUNT_LIMITATION, 128));
         conf.setRestrictConf(restrictConf);
 
         conf.setTimestamp(param.getInt(Key.DEFAULT_TIMESTAMP, -1));
@@ -77,10 +74,12 @@ public class OtsWriterMasterProxy {
                         conf.getPrimaryKeyColumn(),
                         ParamChecker.checkListAndGet(param, Key.COLUMN, true),
                         conf.getMode(),
-                        restrictConf.getRowColumnCountLimitation()
+                        restrictConf.getRowCellCountLimitation()
                 )
         );
         ParamChecker.checkAttribute(conf.getAttributeColumn());
+        
+        conf.setPkColumnMapping(Common.getPkColumnMapping(meta, conf.getPrimaryKeyColumn()));
     }
     
     public List<Configuration> split(int mandatoryNumber){

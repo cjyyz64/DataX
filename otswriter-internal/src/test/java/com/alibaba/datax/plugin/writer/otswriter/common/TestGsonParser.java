@@ -5,9 +5,9 @@ import com.alibaba.datax.plugin.writer.otswriter.adaptor.OTSConfAdaptor;
 import com.alibaba.datax.plugin.writer.otswriter.adaptor.OTSPKColumnAdaptor;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.aliyun.openservices.ots.internal.model.Direction;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -17,7 +17,7 @@ public class TestGsonParser {
     private static Gson gsonBuilder() {
         return new GsonBuilder()
         .registerTypeAdapter(OTSConf.class, new OTSConfAdaptor())
-        .registerTypeAdapter(OTSPKColumn.class, new OTSPKColumnAdaptor())
+        .registerTypeAdapter(PrimaryKeySchema.class, new OTSPKColumnAdaptor())
         .registerTypeAdapter(OTSAttrColumn.class, new OTSAttrColumnAdaptor())
         .create();
     }

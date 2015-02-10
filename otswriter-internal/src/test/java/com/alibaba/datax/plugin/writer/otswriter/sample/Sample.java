@@ -38,7 +38,7 @@ import com.aliyun.openservices.ots.internal.model.TableMeta;
  */
 public class Sample extends BaseTest{
     
-    private static String tableName = "ots_writer_datax";
+    private static String tableName = "AATest";
     
     private static OTS ots = Utils.getOTSClient();
     private static TableMeta tableMeta = null;
@@ -64,16 +64,19 @@ public class Sample extends BaseTest{
     
     // PK的String Column的值等于1KB
     @Test
-    public void testPKString1024B() throws Exception {
+    public void test() throws Exception {
         Map<String, ColumnType> attr = new LinkedHashMap<String, ColumnType>();
-        attr.put("col_string_0", ColumnType.STRING);
-        attr.put("col_string_1", ColumnType.STRING);
-        attr.put("col_string_2", ColumnType.STRING);
-        attr.put("col_string_3", ColumnType.STRING);
-        attr.put("col_int_0", ColumnType.INTEGER);
-        attr.put("col_int_1", ColumnType.INTEGER);
-        attr.put("col_int_2", ColumnType.INTEGER);
-        attr.put("col_int_3", ColumnType.INTEGER);
+        attr.put("cf0_string_column", ColumnType.STRING);
+        attr.put("cf0_int_column", ColumnType.INTEGER);
+        attr.put("cf0_binary_column", ColumnType.BINARY);
+        attr.put("cf0_boolean_column", ColumnType.BOOLEAN);
+        attr.put("cf0_double_column", ColumnType.DOUBLE);
+        attr.put("cf1_string_column", ColumnType.STRING);
+        attr.put("cf1_int_column", ColumnType.INTEGER);
+        attr.put("cf1_binary_column", ColumnType.BINARY);
+        attr.put("cf1_boolean_column", ColumnType.BOOLEAN);
+        attr.put("cf1_double_column", ColumnType.DOUBLE);
+
         // check
         OTSConf conf = Conf.getConf(
                 tableName, 

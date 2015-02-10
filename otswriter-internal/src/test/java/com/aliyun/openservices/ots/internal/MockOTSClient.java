@@ -138,9 +138,9 @@ public class MockOTSClient implements OTS{
         return rows;
     }
 
-    private void add (OTSOpType type, PrimaryKey pk, List<Pair<Column, Type>> attr) {
+    private void add (OTSOpType type, PrimaryKey pk, List<Pair<Column, Type>> attr, long ts) {
         if (type == OTSOpType.PUT_ROW) {
-            lines.put(pk, new Row(pk, toColumns(attr)));
+            lines.put(pk, new Row(pk, toColumns(attr, ts)));
         } else {
             Row old = lines.get(pk);
             if (old == null) {
@@ -148,7 +148,12 @@ public class MockOTSClient implements OTS{
 
                 for (Pair<Column, Type> p : attr) {
                     if (p.getSecond() == Type.PUT) {
-                        columns.add(p.getFirst());
+                        Column c = p.getFirst();
+                        if (!c.hasSetTimestamp()) {
+                            columns.add(new Column(c.getName(), c.getValue(), ts));
+                        } else {
+                            columns.add(p.getFirst());
+                        }
                     }
                 }
                 lines.put(pk, new Row(pk, columns));
@@ -159,7 +164,11 @@ public class MockOTSClient implements OTS{
                     if (p.getSecond() == Type.PUT) {
                         NavigableMap<Long, ColumnValue> cells = mapping.get(p.getFirst().getName());
                         if (cells != null) {
-                            cells.put(p.getFirst().getTimestamp(), p.getFirst().getValue());
+                            if (!p.getFirst().hasSetTimestamp()) {
+                                cells.put(ts, p.getFirst().getValue());
+                            } else {
+                                cells.put(p.getFirst().getTimestamp(), p.getFirst().getValue());
+                            }
                         } else {
                             cells = new TreeMap<Long, ColumnValue>(new Comparator<Long>() {
                                 public int compare(Long l1, Long l2) {
@@ -187,10 +196,15 @@ public class MockOTSClient implements OTS{
         }
     }
     
-    private List<Column> toColumns(List<Pair<Column, Type>> attr) {
+    private List<Column> toColumns(List<Pair<Column, Type>> attr, long ts) {
         List<Column> r = new ArrayList<Column>();
         for (Pair<Column, Type> p : attr) {
-            r.add(p.getFirst());
+            Column c = p.getFirst();
+            if (!c.hasSetTimestamp()) {
+                r.add(new Column(c.getName(), c.getValue(), ts));
+            } else {
+                r.add(p.getFirst());
+            }
         }
         return r;
     }
@@ -203,7 +217,7 @@ public class MockOTSClient implements OTS{
         return r;
     }
     
-    private void send(OTSOpType type, String tableName, PrimaryKey pk, List<Pair<Column, Type>> attr) throws OTSException {
+    private void send(OTSOpType type, String tableName, PrimaryKey pk, List<Pair<Column, Type>> attr, long ts) throws OTSException {
         long expectCU = 10;
         
         try {
@@ -217,7 +231,7 @@ public class MockOTSClient implements OTS{
                 lastTime = curTime;
                 remaingCU =  remaingCU - expectCU + tmpCU; // 补扣CU
                 // add data
-                add(type, pk, attr);
+                add(type, pk, attr, ts);
                 try {
                     Thread.sleep(elapsedTime);
                 } catch (InterruptedException e) {
@@ -280,7 +294,7 @@ public class MockOTSClient implements OTS{
 
         // mock sql clinet
         // STRING PK, STRING ATTR, BINARY ATTR的检查
-
+        long ts = System.currentTimeMillis();
         int index = 0;
         for (Entry<String, List<RowPutChange>> en : input.entrySet()) {
             for (RowPutChange change : en.getValue()) {// row
@@ -337,7 +351,7 @@ public class MockOTSClient implements OTS{
                     // send to worker
                     // mock sql worker
                     try {
-                        send(OTSOpType.PUT_ROW, change.getTableName(), change.getPrimaryKey(), toPairColumns(change.getColumnsToPut()));
+                        send(OTSOpType.PUT_ROW, change.getTableName(), change.getPrimaryKey(), toPairColumns(change.getColumnsToPut()), ts);
                         result.addPutRowResult(
                                 new RowResult(
                                         change.getTableName(), 
@@ -360,6 +374,7 @@ public class MockOTSClient implements OTS{
     }
 
     private void handleUpdateRow(Map<String, List<RowUpdateChange>> input, MockBatchWriteRowResult result) throws InterruptedException, OTSException {
+        long ts = System.currentTimeMillis();
         // mock ots
         int totalRow = 0;
         int totalSize = 0;
@@ -389,7 +404,7 @@ public class MockOTSClient implements OTS{
                 
                 
                 // column name 合法性检查
-                totalSize += Helper.getAttrSize(toColumns(change.getColumnsToUpdate()));
+                totalSize += Helper.getAttrSize(toColumns(change.getColumnsToUpdate(), ts));
 
                 // Total Size的检查
                 if (totalSize > (1024*1024)) {
@@ -460,7 +475,7 @@ public class MockOTSClient implements OTS{
                     // send to worker
                     // mock worker
                     try {
-                        send(OTSOpType.UPDATE_ROW, change.getTableName(), change.getPrimaryKey(), change.getColumnsToUpdate());
+                        send(OTSOpType.UPDATE_ROW, change.getTableName(), change.getPrimaryKey(), change.getColumnsToUpdate(), ts);
                         result.addUpdateRowResult(
                                 new RowResult(
                                         change.getTableName(), 
@@ -500,6 +515,8 @@ public class MockOTSClient implements OTS{
             invokeTimes.incrementAndGet(); 
             conInvokeTimes.incrementAndGet();
             rows.add(1);
+            
+            long ts = System.currentTimeMillis();
 
             if (conInvokeTimes.intValue() > conMaxInvokeTimes) {
                 conMaxInvokeTimes = conInvokeTimes.intValue();
@@ -567,7 +584,7 @@ public class MockOTSClient implements OTS{
 
             
             try {
-                send(OTSOpType.PUT_ROW, change.getTableName(), change.getPrimaryKey(), toPairColumns(change.getColumnsToPut()));
+                send(OTSOpType.PUT_ROW, change.getTableName(), change.getPrimaryKey(), toPairColumns(change.getColumnsToPut()), ts);
                 OTSResult meta = new OTSResult();
                 meta.setRequestID("requsetid put row");
                 meta.setTraceId("tracerid");
@@ -606,6 +623,7 @@ public class MockOTSClient implements OTS{
             RowUpdateChange change = updateRowRequest.getRowChange();
 
             // mock ots
+            long ts = System.currentTimeMillis();
             // column number的检查
             if (change.getColumnsToUpdate().size() > 128) {
                 throw new OTSException(
@@ -657,7 +675,7 @@ public class MockOTSClient implements OTS{
             }
             
             try {
-                send(OTSOpType.UPDATE_ROW, change.getTableName(), change.getPrimaryKey(), change.getColumnsToUpdate());
+                send(OTSOpType.UPDATE_ROW, change.getTableName(), change.getPrimaryKey(), change.getColumnsToUpdate(), ts);
                 OTSResult meta = new OTSResult();
                 meta.setRequestID("requsetid update row");
                 meta.setTraceId("tracerid");
@@ -721,7 +739,14 @@ public class MockOTSClient implements OTS{
     public GetRangeResult getRange(GetRangeRequest getRangeRequest)
             throws OTSException, ClientException {
         
-        MockGetRangeResult result = new MockGetRangeResult(new ArrayList<Row>(lines.values()));
+        List<Row> rows = new ArrayList<Row>();
+        for (Row r : lines.values()) {
+            if (r.getColumns().length != 0) {
+                rows.add(r);
+            }
+        }
+        
+        MockGetRangeResult result = new MockGetRangeResult(rows);
         return result.toGetRangeResult();
     }
     

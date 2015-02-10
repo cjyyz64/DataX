@@ -10,9 +10,12 @@ import java.util.Map;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.otswriter.OtsWriterSlaveProxy;
+import com.alibaba.datax.plugin.writer.otswriter.OtsWriterSlaveProxyMultiversion;
+import com.alibaba.datax.plugin.writer.otswriter.OtsWriterSlaveProxyNormal;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector.RecordAndMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
 import com.aliyun.openservices.ots.internal.OTS;
@@ -38,9 +41,7 @@ public class BaseTest {
             ) throws Exception {
         test(ots, conf, input, expect, null, false);
     }
-    
-    
-    
+
     /**
      * 测试程序异常退出
      * @param ots
@@ -55,14 +56,23 @@ public class BaseTest {
             List<Record> input, 
             String errorMsg
             ) throws Exception {
+        if (conf.getPkColumnMapping() == null) {
+            conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        }
         Configuration configuration = Configuration.newDefault();
         configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
         RecordReceiverForTest recordReceiver = new RecordReceiverForTest(input);
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
-        OtsWriterSlaveProxy slave = new OtsWriterSlaveProxy();
-        slave.init(configuration);
+        OtsWriterSlaveProxy slave = null;
+        
+        if (conf.getMode() == OTSMode.NORMAL) {
+            slave = new OtsWriterSlaveProxyNormal(ots, conf);
+        } else {
+            slave = new OtsWriterSlaveProxyMultiversion(ots, conf);
+        }
+        slave.init(collector);
         try {
-            slave.write(recordReceiver, collector);
+            slave.write(recordReceiver);
             fail();
         } catch (Exception e) {
             assertEquals(errorMsg, e.getMessage());
@@ -88,14 +98,22 @@ public class BaseTest {
             List<RecordAndMessage> rm,
             boolean isCheckTS
             ) throws Exception {
+        if (conf.getPkColumnMapping() == null) {
+            conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        }
         Configuration configuration = Configuration.newDefault();
         configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
         RecordReceiverForTest recordReceiver = new RecordReceiverForTest(input);
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
-        OtsWriterSlaveProxy slave = new OtsWriterSlaveProxy();
-        slave.init(configuration);
+        OtsWriterSlaveProxy slave = null;
+        if (conf.getMode() == OTSMode.NORMAL) {
+            slave = new OtsWriterSlaveProxyNormal(ots, conf);
+        } else {
+            slave = new OtsWriterSlaveProxyMultiversion(ots, conf);
+        }
+        slave.init(collector);
         try {
-            slave.write(recordReceiver, collector);
+            slave.write(recordReceiver);
         } finally {
             slave.close();
         }

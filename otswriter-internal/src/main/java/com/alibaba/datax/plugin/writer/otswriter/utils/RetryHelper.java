@@ -16,6 +16,16 @@ public class RetryHelper {
     private static final Logger LOG = LoggerFactory.getLogger(RetryHelper.class);
     private static final Set<String> noRetryErrorCode = prepareNoRetryErrorCode();
     
+    /**
+     * 对重试的封装，方法需要用户传入最大重试次数，最大的重试时间。
+     * 如果方法执行失败，方法会进入重试，每次重试之前，方法会sleep一段时间（sleep机制请参见
+     * Common.getDelaySendMillinSeconds方法），直到重试次数达到上限，系统会抛出异常。
+     * @param callable
+     * @param maxRetryTimes
+     * @param sleepInMilliSecond
+     * @return
+     * @throws Exception
+     */
     public static <V> V executeWithRetry(Callable<V> callable, int maxRetryTimes, int sleepInMilliSecond) throws Exception {
         int retryTimes = 0;
         while (true){

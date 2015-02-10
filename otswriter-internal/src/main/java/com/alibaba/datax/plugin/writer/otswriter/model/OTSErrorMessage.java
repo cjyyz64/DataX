@@ -10,7 +10,9 @@ public class OTSErrorMessage {
     
     public static final String UNSUPPORT_PARSE = "Unsupport parse '%s' to '%s'.";
     
-    public static final String RECORD_AND_COLUMN_SIZE_ERROR = "Size of record not equal size of config column. record size : %d, config column size : %d.";
+    public static final String UNSUPPORT = "Unsupport : '%s'.";
+    
+    public static final String RECORD_AND_COLUMN_SIZE_ERROR = "Size of record not equal size of config column. record size : %d, config column size : %d, record data : %s.";
     
     public static final String PK_TYPE_ERROR = "Primary key type only support 'string', 'int' and 'binary', not support '%s'.";
     
@@ -40,11 +42,19 @@ public class OTSErrorMessage {
     
     public static final String ATTR_MAP_NAME_TYPE_ERROR = "The 'name' and 'type only support string in json map of 'column'.";
     
-    public static final String ATTR_MAP_SRCNAME_NAME_TYPE_ERROR = "The 'srcName', 'name' and 'type only support string in json map of 'column'.";
+    public static final String ATTR_MAP_SRCNAME_NAME_TYPE_ERROR = "The 'srcName', 'name' and 'type' only support string in json map of 'column'.";
+    
+    public static final String PK_MAP_KEY_TYPE_ERROR = "The '%s' only support string in json map of 'primaryKey'.";
+    
+    public static final String ATTR_MAP_KEY_TYPE_ERROR = "The '%s' only support string in json map of 'column'.";
     
     public static final String PK_MAP_INCLUDE_NAME_TYPE_ERROR = "The only support 'name' and 'type' fileds in json map of 'primaryKey'.";
     
     public static final String ATTR_MAP_INCLUDE_NAME_TYPE_ERROR = "The only support 'name' and 'type' fileds in json map of 'column'.";
+    
+    public static final String PK_MAP_FILED_MISSING_ERROR = "The '%s' fileds is missing in json map of 'primaryKey'.";
+    
+    public static final String ATTR_MAP_FILED_MISSING_ERROR = "The '%s' fileds is missing in json map of 'column'.";
     
     public static final String ATTR_MAP_INCLUDE_SRCNAME_NAME_TYPE_ERROR = "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.";
     
@@ -54,7 +64,13 @@ public class OTSErrorMessage {
     
     public static final String PK_COLUMN_NAME_IS_EMPTY_ERROR = "The name of item can not be a empty string in 'primaryKey'.";
     
+    public static final String PK_COLUMN_TYPE_IS_EMPTY_ERROR = "The type of item can not be a empty string in 'primaryKey'.";
+    
     public static final String ATTR_COLUMN_NAME_IS_EMPTY_ERROR = "The name of item can not be a empty string in 'column'.";
+    
+    public static final String ATTR_COLUMN_SRC_NAME_IS_EMPTY_ERROR = "The srcName of item can not be a empty string in 'column'.";
+    
+    public static final String ATTR_COLUMN_TYPE_IS_EMPTY_ERROR = "The type of item can not be a empty string in 'column'.";
     
     public static final String MULTI_PK_ATTR_COLUMN_ERROR = "Duplicate item in 'column' and 'primaryKey', column name : %s .";
     

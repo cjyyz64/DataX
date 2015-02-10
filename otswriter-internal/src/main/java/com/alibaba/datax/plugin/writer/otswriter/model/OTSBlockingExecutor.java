@@ -10,6 +10,14 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 单个Channel会多线程并发的写入数据到OTS中，需要使用一个固定的线程池来执行Runnable对象，同时当
+ * 线程池满时，阻塞execute方法。原生的Executor并不能做到阻塞execute方法。只是当queue满时，
+ * 方法抛出默认RejectedExecutionException，或者我们实现RejectedExecutionHandler，
+ * 这两种方法都无法满足阻塞用户请求的需求，所以我们用信号量来实现了一个阻塞的Executor
+ * @author redchen
+ *
+ */
 public class OTSBlockingExecutor {
     private final ExecutorService exec;
     private final Semaphore semaphore;

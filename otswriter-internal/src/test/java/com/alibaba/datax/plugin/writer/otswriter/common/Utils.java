@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 import com.alibaba.datax.common.element.BoolColumn;
 import com.alibaba.datax.common.element.BytesColumn;
@@ -12,12 +14,16 @@ import com.alibaba.datax.common.element.DoubleColumn;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.OTSClient;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
 import com.aliyun.openservices.ots.internal.model.ColumnValue;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
+import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 public class Utils {
     public static Configuration loadConf() {
@@ -105,5 +111,13 @@ public class Utils {
             break;
         }
         return null;
+    }
+    
+    public static LinkedHashMap<PrimaryKeySchema, Integer> getPkColumnMapping(List<PrimaryKeySchema> pks) throws OTSCriticalException {
+        TableMeta meta = new TableMeta("xx");
+        for (PrimaryKeySchema p : pks) {
+            meta.addPrimaryKeyColumn(p.getName(), p.getType());
+        }
+        return Common.getPkColumnMapping(meta, pks);
     }
 }

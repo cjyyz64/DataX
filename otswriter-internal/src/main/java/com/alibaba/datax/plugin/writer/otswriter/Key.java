@@ -36,5 +36,5 @@ public final class Key {
     
     public final static String MODE = "mode";
     
-    public final static String DEFAULT_TIMESTAMP = "defaultTimestampInMillionSecond";
+    public final static String DEFAULT_TIMESTAMP = "defaultTimestampInMillisecond";
 }

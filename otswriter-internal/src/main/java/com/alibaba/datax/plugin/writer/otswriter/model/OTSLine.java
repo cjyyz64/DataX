@@ -4,18 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
 import com.alibaba.datax.plugin.writer.otswriter.utils.CalculateHelper;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
 import com.aliyun.openservices.ots.internal.model.RowChange;
 import com.aliyun.openservices.ots.internal.model.RowPutChange;
 import com.aliyun.openservices.ots.internal.model.RowUpdateChange;
 
-/**
- * 改动：
- * 1.RowChange
- * @author redchen
- *
- */
 public class OTSLine {
     private int dataSize = 0;
 
@@ -25,10 +20,9 @@ public class OTSLine {
     private List<Record> records = new ArrayList<Record>();
     
     public OTSLine(
-            OTSOpType type, 
             PrimaryKey pk,
             List<Record> records,
-            RowChange change) {
+            RowChange change) throws OTSCriticalException {
         this.pk = pk;
         this.change = change;
         this.records.addAll(records);
@@ -38,14 +32,14 @@ public class OTSLine {
     public OTSLine(
             PrimaryKey pk,
             Record record,
-            RowChange change) {
+            RowChange change) throws OTSCriticalException {
         this.pk = pk;
         this.change = change;
         this.records.add(record);
         setSize(this.change);
     }
     
-    private void setSize(RowChange change) {
+    private void setSize(RowChange change) throws OTSCriticalException {
         if (change instanceof RowPutChange) {
             this.dataSize = CalculateHelper.getRowPutChangeSize((RowPutChange) change);
         } else if (change instanceof RowUpdateChange) {

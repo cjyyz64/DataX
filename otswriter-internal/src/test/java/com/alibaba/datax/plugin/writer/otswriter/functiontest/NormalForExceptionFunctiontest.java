@@ -100,7 +100,12 @@ public class NormalForExceptionFunctiontest extends BaseTest{
                 getColumnMeta(2, ColumnType.INTEGER), 
                 OTSOpType.UPDATE_ROW,
                 OTSMode.NORMAL);
-        test(ots, conf, input, "Size of record not equal size of config column. record size : 4, config column size : 5.");
+        test(ots, conf, input, "Size of record not equal size of config column. record "
+                + "size : 4, config column size : 5, record data : {\"data\":[{\"byteSize"
+                + "\":9,\"rawData\":\"Uid_value\",\"type\":\"STRING\"},{\"byteSize\":4,"
+                + "\"rawData\":9,\"type\":\"LONG\"},{\"byteSize\":9,\"rawData\":"
+                + "\"TWlkX3ZhbHVl\",\"type\":\"BYTES\"},{\"byteSize\":4,\"rawData\":9,"
+                + "\"type\":\"LONG\"}],\"size\":4}.");
     }
     
     /**
@@ -147,7 +152,14 @@ public class NormalForExceptionFunctiontest extends BaseTest{
                 getColumnMeta(2, ColumnType.INTEGER), 
                 OTSOpType.UPDATE_ROW,
                 OTSMode.NORMAL);
-        test(ots, conf, input, "Size of record not equal size of config column. record size : 6, config column size : 5.");
+        test(ots, conf, input, "Size of record not equal size of config column. "
+                + "record size : 6, config column size : 5, record data : {\"data"
+                + "\":[{\"byteSize\":9,\"rawData\":\"Uid_value\",\"type\":\"STRING"
+                + "\"},{\"byteSize\":4,\"rawData\":9,\"type\":\"LONG\"},{\"byteSize"
+                + "\":9,\"rawData\":\"TWlkX3ZhbHVl\",\"type\":\"BYTES\"},{\"byteSize"
+                + "\":4,\"rawData\":9,\"type\":\"LONG\"},{\"byteSize\":4,\"rawData\""
+                + ":9,\"type\":\"LONG\"},{\"byteSize\":4,\"rawData\":9,\"type\":\"LONG"
+                + "\"}],\"size\":6}.");
     }
     
     /**

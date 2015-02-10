@@ -4,7 +4,7 @@ import java.lang.reflect.Type;
 
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -15,13 +15,13 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class OTSPKColumnAdaptor implements JsonDeserializer<OTSPKColumn>, JsonSerializer<OTSPKColumn>{
+public class OTSPKColumnAdaptor implements JsonDeserializer<PrimaryKeySchema>, JsonSerializer<PrimaryKeySchema>{
     
     private final static String NAME = "name";
     private final static String TYPE = "type";
 
     @Override
-    public JsonElement serialize(OTSPKColumn src, Type typeOfSrc,
+    public JsonElement serialize(PrimaryKeySchema src, Type typeOfSrc,
             JsonSerializationContext context) {
         JsonObject json = new JsonObject();
         json.add(NAME, new JsonPrimitive(src.getName()));
@@ -40,16 +40,16 @@ public class OTSPKColumnAdaptor implements JsonDeserializer<OTSPKColumn>, JsonSe
     }
 
     @Override
-    public OTSPKColumn deserialize(JsonElement json, Type typeOfT,
+    public PrimaryKeySchema deserialize(JsonElement json, Type typeOfT,
             JsonDeserializationContext context) throws JsonParseException {
         JsonObject obj = json.getAsJsonObject();
         String name = obj.getAsJsonPrimitive(NAME).getAsString();
         String type = obj.getAsJsonPrimitive(TYPE).getAsString();
         
         if (type.equalsIgnoreCase(OTSConst.TYPE_STRING)) {
-            return new OTSPKColumn(name, PrimaryKeyType.STRING);
+            return new PrimaryKeySchema(name, PrimaryKeyType.STRING);
         } else if (type.equalsIgnoreCase(OTSConst.TYPE_INTEGER)) {
-            return new OTSPKColumn(name, PrimaryKeyType.INTEGER);
+            return new PrimaryKeySchema(name, PrimaryKeyType.INTEGER);
         } else {
             throw new IllegalArgumentException(String.format(OTSErrorMessage.PK_TYPE_ERROR,  type));
         }

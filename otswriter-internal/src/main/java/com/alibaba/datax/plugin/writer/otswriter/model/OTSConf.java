@@ -1,6 +1,9 @@
 package com.alibaba.datax.plugin.writer.otswriter.model;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 
 public class OTSConf {
     private String endpoint= null;
@@ -9,7 +12,7 @@ public class OTSConf {
     private String instanceName = null;
     private String tableName = null;
    
-    private List<OTSPKColumn> primaryKeyColumn = null;
+    private List<PrimaryKeySchema> primaryKeyColumn = null;
     private List<OTSAttrColumn> attributeColumn = null;
    
     private int retry =  -1;
@@ -26,19 +29,13 @@ public class OTSConf {
     
     private OTSMode mode = null;
     private long timestamp = -1;
+    private LinkedHashMap<PrimaryKeySchema, Integer> pkColumnMapping = null;
     
     //限制项
     public class RestrictConf {
         private int requestTotalSizeLimitation = -1;
         private int rowCellCountLimitation = -1;
-        private int rowColumnCountLimitation = -1;
 
-        public int getRowColumnCountLimitation() {
-            return rowColumnCountLimitation;
-        }
-        public void setRowColumnCountLimitation(int rowColumnCountLimitation) {
-            this.rowColumnCountLimitation = rowColumnCountLimitation;
-        }
         public int getRequestTotalSizeLimitation() {
             return requestTotalSizeLimitation;
         }
@@ -52,7 +49,15 @@ public class OTSConf {
             this.rowCellCountLimitation = rowCellCountLimitation;
         }
     }
-
+    public LinkedHashMap<PrimaryKeySchema, Integer> getPkColumnMapping() {
+        return pkColumnMapping;
+    }
+    public void setPkColumnMapping(LinkedHashMap<PrimaryKeySchema, Integer> pkColumnMapping) {
+        this.pkColumnMapping = pkColumnMapping;
+    }
+    public int getSocketTimeoutInMillisecond() {
+        return socketTimeoutInMillisecond;
+    }
     public RestrictConf getRestrictConf() {
         return restrictConf;
     }
@@ -65,10 +70,10 @@ public class OTSConf {
     public void setOperation(OTSOpType operation) {
         this.operation = operation;
     }
-    public List<OTSPKColumn> getPrimaryKeyColumn() {
+    public List<PrimaryKeySchema> getPrimaryKeyColumn() {
         return primaryKeyColumn;
     }
-    public void setPrimaryKeyColumn(List<OTSPKColumn> primaryKeyColumn) {
+    public void setPrimaryKeyColumn(List<PrimaryKeySchema> primaryKeyColumn) {
         this.primaryKeyColumn = primaryKeyColumn;
     }
     

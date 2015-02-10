@@ -5,7 +5,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.aliyun.openservices.ots.internal.OTS;
 
 /**
@@ -15,7 +14,6 @@ import com.aliyun.openservices.ots.internal.OTS;
 public class OTSBatchWriteRowTaskManager {
 
     private OTS ots = null;
-    private TaskPluginCollector collector = null;
     private OTSBlockingExecutor executorService = null;
     private OTSConf conf = null;
 
@@ -23,10 +21,8 @@ public class OTSBatchWriteRowTaskManager {
 
     public OTSBatchWriteRowTaskManager(
             OTS ots,
-            TaskPluginCollector collector,
             OTSConf conf) {
         this.ots = ots;
-        this.collector = collector;
         this.conf = conf;
         
         executorService = new OTSBlockingExecutor(conf.getConcurrencyWrite());
@@ -34,7 +30,7 @@ public class OTSBatchWriteRowTaskManager {
 
     public void execute(List<OTSLine> lines) throws Exception {
         LOG.debug("Begin execute.");
-        executorService.execute(new OTSBatchWriterRowTask(collector, ots, conf, lines));
+        executorService.execute(new OTSBatchWriterRowTask(ots, conf, lines));
         LOG.debug("End execute.");
     }
 

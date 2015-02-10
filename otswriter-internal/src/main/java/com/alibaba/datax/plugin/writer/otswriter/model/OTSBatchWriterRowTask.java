@@ -6,10 +6,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
 import com.alibaba.datax.plugin.writer.otswriter.callable.BatchWriteRowCallable;
 import com.alibaba.datax.plugin.writer.otswriter.callable.PutRowChangeCallable;
 import com.alibaba.datax.plugin.writer.otswriter.callable.UpdateRowChangeCallable;
+import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
 import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.RetryHelper;
 import com.aliyun.openservices.ots.internal.OTS;
@@ -26,52 +27,42 @@ import com.aliyun.openservices.ots.internal.model.UpdateRowRequest;
 import com.aliyun.openservices.ots.internal.model.UpdateRowResult;
 
 public class OTSBatchWriterRowTask implements Runnable {
-    private TaskPluginCollector collector = null;
     private OTS ots = null;
     private OTSConf conf = null;
     private List<OTSLine> otsLines = new ArrayList<OTSLine>();
-
+    
     private boolean isDone = false;
     private int retryTimes = 0;
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(OTSBatchWriterRowTask.class);
-
+    
     public OTSBatchWriterRowTask(
-            final TaskPluginCollector collector,
             final OTS ots,
             final OTSConf conf, 
             final List<OTSLine> lines
             ) {
-        this.collector = collector;
         this.ots = ots;
         this.conf = conf;
-
+        
         this.otsLines.addAll(lines);
     }
-
+    
     @Override
     public void run() {
         LOG.debug("Begin run");
-        try {
-            sendAll(otsLines);
-        } catch (InterruptedException e) {
-            LOG.error(e.getMessage());
-        }
+        sendAll(otsLines);
         LOG.debug("End run");
     }
-
+    
     public boolean isDone() {
         return this.isDone;
     }
-
-    private boolean isExceptionForSendOneByOne(Exception e) {
-        if (e instanceof OTSException) {
-            OTSException ee = (OTSException)e;
-            if (ee.getErrorCode().equals(OTSErrorCode.INVALID_PARAMETER)|| 
+    
+    private boolean isExceptionForSendOneByOne(OTSException ee) {
+        if (ee.getErrorCode().equals(OTSErrorCode.INVALID_PARAMETER)|| 
                 ee.getErrorCode().equals(OTSErrorCode.REQUEST_TOO_LARGE)
-               ) {
-                return true;
-            }
+                ) {
+            return true;
         }
         return false;
     }
@@ -94,8 +85,12 @@ public class OTSBatchWriterRowTask implements Runnable {
         }
         return newRequst;
     }
-
-    private void sendLine(OTSLine line) throws InterruptedException {
+    
+    /**
+     * 单行发送数据
+     * @param line
+     */
+    private void sendLine(OTSLine line) {
         try {
             switch (conf.getOperation()) {
                 case PUT_ROW:
@@ -118,26 +113,35 @@ public class OTSBatchWriterRowTask implements Runnable {
                     break;
             }
         } catch (Exception e) {
-            LOG.error("Can not send line to OTS. ", e);
-            Common.collectDirtyRecord(collector, e.getMessage(), line.getRecords());
-        }
+            LOG.warn("sendLine fail. ", e);
+            CollectorUtil.collect(line.getRecords(), e.getMessage());
+        } 
     }
-
-    private void sendAllOneByOne(List<OTSLine> lines) throws InterruptedException {
+    
+    private void sendAllOneByOne(List<OTSLine> lines) {
         for (OTSLine l : lines) {
             sendLine(l);
         }
     }
-
-    private void sendAll(List<OTSLine> lines) throws InterruptedException {
-        Thread.sleep(Common.getDelaySendMillinSeconds(retryTimes, conf.getSleepInMillisecond()));
+    
+    /**
+     * 批量发送数据
+     * 如果程序发送失败，BatchWriteRow接口可能整体异常返回或者返回每个子行的操作状态
+     * 1.在整体异常的情况下：方法会检查这个异常是否能通过把批量数据拆分成单行发送，如果不行，
+     * 将会把这一批数据记录到脏数据回收器中，如果可以，方法会调用sendAllOneByOne进行单行数据发送。
+     * 2.如果BatchWriteRow成功执行，方法会检查每行的返回状态，如果子行操作失败，方法会收集所有失
+     * 败的行，重新调用sendAll，发送失败的数据。
+     * @param lines
+     */
+    private void sendAll(List<OTSLine> lines) {
         try {
+            Thread.sleep(Common.getDelaySendMillinSeconds(retryTimes, conf.getSleepInMillisecond()));
             BatchWriteRowRequest batchWriteRowRequest = createRequset(lines);
             BatchWriteRowResult result = RetryHelper.executeWithRetry(
                     new BatchWriteRowCallable(ots, batchWriteRowRequest), 
                     conf.getRetry(), 
                     conf.getSleepInMillisecond());
-
+            
             LOG.debug("Requst ID : {}", result.getRequestID());
             List<LineAndError> errors = getLineAndError(result, lines);
             if (!errors.isEmpty()){
@@ -150,74 +154,78 @@ public class OTSBatchWriterRowTask implements Runnable {
                         if (RetryHelper.canRetry(re.getError().getCode())) {
                             newLines.add(re.getLine());
                         } else {
-                            LOG.error("Can not retry, record row to collector. {}", re.getError().getMessage());
-                            Common.collectDirtyRecord(collector,re.getError().getMessage(), re.getLine().getRecords());
+                            LOG.warn("Can not retry, record row to collector. {}", re.getError().getMessage());
+                            CollectorUtil.collect(re.getLine().getRecords(), re.getError().getMessage());
                         }   
                     }
                     if (!newLines.isEmpty()) {
                         sendAll(newLines);
                     }
                 } else {
-                    LOG.error("Retry times more than limitation. RetryTime : {}", retryTimes); 
-                    Common.collectDirtyRecord(collector, errors);
+                    LOG.warn("Retry times more than limitation. RetryTime : {}", retryTimes); 
+                    CollectorUtil.collect(errors);
                 }
             }
-        } catch (Exception e) {
+        } catch (OTSException e) {
             LOG.warn("Send data fail. {}", e.getMessage());
             if (isExceptionForSendOneByOne(e)) {
                 if (lines.size() == 1) {
-                    LOG.error("Can not retry for Exception.", e); 
-                    Common.collectDirtyRecord(collector, lines, e.getMessage());
+                    LOG.warn("Can not retry.", e); 
+                    CollectorUtil.collect(e.getMessage(), lines);
                 } else {
                     // 进入单行发送的分支
                     sendAllOneByOne(lines);
                 }
             } else {
-                LOG.error("Can not send lines to OTS.", e);
-                Common.collectDirtyRecord(collector, lines, e.getMessage());
+                LOG.error("Can not send lines to OTS for RuntimeException.", e);
+                CollectorUtil.collect(e.getMessage(), lines);
             }
+        } catch (Exception e) {
+            LOG.error("Can not send lines to OTS for Exception.", e);
+            CollectorUtil.collect(e.getMessage(), lines);
         }
     }
-
-    private List<LineAndError> getLineAndError(BatchWriteRowResult result, List<OTSLine> lines) {
+    
+    private List<LineAndError> getLineAndError(BatchWriteRowResult result, List<OTSLine> lines) throws OTSCriticalException {
         List<LineAndError> errors = new ArrayList<LineAndError>();
-
+        
         switch(conf.getOperation()) {
             case PUT_ROW:
-                List<RowResult> putStatus = result.getPutRowStatus(conf.getTableName());
-                for (int i = 0; i < putStatus.size(); i++) {
-                    if (!putStatus.get(i).isSucceed()) {
-                        errors.add(new LineAndError(lines.get(i), putStatus.get(i).getError()));
-                    }
+            {
+                List<RowResult> status = result.getFailedRowsOfPut();
+                for (RowResult r : status) {
+                    errors.add(new LineAndError(lines.get(r.getIndex()), r.getError()));
                 }
-                break;
+            }
+            break;
             case UPDATE_ROW:
-                List<RowResult> updateStatus = result.getUpdateRowStatus(conf.getTableName());
-                for (int i = 0; i < updateStatus.size(); i++) {
-                    if (!updateStatus.get(i).isSucceed()) {
-                        errors.add(new LineAndError(lines.get(i), updateStatus.get(i).getError()));
-                    }
+            {
+                List<RowResult> status = result.getFailedRowsOfUpdate();
+                for (RowResult r : status) {
+                    errors.add(new LineAndError(lines.get(r.getIndex()), r.getError()));
                 }
-                break;
+            }
+            break;
             default:
-                throw new RuntimeException(String.format(OTSErrorMessage.OPERATION_PARSE_ERROR, conf.getOperation()));
+                LOG.error("Bug branch.");
+                throw new OTSCriticalException(String.format(OTSErrorMessage.OPERATION_PARSE_ERROR, conf.getOperation()));
         }
         return errors;
     }
-
+    
     public class LineAndError {
         private OTSLine line;
         private com.aliyun.openservices.ots.internal.model.Error error;
-
+        
         public LineAndError(OTSLine record, com.aliyun.openservices.ots.internal.model.Error error) {
             this.line = record;
             this.error = error;
         }
-
+        
         public OTSLine getLine() {
             return line;
         }
-
+        
         public com.aliyun.openservices.ots.internal.model.Error getError() {
             return error;
         }

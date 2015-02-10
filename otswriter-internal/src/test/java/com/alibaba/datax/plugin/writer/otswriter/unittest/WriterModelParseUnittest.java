@@ -33,18 +33,18 @@ public class WriterModelParseUnittest {
             // 缺少type，{"name":"xx"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("name", "xx");
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'primaryKey'.");
         }
         {
             // 缺少name，{"type":"int"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("type", "int");
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
+            input.put(t, "The 'name' fileds is missing in json map of 'primaryKey'.");
         }
         {
             // 缺少name和type, {}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'primaryKey'.");
         }
         {
             // 包括name和type，但是多了一个value, {"name":"xx", "type":"string", "value":""}
@@ -110,18 +110,18 @@ public class WriterModelParseUnittest {
             // 缺少type，{"name":"xx"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("name", "xx");
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'column'.");
         }
         {
             // 缺少name，{"type":"int"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("type", "int");
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'name' fileds is missing in json map of 'column'.");
         }
         {
             // 缺少name和type, {}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
-            input.put(t, "The only support 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'column'.");
         }
         {
             // 包括name和type，但是多了一个value, {"name":"xx", "type":"string", "value":""}
@@ -168,18 +168,18 @@ public class WriterModelParseUnittest {
             // 缺少type，{"name":"xx"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("name", "xx");
-            input.put(t, "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'column'.");
         }
         {
             // 缺少name，{"type":"int"}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
             t.put("type", "int");
-            input.put(t, "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'name' fileds is missing in json map of 'column'.");
         }
         {
             // 缺少name和type, {}
             Map<String, Object> t = new LinkedHashMap<String, Object>();
-            input.put(t, "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.");
+            input.put(t, "The 'type' fileds is missing in json map of 'column'.");
         }
         {
             // 包括name和type，但是多了一个value, {"name":"xx", "type":"string", "value":""}

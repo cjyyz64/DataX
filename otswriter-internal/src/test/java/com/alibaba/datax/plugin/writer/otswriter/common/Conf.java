@@ -10,9 +10,9 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf.RestrictConf;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 
 public class Conf {
@@ -32,9 +32,9 @@ public class Conf {
         conf.setInstanceName(p.getString("instance-name"));
         conf.setTableName(tableName);
 
-        List<OTSPKColumn> primaryKeyColumn = new ArrayList<OTSPKColumn>();
+        List<PrimaryKeySchema> primaryKeyColumn = new ArrayList<PrimaryKeySchema>();
         for (Entry<String, PrimaryKeyType> en : pk.entrySet()) {
-            primaryKeyColumn.add(new OTSPKColumn(en.getKey(), en.getValue()));
+            primaryKeyColumn.add(new PrimaryKeySchema(en.getKey(), en.getValue()));
         }
         conf.setPrimaryKeyColumn(primaryKeyColumn);
 
@@ -86,9 +86,9 @@ public class Conf {
         conf.setInstanceName(p.getString("instance-name"));
         conf.setTableName(tableName);
 
-        List<OTSPKColumn> primaryKeyColumn = new ArrayList<OTSPKColumn>();
+        List<PrimaryKeySchema> primaryKeyColumn = new ArrayList<PrimaryKeySchema>();
         for (Entry<String, PrimaryKeyType> en : pk.entrySet()) {
-            primaryKeyColumn.add(new OTSPKColumn(en.getKey(), en.getValue()));
+            primaryKeyColumn.add(new PrimaryKeySchema(en.getKey(), en.getValue()));
         }
         conf.setPrimaryKeyColumn(primaryKeyColumn);
 

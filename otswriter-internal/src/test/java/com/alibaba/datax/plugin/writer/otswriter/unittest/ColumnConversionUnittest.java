@@ -19,12 +19,13 @@ import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.DoubleColumn;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
 import com.alibaba.datax.plugin.writer.otswriter.common.Person;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ColumnConversion;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
 import com.aliyun.openservices.ots.internal.model.ColumnValue;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.google.gson.Gson;
@@ -39,11 +40,11 @@ public class ColumnConversionUnittest {
     
     class PKItem {
         private Column src;
-        private OTSPKColumn type;
+        private PrimaryKeySchema type;
         private PrimaryKeyValue expect;
         
         // 备注：第一个元素表示需要被转换的Column，第二个元素表示期望转义的类型，第三个元素表示期望的值
-        public PKItem(Column src, OTSPKColumn type, PrimaryKeyValue expect) {
+        public PKItem(Column src, PrimaryKeySchema type, PrimaryKeyValue expect) {
             this.src = src;
             this.type = type;
             this.expect = expect;
@@ -53,7 +54,7 @@ public class ColumnConversionUnittest {
             return src;
         }
 
-        public OTSPKColumn getType() {
+        public PrimaryKeySchema getType() {
             return type;
         }
 
@@ -87,7 +88,7 @@ public class ColumnConversionUnittest {
         }
     }
     
-    private boolean pkEqual(OTSPKColumn type, PrimaryKeyValue col1, PrimaryKeyValue col2) {
+    private boolean pkEqual(PrimaryKeySchema type, PrimaryKeyValue col1, PrimaryKeyValue col2) {
         switch (type.getType()) {
         case INTEGER:
             return col1.asLong() == col2.asLong() ;
@@ -131,63 +132,64 @@ public class ColumnConversionUnittest {
      * 输入：传入合法的Column，和预期的PK Type
      * 期望：函数能正在转换Column，且最终的值正确
      * @throws UnsupportedEncodingException 
+     * @throws OTSCriticalException 
      */
     @Test
-    public void testColumnToPrimaryKeyValueValid() throws UnsupportedEncodingException {
+    public void testColumnToPrimaryKeyValueValid() throws UnsupportedEncodingException, OTSCriticalException {
 
         List<PKItem> input = new ArrayList<PKItem>();
         // string->string
         // English, 中文, mētēr, にほんご, 한국어
-        input.add(new PKItem(new StringColumn("English"), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("English")));
-        input.add(new PKItem(new StringColumn("中文"), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("中文")));
-        input.add(new PKItem(new StringColumn("mētēr"), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("mētēr")));
-        input.add(new PKItem(new StringColumn("にほんご"), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("にほんご")));
-        input.add(new PKItem(new StringColumn("한국어"), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("한국어")));
+        input.add(new PKItem(new StringColumn("English"), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("English")));
+        input.add(new PKItem(new StringColumn("中文"), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("中文")));
+        input.add(new PKItem(new StringColumn("mētēr"), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("mētēr")));
+        input.add(new PKItem(new StringColumn("にほんご"), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("にほんご")));
+        input.add(new PKItem(new StringColumn("한국어"), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("한국어")));
         
         // int -> string
         // 122211
-        input.add(new PKItem(new LongColumn(122211), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("122211")));
+        input.add(new PKItem(new LongColumn(122211), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("122211")));
         
         // double -> string
         // -12.01, 0, 0.0, 109.0
-        input.add(new PKItem(new DoubleColumn(-12.01), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("-12.01")));
-        input.add(new PKItem(new DoubleColumn(0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0")));
-        input.add(new PKItem(new DoubleColumn(0.0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0.0")));
-        input.add(new PKItem(new DoubleColumn(109.0), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("109.0")));
+        input.add(new PKItem(new DoubleColumn(-12.01), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("-12.01")));
+        input.add(new PKItem(new DoubleColumn(0), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0")));
+        input.add(new PKItem(new DoubleColumn(0.0), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("0.0")));
+        input.add(new PKItem(new DoubleColumn(109.0), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("109.0")));
         
         // bool -> string
         // true, false
-        input.add(new PKItem(new BoolColumn(true), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("true")));
-        input.add(new PKItem(new BoolColumn(false), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("false")));
+        input.add(new PKItem(new BoolColumn(true), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("true")));
+        input.add(new PKItem(new BoolColumn(false), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("false")));
         
         // binary -> string
-        input.add(new PKItem(new BytesColumn("hello".getBytes("UTF-8")), new OTSPKColumn("", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("hello")));
+        input.add(new PKItem(new BytesColumn("hello".getBytes("UTF-8")), new PrimaryKeySchema("name", PrimaryKeyType.STRING), PrimaryKeyValue.fromString("hello")));
         
         // string->int
         // 90, -12.2, 0, 8973277.009012, 100E10
-        input.add(new PKItem(new StringColumn("90"), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(90)));
-        input.add(new PKItem(new StringColumn("-12.2"), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-12)));
-        input.add(new PKItem(new StringColumn("0"), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
-        input.add(new PKItem(new StringColumn("8973277.009012"), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(8973277)));
-        input.add(new PKItem(new StringColumn("100E2"), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(10000)));
+        input.add(new PKItem(new StringColumn("90"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(90)));
+        input.add(new PKItem(new StringColumn("-12.2"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-12)));
+        input.add(new PKItem(new StringColumn("0"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
+        input.add(new PKItem(new StringColumn("8973277.009012"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(8973277)));
+        input.add(new PKItem(new StringColumn("100E2"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(10000)));
         
         // int -> int
         // Long.min, Long.max, -99, 0, 123
-        input.add(new PKItem(new LongColumn(Long.MIN_VALUE), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(Long.MIN_VALUE)));
-        input.add(new PKItem(new LongColumn(Long.MAX_VALUE), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(Long.MAX_VALUE)));
-        input.add(new PKItem(new LongColumn(-99), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-99)));
-        input.add(new PKItem(new LongColumn(0), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
-        input.add(new PKItem(new LongColumn(123), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(123)));
+        input.add(new PKItem(new LongColumn(Long.MIN_VALUE), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(Long.MIN_VALUE)));
+        input.add(new PKItem(new LongColumn(Long.MAX_VALUE), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(Long.MAX_VALUE)));
+        input.add(new PKItem(new LongColumn(-99), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-99)));
+        input.add(new PKItem(new LongColumn(0), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
+        input.add(new PKItem(new LongColumn(123), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(123)));
         
         // double -> int
         // -100.01, 0, 281
-        input.add(new PKItem(new DoubleColumn(-100.01), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-100)));
-        input.add(new PKItem(new DoubleColumn(0), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
-        input.add(new PKItem(new DoubleColumn(281), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(281)));
+        input.add(new PKItem(new DoubleColumn(-100.01), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(-100)));
+        input.add(new PKItem(new DoubleColumn(0), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
+        input.add(new PKItem(new DoubleColumn(281), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(281)));
         
         // bool -> int
-        input.add(new PKItem(new BoolColumn(true), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(1)));
-        input.add(new PKItem(new BoolColumn(false), new OTSPKColumn("", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
+        input.add(new PKItem(new BoolColumn(true), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(1)));
+        input.add(new PKItem(new BoolColumn(false), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), PrimaryKeyValue.fromLong(0)));
         Gson g = new Gson();
         for (PKItem item : input) {
             LOG.info("Item: {}", g.toJson(item));
@@ -206,12 +208,12 @@ public class ColumnConversionUnittest {
         
         // string->int， 非数值型的字符串
         // hello, 0x5f, 100L, 102E2
-        input.put(new PKItem(new StringColumn("hello"), new OTSPKColumn("", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: hello, expect type: INTEGER .");
-        input.put(new PKItem(new StringColumn("0x5f"), new OTSPKColumn("", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: 0x5f, expect type: INTEGER .");
-        input.put(new PKItem(new StringColumn("100L"), new OTSPKColumn("", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: 100L, expect type: INTEGER .");
+        input.put(new PKItem(new StringColumn("hello"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: hello, expect type: INTEGER .");
+        input.put(new PKItem(new StringColumn("0x5f"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: 0x5f, expect type: INTEGER .");
+        input.put(new PKItem(new StringColumn("100L"), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : STRING, src value: 100L, expect type: INTEGER .");
 
         // binary -> int
-        input.put(new PKItem(new BytesColumn("world".getBytes()), new OTSPKColumn("", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : BYTES, src value: world, expect type: INTEGER .");
+        input.put(new PKItem(new BytesColumn("world".getBytes()), new PrimaryKeySchema("name", PrimaryKeyType.INTEGER), null) , "Column coversion error, src type : BYTES, src value: world, expect type: INTEGER .");
         Gson g = new Gson();
         for (Entry<PKItem, String> item : input.entrySet()) {
             LOG.info("Item: {}, Expect:{}", g.toJson(item.getKey()), item.getValue());
@@ -228,9 +230,10 @@ public class ColumnConversionUnittest {
      * 输入：传入合法的Column，和预期的Column Type
      * 期望：函数能正在转换Column，且最终的值正确
      * @throws UnsupportedEncodingException 
+     * @throws OTSCriticalException 
      */
     @Test
-    public void testColumnToColumnValueValid() throws UnsupportedEncodingException {
+    public void testColumnToColumnValueValid() throws UnsupportedEncodingException, OTSCriticalException {
         
         List<AttrItem> input = new ArrayList<AttrItem>();
         // string->string

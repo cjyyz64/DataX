@@ -34,5 +34,4 @@ public class OTSConst {
     // 限制项
     public final static String REQUEST_TOTAL_SIZE_LIMITATION = "requestTotalSizeLimitation";
     public final static String ROW_CELL_COUNT_LIMITATION = "rowCellCountLimitation";
-    public final static String ROW_COLUMN_COUNT_LIMITATION ="rowColumnCountLimitation";
 }

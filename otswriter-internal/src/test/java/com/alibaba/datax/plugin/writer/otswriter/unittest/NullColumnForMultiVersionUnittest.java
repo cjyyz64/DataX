@@ -25,14 +25,16 @@ import com.alibaba.datax.plugin.writer.otswriter.common.Conf;
 import com.alibaba.datax.plugin.writer.otswriter.common.DataChecker;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector.RecordAndMessage;
+import com.alibaba.datax.plugin.writer.otswriter.common.Utils;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
+import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
-import com.aliyun.openservices.ots.internal.MockOTSClient;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
+import com.aliyun.openservices.ots.internal.model.PrimaryKey;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 
 
@@ -76,26 +78,31 @@ public class NullColumnForMultiVersionUnittest {
             Map<String, ColumnType> attr, 
             List<Record> input, 
             List<RecordAndMessage> expect) throws Exception {
-        OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
+        OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.UPDATE_ROW);
         conf.setRetry(5);
         conf.setMode(OTSMode.MULTI_VERSION);
+        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
-        MockOTSClient ots = new MockOTSClient(5000, null, null);
-        OTSSendBuffer buffer = new OTSSendBuffer(ots, collector, conf);
+        CollectorUtil.init(collector);
         
-        OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
-                conf.getTableName(), 
-                conf.getOperation(), 
-                conf.getPrimaryKeyColumn(), 
-                conf.getAttributeColumn(), 
-                input,
-                collector);
-        
-        if (line != null) {
-            buffer.write(line);
+        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
+        for (OTSAttrColumn c : conf.getAttributeColumn()) {
+            attrColumnMapping.put(c.getSrcName(), c);
         }
-        buffer.close();
+        
+        for (Record r : input) {
+            PrimaryKey pKey = null;
+            if ((pKey = Common.getPKFromRecord(conf.getPkColumnMapping(), r)) != null) {
+                ParseRecord.parseMultiVersionRecordToOTSLine(
+                        conf.getTableName(), 
+                        conf.getOperation(), 
+                        conf.getPkColumnMapping(), 
+                        attrColumnMapping, 
+                        pKey,
+                        input);
+            }
+        }
         
         assertEquals(expect.size(), collector.getContent().size());
         assertEquals(true, DataChecker.checkRecordWithMessage(collector.getContent(), expect)); 
@@ -174,7 +181,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     record.addColumn(new LongColumn()); // pk 1
                     record.addColumn(new BytesColumn("".getBytes("UTF-8"))); // pk 2
                     
@@ -194,7 +201,7 @@ public class NullColumnForMultiVersionUnittest {
                 
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     record.addColumn(new LongColumn()); // pk 1
                     record.addColumn(new BytesColumn("".getBytes("UTF-8"))); // pk 2
                     
@@ -228,7 +235,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     record.addColumn(new LongColumn(1)); // pk 1
                     record.addColumn(new BytesColumn()); // pk 2
                     
@@ -248,7 +255,7 @@ public class NullColumnForMultiVersionUnittest {
                 
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     record.addColumn(new LongColumn(1)); // pk 1
                     record.addColumn(new BytesColumn()); // pk 2
                     
@@ -293,7 +300,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new StringColumn()); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -322,7 +329,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new StringColumn("")); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -351,7 +358,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new LongColumn(1000)); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -380,7 +387,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new BytesColumn()); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -408,7 +415,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new BoolColumn()); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -436,7 +443,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new DoubleColumn()); // cn
                     record.addColumn(new StringColumn("14922213432")); // ts
@@ -478,7 +485,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new StringColumn("attr_0")); // cn
                     record.addColumn(new StringColumn()); // ts
@@ -507,7 +514,7 @@ public class NullColumnForMultiVersionUnittest {
             {
                 {
                     Record record = new DefaultRecord();
-                    record.addColumn(new StringColumn("")); // pk 0
+                    record.addColumn(new StringColumn("a")); // pk 0
                     
                     record.addColumn(new StringColumn("attr_0")); // cn
                     record.addColumn(new StringColumn("hello")); // ts
@@ -532,45 +539,4 @@ public class NullColumnForMultiVersionUnittest {
             testIllegal(tp.pk, tp.attr, tp.input, tp.expect);
         }
     }
-    
-//    @Test
-//    public void testForValue() throws Exception {
-//        List<TestInvalidParam> ps = new ArrayList<TestInvalidParam>();
-//        
-//        {
-//            TestInvalidParam p = new TestInvalidParam();
-//            p.pk.put("pk_0", PrimaryKeyType.STRING);
-//            
-//            p.attr.put("attr_0", ColumnType.STRING);
-//            
-//            // Row
-//            {
-//                {
-//                    Record record = new DefaultRecord();
-//                    record.addColumn(new StringColumn("")); // pk 0
-//                    
-//                    record.addColumn(new StringColumn("attr_0")); // cn
-//                    record.addColumn(new StringColumn("12453522")); // ts
-//                    record.addColumn(new StringColumn()); // value
-//                    
-//                    p.input.add(record);
-//                    
-//                    p.expect.add(
-//                            new RecordAndMessage(
-//                                    record, 
-//                                    "The input value can not be empty in the multiVersion mode."
-//                                    )
-//                            );
-//                }
-//                ps.add(p);
-//            }
-//        }
-//        
-//        // check
-//        int index = 0;
-//        for (TestInvalidParam tp : ps) {
-//            LOG.info("TestParam Index : {}", index++);
-//            testIllegal(tp.pk, tp.attr, tp.input, tp.expect);
-//        }
-//    }
 }

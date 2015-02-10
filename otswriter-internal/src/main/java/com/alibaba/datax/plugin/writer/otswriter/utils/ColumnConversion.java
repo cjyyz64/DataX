@@ -2,10 +2,11 @@ package com.alibaba.datax.plugin.writer.otswriter.utils;
 
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSPKColumn;
 import com.aliyun.openservices.ots.internal.model.ColumnValue;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 
 
@@ -17,7 +18,7 @@ import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
  * 4. long   -> binary
  */
 public class ColumnConversion {
-    public static PrimaryKeyValue columnToPrimaryKeyValue(Column c, OTSPKColumn col) {
+    public static PrimaryKeyValue columnToPrimaryKeyValue(Column c, PrimaryKeySchema col) throws OTSCriticalException {
         try {
             switch (col.getType()) {
             case STRING:
@@ -27,17 +28,18 @@ public class ColumnConversion {
             case BINARY:
                 return PrimaryKeyValue.fromBinary(c.asBytes());
             default:
-                throw new IllegalArgumentException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "PrimaryKeyValue"));
+                throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "PrimaryKeyValue"));
             }
         } catch (DataXException e) {
             throw new IllegalArgumentException(String.format(
                     OTSErrorMessage.COLUMN_CONVERSION_ERROR, 
                     c.getType(), c.asString(), col.getType().toString()
-                    ));
+                    ),
+                    e);
         }
     }
     
-    public static ColumnValue columnToColumnValue(Column c, OTSAttrColumn col) {
+    public static ColumnValue columnToColumnValue(Column c, OTSAttrColumn col) throws OTSCriticalException {
         try {
             switch (col.getType()) {
             case STRING:
@@ -51,13 +53,14 @@ public class ColumnConversion {
             case BINARY:
                 return ColumnValue.fromBinary(c.asBytes());
             default:
-                throw new IllegalArgumentException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "ColumnValue"));
+                throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "ColumnValue"));
             }
         } catch (DataXException e) {
             throw new IllegalArgumentException(String.format(
                     OTSErrorMessage.COLUMN_CONVERSION_ERROR, 
                     c.getType(), c.asString(), col.getType().toString()
-                    ));
+                    ),
+                    e);
         }
     }
 }

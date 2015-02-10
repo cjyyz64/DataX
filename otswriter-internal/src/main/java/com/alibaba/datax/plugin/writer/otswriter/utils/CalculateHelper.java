@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.otswriter.utils;
 
 import java.util.List;
 
+import com.alibaba.datax.plugin.writer.otswriter.OTSCriticalException;
 import com.aliyun.openservices.ots.internal.model.Column;
 import com.aliyun.openservices.ots.internal.model.ColumnValue;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
@@ -13,7 +14,49 @@ import com.aliyun.openservices.ots.internal.model.RowUpdateChange;
 import com.aliyun.openservices.ots.internal.utils.Pair;
 
 public class CalculateHelper {
-    public static int getRowPutChangeSize(RowPutChange change) {
+    private static int getPrimaryKeyValueSize(PrimaryKeyValue primaryKeyValue) throws OTSCriticalException {
+        int primaryKeySize = 0;
+        switch (primaryKeyValue.getType()) {
+            case INTEGER:
+                primaryKeySize = 8;
+                break;
+            case STRING:
+                primaryKeySize = primaryKeyValue.asStringInBytes().length;
+                break;
+            case BINARY:
+                primaryKeySize = primaryKeyValue.asBinary().length;
+                break;
+            default:
+                throw new OTSCriticalException("Bug: not support the type : " + primaryKeyValue.getType() + " in getPrimaryKeyValueSize");
+        }
+        return primaryKeySize;
+    }
+    
+    private static int getColumnValueSize(ColumnValue columnValue) throws OTSCriticalException {
+        int columnSize = 0;
+        switch (columnValue.getType()) {
+            case INTEGER:
+                columnSize += 8;
+                break;
+            case DOUBLE:
+                columnSize += 8; 
+                break;
+            case STRING:
+                columnSize += columnValue.asStringInBytes().length;
+                break;
+            case BINARY:
+                columnSize += columnValue.asBinary().length;
+                break;
+            case BOOLEAN:
+                columnSize += 1; 
+                break;
+            default:
+                throw new OTSCriticalException("Bug: not support the type : " + columnValue.getType() + " in getColumnValueSize");
+            }
+        return columnSize;
+    }
+    
+    public static int getRowPutChangeSize(RowPutChange change) throws OTSCriticalException {
         int primaryKeyTotalSize = 0;
         int columnTotalSize = 0;
         
@@ -32,19 +75,7 @@ public class CalculateHelper {
             primaryKeyTotalSize += primaryKeyName.length;
             
             // += PrimaryKey Value Data
-            switch (primaryKeyValue.getType()) {
-            case INTEGER:
-                primaryKeyTotalSize += 8;
-                break;
-            case STRING:
-                primaryKeyTotalSize += primaryKeyValue.asStringInBytes().length;
-                break;
-            case BINARY:
-                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
-                break;
-            default:
-                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
-            }
+            primaryKeyTotalSize += getPrimaryKeyValueSize(primaryKeyValue);
         }
         
         // Columns Total Size
@@ -55,25 +86,8 @@ public class CalculateHelper {
             
             // += Column Value
             ColumnValue columnValue = column.getValue();
-            switch (columnValue.getType()) {
-            case INTEGER:
-                columnTotalSize += 8;
-                break;
-            case DOUBLE:
-                columnTotalSize += 8; 
-                break;
-            case STRING:
-                columnTotalSize += columnValue.asStringInBytes().length;
-                break;
-            case BINARY:
-                columnTotalSize += columnValue.asBinary().length;
-                break;
-            case BOOLEAN:
-                columnTotalSize += 1; 
-                break;
-            default:
-                throw new RuntimeException("Bug: not support the type : " + columnValue.getType());
-            }
+            
+            columnTotalSize += getColumnValueSize(columnValue);
             
             // += Timestamp
             if (column.hasSetTimestamp()) {
@@ -84,7 +98,7 @@ public class CalculateHelper {
         return primaryKeyTotalSize + columnTotalSize; 
     }
 
-    public static int getRowUpdateChangeSize(RowUpdateChange change) {
+    public static int getRowUpdateChangeSize(RowUpdateChange change) throws OTSCriticalException {
         int primaryKeyTotalSize = 0;
         int columnPutSize = 0;
         int columnDeleteSize = 0;
@@ -104,19 +118,7 @@ public class CalculateHelper {
             primaryKeyTotalSize += primaryKeyName.length;
             
             // += PrimaryKey Value Data
-            switch (primaryKeyValue.getType()) {
-            case INTEGER:
-                primaryKeyTotalSize += 8;
-                break;
-            case STRING:
-                primaryKeyTotalSize += primaryKeyValue.asString().getBytes().length; 
-                break;
-            case BINARY:
-                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
-                break;
-            default:
-                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
-            }
+            primaryKeyTotalSize += getPrimaryKeyValueSize(primaryKeyValue);
         }
         
         // Column Total Size 
@@ -131,17 +133,10 @@ public class CalculateHelper {
             switch (type) {
             case DELETE:
                 columnDeleteSize += column.getNameRawData().length;
-                if (column.hasSetTimestamp()) {
-                    columnDeleteSize += 8;
-                } else {
-                    throw new RuntimeException("Bug: not expect branch.");
-                }
+                columnDeleteSize += 8;// Timestamp
                 break;
             case DELETE_ALL:
                 columnDeleteSize += column.getNameRawData().length;
-                if (column.hasSetTimestamp()) {
-                    throw new RuntimeException("Bug: not expect branch.");
-                }
                 break;
             case PUT:
                 // Name
@@ -149,35 +144,17 @@ public class CalculateHelper {
                 
                 // Value
                 columnValue = column.getValue();
-                switch (columnValue.getType()) {
-                case INTEGER:
-                    columnPutSize += 8;
-                    break;
-                case DOUBLE:
-                    columnPutSize += 8;
-                    break;
-                case BOOLEAN:
-                    columnPutSize += 1;
-                    break;
-                case STRING:
-                    columnPutSize += columnValue.asStringInBytes().length;
-                    break;
-                case BINARY:
-                    columnPutSize += columnValue.asBinary().length;
-                    break;
-                default:
-                    throw new RuntimeException("Bug: not support the type : " + columnValue.getType());
-                }
+                columnPutSize += getColumnValueSize(columnValue);
                 break;
             default:
-                throw new RuntimeException("Bug: not support the type : " + type);
+                throw new OTSCriticalException("Bug: not support the type : " + type);
             }
         }
         
         return primaryKeyTotalSize + columnPutSize + columnDeleteSize;
     }
     
-    public static int getRowDeleteChangeSize(RowDeleteChange change) {
+    public static int getRowDeleteChangeSize(RowDeleteChange change) throws OTSCriticalException {
         int primaryKeyTotalSize = 0;
         
         // PrimaryKeys Total Size
@@ -195,19 +172,7 @@ public class CalculateHelper {
             primaryKeyTotalSize += primaryKeyName.length;
             
             // += PrimaryKey Value Data
-            switch (primaryKeyValue.getType()) {
-            case INTEGER:
-                primaryKeyTotalSize += 8;
-                break;
-            case STRING:
-                primaryKeyTotalSize += primaryKeyValue.asStringInBytes().length;
-                break;
-            case BINARY:
-                primaryKeyTotalSize += primaryKeyValue.asBinary().length;
-                break;
-            default:
-                throw new RuntimeException("Bug: not support the type : " + primaryKeyValue.getType());
-            }
+            primaryKeyTotalSize += getPrimaryKeyValueSize(primaryKeyValue);
         }
         
         return primaryKeyTotalSize;

@@ -67,7 +67,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
         List<Record> input = new ArrayList<Record>();
         // 构造数据
         {
-            long ts = System.currentTimeMillis();
+            long ts = 1423572444981L;
 
             String columnName = getColumnName(0);
             for (int j = 0; j < 9; j++) {
@@ -109,7 +109,13 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 getColumnMeta(1, ColumnType.INTEGER), 
                 OTSOpType.UPDATE_ROW,
                 OTSMode.MULTI_VERSION);
-        test(ots, conf, input, "Size of record not equal size of config column. record size : 5, config column size : 6.");
+        test(ots, conf, input, "Size of record not equal size of config column. "
+                + "record size : 5, config column size : 6, record data : {\"data\":["
+                + "{\"byteSize\":9,\"rawData\":\"Uid_value\",\"type\":\"STRING\"},"
+                + "{\"byteSize\":4,\"rawData\":1,\"type\":\"LONG\"},{\"byteSize\":11,"
+                + "\"rawData\":\"attr_000000\",\"type\":\"STRING\"},{\"byteSize\":8,\""
+                + "rawData\":1423572444990,\"type\":\"LONG\"},{\"byteSize\":4,\"rawData"
+                + "\":9,\"type\":\"LONG\"}],\"size\":5}.");
     }
     
     /**
@@ -122,7 +128,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
         List<Record> input = new ArrayList<Record>();
         // 构造数据
         {
-            long ts = System.currentTimeMillis();
+            long ts = 1423572444981L;
 
             String columnName = getColumnName(0);
             for (int j = 0; j < 9; j++) {
@@ -165,7 +171,15 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 getColumnMeta(1, ColumnType.INTEGER), 
                 OTSOpType.UPDATE_ROW,
                 OTSMode.MULTI_VERSION);
-        test(ots, conf, input, "Size of record not equal size of config column. record size : 7, config column size : 6.");
+        test(ots, conf, input, "Size of record not equal size of config column. "
+                + "record size : 7, config column size : 6, record data : {\"data"
+                + "\":[{\"byteSize\":9,\"rawData\":\"Uid_value\",\"type\":\"STRING"
+                + "\"},{\"byteSize\":4,\"rawData\":1,\"type\":\"LONG\"},{\"byteSize"
+                + "\":9,\"rawData\":\"TWlkX3ZhbHVl\",\"type\":\"BYTES\"},{\"byteSize"
+                + "\":9,\"rawData\":\"TWlkX3ZhbHVl\",\"type\":\"BYTES\"},{\"byteSize"
+                + "\":11,\"rawData\":\"attr_000000\",\"type\":\"STRING\"},{\"byteSize"
+                + "\":8,\"rawData\":1423572444990,\"type\":\"LONG\"},{\"byteSize\":4,"
+                + "\"rawData\":9,\"type\":\"LONG\"}],\"size\":7}.");
     }
     
     /**
@@ -509,8 +523,9 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
     }
     
     /**
+     * (修改测试行为，value为null，解析为删除)
      * 测试目的：测试datax传入不符合期望的数据，测试ots-writer的行为是否符合预期。
-     * 测试内容：构造10个Cell，其中一个Cell的value为空，期望该Cell被记录到脏数据回收器中，错误消息符合预期
+     * 测试内容：构造10个Cell，其中一个Cell的value为空，ts是第一个cell的ts，期望该Cell被删除
      * @throws Exception
      */
     @Test
@@ -543,12 +558,15 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 r.addColumn(new LongColumn(j));
                 input.add(r);
                 
-                row.addAttrColumn(columnName, ColumnValue.fromLong(j), ts + j);
+                if (j != 0) {
+                    row.addAttrColumn(columnName, ColumnValue.fromLong(j), ts + j);
+                }
             }
             
             expect.add(row.toRow());
             
-            for (int j = 9; j < 10; j++) {
+            // 删除指定的cell
+            for (int j = 0; j < 1; j++) {
                 Record r = new DefaultRecord();
                 // pk
                 r.addColumn(new StringColumn("Uid_value"));
@@ -562,7 +580,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 // value
                 r.addColumn(new LongColumn());
                 input.add(r);
-                rm.add(new RecordAndMessage(r, "The input value can not be empty in the multiVersion mode."));
+                //rm.add(new RecordAndMessage(r, "The input value can not be empty in the multiVersion mode."));
             }
         }
         
@@ -573,6 +591,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 getColumnMeta(1, ColumnType.INTEGER), 
                 OTSOpType.UPDATE_ROW,
                 OTSMode.MULTI_VERSION);
+        conf.getRestrictConf().setRowCellCountLimitation(1);
         test(ots, conf, input, expect, rm, true);
     }
     
