@@ -1,11 +1,16 @@
-package com.alibaba.datax.common.util;
+package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.Callable;
 
 public final class RetryUtil {
+
+    private static final Logger LOG = LoggerFactory
+            .getLogger(RetryUtil.class);
 
     /**
      * 重试次数工具方法.
@@ -31,6 +36,9 @@ public final class RetryUtil {
         Exception saveException = null;
         for (int i = 0; i < retryTimes; i++) {
             try {
+                if(i >= 1) {
+                    LOG.info("重试第" + i + "次.");
+                }
                 return callable.call();
             } catch (Exception e) {
                 saveException = e;
