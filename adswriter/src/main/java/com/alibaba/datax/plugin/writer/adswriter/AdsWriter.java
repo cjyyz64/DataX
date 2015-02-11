@@ -107,7 +107,7 @@ public class AdsWriter extends Writer {
                 int time = 0;
                 while(!terminated)
                 {
-                    Thread.sleep(5000);
+                    Thread.sleep(120000);
                     terminated = adsHelper.checkLoadDataJobStatus(id);
                 }
             } catch (AdsException e) {
