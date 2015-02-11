@@ -27,13 +27,14 @@ public class AdsWriter extends Writer {
 
         private OdpsWriter.Job odpsWriterJobProxy = new OdpsWriter.Job();
         private Configuration originalConfig = null;
+        private Configuration readerConfig = null;
         private AdsHelper adsHelper;
         private final int ODPSOVERTIME = 10000;
         private String odpsTableName;
 
         @Override
         public void init() {
-
+            this.readerConfig = super.getReaderConf();
             this.originalConfig = super.getPluginJobConf();
             AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);

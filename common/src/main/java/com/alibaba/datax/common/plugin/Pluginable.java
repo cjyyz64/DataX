@@ -15,8 +15,16 @@ public interface Pluginable {
 
     Configuration getPluginJobConf();
 
+    Configuration getWriterConf();
+
+    Configuration getReaderConf();
+
     void setPluginConf(Configuration pluginConf);
 
 	void setPluginJobConf(Configuration jobConf);
+
+    void setReaderConf(Configuration readerConf);
+
+    void setWriterConf(Configuration writerConf);
 
 }

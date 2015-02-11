@@ -8,6 +8,11 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
 
 	private Configuration pluginConf;
 
+
+    private Configuration readerConf;
+
+    private Configuration writerConf;
+
     @Override
 	public String getName() {
 		assert null != this.pluginConf;
@@ -40,6 +45,26 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
 	public void setPluginConf(Configuration pluginConf) {
 		this.pluginConf = pluginConf;
 	}
+
+    @Override
+    public Configuration getReaderConf() {
+        return readerConf;
+    }
+
+    @Override
+    public void setReaderConf(Configuration readerConf) {
+        this.readerConf = readerConf;
+    }
+
+    @Override
+    public Configuration getWriterConf() {
+        return writerConf;
+    }
+
+    @Override
+    public void setWriterConf(Configuration writerConf) {
+        this.writerConf = writerConf;
+    }
 
 	public void prepare() {
 	}
