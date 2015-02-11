@@ -329,6 +329,8 @@ public class AdsHelper {
 
             if (state.equals("SUCCEEDED")) {
                 return true;
+            } else if (state.equals("FAILED")) {
+                throw new AdsException(AdsException.JOB_FAILED, "Target job failed for id: " + jobId, null);
             } else {
                 return false;
             }
