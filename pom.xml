@@ -56,7 +56,8 @@
         <module>otswriter</module>
         <module>oraclewriter</module>
         <module>oceanbasewriter</module>
-	<module>postgresqlwriter</module>
+        <module>postgresqlwriter</module>
+        <module>osswriter</module>
         <!--hook-->
         <module>dqchook</module>
 
@@ -64,6 +65,7 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
+        
     </modules>
 
     <dependencyManagement>

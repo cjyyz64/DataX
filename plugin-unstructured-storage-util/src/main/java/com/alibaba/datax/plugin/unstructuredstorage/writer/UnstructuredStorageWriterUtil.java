@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Set;
 
 import org.anarres.lzo.LzoCompressor1x_1;
 import org.anarres.lzo.LzoOutputStream;
@@ -20,6 +21,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -32,6 +34,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.google.common.collect.Sets;
 
 public class UnstructuredStorageWriterUtil {
 	private UnstructuredStorageWriterUtil() {
@@ -40,6 +43,71 @@ public class UnstructuredStorageWriterUtil {
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(UnstructuredStorageWriterUtil.class);
+
+	/**
+	 * check parameter: writeMode, encoding, compress, filedDelimiter
+	 * */
+	public static void validateParameter(Configuration writerConfiguration) {
+		// writeMode check
+		String writeMode = writerConfiguration.getNecessaryValue(
+				Key.WRITE_MODE,
+				UnstructuredStorageWriterErrorCode.REQUIRED_VALUE);
+		writeMode = writeMode.trim().toLowerCase();
+		Set<String> supportedWriteModes = Sets.newHashSet("truncate", "append",
+				"error");
+		if (!supportedWriteModes.contains(writeMode)) {
+			throw DataXException
+					.asDataXException(
+							UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+							String.format(
+									"仅支持 truncate, append, error 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
+									writeMode));
+		}
+		writerConfiguration.set(Key.WRITE_MODE, writeMode);
+
+		// encoding check
+		String encoding = writerConfiguration.getString(Key.ENCODING,
+				Constant.DEFAULT_ENCODING);
+		if (StringUtils.isBlank(encoding)) {
+			writerConfiguration.set(Key.ENCODING, null);
+		} else {
+			try {
+				encoding = encoding.trim();
+				writerConfiguration.set(Key.ENCODING, encoding);
+				Charsets.toCharset(encoding);
+			} catch (Exception e) {
+				throw DataXException.asDataXException(
+						UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+						String.format("不支持您配置的编码格式:[%s]", encoding), e);
+			}
+		}
+
+		// only support compress types
+		String compress = writerConfiguration.getString(Key.COMPRESS);
+		if (StringUtils.isBlank(compress)) {
+			writerConfiguration.set(Key.COMPRESS, null);
+		} else {
+			Set<String> supportedCompress = Sets.newHashSet("gzip", "bzip2");
+			if (!supportedCompress.contains(compress.toLowerCase().trim())) {
+				String message = String.format(
+						"仅支持 [%s] 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+						StringUtils.join(supportedCompress, ","));
+				throw DataXException.asDataXException(
+						UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+						String.format(message, compress));
+			}
+		}
+
+		// fieldDelimiter check
+		String delimiterInStr = writerConfiguration
+				.getString(Key.FIELD_DELIMITER);
+		// warn: if have, length must be one
+		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+			throw DataXException.asDataXException(
+					UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+					String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+		}
+	}
 
 	public static void writeToStream(RecordReceiver lineReceiver,
 			OutputStream outputStream, Configuration config, String context,
@@ -179,7 +247,7 @@ public class UnstructuredStorageWriterUtil {
 		}
 	}
 
-	private static String transportOneRecord(Record record, String nullFormat,
+	public static String transportOneRecord(Record record, String nullFormat,
 			String dateFormat, char fieldDelimiter,
 			TaskPluginCollector taskPluginCollector) {
 		StringBuilder sb = new StringBuilder();
