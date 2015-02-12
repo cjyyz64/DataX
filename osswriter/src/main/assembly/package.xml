@@ -12,21 +12,21 @@
             <includes>
                 <include>plugin.json</include>
             </includes>
-            <outputDirectory>plugin/reader/osswriter</outputDirectory>
+            <outputDirectory>plugin/writer/osswriter</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>target/</directory>
             <includes>
                 <include>osswriter-0.0.1-SNAPSHOT.jar</include>
             </includes>
-            <outputDirectory>plugin/reader/osswriter</outputDirectory>
+            <outputDirectory>plugin/writer/osswriter</outputDirectory>
         </fileSet>
     </fileSets>
 
     <dependencySets>
         <dependencySet>
             <useProjectArtifact>false</useProjectArtifact>
-            <outputDirectory>plugin/reader/osswriter/libs</outputDirectory>
+            <outputDirectory>plugin/writer/osswriter/libs</outputDirectory>
             <scope>runtime</scope>
         </dependencySet>
     </dependencySets>
