@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.osswriter;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -23,11 +24,15 @@ import com.alibaba.datax.plugin.writer.osswriter.util.OssUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.OSSException;
+import com.aliyun.oss.model.CompleteMultipartUploadRequest;
+import com.aliyun.oss.model.CompleteMultipartUploadResult;
 import com.aliyun.oss.model.InitiateMultipartUploadRequest;
 import com.aliyun.oss.model.InitiateMultipartUploadResult;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
+import com.aliyun.oss.model.PartETag;
 import com.aliyun.oss.model.UploadPartRequest;
+import com.aliyun.oss.model.UploadPartResult;
 
 /**
  * Created by haiwei.luo on 15-02-09.
@@ -192,83 +197,119 @@ public class OssWriter extends Writer {
 	public static class Task extends Writer.Task {
 		private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
-		private OSSClient ossClient = null;
-		private Configuration writerSliceConfig = null;
+		private OSSClient ossClient;
+		private Configuration writerSliceConfig;
+		private String bucket;
+		private String object;
+		private String nullFormat;
+		private String encoding;
+		private char fieldDelimiter;
+		private String format;
 
 		@Override
 		public void init() {
 			this.writerSliceConfig = this.getPluginJobConf();
 			this.ossClient = OssUtil.initOssClient(this.writerSliceConfig);
+			this.bucket = this.writerSliceConfig.getString(Key.BUCKET);
+			this.object = this.writerSliceConfig.getString(Key.OBJECT);
+			this.nullFormat = this.writerSliceConfig
+					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.NULL_FORMAT);
+			this.format = this.writerSliceConfig
+					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FORMAT);
+			this.encoding = this.writerSliceConfig
+					.getString(
+							com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
+							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_ENCODING);
+			this.fieldDelimiter = this.writerSliceConfig
+					.getChar(
+							com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FIELD_DELIMITER,
+							com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_FIELD_DELIMITER);
 		}
 
 		@Override
 		public void startWrite(RecordReceiver lineReceiver) {
 			LOG.info("begin do write...");
-			String bucket = this.writerSliceConfig.getString(Key.BUCKET);
-			String object = this.writerSliceConfig.getString(Key.OBJECT);
-			String nullFormat = this.writerSliceConfig
-					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.NULL_FORMAT);
-			String encoding = this.writerSliceConfig
-					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING);
-			char fieldDelimiter = this.writerSliceConfig
-					.getChar(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FIELD_DELIMITER);
-			String format = this.writerSliceConfig
-					.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FORMAT);
-
 			InitiateMultipartUploadRequest initiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
-					bucket, object);
+					this.bucket, this.object);
 			InitiateMultipartUploadResult initiateMultipartUploadResult = this.ossClient
 					.initiateMultipartUpload(initiateMultipartUploadRequest);
-
 			LOG.info(String
 					.format("write to bucket: [%s] object: [%s] with oss uploadId: [%s]",
-							bucket, object,
+							this.bucket, this.object,
 							initiateMultipartUploadResult.getUploadId()));
 			// 设置每块字符串长度
 			final int partSize = 1024 * 1024 * 1;
 			int partNumber = 1;
 			StringBuilder sb = new StringBuilder();
 			Record record = null;
-			while ((record = lineReceiver.getFromReader()) != null) {
-				String line = UnstructuredStorageWriterUtil.transportOneRecord(
-						record, nullFormat, format, fieldDelimiter,
-						this.getTaskPluginCollector());
-				sb.append(line);
-				try {
+			List<PartETag> partETags = new ArrayList<PartETag>();
+			try {
+				while ((record = lineReceiver.getFromReader()) != null) {
+					String line = UnstructuredStorageWriterUtil
+							.transportOneRecord(record, nullFormat, format,
+									fieldDelimiter,
+									this.getTaskPluginCollector());
+					sb.append(line);
+
 					if (sb.length() >= partSize) {
-						byte[] byteArray = sb.toString().getBytes(encoding);
-						InputStream inputStream = new ByteArrayInputStream(
-								byteArray);
-						// 创建UploadPartRequest，上传分块
-						UploadPartRequest uploadPartRequest = new UploadPartRequest();
-						uploadPartRequest.setBucketName(bucket);
-						uploadPartRequest.setKey(object);
-						uploadPartRequest
-								.setUploadId(initiateMultipartUploadResult
-										.getUploadId());
-						uploadPartRequest.setInputStream(inputStream);
-						uploadPartRequest.setPartSize(byteArray.length);
-						uploadPartRequest.setPartNumber(partNumber++);
-						// UploadPartResult uploadPartResult =
-						// this.ossClient.uploadPart(uploadPartRequest);
+						this.uploadOnePart(sb, partNumber,
+								initiateMultipartUploadResult, partETags);
+						partNumber++;
 						sb = new StringBuilder();
 					}
-
-				} catch (UnsupportedEncodingException e) {
-					throw DataXException.asDataXException(
-							OssWriterErrorCode.ILLEGAL_VALUE,
-							String.format("不支持您配置的编码格式:[%s]", encoding));
-				} catch (OSSException e) {
-					throw DataXException.asDataXException(
-							OssWriterErrorCode.Write_OBJECT_ERROR,
-							e.getMessage());
-				} catch (ClientException e) {
-					throw DataXException.asDataXException(
-							OssWriterErrorCode.Write_OBJECT_ERROR,
-							e.getMessage());
 				}
+
+				if (0 < sb.length()) {
+					this.uploadOnePart(sb, partNumber,
+							initiateMultipartUploadResult, partETags);
+				}
+				CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(
+						this.bucket, this.object,
+						initiateMultipartUploadResult.getUploadId(), partETags);
+				CompleteMultipartUploadResult completeMultipartUploadResult = this.ossClient
+						.completeMultipartUpload(completeMultipartUploadRequest);
+				LOG.info(String.format("final object etag is:[%s]",
+						completeMultipartUploadResult.getETag()));
+
+			} catch (UnsupportedEncodingException e) {
+				throw DataXException.asDataXException(
+						OssWriterErrorCode.ILLEGAL_VALUE,
+						String.format("不支持您配置的编码格式:[%s]", encoding));
+			} catch (OSSException e) {
+				throw DataXException.asDataXException(
+						OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
+			} catch (ClientException e) {
+				throw DataXException.asDataXException(
+						OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
+			} catch (IOException e) {
+				throw DataXException.asDataXException(
+						OssWriterErrorCode.Write_OBJECT_ERROR, e.getMessage());
 			}
 			LOG.info("end do write");
+		}
+
+		private void uploadOnePart(StringBuilder sb, int partNumber,
+				InitiateMultipartUploadResult initiateMultipartUploadResult,
+				List<PartETag> partETags) throws IOException,
+				UnsupportedEncodingException {
+			byte[] byteArray = sb.toString().getBytes(this.encoding);
+			InputStream inputStream = new ByteArrayInputStream(byteArray);
+			// 创建UploadPartRequest，上传分块
+			UploadPartRequest uploadPartRequest = new UploadPartRequest();
+			uploadPartRequest.setBucketName(this.bucket);
+			uploadPartRequest.setKey(this.object);
+			uploadPartRequest.setUploadId(initiateMultipartUploadResult
+					.getUploadId());
+			uploadPartRequest.setInputStream(inputStream);
+			uploadPartRequest.setPartSize(byteArray.length);
+			uploadPartRequest.setPartNumber(partNumber);
+			UploadPartResult uploadPartResult = this.ossClient
+					.uploadPart(uploadPartRequest);
+			partETags.add(uploadPartResult.getPartETag());
+			LOG.info(String.format(
+					"upload part [%s] size [%s] Byte has been completed.",
+					partNumber, byteArray.length));
+			inputStream.close();
 		}
 
 		@Override
