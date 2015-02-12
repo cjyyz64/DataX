@@ -36,6 +36,7 @@ public class AdsWriter extends Writer {
         public void init() {
             this.readerConfig = super.getReaderConf();
             this.originalConfig = super.getPluginJobConf();
+            String readerPluginName = super.getReaderPluginName();
             AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);
 

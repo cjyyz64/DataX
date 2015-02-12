@@ -27,4 +27,12 @@ public interface Pluginable {
 
     void setWriterConf(Configuration writerConf);
 
+    public String getReaderPluginName();
+
+    public void setReaderPluginName(String readerPluginName);
+
+    public String getWriterPluginName();
+
+    public void setWriterPluginName(String writerPluginName);
+
 }

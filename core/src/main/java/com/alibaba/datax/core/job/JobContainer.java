@@ -476,6 +476,7 @@ public class JobContainer extends AbstractContainer {
         jobReader.setWriterConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
 
+
         jobReader.setJobPluginCollector(jobPluginCollector);
         jobReader.init();
 
@@ -507,6 +508,7 @@ public class JobContainer extends AbstractContainer {
         // 设置reader的writerConfig
         jobWriter.setWriterConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
+        jobWriter.setReaderPluginName(this.readerPluginName);
         jobWriter.setJobPluginCollector(jobPluginCollector);
         jobWriter.init();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
