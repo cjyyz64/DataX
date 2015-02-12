@@ -29,4 +29,8 @@ public final class Key {
 
     public final static String PARTITION = "adsPartition";
 
+    public final static String ODPSREADER = "odpsreader";
+
+    public final static String ODPSTABLENAME = "table";
+
 }

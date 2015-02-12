@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.writer.adswriter.TableMetaHelper;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
+import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.OdpsException;
@@ -14,8 +15,7 @@ import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 /**
  * Created by judy.lt on 2015/2/3.
@@ -85,6 +85,46 @@ public class AdsWriteUnitTest {
             adsHelper.checkLoadDataJobStatus(id);
         } catch (AdsException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR, e);
+        }
+    }
+
+    @Test
+    public void odpsReaderTest(){
+        String readerPluginName = "odpsreader";
+        String odpsTableName ="test555__table_2up01_14236492863111508";
+        boolean isSucess = false;
+        if (readerPluginName.equals(Key.ODPSREADER)){
+            isSucess = loadAdsData(odpsTableName);
+            System.exit(0);
+        }
+        assertTrue(isSucess);
+    }
+
+    private boolean loadAdsData(String odpsTableName){
+        String table = "table_2up01";
+        String project = "autotest_dev";
+        String partition = "('id','ds=20150108')";
+        String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
+        boolean overwrite = true;
+        String adsUrl = "10.101.90.23:9999";
+        String userName = "gq5FDS2IgSWqXzTu";
+        String password = "xNXmuBr4dvn3BNLLzWZEAerpHqREto";
+        String schema = "test555";
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema);
+        try {
+            String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
+            boolean terminated = false;
+            int time = 0;
+            while(!terminated)
+            {
+                Thread.sleep(120000);
+                terminated = adsHelper.checkLoadDataJobStatus(id);
+            }
+            return terminated;
+        } catch (AdsException e) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
+        } catch (InterruptedException e) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
         }
     }
 }

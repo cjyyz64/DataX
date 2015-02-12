@@ -34,12 +34,17 @@ public class AdsWriter extends Writer {
 
         @Override
         public void init() {
-            this.readerConfig = super.getReaderConf();
             this.originalConfig = super.getPluginJobConf();
-            String readerPluginName = super.getReaderPluginName();
             AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);
-
+            /*检查ReaderPlugin是否为MySQLReader,执行special Pattern*/
+            String readerPluginName = super.getReaderPluginName();
+            if (readerPluginName.equals(Key.ODPSREADER)){
+                this.readerConfig = super.getReaderConf();
+                String odpsTableName = this.readerConfig.getString(Key.ODPSTABLENAME);
+                loadAdsData(odpsTableName);
+                System.exit(0);
+            }
 
             //Get endpoint,accessId,accessKey,project等参数,创建ODPSConnection实例
             String endPoint = this.originalConfig.getString(Key.ODPS_SERVER);
@@ -98,24 +103,10 @@ public class AdsWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行post 的执行（单表情况例外）
         @Override
         public void post() {
-            String table = this.originalConfig.getString(Key.ADS_TABLE);
-            String project = this.originalConfig.getString(Key.PROJECT);
-            String partition = this.originalConfig.getString(Key.PARTITION);
-            String sourcePath = AdsUtil.generateSourcePath(project,this.odpsTableName);
-            boolean overwrite = true;
-            try {
-                String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
-                boolean terminated = false;
-                int time = 0;
-                while(!terminated)
-                {
-                    Thread.sleep(120000);
-                    terminated = adsHelper.checkLoadDataJobStatus(id);
-                }
-            } catch (AdsException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
-            } catch (InterruptedException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+            try{
+                loadAdsData(this.odpsTableName);
+            }catch(DataXException e){
+                throw e;
             }
             this.odpsWriterJobProxy.post();
 
@@ -126,6 +117,28 @@ public class AdsWriter extends Writer {
             this.odpsWriterJobProxy.destroy();
         }
 
+        private boolean loadAdsData(String odpsTableName){
+            String table = this.originalConfig.getString(Key.ADS_TABLE);
+            String project = this.originalConfig.getString(Key.PROJECT);
+            String partition = this.originalConfig.getString(Key.PARTITION);
+            String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
+            boolean overwrite = true;
+            try {
+                String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
+                boolean terminated = false;
+                int time = 0;
+                while(!terminated)
+                {
+                    Thread.sleep(120000);
+                    terminated = adsHelper.checkLoadDataJobStatus(id);
+                }
+                return terminated;
+            } catch (AdsException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
+            } catch (InterruptedException e) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
+            }
+        }
     }
 
     public static class Task extends Writer.Task {
