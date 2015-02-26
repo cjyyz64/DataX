@@ -66,11 +66,12 @@ public class UnstructuredStorageWriterUtil {
 		writerConfiguration.set(Key.WRITE_MODE, writeMode);
 
 		// encoding check
-		String encoding = writerConfiguration.getString(Key.ENCODING,
-				Constant.DEFAULT_ENCODING);
+		String encoding = writerConfiguration.getString(Key.ENCODING);
 		if (StringUtils.isBlank(encoding)) {
-			// like "  "
-			writerConfiguration.set(Key.ENCODING, null);
+			// like "  ", null
+			LOG.warn(String.format("您的encoding配置为空, 将使用默认值[%s]",
+					Constant.DEFAULT_ENCODING));
+			writerConfiguration.set(Key.ENCODING, Constant.DEFAULT_ENCODING);
 		} else {
 			try {
 				encoding = encoding.trim();
