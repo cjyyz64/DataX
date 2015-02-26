@@ -116,6 +116,16 @@ public class OssWriter extends Writer {
 					ObjectListing listing = this.ossClient.listObjects(bucket,
 							object);
 					if (0 < listing.getObjectSummaries().size()) {
+						StringBuilder objectKeys = new StringBuilder();
+						objectKeys.append("[ ");
+						for (OSSObjectSummary ossObjectSummary : listing
+								.getObjectSummaries()) {
+							objectKeys.append(ossObjectSummary.getKey() + " ,");
+						}
+						objectKeys.append(" ]");
+						LOG.info(String.format(
+								"object with prefix [%s] details: %s", object,
+								objectKeys.toString()));
 						throw DataXException
 								.asDataXException(
 										OssWriterErrorCode.ILLEGAL_VALUE,
