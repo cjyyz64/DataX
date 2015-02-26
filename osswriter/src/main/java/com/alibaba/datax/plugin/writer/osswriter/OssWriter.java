@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,11 +256,13 @@ public class OssWriter extends Writer {
 			List<PartETag> partETags = new ArrayList<PartETag>();
 			try {
 				while ((record = lineReceiver.getFromReader()) != null) {
-					String line = UnstructuredStorageWriterUtil
+					MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
 							.transportOneRecord(record, nullFormat, format,
 									fieldDelimiter,
 									this.getTaskPluginCollector());
-					sb.append(line);
+					if (!transportResult.getRight()) {
+						sb.append(transportResult.getLeft());
+					}
 
 					if (sb.length() >= partSize) {
 						this.uploadOnePart(sb, partNumber,

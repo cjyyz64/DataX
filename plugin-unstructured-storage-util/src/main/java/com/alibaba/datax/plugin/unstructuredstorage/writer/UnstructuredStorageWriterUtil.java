@@ -24,6 +24,7 @@ import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -248,16 +249,24 @@ public class UnstructuredStorageWriterUtil {
 
 		Record record = null;
 		while ((record = lineReceiver.getFromReader()) != null) {
-			String line = UnstructuredStorageWriterUtil.transportOneRecord(
-					record, nullFormat, dateFormat, fieldDelimiter,
-					taskPluginCollector);
-			writer.write(line);
+			MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
+					.transportOneRecord(record, nullFormat, dateFormat,
+							fieldDelimiter, taskPluginCollector);
+			if (!transportResult.getRight()) {
+				writer.write(transportResult.getLeft());
+			}
 		}
 	}
 
-	public static String transportOneRecord(Record record, String nullFormat,
-			String dateFormat, char fieldDelimiter,
-			TaskPluginCollector taskPluginCollector) {
+	/**
+	 * @return MutablePair<String, Boolean> left: formated data line; right: is
+	 *         dirty data or not, true means meeting dirty data
+	 * */
+	public static MutablePair<String, Boolean> transportOneRecord(
+			Record record, String nullFormat, String dateFormat,
+			char fieldDelimiter, TaskPluginCollector taskPluginCollector) {
+		MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
+		transportResult.setRight(false);
 		StringBuilder sb = new StringBuilder();
 		int recordLength = record.getColumnNumber();
 		if (0 != recordLength) {
@@ -281,6 +290,8 @@ public class UnstructuredStorageWriterUtil {
 										dateFormat, column.asString());
 								taskPluginCollector.collectDirtyRecord(record,
 										message);
+								transportResult.setRight(true);
+								break;
 							}
 						} else {
 							sb.append(column.asString());
@@ -296,6 +307,7 @@ public class UnstructuredStorageWriterUtil {
 			}
 		}
 		sb.append(IOUtils.LINE_SEPARATOR);
-		return sb.toString();
+		transportResult.setLeft(sb.toString());
+		return transportResult;
 	}
 }
