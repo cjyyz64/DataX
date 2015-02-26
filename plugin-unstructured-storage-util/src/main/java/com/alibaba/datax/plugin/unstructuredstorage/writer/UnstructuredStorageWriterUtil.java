@@ -69,6 +69,7 @@ public class UnstructuredStorageWriterUtil {
 		String encoding = writerConfiguration.getString(Key.ENCODING,
 				Constant.DEFAULT_ENCODING);
 		if (StringUtils.isBlank(encoding)) {
+			// like "  "
 			writerConfiguration.set(Key.ENCODING, null);
 		} else {
 			try {
@@ -106,6 +107,12 @@ public class UnstructuredStorageWriterUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
 					String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+		}
+		if (null == delimiterInStr) {
+			LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
+					Constant.DEFAULT_FIELD_DELIMITER));
+			writerConfiguration.set(Key.FIELD_DELIMITER,
+					Constant.DEFAULT_FIELD_DELIMITER);
 		}
 	}
 

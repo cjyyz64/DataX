@@ -68,7 +68,7 @@ public class OssWriter extends Writer {
 			if (StringUtils.isNotBlank(compress)) {
 				this.writerSliceConfig
 						.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
-				LOG.warn("OSS写暂时不支持压缩, 该配置项不起效用.");
+				LOG.warn(String.format("OSS写暂时不支持压缩, 该压缩配置项[%s]不起效用", compress));
 
 			}
 			UnstructuredStorageWriterUtil
