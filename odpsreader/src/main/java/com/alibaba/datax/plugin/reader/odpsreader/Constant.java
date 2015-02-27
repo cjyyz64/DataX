@@ -10,10 +10,6 @@ public class Constant {
 
     public final static String IS_PARTITIONED_TABLE = "isPartitionedTable";
 
-    public static final String ALL_COLUMN_PARSED_WITH_CONSTANT = "allColumnParsedWithConstant";
-
-    public static final String COLUMN_POSITION = "columnPosition";
-
     public static final String DEFAULT_SPLIT_MODE = "record";
 
     public static final String PARTITION_SPLIT_MODE = "partition";
@@ -31,5 +27,9 @@ public class Constant {
     public static final String SKYNET_ACCESSID = "SKYNET_ACCESSID";
 
     public static final String SKYNET_ACCESSKEY = "SKYNET_ACCESSKEY";
+    
+    public static final String PARTITION_COLUMNS = "partitionColumns";
+    
+    public static final String PARSED_COLUMNS = "parsedColumns";
 
 }

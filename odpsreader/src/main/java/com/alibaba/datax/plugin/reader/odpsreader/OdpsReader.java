@@ -10,12 +10,19 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
 import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class OdpsReader extends Reader {
     public static class Job extends Reader.Job {
@@ -48,9 +55,8 @@ public class OdpsReader extends Reader {
                         String.format("源头表:%s 是虚拟视图，DataX 不支持读取虚拟视图.", tableName));
             }
 
-            dealPartition(this.originalConfig, this.table);
-
-            dealColumn(this.originalConfig, this.table);
+            this.dealPartition(this.table);
+            this.dealColumn(this.table);
         }
 
         private void dealSplitMode(Configuration originalConfig) {
@@ -73,11 +79,12 @@ public class OdpsReader extends Reader {
          * <li>如果是非分区表，则不能配置分区值.</li>
          * </ol>
          */
-        private void dealPartition(Configuration originalConfig, Table table) {
-            List<String> userConfiguredPartitions = originalConfig.getList(
+        private void dealPartition(Table table) {
+            List<String> userConfiguredPartitions = this.originalConfig.getList(
                     Key.PARTITION, String.class);
 
-            boolean isPartitionedTable = originalConfig.getBool(Constant.IS_PARTITIONED_TABLE);
+            boolean isPartitionedTable = this.originalConfig.getBool(Constant.IS_PARTITIONED_TABLE);
+            List<String> partitionColumns = new ArrayList<String>();
 
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
@@ -105,7 +112,12 @@ public class OdpsReader extends Reader {
                                         StringUtils.join(allPartitions, "\n"),
                                         StringUtils.join(userConfiguredPartitions, "\n")));
                     }
-                    originalConfig.set(Key.PARTITION, parsedPartitions);
+                    this.originalConfig.set(Key.PARTITION, parsedPartitions);
+                    
+                    for (Column column : table.getSchema()
+                            .getPartitionColumns()) {
+                        partitionColumns.add(column.getName());
+                    }
                 }
             } else {
                 // 非分区表，则不能配置分区
@@ -114,6 +126,12 @@ public class OdpsReader extends Reader {
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                             String.format("分区配置错误，源头表:%s 为非分区表, 您不能配置分区. 请您删除该配置项. ", table.getName()));
                 }
+            }
+            
+            this.originalConfig.set(Constant.PARTITION_COLUMNS, partitionColumns);
+            if (isPartitionedTable) {
+                LOG.info("{源头表:{} 的所有分区列是:[{}]}", table.getName(),
+                        StringUtils.join(partitionColumns, ","));
             }
         }
 
@@ -160,13 +178,13 @@ public class OdpsReader extends Reader {
             return retPartitions;
         }
 
-        private void dealColumn(Configuration originalConfig, Table table) {
+        private void dealColumn(Table table) {
             // 用户配置的 column 之前已经确保其不为空
-            List<String> userConfiguredColumns = originalConfig.getList(
+            List<String> userConfiguredColumns = this.originalConfig.getList(
                     Key.COLUMN, String.class);
 
             List<Column> allColumns = OdpsUtil.getTableAllColumns(table);
-            List<String> tableOriginalColumnNameList = OdpsUtil
+            List<String> allNormalColumns = OdpsUtil
                     .getTableOriginalColumnNameList(allColumns);
 
             StringBuilder columnMeta = new StringBuilder();
@@ -180,43 +198,38 @@ public class OdpsReader extends Reader {
             if (1 == userConfiguredColumns.size()
                     && "*".equals(userConfiguredColumns.get(0))) {
                 LOG.warn("这是一条警告信息，您配置的 ODPS 读取的列为*，这是不推荐的行为，因为当您的表字段个数、类型有变动时，可能影响任务正确性甚至会运行出错. 建议您把所有需要抽取的列都配置上. ");
-                originalConfig.set(Key.COLUMN, tableOriginalColumnNameList);
+                this.originalConfig.set(Key.COLUMN, allNormalColumns);
             }
 
             userConfiguredColumns = this.originalConfig.getList(
                     Key.COLUMN, String.class);
 
             /**
-             * 把字符串常量，加到表原生字段tableOriginalColumnNameList 列表后，
-             * 为下一轮解析 position 做准备
+             * warn: 字符串常量需要与表原生字段tableOriginalColumnNameList 分开存放 demo:
+             * ["id","'id'","name"]
              */
-            List<String> allColumnParsedWithConstant = OdpsUtil.parseConstantColumn(tableOriginalColumnNameList,
-                    userConfiguredColumns);
+            List<String> allPartitionColumns = this.originalConfig.getList(
+                    Constant.PARTITION_COLUMNS, String.class);
+            List<Pair<String, ColumnType>> parsedColumns = OdpsUtil
+                    .parseColumns(allNormalColumns, allPartitionColumns,
+                            userConfiguredColumns);
+
+            this.originalConfig.set(Constant.PARSED_COLUMNS, parsedColumns);
 
             if (IS_DEBUG) {
-                LOG.debug("allColumnParsedWithConstant: {} .", allColumnParsedWithConstant);
-            }
-
-            // 去除常量中的首尾标识
-            List<String> userConfiguredColumnWhichWithoutConstantHeadAndTailMark = new ArrayList<String>();
-            for (String column : userConfiguredColumns) {
-                if (OdpsUtil.checkIfConstantColumn(column)) {
-                    userConfiguredColumnWhichWithoutConstantHeadAndTailMark.add(column.substring(1, column.length() - 1));
-                } else {
-                    userConfiguredColumnWhichWithoutConstantHeadAndTailMark.add(column);
+                StringBuilder sb = new StringBuilder();
+                sb.append("[ ");
+                for (int i = 0, len = parsedColumns.size(); i < len; i++) {
+                    Pair<String, ColumnType> pair = parsedColumns.get(i);
+                    sb.append(String.format(" %s : %s", pair.getLeft(),
+                            pair.getRight()));
+                    if (i != len - 1) {
+                        sb.append(",");
+                    }
                 }
+                sb.append(" ]");
+                LOG.debug("parsed column details: {} .", sb.toString());
             }
-
-            List<Integer> columnPositions = OdpsUtil.parsePosition(
-                    allColumnParsedWithConstant, userConfiguredColumnWhichWithoutConstantHeadAndTailMark);
-
-            if (IS_DEBUG) {
-                LOG.debug("columnPositionList: {} .", columnPositions);
-            }
-
-            originalConfig.set(Constant.ALL_COLUMN_PARSED_WITH_CONSTANT,
-                    allColumnParsedWithConstant);
-            originalConfig.set(Constant.COLUMN_POSITION, columnPositions);
         }
 
 
@@ -307,17 +320,32 @@ public class OdpsReader extends Reader {
             }
 
             TableSchema tableSchema = downloadSession.getSchema();
+            Set<Column> allColumns = new HashSet<Column>();
+            allColumns.addAll(tableSchema.getColumns());
+            allColumns.addAll(tableSchema.getPartitionColumns());
 
-            List<OdpsType> tableOriginalColumnTypeList = OdpsUtil
-                    .getTableOriginalColumnTypeList(tableSchema.getColumns());
+            Map<String, OdpsType> columnTypeMap = new HashMap<String, OdpsType>();
+            for (Column column : allColumns) {
+                columnTypeMap.put(column.getName(), column.getType());
+            }
 
             try {
                 RecordReader recordReader = downloadSession.openRecordReader(
                         start, count);
+                @SuppressWarnings("rawtypes")
+                List<Pair> parsedColumnsTmp = this.readerSliceConf.getList(
+                        Constant.PARSED_COLUMNS, Pair.class);
+                List<Pair<String, ColumnType>> parsedColumns = new ArrayList<Pair<String, ColumnType>>();
+                for (int i = 0; i < parsedColumnsTmp.size(); i++) {
+                    String columnName = (String) parsedColumnsTmp.get(i)
+                            .getLeft();
+                    ColumnType columnType = (ColumnType) parsedColumnsTmp
+                            .get(i).getRight();
+                    parsedColumns.add(new MutablePair<String, ColumnType>(
+                            columnName, columnType));
+                }
                 ReaderProxy readerProxy = new ReaderProxy(recordSender,
-                        recordReader, downloadSession.getSchema(),
-                        this.readerSliceConf, tableOriginalColumnTypeList);
-
+                        recordReader, columnTypeMap, parsedColumns, partition);
                 readerProxy.doRead();
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
