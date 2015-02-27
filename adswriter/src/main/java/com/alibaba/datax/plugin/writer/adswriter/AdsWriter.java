@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
+import com.alibaba.datax.plugin.writer.adswriter.util.PropertyLoader;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriter;
 import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
@@ -37,6 +38,9 @@ public class AdsWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);
+            if(this.adsHelper == null){
+
+            }
             /*检查ReaderPlugin是否为MySQLReader,执行special Pattern*/
             String readerPluginName = super.getReaderPluginName();
             if (readerPluginName.equals(Key.ODPSREADER)){
@@ -47,10 +51,16 @@ public class AdsWriter extends Writer {
             }
 
             //Get endpoint,accessId,accessKey,project等参数,创建ODPSConnection实例
-            String endPoint = this.originalConfig.getString(Key.ODPS_SERVER);
-            String accessId = this.originalConfig.getString(Key.ACCESS_ID);
-            String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
-            String project = this.originalConfig.getString(Key.PROJECT);
+//            String endPoint = this.originalConfig.getString(Key.ODPS_SERVER);
+//            String accessId = this.originalConfig.getString(Key.ACCESS_ID);
+//            String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+//            String project = this.originalConfig.getString(Key.PROJECT);
+
+            String endPoint = PropertyLoader.getString("odps.server");
+            String accessId = PropertyLoader.getString("odps.access.id");
+            String accessKey = PropertyLoader.getString("odps.access.key");
+            String project = PropertyLoader.getString("odps.project");
+
             TableMeta tableMeta;
             Account odpsAccount = new AliyunAccount(accessId,accessKey);
             Odps odps = new Odps(odpsAccount);
