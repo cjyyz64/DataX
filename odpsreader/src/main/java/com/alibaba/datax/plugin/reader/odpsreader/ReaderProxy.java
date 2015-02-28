@@ -59,18 +59,14 @@ public class ReaderProxy {
                         String partitionColumnValue = this
                                 .getPartitionColumnValue(partitionMap,
                                         columnName);
-                        this.odpsColumnToDataXField(
-                                odpsRecord,
-                                dataXRecord,
-                                this.columnTypeMap.get(columnName.toLowerCase()),
+                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
+                                this.columnTypeMap.get(columnName),
                                 partitionColumnValue, true);
                         break;
                     case NORMAL:
-                        this.odpsColumnToDataXField(
-                                odpsRecord,
-                                dataXRecord,
-                                this.columnTypeMap.get(columnName.toLowerCase()),
-                                columnName, false);
+                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
+                                this.columnTypeMap.get(columnName), columnName,
+                                false);
                         break;
                     case CONSTANT:
                         dataXRecord.addColumn(new StringColumn(columnName));
@@ -145,7 +141,7 @@ public class ReaderProxy {
      * @param odpsRecord
      *            every line record of odps table
      * @param dataXRecord
-     *            every datax record, to be send to writer
+     *            every datax record, to be send to writer. method getXXX() case sensitive
      * @param type
      *            odps column type
      * @param columnNameValue

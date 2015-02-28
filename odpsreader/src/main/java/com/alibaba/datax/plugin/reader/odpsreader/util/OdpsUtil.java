@@ -155,42 +155,53 @@ public final class OdpsUtil {
         // warn: upper & lower case
         for (String column : userConfiguredColumns) {
             MutablePair<String, ColumnType> pair = new MutablePair<String, ColumnType>();
+            
             // if constant column
             if (OdpsUtil.checkIfConstantColumn(column)) {
                 // remove first and last '
                 pair.setLeft(column.substring(1, column.length() - 1));
                 pair.setRight(ColumnType.CONSTANT);
+                parsededColumns.add(pair);
+                continue;
             }
+
             // if normal column, warn: in o d p s normal columns can not
             // repeated in partitioning columns
-            else if (OdpsUtil.checkContains(allNormalColumns, column)) {
-                pair.setLeft(column);
+            int index = OdpsUtil.indexOfIgnoreCase(allNormalColumns, column);
+            if (0 <= index) {
+                pair.setLeft(allNormalColumns.get(index));
                 pair.setRight(ColumnType.NORMAL);
+                parsededColumns.add(pair);
+                continue;
             }
+
             // if partition column
-            else if (OdpsUtil.checkContains(allPartitionColumns, column)) {
-                pair.setLeft(column);
+            index = OdpsUtil.indexOfIgnoreCase(allPartitionColumns, column);
+            if (0 <= index) {
+                pair.setLeft(allPartitionColumns.get(index));
                 pair.setRight(ColumnType.PARTITION);
+                parsededColumns.add(pair);
+                continue;
             }
             // not exist column
-            else {
-                throw DataXException.asDataXException(
-                        OdpsReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("源头表的列配置错误. 您所配置的列 [%s] 不存在.", column));
-            }
-            parsededColumns.add(pair);
+            throw DataXException.asDataXException(
+                    OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    String.format("源头表的列配置错误. 您所配置的列 [%s] 不存在.", column));
+
         }
         return parsededColumns;
     }
     
-    private static boolean checkContains(List<String> columnCollection,
+    private static int indexOfIgnoreCase(List<String> columnCollection,
             String column) {
-        for (String eachCol : columnCollection) {
-            if (eachCol.equalsIgnoreCase(column)) {
-                return true;
+        int index = -1;
+        for (int i = 0; i < columnCollection.size(); i++) {
+            if (columnCollection.get(i).equalsIgnoreCase(column)) {
+                index = i;
+                break;
             }
         }
-        return false;
+        return index;
     }
 
     public static boolean checkIfConstantColumn(String column) {

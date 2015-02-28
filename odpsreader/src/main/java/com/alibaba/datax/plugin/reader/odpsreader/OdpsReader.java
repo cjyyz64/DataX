@@ -216,20 +216,18 @@ public class OdpsReader extends Reader {
 
             this.originalConfig.set(Constant.PARSED_COLUMNS, parsedColumns);
 
-            if (IS_DEBUG) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("[ ");
-                for (int i = 0, len = parsedColumns.size(); i < len; i++) {
-                    Pair<String, ColumnType> pair = parsedColumns.get(i);
-                    sb.append(String.format(" %s : %s", pair.getLeft(),
-                            pair.getRight()));
-                    if (i != len - 1) {
-                        sb.append(",");
-                    }
+            StringBuilder sb = new StringBuilder();
+            sb.append("[ ");
+            for (int i = 0, len = parsedColumns.size(); i < len; i++) {
+                Pair<String, ColumnType> pair = parsedColumns.get(i);
+                sb.append(String.format(" %s : %s", pair.getLeft(),
+                        pair.getRight()));
+                if (i != len - 1) {
+                    sb.append(",");
                 }
-                sb.append(" ]");
-                LOG.debug("parsed column details: {} .", sb.toString());
             }
+            sb.append(" ]");
+            LOG.info("parsed column details: {} .", sb.toString());
         }
 
 
@@ -328,9 +326,7 @@ public class OdpsReader extends Reader {
 
             Map<String, OdpsType> columnTypeMap = new HashMap<String, OdpsType>();
             for (Column column : allColumns) {
-                // warn: to lower case
-                columnTypeMap.put(column.getName().toLowerCase(),
-                        column.getType());
+                columnTypeMap.put(column.getName(), column.getType());
             }
 
             try {
