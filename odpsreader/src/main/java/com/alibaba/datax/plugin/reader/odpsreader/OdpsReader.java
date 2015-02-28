@@ -328,7 +328,9 @@ public class OdpsReader extends Reader {
 
             Map<String, OdpsType> columnTypeMap = new HashMap<String, OdpsType>();
             for (Column column : allColumns) {
-                columnTypeMap.put(column.getName(), column.getType());
+                // warn: to lower case
+                columnTypeMap.put(column.getName().toLowerCase(),
+                        column.getType());
             }
 
             try {

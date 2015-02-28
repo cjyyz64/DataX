@@ -152,6 +152,7 @@ public final class OdpsUtil {
             List<String> allNormalColumns, List<String> allPartitionColumns,
             List<String> userConfiguredColumns) {
         List<Pair<String, ColumnType>> parsededColumns = new ArrayList<Pair<String, ColumnType>>();
+        // warn: upper & lower case
         for (String column : userConfiguredColumns) {
             MutablePair<String, ColumnType> pair = new MutablePair<String, ColumnType>();
             // if constant column
@@ -162,12 +163,12 @@ public final class OdpsUtil {
             }
             // if normal column, warn: in o d p s normal columns can not
             // repeated in partitioning columns
-            else if (allNormalColumns.contains(column)) {
+            else if (OdpsUtil.checkContains(allNormalColumns, column)) {
                 pair.setLeft(column);
                 pair.setRight(ColumnType.NORMAL);
             }
             // if partition column
-            else if (allPartitionColumns.contains(column)) {
+            else if (OdpsUtil.checkContains(allPartitionColumns, column)) {
                 pair.setLeft(column);
                 pair.setRight(ColumnType.PARTITION);
             }
@@ -180,6 +181,16 @@ public final class OdpsUtil {
             parsededColumns.add(pair);
         }
         return parsededColumns;
+    }
+    
+    private static boolean checkContains(List<String> columnCollection,
+            String column) {
+        for (String eachCol : columnCollection) {
+            if (eachCol.equalsIgnoreCase(column)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean checkIfConstantColumn(String column) {

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 public class ReaderProxy {
     private static final Logger LOG = LoggerFactory
             .getLogger(ReaderProxy.class);
+    private static boolean IS_DEBUG = LOG.isDebugEnabled();
 
     private RecordSender recordSender;
     private RecordReader recordReader;
@@ -39,6 +40,7 @@ public class ReaderProxy {
         this.isPartitionTable = isPartitionTable;
     }
 
+    // warn: odps 分区列和正常列不能重名, 所有列都不不区分大小写
     public void doRead() {
         try {
             Record odpsRecord;
@@ -47,20 +49,28 @@ public class ReaderProxy {
             while ((odpsRecord = recordReader.read()) != null) {
                 com.alibaba.datax.common.element.Record dataXRecord = recordSender
                         .createRecord();
-                // warn: for PARTITION||NORMAL columnTypeMap's key(columnName)
-                // is big than parsedColumns's left(columnName)
+                // warn: for PARTITION||NORMAL columnTypeMap's key
+                // sets(columnName) is big than parsedColumns's left
+                // sets(columnName), always contain
                 for (Pair<String, ColumnType> pair : this.parsedColumns) {
                     String columnName = pair.getLeft();
                     switch (pair.getRight()) {
                     case PARTITION:
-                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
-                                columnTypeMap.get(columnName),
-                                partitionMap.get(columnName), true);
+                        String partitionColumnValue = this
+                                .getPartitionColumnValue(partitionMap,
+                                        columnName);
+                        this.odpsColumnToDataXField(
+                                odpsRecord,
+                                dataXRecord,
+                                this.columnTypeMap.get(columnName.toLowerCase()),
+                                partitionColumnValue, true);
                         break;
                     case NORMAL:
-                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
-                                columnTypeMap.get(columnName), columnName,
-                                false);
+                        this.odpsColumnToDataXField(
+                                odpsRecord,
+                                dataXRecord,
+                                this.columnTypeMap.get(columnName.toLowerCase()),
+                                columnName, false);
                         break;
                     case CONSTANT:
                         dataXRecord.addColumn(new StringColumn(columnName));
@@ -94,10 +104,34 @@ public class ReaderProxy {
                                             "您的分区 [%s] 解析出现错误,解析后正确的配置方式类似为 [ pt=1,dt=1 ].",
                                             eachPartition));
                 }
-                partitionMap.put(partitionDetail[0], partitionDetail[1]);
+                // warn: translate to lower case, it's more comfortable to
+                // compare whit user's input columns
+                String partitionName = partitionDetail[0].toLowerCase();
+                String partitionValue = partitionDetail[1];
+                partitionMap.put(partitionName, partitionValue);
             }
         }
+        if (IS_DEBUG) {
+            LOG.debug(String.format("partition value details: %s",
+                    com.alibaba.fastjson.JSON.toJSONString(partitionMap)));
+        }
         return partitionMap;
+    }
+
+    private String getPartitionColumnValue(Map<String, String> partitionMap,
+            String partitionColumnName) {
+        // warn: to lower case
+        partitionColumnName = partitionColumnName.toLowerCase();
+        // it's will never happen, but add this checking
+        if (!partitionMap.containsKey(partitionColumnName)) {
+            String errorMessage = String.format(
+                    "表所有分区信息为: %s 其中找不到 [%s] 对应的分区值.",
+                    com.alibaba.fastjson.JSON.toJSONString(partitionMap),
+                    partitionColumnName);
+            throw DataXException.asDataXException(
+                    OdpsReaderErrorCode.READ_DATA_FAIL, errorMessage);
+        }
+        return partitionMap.get(partitionColumnName);
     }
 
     /**
