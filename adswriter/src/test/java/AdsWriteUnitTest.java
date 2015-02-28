@@ -7,6 +7,7 @@ import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
+import com.alibaba.datax.plugin.writer.adswriter.util.PropertyLoader;
 import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.OdpsException;
@@ -126,5 +127,17 @@ public class AdsWriteUnitTest {
         } catch (InterruptedException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
         }
+    }
+    /*测试 AdsWriter Plugin的Config.properties*/
+    @Test
+    public void getPropertiesTest(){
+        String endPoint = PropertyLoader.getString("odps.server");
+        String accessId = PropertyLoader.getString("odps.access.id");
+        String accessKey = PropertyLoader.getString("odps.access.key");
+        String project = PropertyLoader.getString("odps.project");
+        assertNotNull(endPoint);
+        assertNotNull(accessId);
+        assertNotNull(accessKey);
+        assertNotNull(project);
     }
 }
