@@ -31,5 +31,5 @@ public class Constant {
     public static final String PARTITION_COLUMNS = "partitionColumns";
     
     public static final String PARSED_COLUMNS = "parsedColumns";
-
+    
 }

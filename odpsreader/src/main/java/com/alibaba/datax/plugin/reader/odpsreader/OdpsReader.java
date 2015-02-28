@@ -257,6 +257,7 @@ public class OdpsReader extends Reader {
 
         private String tunnelServer;
         private Odps odps = null;
+        private Table table = null;
         private String tableName = null;
         private boolean isPartitionedTable;
         private String sessionId;
@@ -270,6 +271,7 @@ public class OdpsReader extends Reader {
             this.odps = OdpsUtil.initOdps(this.readerSliceConf);
 
             this.tableName = this.readerSliceConf.getString(Key.TABLE);
+            this.table = OdpsUtil.getTable(this.odps, tableName);
             this.isPartitionedTable = this.readerSliceConf
                     .getBool(Constant.IS_PARTITIONED_TABLE);
             this.sessionId = this.readerSliceConf.getString(Constant.SESSION_ID, null);
@@ -318,8 +320,8 @@ public class OdpsReader extends Reader {
                         String.format("源头表:%s 的分区:%s  读取行数为负数, 请联系 ODPS 管理员查看表状态!",
                                 this.tableName, partition));
             }
-
-            TableSchema tableSchema = downloadSession.getSchema();
+            
+            TableSchema tableSchema = this.table.getSchema();
             Set<Column> allColumns = new HashSet<Column>();
             allColumns.addAll(tableSchema.getColumns());
             allColumns.addAll(tableSchema.getPartitionColumns());
@@ -332,20 +334,21 @@ public class OdpsReader extends Reader {
             try {
                 RecordReader recordReader = downloadSession.openRecordReader(
                         start, count);
-                @SuppressWarnings("rawtypes")
-                List<Pair> parsedColumnsTmp = this.readerSliceConf.getList(
-                        Constant.PARSED_COLUMNS, Pair.class);
+                List<Configuration> parsedColumnsTmp = this.readerSliceConf
+                        .getListConfiguration(Constant.PARSED_COLUMNS);
                 List<Pair<String, ColumnType>> parsedColumns = new ArrayList<Pair<String, ColumnType>>();
                 for (int i = 0; i < parsedColumnsTmp.size(); i++) {
-                    String columnName = (String) parsedColumnsTmp.get(i)
-                            .getLeft();
-                    ColumnType columnType = (ColumnType) parsedColumnsTmp
-                            .get(i).getRight();
+                    Configuration eachColumnConfig = parsedColumnsTmp.get(i);
+                    String columnName = eachColumnConfig.getString("left");
+                    ColumnType columnType = ColumnType
+                            .asColumnType(eachColumnConfig.getString("right"));
                     parsedColumns.add(new MutablePair<String, ColumnType>(
                             columnName, columnType));
+
                 }
                 ReaderProxy readerProxy = new ReaderProxy(recordSender,
-                        recordReader, columnTypeMap, parsedColumns, partition);
+                        recordReader, columnTypeMap, parsedColumns, partition,
+                        this.isPartitionedTable);
                 readerProxy.doRead();
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
