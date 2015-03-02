@@ -53,8 +53,6 @@ public class TxtFileWriter extends Writer {
             if (null != dateFormatOld) {
                 LOG.warn("您使用format配置日期格式化, 这是不推荐的行为, 请优先使用dateFormat配置项, 量项同时存在则使用dateFormat.");
             }
-            this.writerSliceConfig
-                    .remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FORMAT);
         }
 
         private void validateParameter() {
