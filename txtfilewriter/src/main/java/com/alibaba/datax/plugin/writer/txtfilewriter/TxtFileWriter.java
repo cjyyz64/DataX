@@ -51,7 +51,7 @@ public class TxtFileWriter extends Writer {
                                 dateFormatOld);
             }
             if (null != dateFormatOld) {
-                LOG.warn("您使用format配置日期格式化, 这是不推荐的行为, 请优先使用dateFormat配置项, 量项同时存在则使用dateFormat.");
+                LOG.warn("您使用format配置日期格式化, 这是不推荐的行为, 请优先使用dateFormat配置项, 两项同时存在则使用dateFormat.");
             }
         }
 
@@ -177,7 +177,8 @@ public class TxtFileWriter extends Writer {
             // truncate option handler
             if ("truncate".equals(writeMode)) {
                 LOG.info(String.format(
-                        "由于您配置了writeMode truncate, 开始清理 [%s] 下面的内容", path));
+                        "由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的内容",
+                        path, fileName));
                 File dir = new File(path);
                 // warn:需要判断文件是否存在，不存在时，不能删除
                 try {
@@ -186,6 +187,8 @@ public class TxtFileWriter extends Writer {
                         FilenameFilter filter = new PrefixFileFilter(fileName);
                         File[] filesWithFileNamePrefix = dir.listFiles(filter);
                         for (File eachFile : filesWithFileNamePrefix) {
+                            LOG.info(String.format("delete file [%s].",
+                                    eachFile.getName()));
                             FileUtils.forceDelete(eachFile);
                         }
                         // FileUtils.cleanDirectory(dir);
