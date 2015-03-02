@@ -30,7 +30,7 @@ public class AdsWriter extends Writer {
         private Configuration originalConfig = null;
         private Configuration readerConfig = null;
         private AdsHelper adsHelper;
-        private final int ODPSOVERTIME = 10000;
+        private final int ODPSOVERTIME = 120000;
         private String odpsTableName;
 
         @Override
