@@ -19,8 +19,8 @@ public class Key {
     // not must, not default \N
     public static final String NULL_FORMAT = "nullFormat";
 
-    // not must, date format
+    // not must, date format old style, do not use this
     public static final String FORMAT = "format";
     // for writers ' data format
-    public static final String DATE_RORMAT = "dateFormat";
+    public static final String DATE_FORMAT = "dateFormat";
 }

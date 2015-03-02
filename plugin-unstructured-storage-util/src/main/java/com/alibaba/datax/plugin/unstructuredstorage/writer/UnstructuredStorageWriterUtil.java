@@ -229,9 +229,10 @@ public class UnstructuredStorageWriterUtil {
 			TaskPluginCollector taskPluginCollector) throws IOException {
 
 		String nullFormat = config.getString(Key.NULL_FORMAT);
-
-		String dateFormat = config.getString(Key.FORMAT);
-
+		
+		// 兼容format & dataFormat
+		String dateFormat = config.getString(Key.DATE_FORMAT);
+		
 		String delimiterInStr = config.getString(Key.FIELD_DELIMITER);
 		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 			throw DataXException.asDataXException(

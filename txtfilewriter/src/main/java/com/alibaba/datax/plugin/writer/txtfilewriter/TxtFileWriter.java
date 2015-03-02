@@ -10,12 +10,14 @@ import com.google.common.collect.Sets;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.PrefixFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.UnsupportedCharsetException;
@@ -39,6 +41,15 @@ public class TxtFileWriter extends Writer {
 		public void init() {
 			this.writerSliceConfig = this.getPluginJobConf();
 			this.validateParameter();
+			String dateFormatOld = this.writerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FORMAT);
+			String dateFormatNew = this.writerSliceConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.DATE_FORMAT);
+			if (null == dateFormatNew){
+			    this.writerSliceConfig.set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.DATE_FORMAT, dateFormatOld);
+			}
+			if(null != dateFormatOld){
+			    LOG.warn("您使用format配置日期格式化, 这是不推荐的行为, 请优先使用dateFormat配置项, 量项同时存在则使用dateFormat.");
+			}
+			this.writerSliceConfig.remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FORMAT);
 		}
 
 		private void validateParameter() {
@@ -169,8 +180,17 @@ public class TxtFileWriter extends Writer {
 				try {
 					if (dir.exists()) {
 						// warn:不要使用FileUtils.deleteQuietly(dir);
-						FileUtils.cleanDirectory(dir);
+					    FilenameFilter filter = new PrefixFileFilter(fileName);
+					    File[] filesWithFileNamePrefix = dir.listFiles(filter);
+					    for(File eachFile : filesWithFileNamePrefix) {
+					        FileUtils.forceDelete(eachFile);
+					    }
+						// FileUtils.cleanDirectory(dir);
 					}
+				}catch (NullPointerException npe){
+				    throw DataXException.asDataXException(
+                            TxtFileWriterErrorCode.Write_FILE_ERROR,
+                            String.format("您配置的目录清空时出现空指针异常 : [%s]", path), npe);
 				} catch (IllegalArgumentException iae) {
 					throw DataXException.asDataXException(
 							TxtFileWriterErrorCode.SECURITY_NOT_ENOUGH,
@@ -203,8 +223,15 @@ public class TxtFileWriter extends Writer {
 													"您配置的path: [%s] 不是一个合法的目录, 请您注意文件重名, 不合法目录名等情况.",
 													path));
 						}
-						String[] subFiles = dir.list();
-						if (subFiles.length > 0) {
+						// fileName is not null
+						FilenameFilter filter = new PrefixFileFilter(fileName);
+						File[] filesWithFileNamePrefix = dir.listFiles(filter);
+						if (filesWithFileNamePrefix.length > 0) {
+						    List<String> allFiles = new ArrayList<String>();
+						    for(File eachFile : filesWithFileNamePrefix) {
+						        allFiles.add(eachFile.getName());
+						    }
+						    LOG.error(String.format("冲突文件列表为: [%s]", StringUtils.join(allFiles, ",")));
 							throw DataXException
 									.asDataXException(
 											TxtFileWriterErrorCode.ILLEGAL_VALUE,

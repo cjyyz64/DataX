@@ -227,7 +227,7 @@ public class OssWriter extends Writer {
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.NULL_FORMAT);
             this.dateFormat = this.writerSliceConfig
                     .getString(
-                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.DATE_RORMAT,
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.DATE_FORMAT,
                             null);
             this.encoding = this.writerSliceConfig
                     .getString(
