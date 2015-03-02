@@ -33,16 +33,6 @@ public class AdsUtil {
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.ADS_TABLE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-
-        //检查ODPS必要参数
-        originalConfig.getNecessaryValue(Key.ODPS_SERVER,
-                AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.ACCESS_ID,
-                AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.ACCESS_KEY,
-                AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.PROJECT,
-                AdsWriterErrorCode.REQUIRED_VALUE);
     }
 
     /*生成AdsHelp实例
