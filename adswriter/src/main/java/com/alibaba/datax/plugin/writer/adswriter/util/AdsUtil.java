@@ -63,6 +63,7 @@ public class AdsUtil {
         newConfig.set(Key.ACCESS_KEY,accessKey);
         newConfig.set(Key.PROJECT,project);
         newConfig.set(Key.TRUNCATE,truncate);
+        newConfig.set(Key.PARTITION,null);
         List<FieldSchema> cols = tableMeta.getCols();
         List<String> allColumns = new ArrayList();
         if(cols != null && !cols.isEmpty()){
