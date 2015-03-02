@@ -12,6 +12,7 @@
 			<directory>src/main/resources</directory>
 			<includes>
 				<include>plugin.json</include>
+                <include>config.properties</include>
 			</includes>
 			<outputDirectory>plugin/writer/adswriter</outputDirectory>
 		</fileSet>
