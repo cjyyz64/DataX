@@ -61,4 +61,9 @@ public class PropertyLoader {
         checkState();
         return PropertyLoader.configuration.getDouble(key);
     }
+
+    public static boolean getBoolean(final String key){
+        checkState();
+        return PropertyLoader.configuration.getBoolean(key);
+    }
 }

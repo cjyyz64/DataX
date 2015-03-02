@@ -35,6 +35,8 @@ public final class Key {
 
     public final static String PROJECT = "project";
 
+    public final static String TRUNCATE = "truncate";
+
     /*自带配置文件*/
     public final static String CONFIG_ODPS_SERVER = "odps.server";
 
@@ -45,5 +47,7 @@ public final class Key {
     public final static String CONFIG_PROJECT = "odps.project";
 
     public final static String CONFIG_TUNNEL = "odps.tunnel";
+
+    public final static String CONFIG_TRUNCATE = "odps.truncate";
 
 }
