@@ -56,10 +56,10 @@ public class AdsWriter extends Writer {
 //            String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
 //            String project = this.originalConfig.getString(Key.PROJECT);
 
-            String endPoint = PropertyLoader.getString("odps.server");
-            String accessId = PropertyLoader.getString("odps.access.id");
-            String accessKey = PropertyLoader.getString("odps.access.key");
-            String project = PropertyLoader.getString("odps.project");
+            String endPoint = PropertyLoader.getString(Key.ODPS_SERVER);
+            String accessId = PropertyLoader.getString(Key.ACCESS_ID);
+            String accessKey = PropertyLoader.getString(Key.ACCESS_KEY);
+            String project = PropertyLoader.getString(Key.PROJECT);
 
             TableMeta tableMeta;
             Account odpsAccount = new AliyunAccount(accessId,accessKey);
@@ -132,7 +132,7 @@ public class AdsWriter extends Writer {
             String project = this.originalConfig.getString(Key.PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
-            boolean overwrite = true;
+            boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITER);
             try {
                 String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
                 boolean terminated = false;

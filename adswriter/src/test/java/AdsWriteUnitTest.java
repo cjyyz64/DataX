@@ -131,10 +131,10 @@ public class AdsWriteUnitTest {
     /*测试 AdsWriter Plugin的Config.properties*/
     @Test
     public void getPropertiesTest(){
-        String endPoint = PropertyLoader.getString("odps.server");
-        String accessId = PropertyLoader.getString("odps.access.id");
-        String accessKey = PropertyLoader.getString("odps.access.key");
-        String project = PropertyLoader.getString("odps.project");
+        String endPoint = PropertyLoader.getString(Key.ODPS_SERVER);
+        String accessId = PropertyLoader.getString(Key.ACCESS_ID);
+        String accessKey = PropertyLoader.getString(Key.ACCESS_KEY);
+        String project = PropertyLoader.getString(Key.PROJECT);
         assertNotNull(endPoint);
         assertNotNull(accessId);
         assertNotNull(accessKey);
