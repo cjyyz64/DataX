@@ -149,13 +149,6 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>ftpwriter/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>streamwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
