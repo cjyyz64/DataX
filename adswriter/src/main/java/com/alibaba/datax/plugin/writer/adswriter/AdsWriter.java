@@ -38,8 +38,8 @@ public class AdsWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.adsHelper = AdsUtil.createAdsHelp(this.originalConfig);
-            if(this.adsHelper == null){
-
+            if(this.adsHelper == null) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.Create_ADSHelper_FAILED, "");
             }
             /*检查ReaderPlugin是否为MySQLReader,执行special Pattern*/
             String readerPluginName = super.getReaderPluginName();
