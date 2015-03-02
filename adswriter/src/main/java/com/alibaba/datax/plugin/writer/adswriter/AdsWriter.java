@@ -51,10 +51,10 @@ public class AdsWriter extends Writer {
             }
 
             //Get endpoint,accessId,accessKey,project等参数,创建ODPSConnection实例
-            String endPoint = PropertyLoader.getString(Key.ODPS_SERVER);
-            String accessId = PropertyLoader.getString(Key.ACCESS_ID);
-            String accessKey = PropertyLoader.getString(Key.ACCESS_KEY);
-            String project = PropertyLoader.getString(Key.PROJECT);
+            String endPoint = PropertyLoader.getString(Key.CONFIG_ODPS_SERVER);
+            String accessId = PropertyLoader.getString(Key.CONFIG_ACCESS_ID);
+            String accessKey = PropertyLoader.getString(Key.CONFIG_ACCESS_KEY);
+            String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
 
             TableMeta tableMeta;
             Account odpsAccount = new AliyunAccount(accessId,accessKey);

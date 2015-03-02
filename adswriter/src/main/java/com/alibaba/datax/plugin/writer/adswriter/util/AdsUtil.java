@@ -50,7 +50,17 @@ public class AdsUtil {
     * */
     public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
         Configuration newConfig = originalConfig;
-        newConfig.set(Key.TABLE, odpsTableName);
+        String endPoint = PropertyLoader.getString(Key.CONFIG_ODPS_SERVER);
+        String tunnel = PropertyLoader.getString(Key.CONFIG_TUNNEL);
+        String accessId = PropertyLoader.getString(Key.CONFIG_ACCESS_ID);
+        String accessKey = PropertyLoader.getString(Key.CONFIG_ACCESS_KEY);
+        String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
+        newConfig.set(Key.ODPSTABLENAME, odpsTableName);
+        newConfig.set(Key.ODPS_SERVER,endPoint);
+        newConfig.set(Key.TUNNEL_SERVER,tunnel);
+        newConfig.set(Key.ACCESS_ID,accessId);
+        newConfig.set(Key.ACCESS_KEY,accessKey);
+        newConfig.set(Key.PROJECT,project);
         List<FieldSchema> cols = tableMeta.getCols();
         List<String> allColumns = new ArrayList();
         if(cols != null && !cols.isEmpty()){
