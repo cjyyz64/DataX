@@ -9,21 +9,21 @@ import com.aliyun.oss.ClientConfiguration;
 import com.aliyun.oss.OSSClient;
 
 public class OssUtil {
-	public static OSSClient initOssClient(Configuration conf) {
-		String endpoint = conf.getString(Key.ENDPOINT);
-		String accessId = conf.getString(Key.ACCESSID);
-		String accessKey = conf.getString(Key.ACCESSKEY);
-		ClientConfiguration ossConf = new ClientConfiguration();
-		ossConf.setSocketTimeout(Constant.SOCKETTIMEOUT);
-		OSSClient client = null;
-		try {
-			client = new OSSClient(endpoint, accessId, accessKey, ossConf);
+    public static OSSClient initOssClient(Configuration conf) {
+        String endpoint = conf.getString(Key.ENDPOINT);
+        String accessId = conf.getString(Key.ACCESSID);
+        String accessKey = conf.getString(Key.ACCESSKEY);
+        ClientConfiguration ossConf = new ClientConfiguration();
+        ossConf.setSocketTimeout(Constant.SOCKETTIMEOUT);
+        OSSClient client = null;
+        try {
+            client = new OSSClient(endpoint, accessId, accessKey, ossConf);
 
-		} catch (IllegalArgumentException e) {
-			throw DataXException.asDataXException(
-					OssWriterErrorCode.ILLEGAL_VALUE, e.getMessage());
-		}
+        } catch (IllegalArgumentException e) {
+            throw DataXException.asDataXException(
+                    OssWriterErrorCode.ILLEGAL_VALUE, e.getMessage());
+        }
 
-		return client;
-	}
+        return client;
+    }
 }
