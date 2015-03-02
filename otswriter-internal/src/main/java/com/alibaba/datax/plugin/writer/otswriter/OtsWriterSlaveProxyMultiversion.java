@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.writer.otswriter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,19 +20,22 @@ import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 
 public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
     
     private OTSConf conf = null;
     private OTS ots = null;
     private OTSSendBuffer buffer = null;
+    private Map<PrimaryKeySchema, Integer> pkColumnMapping = null;
     private Map<String, OTSAttrColumn> attrColumnMapping = null;
     private static final Logger LOG = LoggerFactory.getLogger(OtsWriterSlaveProxyMultiversion.class);
     
     public OtsWriterSlaveProxyMultiversion(OTS ots, OTSConf conf) {
         this.ots = ots;
         this.conf = conf;
-        this.attrColumnMapping = this.getAttrColumnMapping(this.conf.getAttributeColumn());
+        this.pkColumnMapping = Common.getPkColumnMapping(conf.getEncodePkColumnMapping());
+        this.attrColumnMapping = Common.getAttrColumnMapping(this.conf.getAttributeColumn());
     } 
     
     @Override
@@ -50,14 +52,6 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
         LOG.info("close begin");
         buffer.close();
         LOG.info("close end");
-    }
-    
-    private Map<String, OTSAttrColumn> getAttrColumnMapping(List<OTSAttrColumn> attrColumns) {
-        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
-        for (OTSAttrColumn c : attrColumns) {
-            attrColumnMapping.put(c.getSrcName(), c);
-        }
-        return attrColumnMapping;
     }
     
     @Override
@@ -84,7 +78,7 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
             }
             
             PrimaryKey curPk = null;
-            if ((curPk = Common.getPKFromRecord(conf.getPkColumnMapping(), record)) == null) {
+            if ((curPk = Common.getPKFromRecord(this.pkColumnMapping, record)) == null) {
                 continue;
             }
             
@@ -98,7 +92,7 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
                 OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
                         conf.getTableName(), 
                         conf.getOperation(), 
-                        conf.getPkColumnMapping(), 
+                        pkColumnMapping, 
                         attrColumnMapping,
                         lastCellPk,
                         rowBuffer);
@@ -115,7 +109,7 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
             OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    pkColumnMapping, 
                     attrColumnMapping,
                     lastCellPk,
                     rowBuffer);

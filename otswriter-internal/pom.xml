@@ -43,7 +43,7 @@
         <dependency>
             <groupId>com.aliyun.openservices</groupId>
             <artifactId>ots</artifactId>
-            <version>3.0.5-snapshot-for-test</version>
+            <version>3.0.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>

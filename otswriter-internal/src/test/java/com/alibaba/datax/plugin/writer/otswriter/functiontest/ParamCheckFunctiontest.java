@@ -26,6 +26,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
@@ -1012,7 +1013,7 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals("UID", pk.get(0).getName());
             assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
             
-            LinkedHashMap<PrimaryKeySchema, Integer> m = conf.getPkColumnMapping();
+            Map<PrimaryKeySchema, Integer> m = Common.getPkColumnMapping(conf.getEncodePkColumnMapping());
             Set<PrimaryKeySchema> kks = m.keySet();
             PrimaryKeySchema[] pks = kks.toArray(new PrimaryKeySchema[kks.size()]);
             
@@ -1078,7 +1079,7 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals("UID", pk.get(0).getName());
             assertEquals(PrimaryKeyType.STRING, pk.get(0).getType());
             
-            LinkedHashMap<PrimaryKeySchema, Integer> m = conf.getPkColumnMapping();
+            Map<PrimaryKeySchema, Integer> m = Common.getPkColumnMapping(conf.getEncodePkColumnMapping());
             Set<PrimaryKeySchema> kks = m.keySet();
             PrimaryKeySchema[] pks = kks.toArray(new PrimaryKeySchema[kks.size()]);
             

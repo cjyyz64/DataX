@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.writer.otswriter.utils;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.aliyun.openservices.ots.internal.model.Direction;
 import com.aliyun.openservices.ots.internal.model.PrimaryKey;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -42,5 +43,15 @@ public class GsonParser {
     public static String primaryKeyToJson (PrimaryKey row) {
         Gson g = gsonBuilder();
         return g.toJson(row);
+    }
+    
+    public static String primaryKeySchemaToJson (PrimaryKeySchema schema) {
+        Gson g = gsonBuilder();
+        return g.toJson(schema);
+    }
+
+    public static PrimaryKeySchema jsonToPrimaryKeySchema (String jsonStr) {
+        Gson g = gsonBuilder();
+        return g.fromJson(jsonStr, PrimaryKeySchema.class);
     }
 }

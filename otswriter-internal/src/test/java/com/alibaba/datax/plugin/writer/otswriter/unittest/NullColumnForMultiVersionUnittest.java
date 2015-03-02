@@ -81,7 +81,7 @@ public class NullColumnForMultiVersionUnittest {
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.UPDATE_ROW);
         conf.setRetry(5);
         conf.setMode(OTSMode.MULTI_VERSION);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         CollectorUtil.init(collector);
@@ -93,11 +93,11 @@ public class NullColumnForMultiVersionUnittest {
         
         for (Record r : input) {
             PrimaryKey pKey = null;
-            if ((pKey = Common.getPKFromRecord(conf.getPkColumnMapping(), r)) != null) {
+            if ((pKey = Common.getPKFromRecord(Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), r)) != null) {
                 ParseRecord.parseMultiVersionRecordToOTSLine(
                         conf.getTableName(), 
                         conf.getOperation(), 
-                        conf.getPkColumnMapping(), 
+                        Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
                         attrColumnMapping, 
                         pKey,
                         input);

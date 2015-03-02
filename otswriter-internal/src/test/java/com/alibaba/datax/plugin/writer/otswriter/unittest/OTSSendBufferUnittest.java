@@ -77,7 +77,7 @@ public class OTSSendBufferUnittest {
         
         OTSConf conf = Conf.getConf(tableName, pk, attr, type);
         conf.setRetry(5);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(10000, exception, prepare);
@@ -87,7 +87,7 @@ public class OTSSendBufferUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
                     conf.getAttributeColumn(), 
                     r,
                     conf.getTimestamp());
@@ -112,7 +112,7 @@ public class OTSSendBufferUnittest {
         conf.setMode(OTSMode.MULTI_VERSION);
         conf.getAttributeColumn().add(new OTSAttrColumn("attr_1", "attr_1", ColumnType.STRING));
         conf.setRetry(5);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, exception, prepare);
@@ -128,9 +128,9 @@ public class OTSSendBufferUnittest {
             OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
                     attrColumnMapping, 
-                    Common.getPKFromRecord(conf.getPkColumnMapping(), en.get(0)),
+                    Common.getPKFromRecord(Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), en.get(0)),
                     en);
             buffer.write(line);
         }
@@ -144,7 +144,7 @@ public class OTSSendBufferUnittest {
     public static void testIllegal(Exception exception, Map<PrimaryKey, Row> prepare, OTSOpType type, List<Record> input, List<Record> expect, List<Integer> rows) throws Exception {
         OTSConf conf = Conf.getConf(tableName, pk, attr, type);
         conf.setRetry(5);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, exception, prepare);
@@ -155,7 +155,7 @@ public class OTSSendBufferUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
                     conf.getAttributeColumn(), 
                     r,
                     conf.getTimestamp());

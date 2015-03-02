@@ -79,7 +79,7 @@ public class OtsWriterMasterProxy {
         );
         ParamChecker.checkAttribute(conf.getAttributeColumn());
         
-        conf.setPkColumnMapping(Common.getPkColumnMapping(meta, conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Common.getEncodePkColumnMapping(meta, conf.getPrimaryKeyColumn()));
     }
     
     public List<Configuration> split(int mandatoryNumber){

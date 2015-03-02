@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.writer.otswriter.utils;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +55,7 @@ public class ParseRecord {
     public static OTSLine parseNormalRecordToOTSLine(
             String tableName, 
             OTSOpType type, 
-            LinkedHashMap<PrimaryKeySchema, Integer> pkColumns, 
+            Map<PrimaryKeySchema, Integer> pkColumns, 
             List<OTSAttrColumn> attrColumns,
             Record record,
             long timestamp) throws OTSCriticalException {

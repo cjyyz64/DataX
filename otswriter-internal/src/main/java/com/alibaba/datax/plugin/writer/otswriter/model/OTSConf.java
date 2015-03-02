@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.writer.otswriter.model;
 
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 
@@ -29,7 +29,7 @@ public class OTSConf {
     
     private OTSMode mode = null;
     private long timestamp = -1;
-    private LinkedHashMap<PrimaryKeySchema, Integer> pkColumnMapping = null;
+    private Map<String, Integer> encodePkColumnMapping = null;
     
     //限制项
     public class RestrictConf {
@@ -49,11 +49,11 @@ public class OTSConf {
             this.rowCellCountLimitation = rowCellCountLimitation;
         }
     }
-    public LinkedHashMap<PrimaryKeySchema, Integer> getPkColumnMapping() {
-        return pkColumnMapping;
+    public Map<String, Integer> getEncodePkColumnMapping() {
+        return encodePkColumnMapping;
     }
-    public void setPkColumnMapping(LinkedHashMap<PrimaryKeySchema, Integer> pkColumnMapping) {
-        this.pkColumnMapping = pkColumnMapping;
+    public void setEncodePkColumnMapping(Map<String, Integer> encodePkColumnMapping) {
+        this.encodePkColumnMapping = encodePkColumnMapping;
     }
     public int getSocketTimeoutInMillisecond() {
         return socketTimeoutInMillisecond;

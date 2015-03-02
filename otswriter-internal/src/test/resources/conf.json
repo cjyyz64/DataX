@@ -1,9 +1,9 @@
 {
-    "endpoint":"http://10.101.204.227:9999",
-    "accessid":"OTSMultiUser199_accessid",
-    "accesskey":"OTSMultiUser199_accesskey",
-    "instance-name":"jingwen-100",
-    "instance-id":"_m46lZZ3lDUr52UjFD",
+    "endpoint":"http://10.101.164.172",
+    "accessid":"OTSMultiUser001_accessid",
+    "accesskey":"OTSMultiUser001_accesskey",
+    "instance-name":"huaiyuan-test",
+    "instance-id":"_mAKkeEfzXx28VSFgD5",
     "legacy-instance-name":"wanhong-legcy",
     "public-instance-name":"wanhong-basic",
     "ag-ip":""

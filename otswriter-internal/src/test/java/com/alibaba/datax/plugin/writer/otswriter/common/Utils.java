@@ -4,8 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.alibaba.datax.common.element.BoolColumn;
 import com.alibaba.datax.common.element.BytesColumn;
@@ -113,11 +113,11 @@ public class Utils {
         return null;
     }
     
-    public static LinkedHashMap<PrimaryKeySchema, Integer> getPkColumnMapping(List<PrimaryKeySchema> pks) throws OTSCriticalException {
+    public static Map<String, Integer> getPkColumnMapping(List<PrimaryKeySchema> pks) throws OTSCriticalException {
         TableMeta meta = new TableMeta("xx");
         for (PrimaryKeySchema p : pks) {
             meta.addPrimaryKeyColumn(p.getName(), p.getType());
         }
-        return Common.getPkColumnMapping(meta, pks);
+        return Common.getEncodePkColumnMapping(meta, pks);
     }
 }

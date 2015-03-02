@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.writer.otswriter;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,19 +13,23 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
 import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
 import com.aliyun.openservices.ots.internal.OTS;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 
 public class OtsWriterSlaveProxyNormal implements OtsWriterSlaveProxy {
     
     private OTSConf conf = null;
     private OTS ots = null;
     private OTSSendBuffer buffer = null;
+    private Map<PrimaryKeySchema, Integer> pkColumnMapping = null;
     private static final Logger LOG = LoggerFactory.getLogger(OtsWriterSlaveProxyNormal.class);
     
     public OtsWriterSlaveProxyNormal(OTS ots, OTSConf conf) {
         this.ots = ots;
         this.conf = conf;
+        this.pkColumnMapping = Common.getPkColumnMapping(conf.getEncodePkColumnMapping());
     } 
     
     @Override
@@ -66,7 +72,7 @@ public class OtsWriterSlaveProxyNormal implements OtsWriterSlaveProxy {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    pkColumnMapping,
                     conf.getAttributeColumn(), 
                     record,
                     conf.getTimestamp());

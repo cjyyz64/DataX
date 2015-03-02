@@ -56,8 +56,8 @@ public class BaseTest {
             List<Record> input, 
             String errorMsg
             ) throws Exception {
-        if (conf.getPkColumnMapping() == null) {
-            conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        if (conf.getEncodePkColumnMapping() == null) {
+            conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         }
         Configuration configuration = Configuration.newDefault();
         configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));
@@ -98,8 +98,8 @@ public class BaseTest {
             List<RecordAndMessage> rm,
             boolean isCheckTS
             ) throws Exception {
-        if (conf.getPkColumnMapping() == null) {
-            conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        if (conf.getEncodePkColumnMapping() == null) {
+            conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         }
         Configuration configuration = Configuration.newDefault();
         configuration.set(OTSConst.OTS_CONF, GsonParser.confToJson(conf));

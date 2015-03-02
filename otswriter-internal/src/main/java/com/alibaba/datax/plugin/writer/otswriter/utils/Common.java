@@ -131,14 +131,14 @@ public class Common {
         return ots;
     }
     
-    public static LinkedHashMap<PrimaryKeySchema,Integer> getPkColumnMapping(TableMeta meta, List<PrimaryKeySchema> attrColumns) throws OTSCriticalException {
-        LinkedHashMap<PrimaryKeySchema,Integer> attrColumnMapping = new LinkedHashMap<PrimaryKeySchema,Integer>();
+    public static LinkedHashMap<String, Integer> getEncodePkColumnMapping(TableMeta meta, List<PrimaryKeySchema> attrColumns) throws OTSCriticalException {
+        LinkedHashMap<String, Integer> attrColumnMapping = new LinkedHashMap<String, Integer>();
         for (Entry<String, PrimaryKeyType> en : meta.getPrimaryKeyMap().entrySet()) {
             // don't care performance
             int i = 0;
             for (; i < attrColumns.size(); i++) {
                 if (attrColumns.get(i).getName().equals(en.getKey())) {
-                    attrColumnMapping.put(attrColumns.get(i),  i);
+                    attrColumnMapping.put(GsonParser.primaryKeySchemaToJson(attrColumns.get(i)),  i);
                     break;
                 }
             }
@@ -146,6 +146,22 @@ public class Common {
              // exception branch
                 throw new OTSCriticalException(String.format(OTSErrorMessage.INPUT_PK_TYPE_NOT_MATCH_META_ERROR, en.getKey(), en.getValue())); 
             }
+        }
+        return attrColumnMapping;
+    }
+    
+    public static Map<PrimaryKeySchema, Integer> getPkColumnMapping(Map<String, Integer> mapping) {
+        Map<PrimaryKeySchema, Integer> target = new LinkedHashMap<PrimaryKeySchema, Integer>();
+        for (Entry<String, Integer> en : mapping.entrySet()) {
+            target.put(GsonParser.jsonToPrimaryKeySchema(en.getKey()), en.getValue());
+        }
+        return target;
+    }
+    
+    public static Map<String, OTSAttrColumn> getAttrColumnMapping(List<OTSAttrColumn> attrColumns) {
+        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
+        for (OTSAttrColumn c : attrColumns) {
+            attrColumnMapping.put(c.getSrcName(), c);
         }
         return attrColumnMapping;
     }

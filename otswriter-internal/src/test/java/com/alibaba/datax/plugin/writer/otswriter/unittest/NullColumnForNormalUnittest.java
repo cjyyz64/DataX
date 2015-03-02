@@ -33,6 +33,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
 import com.alibaba.datax.plugin.writer.otswriter.utils.CollectorUtil;
+import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParseRecord;
 import com.aliyun.openservices.ots.internal.MockOTSClient;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
@@ -76,7 +77,7 @@ public class NullColumnForNormalUnittest {
             ) throws Exception {
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
         conf.setRetry(5);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(10000, null, null);
@@ -87,7 +88,7 @@ public class NullColumnForNormalUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    Common.getPkColumnMapping(conf.getEncodePkColumnMapping()),  
                     conf.getAttributeColumn(), 
                     r,
                     conf.getTimestamp());
@@ -106,7 +107,7 @@ public class NullColumnForNormalUnittest {
             List<RecordAndMessage> expect) throws Exception {
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
         conf.setRetry(5);
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         MockOTSClient ots = new MockOTSClient(5000, null, null);
@@ -117,7 +118,7 @@ public class NullColumnForNormalUnittest {
             OTSLine line = ParseRecord.parseNormalRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
-                    conf.getPkColumnMapping(), 
+                    Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
                     conf.getAttributeColumn(), 
                     r,
                     conf.getTimestamp());

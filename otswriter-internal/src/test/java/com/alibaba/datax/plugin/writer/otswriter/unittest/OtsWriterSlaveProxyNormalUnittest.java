@@ -74,7 +74,7 @@ public class OtsWriterSlaveProxyNormalUnittest {
     }
     
     private void test(OTSConf conf, List<Record> contents, List<Row> expect) throws OTSCriticalException {
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         RecordReceiver lineReceiver = new TestRecordReceiver(contents);
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
@@ -88,7 +88,7 @@ public class OtsWriterSlaveProxyNormalUnittest {
     }
     
     private void testWithTs(OTSConf conf, List<Record> contents, List<Row> expect) throws OTSCriticalException {
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         RecordReceiver lineReceiver = new TestRecordReceiver(contents);
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
@@ -102,7 +102,7 @@ public class OtsWriterSlaveProxyNormalUnittest {
     }
     
     private void testIllegel(OTSConf conf, List<Record> contents, List<RecordAndMessage> expect) throws OTSCriticalException {
-        conf.setPkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
+        conf.setEncodePkColumnMapping(Utils.getPkColumnMapping(conf.getPrimaryKeyColumn()));
         RecordReceiver lineReceiver = new TestRecordReceiver(contents);
         Configuration configuration = Configuration.newDefault();
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
