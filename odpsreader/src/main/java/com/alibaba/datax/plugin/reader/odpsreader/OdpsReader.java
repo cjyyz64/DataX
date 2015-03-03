@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.FilterUtil;
+import com.alibaba.datax.plugin.reader.odpsreader.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
@@ -31,6 +32,13 @@ public class OdpsReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
+
+            //如果用户没有配置accessId/accessKey,尝试从环境变量获取
+            String accountType = originalConfig.getString(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
+            if (Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(accountType)) {
+                this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
+            }
+
             OdpsUtil.checkNecessaryConfig(this.originalConfig);
 
             dealSplitMode(this.originalConfig);
