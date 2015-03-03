@@ -49,7 +49,7 @@ public class AdsUtil {
     /*生成ODPSWriter Plugin所需要的配置文件
     * */
     public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
-        Configuration newConfig = originalConfig;
+        Configuration newConfig = originalConfig.clone();
         String endPoint = PropertyLoader.getString(Key.CONFIG_ODPS_SERVER);
         String tunnel = PropertyLoader.getString(Key.CONFIG_TUNNEL);
         String accessId = PropertyLoader.getString(Key.CONFIG_ACCESS_ID);
@@ -63,7 +63,7 @@ public class AdsUtil {
         newConfig.set(Key.ACCESS_KEY,accessKey);
         newConfig.set(Key.PROJECT,project);
         newConfig.set(Key.TRUNCATE,truncate);
-        newConfig.set(Key.PARTITION,null);
+        newConfig.remove(Key.PARTITION);
         List<FieldSchema> cols = tableMeta.getCols();
         List<String> allColumns = new ArrayList();
         if(cols != null && !cols.isEmpty()){
