@@ -124,7 +124,7 @@ public class AdsWriter extends Writer {
 
         private boolean loadAdsData(String odpsTableName){
             String table = this.originalConfig.getString(Key.ADS_TABLE);
-            String project = this.originalConfig.getString(Key.PROJECT);
+            String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
             boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITER);
