@@ -70,7 +70,6 @@ public class AdsWriter extends Writer {
                 String sql = tableMeta.toDDL();
 //                //创建odps表
                 Instance instance = SQLTask.run(odps,project,sql,null,null);
-                String id = instance.getId();
                 boolean terminated = false;
                     int time = 0;
                     while(!terminated && time < ODPSOVERTIME)
