@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.Key;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.OceanbaseErrorCode;
+import com.alibaba.datax.plugin.writer.oceanbasewriter.Rowkey;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.OBDataSource;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.utils.ResultSetHandler;
 
@@ -96,5 +97,24 @@ public class Context {
 	public long activeMemPercent(){
 		return this.configuration.getInt(Key.ACTIVE_MEM_PERCENT, 60);
 	}
+
+    public Rowkey rowkey() throws Exception {
+        ResultSetHandler<Rowkey> handler = new ResultSetHandler<Rowkey>() {
+
+            @Override
+            public Rowkey callback(ResultSet result) throws Exception {
+                Rowkey.Builder builder = Rowkey.builder();
+                while (result.next()) {
+                    String name = result.getString("field");
+                    String type = result.getString("type");
+                    int key = result.getInt("key");
+                    if (key != 0)
+                        builder.addEntry(name, type, key);
+                }
+                return builder.build();
+            }
+        };
+        return OBDataSource.executeQuery(this.url(),String.format("desc %s", table()), handler);
+    }
 
 }
