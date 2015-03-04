@@ -125,6 +125,9 @@ public abstract class HbaseAbstractReader {
             case STRING:
                 record.addColumn(new StringColumn(bytesToString(byteArray, isBinaryRowkey, encoding)));
                 break;
+            case BINARY_STRING:
+                record.addColumn(new StringColumn(bytesToString(byteArray, true, encoding)));
+                break;
             case DATE:
                 String dateValue = bytesToString(byteArray, isBinaryRowkey, encoding);
                 record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));

@@ -6,6 +6,9 @@ import java.util.Arrays;
 
 public enum ColumnType {
     STRING("string"),
+
+    //TODO 考虑去除 isBinaryString
+    BINARY_STRING("binarystring"),
     BYTES("bytes"),
     BOOLEAN("boolean"),
     SHORT("short"),
