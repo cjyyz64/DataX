@@ -8,6 +8,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -63,7 +64,8 @@ public class NormalColumnMetaFactory extends ColumnMetaFactory {
             },Timestamp {
                 @Override
                 public java.sql.Timestamp value(Column field) {
-                    return new java.sql.Timestamp(field.asDate().getTime());
+                    Date date = field.asDate();
+                    return date == null? null : new java.sql.Timestamp(date.getTime());
                 }
             },Number {
                 @Override
@@ -73,12 +75,13 @@ public class NormalColumnMetaFactory extends ColumnMetaFactory {
             },Float {
                 @Override
                 public Float value(Column field) {
-                    return field.asDouble().floatValue();
+                    Double d = field.asDouble();
+                    return d == null? null : d.floatValue();
                 }
             },Double {
                 @Override
                 public Double value(Column field) {
-                    return field.asDouble();  //To change body of implemented methods use File | Settings | File Templates.
+                    return field.asDouble();
                 }
             },Bool {
                 @Override

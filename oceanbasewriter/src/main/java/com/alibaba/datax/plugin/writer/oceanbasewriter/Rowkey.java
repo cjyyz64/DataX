@@ -38,12 +38,20 @@ public class Rowkey implements Iterable<Rowkey.Entry> {
             INT {
                 @Override
                 public Long value(ResultSet result, String column) throws SQLException {
-                    return result.getLong(column);
+                    if(result.getObject(column) == null){
+                        return null;
+                    }else {
+                        return result.getLong(column);
+                    }
                 }
 
                 @Override
                 public void convert(int index, PreparedStatement statement, ResultSet result, String column) throws SQLException {
-                    statement.setLong(index, result.getLong(column));
+                    if(result.getObject(column) == null){
+                        statement.setObject(index, null);
+                    }else {
+                        statement.setLong(index, result.getLong(column));
+                    }
                 }
             },
             VARCHAR {
@@ -84,13 +92,21 @@ public class Rowkey implements Iterable<Rowkey.Entry> {
             BOOL {
                 @Override
                 public Boolean value(ResultSet result, String column) throws SQLException {
-                    return result.getBoolean(column);
+                    if(result.getObject(column) == null){
+                        return null;
+                    }else {
+                        return result.getBoolean(column);
+                    }
                 }
 
                 @Override
                 public void convert(int index, PreparedStatement statement, ResultSet result, String column)
                         throws SQLException {
-                    statement.setBoolean(index, result.getBoolean(column));
+                    if(result.getObject(column) == null){
+                        statement.setObject(index, null);
+                    }else {
+                        statement.setBoolean(index, result.getBoolean(column));
+                    }
                 }
             };
 
