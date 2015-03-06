@@ -7,7 +7,8 @@ public enum OdpsReaderErrorCode implements ErrorCode {
     ILLEGAL_VALUE("OdpsReader-01", "您配置的值不合法."),
     CREATE_DOWNLOADSESSION_FAIL("OdpsReader-03", "创建 ODPS 的 downloadSession 失败."),
     GET_DOWNLOADSESSION_FAIL("OdpsReader-04", "获取 ODPS 的 downloadSession 失败."),
-    READ_DATA_FAIL("OdpsReader-05", "读取 ODPS 源头表失败."),;
+    READ_DATA_FAIL("OdpsReader-05", "读取 ODPS 源头表失败."),
+    GET_ID_KEY_FAIL("OdpsReader-06", "获取 accessId/accessKey 失败.");
 
     private final String code;
     private final String description;

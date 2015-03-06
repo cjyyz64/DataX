@@ -26,7 +26,7 @@ public class EngineTest extends CaseInitializer {
 		LoadUtil.bind(this.configuration);
 	}
 
-	@Test
+
 	public void test_entry() throws Throwable {
 		String jobConfig = this.configuration.toString();
 

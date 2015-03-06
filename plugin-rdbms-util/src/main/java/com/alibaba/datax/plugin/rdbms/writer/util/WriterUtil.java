@@ -121,13 +121,7 @@ public final class WriterUtil {
 				.append(") VALUES(").append(StringUtils.join(valueHolders, ","))
 				.append(")").toString();
 
-		String formattedSql = writeDataSqlTemplate;
-		try {
-			formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
-		} catch (Exception unused) {
-			// ignore it
-		}
-		return formattedSql;
+		return writeDataSqlTemplate;
 	}
 
 }
