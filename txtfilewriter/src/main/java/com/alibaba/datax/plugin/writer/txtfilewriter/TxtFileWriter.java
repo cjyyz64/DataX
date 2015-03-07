@@ -65,7 +65,7 @@ public class TxtFileWriter extends Writer {
                     .getNecessaryValue(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE,
                             TxtFileWriterErrorCode.REQUIRED_VALUE);
-            writeMode = writeMode.trim().toLowerCase();
+            writeMode = writeMode.trim();
             Set<String> supportedWriteModes = Sets.newHashSet("truncate",
                     "append", "nonConflict");
             if (!supportedWriteModes.contains(writeMode)) {
