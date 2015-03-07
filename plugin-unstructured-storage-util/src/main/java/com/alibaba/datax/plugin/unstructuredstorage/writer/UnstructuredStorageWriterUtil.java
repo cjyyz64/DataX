@@ -55,13 +55,13 @@ public class UnstructuredStorageWriterUtil {
 				UnstructuredStorageWriterErrorCode.REQUIRED_VALUE);
 		writeMode = writeMode.trim().toLowerCase();
 		Set<String> supportedWriteModes = Sets.newHashSet("truncate", "append",
-				"error");
+				"nonConflict");
 		if (!supportedWriteModes.contains(writeMode)) {
 			throw DataXException
 					.asDataXException(
 							UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
 							String.format(
-									"仅支持 truncate, append, error 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
+									"仅支持 truncate, append, nonConflict 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
 									writeMode));
 		}
 		writerConfiguration.set(Key.WRITE_MODE, writeMode);

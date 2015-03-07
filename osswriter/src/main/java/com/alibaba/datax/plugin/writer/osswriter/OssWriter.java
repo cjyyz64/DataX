@@ -67,9 +67,11 @@ public class OssWriter extends Writer {
             String compress = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
             if (StringUtils.isNotBlank(compress)) {
-                this.writerSliceConfig
-                        .remove(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
-                LOG.warn(String.format("OSS写暂时不支持压缩, 该压缩配置项[%s]不起效用", compress));
+                String errorMessage = String.format(
+                        "OSS写暂时不支持压缩, 该压缩配置项[%s]不起效用", compress);
+                LOG.error(errorMessage);
+                throw DataXException.asDataXException(
+                        OssWriterErrorCode.ILLEGAL_VALUE, errorMessage);
 
             }
             UnstructuredStorageWriterUtil
@@ -86,8 +88,14 @@ public class OssWriter extends Writer {
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE);
             // warn: bucket is not exists, create it
             try {
+                // warn: do not create bucket for user
                 if (!this.ossClient.doesBucketExist(bucket)) {
-                    this.ossClient.createBucket(bucket);
+                    // this.ossClient.createBucket(bucket);
+                    String errorMessage = String.format(
+                            "您配置的bucket [%s] 不存在, 请您确认您的配置项.", bucket);
+                    LOG.error(errorMessage);
+                    throw DataXException.asDataXException(
+                            OssWriterErrorCode.ILLEGAL_VALUE, errorMessage);
                 }
                 LOG.info(String.format("access control details [%s].",
                         this.ossClient.getBucketAcl(bucket).toString()));
@@ -110,9 +118,9 @@ public class OssWriter extends Writer {
                     LOG.info(String
                             .format("由于您配置了writeMode append, 写入前不做清理工作, 数据写入Bucket [%s] 下, 写入相应Object的前缀为  [%s]",
                                     bucket, object));
-                } else if ("error".equals(writeMode)) {
+                } else if ("nonConflict".equals(writeMode)) {
                     LOG.info(String
-                            .format("由于您配置了writeMode error, 开始检查Bucket [%s] 下面以 [%s] 命名开头的Object",
+                            .format("由于您配置了writeMode nonConflict, 开始检查Bucket [%s] 下面以 [%s] 命名开头的Object",
                                     bucket, object));
                     ObjectListing listing = this.ossClient.listObjects(bucket,
                             object);

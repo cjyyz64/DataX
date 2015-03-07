@@ -67,13 +67,13 @@ public class TxtFileWriter extends Writer {
                             TxtFileWriterErrorCode.REQUIRED_VALUE);
             writeMode = writeMode.trim().toLowerCase();
             Set<String> supportedWriteModes = Sets.newHashSet("truncate",
-                    "append", "error");
+                    "append", "nonConflict");
             if (!supportedWriteModes.contains(writeMode)) {
                 throw DataXException
                         .asDataXException(
                                 TxtFileWriterErrorCode.ILLEGAL_VALUE,
                                 String.format(
-                                        "仅支持 truncate, append, error 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
+                                        "仅支持 truncate, append, nonConflict 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
                                         writeMode));
             }
             this.writerSliceConfig
@@ -216,9 +216,9 @@ public class TxtFileWriter extends Writer {
                 LOG.info(String
                         .format("由于您配置了writeMode append, 写入前不做清理工作, [%s] 目录下写入相应文件名前缀  [%s] 的文件",
                                 path, fileName));
-            } else if ("error".equals(writeMode)) {
+            } else if ("nonConflict".equals(writeMode)) {
                 LOG.info(String.format(
-                        "由于您配置了writeMode error, 开始检查 [%s] 下面的内容", path));
+                        "由于您配置了writeMode nonConflict, 开始检查 [%s] 下面的内容", path));
                 // warn: check two times about exists, mkdirs
                 File dir = new File(path);
                 try {
@@ -269,7 +269,7 @@ public class TxtFileWriter extends Writer {
                         .asDataXException(
                                 TxtFileWriterErrorCode.ILLEGAL_VALUE,
                                 String.format(
-                                        "仅支持 truncate, append, error 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
+                                        "仅支持 truncate, append, nonConflict 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
                                         writeMode));
             }
         }
