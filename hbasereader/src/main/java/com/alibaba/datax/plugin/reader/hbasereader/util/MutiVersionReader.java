@@ -46,6 +46,7 @@ public class MutiVersionReader extends HbaseAbstractReader {
     }
 
 
+    // TODO refact it. 没有 rowType ，encoding 了，
     private void convertKVToLine(KeyValue keyValue, Record record) throws Exception {
         byte[] rawRowkey = keyValue.getRow();
         long timestamp = keyValue.getTimestamp();
@@ -54,14 +55,12 @@ public class MutiVersionReader extends HbaseAbstractReader {
                 + Bytes.toString(keyValue.getBuffer(), keyValue.getQualifierOffset(), keyValue.getQualifierLength());
         HbaseColumnCell columnCell = this.userConfigedColumnNameAndCellMap.get(column);
 
-        super.doFillRecord(rawRowkey, this.rowkeyType, super.isBinaryRowkey,
-                super.encoding, columnCell.getDateformat(), record);
+        record.addColumn(new StringColumn(Bytes.toStringBinary(rawRowkey)));
 
         record.addColumn(new StringColumn(column));
         record.addColumn(new LongColumn(timestamp));
 
-        super.doFillRecord(keyValue.getValue(), columnCell.getColumnType(), false,
-                super.encoding, columnCell.getDateformat(), record);
+        record.addColumn(new StringColumn(Bytes.toStringBinary(keyValue.getValue())));
     }
 
     @Override

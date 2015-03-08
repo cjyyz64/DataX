@@ -16,25 +16,33 @@
 
             // 可能取值为：normal, mutiVersion
             "mode": "normal",
+
+            // 普通模式读取时，column 中每一项，通常形式为：(name + type) 或者 (value + type)
+            //      其中，(name + type) 形式，表示读取指定名字的 hbase 列。如果 name 为 rowkey，则表示该项对应抽取 hbase 的 rowkey列
+            //      (value + type) 形式，表示指定常量列。使用较少。
+
+            // type 类型可能为：int, short, long, double, float, boolean,date, bytes, string, binaryString
+            // 特别注意:
+            // <1> string 和 binaryString 的区别体现在 byte[] 转换为 String 时调用不同的 API:
+            //      类型为 string 表示采用 API: new String(byteArray,encoding)
+            //      类型为 binaryString 表示采用 API: new String(byteArray,encoding)
+            // <2> date 类型配置时，必须提供 dateformat 以表明所配置的字符串代表的时间格式
+            // <3> 常量不能配置为 binaryString 类型
+
             "column": [
                 {
-                    //如果 name=rowkey 固定值，则表示读取 rowkey
                     "name": "rowkey",
-
-                    // type 类型可能为：string, bytes（这里的string,bytes 与 range里的含义不一样）, int, short, long, double, float, boolean
                     "type": "bytes"
                 },
                 {
                     // 表示读取列族为 basicInfo，列名称为 name 的列的数据，
-                    // 编码信息为 encoding 指定
                     "name": "basicInfo:name",
                     "type": "string"
                 },
                 {
                     // 表示读取列族为 basicInfo，列名称为 address 的列的数据，
-                    // 编码信息为 encoding 指定
                     "name": "basicInfo:address",
-                    "type": "string"
+                    "type": "binaryString"
                 },
                 {
                     // 表示读取列族为 basicInfo，列名称为 school 的列的数据，
@@ -47,22 +55,32 @@
                     "type": "int"
                 },
                 {
-                    // 读取常量列
-                    "type": "string",
-                    "value": "hello-常量"
+                    "name": "extendsInfo:birthday",
+                    "type": "date",
+                    "format":"yyyy-mm-dd"
+                },
+                {
+                    // 读取常量字符串列
+                    "value": "hello-常量",
+                    "type": "string"
+                },
+                {
+                    // 读取常量时间列
+                    "value": "2015/08/08",
+                    "type": "date",
+                    "format":"yyyy/mm/dd"
                 }
             ],
             "range": {
                 // 执行 startRowKey 和 endRowKey 的范围，如果不指定，则表示全表读取
                 "startRowkey": "\\x0001",
-                "endRowkey": "\\xffff"
-            },
-            // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
-            // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
-            // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "endRowkey": "\\xffff",
 
-            // 将会影响：range 里的startRowkey/endRowkey 和 column中 name=rowkey，type=string 的行为
-            "isBinaryRowkey":true
+                // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
+                // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
+                // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "isBinaryRowkey":true
+            }
         }
     }
 }

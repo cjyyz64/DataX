@@ -1,15 +1,16 @@
 package com.alibaba.datax.plugin.reader.hbasereader.util;
 
-import com.alibaba.datax.common.element.*;
-import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.reader.hbasereader.*;
+import com.alibaba.datax.plugin.reader.hbasereader.Constant;
+import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
+import com.alibaba.datax.plugin.reader.hbasereader.HbaseColumnCell;
+import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.http.impl.cookie.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,6 @@ public abstract class HbaseAbstractReader {
     protected List<HbaseColumnCell> hbaseColumnCells;
     protected HTable htable;
     protected String encoding;
-    protected boolean isBinaryRowkey;
     protected Result lastResult = null;
     protected Scan scan;
     protected ResultScanner resultScanner;
@@ -35,7 +35,6 @@ public abstract class HbaseAbstractReader {
         this.htable = HbaseUtil.initHtable(configuration);
 
         this.encoding = configuration.getString(Key.ENCODING);
-        this.isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         this.scanCache = configuration.getInt(Key.SCAN_CACHE, Constant.DEFAULT_SCAN_CACHE);
 
@@ -57,7 +56,7 @@ public abstract class HbaseAbstractReader {
         this.scan.setStartRow(startKey);
         this.scan.setStopRow(endKey);
 
-        LOG.info("The task set startRowkey=[{}], endRowkey=[{}].", bytesToString(this.startKey, this.isBinaryRowkey, this.encoding), bytesToString(this.endKey, this.isBinaryRowkey, this.encoding));
+        LOG.info("The task set startRowkey=[{}], endRowkey=[{}].", Bytes.toStringBinary(this.startKey), Bytes.toStringBinary(this.endKey));
 
         boolean isConstant;
         boolean isRowkeyColumn;
@@ -83,57 +82,6 @@ public abstract class HbaseAbstractReader {
         if (this.htable != null) {
             htable.close();
             HTableFactory.closeHtable();
-        }
-    }
-
-
-    protected String bytesToString(byte[] byteArray, boolean isBinaryRowkey, String encoding) throws Exception {
-        if (byteArray == null) {
-            return null;
-        }
-
-        if (isBinaryRowkey) {
-            return Bytes.toStringBinary(byteArray);
-        } else {
-            return new String(byteArray, encoding);
-        }
-    }
-
-    protected void doFillRecord(byte[] byteArray, ColumnType columnType, boolean isBinaryRowkey, String encoding, String dateformat, Record record) throws Exception {
-        switch (columnType) {
-            case BOOLEAN:
-                record.addColumn(new BoolColumn(Bytes.toBoolean(byteArray)));
-                break;
-            case SHORT:
-                record.addColumn(new LongColumn(String.valueOf(Bytes.toShort(byteArray))));
-                break;
-            case INT:
-                record.addColumn(new LongColumn(Bytes.toInt(byteArray)));
-                break;
-            case LONG:
-                record.addColumn(new LongColumn(Bytes.toLong(byteArray)));
-                break;
-            case BYTES:
-                record.addColumn(new BytesColumn(byteArray));
-                break;
-            case FLOAT:
-                record.addColumn(new DoubleColumn(Bytes.toFloat(byteArray)));
-                break;
-            case DOUBLE:
-                record.addColumn(new DoubleColumn(Bytes.toDouble(byteArray)));
-                break;
-            case STRING:
-                record.addColumn(new StringColumn(bytesToString(byteArray, isBinaryRowkey, encoding)));
-                break;
-            case BINARY_STRING:
-                record.addColumn(new StringColumn(bytesToString(byteArray, true, encoding)));
-                break;
-            case DATE:
-                String dateValue = bytesToString(byteArray, isBinaryRowkey, encoding);
-                record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
-                break;
-            default:
-                throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
         }
     }
 

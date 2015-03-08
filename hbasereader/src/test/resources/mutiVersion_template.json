@@ -19,43 +19,24 @@
             // 约定-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal模式读取数据，而非多版本模式读取，二者差别很大，末尾会展示如果用 normal 模式读取，拼成的 Record 的结果），大于1则表示读取最新的对应个数的版本
             "maxVersion": -1,
 
-          //不支持 Date 类型（是出于这个考虑：如果是时间类型，必然需要配置 dateFormat 格式，引入不必要复杂性）
+            //不支持 Date 类型（是出于这个考虑：如果是时间类型，必然需要配置 dateFormat 格式，引入不必要复杂性）
             "rowkeyType":"string",
-            "column": [
-                {
-                    // 表示读取列族为 basicInfo，列名称为 name 的列的数据，
-                    // 编码信息为 encoding 指定
-                    "name": "basicInfo:name",
-                    "type": "string"
-                },
-                {
-                    // 表示读取列族为 basicInfo，列名称为 address 的列的数据，
-                    // 编码信息为 encoding 指定
-                    "name": "basicInfo:address",
-                    "type": "string"
-                },
-                {
-                    // 表示读取列族为 basicInfo，列名称为 school 的列的数据，
-                    // 并且直接把 hbase 的 byte 数组读出来
-                    "name": "basicInfo:school",
-                    "type": "bytes"
-                },
-                {
-                    "name": "extendsInfo:age",
-                    "type": "int"
-                }
-            ],
+
+            // 多版本读取时，读出的数据是 (rowkey, column, timestamp, value) 四元组形式， 所以目的对应的表结构应该类似于
+            // 有四个字段，并且类型依次为：string,string,long,string. 在把 hbase 中的二进制读成 string 时，统一使用 Bytes.toBinaryString() 完成.
+
+            "column":["basicInfo:name","basicInfo:address","basicInfo:school","extendsInfo:age"],
+
             "range": {
                 // 执行 startRowKey 和 endRowKey 的范围，如果不指定，则表示全表读取
                 "startRowkey": "\\x0001",
-                "endRowkey": "\\xffff"
-            },
-            // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
-            // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
-            // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "endRowkey": "\\xffff",
 
-            // 将会影响：range 里的startRowkey/endRowkey 和 rowkeyType=string 的行为
-            "isBinaryRowkey":true
+                // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
+                // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
+                // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "isBinaryRowkey":true
+            }
         }
     }
 }

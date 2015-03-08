@@ -27,11 +27,12 @@ public final class HbaseUtil {
         originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
                 HbaseReaderErrorCode.REQUIRED_VALUE);
 
+        originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.REQUIRED_VALUE);
+
         String mode = HbaseUtil.dealMode(originalConfig);
 
         originalConfig.set(Key.MODE, mode);
 
-        originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.REQUIRED_VALUE);
         List<Map> column = originalConfig.getList(Key.COLUMN, Map.class);
 
         if (column == null) {
@@ -46,20 +47,28 @@ public final class HbaseUtil {
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
         originalConfig.set(Key.ENCODING, encoding);
 
-        Boolean isBinaryRowkey = originalConfig.getBool(Key.IS_BINARY_ROWKEY);
-        if (isBinaryRowkey == null) {
-            throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 可以配置为 true 或者 false. 分别对应于 hbasereader 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
-        }
-
+        boolean hasConfiguredRange = false;
         String startRowkey = originalConfig.getString(Constant.RANGE + "." + Key.START_ROWKEY);
         if (startRowkey != null) {
+            hasConfiguredRange = true;
             originalConfig.set(Key.START_ROWKEY, startRowkey);
         }
 
 
         String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
         if (endRowkey != null) {
+            hasConfiguredRange = true;
             originalConfig.set(Key.END_ROWKEY, endRowkey);
+        }
+
+        // 如果配置了 range,就必须要配置 isBinaryRowkey
+        if(hasConfiguredRange){
+            Boolean isBinaryRowkey = originalConfig.getBool(Constant.RANGE + "." + Key.IS_BINARY_ROWKEY);
+            if (isBinaryRowkey == null) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 可以配置为 true 或者 false. 分别对应于 hbasereader 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+            }
+
+            originalConfig.set(Key.IS_BINARY_ROWKEY,isBinaryRowkey);
         }
     }
 
@@ -97,7 +106,7 @@ public final class HbaseUtil {
 
             int maxVersionValue = maxVersion.intValue();
             boolean isMaxVersionValid = maxVersionValue == -1 || maxVersionValue > 1;
-            Validate.isTrue(isMaxVersionValid, "您配置的是 multiVersion 模式读取 hbase 中的数据，但是配置 maxVersion 的值错误了. maxVersion规定：-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal 模式读取数据，而非 multiVersion 模式读取，二者差别很大），大于1则表示读取最新的对应个数的版本");
+            Validate.isTrue(isMaxVersionValid, "您配置的是 multiVersion 模式读取 hbase 中的数据，但是配置的 maxVersion 值错误. maxVersion规定：-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal 模式读取数据，而非 multiVersion 模式读取，二者差别很大），大于1则表示读取最新的对应个数的版本");
 
             String rowkeyType = originalConfig.getString(Key.ROWKEY_TYPE);
             Validate.notNull(rowkeyType, "您配置的是 multiVersion 模式读取 hbase 中的数据，所以必须配置：rowkeyType");
@@ -116,7 +125,7 @@ public final class HbaseUtil {
         }
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 
-        Map<String, String> map = null;
+        Map<String, String> map;
         try {
             map = JSON.parseObject(hbaseConf, Map.class);
         } catch (Exception e) {
@@ -185,7 +194,8 @@ public final class HbaseUtil {
 
     private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
         byte[] retRowKey;
-        if (org.apache.commons.lang.StringUtils.isBlank(rowkey)) {
+
+        if (StringUtils.isBlank(rowkey)) {
             retRowKey = HConstants.EMPTY_BYTE_ARRAY;
         } else {
             if (isBinaryRowkey) {

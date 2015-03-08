@@ -18,9 +18,6 @@ public final class HbaseSplitUtil {
     private final static Logger LOG = LoggerFactory.getLogger(HbaseSplitUtil.class);
 
 
-    /**
-     * TODO start/end rowkey 相等，没有数据？
-     */
     public static List<Configuration> split(Configuration configuration) {
         HTable htable = HbaseUtil.initHtable(configuration);
 
@@ -36,7 +33,7 @@ public final class HbaseSplitUtil {
             byte[] startRowkeyByte = HbaseUtil.getStartRowKey(configuration);
             byte[] endRowkeyByte = HbaseUtil.getEndRowKey(configuration);
 
-			/* 如果配置了start-rowkey和end-rowkey，需要确保：start-rowkey<=end-rowkey */
+			/* 如果用户配置了 startRowkey 和 endRowkey，需要确保：startRowkey <= endRowkey */
             if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
                     && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
                 throw new IllegalArgumentException("startRowkey 不得大于 endRowkey.");
@@ -120,8 +117,8 @@ public final class HbaseSplitUtil {
             throw new IllegalArgumentException("userEndKey should not be null!");
         }
 
-        byte[] tempEndRowkeyByte = null;
-        String retEndRowkey = null;
+        byte[] tempEndRowkeyByte;
+        String retEndRowkey;
 
         if (endRowkeyByte.length == 0) {
             tempEndRowkeyByte = regionEndKey;
@@ -152,8 +149,8 @@ public final class HbaseSplitUtil {
                     "userStartKey should not be null!");
         }
 
-        byte[] tempStartRowkeyByte = null;
-        String retStartRowkey = null;
+        byte[] tempStartRowkeyByte;
+        String retStartRowkey;
 
         if (Bytes.compareTo(startRowkeyByte, regionStarKey) < 0) {
             tempStartRowkeyByte = regionStarKey;
