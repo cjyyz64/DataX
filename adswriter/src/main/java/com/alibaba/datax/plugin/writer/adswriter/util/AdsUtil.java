@@ -62,7 +62,7 @@ public class AdsUtil {
         newConfig.set(Key.ACCESS_ID,accessId);
         newConfig.set(Key.ACCESS_KEY,accessKey);
         newConfig.set(Key.PROJECT,project);
-        newConfig.set(Key.TRUNCATE,truncate);
+        newConfig.set(Key.TRUNCATE, truncate);
         newConfig.set(Key.PARTITION,null);
 //        newConfig.remove(Key.PARTITION);
         List<FieldSchema> cols = tableMeta.getCols();
@@ -78,10 +78,41 @@ public class AdsUtil {
 
     /*生成ADS数据倒入时的source_path
     * */
-    public static String generateSourcePath(String project, String tmpOdpsTableName){
+    public static String generateSourcePath(String project, String tmpOdpsTableName, String odpsPartition){
         StringBuilder builder = new StringBuilder();
+        String partition = transferOdpsPartitionToAds(odpsPartition);
         builder.append("odps://").append(project).append("/").append(tmpOdpsTableName);
+        if(odpsPartition != null && !odpsPartition.isEmpty()){
+            builder.append("/").append(partition);
+        }
         return builder.toString();
     }
 
+    public static String transferOdpsPartitionToAds(String odpsPartition){
+        if(odpsPartition == null || odpsPartition.isEmpty())
+            return null;
+        String reqular = formatPartition(odpsPartition);
+        String adsPartition = new String(reqular);
+        String[] partitions = reqular.split("/");
+        for(int last = partitions.length; last > 0; last--){
+
+            String partitionPart = partitions[last-1];
+            String newPart = partitionPart.replace(".*", "*").replace("*", ".*");
+            if(newPart.split("=")[1].equals(".*")){
+                adsPartition = adsPartition.substring(0,adsPartition.length()-partitionPart.length());
+            }else{
+                return adsPartition;
+            }
+            if(adsPartition.endsWith("/")){
+                adsPartition = adsPartition.substring(0,adsPartition.length()-1);
+            }
+        }
+        return adsPartition;
+    }
+
+    public static String formatPartition(String partition) {
+        return partition.trim().replaceAll(" *= *", "=")
+                .replaceAll(" */ *", ",").replaceAll(" *, *", ",")
+                .replaceAll("'", "").replaceAll(",", "/");
+    }
 }

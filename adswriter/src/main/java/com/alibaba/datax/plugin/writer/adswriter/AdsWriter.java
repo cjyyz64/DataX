@@ -46,7 +46,15 @@ public class AdsWriter extends Writer {
             if (readerPluginName.equals(Key.ODPSREADER)){
                 this.readerConfig = super.getReaderConf();
                 String odpsTableName = this.readerConfig.getString(Key.ODPSTABLENAME);
-                loadAdsData(odpsTableName);
+                List<String> userConfiguredPartitions = this.readerConfig.getList(
+                        Key.PARTITION, String.class);
+                if(userConfiguredPartitions.size() > 1)
+                    throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_PARTITION_FAILED,"");
+                if(userConfiguredPartitions.size() == 0){
+                    loadAdsData(odpsTableName,null);
+                }else{
+                    loadAdsData(odpsTableName,userConfiguredPartitions.get(0));
+                }
                 System.exit(0);
             }
 
@@ -108,7 +116,7 @@ public class AdsWriter extends Writer {
         @Override
         public void post() {
             try{
-                loadAdsData(this.odpsTableName);
+                loadAdsData(this.odpsTableName,null);
             }catch(DataXException e){
                 throw e;
             }
@@ -121,11 +129,11 @@ public class AdsWriter extends Writer {
             this.odpsWriterJobProxy.destroy();
         }
 
-        private boolean loadAdsData(String odpsTableName){
+        private boolean loadAdsData(String odpsTableName, String odpsPartition){
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
-            String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
+            String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,odpsPartition);
             boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITER);
             try {
                 String id = adsHelper.loadData(table,partition,sourcePath,overwrite);

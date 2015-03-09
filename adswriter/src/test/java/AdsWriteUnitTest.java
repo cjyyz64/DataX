@@ -71,7 +71,7 @@ public class AdsWriteUnitTest {
     public void generateSourcePathTest(){
         String project = "testProject";
         String tmpOdpsTableName = "tmpOdpsTableName";
-        String sourcePath = AdsUtil.generateSourcePath(project,tmpOdpsTableName);
+        String sourcePath = AdsUtil.generateSourcePath(project,tmpOdpsTableName,null);
         assertNotNull(sourcePath);
     }
     @Test
@@ -105,7 +105,7 @@ public class AdsWriteUnitTest {
         String table = "table_2up01";
         String project = "autotest_dev";
         String partition = "('id','ds=20150108')";
-        String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName);
+        String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,null);
         boolean overwrite = true;
         String adsUrl = "10.101.90.23:9999";
         String userName = "gq5FDS2IgSWqXzTu";
@@ -139,5 +139,21 @@ public class AdsWriteUnitTest {
         assertNotNull(accessId);
         assertNotNull(accessKey);
         assertNotNull(project);
+    }
+
+    /*测试把odps reader的partition转意为Ads partition的信息*/
+    @Test
+    public void TransferOdpsPartitionToAds(){
+        String partition1 = "pt=*";
+        String partition2 = "pt=1,ds=*";
+        String partition3 = "pt=1,ds=hz,dt=3";
+        String partition4 = "pt=1,ds=hz,dt=*";
+        String adsPartition1 = AdsUtil.transferOdpsPartitionToAds(partition1);
+        String adsPartition2 = AdsUtil.transferOdpsPartitionToAds(partition2);
+        String adsPartition3 = AdsUtil.transferOdpsPartitionToAds(partition3);
+        String adsPartition4 = AdsUtil.transferOdpsPartitionToAds(partition4);
+        assertEquals(adsPartition1,"");
+        assertNotNull(adsPartition2);
+        assertNotNull(adsPartition3);
     }
 }

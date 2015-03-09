@@ -7,7 +7,10 @@ public enum AdsWriterErrorCode implements ErrorCode {
     ODPS_CREATETABLE_FAILED("AdsWriter-02", "创建ODPS临时表失败，请联系ADS 技术支持"),
     ADS_LOAD_DATA_FAILED("AdsWriter-03", "ADS从ODPS临时表倒数据失败，请联系ADS 技术支持"),
     TABLE_TRUNCATE_ERROR("AdsWriter-04", "清空 ODPS 目的表时出错."),
-    Create_ADSHelper_FAILED("AdsWriter-05", "创建ADSHelper对象出错，请联系ADS 技术支持"),;
+    Create_ADSHelper_FAILED("AdsWriter-05", "创建ADSHelper对象出错，请联系ADS 技术支持"),
+    ODPS_PARTITION_FAILED("AdsWriter-06", "ODPS Reader不允许配置多个partition，目前只支持三种配置方式，\"partition\":[\"pt=*,ds=*\"](读取test表所有分区的数据)； \n" +
+            "\"partition\":[\"pt=1,ds=*\"](读取test表下面，一级分区pt=1下面的所有二级分区)； \n" +
+            "\"partition\":[\"pt=1,ds=hangzhou\"](读取test表下面，一级分区pt=1下面，二级分区ds=hz的数据)"),;
 
     private final String code;
     private final String description;
