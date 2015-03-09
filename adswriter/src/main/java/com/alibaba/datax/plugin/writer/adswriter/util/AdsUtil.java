@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.adswriter.util;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
@@ -107,6 +108,8 @@ public class AdsUtil {
                 adsPartition = adsPartition.substring(0,adsPartition.length()-1);
             }
         }
+        if (adsPartition.contains("*"))
+            throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_PARTITION_FAILED, "");
         return adsPartition;
     }
 

@@ -148,12 +148,16 @@ public class AdsWriteUnitTest {
         String partition2 = "pt=1,ds=*";
         String partition3 = "pt=1,ds=hz,dt=3";
         String partition4 = "pt=1,ds=hz,dt=*";
+        String partition5 = "pt=*,dt=hz";
         String adsPartition1 = AdsUtil.transferOdpsPartitionToAds(partition1);
         String adsPartition2 = AdsUtil.transferOdpsPartitionToAds(partition2);
         String adsPartition3 = AdsUtil.transferOdpsPartitionToAds(partition3);
         String adsPartition4 = AdsUtil.transferOdpsPartitionToAds(partition4);
+        String adsPartition5 = AdsUtil.transferOdpsPartitionToAds(partition5);
         assertEquals(adsPartition1,"");
         assertNotNull(adsPartition2);
         assertNotNull(adsPartition3);
+        assertNotNull(adsPartition4);
+        assertNotNull(adsPartition5);
     }
 }
