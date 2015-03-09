@@ -4,10 +4,11 @@ import com.alibaba.datax.common.exception.DataXException;
 
 import java.util.Arrays;
 
+/**
+ * 只对 normal 模式读取时有用，多版本读取时，不存在列类型的
+ */
 public enum ColumnType {
     STRING("string"),
-
-    //TODO 考虑去除 isBinaryString
     BINARY_STRING("binarystring"),
     BYTES("bytes"),
     BOOLEAN("boolean"),

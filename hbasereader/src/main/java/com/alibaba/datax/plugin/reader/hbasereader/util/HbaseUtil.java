@@ -21,7 +21,9 @@ import java.util.Map;
 
 public final class HbaseUtil {
     private static Logger LOG = LoggerFactory.getLogger(HbaseUtil.class);
+
     private static final String META_SCANNER_CACHING = "100";
+
 
     public static void doPretreatment(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
@@ -36,7 +38,14 @@ public final class HbaseUtil {
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
         originalConfig.set(Key.ENCODING, encoding);
 
-        // 处理 range 的配置
+
+        // 此处增强一个检查：isBinaryRowkey 配置不能出现在与 hbaseConfig 等配置平级地位
+        Boolean isBinaryRowkey = originalConfig.getBool(Key.IS_BINARY_ROWKEY);
+        if (isBinaryRowkey != null) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("%s 不能配置在此处，它应该配置在 range 里面.", Key.IS_BINARY_ROWKEY));
+        }
+
+        // 处理 range 的配置，将 range 内的配置值提取到与 hbaseConfig 等配置项平级地位，方便后续获取值
         boolean hasConfiguredRange = false;
         String startRowkey = originalConfig.getString(Constant.RANGE + "." + Key.START_ROWKEY);
         if (startRowkey != null) {
@@ -52,7 +61,7 @@ public final class HbaseUtil {
 
         // 如果配置了 range, 就必须要配置 isBinaryRowkey
         if (hasConfiguredRange) {
-            Boolean isBinaryRowkey = originalConfig.getBool(Constant.RANGE + "." + Key.IS_BINARY_ROWKEY);
+            isBinaryRowkey = originalConfig.getBool(Constant.RANGE + "." + Key.IS_BINARY_ROWKEY);
             if (isBinaryRowkey == null) {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 可以配置为 true 或者 false. 分别对应于 hbasereader 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
             }
@@ -136,8 +145,7 @@ public final class HbaseUtil {
         Integer maxVersion = configuration.getInt(Key.MAX_VERSION);
         Validate.notNull(maxVersion, String.format("您配置的是 %s 模式读取 hbase 中的数据，所以必须配置：maxVersion", mode));
 
-        int maxVersionValue = maxVersion.intValue();
-        boolean isMaxVersionValid = maxVersionValue == -1 || maxVersionValue > 1;
+        boolean isMaxVersionValid = maxVersion == -1 || maxVersion > 1;
         Validate.isTrue(isMaxVersionValid, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是配置的 maxVersion 值错误. maxVersion规定：-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal 模式读取数据，而非 %s 模式读取，二者差别大），大于1则表示读取最新的对应个数的版本", mode, mode));
     }
 
@@ -166,20 +174,46 @@ public final class HbaseUtil {
         return conf;
     }
 
-    public static byte[] getStartRowKey(Configuration configuration) {
+    public static byte[] convertUserStartRowkey(Configuration configuration) {
         String startRowkey = configuration.getString(Key.START_ROWKEY);
-        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
-
-        return parseRowKeyByte(startRowkey, isBinaryRowkey);
+        if (StringUtils.isBlank(startRowkey)) {
+            return HConstants.EMPTY_BYTE_ARRAY;
+        } else {
+            boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
+            return HbaseUtil.stringToBytes(startRowkey, isBinaryRowkey);
+        }
     }
 
-    public static byte[] getEndRowKey(Configuration configuration) {
+    public static byte[] convertUserEndRowkey(Configuration configuration) {
         String endRowkey = configuration.getString(Key.END_ROWKEY);
-        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
-
-        return parseRowKeyByte(endRowkey, isBinaryRowkey);
+        if (StringUtils.isBlank(endRowkey)) {
+            return HConstants.EMPTY_BYTE_ARRAY;
+        } else {
+            boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
+            return HbaseUtil.stringToBytes(endRowkey, isBinaryRowkey);
+        }
     }
 
+    /**
+     * 注意：convertUserStartRowkey 和 convertInnerStartRowkey，前者会受到 isBinaryRowkey 的影响，只用于第一次对用户配置的 String 类型的 rowkey 转为二进制时使用。而后者约定：切分时得到的二进制的 rowkey 回填到配置中时采用
+     */
+    public static byte[] convertInnerStartRowkey(Configuration configuration) {
+        String startRowkey = configuration.getString(Key.START_ROWKEY);
+        if (StringUtils.isBlank(startRowkey)) {
+            return HConstants.EMPTY_BYTE_ARRAY;
+        }
+
+        return Bytes.toBytesBinary(startRowkey);
+    }
+
+    public static byte[] convertInnerEndRowkey(Configuration configuration) {
+        String endRowkey = configuration.getString(Key.END_ROWKEY);
+        if (StringUtils.isBlank(endRowkey)) {
+            return HConstants.EMPTY_BYTE_ARRAY;
+        }
+
+        return Bytes.toBytesBinary(endRowkey);
+    }
 
     public static HTable initHtable(com.alibaba.datax.common.util.Configuration configuration) {
         String hbaseConnConf = configuration.getString(Key.HBASE_CONFIG);
@@ -214,25 +248,17 @@ public final class HbaseUtil {
         }
     }
 
-    private static byte[] parseRowKeyByte(String rowkey, boolean isBinaryRowkey) {
-        byte[] retRowKey;
-
-        if (StringUtils.isBlank(rowkey)) {
-            retRowKey = HConstants.EMPTY_BYTE_ARRAY;
+    private static byte[] stringToBytes(String rowkey, boolean isBinaryRowkey) {
+        if (isBinaryRowkey) {
+            return Bytes.toBytesBinary(rowkey);
         } else {
-            if (isBinaryRowkey) {
-                retRowKey = Bytes.toBytesBinary(rowkey);
-            } else {
-                retRowKey = Bytes.toBytes(rowkey);
-            }
+            return Bytes.toBytes(rowkey);
         }
-        return retRowKey;
     }
 
     public static boolean isRowkeyColumn(String columnName) {
         return Constant.ROWKEY_FLAG.equalsIgnoreCase(columnName);
     }
-
 
     /**
      * 用于解析 Normal 模式下的列配置

@@ -35,8 +35,8 @@ public abstract class HbaseAbstractReader {
 
         this.scanCache = configuration.getInt(Key.SCAN_CACHE, Constant.DEFAULT_SCAN_CACHE);
 
-        this.startKey = HbaseUtil.getStartRowKey(configuration);
-        this.endKey = HbaseUtil.getEndRowKey(configuration);
+        this.startKey = HbaseUtil.convertInnerStartRowkey(configuration);
+        this.endKey = HbaseUtil.convertInnerEndRowkey(configuration);
     }
 
     public abstract boolean fetchLine(Record record) throws Exception;

@@ -19,28 +19,28 @@ public final class HbaseSplitUtil {
 
 
     public static List<Configuration> split(Configuration configuration) {
+        byte[] startRowkeyByte = HbaseUtil.convertUserStartRowkey(configuration);
+        byte[] endRowkeyByte = HbaseUtil.convertUserEndRowkey(configuration);
+
+			/* 如果用户配置了 startRowkey 和 endRowkey，需要确保：startRowkey <= endRowkey */
+        if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
+                && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
+            throw new IllegalArgumentException("Hbasereader 中 startRowkey 不得大于 endRowkey.");
+        }
+
         HTable htable = HbaseUtil.initHtable(configuration);
 
         List<Configuration> resultConfigurations;
-        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
+//        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         try {
             Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
             if (null == regionRanges) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "获取源头 Hbase 表的 rowkey 范围 失败.");
-            }
-
-            byte[] startRowkeyByte = HbaseUtil.getStartRowKey(configuration);
-            byte[] endRowkeyByte = HbaseUtil.getEndRowKey(configuration);
-
-			/* 如果用户配置了 startRowkey 和 endRowkey，需要确保：startRowkey <= endRowkey */
-            if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
-                    && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
-                throw new IllegalArgumentException("startRowkey 不得大于 endRowkey.");
+                throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "获取源头 Hbase 表的 rowkey 范围失败.");
             }
 
             resultConfigurations = doSplit(configuration, startRowkeyByte, endRowkeyByte,
-                    regionRanges, isBinaryRowkey);
+                    regionRanges);
 
             LOG.info("HBaseReader split job into {} tasks.", resultConfigurations.size());
 
@@ -60,7 +60,7 @@ public final class HbaseSplitUtil {
 
 
     private static List<Configuration> doSplit(Configuration config, byte[] startRowkeyByte,
-                                               byte[] endRowkeyByte, Pair<byte[][], byte[][]> regionRanges, boolean isBinaryRowkey) {
+                                               byte[] endRowkeyByte, Pair<byte[][], byte[][]> regionRanges) {
 
         List<Configuration> configurations = new ArrayList<Configuration>();
 
@@ -94,11 +94,9 @@ public final class HbaseSplitUtil {
 
             Configuration p = config.clone();
 
-            String thisStartKey = getStartKey(startRowkeyByte, regionStartKey,
-                    isBinaryRowkey);
+            String thisStartKey = getStartKey(startRowkeyByte, regionStartKey);
 
-            String thisEndKey = getEndKey(endRowkeyByte, regionEndKey,
-                    isBinaryRowkey);
+            String thisEndKey = getEndKey(endRowkeyByte, regionEndKey);
 
             p.set(Key.START_ROWKEY, thisStartKey);
             p.set(Key.END_ROWKEY, thisEndKey);
@@ -111,14 +109,12 @@ public final class HbaseSplitUtil {
         return configurations;
     }
 
-    private static String getEndKey(byte[] endRowkeyByte, byte[] regionEndKey,
-                                    boolean isBinaryRowkey) {
+    private static String getEndKey(byte[] endRowkeyByte, byte[] regionEndKey) {
         if (endRowkeyByte == null) {// 由于之前处理过，所以传入的userStartKey不可能为null
             throw new IllegalArgumentException("userEndKey should not be null!");
         }
 
         byte[] tempEndRowkeyByte;
-        String retEndRowkey;
 
         if (endRowkeyByte.length == 0) {
             tempEndRowkeyByte = regionEndKey;
@@ -133,24 +129,16 @@ public final class HbaseSplitUtil {
             }
         }
 
-        if (isBinaryRowkey) {
-            retEndRowkey = Bytes.toStringBinary(tempEndRowkeyByte);
-        } else {
-            retEndRowkey = Bytes.toString(tempEndRowkeyByte);
-        }
-
-        return retEndRowkey;
+        return Bytes.toStringBinary(tempEndRowkeyByte);
     }
 
-    private static String getStartKey(byte[] startRowkeyByte, byte[] regionStarKey,
-                                      boolean isBinaryRowkey) {
+    private static String getStartKey(byte[] startRowkeyByte, byte[] regionStarKey) {
         if (startRowkeyByte == null) {// 由于之前处理过，所以传入的userStartKey不可能为null
             throw new IllegalArgumentException(
                     "userStartKey should not be null!");
         }
 
         byte[] tempStartRowkeyByte;
-        String retStartRowkey;
 
         if (Bytes.compareTo(startRowkeyByte, regionStarKey) < 0) {
             tempStartRowkeyByte = regionStarKey;
@@ -158,12 +146,6 @@ public final class HbaseSplitUtil {
             tempStartRowkeyByte = startRowkeyByte;
         }
 
-        if (isBinaryRowkey) {
-            retStartRowkey = Bytes.toStringBinary(tempStartRowkeyByte);
-        } else {
-            retStartRowkey = Bytes.toString(tempStartRowkeyByte);
-        }
-
-        return retStartRowkey;
+        return Bytes.toStringBinary(tempStartRowkeyByte);
     }
 }
