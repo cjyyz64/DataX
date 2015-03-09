@@ -4,7 +4,6 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.Constant;
 import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
-import com.alibaba.datax.plugin.reader.hbasereader.HbaseColumnCell;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
@@ -15,16 +14,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 public abstract class HbaseAbstractReader {
     private final static Logger LOG = LoggerFactory.getLogger(HbaseAbstractReader.class);
 
-    private byte[] startKey = null;
     private int scanCache;
+    private byte[] startKey = null;
     private byte[] endKey = null;
 
-    protected List<HbaseColumnCell> hbaseColumnCells;
     protected HTable htable;
     protected String encoding;
     protected Result lastResult = null;
@@ -40,16 +37,13 @@ public abstract class HbaseAbstractReader {
 
         this.startKey = HbaseUtil.getStartRowKey(configuration);
         this.endKey = HbaseUtil.getEndRowKey(configuration);
-
     }
 
     public abstract boolean fetchLine(Record record) throws Exception;
 
-    public abstract void setMaxVersions(Scan scan);
+    public abstract void initScan(Scan scan);
 
-    public void prepare(List<HbaseColumnCell> hbaseColumnCells) throws Exception {
-        this.hbaseColumnCells = hbaseColumnCells;
-
+    public void prepare() throws Exception {
         this.scan = new Scan();
         scan.setCacheBlocks(false);
 
@@ -58,22 +52,12 @@ public abstract class HbaseAbstractReader {
 
         LOG.info("The task set startRowkey=[{}], endRowkey=[{}].", Bytes.toStringBinary(this.startKey), Bytes.toStringBinary(this.endKey));
 
-        boolean isConstant;
-        boolean isRowkeyColumn;
-        for (HbaseColumnCell cell : hbaseColumnCells) {
-            isConstant = cell.isConstant();
-            isRowkeyColumn = HbaseUtil.isRowkeyColumn(cell.getColumnName());
-
-            if (!isConstant && !isRowkeyColumn) {
-                this.scan.addColumn(cell.getCf(), cell.getQualifier());
-            }
-        }
-
-        setMaxVersions(this.scan);
+        initScan(this.scan);
 
         this.scan.setCaching(this.scanCache);
         this.resultScanner = this.htable.getScanner(this.scan);
     }
+
 
     public void close() throws IOException {
         if (this.resultScanner != null) {

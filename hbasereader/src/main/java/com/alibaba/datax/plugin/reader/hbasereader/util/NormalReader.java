@@ -6,14 +6,24 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.ColumnType;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseColumnCell;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
+import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.util.List;
+import java.util.Map;
+
 public class NormalReader extends HbaseAbstractReader {
+    private List<Map> column;
+    private List<HbaseColumnCell> hbaseColumnCells;
+
     public NormalReader(Configuration configuration) {
         super(configuration);
+
+        this.column = configuration.getList(Key.COLUMN, Map.class);
+        this.hbaseColumnCells = HbaseUtil.parseColumnOfNormalMode(this.column);
     }
 
     @Override
@@ -33,7 +43,7 @@ public class NormalReader extends HbaseAbstractReader {
             byte[] cf;
             byte[] qualifier;
 
-            for (HbaseColumnCell cell : super.hbaseColumnCells) {
+            for (HbaseColumnCell cell : this.hbaseColumnCells) {
                 columnType = cell.getColumnType();
                 if (cell.isConstant()) {
                     // 对常量字段的处理
@@ -42,15 +52,15 @@ public class NormalReader extends HbaseAbstractReader {
                     // 根据列名称获取值
                     columnName = cell.getColumnName();
 
-                    if(HbaseUtil.isRowkeyColumn(columnName)){
+                    if (HbaseUtil.isRowkeyColumn(columnName)) {
                         hbaseColumnValue = result.getRow();
-                    }else{
+                    } else {
                         cf = cell.getCf();
                         qualifier = cell.getQualifier();
                         hbaseColumnValue = result.getValue(cf, qualifier);
                     }
 
-                    doFillRecord(hbaseColumnValue,columnType,super.encoding,cell.getDateformat(),record);
+                    doFillRecord(hbaseColumnValue, columnType, super.encoding, cell.getDateformat(), record);
                 }
             }
         } catch (Exception e) {
@@ -65,8 +75,17 @@ public class NormalReader extends HbaseAbstractReader {
     }
 
     @Override
-    public void setMaxVersions(Scan scan) {
-        // do nothing
+    public void initScan(Scan scan) {
+        boolean isConstant;
+        boolean isRowkeyColumn;
+        for (HbaseColumnCell cell : this.hbaseColumnCells) {
+            isConstant = cell.isConstant();
+            isRowkeyColumn = HbaseUtil.isRowkeyColumn(cell.getColumnName());
+
+            if (!isConstant && !isRowkeyColumn) {
+                this.scan.addColumn(cell.getCf(), cell.getQualifier());
+            }
+        }
     }
 
 

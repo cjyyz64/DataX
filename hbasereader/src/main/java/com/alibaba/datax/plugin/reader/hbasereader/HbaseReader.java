@@ -6,14 +6,10 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.*;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class HbaseReader extends Reader {
     public static class Job extends Reader.Job {
@@ -55,37 +51,41 @@ public class HbaseReader extends Reader {
         private Configuration taskConfig;
 
         private HbaseAbstractReader hbaseAbstractReader;
-        private List<Map> column;
         private String mode;
-        private List<HbaseColumnCell> hbaseColumnCells;
 
         @Override
         public void init() {
             this.taskConfig = super.getPluginJobConf();
 
-            this.column = this.taskConfig.getList(Key.COLUMN, Map.class);
-
             this.mode = this.taskConfig.getString(Key.MODE);
-            if (ModeType.isNormalMode(this.mode)) {
-                this.hbaseAbstractReader = new NormalReader(this.taskConfig);
-            } else {
-                this.hbaseAbstractReader = new MutiVersionReader(this.taskConfig);
+            ModeType modeType = ModeType.getByTypeName(this.mode);
+
+            switch (modeType) {
+                case Normal:
+                    this.hbaseAbstractReader = new NormalReader(this.taskConfig);
+                    break;
+                case MultiVersionFixedColumn:
+                    this.hbaseAbstractReader = new MultiVersionFixedColumnReader(this.taskConfig);
+                    break;
+                case MultiVersionDynamicColumn:
+                    this.hbaseAbstractReader = new MultiVersionDynamicColumnReader(this.taskConfig);
+                    break;
+                default:
+                    throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持此类模式:" + modeType);
             }
-            this.hbaseColumnCells = HbaseReader.parseColumn(this.column);
         }
 
         @Override
         public void prepare() {
+            try {
+                this.hbaseAbstractReader.prepare();
+            } catch (Exception e) {
+                throw DataXException.asDataXException(HbaseReaderErrorCode.PREPAR_READ_ERROR, e);
+            }
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
-            try {
-                this.hbaseAbstractReader.prepare(this.hbaseColumnCells);
-            } catch (Exception e) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.PREPAR_READ_ERROR, e);
-            }
-
             Record record = recordSender.createRecord();
             boolean fetchOK;
             while (true) {
@@ -122,45 +122,5 @@ public class HbaseReader extends Reader {
         }
 
 
-    }
-
-    public static List<HbaseColumnCell> parseColumn(List<Map> column) {
-        List<HbaseColumnCell> hbaseColumnCells = new ArrayList<HbaseColumnCell>();
-
-        HbaseColumnCell oneColumnCell;
-
-        for (Map<String, String> aColumn : column) {
-            ColumnType type = ColumnType.getByTypeName(aColumn.get("type"));
-            String columnName = aColumn.get("name");
-            String columnValue = aColumn.get("value");
-            String dateformat = aColumn.get("format");
-
-            if (type == ColumnType.DATE) {
-                Validate.notNull(dateformat, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
-
-                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型为时间，则要么是 type + name + format 的组合，要么是type + value + format 的组合. 而您的配置非这两种组合，请检查并修改.");
-
-                oneColumnCell = new HbaseColumnCell
-                        .Builder(type)
-                        .columnName(columnName)
-                        .columnValue(columnValue)
-                        .dateformat(dateformat)
-                        .build();
-            } else {
-                Validate.isTrue(dateformat == null, "Hbasereader 的列配置中，如果类型不为时间，则不需要指定时间格式.");
-
-                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型不是时间，则要么是 type + name 的组合，要么是type + value 的组合. 而您的配置非这两种组合，请检查并修改.");
-
-                oneColumnCell = new HbaseColumnCell
-                        .Builder(type)
-                        .columnName(columnName)
-                        .columnValue(columnValue)
-                        .build();
-            }
-
-            hbaseColumnCells.add(oneColumnCell);
-        }
-
-        return hbaseColumnCells;
     }
 }

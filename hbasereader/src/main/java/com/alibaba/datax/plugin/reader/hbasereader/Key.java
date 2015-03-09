@@ -5,7 +5,7 @@ public final class Key {
     public final static String HBASE_CONFIG = "hbaseConfig";
 
     /**
-     * mode 可以取 normal 或者 multiVersion 两个值，无默认值。二者区别非常大
+     * mode 可以取 normal 或者 multiVersionFixedColumn 或者 multiVersionDynamicColumn 三个值，无默认值。
      */
     public final static String MODE = "mode";
 
@@ -18,16 +18,13 @@ public final class Key {
     public final static String MAX_VERSION = "maxVersion";
 
     /**
-     * 配合 mode = multiVersion 时使用
-     */
-    public final static String ROWKEY_TYPE = "rowkeyType";
-
-    /**
      * 默认为 utf8
      */
     public final static String ENCODING = "encoding";
 
     public final static String TABLE = "table";
+
+    public final static String COLUMN_FAMILY = "columnFamily";
 
     public final static String COLUMN = "column";
 

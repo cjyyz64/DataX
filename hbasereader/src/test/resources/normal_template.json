@@ -14,7 +14,7 @@
             // 默认为 utf8,可以配置为 utf8,gbk
             "encoding": "utf8",
 
-            // 可能取值为：normal, mutiVersion
+            //mode 可能取值为：normal, multiVersionFixedColumn, multiVersionDynamicColumn
             "mode": "normal",
 
             // 普通模式读取时，column 中每一项，通常形式为：(name + type) 或者 (value + type)
