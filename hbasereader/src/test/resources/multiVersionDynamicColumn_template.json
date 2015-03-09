@@ -26,9 +26,6 @@
             // 约定-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal模式读取数据，而非多版本模式读取，二者差别很大，末尾会展示如果用 normal 模式读取，拼成的 Record 的结果），大于1则表示读取最新的对应个数的版本
             "maxVersion": -1,
 
-            //不支持 Date 类型（是出于这个考虑：如果是时间类型，必然需要配置 dateFormat 格式，引入不必要复杂性）
-            "rowkeyType":"string",
-
             // 多版本读取时，读出的数据是 (rowkey, column, timestamp, value) 四元组形式， 所以目的对应的表结构应该类似于
             // 有四个字段，并且类型依次为：string,string,long,string. 在把 hbase 中的二进制读成 string 时，统一使用 Bytes.toBinaryString() 完成.
 
