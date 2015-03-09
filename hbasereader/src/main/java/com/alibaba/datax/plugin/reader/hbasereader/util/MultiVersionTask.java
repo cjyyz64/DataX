@@ -13,12 +13,12 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class MultiVersionReader extends HbaseAbstractReader {
+public abstract class MultiVersionTask extends HbaseAbstractTask {
     private int maxVersion;
     private List<KeyValue> kvList = new ArrayList<KeyValue>();
     private int currentReadPosition = 0;
 
-    public MultiVersionReader(Configuration configuration) {
+    public MultiVersionTask(Configuration configuration) {
         super(configuration);
 
         this.maxVersion = configuration.getInt(Key.MAX_VERSION);

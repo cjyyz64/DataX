@@ -15,11 +15,11 @@ import org.apache.hadoop.hbase.util.Bytes;
 import java.util.List;
 import java.util.Map;
 
-public class NormalReader extends HbaseAbstractReader {
+public class NormalTask extends HbaseAbstractTask {
     private List<Map> column;
     private List<HbaseColumnCell> hbaseColumnCells;
 
-    public NormalReader(Configuration configuration) {
+    public NormalTask(Configuration configuration) {
         super(configuration);
 
         this.column = configuration.getList(Key.COLUMN, Map.class);

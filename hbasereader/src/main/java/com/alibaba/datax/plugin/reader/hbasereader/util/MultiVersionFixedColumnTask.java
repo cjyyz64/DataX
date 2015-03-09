@@ -7,10 +7,10 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.List;
 
-public class MultiVersionFixedColumnReader extends MultiVersionReader {
+public class MultiVersionFixedColumnTask extends MultiVersionTask {
     private List<String> column = null;
 
-    public MultiVersionFixedColumnReader(Configuration configuration) {
+    public MultiVersionFixedColumnTask(Configuration configuration) {
         super(configuration);
 
         this.column = configuration.getList(Key.COLUMN, String.class);

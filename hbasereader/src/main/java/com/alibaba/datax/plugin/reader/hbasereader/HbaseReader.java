@@ -50,25 +50,24 @@ public class HbaseReader extends Reader {
     public static class Task extends Reader.Task {
         private Configuration taskConfig;
 
-        private HbaseAbstractReader hbaseAbstractReader;
-        private String mode;
+        private HbaseAbstractTask hbaseTaskProxy;
 
         @Override
         public void init() {
             this.taskConfig = super.getPluginJobConf();
 
-            this.mode = this.taskConfig.getString(Key.MODE);
-            ModeType modeType = ModeType.getByTypeName(this.mode);
+            String mode = this.taskConfig.getString(Key.MODE);
+            ModeType modeType = ModeType.getByTypeName(mode);
 
             switch (modeType) {
                 case Normal:
-                    this.hbaseAbstractReader = new NormalReader(this.taskConfig);
+                    this.hbaseTaskProxy = new NormalTask(this.taskConfig);
                     break;
                 case MultiVersionFixedColumn:
-                    this.hbaseAbstractReader = new MultiVersionFixedColumnReader(this.taskConfig);
+                    this.hbaseTaskProxy = new MultiVersionFixedColumnTask(this.taskConfig);
                     break;
                 case MultiVersionDynamicColumn:
-                    this.hbaseAbstractReader = new MultiVersionDynamicColumnReader(this.taskConfig);
+                    this.hbaseTaskProxy = new MultiVersionDynamicColumnTask(this.taskConfig);
                     break;
                 default:
                     throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持此类模式:" + modeType);
@@ -78,7 +77,7 @@ public class HbaseReader extends Reader {
         @Override
         public void prepare() {
             try {
-                this.hbaseAbstractReader.prepare();
+                this.hbaseTaskProxy.prepare();
             } catch (Exception e) {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.PREPAR_READ_ERROR, e);
             }
@@ -90,7 +89,7 @@ public class HbaseReader extends Reader {
             boolean fetchOK;
             while (true) {
                 try {
-                    fetchOK = this.hbaseAbstractReader.fetchLine(record);
+                    fetchOK = this.hbaseTaskProxy.fetchLine(record);
                 } catch (Exception e) {
                     super.getTaskPluginCollector().collectDirtyRecord(record, e);
                     continue;
@@ -112,9 +111,9 @@ public class HbaseReader extends Reader {
 
         @Override
         public void destroy() {
-            if (this.hbaseAbstractReader != null) {
+            if (this.hbaseTaskProxy != null) {
                 try {
-                    this.hbaseAbstractReader.close();
+                    this.hbaseTaskProxy.close();
                 } catch (Exception e) {
                     //
                 }

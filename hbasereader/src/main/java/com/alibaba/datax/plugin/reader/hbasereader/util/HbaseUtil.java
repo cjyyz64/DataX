@@ -32,12 +32,10 @@ public final class HbaseUtil {
         originalConfig.getNecessaryValue(Key.TABLE, HbaseReaderErrorCode.REQUIRED_VALUE);
 
         String mode = HbaseUtil.dealMode(originalConfig);
-
         originalConfig.set(Key.MODE, mode);
 
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
         originalConfig.set(Key.ENCODING, encoding);
-
 
         // 此处增强一个检查：isBinaryRowkey 配置不能出现在与 hbaseConfig 等配置平级地位
         Boolean isBinaryRowkey = originalConfig.getBool(Key.IS_BINARY_ROWKEY);
@@ -63,7 +61,7 @@ public final class HbaseUtil {
         if (hasConfiguredRange) {
             isBinaryRowkey = originalConfig.getBool(Constant.RANGE + "." + Key.IS_BINARY_ROWKEY);
             if (isBinaryRowkey == null) {
-                throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要配置 isBinaryRowkey 项，用于指定主键自身是否为二进制结构。isBinaryRowkey 可以配置为 true 或者 false. 分别对应于 hbasereader 内部调用Bytes.toBytesBinary(String rowKey) 或者Bytes.toBytes(String rowKey) 两个不同的 API.");
+                throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您需要在 range 内配置 isBinaryRowkey 项，用于告诉 DataX 把您填写的 rowkey 转换为内部的二进制时，采用那个 API(值为 true 时，采用Bytes.toBytesBinary(String rowKey)，值为 false 时，采用Bytes.toBytes(String rowKey))");
             }
 
             originalConfig.set(Key.IS_BINARY_ROWKEY, isBinaryRowkey);
@@ -79,7 +77,7 @@ public final class HbaseUtil {
         ModeType modeType = ModeType.getByTypeName(mode);
         switch (modeType) {
             case Normal: {
-                // normal 模式读取数据，不需要配置 maxVersion 和 rowkeyType，需要配置 column，并且 column 格式为 Map 风格
+                // normal 模式不需要配置 maxVersion，需要配置 column，并且 column 格式为 Map 风格
                 String maxVersion = originalConfig.getString(Key.MAX_VERSION);
                 Validate.isTrue(maxVersion == null, "您配置的是 normal 模式读取 hbase 中的数据，所以不能配置无关项：maxVersion");
 
@@ -94,7 +92,7 @@ public final class HbaseUtil {
                 break;
             }
             case MultiVersionFixedColumn: {
-                // multiVersionFixedColumn 模式读取数据，需要配置 maxVersion 和 column，并且 column 格式为 List 风格
+                // multiVersionFixedColumn 模式需要配置 maxVersion 和 column，并且 column 格式为 List 风格
                 checkMaxVersion(originalConfig, mode);
 
                 List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
@@ -102,7 +100,7 @@ public final class HbaseUtil {
                     throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您配置的是 multiVersionFixedColumn 模式读取 hbase 中的数据，所以必须配置 column，其形式为: column:[\"cf0:column0\",\"cf1:column1\"]");
                 }
 
-                // 检查多版本固定列读取时，配置的 column 格式是否包含cf:qualifier
+                // 检查配置的 column 格式是否包含cf:qualifier
                 for (String column : columns) {
                     if (StringUtils.isBlank(column) || column.split(":").length != 2) {
                         throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("您配置的是 multiVersionFixedColumn 模式读取 hbase 中的数据，但是您配置的列格式[%s]不正确，每一个列元素应该配置为 列族:列名  的形式, 如 column:[\"cf0:column0\",\"cf1:column1\"]", column));
@@ -118,7 +116,7 @@ public final class HbaseUtil {
                 break;
             }
             case MultiVersionDynamicColumn: {
-                // multiVersionDynamicColumn 模式读取数据，需要配置 maxVersion 和 columnFamily，并且 columnFamily 格式为 List 风格
+                // multiVersionDynamicColumn 模式需要配置 maxVersion 和 columnFamily，并且 columnFamily 格式为 List 风格
                 checkMaxVersion(originalConfig, mode);
                 List<String> columnFamilies = originalConfig.getList(Key.COLUMN_FAMILY, String.class);
                 if (columnFamilies == null || columnFamilies.isEmpty()) {

@@ -15,8 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-public abstract class HbaseAbstractReader {
-    private final static Logger LOG = LoggerFactory.getLogger(HbaseAbstractReader.class);
+public abstract class HbaseAbstractTask {
+    private final static Logger LOG = LoggerFactory.getLogger(HbaseAbstractTask.class);
 
     private int scanCache;
     private byte[] startKey = null;
@@ -28,7 +28,7 @@ public abstract class HbaseAbstractReader {
     protected Scan scan;
     protected ResultScanner resultScanner;
 
-    public HbaseAbstractReader(Configuration configuration) {
+    public HbaseAbstractTask(Configuration configuration) {
         this.htable = HbaseUtil.initHtable(configuration);
 
         this.encoding = configuration.getString(Key.ENCODING);

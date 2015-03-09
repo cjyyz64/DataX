@@ -7,10 +7,10 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 import java.util.List;
 
-public class MultiVersionDynamicColumnReader extends MultiVersionReader {
+public class MultiVersionDynamicColumnTask extends MultiVersionTask {
     private List<String> columnFamilies = null;
 
-    public MultiVersionDynamicColumnReader(Configuration configuration) {
+    public MultiVersionDynamicColumnTask(Configuration configuration) {
         super(configuration);
 
         this.columnFamilies = configuration.getList(Key.COLUMN_FAMILY, String.class);

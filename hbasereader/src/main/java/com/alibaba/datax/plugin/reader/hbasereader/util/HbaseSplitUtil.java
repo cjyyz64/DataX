@@ -25,13 +25,12 @@ public final class HbaseSplitUtil {
 			/* 如果用户配置了 startRowkey 和 endRowkey，需要确保：startRowkey <= endRowkey */
         if (startRowkeyByte.length != 0 && endRowkeyByte.length != 0
                 && Bytes.compareTo(startRowkeyByte, endRowkeyByte) > 0) {
-            throw new IllegalArgumentException("Hbasereader 中 startRowkey 不得大于 endRowkey.");
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 中 startRowkey 不得大于 endRowkey.");
         }
 
         HTable htable = HbaseUtil.initHtable(configuration);
 
         List<Configuration> resultConfigurations;
-//        boolean isBinaryRowkey = configuration.getBool(Key.IS_BINARY_ROWKEY);
 
         try {
             Pair<byte[][], byte[][]> regionRanges = htable.getStartEndKeys();
@@ -39,7 +38,7 @@ public final class HbaseSplitUtil {
                 throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "获取源头 Hbase 表的 rowkey 范围失败.");
             }
 
-            resultConfigurations = doSplit(configuration, startRowkeyByte, endRowkeyByte,
+            resultConfigurations = HbaseSplitUtil.doSplit(configuration, startRowkeyByte, endRowkeyByte,
                     regionRanges);
 
             LOG.info("HBaseReader split job into {} tasks.", resultConfigurations.size());
