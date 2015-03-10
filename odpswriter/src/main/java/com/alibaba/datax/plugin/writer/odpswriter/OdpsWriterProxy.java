@@ -138,11 +138,11 @@ public class OdpsWriterProxy {
                 columnValue = dataXRecord.getColumn(sourceIndex);
 
                 if (columnValue == null) {
-                    break;
+                    continue;
                 }
                 // for compatible dt lib, "" as null
                 if(this.emptyAsNull && columnValue instanceof StringColumn && "".equals(columnValue.asString())){
-                    break;
+                    continue;
                 }
 
                 switch (type) {
