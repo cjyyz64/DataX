@@ -6,6 +6,12 @@ public final class Key {
 
     /**
      * mode 可以取 normal 或者 multiVersionFixedColumn 或者 multiVersionDynamicColumn 三个值，无默认值。
+     * <p/>
+     * normal 配合 column(Map 结构的)使用
+     * <p/>
+     * multiVersionFixedColumn 配合 maxVersion,tetradType, column(List 结构的)使用
+     * <p/>
+     * multiVersionDynamicColumn 配合 maxVersion,tetradType, columnFamily(List 结构的)使用
      */
     public final static String MODE = "mode";
 
@@ -16,6 +22,11 @@ public final class Key {
      * >1 表示最多读取对应个数的版本数(不能超过 Integer 的最大值)
      */
     public final static String MAX_VERSION = "maxVersion";
+
+    /**
+     * 多版本情况下，必须配置 四元组的类型(rowkey,column,timestamp,value)
+     */
+    public final static String TETRAD_TYPE = "tetradType";
 
     /**
      * 默认为 utf8

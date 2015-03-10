@@ -17,16 +17,14 @@
             /**
             mode 可能取值为：normal, multiVersionFixedColumn, multiVersionDynamicColumn
 
-            multiVersionFixedColumn, multiVersionDynamicColumn 都属于多版本读取方式，读出的数据是 (rowkey, column, timestamp, value) 四元组形式， 所以目的对应的表结构应该类似于有四个字段，并且类型依次为：string,string,long,string. 在把 hbase 中的二进制读成 string 时，DataX 统一使用 Bytes.toStringBinary() 完成.此外，多版本读取时，一定会去读 rowkey,这时不能在 column 中配置 rowkey；不支持常量列. 配合多版本读取时使用的还有额外两个参数：maxVersion,rowkeyType）
-
-            multiVersionFixedColumn 表示根据用户指定的列名称读取，注意column 配置项的格式，不需要指定类型
+            multiVersionFixedColumn, multiVersionDynamicColumn 都属于多版本读取方式，读出的数据是 (rowkey, column, timestamp, value) 四元组形式. 此外，多版本读取时，一定会去读 rowkey,这时不能在 column 中配置 rowkey；不支持常量列. 配合使用的还有额外参数：maxVersion,column/columnFamily,tetradType）
             */
             "mode": "multiVersionFixedColumn",
             // 约定-1为读取全部版本，不能配置为0或者1（因为0或者1，我们认为用户是想用 normal模式读取数据，而非多版本模式读取，二者差别很大，末尾会展示如果用 normal 模式读取，拼成的 Record 的结果），大于1则表示读取最新的对应个数的版本
             "maxVersion": -1,
 
-            // 多版本读取时，读出的数据是 (rowkey, column, timestamp, value) 四元组形式， 所以目的对应的表结构应该类似于
-            // 有四个字段，并且类型依次为：string,string,long,string. 在把 hbase 中的二进制读成 string 时，统一使用 Bytes.toBinaryString() 完成.
+            //  指定四元组的各自类型
+            "tetradType":["string","string","long","string"],
 
             "column":["basicInfo:name","basicInfo:address","basicInfo:school","extendsInfo:age"],
 

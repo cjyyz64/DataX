@@ -25,7 +25,7 @@
             // 特别注意:
             // <1> string 和 binaryString 的区别体现在 byte[] 转换为 String 时调用不同的 API:
             //      类型为 string 表示采用 API: new String(byteArray,encoding)
-            //      类型为 binaryString 表示采用 API: new String(byteArray,encoding)
+            //      类型为 binaryString 表示采用 API: Bytes.toStringBinary(byteArray)
             // <2> date 类型配置时，必须提供 dateformat 以表明所配置的字符串代表的时间格式
             // <3> 常量不能配置为 binaryString 类型
 

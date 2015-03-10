@@ -24,6 +24,8 @@ public final class HbaseUtil {
 
     private static final String META_SCANNER_CACHING = "100";
 
+    private static final int TETRAD_TYPE_COUNT = 4;
+
 
     public static void doPretreatment(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
@@ -95,6 +97,8 @@ public final class HbaseUtil {
                 // multiVersionFixedColumn 模式需要配置 maxVersion 和 column，并且 column 格式为 List 风格
                 checkMaxVersion(originalConfig, mode);
 
+                checkTetradType(originalConfig, mode);
+
                 List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
                 if (columns == null || columns.isEmpty()) {
                     throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您配置的是 multiVersionFixedColumn 模式读取 hbase 中的数据，所以必须配置 column，其形式为: column:[\"cf0:column0\",\"cf1:column1\"]");
@@ -118,6 +122,9 @@ public final class HbaseUtil {
             case MultiVersionDynamicColumn: {
                 // multiVersionDynamicColumn 模式需要配置 maxVersion 和 columnFamily，并且 columnFamily 格式为 List 风格
                 checkMaxVersion(originalConfig, mode);
+
+                checkTetradType(originalConfig, mode);
+
                 List<String> columnFamilies = originalConfig.getList(Key.COLUMN_FAMILY, String.class);
                 if (columnFamilies == null || columnFamilies.isEmpty()) {
                     throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, "您配置的是 multiVersionDynamicColumn 模式读取 hbase 中的数据，所以必须配置 columnFamily，其形式为：columnFamily:[\"cf0\",\"cf1\"]");
@@ -170,6 +177,21 @@ public final class HbaseUtil {
             conf.set(entry.getKey(), entry.getValue());
         }
         return conf;
+    }
+
+    private static void checkTetradType(Configuration configuration, String mode) {
+        List<String> tetradTypes = configuration.getList(Key.TETRAD_TYPE, String.class);
+        if (tetradTypes == null || tetradTypes.isEmpty()) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是缺失了 tetradType 配置项. tetradType规定：是长度为 4 的数组，用于指定四元组读取的类型，如：tetradType:[\"bytes\",\"string\",\"long\",\"bytes\"]", mode));
+        }
+
+        if (tetradTypes.size() != TETRAD_TYPE_COUNT) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素个数错误. tetradType规定：是长度为 4 的数组，用于指定四元组读取的类型，如：tetradType:[\"bytes\",\"string\",\"long\",\"bytes\"]", mode));
+        }
+
+        for (String tetradType : tetradTypes) {
+            ColumnType.getByTypeName(tetradType);
+        }
     }
 
     public static byte[] convertUserStartRowkey(Configuration configuration) {
