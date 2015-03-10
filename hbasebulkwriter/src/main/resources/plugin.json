@@ -1,0 +1,6 @@
+{
+    "name": "hbasebulkwriter",
+    "class": "com.alibaba.datax.plugin.writer.hbasebulkwriter.HBaseBulkWriter",
+    "description": "www.atatech.org/articles/27116",
+    "developer": "qingyi.mqy@alibaba-inc.com"
+}

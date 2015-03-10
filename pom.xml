@@ -62,6 +62,7 @@
         <module>postgresqlwriter</module>
         <module>osswriter</module>
         <module>tddlwriter</module>
+        <module>hbasebulkwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
