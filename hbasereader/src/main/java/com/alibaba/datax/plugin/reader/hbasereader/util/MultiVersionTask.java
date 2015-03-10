@@ -17,6 +17,7 @@ import java.util.List;
 
 public abstract class MultiVersionTask extends HbaseAbstractTask {
     private static byte[] COLON_BYTE;
+
     private int maxVersion;
     private List<KeyValue> kvList = new ArrayList<KeyValue>();
     private int currentReadPosition = 0;
@@ -27,7 +28,7 @@ public abstract class MultiVersionTask extends HbaseAbstractTask {
     private ColumnType timestampReadoutType = null;
     private ColumnType valueReadoutType = null;
 
-    public MultiVersionTask(Configuration configuration) throws Exception {
+    public MultiVersionTask(Configuration configuration) {
         super(configuration);
 
         this.maxVersion = configuration.getInt(Key.MAX_VERSION);
@@ -38,7 +39,11 @@ public abstract class MultiVersionTask extends HbaseAbstractTask {
         this.timestampReadoutType = ColumnType.getByTypeName(userConfiguredTetradTypes.get(2));
         this.valueReadoutType = ColumnType.getByTypeName(userConfiguredTetradTypes.get(3));
 
-        MultiVersionTask.COLON_BYTE = ":".getBytes("utf8");
+        try {
+            MultiVersionTask.COLON_BYTE = ":".getBytes("utf8");
+        } catch (UnsupportedEncodingException e) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.PREPAR_READ_ERROR, "系统内部获取 列族与列名冒号分隔符的二进制时失败.", e);
+        }
     }
 
     private void convertKVToLine(KeyValue keyValue, Record record) throws Exception {
