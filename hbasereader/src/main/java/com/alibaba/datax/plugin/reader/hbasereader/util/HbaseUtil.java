@@ -180,18 +180,34 @@ public final class HbaseUtil {
     }
 
     private static void checkTetradType(Configuration configuration, String mode) {
-        List<String> tetradTypes = configuration.getList(Key.TETRAD_TYPE, String.class);
-        if (tetradTypes == null || tetradTypes.isEmpty()) {
+        List<String> userConfiguredTetradTypes = configuration.getList(Key.TETRAD_TYPE, String.class);
+        if (userConfiguredTetradTypes == null || userConfiguredTetradTypes.isEmpty()) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是缺失了 tetradType 配置项. tetradType规定：是长度为 4 的数组，用于指定四元组读取的类型，如：tetradType:[\"bytes\",\"string\",\"long\",\"bytes\"]", mode));
         }
 
-        if (tetradTypes.size() != TETRAD_TYPE_COUNT) {
+        if (userConfiguredTetradTypes.size() != TETRAD_TYPE_COUNT) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.REQUIRED_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素个数错误. tetradType规定：是长度为 4 的数组，用于指定四元组读取的类型，如：tetradType:[\"bytes\",\"string\",\"long\",\"bytes\"]", mode));
         }
 
-        for (String tetradType : tetradTypes) {
-            ColumnType.getByTypeName(tetradType);
+
+        String rowkeyType = userConfiguredTetradTypes.get(0);
+        String columnNameType = userConfiguredTetradTypes.get(1);
+        String timestampType = userConfiguredTetradTypes.get(2);
+        String valueType = userConfiguredTetradTypes.get(3);
+
+        ColumnType.getByTypeName(rowkeyType);
+        ColumnType.getByTypeName(columnNameType);
+
+        if (!"long".equalsIgnoreCase(timestampType)) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素类型错误. tetradType规定：第三项描述 timestamp 类型只能为 long，而您配置的值是：[%s]", mode, timestampType));
         }
+
+        if ("date".equalsIgnoreCase(rowkeyType) || "date".equalsIgnoreCase(columnNameType)
+                || "date".equalsIgnoreCase(valueType)) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素类型错误. tetradType规定：不支持 date 类型，而您配置的值是：[%s]", mode, timestampType));
+        }
+
+        ColumnType.getByTypeName(valueType);
     }
 
     public static byte[] convertUserStartRowkey(Configuration configuration) {
