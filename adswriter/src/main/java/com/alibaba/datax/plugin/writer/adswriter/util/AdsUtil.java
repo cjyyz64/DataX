@@ -102,7 +102,7 @@ public class AdsUtil {
             if(newPart.split("=")[1].equals(".*")){
                 adsPartition = adsPartition.substring(0,adsPartition.length()-partitionPart.length());
             }else{
-                return adsPartition;
+                break;
             }
             if(adsPartition.endsWith("/")){
                 adsPartition = adsPartition.substring(0,adsPartition.length()-1);
