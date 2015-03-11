@@ -98,7 +98,11 @@ public class ResultSetReadProxy {
 					break;
 
 				case Types.NULL:
-					record.addColumn(new NullColumn(rs.getObject(i)));
+					String stringData = null;
+					if(rs.getObject(i) != null) {
+						stringData = rs.getObject(i).toString();
+					}
+					record.addColumn(new StringColumn(stringData));
 					break;
 
 				// TODO 添加BASIC_MESSAGE
