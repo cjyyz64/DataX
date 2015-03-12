@@ -28,6 +28,7 @@
             //      类型为 binaryString 表示采用 API: Bytes.toStringBinary(byteArray)
             // <2> date 类型配置时，必须提供 dateformat 以表明所配置的字符串代表的时间格式
             // <3> 常量不能配置为 binaryString 类型
+            // <4> 时间类型的 format 比如 yyyy-MM-dd HH:mm:ss，特别注意不能随意小写时间格式，那样可能导致时间转换错误！
 
             "column": [
                 {

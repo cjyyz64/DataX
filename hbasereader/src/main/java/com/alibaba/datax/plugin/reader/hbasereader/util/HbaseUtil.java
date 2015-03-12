@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,6 @@ public final class HbaseUtil {
 
     private static final int TETRAD_TYPE_COUNT = 4;
 
-
     public static void doPretreatment(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
                 HbaseReaderErrorCode.REQUIRED_VALUE);
@@ -37,6 +37,9 @@ public final class HbaseUtil {
         originalConfig.set(Key.MODE, mode);
 
         String encoding = originalConfig.getString(Key.ENCODING, "utf-8");
+        if (!Charset.isSupported(encoding)) {
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("Hbasereader 不支持您所配置的编码:[%s]", encoding));
+        }
         originalConfig.set(Key.ENCODING, encoding);
 
         // 此处增强一个检查：isBinaryRowkey 配置不能出现在与 hbaseConfig 等配置平级地位
@@ -48,13 +51,16 @@ public final class HbaseUtil {
         // 处理 range 的配置，将 range 内的配置值提取到与 hbaseConfig 等配置项平级地位，方便后续获取值
         boolean hasConfiguredRange = false;
         String startRowkey = originalConfig.getString(Constant.RANGE + "." + Key.START_ROWKEY);
-        if (startRowkey != null) {
+
+        //此处判断需要谨慎：如果有 key range.startRowkey 但是没有值，得到的 startRowkey 是空字符串，而不是 null
+        if (startRowkey != null && startRowkey.length() != 0) {
             hasConfiguredRange = true;
             originalConfig.set(Key.START_ROWKEY, startRowkey);
         }
 
         String endRowkey = originalConfig.getString(Constant.RANGE + "." + Key.END_ROWKEY);
-        if (endRowkey != null) {
+        //此处判断需要谨慎：如果有 key range.endRowkey 但是没有值，得到的 endRowkey 是空字符串，而不是 null
+        if (endRowkey != null && endRowkey.length() != 0) {
             hasConfiguredRange = true;
             originalConfig.set(Key.END_ROWKEY, endRowkey);
         }
@@ -204,7 +210,7 @@ public final class HbaseUtil {
 
         if ("date".equalsIgnoreCase(rowkeyType) || "date".equalsIgnoreCase(columnNameType)
                 || "date".equalsIgnoreCase(valueType)) {
-            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素类型错误. tetradType规定：不支持 date 类型，而您配置的值是：[%s]", mode, timestampType));
+            throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, String.format("您配置的是 %s 模式读取 hbase 中的数据，但是 tetradType 配置项元素类型错误. tetradType规定：不支持 date 类型", mode));
         }
 
         ColumnType.getByTypeName(valueType);
@@ -311,9 +317,9 @@ public final class HbaseUtil {
             String dateformat = aColumn.get("format");
 
             if (type == ColumnType.DATE) {
-                Validate.notNull(dateformat, "Hbasereader 的列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss");
+                Validate.notNull(dateformat, "Hbasereader 在 normal 方式读取时，其列配置中，如果类型为时间，则必须指定时间格式. 形如：yyyy-MM-dd HH:mm:ss，特别注意不能随意小写时间格式，那样可能导致时间转换错误!");
 
-                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型为时间，则要么是 type + name + format 的组合，要么是type + value + format 的组合. 而您的配置非这两种组合，请检查并修改.");
+                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 在 normal 方式读取时则要么是 type + name + format 的组合，要么是type + value + format 的组合. 而您的配置非这两种组合，请检查并修改.");
 
                 oneColumnCell = new HbaseColumnCell
                         .Builder(type)
@@ -322,9 +328,9 @@ public final class HbaseUtil {
                         .dateformat(dateformat)
                         .build();
             } else {
-                Validate.isTrue(dateformat == null, "Hbasereader 的列配置中，如果类型不为时间，则不需要指定时间格式.");
+                Validate.isTrue(dateformat == null, "Hbasereader 在 normal 方式读取时， 其列配置中，如果类型不为时间，则不需要指定时间格式.");
 
-                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 的列配置中，如果类型不是时间，则要么是 type + name 的组合，要么是type + value 的组合. 而您的配置非这两种组合，请检查并修改.");
+                Validate.isTrue(StringUtils.isNotBlank(columnName) || StringUtils.isNotBlank(columnValue), "Hbasereader 在 normal 方式读取时，其列配置中，如果类型不是时间，则要么是 type + name 的组合，要么是type + value 的组合. 而您的配置非这两种组合，请检查并修改.");
 
                 oneColumnCell = new HbaseColumnCell
                         .Builder(type)

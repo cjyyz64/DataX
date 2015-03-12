@@ -120,7 +120,7 @@ public class NormalTask extends HbaseAbstractTask {
                 break;
             case DATE:
                 String dateValue = Bytes.toStringBinary(byteArray);
-                record.addColumn(new DateColumn(org.apache.http.impl.cookie.DateUtils.parseDate(dateValue, new String[]{dateformat})));
+                record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
                 break;
             default:
                 throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
