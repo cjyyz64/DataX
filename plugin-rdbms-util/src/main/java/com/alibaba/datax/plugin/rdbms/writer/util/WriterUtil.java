@@ -20,14 +20,14 @@ import java.util.List;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
-//TODO 切分报错
+
+    //TODO 切分报错
     public static List<Configuration> doSplit(Configuration simplifiedConf,
                                               int adviceNumber) {
 
         List<Configuration> splitResultConfigs = new ArrayList<Configuration>();
 
-        int tableNumber = simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK)
-                .intValue();
+        int tableNumber = simplifiedConf.getInt(Constant.TABLE_NUMBER_MARK);
 
         //处理单表的情况
         if (tableNumber == 1) {
@@ -45,17 +45,17 @@ public final class WriterUtil {
                             tableNumber, adviceNumber));
         }
 
-        String jdbcUrl = null;
+        String jdbcUrl;
         List<String> preSqls = simplifiedConf.getList(Key.PRE_SQL, String.class);
         List<String> postSqls = simplifiedConf.getList(Key.POST_SQL, String.class);
 
         List<Object> conns = simplifiedConf.getList(Constant.CONN_MARK,
                 Object.class);
 
-        for (int i = 0, len = conns.size(); i < len; i++) {
+        for (Object conn : conns) {
             Configuration sliceConfig = simplifiedConf.clone();
 
-            Configuration connConf = Configuration.from(conns.get(i).toString());
+            Configuration connConf = Configuration.from(conn.toString());
             jdbcUrl = connConf.getString(Key.JDBC_URL);
             sliceConfig.set(Key.JDBC_URL, jdbcUrl);
 
@@ -106,28 +106,28 @@ public final class WriterUtil {
             DBUtil.closeDBResources(null, stmt, null);
         }
     }
-    
-    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode){
-		boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
-				|| writeMode.trim().toLowerCase().startsWith("replace");
 
-		if (!isWriteModeLegal) {
-			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-				String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
-		}
+    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode) {
+        boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
+                || writeMode.trim().toLowerCase().startsWith("replace");
 
-		String writeDataSqlTemplate = new StringBuilder().append(writeMode)
-				.append(" INTO %s (").append(StringUtils.join(columnHolders, ","))
-				.append(") VALUES(").append(StringUtils.join(valueHolders, ","))
-				.append(")").toString();
+        if (!isWriteModeLegal) {
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
+                    String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
+        }
 
-		String formattedSql = writeDataSqlTemplate;
-		try {
-			formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
-		} catch (Exception unused) {
-			// ignore it
-		}
-		return formattedSql;
-	}
+        String writeDataSqlTemplate = new StringBuilder().append(writeMode)
+                .append(" INTO %s (").append(StringUtils.join(columnHolders, ","))
+                .append(") VALUES(").append(StringUtils.join(valueHolders, ","))
+                .append(")").toString();
+
+        String formattedSql = writeDataSqlTemplate;
+        try {
+            formattedSql = SqlFormatUtil.format(writeDataSqlTemplate);
+        } catch (Exception unused) {
+            // ignore it
+        }
+        return formattedSql;
+    }
 
 }

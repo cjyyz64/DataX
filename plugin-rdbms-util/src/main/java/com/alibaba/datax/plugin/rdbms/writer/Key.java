@@ -18,6 +18,7 @@ public final class Key {
 
     public final static String POST_SQL = "postSql";
 
+    public final static String TDDL_APP_NAME = "tddlAppName";
 
     //默认值：256
     public final static String BATCH_SIZE = "batchSize";

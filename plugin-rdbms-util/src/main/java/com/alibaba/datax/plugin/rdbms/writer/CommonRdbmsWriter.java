@@ -199,16 +199,8 @@ public class CommonRdbmsWriter {
             DBUtil.closeDBResources(null, null, connection);
         }
 
-        // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
-        public void startWrite(RecordReceiver recordReceiver,
-                               Configuration writerSliceConfig,
-                               TaskPluginCollector taskPluginCollector) {
+        public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
             this.taskPluginCollector = taskPluginCollector;
-
-            Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
-            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
@@ -249,6 +241,17 @@ public class CommonRdbmsWriter {
                 writeBuffer.clear();
                 DBUtil.closeDBResources(null, null, connection);
             }
+        }
+
+        // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
+        public void startWrite(RecordReceiver recordReceiver,
+                               Configuration writerSliceConfig,
+                               TaskPluginCollector taskPluginCollector) {
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
+                    this.jdbcUrl, username, password);
+            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
+                    this.dataBaseType, BASIC_MESSAGE);
+            startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
         }
 
         public void post(Configuration writerSliceConfig) {

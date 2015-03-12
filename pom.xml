@@ -22,6 +22,7 @@
         <commons-io-version>2.4</commons-io-version>
         <mysql-connector-java-version>5.1.34</mysql-connector-java-version>
         <junit-version>4.11</junit-version>
+        <tddl.version>5.1.9</tddl.version>
 
         <project-sourceEncoding>UTF-8</project-sourceEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -64,6 +65,7 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
+        <module>tddlwriter</module>
     </modules>
 
     <dependencyManagement>
@@ -102,6 +104,46 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback-classic-version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.taobao.tddl</groupId>
+                <artifactId>tddl-client</artifactId>
+                <version>${tddl.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>spring-core</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>spring-context</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>spring-orm</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring-aspects</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.mina</groupId>
+                        <artifactId>mina-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>icu4j</artifactId>
+                        <groupId>com.ibm.icu</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
