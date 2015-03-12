@@ -58,7 +58,9 @@ public class OTSErrorMessage {
     
     public static final String ATTR_MAP_INCLUDE_SRCNAME_NAME_TYPE_ERROR = "The only support 'srcName', 'name' and 'type' fileds in json map of 'column'.";
     
-    public static final String PK_ITEM_IS_NOT_MAP_ERROR = "The item is not map in 'primaryKey'.";
+    public static final String PK_ITEM_IS_NOT_STRING_ERROR = "The item is not string in 'primaryKey'.";
+    
+    public static final String PK_IS_NOT_EXIST_AT_OTS_ERROR = "Can not find the pk('%s') at ots in 'primaryKey'.";
     
     public static final String ATTR_ITEM_IS_NOT_MAP_ERROR = "The item is not map in 'column'.";
     
@@ -82,7 +84,7 @@ public class OTSErrorMessage {
     
     public static final String PK_COLUMN_VALUE_IS_NULL_ERROR = "The column of record is NULL, primary key name : %s .";
     
-    public static final String PK_STRONG_LENGTH_ERROR = "The length of pk string value is more than configuration, conf: %d, input: %d .";
+    public static final String PK_STRING_LENGTH_ERROR = "The length of pk string value is more than configuration, conf: %d, input: %d .";
     
     public static final String ATTR_STRING_LENGTH_ERROR = "The length of attr string value is more than configuration, conf: %d, input: %d .";
     

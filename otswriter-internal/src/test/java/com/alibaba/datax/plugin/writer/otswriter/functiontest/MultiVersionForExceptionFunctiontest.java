@@ -372,7 +372,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 // value
                 r.addColumn(new LongColumn(j));
                 input.add(r);
-                rm.add(new RecordAndMessage(r, "The column name : 'null' not define in column."));
+                rm.add(new RecordAndMessage(r, "The name of column is null or empty."));
             }
         }
         
@@ -592,74 +592,6 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 OTSOpType.UPDATE_ROW,
                 OTSMode.MULTI_VERSION);
         conf.getRestrictConf().setRowCellCountLimitation(1);
-        test(ots, conf, input, expect, rm, true);
-    }
-    
-    /**
-     * 测试目的：测试datax传入不符合期望的数据，测试ots-writer的行为是否符合预期。
-     * 测试内容：构造10个Cell，其中一个Cell的value为不能转为指定的类型，期望该Cell被记录到脏数据回收器中，错误消息符合预期
-     * @throws Exception
-     */
-    @Test
-    public void testCase7Conversion() throws Exception {
-        List<Record> input = new ArrayList<Record>();
-        List<Row> expect = new ArrayList<Row>();
-        List<RecordAndMessage> rm = new ArrayList<RecordAndMessage>();
-        // 构造数据
-        {
-            long ts = System.currentTimeMillis();
-            
-            OTSRowBuilder row = OTSRowBuilder.newInstance();
-            row.addPrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("Uid_value"));
-            row.addPrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1));
-            row.addPrimaryKeyColumn("Mid", PrimaryKeyValue.fromBinary("Mid_value".getBytes()));
-
-            String columnName = getColumnName(0);
-            for (int j = 0; j < 9; j++) {
-                Record r = new DefaultRecord();
-                // pk
-                r.addColumn(new StringColumn("Uid_value"));
-                r.addColumn(new LongColumn(1));
-                r.addColumn(new BytesColumn("Mid_value".getBytes()));
-                
-                // columnName
-                r.addColumn(new StringColumn(columnName));
-                // timestamp
-                r.addColumn(new LongColumn(ts + j));
-                // value
-                r.addColumn(new LongColumn(j));
-                input.add(r);
-                
-                row.addAttrColumn(columnName, ColumnValue.fromLong(j), ts + j);
-            }
-            
-            expect.add(row.toRow());
-            
-            for (int j = 9; j < 10; j++) {
-                Record r = new DefaultRecord();
-                // pk
-                r.addColumn(new StringColumn("Uid_value"));
-                r.addColumn(new LongColumn(1));
-                r.addColumn(new BytesColumn("Mid_value".getBytes()));
-                
-                // columnName
-                r.addColumn(new StringColumn(columnName));
-                // timestamp
-                r.addColumn(new LongColumn(ts + j));
-                // value
-                r.addColumn(new StringColumn("hello"));
-                input.add(r);
-                rm.add(new RecordAndMessage(r, "Column coversion error, src type : STRING, src value: hello, expect type: INTEGER ."));
-            }
-        }
-        
-        // check
-        OTSConf conf = Conf.getConf(
-                tableName, 
-                tableMeta.getPrimaryKeyMap(), 
-                getColumnMeta(1, ColumnType.INTEGER), 
-                OTSOpType.UPDATE_ROW,
-                OTSMode.MULTI_VERSION);
         test(ots, conf, input, expect, rm, true);
     }
 }

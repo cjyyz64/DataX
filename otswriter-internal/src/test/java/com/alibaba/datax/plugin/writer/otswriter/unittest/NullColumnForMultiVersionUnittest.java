@@ -26,7 +26,6 @@ import com.alibaba.datax.plugin.writer.otswriter.common.DataChecker;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector;
 import com.alibaba.datax.plugin.writer.otswriter.common.TestPluginCollector.RecordAndMessage;
 import com.alibaba.datax.plugin.writer.otswriter.common.Utils;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
@@ -86,11 +85,6 @@ public class NullColumnForMultiVersionUnittest {
         TestPluginCollector collector = new TestPluginCollector(configuration, null, null);
         CollectorUtil.init(collector);
         
-        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
-        for (OTSAttrColumn c : conf.getAttributeColumn()) {
-            attrColumnMapping.put(c.getSrcName(), c);
-        }
-        
         for (Record r : input) {
             PrimaryKey pKey = null;
             if ((pKey = Common.getPKFromRecord(Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), r)) != null) {
@@ -98,7 +92,7 @@ public class NullColumnForMultiVersionUnittest {
                         conf.getTableName(), 
                         conf.getOperation(), 
                         Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
-                        attrColumnMapping, 
+                        null, 
                         pKey,
                         input);
             }

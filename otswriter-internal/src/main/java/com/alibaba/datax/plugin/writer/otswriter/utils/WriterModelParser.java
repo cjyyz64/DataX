@@ -14,6 +14,7 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
+import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 /**
  * 解析配置中参数
@@ -77,15 +78,22 @@ public class WriterModelParser {
         }
     }
     
-    public static List<PrimaryKeySchema> parseOTSPKColumnList(List<Object> values) {
+    public static List<PrimaryKeySchema> parseOTSPKColumnList(TableMeta meta, List<Object> values) {
+        
+        Map<String, PrimaryKeyType> pkMapping = meta.getPrimaryKeyMap();
+        
         List<PrimaryKeySchema> pks = new ArrayList<PrimaryKeySchema>();
         for (Object obj : values) {
-            if (obj instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> column = (Map<String, Object>) obj;
-                pks.add(parseOTSPKColumn(column));
+            if (obj instanceof String) {
+                String name = (String) obj;
+                PrimaryKeyType type = pkMapping.get(name);
+                if (null == type) {
+                    throw new IllegalArgumentException(String.format(OTSErrorMessage.PK_IS_NOT_EXIST_AT_OTS_ERROR, name)); 
+                } else {
+                    pks.add(new PrimaryKeySchema(name, type));
+                }
             } else {
-                throw new IllegalArgumentException(OTSErrorMessage.PK_ITEM_IS_NOT_MAP_ERROR);
+                throw new IllegalArgumentException(OTSErrorMessage.PK_ITEM_IS_NOT_STRING_ERROR);
             }
         }
         return pks;

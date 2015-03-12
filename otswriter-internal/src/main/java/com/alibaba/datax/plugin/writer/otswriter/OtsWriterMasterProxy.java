@@ -11,6 +11,8 @@ import com.alibaba.datax.plugin.writer.otswriter.callable.GetTableMetaCallable;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf.RestrictConf;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSMode;
+import com.alibaba.datax.plugin.writer.otswriter.model.OTSOpType;
 import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.alibaba.datax.plugin.writer.otswriter.utils.ParamChecker;
@@ -58,27 +60,30 @@ public class OtsWriterMasterProxy {
         conf.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME)); 
         conf.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME));
         
-        conf.setMode(WriterModelParser.parseOTSMode(ParamChecker.checkStringAndGet(param, Key.MODE)));
-        conf.setOperation(WriterModelParser.parseOTSOpType(ParamChecker.checkStringAndGet(param, Key.WRITE_MODE), conf.getMode()));
-        
         ots = Common.getOTSInstance(conf);
         
         meta = getTableMeta(ots, conf.getTableName());
         LOG.debug("Table Meta : {}", GsonParser.metaToJson(meta));
         
-        conf.setPrimaryKeyColumn(WriterModelParser.parseOTSPKColumnList(ParamChecker.checkListAndGet(param, Key.PRIMARY_KEY, true)));
-        ParamChecker.checkPrimaryKey(meta, conf.getPrimaryKeyColumn());
+        conf.setPrimaryKeyColumn(WriterModelParser.parseOTSPKColumnList(meta, ParamChecker.checkListAndGet(param, Key.PRIMARY_KEY, true)));
         
-        conf.setAttributeColumn(
-                WriterModelParser.parseOTSAttrColumnList(
-                        conf.getPrimaryKeyColumn(),
-                        ParamChecker.checkListAndGet(param, Key.COLUMN, true),
-                        conf.getMode(),
-                        restrictConf.getRowCellCountLimitation()
-                )
-        );
-        ParamChecker.checkAttribute(conf.getAttributeColumn());
+        conf.setMode(WriterModelParser.parseOTSMode(ParamChecker.checkStringAndGet(param, Key.MODE)));
         
+        if (conf.getMode() == OTSMode.MULTI_VERSION) {
+            conf.setOperation(OTSOpType.UPDATE_ROW);// 多版本只支持Update模式
+            conf.setColumnNamePrefixFilter(param.getString(Key.COLUMN_NAME_PREFIX_FILTER, null));
+        } else {
+            conf.setOperation(WriterModelParser.parseOTSOpType(ParamChecker.checkStringAndGet(param, Key.WRITE_MODE), conf.getMode()));
+            conf.setAttributeColumn(
+                    WriterModelParser.parseOTSAttrColumnList(
+                            conf.getPrimaryKeyColumn(),
+                            ParamChecker.checkListAndGet(param, Key.COLUMN, true),
+                            conf.getMode(),
+                            restrictConf.getRowCellCountLimitation()
+                    )
+            );
+            ParamChecker.checkAttribute(conf.getAttributeColumn());
+        }
         conf.setEncodePkColumnMapping(Common.getEncodePkColumnMapping(meta, conf.getPrimaryKeyColumn()));
     }
     

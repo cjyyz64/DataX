@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
-import com.alibaba.datax.plugin.writer.otswriter.model.OTSAttrColumn;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSConf;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
@@ -28,14 +27,12 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
     private OTS ots = null;
     private OTSSendBuffer buffer = null;
     private Map<PrimaryKeySchema, Integer> pkColumnMapping = null;
-    private Map<String, OTSAttrColumn> attrColumnMapping = null;
     private static final Logger LOG = LoggerFactory.getLogger(OtsWriterSlaveProxyMultiversion.class);
     
     public OtsWriterSlaveProxyMultiversion(OTS ots, OTSConf conf) {
         this.ots = ots;
         this.conf = conf;
         this.pkColumnMapping = Common.getPkColumnMapping(conf.getEncodePkColumnMapping());
-        this.attrColumnMapping = Common.getAttrColumnMapping(this.conf.getAttributeColumn());
     } 
     
     @Override
@@ -93,7 +90,7 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
                         conf.getTableName(), 
                         conf.getOperation(), 
                         pkColumnMapping, 
-                        attrColumnMapping,
+                        conf.getColumnNamePrefixFilter(),
                         lastCellPk,
                         rowBuffer);
                 if (line != null) {
@@ -110,7 +107,7 @@ public class OtsWriterSlaveProxyMultiversion implements OtsWriterSlaveProxy {
                     conf.getTableName(), 
                     conf.getOperation(), 
                     pkColumnMapping, 
-                    attrColumnMapping,
+                    conf.getColumnNamePrefixFilter(),
                     lastCellPk,
                     rowBuffer);
             if (line != null) {

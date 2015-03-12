@@ -84,9 +84,8 @@ public class ParamCheckFunctiontest extends BaseTest{
         lines.put("accessKey",    "\"accessKey\":\""+ p.getString("accesskey") +"\"");
         lines.put("instanceName", "\"instanceName\":\""+ p.getString("instance-name") +"\"");
         lines.put("table",        "\"table\":\""+ tableName +"\"");
-        lines.put("primaryKey",   "\"primaryKey\":[{\"name\":\"Uid\", \"type\":\"String\"},{\"name\":\"Pid\", \"type\":\"Int\"},{\"name\":\"Mid\", \"type\":\"Int\"},{\"name\":\"UID\", \"type\":\"String\"}]");
-        lines.put("column",       "\"column\":    [{\"srcName\":\"attr:0\", \"name\":\"attr_0\", \"type\":\"String\"}]");
-        lines.put("writeMode",    "\"writeMode\":\"UpdateRow\"");
+        lines.put("primaryKey",   "\"primaryKey\":[\"Uid\", \"Pid\", \"Mid\", \"UID\"]");
+        lines.put("columnNamePrefixFilter", "\"columnNamePrefixFilter\": \"CF:\"");
         lines.put("mode",         "\"mode\":\"multiVersion\"");
         return lines;
     }
@@ -98,7 +97,7 @@ public class ParamCheckFunctiontest extends BaseTest{
         lines.put("accessKey",    "\"accessKey\":\""+ p.getString("accesskey") +"\"");
         lines.put("instanceName", "\"instanceName\":\""+ p.getString("instance-name") +"\"");
         lines.put("table",        "\"table\":\""+ tableName +"\"");
-        lines.put("primaryKey",   "\"primaryKey\":[{\"name\":\"Uid\", \"type\":\"String\"},{\"name\":\"Pid\", \"type\":\"Int\"},{\"name\":\"Mid\", \"type\":\"Int\"},{\"name\":\"UID\", \"type\":\"String\"}]");
+        lines.put("primaryKey",   "\"primaryKey\":[\"Uid\", \"Pid\", \"Mid\", \"UID\"]");
         lines.put("column",       "\"column\":    [{\"name\":\"attr_0\", \"type\":\"String\"}]");
         lines.put("writeMode",    "\"writeMode\":\"putRow\"");
         lines.put("defaultTimestampInMillisecond", "\"defaultTimestampInMillisecond\":1450002101");
@@ -139,11 +138,8 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals("UID", pk.get(3).getName());
             assertEquals(PrimaryKeyType.STRING, pk.get(3).getType());
             
-            List<OTSAttrColumn> attr = conf.getAttributeColumn();
-            assertEquals(1, attr.size());
-            assertEquals("attr:0", attr.get(0).getSrcName());
-            assertEquals("attr_0", attr.get(0).getName());
-            assertEquals(ColumnType.STRING, attr.get(0).getType());
+            
+            assertEquals("CF:", conf.getColumnNamePrefixFilter());
             
             assertEquals(-1, conf.getTimestamp());
             assertEquals(OTSMode.MULTI_VERSION, conf.getMode());
@@ -291,7 +287,7 @@ public class ParamCheckFunctiontest extends BaseTest{
         Map<String, String> lines = this.getNormalLines();
         
         // Uid重复
-        lines.put("primaryKey", "\"primaryKey\":[{\"name\":\"Uid\", \"type\":\"String\"},{\"name\":\"Pid\", \"type\":\"Int\"},{\"name\":\"Mid\", \"type\":\"Int\"},{\"name\":\"UID\", \"type\":\"String\"}]");
+        lines.put("primaryKey", "\"primaryKey\":[\"Uid\",\"Pid\",\"Mid\",\"UID\"]");
         lines.put("column", "\"column\":[{\"name\":\"Uid\", \"type\":\"String\"}]");
         
         String json = this.linesToJson(lines);
@@ -475,31 +471,27 @@ public class ParamCheckFunctiontest extends BaseTest{
      */
     @Test
     public void testCase8() {
-        invalidPrimaryKey("{\"type\":\"String\"}", "The 'name' fileds is missing in json map of 'column'.");
-        invalidPrimaryKey("{\"name\":\"Uid\"}", "The 'type' fileds is missing in json map of 'column'.");
-        invalidPrimaryKey("{}", "The 'type' fileds is missing in json map of 'column'.");
-        invalidPrimaryKey("{\"name\":\"Uid\",\"type\":\"String\", \"value\":\"\"}", "The only support 'name' and 'type' fileds in json map of 'primaryKey'.");
-        invalidPrimaryKey("{\"name\":\"Uid\", \"type\":\"Integer\"}", "Primary key type only support 'string', 'int' and 'binary', not support 'Integer'.");
-        invalidPrimaryKey("{\"name\":\"\", \"type\":\"String\"}", "The name of item can not be a empty string in 'primaryKey'.");
-        invalidPrimaryKey("{\"name\":\"UID\",\"type\":\"String\"},{\"name\":\"UID\",\"type\":\"String\"}", "The count of 'primaryKey' not equal meta, input count : 2, primary key count : 4 in meta.");
-        invalidPrimaryKey("{\"name\":\"UID\",\"type\":\"Bool\"}", "Primary key type only support 'string', 'int' and 'binary', not support 'Bool'.");
-        invalidPrimaryKey("{\"name\":\"UID\",\"type\":\"double\"}", "Primary key type only support 'string', 'int' and 'binary', not support 'double'.");
-        invalidPrimaryKey("{\"name\":\"Uid\",\"type\":\"string\"}", "The count of 'primaryKey' not equal meta, input count : 1, primary key count : 4 in meta.");
+        invalidPrimaryKey("{\"type\":\"String\"}", "The item is not string in 'primaryKey'.");
+        invalidPrimaryKey("{\"name\":\"Uid\"}", "The item is not string in 'primaryKey'.");
+        invalidPrimaryKey("{}", "The item is not string in 'primaryKey'.");
+        invalidPrimaryKey("{\"name\":\"Uid\",\"type\":\"String\", \"value\":\"\"}", "The item is not string in 'primaryKey'.");
+        invalidPrimaryKey("\"\"", "Can not find the pk('') at ots in 'primaryKey'.");
+        invalidPrimaryKey("\"UID\",\"UID\"", "Duplicate item in 'column' and 'primaryKey', column name : UID .");
         invalidPrimaryKey(
-                  "{\"name\":\"Uid\",\"type\":\"string\"},"
-                + "{\"name\":\"Pid\",\"type\":\"int\"},"
-                + "{\"name\":\"Mid\",\"type\":\"int\"},"
-                + "{\"name\":\"UID\",\"type\":\"string\"},"
-                + "{\"name\":\"xx\",\"type\":\"string\"}", "The count of 'primaryKey' not equal meta, input count : 5, primary key count : 4 in meta.");
+                  "\"Uid\","
+                + "\"Pid\","
+                + "\"Mid\","
+                + "\"UID\","
+                + "\"xx\"", "Can not find the pk('xx') at ots in 'primaryKey'.");
         {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 100; i++) {
-                sb.append("{\"name\":\"Uid"+ i +"\",\"type\":\"string\"}");
+                sb.append("\"Uid"+ i +"\"");
                 if (i < 99) {
                     sb.append(",");
                 }
             }
-            invalidPrimaryKey(sb.toString(), "The count of 'primaryKey' not equal meta, input count : 100, primary key count : 4 in meta.");
+            invalidPrimaryKey(sb.toString(), "Can not find the pk('Uid0') at ots in 'primaryKey'.");
         }
     }
     
@@ -517,19 +509,7 @@ public class ParamCheckFunctiontest extends BaseTest{
         }
     }
     
-    private void invalidColumnByMulti(String value, String expect) {
-        OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-        Map<String, String> lines = this.getMultiVersionLines();
-        lines.put("column", "\"column\":["+ value +"]");
-        String json = this.linesToJson(lines);
-        Configuration configuration = Configuration.from(json);
-        try {
-            proxy.init(configuration);
-            fail();
-        } catch (Exception e) {
-            assertEquals(expect, e.getMessage());
-        }
-    }
+    
     
     private void validColumnByNormal(String value, List<OTSAttrColumn> expect) throws Exception {
         OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
@@ -552,29 +532,7 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals(ec.getType(), sc.getType());
         }
     }
-    
-    private void validColumnByMulti(String value, List<OTSAttrColumn> expect) throws Exception {
-        OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-        Map<String, String> lines = this.getMultiVersionLines();
-        lines.put("column", "\"column\":["+ value +"]");
-        String json = this.linesToJson(lines);
-        Configuration configuration = Configuration.from(json);
-        
-        proxy.init(configuration);
-        
-        List<OTSAttrColumn> src = proxy.getOTSConf().getAttributeColumn();
-        
-        assertEquals(expect.size(), src.size());
-        for (int i = 0; i < expect.size(); i++) {
-            OTSAttrColumn ec = expect.get(i);
-            OTSAttrColumn sc = src.get(i);
-            
-            assertEquals(ec.getSrcName(), sc.getSrcName());
-            assertEquals(ec.getName(), sc.getName());
-            assertEquals(ec.getType(), sc.getType());
-        }
-    }
-    
+
     /**
      * ## 普通模式下的参数测试
      * 测试目的：测试column的值合法性检查是否符合预期。测试内容：分别构造
@@ -657,94 +615,6 @@ public class ParamCheckFunctiontest extends BaseTest{
     }
     
     /**
-     * ## 多版本模式下的参数测试
-     * 测试目的：测试column的值合法性检查是否符合预期。测试内容：分别构造
-     * {\"type\":\"String\"}、
-     * {\"name\":\"Uid\"}、
-     * {}、
-     * {\"name\":\"Uid\", \"type\":\"String\", \"value\":\"\"}、
-     * {\"name\":\"Uid\", \"type\":\"Integer\"}、
-     * {\"name\":\"\",\"type\":\"String\"}、
-     * {\"name\":\"attr_0\", \"type\":\"String\"}、
-     * {\"srcName\":\"Uid\", \"name\":\"Uid\",\"type\":\"Integer\"}、
-     * {\"srcName\":\"Uid\", \"name\":\"\",  \"type\":\"String\"}、
-     * {\"srcName\":\"Uid\", \"name\":\"old\",  \"type\":\"String\"}{\"srcName\":\"Uid\", \"name\":\"new\",\"type\":\"Int\"}、
-     * {\"srcName\":\"old\", \"name\":\"ss\",  \"type\":\"String\"}{\"srcName\":\"new\", \"name\":\"ss\", \"type\":\"String\"}，
-     * 129、1000个Column
-     * 期望column解析正确
-     * @throws Exception 
-     */
-    @Test
-    public void testCase10() throws Exception {
-        invalidColumnByMulti("{\"type\":\"String\"}", "The 'name' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\"}", "The 'type' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{}", "The 'type' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"String\", \"value\":\"\"}", "The 'srcName' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"Uid\", \"type\":\"Integer\"}", "The 'srcName' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{\"name\":\"\",\"type\":\"String\"}", "The name of item can not be a empty string in 'column'.");
-        invalidColumnByMulti("{\"name\":\"attr_0\", \"type\":\"String\"}", "The 'srcName' fileds is missing in json map of 'column'.");
-        invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"Uid\",\"type\":\"Integer\"}", "Column type only support 'string','int','double','bool' and 'binary', not support 'Integer'.");
-        invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"\",  \"type\":\"String\"}", "The name of item can not be a empty string in 'column'.");
-        invalidColumnByMulti("{\"srcName\":\"Uid\", \"name\":\"old\",  \"type\":\"String\"}{\"srcName\":\"Uid\", \"name\":\"new\",\"type\":\"Int\"}", "Duplicate src name in 'column', src name : Uid .");
-        invalidColumnByMulti("{\"srcName\":\"old\", \"name\":\"ss\",  \"type\":\"String\"}{\"srcName\":\"new\", \"name\":\"ss\", \"type\":\"String\"}", "Duplicate item in 'column', column name : ss .");
-        {
-            List<OTSAttrColumn> expect = new ArrayList<OTSAttrColumn>();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1; i++) {
-                sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 0) {
-                    sb.append(",");
-                }
-                expect.add(new OTSAttrColumn("old_"+ i, "Attr_"+ i, ColumnType.STRING));
-            }
-            validColumnByMulti(sb.toString(), expect);
-        }
-        {
-            List<OTSAttrColumn> expect = new ArrayList<OTSAttrColumn>();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 8; i++) {
-                sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 7) {
-                    sb.append(",");
-                }
-                expect.add(new OTSAttrColumn("old_"+ i, "Attr_"+ i, ColumnType.STRING));
-            }
-            validColumnByMulti(sb.toString(), expect);
-        }
-        {
-            List<OTSAttrColumn> expect = new ArrayList<OTSAttrColumn>();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
-                sb.append("{\"srcName\":\"old_"+ i +"\", \"name\":\"Attr_"+ i +"\",\"type\":\"string\"}");
-                if (i < 999) {
-                    sb.append(",");
-                }
-                expect.add(new OTSAttrColumn("old_"+ i, "Attr_"+ i, ColumnType.STRING));
-            }
-            validColumnByMulti(sb.toString(), expect);
-        }
-    }
-    
-    /**
-     * 测试目的：测试在多版本模式下，对PutRow的检查是否生效。
-     * 测试内容：配置多版本，但是指定写入模式为PutRow，期望检查出错，且错误消息符合预期
-     */
-    @Test
-    public void testCase11() {
-        OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-        Map<String, String> lines = this.getMultiVersionLines();
-        lines.put("writeMode",    "\"writeMode\":\"putRow\"");
-        String json = this.linesToJson(lines);
-        Configuration configuration = Configuration.from(json);
-        try {
-            proxy.init(configuration);
-            fail();
-        } catch (Exception e) {
-            assertEquals("When configurion set mode='MultiVersion', the 'writeMode' only support 'UpdateRow' not 'putRow'.", e.getMessage());
-        }
-    }
-    
-    /**
      * 测试目的：测试column的值合法性检查是否符合预期。
      * 测试内容：构造128列属性列，期望解析配置正确。构造129列属性列，期望解析配置出错，且错误消息符合预期。
      * @throws Exception 
@@ -806,7 +676,6 @@ public class ParamCheckFunctiontest extends BaseTest{
             tableMeta.addPrimaryKeyColumn("Pid", PrimaryKeyType.INTEGER);
             tableMeta.addPrimaryKeyColumn("Mid", PrimaryKeyType.INTEGER);
             tableMeta.addPrimaryKeyColumn("UID", PrimaryKeyType.STRING);
-            
             OTSHelper.createTableSafe(ots, tableMeta);
         }
         {
@@ -934,44 +803,6 @@ public class ParamCheckFunctiontest extends BaseTest{
     }
     
     /**
-     * 测试目的：测试mode和Column使用错误的情况是否符合预期。
-     * 测试内容：指定mode为multiVersion但是Column为普通模式，指定mode为normal但是Column为多版本模式，期望解析错误。
-     */
-    @Test
-    public void testCase18() {
-        {
-            OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-            Map<String, String> lines = this.getMultiVersionLines();
-            lines.put("mode", "\"mode\":\"multiVersion\"");
-            lines.put("column", "\"column\":[{\"name\":\"attr_0\", \"type\":\"String\"}]");
-            String json = this.linesToJson(lines);
-            
-            Configuration configuration = Configuration.from(json);
-            try {
-                proxy.init(configuration);
-                fail();
-            } catch (Exception e) {
-                assertEquals("The 'srcName' fileds is missing in json map of 'column'.", e.getMessage());
-            }
-        }
-        {
-            OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
-            Map<String, String> lines = this.getNormalLines();
-            lines.put("mode", "\"mode\":\"normal\"");
-            lines.put("column", "\"column\":[{\"srcName\":\"attr_0\", \"name\":\"attr_0\", \"type\":\"String\"}]");
-            String json = this.linesToJson(lines);
-            
-            Configuration configuration = Configuration.from(json);
-            try {
-                proxy.init(configuration);
-                fail();
-            } catch (Exception e) {
-                assertEquals("The only support 'name' and 'type' fileds in json map of 'column'.", e.getMessage());
-            }
-        }
-    }
-    
-    /**
      * 用户配置的PK和表中得PK顺序不一致
      * @throws Exception 
      */
@@ -980,10 +811,10 @@ public class ParamCheckFunctiontest extends BaseTest{
         OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
         
         StringBuilder sb = new StringBuilder();
-        sb.append("{\"name\":\"UID\", \"type\":\"String\"},");
-        sb.append("{\"name\":\"Mid\", \"type\":\"Int\"},");
-        sb.append("{\"name\":\"Uid\", \"type\":\"String\"},");
-        sb.append("{\"name\":\"Pid\", \"type\":\"Int\"}");
+        sb.append("\"UID\",");
+        sb.append("\"Mid\",");
+        sb.append("\"Uid\",");
+        sb.append("\"Pid\"");
         
         String value = sb.toString();
         
@@ -1033,12 +864,6 @@ public class ParamCheckFunctiontest extends BaseTest{
             assertEquals("UID", pks[3].getName());
             assertEquals(PrimaryKeyType.STRING, pks[3].getType());
             assertEquals(0, m.get(pks[3]).intValue());
-            
-            List<OTSAttrColumn> attr = conf.getAttributeColumn();
-            assertEquals(1, attr.size());
-            assertEquals("attr:0", attr.get(0).getSrcName());
-            assertEquals("attr_0", attr.get(0).getName());
-            assertEquals(ColumnType.STRING, attr.get(0).getType());
             
             assertEquals(-1, conf.getTimestamp());
             assertEquals(OTSMode.MULTI_VERSION, conf.getMode());

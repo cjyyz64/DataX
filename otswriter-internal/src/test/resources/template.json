@@ -9,7 +9,37 @@
 //   : 插件异常终止
 // 4.在普通模式下，采用UpdateRow的方式写入数据，如果不指定TS，相同行数的数据怎么写入到OTS中？
 //   : 后面的覆盖前面的数据
-//
+
+// 多版本模式
+// 注意：这种模式的数据格式比较特殊，该writer需要reader也提供版本的输出
+// 当前只有hbase reader提供这种模式，使用时切记注意
+{
+    "endpoint":"",
+    "accessId":"",
+    "accessKey":"",
+    "instanceName":"",
+    "table":"",
+
+    // 多版本模式，插件会按照多版本模式去解析所有配置
+    "mode":"multiVersion",
+
+    // 配置PK信息
+    // 考虑到配置成本，并不需要配置PK在Record（Line）中的位置，要求
+    // Record的格式固定,PK一定在行首，PK之后是columnName，格式如下：
+    // 如：{pk0,pk1,pk2,pk3}, {columnName}, {timestamp}, {value}
+    "primaryKey":[
+        "userid",
+        "groupid"
+    ],
+    
+    // 列名前缀过滤
+    // 描述：hbase导入过来的数据，cf和qulifier共同组成columnName，
+    // OTS并不支持cf，所以需要将cf过滤掉
+    // 注意：
+    // 1.该参数选填，如果没有填写或者值为空字符串，表示不对列名进行过滤。
+    // 2.如果datax传入的数据columnName列不是以前缀开始，则将该Record放入脏数据回收器中
+    "columnNamePrefixFilter":"cf:"
+}
 
 // 标准模式的配置
 {
@@ -32,8 +62,8 @@
     // 2. 顺序不要求和表的Meta一致
     // 3. name全局唯一
     "primaryKey":[
-        {"name":"userid", "type":"int"},
-        {"name":"groupid", "type":"int"}
+        "userid",
+        "groupid"
     ],
 
     // 需要导入的列名，区分大小写
@@ -53,38 +83,4 @@
     // PutRow : 等同于OTS API中PutRow操作，检查条件是ignore
     // UpdateRow : 等同于OTS API中UpdateRow操作，检查条件是ignore
     "writeMode":"PutRow"
-}
-
-// 多版本模式
-// 注意：这种模式的数据格式比较特殊，该writer需要reader也提供版本的输出
-// 当前只有hbase reader提供这种模式，使用时切记注意
-{
-    "endpoint":"",
-    "accessId":"",
-    "accessKey":"",
-    "instanceName":"",
-    "table":"",
-
-    // 多版本模式，插件会按照多版本模式去解析所有配置
-    "mode":"multiVersion",
-
-    // 配置PK信息
-    // 考虑到配置成本，并不需要配置PK在Record（Line）中的位置，要求
-    // Record的格式固定,PK一定在行首，PK之后是columnName，格式如下：
-    // 如：{pk0,pk1,pk2,pk3}, {columnName}, {timestamp}, {value}
-    "primaryKey":[
-        {"name":"userid", "type":"int"},
-        {"name":"groupid", "type":"int"}
-    ],
-
-    // 列名映射表与类型转换
-    // 注意：
-    // 1. 插件只导出定义的列，发现未定义的列的认为是用户配置行为错误，报错退出
-    "column":[
-        {"srcName":"addr:company", "name":"addr_company", "type":"string"},
-        {"srcName":"addr:home", "name":"addr_home", "type":"string"}
-    ],
-
-    // 多版本模式下只支持UpdateRow的模式
-    "writeMode":"UpdateRow"
 }

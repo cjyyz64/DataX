@@ -119,17 +119,12 @@ public class OTSSendBufferUnittest {
         CollectorUtil.init(collector);
         OTSSendBuffer buffer = new OTSSendBuffer(ots, conf);
         
-        Map<String, OTSAttrColumn> attrColumnMapping = new LinkedHashMap<String, OTSAttrColumn>();
-        for (OTSAttrColumn c : conf.getAttributeColumn()) {
-            attrColumnMapping.put(c.getSrcName(), c);
-        }
-        
         for (List<Record> en : input) {
             OTSLine line = ParseRecord.parseMultiVersionRecordToOTSLine(
                     conf.getTableName(), 
                     conf.getOperation(), 
                     Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), 
-                    attrColumnMapping, 
+                    null, 
                     Common.getPKFromRecord(Common.getPkColumnMapping(conf.getEncodePkColumnMapping()), en.get(0)),
                     en);
             buffer.write(line);

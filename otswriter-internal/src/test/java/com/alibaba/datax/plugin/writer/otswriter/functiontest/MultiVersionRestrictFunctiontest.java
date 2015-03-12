@@ -298,7 +298,7 @@ public class MultiVersionRestrictFunctiontest extends BaseTest{
             r.addColumn(new BytesColumn("0".getBytes()));
             r.addColumn(new StringColumn(getColumnName(0)));
             r.addColumn(new LongColumn(ts));
-            r.addColumn(new StringColumn(sb.toString()));
+            r.addColumn(new BytesColumn(sb.toString().getBytes()));
             rs.add(r);
             
             Row row = OTSRowBuilder.newInstance()

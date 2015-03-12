@@ -94,23 +94,26 @@ public class ParseRecord {
         }
     }
     
-    public static OTSAttrColumn getDefineColumn(Map<String, OTSAttrColumn> attrColumnMapping, int columnNameIndex, Record r) {
+    public static String getDefineCoumnName(String attrColumnNamePrefixFilter, int columnNameIndex, Record r) {
         String columnName = r.getColumn(columnNameIndex).asString();
-        OTSAttrColumn col = attrColumnMapping.get(columnName);
-        if (col == null) {
-            throw new IllegalArgumentException(String.format(OTSErrorMessage.COLUMN_NOT_DEFINE, columnName));
-        }
-        return col;
+        if (attrColumnNamePrefixFilter != null) {
+            if (columnName.startsWith(attrColumnNamePrefixFilter) && columnName.length() > attrColumnNamePrefixFilter.length()) {
+                columnName = columnName.substring(attrColumnNamePrefixFilter.length());
+            } else {
+                throw new IllegalArgumentException(String.format(OTSErrorMessage.COLUMN_NOT_DEFINE, columnName));
+            }
+        } 
+        return columnName;
     }
     
     private static void appendCellToRowUpdateChange(
             Map<PrimaryKeySchema, Integer> pkColumns,
-            Map<String, OTSAttrColumn> attrColumnMapping,
+            String attrColumnNamePrefixFilter,
             Record r,
             RowUpdateChange updateChange
             ) throws OTSCriticalException {
         try {
-            OTSAttrColumn meta = getDefineColumn(attrColumnMapping, pkColumns.size(), r);
+            String columnName = getDefineCoumnName(attrColumnNamePrefixFilter, pkColumns.size(), r);
             Column timestamp = r.getColumn(pkColumns.size() + 1);
             Column value = r.getColumn(pkColumns.size() + 2);
             
@@ -119,14 +122,14 @@ public class ParseRecord {
             }
             
             if (value.getRawData() == null) {
-                updateChange.deleteColumn(meta.getName(), timestamp.asLong());
+                updateChange.deleteColumn(columnName, timestamp.asLong());
                 return;
             }
             
-            ColumnValue otsValue = ColumnConversion.columnToColumnValue(value, meta);
+            ColumnValue otsValue = ColumnConversion.columnToColumnValue(value);
             
             com.aliyun.openservices.ots.internal.model.Column c = new com.aliyun.openservices.ots.internal.model.Column(
-                    meta.getName(), 
+                    columnName, 
                     otsValue,
                     timestamp.asLong()
                     );
@@ -159,7 +162,7 @@ public class ParseRecord {
             String tableName, 
             OTSOpType type, 
             Map<PrimaryKeySchema, Integer> pkColumns, 
-            Map<String, OTSAttrColumn> attrColumnMapping,
+            String attrColumnNamePrefixFilter,
             PrimaryKey pk,
             List<Record> records) throws OTSCriticalException {
         
@@ -167,7 +170,7 @@ public class ParseRecord {
             case UPDATE_ROW:
                 RowUpdateChange updateChange = new RowUpdateChange(tableName, pk);
                 for (Record r : records) {
-                    appendCellToRowUpdateChange(pkColumns, attrColumnMapping, r, updateChange);
+                    appendCellToRowUpdateChange(pkColumns, attrColumnNamePrefixFilter, r, updateChange);
                 }
                 if (updateChange.getColumnsToUpdate().isEmpty()) {
                     return null;

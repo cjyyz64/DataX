@@ -37,4 +37,6 @@ public final class Key {
     public final static String MODE = "mode";
     
     public final static String DEFAULT_TIMESTAMP = "defaultTimestampInMillisecond";
+    
+    public final static String COLUMN_NAME_PREFIX_FILTER = "columnNamePrefixFilter";
 }

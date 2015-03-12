@@ -21,14 +21,14 @@ public class ColumnConversion {
     public static PrimaryKeyValue columnToPrimaryKeyValue(Column c, PrimaryKeySchema col) throws OTSCriticalException {
         try {
             switch (col.getType()) {
-            case STRING:
-                return PrimaryKeyValue.fromString(c.asString());
-            case INTEGER:
-                return PrimaryKeyValue.fromLong(c.asLong());
-            case BINARY:
-                return PrimaryKeyValue.fromBinary(c.asBytes());
-            default:
-                throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "PrimaryKeyValue"));
+                case STRING:
+                    return PrimaryKeyValue.fromString(c.asString());
+                case INTEGER:
+                    return PrimaryKeyValue.fromLong(c.asLong());
+                case BINARY:
+                    return PrimaryKeyValue.fromBinary(c.asBytes());
+                default:
+                    throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "PrimaryKeyValue"));
             }
         } catch (DataXException e) {
             throw new IllegalArgumentException(String.format(
@@ -39,21 +39,38 @@ public class ColumnConversion {
         }
     }
     
-    public static ColumnValue columnToColumnValue(Column c, OTSAttrColumn col) throws OTSCriticalException {
-        try {
-            switch (col.getType()) {
+    public static ColumnValue columnToColumnValue(Column c) throws OTSCriticalException {
+        switch (c.getType()) {
             case STRING:
                 return ColumnValue.fromString(c.asString());
-            case INTEGER:
+            case LONG:
                 return ColumnValue.fromLong(c.asLong());
-            case BOOLEAN:
+            case BOOL:
                 return ColumnValue.fromBoolean(c.asBoolean());
             case DOUBLE:
                 return ColumnValue.fromDouble(c.asDouble());
-            case BINARY:
+            case BYTES:
                 return ColumnValue.fromBinary(c.asBytes());
             default:
-                throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "ColumnValue"));
+                throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, c.getType(), "ColumnValue"));
+        }
+    }
+    
+    public static ColumnValue columnToColumnValue(Column c, OTSAttrColumn col) throws OTSCriticalException {
+        try {
+            switch (col.getType()) {
+                case STRING:
+                    return ColumnValue.fromString(c.asString());
+                case INTEGER:
+                    return ColumnValue.fromLong(c.asLong());
+                case BOOLEAN:
+                    return ColumnValue.fromBoolean(c.asBoolean());
+                case DOUBLE:
+                    return ColumnValue.fromDouble(c.asDouble());
+                case BINARY:
+                    return ColumnValue.fromBinary(c.asBytes());
+                default:
+                    throw new OTSCriticalException(String.format(OTSErrorMessage.UNSUPPORT_PARSE, col.getType(), "ColumnValue"));
             }
         } catch (DataXException e) {
             throw new IllegalArgumentException(String.format(

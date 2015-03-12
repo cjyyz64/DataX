@@ -30,6 +30,7 @@ public class OTSConf {
     private OTSMode mode = null;
     private long timestamp = -1;
     private Map<String, Integer> encodePkColumnMapping = null;
+    private String columnNamePrefixFilter = null;
     
     //限制项
     public class RestrictConf {
@@ -166,5 +167,11 @@ public class OTSConf {
     }
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+    public String getColumnNamePrefixFilter() {
+        return columnNamePrefixFilter;
+    }
+    public void setColumnNamePrefixFilter(String columnNamePrefixFilter) {
+        this.columnNamePrefixFilter = columnNamePrefixFilter;
     }
 }
