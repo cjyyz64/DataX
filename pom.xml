@@ -39,8 +39,8 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
-	<module>postgresqlreader</module>
-	<module>oraclereader</module>
+	    <module>postgresqlreader</module>
+	    <module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
         <module>txtfilereader</module>
@@ -57,7 +57,8 @@
         <module>otswriter</module>
         <module>oraclewriter</module>
         <module>oceanbasewriter</module>
-	<module>postgresqlwriter</module>
+        <module>tddlwriter</module>
+        <module>postgresqlwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
@@ -65,7 +66,6 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
-        <module>tddlwriter</module>
     </modules>
 
     <dependencyManagement>
