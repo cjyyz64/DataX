@@ -56,7 +56,7 @@ public class OtsWriter {
     }
     
     public static class Task extends Writer.Task {
-        private static final Logger LOG = LoggerFactory.getLogger(Job.class);
+        private static final Logger LOG = LoggerFactory.getLogger(Task.class);
         private OtsWriterSlaveProxy proxy = new OtsWriterSlaveProxy();
         
         @Override

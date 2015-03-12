@@ -29,7 +29,8 @@ public class OTSSendBuffer {
     public void write(OTSLine line) throws Exception {
         // 检查是否满足发送条件
         if (lines.size() >= conf.getBatchWriteCount() || 
-                ((totalSize + line.getDataSize()) > conf.getRestrictConf().getRequestTotalSizeLimition() && totalSize > 0)) {
+            ((totalSize + line.getDataSize()) > conf.getRestrictConf().getRequestTotalSizeLimition() && totalSize > 0)) {
+            
             manager.execute(new ArrayList<OTSLine>(lines.values()));
             lines.clear();
             totalSize = 0;

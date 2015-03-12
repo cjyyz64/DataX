@@ -89,8 +89,6 @@ public class OtsReaderSlaveProxy {
     public void read(RecordSender sender, Configuration configuration) throws Exception {
         LOG.info("read begin.");
         
-        LOG.info("OTSReader task parameter: {}", Common.configurtionToNoSensitiveString(configuration));
-        
         OTSConf conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         OTSRange range = GsonParser.jsonToRange(configuration.getString(OTSConst.OTS_RANGE));
         Direction direction = GsonParser.jsonToDirection(configuration.getString(OTSConst.OTS_DIRECTION));
@@ -101,7 +99,7 @@ public class OtsReaderSlaveProxy {
         OTSClientAsync ots = new OTSClientAsync(
                 conf.getEndpoint(),
                 conf.getAccessId(),
-                conf.getAccessKey(),
+                conf.getAccesskey(),
                 conf.getInstanceName(),
                 null,
                 configure,
