@@ -1,0 +1,10 @@
+{
+    "endpoint":"http://10.101.164.172",
+    "accessid":"OTSMultiUser001_accessid",
+    "accesskey":"OTSMultiUser001_accesskey",
+    "instance-name":"wanhong-test",
+    "instance-id":"_mAKkeEfzXx28VSFgD5",
+    "legacy-instance-name":"wanhong-legcy",
+    "public-instance-name":"wanhong-basic",
+    "ag-ip":""
+}
