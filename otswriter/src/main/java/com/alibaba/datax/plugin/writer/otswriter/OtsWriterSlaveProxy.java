@@ -12,7 +12,6 @@ import com.alibaba.datax.plugin.writer.otswriter.model.OTSConst;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSLine;
 import com.alibaba.datax.plugin.writer.otswriter.model.OTSSendBuffer;
-import com.alibaba.datax.plugin.writer.otswriter.utils.Common;
 import com.alibaba.datax.plugin.writer.otswriter.utils.DefaultNoRetry;
 import com.alibaba.datax.plugin.writer.otswriter.utils.GsonParser;
 import com.aliyun.openservices.ots.ClientConfiguration;
@@ -30,7 +29,6 @@ public class OtsWriterSlaveProxy {
     private OTS ots = null;
 
     public void init(Configuration configuration) {
-        LOG.info("OTSWriter task parameter: {}", Common.configurtionToNoSensitiveString(configuration));
         conf = GsonParser.jsonToConf(configuration.getString(OTSConst.OTS_CONF));
         
         ClientConfiguration clientConfigure = new ClientConfiguration();

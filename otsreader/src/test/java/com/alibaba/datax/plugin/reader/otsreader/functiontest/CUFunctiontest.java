@@ -134,7 +134,7 @@ public class CUFunctiontest {
         OTSConf conf = new OTSConf();
         conf.setEndpoint(base.getP().getString("endpoint"));
         conf.setAccessId(base.getP().getString("accessid"));
-        conf.setAccessKey(base.getP().getString("accesskey"));
+        conf.setAccesskey(base.getP().getString("accesskey"));
         conf.setInstanceName(base.getP().getString("instance-name"));
         conf.setTableName(tableName);
         
