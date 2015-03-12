@@ -113,7 +113,7 @@ public class LongColumnTest {
 		System.out.println(column.toString());
 		Assert.assertTrue(column
 				.toString()
-				.equals("{\"byteSize\":7,\"rawData\":-9223372036854775808,\"type\":\"LONG\"}"));
+				.equals("{\"byteSize\":20,\"rawData\":-9223372036854775808,\"type\":\"LONG\"}"));
 		Assert.assertTrue(column.asBoolean().equals(true));
 
 		System.out.println(column.asDouble());
