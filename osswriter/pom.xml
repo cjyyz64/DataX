@@ -6,11 +6,9 @@
 		<artifactId>datax-all</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>oraclewriter</artifactId>
-	<name>oraclewriter</name>
+	<artifactId>osswriter</artifactId>
+	<name>osswriter</name>
 	<packaging>jar</packaging>
-	<description>writer data into oracle database</description>
-
 	<dependencies>
 		<dependency>
 			<groupId>com.alibaba.datax</groupId>
@@ -24,6 +22,11 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<groupId>com.alibaba.datax</groupId>
+			<artifactId>plugin-unstructured-storage-util</artifactId>
+			<version>${datax-project-version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
@@ -31,26 +34,17 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 		</dependency>
-
 		<dependency>
-			<groupId>com.alibaba.datax</groupId>
-			<artifactId>plugin-rdbms-util</artifactId>
-			<version>${datax-project-version}</version>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
 		</dependency>
-
 		<dependency>
-			<groupId>com.oracle</groupId>
-			<artifactId>ojdbc14</artifactId>
-			<version>10.2.0.3.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.alibaba.datax</groupId>
-			<artifactId>simulator</artifactId>
-			<version>${datax-project-version}</version>
-			<scope>test</scope>
+			<groupId>com.aliyun.oss</groupId>
+			<artifactId>aliyun-sdk-oss</artifactId>
+			<version>2.0.0</version>
 		</dependency>
 	</dependencies>
+
 	<build>
 		<plugins>
 			<!-- compiler plugin -->
@@ -62,7 +56,6 @@
 					<encoding>${project-sourceEncoding}</encoding>
 				</configuration>
 			</plugin>
-			<!-- assembly plugin -->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>

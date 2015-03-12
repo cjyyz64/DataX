@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
@@ -137,24 +138,22 @@ public class OdpsWriterProxy {
                 columnValue = dataXRecord.getColumn(sourceIndex);
 
                 if (columnValue == null) {
-                    break;
+                    continue;
+                }
+                // for compatible dt lib, "" as null
+                if(this.emptyAsNull && columnValue instanceof StringColumn && "".equals(columnValue.asString())){
+                    continue;
                 }
 
                 switch (type) {
                     case ODPS_STRING:
-                        if (this.emptyAsNull && "".equals(columnValue.asString())) {
-                            break;
-                        } else {
-                            odpsRecord.setString(currentIndex,
-                                    columnValue.asString());
-                        }
+                        odpsRecord.setString(currentIndex, columnValue.asString());
                         break;
                     case ODPS_BIGINT:
                         odpsRecord.setBigint(currentIndex, columnValue.asLong());
                         break;
                     case ODPS_BOOLEAN:
-                        odpsRecord
-                                .setBoolean(currentIndex, columnValue.asBoolean());
+                        odpsRecord.setBoolean(currentIndex, columnValue.asBoolean());
                         break;
                     case ODPS_DATETIME:
                         odpsRecord.setDatetime(currentIndex, columnValue.asDate());

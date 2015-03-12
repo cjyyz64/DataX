@@ -58,7 +58,8 @@
         <module>otswriter-internal</module>
         <module>oraclewriter</module>
         <module>oceanbasewriter</module>
-	<module>postgresqlwriter</module>
+        <module>postgresqlwriter</module>
+        <module>osswriter</module>
         <!--hook-->
         <module>dqchook</module>
 

@@ -19,6 +19,10 @@ public abstract class AbstractContainer {
 
         String dataxServiceUrl = configuration.getString(
                 CoreConstant.DATAX_CORE_DATAXSERVER_ADDRESS);
+        dataxServiceUrl = dataxServiceUrl.trim();
+        if(!dataxServiceUrl.endsWith("/")) {
+            dataxServiceUrl = dataxServiceUrl + "/";
+        }
         int httpTimeOutInMillionSeconds = configuration.getInt(
                 CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
 
