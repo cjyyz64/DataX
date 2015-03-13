@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public final class OriginalConfPretreatmentUtil {
         dealWriteMode(originalConfig);
     }
 
-    private static void simplifyConf(Configuration originalConfig) {
+    public static void simplifyConf(Configuration originalConfig) {
         List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
 
@@ -92,22 +93,14 @@ public final class OriginalConfPretreatmentUtil {
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
     }
 
-    private static void dealColumnConf(Configuration originalConfig) {
+    public static void dealColumnConf(Configuration originalConfig, Connection conn, String oneTable) {
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
-            String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
-                    Constant.CONN_MARK, Key.JDBC_URL));
 
-            String username = originalConfig.getString(Key.USERNAME);
-            String password = originalConfig.getString(Key.PASSWORD);
-            String oneTable = originalConfig.getString(String.format(
-                    "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
-
-            List<String> allColumns = DBUtil.getTableColumns(DATABASE_TYPE, jdbcUrl, username, password, oneTable);
-
+            List<String> allColumns = DBUtil.getTableColumnsByConn(conn, oneTable);
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
                     StringUtils.join(allColumns, ","));
@@ -126,13 +119,25 @@ public final class OriginalConfPretreatmentUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                DBUtil.getColumnMetaData(DATABASE_TYPE, jdbcUrl, username, password, oneTable,
-                        StringUtils.join(userConfiguredColumns, ","));
+                DBUtil.getColumnMetaData(conn, oneTable,StringUtils.join(userConfiguredColumns, ","));
             }
         }
     }
 
-    private static void dealWriteMode(Configuration originalConfig) {
+    public static void dealColumnConf(Configuration originalConfig) {
+        String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
+                Constant.CONN_MARK, Key.JDBC_URL));
+
+        String username = originalConfig.getString(Key.USERNAME);
+        String password = originalConfig.getString(Key.PASSWORD);
+        String oneTable = originalConfig.getString(String.format(
+                "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
+
+        Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl, username, password);
+        dealColumnConf(originalConfig, conn, oneTable);
+    }
+
+    public static void dealWriteMode(Configuration originalConfig) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
 
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",

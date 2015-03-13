@@ -47,8 +47,19 @@
         <dependency>
             <groupId>com.taobao.tddl</groupId>
             <artifactId>tddl-client</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>16.0</version>
+        </dependency>
     </dependencies>
 
     <build>

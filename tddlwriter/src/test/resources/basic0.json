@@ -1,0 +1,36 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "channel": 5
+      }
+    },
+    "content": [
+      {
+        "reader": {},
+        "writer": {
+          "name": "tddlwriter",
+          "parameter": {
+            "writeMode": "replace",
+            "tddlAppName": "CDO_DATAX_DS_DEV_APP",
+            "table": "test_tddl_writer",
+            "column": [
+              "t_long",
+              "t_boolean",
+              "t_double",
+              "t_string",
+              "t_date"
+            ],
+            "preSql": [
+              "delete from test_tddl_writer"
+            ],
+            "postSql": [
+              "update test_tddl_writer set gmt_modified = now() where id = 1;"
+            ],
+            "session": []
+          }
+        }
+      }
+    ]
+  }
+}

@@ -291,32 +291,35 @@ public final class DBUtil {
 		closeDBResources(null, stmt, conn);
 	}
 
+    public static List<String> getTableColumnsByConn(Connection conn, String tableName) {
+        List<String> columns = new ArrayList<String>();
+        Statement statement = null;
+        ResultSet rs = null;
+        try {
+            statement = conn.createStatement();
+            String queryColumnSql = String.format("select * from %s where 1=2",
+                    tableName);
+            rs = statement.executeQuery(queryColumnSql);
+            ResultSetMetaData rsMetaData = rs.getMetaData();
+            for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
+                columns.add(rsMetaData.getColumnName(i + 1));
+            }
+
+        } catch (SQLException e) {
+            throw DataXException
+                    .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
+                            "获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的jdbcUrl和table信息. ", e);
+        } finally {
+            DBUtil.closeDBResources(rs, statement, conn);
+        }
+
+        return columns;
+    }
+
 	public static List<String> getTableColumns(DataBaseType dataBaseType,
 			String jdbcUrl, String user, String pass, String tableName) {
-		List<String> columns = new ArrayList<String>();
-		Connection conn = null;
-		Statement statement = null;
-		ResultSet rs = null;
-		try {
-			conn = getConnection(dataBaseType, jdbcUrl, user, pass);
-			statement = conn.createStatement();
-			String queryColumnSql = String.format("select * from %s where 1=2",
-					tableName);
-			rs = statement.executeQuery(queryColumnSql);
-			ResultSetMetaData rsMetaData = rs.getMetaData();
-			for (int i = 0, len = rsMetaData.getColumnCount(); i < len; i++) {
-				columns.add(rsMetaData.getColumnName(i + 1));
-			}
-
-		} catch (SQLException e) {
-			throw DataXException
-					.asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-							"获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的jdbcUrl和table信息. ", e);
-		} finally {
-			DBUtil.closeDBResources(rs, statement, conn);
-		}
-
-		return columns;
+        Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
+        return getTableColumnsByConn(conn, tableName);
 	}
 
 	/**
