@@ -1,0 +1,7 @@
+{
+    "name": "osswriter",
+    "class": "com.alibaba.datax.plugin.writer.osswriter.OssWriter",
+    "description": "",
+    "developer": "haiwei.luo, bug reported to : haiwei.luo@alibaba-inc.com"
+}
+

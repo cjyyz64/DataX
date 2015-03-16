@@ -1,0 +1,87 @@
+{
+    //普通模式的配置模板
+    "reader": {
+        "name": "hbasereader",
+        "parameter": {
+            // hbase 连接信息
+            "hbaseConfig": {
+                "hbase.zookeeper.quorum": "?",
+                "hbase.zookeeper.property.clientPort": "?",
+                "k3": "v3"
+            },
+            "table": "hbase_test_table",
+
+            // 默认为 utf8,可以配置为 utf8,gbk
+            "encoding": "utf8",
+
+            //mode 可能取值为：normal, multiVersionFixedColumn, multiVersionDynamicColumn
+            "mode": "normal",
+
+            // 普通模式读取时，column 中每一项，通常形式为：(name + type) 或者 (value + type)
+            //      其中，(name + type) 形式，表示读取指定名字的 hbase 列。如果 name 为 rowkey，则表示该项对应抽取 hbase 的 rowkey列
+            //      (value + type) 形式，表示指定常量列。使用较少。
+
+            // type 类型可能为：int, short, long, double, float, boolean,date, bytes, string, binaryString
+            // 特别注意:
+            // <1> string 和 binaryString 的区别体现在 byte[] 转换为 String 时调用不同的 API:
+            //      类型为 string 表示采用 API: new String(byteArray,encoding)
+            //      类型为 binaryString 表示采用 API: Bytes.toStringBinary(byteArray)
+            // <2> date 类型配置时，必须提供 dateformat 以表明所配置的字符串代表的时间格式
+            // <3> 常量不能配置为 binaryString 类型
+            // <4> 时间类型的 format 比如 yyyy-MM-dd HH:mm:ss，特别注意不能随意小写时间格式，那样可能导致时间转换错误！
+
+            "column": [
+                {
+                    "name": "rowkey",
+                    "type": "bytes"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 name 的列的数据，
+                    "name": "basicInfo:name",
+                    "type": "string"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 address 的列的数据，
+                    "name": "basicInfo:address",
+                    "type": "binaryString"
+                },
+                {
+                    // 表示读取列族为 basicInfo，列名称为 school 的列的数据，
+                    // 并且直接把 hbase 的 byte 数组读出来
+                    "name": "basicInfo:school",
+                    "type": "bytes"
+                },
+                {
+                    "name": "extendsInfo:age",
+                    "type": "int"
+                },
+                {
+                    "name": "extendsInfo:birthday",
+                    "type": "date",
+                    "format":"yyyy-mm-dd"
+                },
+                {
+                    // 读取常量字符串列
+                    "value": "hello-常量",
+                    "type": "string"
+                },
+                {
+                    // 读取常量时间列
+                    "value": "2015/08/08",
+                    "type": "date",
+                    "format":"yyyy/mm/dd"
+                }
+            ],
+            "range": {
+                // 执行 startRowKey 和 endRowKey 的范围，如果不指定，则表示全表读取
+                "startRowkey": "\\x0001",
+                "endRowkey": "\\xffff",
+
+                // 描述用户配置的 startRowkey/endRowkey 的字符串是否为二进制字符串。
+                // 如果为 true, 则调用Bytes.toBytesBinary(String rowKey)把 rowkey 转换为 bytes[]
+                // 如果为 false, 则调用Bytes.toBytes(String rowKey)
+                "isBinaryRowkey":true
+            }
+        }
+    }
+}

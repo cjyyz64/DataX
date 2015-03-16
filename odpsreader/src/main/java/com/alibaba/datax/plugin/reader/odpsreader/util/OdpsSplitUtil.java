@@ -36,7 +36,6 @@ public final class OdpsSplitUtil {
         List<String> partitions = originalConfig.getList(Key.PARTITION,
                 String.class);
 
-        // TODO
         if (null == partitions || partitions.isEmpty()) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                     "您所配置的分区不能为空白.");
@@ -71,7 +70,6 @@ public final class OdpsSplitUtil {
         }
     }
 
-    // TODO Mysqlreader 中有这个方法，考虑抽象
     private static int calculateEachPartitionShouldSplittedNumber(
             int adviceNumber, int partitionNumber) {
         double tempNum = 1.0 * adviceNumber / partitionNumber;

@@ -61,8 +61,13 @@ public abstract class Strategy {
 		}
 	}
 	
-	public static Strategy instance(Context context, List<ColumnMeta> columns) {
-		return new PrepareStrategy(context, columns);
+	public static Strategy instance(Context context, List<ColumnMeta> columns) throws Exception{
+        String writeMode = context.writeMode();
+        if("delete".equalsIgnoreCase(writeMode)){
+            return new DeleteStrategy(context,columns);
+        }else {
+            return new PrepareStrategy(context, columns);
+        }
 	}
 
 	private class Helper{

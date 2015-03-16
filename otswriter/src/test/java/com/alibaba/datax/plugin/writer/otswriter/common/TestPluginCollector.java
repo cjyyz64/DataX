@@ -6,8 +6,8 @@ import java.util.List;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.statistics.plugin.task.AbstractTaskPluginCollector;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.plugin.task.AbstractTaskPluginCollector;
 
 public class TestPluginCollector extends AbstractTaskPluginCollector {
     
