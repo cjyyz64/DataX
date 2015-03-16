@@ -12,7 +12,7 @@
           "name": "tddlwriter",
           "parameter": {
             "writeMode": "replace",
-            "tddlAppName": "CDO_DATAX_DS_DEV_APP",
+            "appName": "CDO_DATAX_DS_DEV_APP",
             "table": "test_tddl_writer",
             "column": [
               "t_long",
