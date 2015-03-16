@@ -14,7 +14,7 @@
         <commons-configuration-version>1.10</commons-configuration-version>
         <commons-cli-version>1.2</commons-cli-version>
         <fastjson-version>1.1.43</fastjson-version>
-        <guava-version>14.0.1</guava-version>
+        <guava-version>16.0.1</guava-version>
 
         <!--slf4j 1.7.10 和 logback-classic 1.0.13 是好基友 -->
         <slf4j-api-version>1.7.10</slf4j-api-version>
