@@ -3,7 +3,7 @@ package com.alibaba.datax.plugin.reader.hbasereader.util;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.Constant;
-import com.alibaba.datax.plugin.reader.hbasereader.HTableFactory;
+import com.alibaba.datax.plugin.reader.hbasereader.HTableManager;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
@@ -63,10 +63,7 @@ public abstract class HbaseAbstractTask {
         if (this.resultScanner != null) {
             this.resultScanner.close();
         }
-        if (this.htable != null) {
-            htable.close();
-            HTableFactory.closeHtable();
-        }
+        HTableManager.closeHTable(this.htable);
     }
 
     protected Result getNextHbaseRow() throws IOException {
@@ -77,7 +74,7 @@ public abstract class HbaseAbstractTask {
             if (lastResult != null) {
                 scan.setStartRow(lastResult.getRow());
             }
-            resultScanner = htable.getScanner(scan);
+            resultScanner = this.htable.getScanner(scan);
             result = resultScanner.next();
             if (lastResult != null && Bytes.equals(lastResult.getRow(), result.getRow())) {
                 result = resultScanner.next();
