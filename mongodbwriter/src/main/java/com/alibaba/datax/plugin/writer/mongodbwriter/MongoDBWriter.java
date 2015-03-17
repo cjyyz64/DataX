@@ -61,21 +61,20 @@ public class MongoDBWriter extends Writer{
                 }
                 //TODO 补充一个验证方式
             }
-            DBCollection collection = db.getCollection(this.collection);
-            //TODO 要提前获取collection 的meta定义
+            DBCollection col = db.getCollection(this.collection);
             List<String> columnMetaList = new ArrayList<String>();
-
+            columnMetaList.addAll(col.findOne().keySet());
             List<Record> writerBuffer = new ArrayList<Record>(this.batchSize);
             Record record = null;
             while((record = lineReceiver.getFromReader()) != null) {
                 writerBuffer.add(record);
                 if(writerBuffer.size() >= this.batchSize) {
-                    doBatchInsert(collection,writerBuffer,columnMetaList);
+                    doBatchInsert(col,writerBuffer,columnMetaList);
                     writerBuffer.clear();
                 }
             }
             if(!writerBuffer.isEmpty()) {
-                doBatchInsert(collection,writerBuffer,columnMetaList);
+                doBatchInsert(col,writerBuffer,columnMetaList);
                 writerBuffer.clear();
             }
             //TODO
