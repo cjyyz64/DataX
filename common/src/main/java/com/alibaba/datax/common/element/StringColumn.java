@@ -91,7 +91,7 @@ public class StringColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT, String.format(
-							"String[%s]不能转为BigDecimal .", this.asString()));
+							"String [\"%s\"] 不能转为BigDecimal .", this.asString()));
 		}
 	}
 
