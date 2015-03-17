@@ -15,8 +15,10 @@ import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.aliyun.oss.model.ObjectListing;
 import com.google.common.collect.Sets;
+
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,15 +152,18 @@ public class OssReader extends Reader {
             }
 
 
-
-
-            // only support compress: lzo,lzop,gzip,bzip
+            // only support compress: gzip,bzip2
             String compress = this.readerOriginConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS);
-            if (null != compress) {
-                Set<String> supportedCompress = Sets.newHashSet(
-                        "gzip", "bzip2");
-                if (!supportedCompress.contains(compress.toLowerCase().trim())) {
+            if (StringUtils.isBlank(compress)) {
+                this.readerOriginConfig
+                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,
+                                null);
+            } else {
+                Set<String> supportedCompress = Sets
+                        .newHashSet("gzip", "bzip2");
+                compress = compress.toLowerCase().trim();
+                if (!supportedCompress.contains(compress)) {
                     throw DataXException
                             .asDataXException(
                                     OssReaderErrorCode.ILLEGAL_VALUE,
@@ -166,6 +171,9 @@ public class OssReader extends Reader {
                                             "仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
                                             compress));
                 }
+                this.readerOriginConfig
+                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,
+                                compress);
             }
         }
 
