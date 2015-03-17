@@ -108,7 +108,7 @@ public class CUFunctiontest {
 
         OTSConf conf = Conf.getConf(tableName, pk, attr, OTSOpType.PUT_ROW);
         conf.setRetry(18);
-        conf.setConcurrencyWrite(5);
+        conf.setConcurrencyWrite(1);
         conf.setBatchWriteCount(1);
         
         Configuration configuration = Configuration.newDefault();

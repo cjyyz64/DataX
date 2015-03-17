@@ -117,8 +117,8 @@ public class ReaderConf {
         if (conf.getAccessId() != null) {
             lines.add(String.format("\t\"%s\":\"%s\"", Key.OTS_ACCESSID, conf.getAccessId()));
         }
-        if (conf.getAccessKey() != null) {
-            lines.add(String.format("\t\"%s\":\"%s\"", Key.OTS_ACCESSKEY, conf.getAccessKey()));
+        if (conf.getAccesskey() != null) {
+            lines.add(String.format("\t\"%s\":\"%s\"", Key.OTS_ACCESSKEY, conf.getAccesskey()));
         }
         if (conf.getInstanceName() != null) {
             lines.add(String.format("\t\"%s\":\"%s\"", Key.OTS_INSTANCE_NAME, conf.getInstanceName()));

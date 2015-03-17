@@ -4,13 +4,11 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.Key;
 import com.alibaba.datax.plugin.writer.oceanbasewriter.Rowkey;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,17 +65,39 @@ public class TaskPrepare {
                 String query = String.format("select %s %s from %s %s limit %s", hint, fields, table, where, limit);
                 log.info("{} start execute delete table {}",Thread.currentThread().getName(),table);
                 DeleteHandler handler = new DeleteHandler(table, rowkey, url);
-                String condition = OBDataSource.executeQuery(url, query, handler);
-                while (!"".equals(condition)) {
+                List<?> condition = OBDataSource.executeQuery(url, query, handler);
+                while (!condition.isEmpty()) {
                     if(where.equals("")){
-                        query = String.format("select %s %s from %s where %s limit %s", hint, fields, table, condition, limit);
+                        query = String.format("select %s %s from %s where %s limit %s", hint, fields, table, relation(">",rowkey), limit);
                     }else {
-                        query = String.format("select %s %s from %s %s and %s limit %s", hint, fields, table, where, condition, limit);
+                        query = String.format("select %s %s from %s %s and %s limit %s", hint, fields, table, where, relation(">",rowkey), limit);
                     }
-                    condition = OBDataSource.executeQuery(url, query, handler);
+                    condition = OBDataSource.executePreparedQuery(url, query, condition, handler);
                 }
                 log.info("delete total {} records for table {} ", handler.counter.get(), table);
             }
+        }
+
+        private static String relation(String op, Rowkey rowkey) throws Exception{
+            String left = "(";
+            for (Rowkey.Entry entry : rowkey) {
+                if (entry.position == 1) {
+                    left += entry.name;
+                } else {
+                    left += ("," + entry.name);
+                }
+            }
+            left += ")";
+            String right = "(";
+            for (Rowkey.Entry entry : rowkey) {
+                if (entry.position == 1) {
+                    right += "?";
+                } else {
+                    right += (",?");
+                }
+            }
+            right += ")";
+            return String.format("%s %s %s",left,op,right);
         }
 
         private static String field(Rowkey rowkey){
@@ -140,7 +160,7 @@ public class TaskPrepare {
             return OBDataSource.executeQuery(url, String.format("desc %s", table), handler);
         }
 
-        private static class DeleteHandler implements ResultSetHandler<String> {
+        private static class DeleteHandler implements ResultSetHandler<List<?>> {
 
             private final Rowkey rowkey;
             private final String table;
@@ -153,20 +173,24 @@ public class TaskPrepare {
             }
 
             @Override
-            public String callback(ResultSet result) throws Exception {
+            public List<?> callback(ResultSet result) throws Exception {
                 this.delete(url, result);
                 return this.getLastRowkey(result);
             }
 
-            private void delete(String url,ResultSet result) throws Exception{
+            private void delete(String url,final ResultSet result) throws Exception{
                 while (result.next()){
-                    final String delete = String.format("delete from %s where %s", table, relation("=", result));
+                    final String delete = String.format("delete from %s where %s", table, relation("=",rowkey));
                     OBDataSource.execute(url,new ConnectionHandler() {
                         @Override
                         public Statement callback(Connection connection) throws Exception {
-                            Statement statement = connection.createStatement();
+                            PreparedStatement statement = connection.prepareStatement(delete);
                             log.debug(delete);
-                            statement.execute(delete);
+                            int index = 1;
+                            for (Rowkey.Entry entry : rowkey){
+                                entry.type.convert(index++,statement,result,entry.name);
+                            }
+                            statement.execute();
                             return statement;
                         }
                     });
@@ -174,34 +198,17 @@ public class TaskPrepare {
                 }
             }
 
-            private String getLastRowkey(ResultSet result) throws Exception {
+            private List<?> getLastRowkey(ResultSet result) throws Exception {
                 if (!result.isAfterLast())//根据jdbc规范判断空集
-                    return "";
+                    return Collections.emptyList();
                 result.last();
-                return relation(">",result);
+                List<Object> values = Lists.newArrayList();
+                for (Rowkey.Entry entry : rowkey){
+                    values.add(entry.type.value(result,entry.name));
+                }
+                return values;
             }
 
-            private String relation(String op,ResultSet result) throws Exception{
-                String left = "(";
-                for (Rowkey.Entry entry : rowkey) {
-                    if (entry.position == 1) {
-                        left += entry.name;
-                    } else {
-                        left += ("," + entry.name);
-                    }
-                }
-                left += ")";
-                String right = "(";
-                for (Rowkey.Entry entry : rowkey) {
-                    if (entry.position == 1) {
-                        right += entry.type.convert(result, entry.name);
-                    } else {
-                        right += ("," + entry.type.convert(result, entry.name));
-                    }
-                }
-                right += ")";
-                return String.format("%s %s %s",left,op,right);
-            }
         }
     }
 }

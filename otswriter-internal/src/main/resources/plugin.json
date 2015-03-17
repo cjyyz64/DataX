@@ -1,0 +1,6 @@
+{
+    "name": "otswriter-internal",
+    "class": "com.alibaba.datax.plugin.writer.otswriter.OtsWriter",
+    "description": "otswriter for ots internal",
+    "developer": "wanhong.chenwh@alibaba-inc.com"
+}

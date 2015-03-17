@@ -1,0 +1,43 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "byte":10485760
+            },
+            "errorLimit":0.0
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "otsreader",
+                    "parameter": {
+                        "endpoint":"http://redchen-instance.cn-hangzhou.ots.aliyuncs.com", 
+                        "accessId":"5viOHfldyK6K72ht",
+                        "accessKey":"n1raV0YxsLv0TG4nSVWqTJ7YSq2mvK",
+                        "instanceName":"redchen-instance",
+                        "table":"",
+
+                        "column":[
+                            {"name":"pk"},
+                            {"name":"attr_0000"},
+                            {"name":"attr_0001"},
+                            {"name":"attr_0002"},
+                            {"name":"attr_0003"},
+                            {"name":"attr_0004"},
+                            {"name":"attr_0005"},
+                            {"name":"attr_0006"},
+                            {"name":"attr_0007"},
+                            {"name":"attr_0008"},
+                            {"name":"attr_0009"}
+                        ], 
+                        "range":{
+                            "begin":[],
+                            "end":[]
+                        }
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}

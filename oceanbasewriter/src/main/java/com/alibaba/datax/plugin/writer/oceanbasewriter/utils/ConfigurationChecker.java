@@ -28,7 +28,7 @@ public class ConfigurationChecker {
 
     private static void checkWriteMode(Configuration configuration){
         String mode = configuration.getString(Key.WRITE_MODE,"replace");
-        Preconditions.checkArgument(mode.equalsIgnoreCase("replace") || mode.equalsIgnoreCase("insert"),"writeMode must be replace or insert");
+        Preconditions.checkArgument(mode.equalsIgnoreCase("replace") || mode.equalsIgnoreCase("insert") || mode.equalsIgnoreCase("delete"),"writeMode must be replace or insert or delete");
     }
 
     private static void checkConnection(Configuration configuration){

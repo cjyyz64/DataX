@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.odpsreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.odpsreader.ColumnType;
 import com.alibaba.datax.plugin.reader.odpsreader.Constant;
 import com.alibaba.datax.plugin.reader.odpsreader.Key;
 import com.alibaba.datax.plugin.reader.odpsreader.OdpsReaderErrorCode;
@@ -11,7 +12,10 @@ import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
 import com.aliyun.odps.tunnel.TableTunnel;
 import com.aliyun.odps.tunnel.TunnelException;
+
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,16 +112,6 @@ public final class OdpsUtil {
         return tableSchema.getColumns();
     }
 
-    public static List<OdpsType> getTableOriginalColumnTypeList(
-            List<Column> columns) {
-        List<OdpsType> tableOriginalColumnTypeList = new ArrayList<OdpsType>();
-
-        for (Column column : columns) {
-            tableOriginalColumnTypeList.add(column.getType());
-        }
-
-        return tableOriginalColumnTypeList;
-    }
 
     public static List<String> getTableOriginalColumnNameList(
             List<Column> columns) {
@@ -154,15 +148,60 @@ public final class OdpsUtil {
         }
     }
 
-    public static List<String> parseConstantColumn(List<String> tableOriginalColumnList,
-                                                   List<String> userConfiguredColumns) {
-        List<String> retList = new ArrayList<String>(tableOriginalColumnList);
-        for (String col : userConfiguredColumns) {
-            if (checkIfConstantColumn(col)) {
-                retList.add(col.substring(1, col.length() - 1));
+    public static List<Pair<String, ColumnType>> parseColumns(
+            List<String> allNormalColumns, List<String> allPartitionColumns,
+            List<String> userConfiguredColumns) {
+        List<Pair<String, ColumnType>> parsededColumns = new ArrayList<Pair<String, ColumnType>>();
+        // warn: upper & lower case
+        for (String column : userConfiguredColumns) {
+            MutablePair<String, ColumnType> pair = new MutablePair<String, ColumnType>();
+            
+            // if constant column
+            if (OdpsUtil.checkIfConstantColumn(column)) {
+                // remove first and last '
+                pair.setLeft(column.substring(1, column.length() - 1));
+                pair.setRight(ColumnType.CONSTANT);
+                parsededColumns.add(pair);
+                continue;
+            }
+
+            // if normal column, warn: in o d p s normal columns can not
+            // repeated in partitioning columns
+            int index = OdpsUtil.indexOfIgnoreCase(allNormalColumns, column);
+            if (0 <= index) {
+                pair.setLeft(allNormalColumns.get(index));
+                pair.setRight(ColumnType.NORMAL);
+                parsededColumns.add(pair);
+                continue;
+            }
+
+            // if partition column
+            index = OdpsUtil.indexOfIgnoreCase(allPartitionColumns, column);
+            if (0 <= index) {
+                pair.setLeft(allPartitionColumns.get(index));
+                pair.setRight(ColumnType.PARTITION);
+                parsededColumns.add(pair);
+                continue;
+            }
+            // not exist column
+            throw DataXException.asDataXException(
+                    OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    String.format("源头表的列配置错误. 您所配置的列 [%s] 不存在.", column));
+
+        }
+        return parsededColumns;
+    }
+    
+    private static int indexOfIgnoreCase(List<String> columnCollection,
+            String column) {
+        int index = -1;
+        for (int i = 0; i < columnCollection.size(); i++) {
+            if (columnCollection.get(i).equalsIgnoreCase(column)) {
+                index = i;
+                break;
             }
         }
-        return retList;
+        return index;
     }
 
     public static boolean checkIfConstantColumn(String column) {
@@ -172,28 +211,6 @@ public final class OdpsUtil {
         } else {
             return false;
         }
-    }
-
-    public static List<Integer> parsePosition(List<String> allColumnList,
-                                              List<String> userConfiguredColumns) {
-        List<Integer> retList = new ArrayList<Integer>();
-
-        boolean hasColumn = false;
-        for (String col : userConfiguredColumns) {
-            hasColumn = false;
-            for (int i = 0, len = allColumnList.size(); i < len; i++) {
-                if (allColumnList.get(i).equalsIgnoreCase(col)) {
-                    retList.add(i);
-                    hasColumn = true;
-                    break;
-                }
-            }
-            if (!hasColumn) {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("读取源头表的列配置错误. 您所配置的列:%s 不存在.", col));
-            }
-        }
-        return retList;
     }
 
     public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps,
@@ -277,5 +294,4 @@ public final class OdpsUtil {
 
         return downloadSession;
     }
-
 }

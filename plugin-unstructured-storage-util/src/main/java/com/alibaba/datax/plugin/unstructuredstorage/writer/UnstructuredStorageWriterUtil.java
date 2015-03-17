@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.Set;
 
 import org.anarres.lzo.LzoCompressor1x_1;
 import org.anarres.lzo.LzoOutputStream;
@@ -20,8 +21,10 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorOutputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +35,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.google.common.collect.Sets;
 
 public class UnstructuredStorageWriterUtil {
 	private UnstructuredStorageWriterUtil() {
@@ -40,6 +44,79 @@ public class UnstructuredStorageWriterUtil {
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(UnstructuredStorageWriterUtil.class);
+
+	/**
+	 * check parameter: writeMode, encoding, compress, filedDelimiter
+	 * */
+	public static void validateParameter(Configuration writerConfiguration) {
+		// writeMode check
+		String writeMode = writerConfiguration.getNecessaryValue(
+				Key.WRITE_MODE,
+				UnstructuredStorageWriterErrorCode.REQUIRED_VALUE);
+		writeMode = writeMode.trim();
+		Set<String> supportedWriteModes = Sets.newHashSet("truncate", "append",
+				"nonConflict");
+		if (!supportedWriteModes.contains(writeMode)) {
+			throw DataXException
+					.asDataXException(
+							UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+							String.format(
+									"仅支持 truncate, append, nonConflict 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
+									writeMode));
+		}
+		writerConfiguration.set(Key.WRITE_MODE, writeMode);
+
+		// encoding check
+		String encoding = writerConfiguration.getString(Key.ENCODING);
+		if (StringUtils.isBlank(encoding)) {
+			// like "  ", null
+			LOG.warn(String.format("您的encoding配置为空, 将使用默认值[%s]",
+					Constant.DEFAULT_ENCODING));
+			writerConfiguration.set(Key.ENCODING, Constant.DEFAULT_ENCODING);
+		} else {
+			try {
+				encoding = encoding.trim();
+				writerConfiguration.set(Key.ENCODING, encoding);
+				Charsets.toCharset(encoding);
+			} catch (Exception e) {
+				throw DataXException.asDataXException(
+						UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+						String.format("不支持您配置的编码格式:[%s]", encoding), e);
+			}
+		}
+
+		// only support compress types
+		String compress = writerConfiguration.getString(Key.COMPRESS);
+		if (StringUtils.isBlank(compress)) {
+			writerConfiguration.set(Key.COMPRESS, null);
+		} else {
+			Set<String> supportedCompress = Sets.newHashSet("gzip", "bzip2");
+			if (!supportedCompress.contains(compress.toLowerCase().trim())) {
+				String message = String.format(
+						"仅支持 [%s] 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+						StringUtils.join(supportedCompress, ","));
+				throw DataXException.asDataXException(
+						UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+						String.format(message, compress));
+			}
+		}
+
+		// fieldDelimiter check
+		String delimiterInStr = writerConfiguration
+				.getString(Key.FIELD_DELIMITER);
+		// warn: if have, length must be one
+		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+			throw DataXException.asDataXException(
+					UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+					String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+		}
+		if (null == delimiterInStr) {
+			LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
+					Constant.DEFAULT_FIELD_DELIMITER));
+			writerConfiguration.set(Key.FIELD_DELIMITER,
+					Constant.DEFAULT_FIELD_DELIMITER);
+		}
+	}
 
 	public static void writeToStream(RecordReceiver lineReceiver,
 			OutputStream outputStream, Configuration config, String context,
@@ -152,9 +229,10 @@ public class UnstructuredStorageWriterUtil {
 			TaskPluginCollector taskPluginCollector) throws IOException {
 
 		String nullFormat = config.getString(Key.NULL_FORMAT);
-
-		String dateFormat = config.getString(Key.FORMAT);
-
+		
+		// 兼容format & dataFormat
+		String dateFormat = config.getString(Key.DATE_FORMAT);
+		
 		String delimiterInStr = config.getString(Key.FIELD_DELIMITER);
 		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 			throw DataXException.asDataXException(
@@ -172,16 +250,24 @@ public class UnstructuredStorageWriterUtil {
 
 		Record record = null;
 		while ((record = lineReceiver.getFromReader()) != null) {
-			String line = UnstructuredStorageWriterUtil.transportOneRecord(
-					record, nullFormat, dateFormat, fieldDelimiter,
-					taskPluginCollector);
-			writer.write(line);
+			MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
+					.transportOneRecord(record, nullFormat, dateFormat,
+							fieldDelimiter, taskPluginCollector);
+			if (!transportResult.getRight()) {
+				writer.write(transportResult.getLeft());
+			}
 		}
 	}
 
-	private static String transportOneRecord(Record record, String nullFormat,
-			String dateFormat, char fieldDelimiter,
-			TaskPluginCollector taskPluginCollector) {
+	/**
+	 * @return MutablePair<String, Boolean> left: formated data line; right: is
+	 *         dirty data or not, true means meeting dirty data
+	 * */
+	public static MutablePair<String, Boolean> transportOneRecord(
+			Record record, String nullFormat, String dateFormat,
+			char fieldDelimiter, TaskPluginCollector taskPluginCollector) {
+		MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
+		transportResult.setRight(false);
 		StringBuilder sb = new StringBuilder();
 		int recordLength = record.getColumnNumber();
 		if (0 != recordLength) {
@@ -205,6 +291,8 @@ public class UnstructuredStorageWriterUtil {
 										dateFormat, column.asString());
 								taskPluginCollector.collectDirtyRecord(record,
 										message);
+								transportResult.setRight(true);
+								break;
 							}
 						} else {
 							sb.append(column.asString());
@@ -220,6 +308,7 @@ public class UnstructuredStorageWriterUtil {
 			}
 		}
 		sb.append(IOUtils.LINE_SEPARATOR);
-		return sb.toString();
+		transportResult.setLeft(sb.toString());
+		return transportResult;
 	}
 }
