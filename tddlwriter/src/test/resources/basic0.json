@@ -12,9 +12,10 @@
           "name": "tddlwriter",
           "parameter": {
             "writeMode": "replace",
-            "appName": "CDO_DATAX_DS_DEV_APP",
-            "table": "test_tddl_writer",
+            "appName": "B2B_CDO_DATAX_TDDL_PERF_APP",
+            "table": "test_tddl_writer_f4",
             "column": [
+              "id",
               "t_long",
               "t_boolean",
               "t_double",
@@ -22,10 +23,10 @@
               "t_date"
             ],
             "preSql": [
-              "delete from test_tddl_writer"
+              "delete from test_tddl_writer_f4 where id < 1000000"
             ],
             "postSql": [
-              "update test_tddl_writer set gmt_modified = now() where id = 1;"
+              "update test_tddl_writer_f4 set gmt_modified = now() where id = 1;"
             ],
             "session": []
           }

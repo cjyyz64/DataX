@@ -27,6 +27,7 @@ public class TddlWriterTest extends BasicWriterPluginTest {
 		List<Record> list = new ArrayList<Record>();
         for (int i = 0; i < 1000; i++) {
             Record r = new DefaultRecord();
+            r.addColumn(new LongColumn(i));
             r.addColumn(new LongColumn(6));
             r.addColumn(new BoolColumn(true));
             r.addColumn(new DoubleColumn("5.5"));
