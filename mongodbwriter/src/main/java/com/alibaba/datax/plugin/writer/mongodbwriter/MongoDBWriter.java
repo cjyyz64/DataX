@@ -1,14 +1,12 @@
 package com.alibaba.datax.plugin.writer.mongodbwriter;
 
-import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
 import com.google.common.base.Strings;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.MongoClient;
+import com.mongodb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,9 +62,73 @@ public class MongoDBWriter extends Writer{
                 //TODO 补充一个验证方式
             }
             DBCollection collection = db.getCollection(this.collection);
-            List<Record> witerBuffer = new ArrayList<Record>(this.batchSize);
+            //TODO 要提前获取collection 的meta定义
+            List<String> columnMetaList = new ArrayList<String>();
+
+            List<Record> writerBuffer = new ArrayList<Record>(this.batchSize);
+            Record record = null;
+            while((record = lineReceiver.getFromReader()) != null) {
+                writerBuffer.add(record);
+                if(writerBuffer.size() >= this.batchSize) {
+                    doBatchInsert(collection,writerBuffer,columnMetaList);
+                    writerBuffer.clear();
+                }
+            }
+            if(!writerBuffer.isEmpty()) {
+                doBatchInsert(collection,writerBuffer,columnMetaList);
+                writerBuffer.clear();
+            }
             //TODO
         }
+
+        private void doBatchInsert(DBCollection collection,List<Record> writerBuffer, List<String> columnMetaList) {
+
+            List<DBObject> dataList = new ArrayList<DBObject>();
+
+            for(Record record : writerBuffer) {
+
+                BasicDBObject data = new BasicDBObject();
+
+                for(int i = 0; i < record.getColumnNumber(); i++) {
+
+                    if(record.getColumn(i) instanceof StringColumn){
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asString());
+
+                    } else if(record.getColumn(i) instanceof LongColumn) {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asLong());
+
+                    } else if(record.getColumn(i) instanceof DateColumn) {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asDate());
+
+                    } else if(record.getColumn(i) instanceof DoubleColumn) {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asDouble());
+
+                    } else if(record.getColumn(i) instanceof BoolColumn) {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asBoolean());
+
+                    } else if(record.getColumn(i) instanceof NullColumn) {
+
+                        data.put(columnMetaList.get(i),null);
+
+                    } else if(record.getColumn(i) instanceof BytesColumn) {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asBytes());
+
+                    } else {
+
+                        data.put(columnMetaList.get(i),record.getColumn(i).asString());
+                    }
+                }
+                dataList.add(data);
+                collection.insert(dataList);
+            }
+        }
+
 
         @Override
         public void init() {
