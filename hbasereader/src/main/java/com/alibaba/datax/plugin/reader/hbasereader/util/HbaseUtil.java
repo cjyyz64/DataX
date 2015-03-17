@@ -263,18 +263,27 @@ public final class HbaseUtil {
     public static HTable initHtable(com.alibaba.datax.common.util.Configuration configuration) {
         String hbaseConnConf = configuration.getString(Key.HBASE_CONFIG);
         String tableName = configuration.getString(Key.TABLE);
+        HBaseAdmin admin = null;
         try {
             org.apache.hadoop.conf.Configuration conf = HbaseUtil.getHbaseConf(hbaseConnConf);
             conf.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
 
-            HBaseAdmin admin = HTableManager.createHBaseAdmin(conf);
             HTable htable = HTableManager.createHTable(conf, tableName);
+            admin = HTableManager.createHBaseAdmin(conf);
 
             check(admin, htable);
 
             return htable;
         } catch (Exception e) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.INIT_TABLE_ERROR, e);
+        } finally {
+            if (admin != null) {
+                try {
+                    admin.close();
+                } catch (IOException e) {
+                    // ignore it
+                }
+            }
         }
     }
 
