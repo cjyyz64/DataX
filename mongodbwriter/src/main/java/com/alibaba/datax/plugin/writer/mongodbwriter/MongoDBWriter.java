@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -56,6 +57,7 @@ public class MongoDBWriter extends Writer{
         private Integer batchSize = null;
         private boolean isContainArray = false;
         private String splitter = " ";
+        private String mongodbColumnMeta = null;
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
@@ -64,19 +66,18 @@ public class MongoDBWriter extends Writer{
             }
             DB db = mongoClient.getDB(database);
             DBCollection col = db.getCollection(this.collection);
-            List<String> columnMetaList = new ArrayList<String>();
-            columnMetaList.addAll(col.findOne().keySet());
+            List<String> columnMetaList = Arrays.asList(mongodbColumnMeta.split(","));
             List<Record> writerBuffer = new ArrayList<Record>(this.batchSize);
             Record record = null;
             while((record = lineReceiver.getFromReader()) != null) {
                 writerBuffer.add(record);
                 if(writerBuffer.size() >= this.batchSize) {
-                    doBatchInsert(col,writerBuffer,columnMetaList.subList(1,columnMetaList.size()));
+                    doBatchInsert(col,writerBuffer,columnMetaList);
                     writerBuffer.clear();
                 }
             }
             if(!writerBuffer.isEmpty()) {
-                doBatchInsert(col,writerBuffer,columnMetaList.subList(1,columnMetaList.size()));
+                doBatchInsert(col,writerBuffer,columnMetaList);
                 writerBuffer.clear();
             }
         }
@@ -132,11 +133,9 @@ public class MongoDBWriter extends Writer{
                         data.put(columnMetaList.get(i),record.getColumn(i).asBytes());
 
                     } else {
-
                         data.put(columnMetaList.get(i),record.getColumn(i).asString());
                     }
                 }
-                data.remove("id");
                 dataList.add(data);
             }
             collection.insert(dataList);
@@ -165,6 +164,7 @@ public class MongoDBWriter extends Writer{
             this.batchSize = writerSliceConfig.getInt(KeyConstant.BATCH_SIZE);
             this.isContainArray = writerSliceConfig.getBool(KeyConstant.IS_CONTAIN_ARRAY);
             this.splitter = writerSliceConfig.getString(KeyConstant.ARRAY_SPLITTER);
+            this.mongodbColumnMeta = writerSliceConfig.getString(KeyConstant.MONGO_COLUMN);
         }
 
         @Override
