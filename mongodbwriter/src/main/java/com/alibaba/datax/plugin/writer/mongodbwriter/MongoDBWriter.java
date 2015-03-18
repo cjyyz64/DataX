@@ -71,12 +71,12 @@ public class MongoDBWriter extends Writer{
             while((record = lineReceiver.getFromReader()) != null) {
                 writerBuffer.add(record);
                 if(writerBuffer.size() >= this.batchSize) {
-                    doBatchInsert(col,writerBuffer,columnMetaList);
+                    doBatchInsert(col,writerBuffer,columnMetaList.subList(1,columnMetaList.size()));
                     writerBuffer.clear();
                 }
             }
             if(!writerBuffer.isEmpty()) {
-                doBatchInsert(col,writerBuffer,columnMetaList);
+                doBatchInsert(col,writerBuffer,columnMetaList.subList(1,columnMetaList.size()));
                 writerBuffer.clear();
             }
         }
