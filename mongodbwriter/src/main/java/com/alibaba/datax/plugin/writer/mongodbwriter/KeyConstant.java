@@ -36,4 +36,12 @@ public class KeyConstant {
      * 批处理的大小
      */
     public static final String BATCH_SIZE = "batch_size";
+    /**
+     * 是否包含数组类型
+     */
+    public static final String IS_CONTAIN_ARRAY = "is_contain_array";
+    /**
+     * 数组分隔符
+     */
+    public static final String ARRAY_SPLITTER = "array_splitter";
 }

@@ -20,14 +20,20 @@ public class MongoDBWriter extends Writer{
 
     public static class Job extends Writer.Job {
 
+        private Configuration originalConfig = null;
+
         @Override
         public List<Configuration> split(int mandatoryNumber) {
-            return null;
+            List<Configuration> configList = new ArrayList<Configuration>();
+            for(int i = 0; i < mandatoryNumber; i++) {
+                configList.add(this.originalConfig.clone());
+            }
+            return configList;
         }
 
         @Override
         public void init() {
-
+            this.originalConfig = super.getPluginJobConf();
         }
 
         @Override
@@ -48,6 +54,8 @@ public class MongoDBWriter extends Writer{
         private String database = null;
         private String collection = null;
         private Integer batchSize = null;
+        private boolean isContainArray = false;
+        private String splitter = " ";
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
@@ -55,12 +63,6 @@ public class MongoDBWriter extends Writer{
                 return;
             }
             DB db = mongoClient.getDB(database);
-            if(isAuth) {
-                if(Strings.isNullOrEmpty(userName) || Strings.isNullOrEmpty(password)) {
-                    return;
-                }
-                //TODO 补充一个验证方式
-            }
             DBCollection col = db.getCollection(this.collection);
             List<String> columnMetaList = new ArrayList<String>();
             columnMetaList.addAll(col.findOne().keySet());
@@ -77,7 +79,6 @@ public class MongoDBWriter extends Writer{
                 doBatchInsert(col,writerBuffer,columnMetaList);
                 writerBuffer.clear();
             }
-            //TODO
         }
 
         private void doBatchInsert(DBCollection collection,List<Record> writerBuffer, List<String> columnMetaList) {
@@ -91,8 +92,14 @@ public class MongoDBWriter extends Writer{
                 for(int i = 0; i < record.getColumnNumber(); i++) {
 
                     if(record.getColumn(i) instanceof StringColumn){
-
-                        data.put(columnMetaList.get(i),record.getColumn(i).asString());
+                        //处理数组类型
+                        if(this.isContainArray) {
+                            if(!Strings.isNullOrEmpty(this.splitter)) {
+                                data.put(columnMetaList.get(i), record.getColumn(i).asString().split(this.splitter));
+                            }
+                        } else {
+                            data.put(columnMetaList.get(i), record.getColumn(i).asString());
+                        }
 
                     } else if(record.getColumn(i) instanceof LongColumn) {
 
@@ -132,20 +139,30 @@ public class MongoDBWriter extends Writer{
         @Override
         public void init() {
             this.writerSliceConfig = this.getPluginJobConf();
-            this.mongoClient = MongoUtil.initMongoClient(this.writerSliceConfig);
+
             this.isAuth = writerSliceConfig.getBool(KeyConstant.MONGO_IS_AUTH);
             if(this.isAuth) {
                 this.userName = writerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = writerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+                if(isAuth) {
+                    if(Strings.isNullOrEmpty(userName) || Strings.isNullOrEmpty(password)) {
+                        return;
+                    }
+                    this.mongoClient = MongoUtil.initCredentialMongoClient(this.writerSliceConfig,userName,password);
+                }
+            } else {
+                this.mongoClient = MongoUtil.initMongoClient(this.writerSliceConfig);
             }
             this.database = writerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             this.collection = writerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
             this.batchSize = writerSliceConfig.getInt(KeyConstant.BATCH_SIZE);
+            this.isContainArray = writerSliceConfig.getBool(KeyConstant.IS_CONTAIN_ARRAY);
+            this.splitter = writerSliceConfig.getString(KeyConstant.ARRAY_SPLITTER);
         }
 
         @Override
         public void destroy() {
-
+            mongoClient.close();
         }
     }
 
