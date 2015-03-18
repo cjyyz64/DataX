@@ -136,9 +136,10 @@ public class MongoDBWriter extends Writer{
                         data.put(columnMetaList.get(i),record.getColumn(i).asString());
                     }
                 }
+                data.remove("id");
                 dataList.add(data);
-                collection.insert(dataList);
             }
+            collection.insert(dataList);
         }
 
 
