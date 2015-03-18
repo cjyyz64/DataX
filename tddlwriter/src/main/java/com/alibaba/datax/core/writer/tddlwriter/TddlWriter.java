@@ -1,6 +1,5 @@
 package com.alibaba.datax.core.writer.tddlwriter;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -120,12 +119,6 @@ public class TddlWriter extends Writer {
 
         public void startWrite(RecordReceiver recordReceiver) {
             Connection conn = tddlConnectionFactory.getConnecttion();
-            try {
-                conn.setAutoCommit(false);
-            } catch (Exception e) {
-                throw DataXException.asDataXException(
-                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
-            }
             this.commonRdbmsWriterTask.startWriteWithConnection(recordReceiver, super.getTaskPluginCollector(), conn);
         }
 
