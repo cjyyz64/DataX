@@ -91,6 +91,10 @@ public class MongoDBWriter extends Writer{
 
                 for(int i = 0; i < record.getColumnNumber(); i++) {
 
+                    if(Strings.isNullOrEmpty(record.getColumn(i).asString())) {
+                        data.put(columnMetaList.get(i), record.getColumn(i).asString());
+                        continue;
+                    }
                     if(record.getColumn(i) instanceof StringColumn){
                         //处理数组类型
                         if(this.isContainArray) {
