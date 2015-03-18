@@ -44,4 +44,8 @@ public class KeyConstant {
      * 数组分隔符
      */
     public static final String ARRAY_SPLITTER = "array_splitter";
+    /**
+     * mongodb 的列
+     */
+    public static final String MONGO_COLUMN = "mongo_column";
 }
