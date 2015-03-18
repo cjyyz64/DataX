@@ -65,6 +65,7 @@ public class MongoDBWriter extends Writer{
                 return;
             }
             DB db = mongoClient.getDB(database);
+            logger.warn("db="+db+" database="+database+ " collection="+this.collection+" meta="+mongodbColumnMeta);
             DBCollection col = db.getCollection(this.collection);
             List<String> columnMetaList = Arrays.asList(mongodbColumnMeta.split(","));
             List<Record> writerBuffer = new ArrayList<Record>(this.batchSize);
