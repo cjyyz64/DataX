@@ -413,6 +413,7 @@ public class CommonRdbmsWriter {
                         preparedStatement.setTime(i + 1, sqlTime);
                         break;
 
+                    case 10003:
                     case Types.TIMESTAMP:
                         java.sql.Timestamp sqlTimestamp = null;
                         try {
