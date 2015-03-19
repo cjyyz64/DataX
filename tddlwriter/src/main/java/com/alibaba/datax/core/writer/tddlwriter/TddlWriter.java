@@ -6,7 +6,6 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
@@ -104,12 +103,12 @@ public class TddlWriter extends Writer {
     public static class Task extends Writer.Task {
 
         private Configuration writerSliceConfig;
-        private CommonRdbmsWriter.Task commonRdbmsWriterTask;
+        private TddlCommonRdbmsWriter.Task commonRdbmsWriterTask;
 
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterTask = new CommonRdbmsWriter.Task(DATABASE_TYPE);
+            this.commonRdbmsWriterTask = new TddlCommonRdbmsWriter.Task(DATABASE_TYPE);
             this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 

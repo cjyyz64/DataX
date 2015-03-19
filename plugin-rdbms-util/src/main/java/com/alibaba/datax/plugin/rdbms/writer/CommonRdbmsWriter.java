@@ -144,7 +144,7 @@ public class CommonRdbmsWriter {
         private List<String> preSqls;
         private List<String> postSqls;
         private int batchSize;
-        private int columnNumber = 0;
+        protected int columnNumber = 0;
         private TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
@@ -154,7 +154,7 @@ public class CommonRdbmsWriter {
 
         private String writeRecordSql;
         private String writeMode;
-        private Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
+        protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
             this.dataBaseType = dataBaseType;
@@ -337,7 +337,7 @@ public class CommonRdbmsWriter {
         }
 
         // 直接使用了两个类变量：columnNumber,resultSetMetaData
-        private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
+        protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
                 throws SQLException {
             java.util.Date utilDate;
             for (int i = 0; i < this.columnNumber; i++) {
@@ -413,7 +413,6 @@ public class CommonRdbmsWriter {
                         preparedStatement.setTime(i + 1, sqlTime);
                         break;
 
-                    case 10003:
                     case Types.TIMESTAMP:
                         java.sql.Timestamp sqlTimestamp = null;
                         try {
