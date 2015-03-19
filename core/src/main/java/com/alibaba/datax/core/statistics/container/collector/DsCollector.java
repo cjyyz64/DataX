@@ -4,15 +4,23 @@ import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.LocalTGCommunicationManager;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import com.alibaba.datax.dataxservice.face.domain.enums.State;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class DsCollector extends AbstractCollector {
 
+    private static final Logger LOG = LoggerFactory
+            .getLogger(DsCollector.class);
+
     public DsCollector(Long jobId) {
         super.setJobId(jobId);
     }
 
+    //打印第一个失败或kill掉tg的开关
+    private static Integer flag = -1;
 
     @Override
     public Communication collectFromTaskGroup() {
@@ -27,8 +35,20 @@ public class DsCollector extends AbstractCollector {
         List<TaskGroupStatusDto> taskGroupStatusList = DataxServiceUtil.getTaskGroupStatusInJob(super.getJobId()).getData();
 
         for (TaskGroupStatusDto taskGroupStatus : taskGroupStatusList) {
-            LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroupStatus.getTaskGroupId(),
-                    DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus));
+            if(taskGroupStatus != null) {
+                if(flag == -1) {
+                    if (taskGroupStatus.getState().equals(State.FAILED)) {
+                        flag ++;
+                        LOG.info("taskGroup[{}]运行失败." + taskGroupStatus.getTaskGroupId());
+                    }
+                    if (taskGroupStatus.getState().equals(State.KILLED)) {
+                        flag ++;
+                        LOG.info("taskGroup[{}]被Kill." + taskGroupStatus.getTaskGroupId());
+                    }
+                }
+                LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroupStatus.getTaskGroupId(),
+                        DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus));
+            }
         }
 
         return LocalTGCommunicationManager.getJobCommunication();
