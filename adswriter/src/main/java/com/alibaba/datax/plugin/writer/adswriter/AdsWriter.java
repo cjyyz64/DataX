@@ -16,15 +16,18 @@ import com.aliyun.odps.OdpsException;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 
-//TODO writeProxy
 public class AdsWriter extends Writer {
 
 
     public static class Job extends Writer.Job {
+        private static final Logger LOG = LoggerFactory
+                .getLogger(Writer.Job.class);
 
         private OdpsWriter.Job odpsWriterJobProxy = new OdpsWriter.Job();
         private Configuration originalConfig = null;
@@ -76,6 +79,7 @@ public class AdsWriter extends Writer {
                 tableMeta = TableMetaHelper.createTempODPSTable(tableInfo,lifeCycle);
                 this.odpsTableName = tableMeta.getTableName();
                 String sql = tableMeta.toDDL();
+                LOG.info("正在创建ODPS临时表： "+sql);
 //                //创建odps表
                 Instance instance = SQLTask.run(odps,project,sql,null,null);
                 boolean terminated = false;

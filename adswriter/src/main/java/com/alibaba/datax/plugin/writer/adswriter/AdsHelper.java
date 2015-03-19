@@ -6,6 +6,8 @@ package com.alibaba.datax.plugin.writer.adswriter;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.Properties;
 
 public class AdsHelper {
+    private static final Logger LOG = LoggerFactory
+            .getLogger(AdsHelper.class);
 
     private String adsURL;
     private String userName;
@@ -227,7 +231,7 @@ public class AdsHelper {
             connectionProps.put("password", password);
             connection = DriverManager.getConnection(url, connectionProps);
             statement = connection.createStatement();
-
+            LOG.info("正在从ODPS数据库倒数据到ADS中: "+sb.toString());
             rs = statement.executeQuery(sb.toString());
 
             String jobId = null;
