@@ -83,8 +83,4 @@ public class Tablet implements Serializable{
         return Objects.hashCode(meta, startkey, endkey);
     }
 
-
-    public boolean wholeRange(){
-        return MIN.equals(startkey) && MAX.equals(endkey);
-    }
 }
