@@ -24,7 +24,6 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
 
         @Override
         public PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record) throws SQLException {
-            System.out.println("....tddl fillPreparedStatement");
             for (int i = 0; i < super.columnNumber; i++) {
                 switch (super.resultSetMetaData.getMiddle().get(i)) {
                     case Types.INTEGER:
