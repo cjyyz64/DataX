@@ -11,7 +11,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class ConfigParser {
     /**
@@ -72,6 +74,9 @@ public final class ConfigParser {
     private static Configuration parsePluginConfig() {
         Configuration configuration = Configuration.newDefault();
 
+        //检查是否存在重复插件
+        checkDuplicatePlugin();
+
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
             configuration.merge(
@@ -85,6 +90,39 @@ public final class ConfigParser {
         }
 
         return configuration;
+    }
+
+    /**
+     * 检查是否存在重复插件
+     */
+    private static void checkDuplicatePlugin() {
+        Map<String, Boolean> readerMap = new HashMap<String, Boolean>();
+
+        Map<String, Boolean> writerMap = new HashMap<String, Boolean>();
+
+        for (final String readerPath : ConfigParser
+                .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
+            String filePath = readerPath + File.separator + "plugin.json";
+            Configuration configuration = Configuration.from(new File(filePath));
+            String pluginName = configuration.getString("name");
+            if(readerMap.get(pluginName) == null) {
+                readerMap.put(pluginName, true);
+            } else {
+                throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + readerPath);
+            }
+        }
+
+        for (final String writerPath : ConfigParser
+                .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
+            String filePath = writerPath + File.separator + "plugin.json";
+            Configuration configuration = Configuration.from(new File(filePath));
+            String pluginName = configuration.getString("name");
+            if(writerMap.get(pluginName) == null) {
+                writerMap.put(pluginName, true);
+            } else {
+                throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + writerPath);
+            }
+        }
     }
 
     public static Configuration parseOnePluginConfig(final String path,
