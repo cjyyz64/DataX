@@ -27,9 +27,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
             for (int i = 0; i < super.columnNumber; i++) {
                 switch (super.resultSetMetaData.getMiddle().get(i)) {
                     case Types.INTEGER:
-                        preparedStatement.setLong(i + 1, record.getColumn(i)
-                                .asLong());
-                        break;
+                    case Types.DECIMAL:
                     case Types.BIGINT:
                         preparedStatement.setLong(i + 1, record.getColumn(i)
                                 .asLong());
