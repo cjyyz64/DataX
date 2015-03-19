@@ -25,7 +25,8 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
         @Override
         public PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record) throws SQLException {
             for (int i = 0; i < super.columnNumber; i++) {
-                switch (super.resultSetMetaData.getMiddle().get(i)) {
+                int columnSqltype = resultSetMetaData.getMiddle().get(i);
+                switch (columnSqltype) {
                     case Types.INTEGER:
                     case Types.DECIMAL:
                     case Types.BIGINT:
@@ -48,7 +49,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                         preparedStatement.setTimestamp(i + 1, sqlTimestamp);
                         break;
                     default:
-                        preparedStatement = super.fillPreparedStatement(preparedStatement, record);
+                        preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
                 }
             }
             return preparedStatement;
