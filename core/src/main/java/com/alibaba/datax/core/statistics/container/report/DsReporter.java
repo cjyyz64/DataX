@@ -28,7 +28,16 @@ public class DsReporter extends AbstractReporter {
         jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
         jobStatus.setPercentage(communication.getDoubleCounter("percentage"));
 
-        jobStatus.setErrorMessage(communication.getThrowableMessage());
+        if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
+            try {
+                jobStatus.setErrorMessage(communication.getThrowable().toString() + " : " +
+                        communication.getThrowable().getStackTrace()[0].toString());
+            } catch (Exception e) {
+                jobStatus.setErrorMessage(communication.getThrowable().toString());
+            }
+        } else {
+            jobStatus.setErrorMessage(communication.getThrowableMessage());
+        }
         DataxServiceUtil.updateJobInfo(jobId, jobStatus);
     }
 
@@ -48,7 +57,16 @@ public class DsReporter extends AbstractReporter {
         taskGroupStatus.setErrorRecords(CommunicationTool.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationTool.getTotalErrorBytes(communication));
 
-        taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
+        if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
+            try {
+                taskGroupStatus.setErrorMessage(communication.getThrowable().toString() + " : " +
+                        communication.getThrowable().getStackTrace()[0].toString());
+            } catch (Exception e) {
+                taskGroupStatus.setErrorMessage(communication.getThrowable().toString());
+            }
+        } else {
+            taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
+        }
 
         DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
     }
