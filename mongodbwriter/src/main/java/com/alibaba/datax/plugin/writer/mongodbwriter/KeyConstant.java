@@ -48,4 +48,12 @@ public class KeyConstant {
      * mongodb 的列
      */
     public static final String MONGO_COLUMN = "mongo_column";
+    /**
+     * 有相同的记录是否覆盖，默认为false
+     */
+    public static final String IS_UPSERT = "is_upsert";
+    /**
+     * 指定用来判断是否覆盖的 业务主键
+     */
+    public static final String UNIQUE_KEY = "uniqueKey";
 }

@@ -52,12 +52,16 @@ public class MongoDBWriter extends Writer{
         private boolean isAuth = false;
         private String userName = null;
         private String password = null;
+
         private String database = null;
         private String collection = null;
         private Integer batchSize = null;
         private boolean isContainArray = false;
         private String splitter = " ";
         private String mongodbColumnMeta = null;
+
+        private boolean isUpsert = false;
+        private String uniqueKey = "id";
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
@@ -139,7 +143,22 @@ public class MongoDBWriter extends Writer{
                 }
                 dataList.add(data);
             }
-            collection.insert(dataList);
+            /**
+             * 如果存在重复的值覆盖
+             */
+            if(this.isUpsert) {
+                BasicDBObject query = new BasicDBObject();
+                if(!Strings.isNullOrEmpty(this.uniqueKey)) {
+                    for(DBObject data : dataList) {
+                        if(data.get(this.uniqueKey) != null) {
+                            query.put(this.uniqueKey,data.get(this.uniqueKey));
+                        }
+                        collection.update(query,data,true,true);
+                    }
+                }
+            } else {
+                collection.insert(dataList);
+            }
         }
 
 
@@ -166,6 +185,8 @@ public class MongoDBWriter extends Writer{
             this.isContainArray = writerSliceConfig.getBool(KeyConstant.IS_CONTAIN_ARRAY);
             this.splitter = writerSliceConfig.getString(KeyConstant.ARRAY_SPLITTER);
             this.mongodbColumnMeta = writerSliceConfig.getString(KeyConstant.MONGO_COLUMN);
+            this.isUpsert = writerSliceConfig.getBool(KeyConstant.IS_UPSERT);
+            this.uniqueKey = writerSliceConfig.getString(KeyConstant.UNIQUE_KEY);
         }
 
         @Override
