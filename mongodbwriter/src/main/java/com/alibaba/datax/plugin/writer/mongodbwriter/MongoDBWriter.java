@@ -64,6 +64,7 @@ public class MongoDBWriter extends Writer{
         private boolean isUpsert = false;
         private String uniqueKey = "id";
 
+
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
             if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)
@@ -150,13 +151,16 @@ public class MongoDBWriter extends Writer{
              */
             if(this.isUpsert) {
                 BasicDBObject query = new BasicDBObject();
+                BulkWriteOperation bulkUpsert = collection.initializeUnorderedBulkOperation();
                 if(!Strings.isNullOrEmpty(this.uniqueKey)) {
                     for(DBObject data : dataList) {
                         if(data.get(this.uniqueKey) != null) {
                             query.put(this.uniqueKey,data.get(this.uniqueKey));
                         }
-                        collection.update(query,data,true,false);
+                        //collection.update(query,data,true,false);
+                        bulkUpsert.find(query).upsert().update(data);
                     }
+                    bulkUpsert.execute();
                 } else {
                     throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
                 }
