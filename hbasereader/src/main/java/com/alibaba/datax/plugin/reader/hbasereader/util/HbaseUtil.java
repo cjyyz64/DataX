@@ -257,21 +257,33 @@ public final class HbaseUtil {
         return Bytes.toBytesBinary(endRowkey);
     }
 
+    /**
+     * 每次都获取一个新的HTable  注意：HTable 本身是线程不安全的
+     */
     public static HTable initHtable(com.alibaba.datax.common.util.Configuration configuration) {
         String hbaseConnConf = configuration.getString(Key.HBASE_CONFIG);
         String tableName = configuration.getString(Key.TABLE);
+        HBaseAdmin admin = null;
         try {
             org.apache.hadoop.conf.Configuration conf = HbaseUtil.getHbaseConf(hbaseConnConf);
             conf.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
 
-            HBaseAdmin admin = HTableFactory.createHBaseAdmin(conf);
-            HTable htable = HTableFactory.createHTable(conf, tableName);
+            HTable htable = HTableManager.createHTable(conf, tableName);
+            admin = HTableManager.createHBaseAdmin(conf);
 
             check(admin, htable);
 
             return htable;
         } catch (Exception e) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.INIT_TABLE_ERROR, e);
+        } finally {
+            if (admin != null) {
+                try {
+                    admin.close();
+                } catch (IOException e) {
+                    // ignore it
+                }
+            }
         }
     }
 
