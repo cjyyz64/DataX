@@ -6,6 +6,8 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.util.*;
+
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +51,7 @@ public class HbaseReader extends Reader {
 
     public static class Task extends Reader.Task {
         private Configuration taskConfig;
-
+        private static Logger LOG = LoggerFactory.getLogger(Task.class);
         private HbaseAbstractTask hbaseTaskProxy;
 
         @Override
@@ -91,6 +93,9 @@ public class HbaseReader extends Reader {
                 try {
                     fetchOK = this.hbaseTaskProxy.fetchLine(record);
                 } catch (Exception e) {
+                	LOG.info("table counter " + HbaseUtil.htableCounter.get());
+                	LOG.info("admin counter " + HbaseUtil.adminCounter.get());
+                	LOG.info("Exception", e);
                     super.getTaskPluginCollector().collectDirtyRecord(record, e);
                     continue;
                 }
