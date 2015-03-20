@@ -33,7 +33,15 @@ public class KeyConstant {
      */
     public static final String MONGO_COLLECTION_NAME = "mongo_collection_name";
     /**
+     * mongodb 的列
+     */
+    public static final String MONGO_COLUMN = "mongo_column";
+    /**
      * 起始Id
      */
-    public static final String SINCE_ID = "since_id";
+    public static final String SKIP_COUNT = "skip_count";
+    /**
+     * 批量的个数
+     */
+    public static final String BATCH_SIZE = "batch_size";
 }

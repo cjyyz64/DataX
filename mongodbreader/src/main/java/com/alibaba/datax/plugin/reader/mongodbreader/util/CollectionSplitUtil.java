@@ -31,34 +31,37 @@ public class CollectionSplitUtil {
         DB db = mongoClient.getDB(dbName);
         DBCollection collection = db.getCollection(collectionName);
 
-        List idList = doSplitRowId(adviceNumber,collection);
-        for(Object obj : idList) {
+        List<Entry> countInterval = doSplitInterval(adviceNumber,collection);
+        for(Entry interval : countInterval) {
             Configuration conf = originalSliceConfig.clone();
-            conf.set(KeyConstant.SINCE_ID,obj);
+            conf.set(KeyConstant.SKIP_COUNT,interval.interval);
+            conf.set(KeyConstant.BATCH_SIZE,interval.batchSize);
             confList.add(conf);
         }
         return confList;
     }
 
-    private static List doSplitRowId(int adviceNumber,DBCollection collection) {
+    private static List<Entry> doSplitInterval(int adviceNumber,DBCollection collection) {
 
-        List idList = new ArrayList();
+        List<Entry> intervalCountList = new ArrayList<Entry>();
 
         long totalCount = collection.count();
         if(totalCount < 0) {
-            return idList;
+            return intervalCountList;
         }
-        int batchSize = (int)totalCount/adviceNumber;
-
-        DBObject sortObj = new BasicDBObject();
-        sortObj.put("_id",1);
-        for(int i = 1; i < adviceNumber; i++) {
-            DBCursor cursor = collection.find().batchSize(1).sort(sortObj).skip(batchSize*i);
-            if(!cursor.hasNext()) {
-                break;
-            }
-            idList.add(cursor.next());
+        long batchSize = totalCount/adviceNumber;
+        for(int i = 0; i < adviceNumber; i++) {
+            Entry entry = new Entry();
+            entry.batchSize = batchSize;
+            entry.interval = batchSize * i;
+            intervalCountList.add(entry);
         }
-        return idList;
+        return intervalCountList;
     }
+
+}
+
+class Entry {
+    Long interval;
+    Long batchSize;
 }
