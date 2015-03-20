@@ -155,7 +155,7 @@ public class MongoDBWriter extends Writer{
                         if(data.get(this.uniqueKey) != null) {
                             query.put(this.uniqueKey,data.get(this.uniqueKey));
                         }
-                        collection.update(query,data,true,true);
+                        collection.update(query,data,true,false);
                     }
                 } else {
                     throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
