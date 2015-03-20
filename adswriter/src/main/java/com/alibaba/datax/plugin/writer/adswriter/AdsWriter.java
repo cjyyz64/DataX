@@ -35,7 +35,6 @@ public class AdsWriter extends Writer {
         private AdsHelper adsHelper;
         private final int ODPSOVERTIME = 120000;
         private String odpsTableName;
-        private String readerPluginName;
 
         @Override
         public void init() {
@@ -46,8 +45,8 @@ public class AdsWriter extends Writer {
                 throw DataXException.asDataXException(AdsWriterErrorCode.Create_ADSHelper_FAILED, "");
             }
             /*检查ReaderPlugin是否为MySQLReader,执行special Pattern*/
-            this.readerPluginName = super.getReaderPluginName();
-            if (this.readerPluginName.equals(Key.ODPSREADER)){
+            String readerPluginName = super.getReaderPluginName();
+            if (readerPluginName.equals(Key.ODPSREADER)){
                 this.readerConfig = super.getReaderConf();
                 String odpsTableName = this.readerConfig.getString(Key.ODPSTABLENAME);
                 List<String> userConfiguredPartitions = this.readerConfig.getList(
@@ -136,12 +135,7 @@ public class AdsWriter extends Writer {
 
         private boolean loadAdsData(String odpsTableName, String odpsPartition){
             String table = this.originalConfig.getString(Key.ADS_TABLE);
-            String project;
-            if (this.readerPluginName.equals(Key.ODPSREADER)){
-                project = this.readerConfig.getString(Key.PROJECT);
-            }else{
-                project = PropertyLoader.getString(Key.CONFIG_PROJECT);
-            }
+            String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,odpsPartition);
             boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITER);
@@ -156,11 +150,7 @@ public class AdsWriter extends Writer {
                 }
                 return terminated;
             } catch (AdsException e) {
-                if (this.readerPluginName.equals(Key.ODPSREADER)){
-                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED,e);
-                }else{
-                    throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_TEMP_ODPS_FAILED,e);
-                }
+                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
             } catch (InterruptedException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
