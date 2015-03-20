@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.mongodbwriter;
 
 import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -65,8 +66,9 @@ public class MongoDBWriter extends Writer{
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
-            if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)) {
-                return;
+            if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)
+                    || mongoClient == null || mongodbColumnMeta == null || batchSize == null) {
+                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
             }
             DB db = mongoClient.getDB(database);
             logger.warn("db="+db+" database="+database+ " collection="+this.collection+" meta="+mongodbColumnMeta);
@@ -155,6 +157,8 @@ public class MongoDBWriter extends Writer{
                         }
                         collection.update(query,data,true,true);
                     }
+                } else {
+                    throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
                 }
             } else {
                 collection.insert(dataList);
