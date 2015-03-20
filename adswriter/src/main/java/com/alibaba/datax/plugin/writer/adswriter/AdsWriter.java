@@ -91,7 +91,7 @@ public class AdsWriter extends Writer {
                         time += 1000;
                 }
             } catch (AdsException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.TABLE_TRUNCATE_ERROR,e);
+                throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }catch (OdpsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             } catch (InterruptedException e) {
