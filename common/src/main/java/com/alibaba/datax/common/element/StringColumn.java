@@ -36,7 +36,7 @@ public class StringColumn extends Column {
 				|| "-Infinity".equals(data)) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s]属于Double特殊类型，不能转为其他类型 .", data));
+					String.format("String[\"%s\"]属于Double特殊类型，不能转为其他类型 .", data));
 		}
 
 		return;
@@ -55,7 +55,7 @@ public class StringColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT, String.format(
-							"String[%s]不能转为BigInteger .", this.asString()));
+							"String[\"%s\"]不能转为BigInteger .", this.asString()));
 		}
 	}
 
@@ -74,7 +74,7 @@ public class StringColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s]不能转为Long .", this.asString()));
+					String.format("String[\"%s\"]不能转为Long .", this.asString()));
 		}
 	}
 
@@ -136,7 +136,7 @@ public class StringColumn extends Column {
 
 		throw DataXException.asDataXException(
 				CommonErrorCode.CONVERT_NOT_SUPPORT,
-				String.format("String[%s]不能转为Bool .", this.asString()));
+				String.format("String[\"%s\"]不能转为Bool .", this.asString()));
 	}
 
 	@Override
@@ -146,7 +146,7 @@ public class StringColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s]不能转为Date .", this.asString()));
+					String.format("String[\"%s\"]不能转为Date .", this.asString()));
 		}
 	}
 
@@ -157,7 +157,7 @@ public class StringColumn extends Column {
 		} catch (Exception e) {
 			throw DataXException.asDataXException(
 					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("String[%s]不能转为Bytes .", this.asString()));
+					String.format("String[\"%s\"]不能转为Bytes .", this.asString()));
 		}
 	}
 }
