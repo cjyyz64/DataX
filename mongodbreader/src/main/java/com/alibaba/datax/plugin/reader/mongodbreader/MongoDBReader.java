@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.mongodbreader;
 import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
@@ -77,12 +78,14 @@ public class MongoDBReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
 
+            if(Strings.isNullOrEmpty(skipCount) || batchSize == null ||
+                             mongoClient == null || database == null ||
+                             collection == null  || mongodbColumnMeta == null) {
+                throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
+            }
             List<String> columnMetaList = Arrays.asList(mongodbColumnMeta.split(","));
             DB db = mongoClient.getDB(database);
             DBCollection col = db.getCollection(this.collection);
-            if(Strings.isNullOrEmpty(skipCount) || batchSize == null) {
-                return;
-            }
             DBObject obj = new BasicDBObject();
             obj.put("_id",1);
             DBCursor dbCursor = col.find().sort(obj).skip(Integer.valueOf(skipCount)).limit((int)(long)batchSize);

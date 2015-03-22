@@ -24,7 +24,7 @@ public class CollectionSplitUtil {
 
         String collectionName = originalSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
 
-        if(Strings.isNullOrEmpty(dbName) || Strings.isNullOrEmpty(collectionName)) {
+        if(Strings.isNullOrEmpty(dbName) || Strings.isNullOrEmpty(collectionName) || mongoClient == null) {
             throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
         }
 
