@@ -74,63 +74,39 @@ public final class ConfigParser {
     private static Configuration parsePluginConfig() {
         Configuration configuration = Configuration.newDefault();
 
-        //检查是否存在重复插件
-        checkDuplicatePlugin();
-
+        Map<String, Boolean> pluginMap = new HashMap<String, Boolean>();
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
+            Configuration eachReaderConfig = ConfigParser.parseOnePluginConfig(each, "reader", pluginMap);
             configuration.merge(
-                    ConfigParser.parseOnePluginConfig(each, "reader"), true);
+                    eachReaderConfig, true);
         }
 
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
+            Configuration eachWriterConfig = ConfigParser.parseOnePluginConfig(each, "writer", pluginMap);
             configuration.merge(
-                    ConfigParser.parseOnePluginConfig(each, "writer"), true);
+                    eachWriterConfig, true);
         }
 
         return configuration;
     }
 
-    /**
-     * 检查是否存在重复插件
-     */
-    private static void checkDuplicatePlugin() {
-        Map<String, Boolean> readerMap = new HashMap<String, Boolean>();
-
-        Map<String, Boolean> writerMap = new HashMap<String, Boolean>();
-
-        for (final String readerPath : ConfigParser
-                .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
-            String filePath = readerPath + File.separator + "plugin.json";
-            Configuration configuration = Configuration.from(new File(filePath));
-            String pluginName = configuration.getString("name");
-            if(readerMap.get(pluginName) == null) {
-                readerMap.put(pluginName, true);
-            } else {
-                throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + readerPath);
-            }
-        }
-
-        for (final String writerPath : ConfigParser
-                .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
-            String filePath = writerPath + File.separator + "plugin.json";
-            Configuration configuration = Configuration.from(new File(filePath));
-            String pluginName = configuration.getString("name");
-            if(writerMap.get(pluginName) == null) {
-                writerMap.put(pluginName, true);
-            } else {
-                throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + writerPath);
-            }
-        }
-    }
 
     public static Configuration parseOnePluginConfig(final String path,
-                                                     final String type) {
+                                                     final String type,
+                                                     Map<String, Boolean> map) {
         String filePath = path + File.separator + "plugin.json";
         Configuration configuration = Configuration.from(new File(filePath));
 
         String pluginPath = configuration.getString("path");
+        String pluginName = configuration.getString("name");
+        if(map.get(pluginName) == null) {
+            map.put(pluginName, true);
+        } else {
+            throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + filePath);
+        }
+
         boolean isDefaultPath = StringUtils.isBlank(pluginPath);
         if (isDefaultPath) {
             configuration.set("path", path);

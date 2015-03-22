@@ -18,7 +18,9 @@ import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -52,8 +54,9 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
             Assert.assertTrue("libs should not be empty.",
                     libsDir.list().length > 0);
 
+            Map<String, Boolean> pluginMap = new HashMap<String, Boolean>();
             PLUGIN_CONF = ConfigParser.parseOnePluginConfig(PLUGIN_PATH,
-                    "reader");
+                    "reader", pluginMap);
             Assert.assertTrue("plugin.json file should be a json file.",
                     pluginJsonFile.exists() && pluginJsonFile.isFile()
                             && null != PLUGIN_CONF);
