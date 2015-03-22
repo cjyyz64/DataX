@@ -94,6 +94,10 @@ public class MongoDBReader extends Reader {
                 Record record = recordSender.createRecord();
                 for(String column : columnMetaList) {
                     Object tempCol = item.get(column);
+                    System.out.println("tempCol="+tempCol+" columnMetaList="+columnMetaList);
+                    if(tempCol == null) {
+                        continue;
+                    }
                     if(tempCol instanceof Double) {
                         record.addColumn(new DoubleColumn((Double)tempCol));
                     } else if(tempCol instanceof Boolean) {
