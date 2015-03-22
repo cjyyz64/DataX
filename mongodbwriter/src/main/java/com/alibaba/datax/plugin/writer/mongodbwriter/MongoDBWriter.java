@@ -157,7 +157,7 @@ public class MongoDBWriter extends Writer{
                         if(data.get(this.uniqueKey) != null) {
                             query.put(this.uniqueKey,data.get(this.uniqueKey));
                         }
-                        //collection.update(query,data,true,false);
+                        System.out.println("query="+query+" data="+data);
                         bulkUpsert.find(query).upsert().replaceOne(data);
                     }
                     bulkUpsert.execute();
