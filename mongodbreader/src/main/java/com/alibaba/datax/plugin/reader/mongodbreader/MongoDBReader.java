@@ -109,7 +109,6 @@ public class MongoDBReader extends Reader {
                         record.addColumn(new StringColumn(tempCol.toString()));
                     }
                 }
-                System.out.println("record="+record);
                 recordSender.sendToWriter(record);
             }
         }
