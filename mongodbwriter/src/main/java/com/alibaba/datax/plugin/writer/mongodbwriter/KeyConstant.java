@@ -55,5 +55,5 @@ public class KeyConstant {
     /**
      * 指定用来判断是否覆盖的 业务主键
      */
-    public static final String UNIQUE_KEY = "unique_key";
+    public static final String UNIQUE_KEY = "unique_id";
 }
