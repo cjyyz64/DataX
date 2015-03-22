@@ -150,10 +150,10 @@ public class MongoDBWriter extends Writer{
              * 如果存在重复的值覆盖
              */
             if(this.isUpsert) {
-                BasicDBObject query = new BasicDBObject();
                 BulkWriteOperation bulkUpsert = collection.initializeUnorderedBulkOperation();
                 if(!Strings.isNullOrEmpty(this.uniqueKey)) {
                     for(DBObject data : dataList) {
+                        BasicDBObject query = new BasicDBObject();
                         if(data.get(this.uniqueKey) != null) {
                             query.put(this.uniqueKey,data.get(this.uniqueKey));
                         }
