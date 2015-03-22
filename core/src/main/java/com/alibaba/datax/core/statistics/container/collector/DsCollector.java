@@ -19,8 +19,8 @@ public class DsCollector extends AbstractCollector {
         super.setJobId(jobId);
     }
 
-    //打印第一个失败或kill掉tg的开关
-    private static Integer flag = -1;
+    //是否已经打印第一个失败或kill掉tg的开关
+    private static boolean failOrKillFlag = false;
 
     @Override
     public Communication collectFromTaskGroup() {
@@ -35,20 +35,18 @@ public class DsCollector extends AbstractCollector {
         List<TaskGroupStatusDto> taskGroupStatusList = DataxServiceUtil.getTaskGroupStatusInJob(super.getJobId()).getData();
 
         for (TaskGroupStatusDto taskGroupStatus : taskGroupStatusList) {
-            if(taskGroupStatus != null) {
-                if(flag == -1) {
-                    if (taskGroupStatus.getState().equals(State.FAILED)) {
-                        flag ++;
-                        LOG.info("taskGroup[{}]运行失败." + taskGroupStatus.getTaskGroupId());
-                    }
-                    if (taskGroupStatus.getState().equals(State.KILLED)) {
-                        flag ++;
-                        LOG.info("taskGroup[{}]被Kill." + taskGroupStatus.getTaskGroupId());
-                    }
+            if(!failOrKillFlag) {
+                if (taskGroupStatus.getState().equals(State.FAILED)) {
+                    failOrKillFlag = true;
+                    LOG.error("taskGroup[{}]运行失败." + taskGroupStatus.getTaskGroupId());
                 }
-                LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroupStatus.getTaskGroupId(),
-                        DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus));
+                if (taskGroupStatus.getState().equals(State.KILLED)) {
+                    failOrKillFlag = true;
+                    LOG.error("taskGroup[{}]被Kill." + taskGroupStatus.getTaskGroupId());
+                }
             }
+            LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroupStatus.getTaskGroupId(),
+                    DataxServiceUtil.convertTaskGroupToCommunication(taskGroupStatus));
         }
 
         return LocalTGCommunicationManager.getJobCommunication();
