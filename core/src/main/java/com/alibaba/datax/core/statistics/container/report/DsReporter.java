@@ -3,6 +3,7 @@ package com.alibaba.datax.core.statistics.container.report;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.DataxServiceUtil;
+import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 
@@ -29,12 +30,7 @@ public class DsReporter extends AbstractReporter {
         jobStatus.setPercentage(communication.getDoubleCounter("percentage"));
 
         if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
-            try {
-                jobStatus.setErrorMessage(communication.getThrowable().toString() + " : " +
-                        communication.getThrowable().getStackTrace()[0].toString());
-            } catch (Exception e) {
-                jobStatus.setErrorMessage(communication.getThrowable().toString());
-            }
+            jobStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
         } else {
             jobStatus.setErrorMessage(communication.getThrowableMessage());
         }
@@ -58,12 +54,7 @@ public class DsReporter extends AbstractReporter {
         taskGroupStatus.setErrorBytes(CommunicationTool.getTotalErrorBytes(communication));
 
         if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
-            try {
-                taskGroupStatus.setErrorMessage(communication.getThrowable().toString() + " : " +
-                        communication.getThrowable().getStackTrace()[0].toString());
-            } catch (Exception e) {
-                taskGroupStatus.setErrorMessage(communication.getThrowable().toString());
-            }
+            taskGroupStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
         } else {
             taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
         }
