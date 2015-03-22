@@ -94,7 +94,6 @@ public class MongoDBReader extends Reader {
                 Record record = recordSender.createRecord();
                 for(String column : columnMetaList) {
                     Object tempCol = item.get(column);
-                    System.out.println("tempCol="+tempCol+" columnMetaList="+columnMetaList);
                     if(tempCol == null) {
                         continue;
                     }
@@ -110,6 +109,7 @@ public class MongoDBReader extends Reader {
                         record.addColumn(new StringColumn(tempCol.toString()));
                     }
                 }
+                System.out.println("record="+record);
                 recordSender.sendToWriter(record);
             }
         }
