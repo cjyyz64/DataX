@@ -175,6 +175,7 @@ public class AdsWriter extends Writer {
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
+            odpsWriterTaskProxy.setTaskPluginCollector(super.getTaskPluginCollector());
             odpsWriterTaskProxy.startWrite(recordReceiver);
         }
 
