@@ -26,4 +26,6 @@ public final class Key {
     //TODO delete it
     public final static String SESSION = "session";
 
+    public final static String EMPTY_AS_NULL = "emptyAsNull";
+
 }
