@@ -22,7 +22,7 @@
         <commons-io-version>2.4</commons-io-version>
         <mysql-connector-java-version>5.1.34</mysql-connector-java-version>
         <junit-version>4.11</junit-version>
-        <tddl.version>5.1.9</tddl.version>
+        <tddl.version>5.1.17</tddl.version>
 
         <project-sourceEncoding>UTF-8</project-sourceEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
