@@ -151,6 +151,7 @@ public class AdsWriter extends Writer {
                     time += 2;
                     LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 "+ time+" 分钟");
                 }
+                LOG.info("ADS 导数据已成功");
                 return terminated;
             } catch (AdsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
