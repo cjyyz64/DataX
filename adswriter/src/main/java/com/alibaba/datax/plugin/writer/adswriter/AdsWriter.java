@@ -134,6 +134,7 @@ public class AdsWriter extends Writer {
         }
 
         private boolean loadAdsData(String odpsTableName, String odpsPartition){
+
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
@@ -147,6 +148,8 @@ public class AdsWriter extends Writer {
                 {
                     Thread.sleep(120000);
                     terminated = adsHelper.checkLoadDataJobStatus(id);
+                    time += 2;
+                    LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 "+ time+" 分钟");
                 }
                 return terminated;
             } catch (AdsException e) {

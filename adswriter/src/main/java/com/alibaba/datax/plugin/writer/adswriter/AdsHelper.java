@@ -231,7 +231,8 @@ public class AdsHelper {
             connectionProps.put("password", password);
             connection = DriverManager.getConnection(url, connectionProps);
             statement = connection.createStatement();
-            LOG.info("正在从ODPS数据库倒数据到ADS中: "+sb.toString());
+            LOG.info("正在从ODPS数据库导数据到ADS中: "+sb.toString());
+            LOG.info("由于ADS的限制，ADS导数据最少需要20分钟，请耐心等待");
             rs = statement.executeQuery(sb.toString());
 
             String jobId = null;
