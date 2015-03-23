@@ -77,7 +77,7 @@ public class AdsUtil {
         return newConfig;
     }
 
-    /*生成ADS数据倒入时的source_path
+    /*生成ADS数据导入时的source_path
     * */
     public static String generateSourcePath(String project, String tmpOdpsTableName, String odpsPartition){
         StringBuilder builder = new StringBuilder();

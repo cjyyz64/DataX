@@ -107,7 +107,7 @@ public class AdsWriter extends Writer {
         @Override
         public void prepare() {
 
-            //倒数据到odps表中
+            //导数据到odps表中
             this.odpsWriterJobProxy.prepare();
         }
 
