@@ -52,7 +52,15 @@ public class CollectionSplitUtil {
         long batchSize = totalCount/adviceNumber;
         for(int i = 0; i < adviceNumber; i++) {
             Entry entry = new Entry();
-            entry.batchSize = batchSize;
+            /**
+             * 这个判断确认不会丢失最后一页数据，
+             * 因为 totalCount/adviceNumber 不整除时，如果不做判断会丢失最后一页
+             */
+            if(i == (adviceNumber - 1)) {
+                entry.batchSize = batchSize + adviceNumber;
+            } else {
+                entry.batchSize = batchSize;
+            }
             entry.interval = batchSize * i;
             intervalCountList.add(entry);
         }
