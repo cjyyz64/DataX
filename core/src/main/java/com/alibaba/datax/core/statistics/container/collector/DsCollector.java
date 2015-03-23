@@ -39,11 +39,11 @@ public class DsCollector extends AbstractCollector {
             if(!isPrintFailOrKillTG) {
                 if (taskGroupStatus.getState().equals(State.FAILED)) {
                     hasFailedOrKilledTG = true;
-                    LOG.error("taskGroup[{}]运行失败." + taskGroupStatus.getTaskGroupId());
+                    LOG.error("taskGroup[{}]运行失败.", taskGroupStatus.getTaskGroupId());
                 }
                 if (taskGroupStatus.getState().equals(State.KILLED)) {
                     hasFailedOrKilledTG = true;
-                    LOG.error("taskGroup[{}]被Kill." + taskGroupStatus.getTaskGroupId());
+                    LOG.error("taskGroup[{}]被Kill.", taskGroupStatus.getTaskGroupId());
                 }
             }
             LocalTGCommunicationManager.updateTaskGroupCommunication(taskGroupStatus.getTaskGroupId(),
