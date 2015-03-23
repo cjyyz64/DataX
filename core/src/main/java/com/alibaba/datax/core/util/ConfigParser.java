@@ -10,10 +10,7 @@ import org.apache.http.client.methods.HttpGet;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ConfigParser {
     /**
@@ -74,17 +71,17 @@ public final class ConfigParser {
     private static Configuration parsePluginConfig() {
         Configuration configuration = Configuration.newDefault();
 
-        Map<String, Boolean> pluginMap = new HashMap<String, Boolean>();
+        Set<String> pluginSet = new HashSet<String>();
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
-            Configuration eachReaderConfig = ConfigParser.parseOnePluginConfig(each, "reader", pluginMap);
+            Configuration eachReaderConfig = ConfigParser.parseOnePluginConfig(each, "reader", pluginSet);
             configuration.merge(
                     eachReaderConfig, true);
         }
 
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
-            Configuration eachWriterConfig = ConfigParser.parseOnePluginConfig(each, "writer", pluginMap);
+            Configuration eachWriterConfig = ConfigParser.parseOnePluginConfig(each, "writer", pluginSet);
             configuration.merge(
                     eachWriterConfig, true);
         }
@@ -95,14 +92,14 @@ public final class ConfigParser {
 
     public static Configuration parseOnePluginConfig(final String path,
                                                      final String type,
-                                                     Map<String, Boolean> map) {
+                                                     Set<String> pluginSet) {
         String filePath = path + File.separator + "plugin.json";
         Configuration configuration = Configuration.from(new File(filePath));
 
         String pluginPath = configuration.getString("path");
         String pluginName = configuration.getString("name");
-        if(map.get(pluginName) == null) {
-            map.put(pluginName, true);
+        if(!pluginSet.contains(pluginName)) {
+            pluginSet.add(pluginName);
         } else {
             throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + filePath);
         }
