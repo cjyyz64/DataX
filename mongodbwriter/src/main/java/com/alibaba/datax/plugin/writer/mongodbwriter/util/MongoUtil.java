@@ -46,8 +46,7 @@ public class MongoUtil {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
-            MongoCredential credential = MongoCredential.
-                    createPlainCredential(userName, "mongodbwriter-datax", password.toCharArray());
+            MongoCredential credential = MongoCredential.createMongoCRCredential(userName, "admin", password.toCharArray());
 
             return new MongoClient(new ServerAddress(host,Integer.valueOf(port)), Arrays.asList(credential));
 
