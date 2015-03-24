@@ -123,7 +123,7 @@ public class AdsWriteUnitTest {
             }
             return terminated;
         } catch (AdsException e) {
-            throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
+            throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_TEMP_ODPS_FAILED,e);
         } catch (InterruptedException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
         }

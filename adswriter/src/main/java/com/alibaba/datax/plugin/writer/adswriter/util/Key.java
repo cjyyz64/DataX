@@ -50,4 +50,5 @@ public final class Key {
 
     public final static String CONFIG_TRUNCATE = "odps.truncate";
 
+    public final static String ADS_ACCOUNT = "ads.account";
 }

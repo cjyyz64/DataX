@@ -3,6 +3,7 @@ package com.alibaba.datax.core;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,5 +40,23 @@ public class EngineTest extends CaseInitializer {
 
 		Engine.entry(args);
 	}
+
+    @Test
+    public void testNN() {
+        try {
+            throwEE();
+        } catch (Exception e) {
+            String tarce = ExceptionTracker.trace(e);
+            if(e instanceof NullPointerException) {
+                System.out.println(tarce);
+            }
+        }
+    }
+
+    public static void throwEE() {
+        String aa = null;
+        aa.toString();
+        //throw new NullPointerException();
+    }
 
 }

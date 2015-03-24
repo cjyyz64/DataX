@@ -107,7 +107,7 @@ public class AdsWriter extends Writer {
         @Override
         public void prepare() {
 
-            //倒数据到odps表中
+            //导数据到odps表中
             this.odpsWriterJobProxy.prepare();
         }
 
@@ -134,6 +134,7 @@ public class AdsWriter extends Writer {
         }
 
         private boolean loadAdsData(String odpsTableName, String odpsPartition){
+
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
             String partition = this.originalConfig.getString(Key.PARTITION);
@@ -147,7 +148,10 @@ public class AdsWriter extends Writer {
                 {
                     Thread.sleep(120000);
                     terminated = adsHelper.checkLoadDataJobStatus(id);
+                    time += 2;
+                    LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 "+ time+" 分钟");
                 }
+                LOG.info("ADS 导数据已成功");
                 return terminated;
             } catch (AdsException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
@@ -175,6 +179,7 @@ public class AdsWriter extends Writer {
 
         //TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
         public void startWrite(RecordReceiver recordReceiver) {
+            odpsWriterTaskProxy.setTaskPluginCollector(super.getTaskPluginCollector());
             odpsWriterTaskProxy.startWrite(recordReceiver);
         }
 

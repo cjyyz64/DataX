@@ -108,7 +108,7 @@ public class OdpsUtil {
     }
 
     public static List<String> listOdpsPartitions(Table table) {
-        List<String> parts = null;
+        List<String> parts;
         try {
             parts = table.listPartitions();
             if (null == parts) {
@@ -124,7 +124,7 @@ public class OdpsUtil {
 
     public static boolean isPartitionedTable(Table table) {
         //必须要是非分区表才能 truncate 整个表
-        List<com.aliyun.openservices.odps.tables.Column> partitionKeys = null;
+        List<com.aliyun.openservices.odps.tables.Column> partitionKeys;
         try {
             partitionKeys = table.getPartitionKeys();
             if (null != partitionKeys && !partitionKeys.isEmpty()) {
@@ -161,16 +161,13 @@ public class OdpsUtil {
         List<String> odpsParts = OdpsUtil.listOdpsPartitions(table);
 
         int j = 0;
-        for (j = 0; j < odpsParts.size(); j++) {
+        for (; j < odpsParts.size(); j++) {
             if (odpsParts.get(j).replaceAll("'", "").equals(partition)) {
                 break;
             }
         }
-        if (j == odpsParts.size()) {
-            return false;
-        }
 
-        return true;
+        return j != odpsParts.size();
     }
 
     public static void addPart(Table table, String partition) {
@@ -287,7 +284,7 @@ public class OdpsUtil {
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.COMMIT_BLOCK_FAIL,
-                    String.format("ODPS 目的表在提交 block:[\n%s\n] 时失败. 请联系 ODPS 管理员处理.", StringUtils.join(blocks, ",")), e);
+                    String.format("ODPS 目的表在提交 block:[\n%s\n] 时失败, uploadId=[%s]. 请联系 ODPS 管理员处理.", StringUtils.join(blocks, ","), masterUpload.getUploadId()), e);
         }
     }
 
@@ -305,19 +302,16 @@ public class OdpsUtil {
             }, MAX_RETRY_TIME, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL,
-                    String.format("ODPS 目的表写 block:%s 失败. 请联系 ODPS 管理员处理.", blockId), e);
+                    String.format("ODPS 目的表写 block:%s 失败， uploadId=[%s]. 请联系 ODPS 管理员处理.", blockId, slaveUpload.getUploadId()), e);
         }
 
     }
 
-    /**
-     * 与 OdpsReader 中代码一样
-     */
     public static List<Integer> parsePosition(List<String> allColumnList,
                                               List<String> userConfiguredColumns) {
         List<Integer> retList = new ArrayList<Integer>();
 
-        boolean hasColumn = false;
+        boolean hasColumn;
         for (String col : userConfiguredColumns) {
             hasColumn = false;
             for (int i = 0, len = allColumnList.size(); i < len; i++) {
@@ -341,7 +335,7 @@ public class OdpsUtil {
         }
 //todo
         List<String> allColumns = new ArrayList<String>();
-        Column.Type type = null;
+        Column.Type type;
         for (int i = 0, columnCount = schema.getColumnCount(); i < columnCount; i++) {
             allColumns.add(schema.getColumnName(i));
             type = schema.getColumnType(i);
