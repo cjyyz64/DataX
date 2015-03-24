@@ -154,7 +154,7 @@ public class AdsWriter extends Writer {
                 LOG.info("ADS 导数据已成功");
                 return terminated;
             } catch (AdsException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_DATA_FAILED,e);
+                throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED,e);
             } catch (InterruptedException e) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_CREATETABLE_FAILED,e);
             }
