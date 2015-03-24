@@ -46,6 +46,7 @@
         <module>txtfilereader</module>
         <module>streamreader</module>
         <module>oceanbasereader</module>
+        <module>hbasereader</module>
         <module>ossreader</module>
 
         <!-- writer -->
@@ -55,10 +56,12 @@
         <module>txtfilewriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>
+        <module>otswriter-internal</module>
         <module>oraclewriter</module>
         <module>oceanbasewriter</module>
-        <module>tddlwriter</module>
         <module>postgresqlwriter</module>
+        <module>osswriter</module>
+        <module>tddlwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
@@ -66,6 +69,7 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
+
     </modules>
 
     <dependencyManagement>

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.List;
 import java.util.Map;
 /*
  * init/destroy必须成对调用
@@ -65,7 +66,32 @@ public final class OBDataSource {
         }
         throw new Exception(String.format("retry sql [%s] fail exit", sql));
 	}
-	
+
+    public static <T> T executePreparedQuery(String url, String sql, List<?> values, ResultSetHandler<T> handler) throws Exception {
+        int retry = 0;
+        while(retry++ <= 3){
+            Connection connection = null;
+            PreparedStatement statement = null;
+            ResultSet result = null;
+            try {
+                DataSourceHolder holder = datasources.get(url);
+                Preconditions.checkState(holder != null, "can't fetch [%s] datasource", url);
+                connection = holder.datasource.getConnection();
+                statement = connection.prepareStatement(sql);
+                for (int index = 1; index <= values.size(); index ++){
+                    statement.setObject(index,values.get(index - 1));
+                }
+                result = statement.executeQuery();
+                return handler.callback(result);
+            } catch(SQLException e){
+                log.error(String.format("execute sql [%s] exception retry", sql), e);
+            }finally {
+                DBUtil.closeDBResources(result, statement, connection);
+            }
+        }
+        throw new Exception(String.format("retry sql [%s] fail exit", sql));
+    }
+
 	public static void execute(String url, ConnectionHandler handler) throws Exception {
 		Connection connection = null;
 		Statement statement = null;

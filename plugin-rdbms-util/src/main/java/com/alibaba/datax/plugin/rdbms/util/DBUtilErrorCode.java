@@ -17,7 +17,7 @@ public enum DBUtilErrorCode implements ErrorCode {
     SQL_EXECUTE_FAIL("DBUtilErrorCode-06", "执行数据库 Sql 失败, 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
 
     // only for reader
-    READ_RECORD_FAIL("DBUtilErrorCode-07", "读取数据看数据失败. 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
+    READ_RECORD_FAIL("DBUtilErrorCode-07", "读取数据库数据失败. 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
     TABLE_QUERYSQL_MIXED("DBUtilErrorCode-08", "您配置凌乱了. 不能同时既配置table又配置querySql"),
     TABLE_QUERYSQL_MISSING("DBUtilErrorCode-09", "您配置错误. table和querySql 应该并且只能配置一个."),
 

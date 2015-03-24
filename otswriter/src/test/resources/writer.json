@@ -1,0 +1,41 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "byte":10485760
+            },
+            "errorLimit":0.0
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "otswriter",
+                    "parameter": {
+                        "endpoint":"http://redchen-instance.cn-hangzhou.ots.aliyuncs.com", 
+                        "accessId":"5viOHfldyK6K72ht",
+                        "accessKey":"n1raV0YxsLv0TG4nSVWqTJ7YSq2mvK",
+                        "instanceName":"redchen-instance",
+                        "table":"",
+                        "primaryKey" : [
+                            {"name":"pk", "type":"int"}
+                        ],
+                        "column" : [
+                            {"name":"attr_0000", "type":"STRING"},
+                            {"name":"attr_0001", "type":"STRING"},
+                            {"name":"attr_0002", "type":"STRING"},
+                            {"name":"attr_0003", "type":"STRING"},
+                            {"name":"attr_0004", "type":"STRING"},
+                            {"name":"attr_0005", "type":"STRING"},
+                            {"name":"attr_0006", "type":"STRING"},
+                            {"name":"attr_0007", "type":"STRING"},
+                            {"name":"attr_0008", "type":"STRING"},
+                            {"name":"attr_0009", "type":"STRING"}
+                        ], 
+                        "writeMode" : "PutRow"
+                    }
+                }
+            }
+        ]
+    }
+}

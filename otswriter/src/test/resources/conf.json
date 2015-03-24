@@ -1,7 +1,6 @@
 {
-    "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
-    "accessid":"5GbtIurEnFZDWMih",
-    "accesskey":"IJ5Eq4aRsMQu8JczndW6v78wYMsJIP",
-    "instance-name":"datax3",
-    "ag-ip":""
+    "endpoint":"http://redchen-instance.cn-hangzhou.ots.aliyuncs.com",
+    "accessid":"5viOHfldyK6K72ht",
+    "accesskey":"n1raV0YxsLv0TG4nSVWqTJ7YSq2mvK",
+    "instance-name":"redchen-instance"
 }
