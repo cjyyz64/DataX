@@ -31,6 +31,6 @@ public class JdbcConnectionFactory implements ConnectionFactory {
 
     @Override
     public String getConnectionInfo() {
-        return "jdbcUrl=" + jdbcUrl;
+        return "jdbcUrl:" + jdbcUrl;
     }
 }

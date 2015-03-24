@@ -103,7 +103,7 @@ public final class OriginalConfPretreatmentUtil {
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
 
-            List<String> allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable);
+            List<String> allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
                     StringUtils.join(allColumns, ","));

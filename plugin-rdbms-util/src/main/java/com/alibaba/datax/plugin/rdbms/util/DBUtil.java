@@ -285,12 +285,15 @@ public final class DBUtil {
 
     public static List<String> getTableColumns(DataBaseType dataBaseType,
                                                String jdbcUrl, String user, String pass, String tableName) {
+        Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
+        return getTableColumnsByConn(conn, tableName, "jdbcUrl:"+jdbcUrl);
+    }
+
+    public static List<String> getTableColumnsByConn(Connection conn, String tableName, String basicMsg) {
         List<String> columns = new ArrayList<String>();
-        Connection conn = null;
         Statement statement = null;
         ResultSet rs = null;
         try {
-            conn = getConnection(dataBaseType, jdbcUrl, user, pass);
             statement = conn.createStatement();
             String queryColumnSql = String.format("select * from %s where 1=2",
                     tableName);
@@ -303,7 +306,7 @@ public final class DBUtil {
         } catch (SQLException e) {
             throw DataXException
                     .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-                            String.format("获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的 jdbcUrl 和 table 信息. 错误信息上下文: jdbcUrl:[%s],table:[%s]", jdbcUrl, tableName), e);
+                            String.format("获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置信息. 错误配置信息上下文: %s,table:[%s]", basicMsg, tableName), e);
         } finally {
             DBUtil.closeDBResources(rs, statement, conn);
         }
