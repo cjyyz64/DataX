@@ -68,6 +68,7 @@ public class TableMetaHelper {
                 type = DataType.DOUBLE;
                 break;
             case ColumnDataType.DATE:
+            case ColumnDataType.TIME:
             case ColumnDataType.TIMESTAMP:
             case ColumnDataType.STRING:
             case ColumnDataType.MULTI_VALUE:

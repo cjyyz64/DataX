@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.adswriter.ads;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ public class ColumnDataType {
     public static final int DECIMAL = 6;
     public static final int DOUBLE = 7;
     public static final int FLOAT = 8;
-    // public static final int TIME = 9;
+    public static final int TIME = 9;
     public static final int DATE = 10;
     public static final int TIMESTAMP = 11;
     public static final int STRING = 13;
@@ -87,7 +88,7 @@ public class ColumnDataType {
         add(FLOAT, Types.REAL, "Float", new String[] { "REAL", "FLOAT4" });
         add(DOUBLE, Types.DOUBLE, "Double", new String[] { "DOUBLE", "DOUBLE PRECISION" });
         add(DOUBLE, Types.FLOAT, "Double", new String[] { "FLOAT", "FLOAT8" });
-        // add(TIME, Types.TIME, "Time", new String[] { "TIME" });
+        add(TIME, Types.TIME, "Time", new String[] { "TIME" });
         add(DATE, Types.DATE, "Date", new String[] { "DATE" });
         add(TIMESTAMP, Types.TIMESTAMP, "Timestamp", new String[] { "TIMESTAMP", "DATETIME", "SMALLDATETIME" });
         add(MULTI_VALUE, Types.VARCHAR, "String", new String[] { "MULTIVALUE" });
@@ -148,9 +149,9 @@ public class ColumnDataType {
             case DECIMAL:
                 // "java.math.BigDecimal";
                 return BigDecimal.class.getName();
-                // case TIME:
-                // // "java.sql.Time";
-                // return Time.class.getName();
+            case TIME:
+                // "java.sql.Time";
+                return Time.class.getName();
             case DATE:
                 // "java.sql.Date";
                 return Date.class.getName();
@@ -240,8 +241,8 @@ public class ColumnDataType {
                 return DOUBLE;
             case Types.DATE:
                 return DATE;
-                // case Types.TIME:
-                // return TIME;
+            case Types.TIME:
+                return TIME;
             case Types.TIMESTAMP:
                 return TIMESTAMP;
                 // case Types.NULL:
@@ -286,8 +287,8 @@ public class ColumnDataType {
             return DECIMAL;
         } else if (Date.class.isAssignableFrom(x)) {
             return DATE;
-            // } else if (Time.class.isAssignableFrom(x)) {
-            // return TIME;
+        } else if (Time.class.isAssignableFrom(x)) {
+            return TIME;
         } else if (Timestamp.class.isAssignableFrom(x)) {
             return TIMESTAMP;
         } else if (java.util.Date.class.isAssignableFrom(x)) {
