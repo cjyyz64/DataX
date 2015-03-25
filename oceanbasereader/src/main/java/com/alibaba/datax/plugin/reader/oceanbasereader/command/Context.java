@@ -11,6 +11,7 @@ import com.alibaba.datax.plugin.reader.oceanbasereader.parser.SelectParser;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.*;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang.StringUtils;
 
 import java.sql.ResultSet;
@@ -35,10 +36,10 @@ public class Context {
         try {
             if(this.lowVersion()) return;
             RowkeyMeta meta = this.rowkeyMeta();
-            String startkey = configuration.getString("startkey");
-            String endkey = configuration.getString("endkey");
+            List<?> startkey = configuration.getList("startkey");
+            List<?> endkey = configuration.getList("endkey");
             if(startkey == null || endkey == null){
-                configuration.set("tablet", new Tablet(meta,Tablet.MIN,Tablet.MAX));
+                configuration.set("tablet", new Tablet(meta, ImmutableList.of(RowkeyMeta.BoundValue.OB_MIN),ImmutableList.of(RowkeyMeta.BoundValue.OB_MAX)));
             }else {
                 configuration.set("tablet", new Tablet(meta,startkey,endkey));
             }

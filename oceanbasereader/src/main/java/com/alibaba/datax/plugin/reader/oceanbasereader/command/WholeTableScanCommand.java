@@ -4,14 +4,17 @@ import com.alibaba.datax.plugin.reader.oceanbasereader.Index;
 import com.alibaba.datax.plugin.reader.oceanbasereader.ast.Expression;
 import com.alibaba.datax.plugin.reader.oceanbasereader.ast.SelectExpression;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.OBDataSource;
+import com.alibaba.datax.plugin.reader.oceanbasereader.utils.PreparedStatementHandler;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.ResultSetHandler;
 import com.alibaba.datax.plugin.reader.oceanbasereader.utils.Tablet;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -25,12 +28,10 @@ public class WholeTableScanCommand implements Command {
 		SelectExpression select = context.orginalAst();
 		meetRowkeyExist(context.rowkey(),select.columns);
         Tablet tablet = context.tablet();
-		String sql = tablet.sql(select, null, context.limit());
-		ResultSetHandler<String> handler = new SendToWriterHandler(context);
-		String boundRowkey = OBDataSource.execute(context.url(), sql, handler);
-		while (!"".equals(boundRowkey) && !tablet.endkey.equals(boundRowkey)) {
-            sql = tablet.sql(select, boundRowkey, context.limit());
-			boundRowkey = OBDataSource.execute(context.url(), sql, handler);
+		ResultSetHandler<List<?>> handler = new SendToWriterHandler(context);
+		List<?> boundRowkey = OBDataSource.executePrepare(context.url(), new Handler(tablet,Collections.emptyList(),select,context.limit()), handler);
+		while (!boundRowkey.isEmpty() && !tablet.endkey.equals(boundRowkey)) {
+			boundRowkey = OBDataSource.executePrepare(context.url(), new Handler(tablet, boundRowkey,select,context.limit()), handler);
 		}
 		log.info("Case[whole table scan] end");
 	}
@@ -49,7 +50,7 @@ public class WholeTableScanCommand implements Command {
 		Preconditions.checkArgument(miss.isEmpty(),String.format("select clause must contain primary key, you miss %s", miss));
 	}
 
-	private class SendToWriterHandler implements ResultSetHandler<String> {
+	private class SendToWriterHandler implements ResultSetHandler<List<?>> {
 
 		private Index rowkey;
 		private Context context;
@@ -60,26 +61,46 @@ public class WholeTableScanCommand implements Command {
 		}
 
 		@Override
-		public String callback(ResultSet result) throws Exception {
+		public List<?> callback(ResultSet result) throws Exception {
 			this.context.sendToWriter(result);
 			return this.getLastRowkey(result);
 		}
 
-		private String getLastRowkey(ResultSet result) throws Exception {
+		private List<?> getLastRowkey(ResultSet result) throws Exception {
 			if (!result.isAfterLast())
-				return "";
+				return Collections.emptyList();
 			result.last();
-			String rowkey = "(";
-			for (Index.Entry entry : this.rowkey) {
-				if (entry.position == 1) {
-					rowkey += entry.type.convert(result, entry.name);
-				} else {
-					rowkey += ("," + entry.type.convert(result, entry.name));
-				}
+            List<Object> values = Lists.newArrayList();
+            for (Index.Entry entry : this.rowkey) {
+                values.add(entry.type.convert(result,entry.name));
 			}
-			rowkey += ")";
-			return rowkey;
+			return values;
 		}
 	}
 
+    private class Handler implements PreparedStatementHandler {
+
+        private final Tablet tablet;
+        private final List<?> boundRowkey;
+        private final SelectExpression expression;
+        private final int limit;
+
+        private Handler(Tablet tablet,List<?> boundRowkey, SelectExpression expression,int limit){
+            this.tablet = tablet;
+            this.boundRowkey = boundRowkey;
+            this.expression = expression;
+            this.limit = limit;
+        }
+
+        @Override
+        public String sql() {
+            return tablet.sql(expression,boundRowkey,limit);
+        }
+
+        @Override
+        public List<?> parameters() {
+            return tablet.parameters(boundRowkey);
+        }
+
+    }
 }

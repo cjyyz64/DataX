@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.reader.oceanbasereader;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -19,6 +20,60 @@ public class Index implements Iterable<Index.Entry> {
 		this.fields = fields;
 	}
 
+    public static enum Type {
+
+        INT {
+            @Override
+            public Long convert(ResultSet result, String column) throws SQLException {
+                return result.getObject(column) == null? null : result.getLong(column);
+            }
+        }, VARCHAR {
+            @Override
+            public String convert(ResultSet result, String column)
+                    throws SQLException {
+                return result.getString(column);
+            }
+        }, TIMESTAMP {
+            @Override
+            public Timestamp convert(ResultSet result, String column)
+                    throws SQLException {
+                return result.getTimestamp(column);
+            }
+        },
+        NUMBER {
+            @Override
+            public BigDecimal convert(ResultSet result, String column) throws SQLException {
+                return result.getBigDecimal(column);
+            }
+        }, UNKNOW {
+            @Override
+            public <T> T convert(ResultSet result, String column) throws SQLException {
+                throw new IllegalArgumentException("not support field type for " + column);
+            }
+        }, BOOL {
+            @Override
+            public Boolean convert(ResultSet result, String column)
+                    throws SQLException {
+                return result.getObject(column) == null ? null : result.getBoolean(column);
+            }
+        };
+
+        public abstract <T> T convert(ResultSet result, String column) throws SQLException;
+
+        private static Map<String, String> DATETIME = ImmutableMap.of(
+                "CREATETIME", "TIMESTAMP", "MODIFYTIME", "TIMESTAMP");
+
+        public static Type type(String label) {
+            label = label.toUpperCase();
+            if (DATETIME.containsKey(label))
+                label = DATETIME.get(label);
+            for (Type type : Type.values()) {
+                if (label.toUpperCase().contains(type.name()))
+                    return type;
+            }
+            return UNKNOW;
+        }
+    }
 	public static class Entry implements Comparable<Entry> {
 
 		public final String name;
@@ -31,52 +86,6 @@ public class Index implements Iterable<Index.Entry> {
 			this.position = position;
 		}
 
-		public enum Type {
-
-			INT, VARCHAR {
-				@Override
-				public String convert(ResultSet result, String column)
-						throws SQLException {
-                    String value = super.convert(result, column);
-					return value == null ? null : String.format("'%s'",value);
-				}
-			},
-			TIMESTAMP {
-				@Override
-				public String convert(ResultSet result, String column)
-						throws SQLException {
-                    Timestamp timestamp = result.getTimestamp(column);
-					return timestamp == null ? null : String.format("timestamp'%s'",timestamp);
-				}
-			},
-			NUMBER, UNKNOW, BOOL {
-				@Override
-				public String convert(ResultSet result, String column)
-						throws SQLException {
-                    if (result.getObject(column) == null) return null;
-					return String.valueOf(result.getBoolean(column));
-				}
-			};
-
-			public String convert(ResultSet result, String column)
-					throws SQLException {
-				return result.getString(column);
-			}
-
-			private static Map<String, String> DATETIME = ImmutableMap.of(
-					"CREATETIME", "TIMESTAMP", "MODIFYTIME", "TIMESTAMP");
-
-			public static Type type(String label) {
-				label = label.toUpperCase();
-				if (DATETIME.containsKey(label))
-					label = DATETIME.get(label);
-				for (Type type : Type.values()) {
-					if (label.toUpperCase().contains(type.name()))
-						return type;
-				}
-				return UNKNOW;
-			}
-		}
 
 		@Override
 		public int compareTo(Entry o) {
@@ -95,15 +104,14 @@ public class Index implements Iterable<Index.Entry> {
 
 	public static final class Builder {
 
-		private Builder() {
-		};
+		private Builder() { }
 
 		private boolean hasBuild = false;
 		private Set<Entry> fields = new TreeSet<Entry>();
 
 		public Builder addEntry(String name, String type, int position) {
 			Preconditions.checkState(!hasBuild,"can't call addEntry() once build() has called");
-			fields.add(new Entry(name, Entry.Type.type(type), position));
+			fields.add(new Entry(name, Type.type(type), position));
 			return this;
 		}
 

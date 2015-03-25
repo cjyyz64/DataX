@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import java.io.Reader;
 import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
@@ -73,11 +72,11 @@ public class TaskSplitter {
                 public Set<Tablet> callback(ResultSet result) throws Exception {
                     Set<Tablet> tablets = Sets.newHashSet();
                     while (result.next()) {
-                        List<String> startRowkey = Lists.newArrayList();
-                        List<String> endRowkey = Lists.newArrayList();
+                        List<Object> startRowkey = Lists.newArrayList();
+                        List<Object> endRowkey = Lists.newArrayList();
                         for (RowkeyMeta.Entry entry : meta) {
-                            startRowkey.add(fetchValue(result,String.format("startkey_%s", entry.id)));
-                            endRowkey.add(fetchValue(result,String.format("endkey_%s", entry.id)));
+                            startRowkey.add(fetchValue(entry,result,String.format("startkey_%s", entry.id)));
+                            endRowkey.add(fetchValue(entry,result,String.format("endkey_%s", entry.id)));
                         }
                         tablets.add(new Tablet(meta, Collections.unmodifiableList(startRowkey), Collections.unmodifiableList(endRowkey)));
                     }
@@ -94,18 +93,13 @@ public class TaskSplitter {
             return slices;
         }
 
-        private static String fetchValue(ResultSet result,String field) throws Exception {
-            Reader reader = result.getCharacterStream(field);
-            StringBuilder builder = new StringBuilder();
-            char[] buffer = new char[256];
-            int n = -1;
-            while ((n = reader.read(buffer,0,buffer.length)) == buffer.length){
-               builder.append(buffer);
-            }
-            for (int index = 0; index < n; index++){
-                builder.append(buffer[index]);
-            }
-            return builder.toString();
+        private static Object fetchValue(RowkeyMeta.Entry entry,ResultSet result,String name) throws Exception {
+            String value = result.getString(name);
+            if(value == null) return null;
+            if(RowkeyMeta.BoundValue.isMin(value)) return RowkeyMeta.BoundValue.OB_MIN;
+            if(RowkeyMeta.BoundValue.isMax(value)) return RowkeyMeta.BoundValue.OB_MAX;
+            return entry.value(result,name);
         }
     }
+
 }
