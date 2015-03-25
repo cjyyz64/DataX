@@ -49,11 +49,7 @@ public class Tablet implements Serializable{
         } else if (min) {
             return String.format("%s %s %s <= %s limit %s", sql, keyword, vector(), placeholder(), limit);
         } else if (max) {
-            if(boundRowkey.isEmpty()){
-                return String.format("%s %s %s > %s limit %s", sql, keyword, vector(), placeholder(), limit);
-            }else {
-                return String.format("%s %s %s > %s limit %s", sql, keyword, vector(), placeholder(), limit);
-            }
+            return String.format("%s %s %s > %s limit %s", sql, keyword, vector(), placeholder(), limit);
         } else {
             return String.format("%s %s (%s > %s and %s <= %s) limit %s", sql, keyword, vector(), placeholder(), vector(), placeholder(), limit);
         }
