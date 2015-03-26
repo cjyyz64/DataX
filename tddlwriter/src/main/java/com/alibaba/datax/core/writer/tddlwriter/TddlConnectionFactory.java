@@ -3,6 +3,7 @@ package com.alibaba.datax.core.writer.tddlwriter;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.rdbms.util.ConnectionFactory;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.druid.util.StringUtils;
 import com.taobao.tddl.client.jdbc.TDataSource;
 
 import java.sql.Connection;
@@ -17,8 +18,10 @@ public class TddlConnectionFactory implements ConnectionFactory {
     private String appName;
     private TDataSource ds;
 
-    public TddlConnectionFactory(String appName) {
-        this.appName = appName;
+    public void initAppName(String appName) {
+        if(!StringUtils.equals(this.appName, appName)) {
+            this.appName = appName;
+        }
     }
 
     @Override

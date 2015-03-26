@@ -19,11 +19,11 @@ import java.util.List;
 
 public class TddlWriter extends Writer {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.Tddl;
+    private static TddlConnectionFactory tddlConnectionFactory = new TddlConnectionFactory();
 
     public static class Job extends Writer.Job {
 
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
-        private static TddlConnectionFactory tddlConnectionFactory;
 
         private Configuration originalConfig = null;
 
@@ -32,11 +32,11 @@ public class TddlWriter extends Writer {
             this.originalConfig = super.getPluginJobConf();
             //check appName
             originalConfig.getNecessaryValue(Key.TDDL_APP_NAME, DBUtilErrorCode.REQUIRED_VALUE);
+            // init tddlConnctionFactory
+            String appName = originalConfig.getString(Key.TDDL_APP_NAME);
+            tddlConnectionFactory.initAppName(appName);
             //check batch size
             OriginalConfPretreatmentUtil.doCheckBatchSize(originalConfig);
-            // init tddlConnctionFactory
-            String APP_NAME = originalConfig.getString(Key.TDDL_APP_NAME);
-            tddlConnectionFactory = new TddlConnectionFactory(APP_NAME);
             //deal config
             String table = originalConfig.getString(Key.TABLE);
             OriginalConfPretreatmentUtil.dealColumnConf(originalConfig, tddlConnectionFactory, table);
@@ -104,17 +104,17 @@ public class TddlWriter extends Writer {
 
         private Configuration writerSliceConfig;
         private TddlCommonRdbmsWriter.Task commonRdbmsWriterTask;
-        private static TddlConnectionFactory tddlConnectionFactory;
 
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterTask = new TddlCommonRdbmsWriter.Task(DATABASE_TYPE);
-            this.commonRdbmsWriterTask.init(this.writerSliceConfig);
             //检查appName为必选项
             writerSliceConfig.getNecessaryValue(Key.TDDL_APP_NAME, DBUtilErrorCode.REQUIRED_VALUE);
             String appName = writerSliceConfig.getString(Key.TDDL_APP_NAME);
-            tddlConnectionFactory = new TddlConnectionFactory(appName);
+            tddlConnectionFactory.initAppName(appName);
+
+            this.commonRdbmsWriterTask = new TddlCommonRdbmsWriter.Task(DATABASE_TYPE);
+            this.commonRdbmsWriterTask.init(this.writerSliceConfig);
         }
 
         @Override
