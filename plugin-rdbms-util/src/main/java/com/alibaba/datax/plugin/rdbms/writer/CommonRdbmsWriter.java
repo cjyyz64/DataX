@@ -139,21 +139,21 @@ public class CommonRdbmsWriter {
         private String username;
         private String password;
         private String jdbcUrl;
-        private String table;
-        private List<String> columns;
+        protected String table;
+        protected List<String> columns;
         private List<String> preSqls;
         private List<String> postSqls;
-        private int batchSize;
+        protected int batchSize;
         protected int columnNumber = 0;
         private TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
 
-        private static String INSERT_OR_REPLACE_TEMPLATE;
+        protected static String INSERT_OR_REPLACE_TEMPLATE;
 
-        private String writeRecordSql;
-        private String writeMode;
+        protected String writeRecordSql;
+        protected String writeMode;
         protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
@@ -254,8 +254,7 @@ public class CommonRdbmsWriter {
             try {
                 connection.setAutoCommit(false);
             } catch (Exception e) {
-                throw DataXException.asDataXException(
-                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
             }
             startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
         }

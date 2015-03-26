@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.taobao.tddl.client.jdbc.TDataSource;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * Date: 15/3/16 下午3:33
@@ -14,6 +15,7 @@ import java.sql.Connection;
  */
 public class TddlConnectionFactory implements ConnectionFactory {
     private String appName;
+    private TDataSource ds;
 
     public TddlConnectionFactory(String appName) {
         this.appName = appName;
@@ -22,15 +24,19 @@ public class TddlConnectionFactory implements ConnectionFactory {
     @Override
     public Connection getConnecttion() {
         try {
-            TDataSource ds = new TDataSource();
-            ds.setAppName(appName);
-            ds.setDynamicRule(true);
-            ds.init();
+            synchronized (this) {
+                if(ds == null || !ds.isInited()) {
+                    ds = new TDataSource();
+                    ds.setAppName(appName);
+                    ds.setDynamicRule(true);
+                    ds.init();
+                }
+            }
             return ds.getConnection();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.CONN_DB_ERROR,
-                    String.format("TDDL数据库连接失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", appName), e);
+                    String.format("TDDL数据库getConnection失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", appName), e);
         }
     }
 
