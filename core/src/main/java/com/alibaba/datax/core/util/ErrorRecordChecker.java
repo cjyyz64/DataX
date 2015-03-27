@@ -32,8 +32,8 @@ public final class ErrorRecordChecker {
         percentageLimit = percentage;
 
         if (percentageLimit != null) {
-            Validate.isTrue(0.0 < percentageLimit && percentageLimit < 1.0,
-                    "脏数据百分比限制应该在(0.0, 1.0)之间");
+            Validate.isTrue(0.0 <= percentageLimit && percentageLimit <= 1.0,
+                    "脏数据百分比限制应该在[0.0, 1.0]之间");
         }
 
         if (recordLimit != null) {
