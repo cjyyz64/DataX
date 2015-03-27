@@ -56,7 +56,7 @@ public final class DBUtil {
                             }
                         }
                     }
-                    throw new Exception("No available jdbcURL yet.");
+                    throw new Exception("DataX无法连接对应的数据库，可能原因是：1) 配置的ip/port/database/jdbc错误，无法连接。2) 配置的username/password错误，鉴权失败。请和DBA确认该数据库的连接信息是否正确。");
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
