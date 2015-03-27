@@ -1,18 +1,10 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter.column;
 
-import org.apache.hadoop.hbase.util.Bytes;
-
-import com.alibaba.datax.common.element.BoolColumn;
-import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.DateColumn;
-import com.alibaba.datax.common.element.DoubleColumn;
-import com.alibaba.datax.common.element.LongColumn;
-import com.alibaba.datax.common.element.NullColumn;
-import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter.BulkWriterError;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter.column.HBaseColumn.HBaseDataType;
+import org.apache.hadoop.hbase.util.Bytes;
 
 public class DataTypeConvertor {
   public static byte[] toBoolBytes(BoolColumn dataxBool, HBaseDataType hbaseDataType) {
@@ -81,9 +73,9 @@ public class DataTypeConvertor {
     return HBaseColumn.convertStrToBytes(dataxString.asString(), hbaseDataType, encoding);
   }
   
-  public static byte[] toNullBytes(NullColumn dataxDouble, HBaseDataType hbaseDataType) {
-    throw DataXException.asDataXException(BulkWriterError.RUNTIME_CAST, String.format("can not convert datax NULL to hbase %s" , hbaseDataType));
-  }
+//  public static byte[] toNullBytes(NullColumn dataxDouble, HBaseDataType hbaseDataType) {
+//    throw DataXException.asDataXException(BulkWriterError.RUNTIME_CAST, String.format("can not convert datax NULL to hbase %s" , hbaseDataType));
+//  }
   
   public static byte[] toBytes(Column dataxColumn, HBaseDataType hbaseDataType) {
     return toBytes(dataxColumn, hbaseDataType, "utf-8");
@@ -102,8 +94,8 @@ public class DataTypeConvertor {
       return toLongOrIntBytes((LongColumn)dataxColumn, hbaseDataType);
     } else if (dataxColumn instanceof StringColumn) {
       return toStringBytes((StringColumn)dataxColumn, hbaseDataType,encoding);
-    } else if (dataxColumn instanceof NullColumn) {
-      return toNullBytes((NullColumn)dataxColumn, hbaseDataType);
+//    } else if (dataxColumn instanceof NullColumn) {
+//      return toNullBytes((NullColumn)dataxColumn, hbaseDataType);
     } else {
       throw DataXException.asDataXException(BulkWriterError.RUNTIME_CAST, String.format("unsupported datax data type" , dataxColumn.getClass().getName()));
     }
