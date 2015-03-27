@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.writer;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -10,7 +11,6 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -139,22 +139,22 @@ public class CommonRdbmsWriter {
         private String username;
         private String password;
         private String jdbcUrl;
-        private String table;
-        private List<String> columns;
+        protected String table;
+        protected List<String> columns;
         private List<String> preSqls;
         private List<String> postSqls;
-        private int batchSize;
-        private int columnNumber = 0;
+        protected int batchSize;
+        protected int columnNumber = 0;
         private TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
 
-        private static String INSERT_OR_REPLACE_TEMPLATE;
+        protected static String INSERT_OR_REPLACE_TEMPLATE;
 
-        private String writeRecordSql;
-        private String writeMode;
-        private Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
+        protected String writeRecordSql;
+        protected String writeMode;
+        protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
             this.dataBaseType = dataBaseType;
@@ -199,16 +199,8 @@ public class CommonRdbmsWriter {
             DBUtil.closeDBResources(null, null, connection);
         }
 
-        // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
-        public void startWrite(RecordReceiver recordReceiver,
-                               Configuration writerSliceConfig,
-                               TaskPluginCollector taskPluginCollector) {
+        public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
             this.taskPluginCollector = taskPluginCollector;
-
-            Connection connection = DBUtil.getConnection(this.dataBaseType,
-                    this.jdbcUrl, username, password);
-            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
             this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
@@ -251,6 +243,22 @@ public class CommonRdbmsWriter {
             }
         }
 
+        // TODO 改用连接池，确保每次获取的连接都是可用的（注意：连接可能需要每次都初始化其 session）
+        public void startWrite(RecordReceiver recordReceiver,
+                               Configuration writerSliceConfig,
+                               TaskPluginCollector taskPluginCollector) {
+            Connection connection = DBUtil.getConnection(this.dataBaseType,
+                    this.jdbcUrl, username, password);
+            DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
+                    this.dataBaseType, BASIC_MESSAGE);
+            try {
+                connection.setAutoCommit(false);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            }
+            startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
+        }
+
         public void post(Configuration writerSliceConfig) {
             int tableNumber = writerSliceConfig.getInt(
                     Constant.TABLE_NUMBER_MARK);
@@ -276,7 +284,6 @@ public class CommonRdbmsWriter {
                 throws SQLException {
             PreparedStatement preparedStatement = null;
             try {
-                connection.setAutoCommit(false);
                 preparedStatement = connection
                         .prepareStatement(this.writeRecordSql);
 
@@ -328,123 +335,128 @@ public class CommonRdbmsWriter {
             }
         }
 
-        // 直接使用了两个类变量：columnNumber,resultSetMetaData
-        private PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
-                throws SQLException {
+        protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
             java.util.Date utilDate;
-            for (int i = 0; i < this.columnNumber; i++) {
+            switch (columnSqltype) {
+                case Types.CHAR:
+                case Types.NCHAR:
+                case Types.CLOB:
+                case Types.NCLOB:
+                case Types.VARCHAR:
+                case Types.LONGVARCHAR:
+                case Types.NVARCHAR:
+                case Types.LONGNVARCHAR:
+                case Types.SMALLINT:
+                case Types.INTEGER:
+                case Types.BIGINT:
+                case Types.NUMERIC:
+                case Types.DECIMAL:
+                case Types.FLOAT:
+                case Types.REAL:
+                case Types.DOUBLE:
+                    preparedStatement.setString(columnIndex + 1, column
+                            .asString());
+                    break;
 
-                switch (this.resultSetMetaData.getMiddle().get(i)) {
-                    case Types.CHAR:
-                    case Types.NCHAR:
-                    case Types.CLOB:
-                    case Types.NCLOB:
-                    case Types.VARCHAR:
-                    case Types.LONGVARCHAR:
-                    case Types.NVARCHAR:
-                    case Types.LONGNVARCHAR:
-                    case Types.SMALLINT:
-                    case Types.INTEGER:
-                    case Types.BIGINT:
-                    case Types.NUMERIC:
-                    case Types.DECIMAL:
-                    case Types.FLOAT:
-                    case Types.REAL:
-                    case Types.DOUBLE:
-                        preparedStatement.setString(i + 1, record.getColumn(i)
-                                .asString());
-                        break;
-                        
-                    //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
-                    case Types.TINYINT:
-                    	Long longValue = record.getColumn(i).asLong();
-                    	if (null == longValue) {
-                    		preparedStatement.setString(i + 1, null);
-                    	} else {
-                    		preparedStatement.setString(i + 1, longValue.toString());
-                    	}
-                    	break;
+                //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
+                case Types.TINYINT:
+                    Long longValue = column.asLong();
+                    if (null == longValue) {
+                        preparedStatement.setString(columnIndex + 1, null);
+                    } else {
+                        preparedStatement.setString(columnIndex + 1, longValue.toString());
+                    }
+                    break;
 
-                    // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
-                    case Types.DATE:
-                        if (this.resultSetMetaData.getRight().get(i)
-                                .equalsIgnoreCase("year")) {
-                            if (record.getColumn(i).asBigInteger() == null) {
-                                preparedStatement.setString(i + 1, null);
-                            } else {
-                                preparedStatement.setInt(i + 1, record.getColumn(i).asBigInteger().intValue());
-                            }
+                // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
+                case Types.DATE:
+                    if (this.resultSetMetaData.getRight().get(columnIndex)
+                            .equalsIgnoreCase("year")) {
+                        if (column.asBigInteger() == null) {
+                            preparedStatement.setString(columnIndex + 1, null);
                         } else {
-                            java.sql.Date sqlDate = null;
-                            try {
-                                utilDate = record.getColumn(i).asDate();
-                            } catch (DataXException e) {
-                                throw new SQLException(String.format(
-                                        "Date 类型转换错误：[%s]", record.getColumn(i)));
-                            }
-
-                            if (null != utilDate) {
-                                sqlDate = new java.sql.Date(utilDate.getTime());
-                            }
-                            preparedStatement.setDate(i + 1, sqlDate);
+                            preparedStatement.setInt(columnIndex + 1, column.asBigInteger().intValue());
                         }
-                        break;
-
-                    case Types.TIME:
-                        java.sql.Time sqlTime = null;
+                    } else {
+                        java.sql.Date sqlDate = null;
                         try {
-                            utilDate = record.getColumn(i).asDate();
+                            utilDate = column.asDate();
                         } catch (DataXException e) {
                             throw new SQLException(String.format(
-                                    "TIME 类型转换错误：[%s]", record.getColumn(i)));
+                                    "Date 类型转换错误：[%s]", column));
                         }
 
                         if (null != utilDate) {
-                            sqlTime = new java.sql.Time(utilDate.getTime());
+                            sqlDate = new java.sql.Date(utilDate.getTime());
                         }
-                        preparedStatement.setTime(i + 1, sqlTime);
-                        break;
+                        preparedStatement.setDate(columnIndex + 1, sqlDate);
+                    }
+                    break;
 
-                    case Types.TIMESTAMP:
-                        java.sql.Timestamp sqlTimestamp = null;
-                        try {
-                            utilDate = record.getColumn(i).asDate();
-                        } catch (DataXException e) {
-                            throw new SQLException(String.format(
-                                    "TIMESTAMP 类型转换错误：[%s]", record.getColumn(i)));
-                        }
+                case Types.TIME:
+                    java.sql.Time sqlTime = null;
+                    try {
+                        utilDate = column.asDate();
+                    } catch (DataXException e) {
+                        throw new SQLException(String.format(
+                                "TIME 类型转换错误：[%s]", column));
+                    }
 
-                        if (null != utilDate) {
-                            sqlTimestamp = new java.sql.Timestamp(
-                                    utilDate.getTime());
-                        }
-                        preparedStatement.setTimestamp(i + 1, sqlTimestamp);
-                        break;
+                    if (null != utilDate) {
+                        sqlTime = new java.sql.Time(utilDate.getTime());
+                    }
+                    preparedStatement.setTime(columnIndex + 1, sqlTime);
+                    break;
 
-                    case Types.BINARY:
-                    case Types.VARBINARY:
-                    case Types.BLOB:
-                    case Types.LONGVARBINARY:
-                        preparedStatement.setBytes(i + 1, record.getColumn(i)
-                                .asBytes());
-                        break;
-                    case Types.BOOLEAN:
-                    case Types.BIT:
-                        preparedStatement.setString(i + 1, record.getColumn(i).asString());
-                        break;
-                    default:
-                        throw DataXException
-                                .asDataXException(
-                                        DBUtilErrorCode.UNSUPPORTED_TYPE,
-                                        String.format(
-                                                "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
-                                                this.resultSetMetaData.getLeft()
-                                                        .get(i),
-                                                this.resultSetMetaData.getMiddle()
-                                                        .get(i),
-                                                this.resultSetMetaData.getRight()
-                                                        .get(i)));
-                }
+                case Types.TIMESTAMP:
+                    java.sql.Timestamp sqlTimestamp = null;
+                    try {
+                        utilDate = column.asDate();
+                    } catch (DataXException e) {
+                        throw new SQLException(String.format(
+                                "TIMESTAMP 类型转换错误：[%s]", column));
+                    }
+
+                    if (null != utilDate) {
+                        sqlTimestamp = new java.sql.Timestamp(
+                                utilDate.getTime());
+                    }
+                    preparedStatement.setTimestamp(columnIndex + 1, sqlTimestamp);
+                    break;
+
+                case Types.BINARY:
+                case Types.VARBINARY:
+                case Types.BLOB:
+                case Types.LONGVARBINARY:
+                    preparedStatement.setBytes(columnIndex + 1, column
+                            .asBytes());
+                    break;
+                case Types.BOOLEAN:
+                case Types.BIT:
+                    preparedStatement.setString(columnIndex + 1, column.asString());
+                    break;
+                default:
+                    throw DataXException
+                            .asDataXException(
+                                    DBUtilErrorCode.UNSUPPORTED_TYPE,
+                                    String.format(
+                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
+                                            this.resultSetMetaData.getLeft()
+                                                    .get(columnIndex),
+                                            this.resultSetMetaData.getMiddle()
+                                                    .get(columnIndex),
+                                            this.resultSetMetaData.getRight()
+                                                    .get(columnIndex)));
+            }
+            return preparedStatement;
+        }
+
+        // 直接使用了两个类变量：columnNumber,resultSetMetaData
+        protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
+                throws SQLException {
+            for (int i = 0; i < this.columnNumber; i++) {
+                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
+                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
             }
 
             return preparedStatement;
