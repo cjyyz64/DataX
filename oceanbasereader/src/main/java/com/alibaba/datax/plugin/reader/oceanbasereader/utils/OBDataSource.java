@@ -76,7 +76,9 @@ public final class OBDataSource {
                 DataSourceHolder holder = datasources.get(url);
                 Preconditions.checkState(holder != null,"can't fetch [%s] datasource",url);
                 connection = holder.datasource.getConnection();
-                statement = connection.prepareStatement(handler.sql());
+                String sql = handler.sql();
+                log.debug("start execute {}", sql);
+                statement = connection.prepareStatement(sql);
                 List<?> parameters = handler.parameters();
                 for (int index = 1; index <= parameters.size(); index++){
                     statement.setObject(index,parameters.get(index - 1));

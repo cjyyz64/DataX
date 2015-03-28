@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import java.io.Reader;
 import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
@@ -93,13 +94,30 @@ public class TaskSplitter {
             return slices;
         }
 
-        private static Object fetchValue(RowkeyMeta.Entry entry,ResultSet result,String name) throws Exception {
-            String value = result.getString(name);
+        private static Object fetchValue(RowkeyMeta.Entry entry,ResultSet result,String field) throws Exception {
+            class Helper {
+                private String fetchStringValue(ResultSet result,String field) throws Exception {
+                    Reader reader = result.getCharacterStream(field);
+                    if(reader == null) return null;
+                    StringBuilder builder = new StringBuilder();
+                    char[] buffer = new char[256];
+                    int n = -1;
+                    while ((n = reader.read(buffer,0,buffer.length)) == buffer.length){
+                        builder.append(buffer);
+                    }
+                    for (int index = 0; index < n; index++){
+                        builder.append(buffer[index]);
+                    }
+                    return builder.toString();
+                }
+            }
+            String value = new Helper().fetchStringValue(result,field);
             if(value == null) return null;
             if(RowkeyMeta.BoundValue.isMin(value)) return RowkeyMeta.BoundValue.OB_MIN;
             if(RowkeyMeta.BoundValue.isMax(value)) return RowkeyMeta.BoundValue.OB_MAX;
-            return entry.value(result,name);
+            return entry.value(result,field);
         }
+
     }
 
 }

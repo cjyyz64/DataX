@@ -40,7 +40,7 @@ public class Index implements Iterable<Index.Entry> {
                 return result.getTimestamp(column);
             }
         },
-        NUMBER {
+        NUMERIC {
             @Override
             public BigDecimal convert(ResultSet result, String column) throws SQLException {
                 return result.getBigDecimal(column);
