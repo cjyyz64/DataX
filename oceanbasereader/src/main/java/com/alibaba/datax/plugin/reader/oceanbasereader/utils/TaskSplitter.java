@@ -101,7 +101,7 @@ public class TaskSplitter {
                     if(reader == null) return null;
                     StringBuilder builder = new StringBuilder();
                     char[] buffer = new char[256];
-                    int n = -1;
+                    int n;
                     while ((n = reader.read(buffer,0,buffer.length)) == buffer.length){
                         builder.append(buffer);
                     }
