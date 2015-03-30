@@ -25,4 +25,8 @@ public class Key {
     // 账号类型，默认为aliyun，也可能为taobao等其他类型
     public final static String ACCOUNT_TYPE = "accountType";
 
+    public final static String PACKAGE_AUTHORIZED_PROJECT = "packageAuthorizedProject";
+
+    public final static String IS_COMPRESS = "isCompress";
+
 }
