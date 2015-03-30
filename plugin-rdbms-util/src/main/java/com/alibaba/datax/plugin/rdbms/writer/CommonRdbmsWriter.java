@@ -288,7 +288,6 @@ public class CommonRdbmsWriter {
                 throws SQLException {
             PreparedStatement preparedStatement = null;
             try {
-                connection.setAutoCommit(false);
                 preparedStatement = connection
                         .prepareStatement(this.writeRecordSql);
 
