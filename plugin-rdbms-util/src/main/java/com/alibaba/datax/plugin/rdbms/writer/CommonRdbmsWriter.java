@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.writer;
 
-import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -11,6 +11,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -154,6 +155,7 @@ public class CommonRdbmsWriter {
 
         protected String writeRecordSql;
         protected String writeMode;
+        private boolean emptyAsNull;
         protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
@@ -174,6 +176,7 @@ public class CommonRdbmsWriter {
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
+            emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
             this.writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
 
@@ -259,6 +262,7 @@ public class CommonRdbmsWriter {
             startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
         }
 
+
         public void post(Configuration writerSliceConfig) {
             int tableNumber = writerSliceConfig.getInt(
                     Constant.TABLE_NUMBER_MARK);
@@ -284,6 +288,7 @@ public class CommonRdbmsWriter {
                 throws SQLException {
             PreparedStatement preparedStatement = null;
             try {
+                connection.setAutoCommit(false);
                 preparedStatement = connection
                         .prepareStatement(this.writeRecordSql);
 
@@ -335,6 +340,17 @@ public class CommonRdbmsWriter {
             }
         }
 
+        // 直接使用了两个类变量：columnNumber,resultSetMetaData
+        protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
+                throws SQLException {
+            for (int i = 0; i < this.columnNumber; i++) {
+                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
+                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
+            }
+
+            return preparedStatement;
+        }
+
         protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
             java.util.Date utilDate;
             switch (columnSqltype) {
@@ -346,6 +362,10 @@ public class CommonRdbmsWriter {
                 case Types.LONGVARCHAR:
                 case Types.NVARCHAR:
                 case Types.LONGNVARCHAR:
+                    preparedStatement.setString(columnIndex + 1, column
+                            .asString());
+                    break;
+
                 case Types.SMALLINT:
                 case Types.INTEGER:
                 case Types.BIGINT:
@@ -354,8 +374,12 @@ public class CommonRdbmsWriter {
                 case Types.FLOAT:
                 case Types.REAL:
                 case Types.DOUBLE:
-                    preparedStatement.setString(columnIndex + 1, column
-                            .asString());
+                    String strValue = column.asString();
+                    if(emptyAsNull && "".equals(strValue)){
+                        preparedStatement.setString(columnIndex + 1, null);
+                    }else{
+                        preparedStatement.setString(columnIndex + 1, strValue);
+                    }
                     break;
 
                 //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
@@ -448,17 +472,6 @@ public class CommonRdbmsWriter {
                                             this.resultSetMetaData.getRight()
                                                     .get(columnIndex)));
             }
-            return preparedStatement;
-        }
-
-        // 直接使用了两个类变量：columnNumber,resultSetMetaData
-        protected PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record)
-                throws SQLException {
-            for (int i = 0; i < this.columnNumber; i++) {
-                int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
-                preparedStatement = fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
-            }
-
             return preparedStatement;
         }
 

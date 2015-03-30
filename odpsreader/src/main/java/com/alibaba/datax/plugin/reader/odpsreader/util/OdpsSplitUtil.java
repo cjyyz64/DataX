@@ -84,8 +84,10 @@ public final class OdpsSplitUtil {
         String tunnelServer = sliceConfig.getString(Key.TUNNEL_SERVER);
         String tableName = sliceConfig.getString(Key.TABLE);
 
+        String projectName = sliceConfig.getString(Key.PROJECT);
+
         DownloadSession session = OdpsUtil.createMasterSessionForNonPartitionedTable(odps,
-                tunnelServer, tableName);
+                tunnelServer, projectName, tableName);
 
         String id = session.getId();
         long count = session.getRecordCount();
@@ -111,8 +113,10 @@ public final class OdpsSplitUtil {
         String tunnelServer = sliceConfig.getString(Key.TUNNEL_SERVER);
         String tableName = sliceConfig.getString(Key.TABLE);
 
+        String  projectName = sliceConfig.getString(Key.PROJECT);
+
         DownloadSession session = OdpsUtil.createMasterSessionForPartitionedTable(odps,
-                tunnelServer, tableName, onePartition);
+                tunnelServer, projectName, tableName, onePartition);
 
         String id = session.getId();
         long count = session.getRecordCount();

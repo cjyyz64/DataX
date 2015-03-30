@@ -50,10 +50,14 @@ public class OdpsReader extends Reader {
 
             dealSplitMode(this.originalConfig);
 
+            //check isCompress
+            this.originalConfig.getBool(Key.IS_COMPRESS, false);
+
             this.odps = OdpsUtil.initOdps(this.originalConfig);
             String tableName = this.originalConfig.getString(Key.TABLE);
+            String projectName = this.originalConfig.getString(Key.PROJECT);
 
-            this.table = OdpsUtil.getTable(this.odps, tableName);
+            this.table = OdpsUtil.getTable(this.odps, projectName, tableName);
             this.originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                     OdpsUtil.isPartitionedTable(table));
 
@@ -264,9 +268,11 @@ public class OdpsReader extends Reader {
         private String tunnelServer;
         private Odps odps = null;
         private Table table = null;
+        private String projectName = null;
         private String tableName = null;
         private boolean isPartitionedTable;
         private String sessionId;
+        private boolean isCompress;
 
         @Override
         public void init() {
@@ -275,17 +281,21 @@ public class OdpsReader extends Reader {
                     Key.TUNNEL_SERVER, null);
 
             this.odps = OdpsUtil.initOdps(this.readerSliceConf);
-
+            this.projectName = this.readerSliceConf.getString(Key.PROJECT);
             this.tableName = this.readerSliceConf.getString(Key.TABLE);
-            this.table = OdpsUtil.getTable(this.odps, tableName);
+            this.table = OdpsUtil.getTable(this.odps, projectName, tableName);
             this.isPartitionedTable = this.readerSliceConf
                     .getBool(Constant.IS_PARTITIONED_TABLE);
             this.sessionId = this.readerSliceConf.getString(Constant.SESSION_ID, null);
 
+
+
+            this.isCompress = this.readerSliceConf.getBool(Key.IS_COMPRESS, false);
+
             // sessionId 为空的情况是：切分级别只到 partition 的情况
             if (StringUtils.isBlank(this.sessionId)) {
                 DownloadSession session = OdpsUtil.createMasterSessionForPartitionedTable(odps,
-                        tunnelServer, tableName, this.readerSliceConf.getString(Key.PARTITION));
+                        tunnelServer, projectName, tableName, this.readerSliceConf.getString(Key.PARTITION));
                 this.sessionId = session.getId();
             }
 
@@ -303,10 +313,10 @@ public class OdpsReader extends Reader {
 
             if (this.isPartitionedTable) {
                 downloadSession = OdpsUtil.getSlaveSessionForPartitionedTable(this.odps, this.sessionId,
-                        this.tunnelServer, this.tableName, partition);
+                        this.tunnelServer, this.projectName, this.tableName, partition);
             } else {
                 downloadSession = OdpsUtil.getSlaveSessionForNonPartitionedTable(this.odps, this.sessionId,
-                        this.tunnelServer, this.tableName);
+                        this.tunnelServer, this.projectName, this.tableName);
             }
 
             long start = this.readerSliceConf.getLong(Constant.START_INDEX, 0);
@@ -339,7 +349,7 @@ public class OdpsReader extends Reader {
 
             try {
                 RecordReader recordReader = downloadSession.openRecordReader(
-                        start, count);
+                        start, count, this.isCompress);
                 List<Configuration> parsedColumnsTmp = this.readerSliceConf
                         .getListConfiguration(Constant.PARSED_COLUMNS);
                 List<Pair<String, ColumnType>> parsedColumns = new ArrayList<Pair<String, ColumnType>>();

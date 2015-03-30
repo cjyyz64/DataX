@@ -141,9 +141,12 @@ def buildStartCommand(options, args):
 
 
 def printCopyright():
-    print '''DataX (%s), From Alibaba !
+    print '''
+DataX (%s), From Alibaba !
 Copyright (C) 2010-2015, Alibaba Group. All Rights Reserved.
+
 ''' % DATAX_VERSION
+    sys.stdout.flush()
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.reader.oceanbasereader.utils;
 
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.reader.oceanbasereader.Key;
 import com.alipay.oceanbase.OceanbaseDataSourceProxy;
 import com.google.common.base.Preconditions;
@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.List;
 import java.util.Map;
 
 public final class OBDataSource {
@@ -64,6 +65,34 @@ public final class OBDataSource {
 		}
 		throw new Exception(String.format("retry sql [%s] fail exit", sql));
 	}
+
+    public static <T> T executePrepare(String url, PreparedStatementHandler handler, ResultSetHandler<T> resultHandler) throws Exception {
+        int retry = 0;
+        while(retry++ <= 3){
+            Connection connection = null;
+            PreparedStatement statement = null;
+            ResultSet result = null;
+            try {
+                DataSourceHolder holder = datasources.get(url);
+                Preconditions.checkState(holder != null,"can't fetch [%s] datasource",url);
+                connection = holder.datasource.getConnection();
+                String sql = handler.sql();
+                log.debug("start execute {}", sql);
+                statement = connection.prepareStatement(sql);
+                List<?> parameters = handler.parameters();
+                for (int index = 1; index <= parameters.size(); index++){
+                    statement.setObject(index,parameters.get(index - 1));
+                }
+                result = statement.executeQuery();
+                return resultHandler.callback(result);
+            } catch(SQLException e){
+                log.error(String.format("execute sql [%s] exception retry", handler.sql()), e);
+            }finally {
+                DBUtil.closeDBResources(result, statement, connection);
+            }
+        }
+        throw new Exception(String.format("retry sql [%s] fail exit", handler.sql()));
+    }
 
     private static class DataSourceHolder {
         private volatile int reference;

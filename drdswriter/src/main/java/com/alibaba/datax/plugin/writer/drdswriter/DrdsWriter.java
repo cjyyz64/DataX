@@ -17,20 +17,22 @@ public class DrdsWriter extends Writer {
 
     public static class Job extends Writer.Job {
         private Configuration originalConfig = null;
-        private String ONLY_SUPPORTED_WRITEMODE = "replace";
+        private String DEFAULT_WRITEMODE = "replace";
+        private String INSERT_IGNORE_WRITEMODE = "insert ignore";
         private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            String writeMode = this.originalConfig.getString(Key.WRITE_MODE, ONLY_SUPPORTED_WRITEMODE);
-            if (!ONLY_SUPPORTED_WRITEMODE.equalsIgnoreCase(writeMode)) {
+            String writeMode = this.originalConfig.getString(Key.WRITE_MODE, DEFAULT_WRITEMODE);
+            if (!DEFAULT_WRITEMODE.equalsIgnoreCase(writeMode) &&
+                    !INSERT_IGNORE_WRITEMODE.equalsIgnoreCase(writeMode)) {
                 throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-                        String.format("写入模式(writeMode)配置错误. DRDSWriter只支持写入模式为:%s, 但是您配置的写入模式为:%s. 请检查您的配置并作出修改.",
-                                ONLY_SUPPORTED_WRITEMODE, writeMode));
+                        String.format("写入模式(writeMode)配置错误. DRDSWriter只支持两种写入模式为:[%s, %s], 但是您配置的写入模式为:%s. 请检查您的配置并作出修改.",
+                                DEFAULT_WRITEMODE, INSERT_IGNORE_WRITEMODE, writeMode));
             }
 
-            this.originalConfig.set(Key.WRITE_MODE, ONLY_SUPPORTED_WRITEMODE);
+            this.originalConfig.set(Key.WRITE_MODE, writeMode);
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }

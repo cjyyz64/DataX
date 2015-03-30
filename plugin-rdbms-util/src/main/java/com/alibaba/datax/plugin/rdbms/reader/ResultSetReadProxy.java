@@ -33,8 +33,6 @@ public class ResultSetReadProxy {
 
 				case Types.CHAR:
 				case Types.NCHAR:
-				case Types.CLOB:
-				case Types.NCLOB:
 				case Types.VARCHAR:
 				case Types.LONGVARCHAR:
 				case Types.NVARCHAR:
@@ -47,6 +45,11 @@ public class ResultSetReadProxy {
 							rs.getBytes(i)), mandatoryEncoding);
 					}
 					record.addColumn(new StringColumn(rawData));
+					break;
+
+				case Types.CLOB:
+				case Types.NCLOB:
+					record.addColumn(new StringColumn(rs.getString(i)));
 					break;
 
 				case Types.SMALLINT:
@@ -98,7 +101,11 @@ public class ResultSetReadProxy {
 					break;
 
 				case Types.NULL:
-					record.addColumn(new NullColumn(rs.getObject(i)));
+					String stringData = null;
+					if(rs.getObject(i) != null) {
+						stringData = rs.getObject(i).toString();
+					}
+					record.addColumn(new StringColumn(stringData));
 					break;
 
 				// TODO 添加BASIC_MESSAGE

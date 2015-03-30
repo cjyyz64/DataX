@@ -47,6 +47,15 @@ public final class OdpsUtil {
         String accessKey = originalConfig.getString(Key.ACCESS_KEY);
         String project = originalConfig.getString(Key.PROJECT);
 
+        String packageAuthorizedProject = originalConfig.getString(Key.PACKAGE_AUTHORIZED_PROJECT);
+
+        String defaultProject = null;
+        if(StringUtils.isEmpty(packageAuthorizedProject)) {
+            defaultProject = project;
+        } else {
+            defaultProject = packageAuthorizedProject;
+        }
+
         String accountType = originalConfig.getString(Key.ACCOUNT_TYPE,
                 Constant.DEFAULT_ACCOUNT_TYPE);
 
@@ -61,16 +70,16 @@ public final class OdpsUtil {
         }
 
         Odps odps = new Odps(account);
-        odps.setDefaultProject(project);
+        odps.setDefaultProject(defaultProject);
         odps.setEndpoint(odpsServer);
 
         return odps;
     }
 
-    public static Table getTable(Odps odps, String tableName) {
+    public static Table getTable(Odps odps, String projectName, String tableName) {
         Table table = null;
         try {
-            table = odps.tables().get(tableName);
+            table = odps.tables().get(projectName, tableName);
 
             //通过这种方式检查表是否存在
             table.reload();
@@ -214,7 +223,7 @@ public final class OdpsUtil {
     }
 
     public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps,
-                                                                                        String tunnelServer, String tableName) {
+                                                                                        String tunnelServer, String projectName, String tableName) {
 
         TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
@@ -224,7 +233,7 @@ public final class OdpsUtil {
         TableTunnel.DownloadSession downloadSession = null;
         try {
             downloadSession = tunnel.createDownloadSession(
-                    odps.getDefaultProject(), tableName);
+                    projectName, tableName);
         } catch (TunnelException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
@@ -233,7 +242,7 @@ public final class OdpsUtil {
     }
 
     public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, String sessionId,
-                                                                                    String tunnelServer, String tableName) {
+                                                                                    String tunnelServer, String projectName, String tableName) {
 
         TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
@@ -243,7 +252,7 @@ public final class OdpsUtil {
         TableTunnel.DownloadSession downloadSession = null;
         try {
             downloadSession = tunnel.getDownloadSession(
-                    odps.getDefaultProject(), tableName, sessionId);
+                    projectName, tableName, sessionId);
         } catch (TunnelException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
@@ -252,7 +261,7 @@ public final class OdpsUtil {
     }
 
     public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps,
-                                                                                     String tunnelServer, String tableName, String partition) {
+                                                                                     String tunnelServer, String projectName, String tableName, String partition) {
 
         TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
@@ -265,7 +274,7 @@ public final class OdpsUtil {
 
         try {
             downloadSession = tunnel.createDownloadSession(
-                    odps.getDefaultProject(), tableName, partitionSpec);
+                    projectName, tableName, partitionSpec);
         } catch (TunnelException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
@@ -274,7 +283,7 @@ public final class OdpsUtil {
     }
 
     public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, String sessionId,
-                                                                                 String tunnelServer, String tableName, String partition) {
+                                                                                 String tunnelServer, String projectName, String tableName, String partition) {
 
         TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
@@ -287,7 +296,7 @@ public final class OdpsUtil {
 
         try {
             downloadSession = tunnel.getDownloadSession(
-                    odps.getDefaultProject(), tableName, partitionSpec, sessionId);
+                    projectName, tableName, partitionSpec, sessionId);
         } catch (TunnelException e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
