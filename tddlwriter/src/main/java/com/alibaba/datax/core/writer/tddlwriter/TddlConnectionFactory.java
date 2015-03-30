@@ -19,8 +19,10 @@ public class TddlConnectionFactory implements ConnectionFactory {
     private TDataSource ds;
 
     public void initAppName(String appName) {
-        if(!StringUtils.equals(this.appName, appName)) {
-            this.appName = appName;
+        synchronized (this) {
+            if (!StringUtils.equals(this.appName, appName)) {
+                this.appName = appName;
+            }
         }
     }
 
