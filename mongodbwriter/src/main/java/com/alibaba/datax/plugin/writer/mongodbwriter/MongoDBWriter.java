@@ -109,7 +109,7 @@ public class MongoDBWriter extends Writer{
                         //处理数组类型
                         if(this.isContainArray) {
                             if(!Strings.isNullOrEmpty(this.splitter)) {
-                                logger.warn("columnMeta="+columnMetaList.get(i)+" record="+record+" record.getColumn("+i+")="+record.getColumn(i).asString());
+                                //logger.warn("columnMeta="+columnMetaList.get(i)+" record="+record+" record.getColumn("+i+")="+record.getColumn(i).asString());
                                 data.put(columnMetaList.get(i), record.getColumn(i).asString().split(this.splitter));
                             }
                         } else {
