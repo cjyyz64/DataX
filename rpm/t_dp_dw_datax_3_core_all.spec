@@ -33,6 +33,7 @@ rm -rf %{_prefix}/plugins/
 %build
 cd ${OLDPWD}/../
 
+export MAVEN_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=128m"
 /home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
 
 %install
