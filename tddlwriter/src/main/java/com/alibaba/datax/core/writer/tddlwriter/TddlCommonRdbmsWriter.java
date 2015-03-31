@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.taobao.tddl.optimizer.core.datatype.DataType;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -52,7 +53,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     case Types.BIGINT:
                     case DataType.MEDIAUMNINT_SQL_TYPE :
                         String strValue = record.getColumn(i).asString();
-                        if (emptyAsNull && "".equals(strValue)) {
+                        if (emptyAsNull && StringUtils.isBlank(strValue)) {
                             preparedStatement.setString(i + 1, null);
                         } else {
                             preparedStatement.setLong(i + 1, record.getColumn(i).asLong());
