@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.writer.tddlwriter;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
@@ -41,6 +42,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
 
         @Override
         public PreparedStatement fillPreparedStatement(PreparedStatement preparedStatement, Record record) throws SQLException {
+            java.util.Date utilDate;
             for (int i = 0; i < super.columnNumber; i++) {
                 int columnSqltype = resultSetMetaData.getMiddle().get(i);
                 switch (columnSqltype) {
@@ -61,7 +63,27 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                         preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, Types.TIMESTAMP, record.getColumn(i));
                         break;
                     case DataType.YEAR_SQL_TYPE:
-                        preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, Types.DATE, record.getColumn(i));
+                        if (this.resultSetMetaData.getRight().get(i)
+                                .equalsIgnoreCase("YearType")) {
+                            if (record.getColumn(i).asBigInteger() == null) {
+                                preparedStatement.setString(i + 1, null);
+                            } else {
+                                preparedStatement.setInt(i + 1, record.getColumn(i).asBigInteger().intValue());
+                            }
+                        } else {
+                            java.sql.Date sqlDate = null;
+                            try {
+                                utilDate = record.getColumn(i).asDate();
+                            } catch (DataXException e) {
+                                throw new SQLException(String.format(
+                                        "Date 类型转换错误：[%s]", record.getColumn(i)));
+                            }
+
+                            if (null != utilDate) {
+                                sqlDate = new java.sql.Date(utilDate.getTime());
+                            }
+                            preparedStatement.setDate(i + 1, sqlDate);
+                        }
                         break;
                     default:
                         preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, columnSqltype, record.getColumn(i));
