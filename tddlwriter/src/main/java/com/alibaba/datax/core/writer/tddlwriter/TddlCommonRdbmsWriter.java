@@ -33,6 +33,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
             this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
             this.columnNumber = this.columns.size();
 
+            emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
@@ -50,7 +51,12 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     case Types.SMALLINT:
                     case Types.BIGINT:
                     case DataType.MEDIAUMNINT_SQL_TYPE :
-                        preparedStatement.setLong(i + 1, record.getColumn(i).asLong());
+                        String strValue = record.getColumn(i).asString();
+                        if (emptyAsNull && "".equals(strValue)) {
+                            preparedStatement.setString(i + 1, null);
+                        } else {
+                            preparedStatement.setLong(i + 1, record.getColumn(i).asLong());
+                        }
                         break;
                     case Types.NUMERIC:
                     case Types.DECIMAL:

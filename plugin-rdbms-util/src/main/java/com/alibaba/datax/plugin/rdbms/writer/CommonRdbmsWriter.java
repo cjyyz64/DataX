@@ -155,7 +155,7 @@ public class CommonRdbmsWriter {
 
         protected String writeRecordSql;
         protected String writeMode;
-        private boolean emptyAsNull;
+        protected boolean emptyAsNull;
         protected Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
         public Task(DataBaseType dataBaseType) {
