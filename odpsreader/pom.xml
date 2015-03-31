@@ -34,6 +34,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+            <version>16.0.1</version>
 		</dependency>
 
 		<!-- ref:http://odps.alibaba-inc.com/doc/prddoc/odps_sdk_v2/sdk.html -->
