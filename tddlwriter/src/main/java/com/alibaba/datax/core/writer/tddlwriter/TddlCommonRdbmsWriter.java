@@ -69,6 +69,10 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     case DataType.DATETIME_SQL_TYPE:
                         preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, Types.TIMESTAMP, record.getColumn(i));
                         break;
+                    case Types.BOOLEAN:
+                        preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        break;
+
                     case DataType.YEAR_SQL_TYPE:
                         if (this.resultSetMetaData.getRight().get(i)
                                 .equalsIgnoreCase("YearType")) {
