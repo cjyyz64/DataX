@@ -30,8 +30,10 @@ public class TddlWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            //check appName
+            //check appName,table
             originalConfig.getNecessaryValue(Key.TDDL_APP_NAME, DBUtilErrorCode.REQUIRED_VALUE);
+            originalConfig.getNecessaryValue(Key.TABLE, DBUtilErrorCode.REQUIRED_VALUE);
+
             // init tddlConnctionFactory
             String appName = originalConfig.getString(Key.TDDL_APP_NAME);
             tddlConnectionFactory.initAppName(appName);
