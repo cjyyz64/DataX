@@ -136,12 +136,12 @@ public class HttpClientUtil {
 
     public String executeAndGetWithRetry(final HttpRequestBase httpRequestBase, final int retryTimes, final long retryInterval) {
         try {
-            return RetryUtil.executeWithRetry(new Callable<String>() {
+            return RetryUtil.asyncExecuteWithRetry(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     return executeAndGet(httpRequestBase);
                 }
-            }, retryTimes, retryInterval, true);
+            }, retryTimes, retryInterval, true, HTTP_TIMEOUT_INMILLIONSECONDS + 1000);
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
         }
