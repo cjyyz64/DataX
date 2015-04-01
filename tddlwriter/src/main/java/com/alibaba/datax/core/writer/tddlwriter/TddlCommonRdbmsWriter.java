@@ -64,15 +64,24 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                        preparedStatement.setBigDecimal(i + 1, record.getColumn(i).asBigDecimal());
+                        strValue = record.getColumn(i).asString();
+                        if (emptyAsNull && StringUtils.isBlank(strValue)) {
+                            preparedStatement.setString(i + 1, null);
+                        } else {
+                            preparedStatement.setBigDecimal(i + 1, record.getColumn(i).asBigDecimal());
+                        }
                         break;
                     case DataType.DATETIME_SQL_TYPE:
                         preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, Types.TIMESTAMP, record.getColumn(i));
                         break;
                     case Types.BOOLEAN:
-                        preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        strValue = record.getColumn(i).asString();
+                        if (emptyAsNull && StringUtils.isBlank(strValue)) {
+                            preparedStatement.setString(i + 1, null);
+                        } else {
+                            preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        }
                         break;
-
                     case DataType.YEAR_SQL_TYPE:
                         if (this.resultSetMetaData.getRight().get(i)
                                 .equalsIgnoreCase("YearType")) {
