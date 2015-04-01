@@ -8,11 +8,12 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
-import com.alibaba.odps.tunnel.DataTunnel;
-import com.alibaba.odps.tunnel.RecordSchema;
-import com.alibaba.odps.tunnel.Upload;
-import com.aliyun.openservices.odps.Project;
-import com.aliyun.openservices.odps.tables.Table;
+
+import com.aliyun.odps.Odps;
+import com.aliyun.odps.Table;
+import com.aliyun.odps.TableSchema;
+import com.aliyun.odps.tunnel.TableTunnel;
+import com.aliyun.odps.tunnel.io.ProtobufRecordPack;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,13 +34,16 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration originalConfig;
-        private String project;
-        private String table;
+        private Odps odps;
+        private Table table;
+
+        private String projectName;
+        private String tableName;
         private String partition;
         private String accountType;
         private boolean truncate;
         private String uploadId;
-        private Upload masterUpload;
+        private TableTunnel.UploadSession masterUpload;
         private int blockSizeInMB;
 
         @Override
@@ -49,8 +53,8 @@ public class OdpsWriter extends Writer {
             OdpsUtil.checkNecessaryConfig(this.originalConfig);
             OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
-            this.project = this.originalConfig.getString(Key.PROJECT);
-            this.table = this.originalConfig.getString(Key.TABLE);
+            this.projectName = this.originalConfig.getString(Key.PROJECT);
+            this.tableName = this.originalConfig.getString(Key.TABLE);
 
             this.partition = OdpsUtil.formatPartition(this.originalConfig
                     .getString(Key.PARTITION, ""));
@@ -103,21 +107,14 @@ public class OdpsWriter extends Writer {
 
 
             // init odps config
-            Project odpsProject = OdpsUtil.initOdpsProject(this.originalConfig);
+            this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
-            String table = this.originalConfig.getString(Key.TABLE);
-            Table tab = new Table(odpsProject, table);
-
+            //String tableName = this.originalConfig.getString(Key.TABLE);
             //检查表等配置是否正确
-            try {
-                tab.load();
-            } catch (Exception e) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                        String.format("加载 ODPS 目的表:%s 失败. " +
-                                "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", tab.getName()), e);
-            }
+            this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
 
-            OdpsUtil.dealTruncate(tab, this.partition, this.truncate);
+
+            OdpsUtil.dealTruncate(this.odps, this.table, this.partition, this.truncate);
         }
 
         /**
@@ -130,14 +127,14 @@ public class OdpsWriter extends Writer {
             List<Configuration> configurations = new ArrayList<Configuration>();
 
             // 此处获取到 masterUpload 只是为了拿到 RecordSchema,以完成对 column 的处理
-            DataTunnel dataTunnel = OdpsUtil.initDataTunnel(this.originalConfig);
+            TableTunnel tableTunnel = new TableTunnel(this.odps);
 
             this.masterUpload = OdpsUtil.createMasterTunnelUpload(
-                    dataTunnel, this.project, this.table, this.partition);
-            this.uploadId = this.masterUpload.getUploadId();
+                    tableTunnel, this.projectName, this.tableName, this.partition);
+            this.uploadId = this.masterUpload.getId();
             LOG.info("Master uploadId:[{}].", this.uploadId);
 
-            RecordSchema schema = this.masterUpload.getSchema();
+            TableSchema schema = this.masterUpload.getSchema();
             List<String> allColumns = OdpsUtil.getAllColumns(schema);
             LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
 
@@ -193,13 +190,15 @@ public class OdpsWriter extends Writer {
         private static final boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration sliceConfig;
-        private String project;
-        private String table;
+        private Odps odps;
+
+        private String projectName;
+        private String tableName;
         private String partition;
         private boolean emptyAsNull;
 
-        private Upload managerUpload;
-        private Upload workerUpload;
+        private TableTunnel.UploadSession managerUpload;
+        private TableTunnel.UploadSession workerUpload;
 
         private String uploadId = null;
         private List<Long> blocks;
@@ -210,8 +209,8 @@ public class OdpsWriter extends Writer {
         public void init() {
             this.sliceConfig = super.getPluginJobConf();
 
-            this.project = this.sliceConfig.getString(Key.PROJECT);
-            this.table = this.sliceConfig.getString(Key.TABLE);
+            this.projectName = this.sliceConfig.getString(Key.PROJECT);
+            this.tableName = this.sliceConfig.getString(Key.TABLE);
             this.partition = OdpsUtil.formatPartition(this.sliceConfig
                     .getString(Key.PARTITION, ""));
             this.sliceConfig.set(Key.PARTITION, this.partition);
@@ -231,14 +230,16 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void prepare() {
-            DataTunnel dataTunnel = OdpsUtil.initDataTunnel(this.sliceConfig);
-            this.managerUpload = OdpsUtil.createMasterTunnelUpload(dataTunnel, this.project,
-                    this.table, this.partition);
-            this.uploadId = this.managerUpload.getUploadId();
+            this.odps = OdpsUtil.initOdpsProject(this.sliceConfig);
+
+            TableTunnel tableTunnel = new TableTunnel(this.odps);
+            this.managerUpload = OdpsUtil.createMasterTunnelUpload(tableTunnel, this.projectName,
+                    this.tableName, this.partition);
+            this.uploadId = this.managerUpload.getId();
             LOG.info("task uploadId:[{}].", this.uploadId);
 
-            this.workerUpload = OdpsUtil.getSlaveTunnelUpload(dataTunnel, this.project,
-                    this.table, this.partition, uploadId);
+            this.workerUpload = OdpsUtil.getSlaveTunnelUpload(tableTunnel, this.projectName,
+                    this.tableName, this.partition, uploadId);
         }
 
         @Override
@@ -257,6 +258,8 @@ public class OdpsWriter extends Writer {
                         columnPositions, taskPluginCollector, this.emptyAsNull);
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
+
+                ProtobufRecordPack protobufRecordPack = null;
                 while ((dataXRecord = recordReceiver.getFromReader()) != null) {
                     proxy.writeOneRecord(dataXRecord, blocks);
                 }
