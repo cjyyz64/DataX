@@ -131,7 +131,7 @@ public class CommonRdbmsWriter {
     }
 
     public static class Task {
-        private static final Logger LOG = LoggerFactory
+        protected static final Logger LOG = LoggerFactory
                 .getLogger(Task.class);
 
         private DataBaseType dataBaseType;
@@ -146,7 +146,7 @@ public class CommonRdbmsWriter {
         private List<String> postSqls;
         protected int batchSize;
         protected int columnNumber = 0;
-        private TaskPluginCollector taskPluginCollector;
+        protected TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
         private static String BASIC_MESSAGE;
@@ -279,7 +279,7 @@ public class CommonRdbmsWriter {
         public void destroy(Configuration writerSliceConfig) {
         }
 
-        private void doBatchInsert(Connection connection, List<Record> buffer)
+        protected void doBatchInsert(Connection connection, List<Record> buffer)
                 throws SQLException {
             PreparedStatement preparedStatement = null;
             try {
@@ -306,7 +306,7 @@ public class CommonRdbmsWriter {
             }
         }
 
-        private void doOneInsert(Connection connection, List<Record> buffer) {
+        protected void doOneInsert(Connection connection, List<Record> buffer) {
             PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(true);

@@ -3,16 +3,21 @@ package com.alibaba.datax.core.writer.tddlwriter;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.taobao.tddl.common.exception.TddlNestableRuntimeException;
 import com.taobao.tddl.optimizer.core.datatype.DataType;
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 
 /**
  * Date: 15/3/19 下午4:05
@@ -110,6 +115,61 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                 }
             }
             return preparedStatement;
+        }
+
+        @Override
+        protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
+            PreparedStatement preparedStatement = null;
+            try {
+                preparedStatement = connection
+                        .prepareStatement(this.writeRecordSql);
+
+                for (Record record : buffer) {
+                    preparedStatement = fillPreparedStatement(
+                            preparedStatement, record);
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
+                connection.commit();
+            } catch (TddlNestableRuntimeException e) {
+                LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
+                connection.rollback();
+                doOneInsert(connection, buffer);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(preparedStatement, null);
+            }
+        }
+
+        @Override
+        protected void doOneInsert(Connection connection, List<Record> buffer) {
+            PreparedStatement preparedStatement = null;
+            try {
+                connection.setAutoCommit(true);
+                preparedStatement = connection
+                        .prepareStatement(this.writeRecordSql);
+
+                for (Record record : buffer) {
+                    try {
+                        preparedStatement = fillPreparedStatement(
+                                preparedStatement, record);
+                        preparedStatement.execute();
+                    } catch (TddlNestableRuntimeException e) {
+                        LOG.debug(e.toString());
+                        this.taskPluginCollector.collectDirtyRecord(record, e);
+                    } finally {
+                        // 最后不要忘了关闭 preparedStatement
+                        preparedStatement.clearParameters();
+                    }
+                }
+            } catch (Exception e) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(preparedStatement, null);
+            }
         }
     }
 
