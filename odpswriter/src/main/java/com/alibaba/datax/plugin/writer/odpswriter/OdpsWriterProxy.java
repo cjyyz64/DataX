@@ -52,6 +52,7 @@ public class OdpsWriterProxy {
         this.tableOriginalColumnTypeList = OdpsUtil
                 .getTableOriginalColumnTypeList(this.schema);
 
+        this.protobufRecordPack = new ProtobufRecordPack(this.schema);
         this.blockId = blockId;
         this.columnPositions = columnPositions;
         this.taskPluginCollector = taskPluginCollector;
@@ -80,10 +81,7 @@ public class OdpsWriterProxy {
             return;
         }
 
-        protobufRecordPack = new ProtobufRecordPack(schema);
         protobufRecordPack.append(record);
-
-
         recordPackByteSize = recordPackByteSize + recordByteSize;
 
         if (recordPackByteSize >= max_buffer_length) {
@@ -94,6 +92,7 @@ public class OdpsWriterProxy {
 
             blocks.add(blockId.get());
             recordPackByteSize = 0;
+            protobufRecordPack = new ProtobufRecordPack(this.schema);
 
             this.blockId.incrementAndGet();
         }
@@ -109,6 +108,7 @@ public class OdpsWriterProxy {
             blocks.add(blockId.get());
             // reset the buffer for next block
             recordPackByteSize = 0;
+            protobufRecordPack = new ProtobufRecordPack(this.schema);
         }
     }
 

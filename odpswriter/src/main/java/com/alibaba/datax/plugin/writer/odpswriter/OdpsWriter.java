@@ -67,7 +67,7 @@ public class OdpsWriter extends Writer {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("账号类型错误，因为你的账号 [%s] 不是datax目前支持的账号类型，目前仅支持aliyun, taobao账号，请修改您的账号信息.", accountType));
             }
-            this.originalConfig.set(Key.ACCOUNT_TYPE, Constant.DEFAULT_ACCOUNT_TYPE);
+            this.originalConfig.set(Key.ACCOUNT_TYPE, this.accountType);
 
             this.truncate = this.originalConfig.getBool(Key.TRUNCATE);
 
@@ -109,7 +109,6 @@ public class OdpsWriter extends Writer {
             // init odps config
             this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
-            //String tableName = this.originalConfig.getString(Key.TABLE);
             //检查表等配置是否正确
             this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
 
@@ -259,7 +258,6 @@ public class OdpsWriter extends Writer {
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
 
-                ProtobufRecordPack protobufRecordPack = null;
                 while ((dataXRecord = recordReceiver.getFromReader()) != null) {
                     proxy.writeOneRecord(dataXRecord, blocks);
                 }
