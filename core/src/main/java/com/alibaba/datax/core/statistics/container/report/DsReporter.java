@@ -1,13 +1,22 @@
 package com.alibaba.datax.core.statistics.container.report;
 
+import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DsReporter extends AbstractReporter {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DsReporter.class);
+
+    public static final int MSG_SIZE = 4096;
+
+
     private Long jobId;
 
     public DsReporter(Long jobId) {
@@ -29,12 +38,17 @@ public class DsReporter extends AbstractReporter {
         jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
         jobStatus.setPercentage(communication.getDoubleCounter("percentage"));
 
-        if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
+        if (communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
             jobStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
         } else {
-            jobStatus.setErrorMessage(communication.getThrowableMessage());
+            String compressedMsg = StrUtil.compressMiddle(communication.getThrowableMessage(), MSG_SIZE, MSG_SIZE);
+            jobStatus.setErrorMessage(compressedMsg);
         }
-        DataxServiceUtil.updateJobInfo(jobId, jobStatus);
+        try {
+            DataxServiceUtil.updateJobInfo(jobId, jobStatus);
+        } catch (Exception e) {
+            LOG.error("Exception when report job communication", e);
+        }
     }
 
     @Override
@@ -53,13 +67,18 @@ public class DsReporter extends AbstractReporter {
         taskGroupStatus.setErrorRecords(CommunicationTool.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationTool.getTotalErrorBytes(communication));
 
-        if(communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
+        if (communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
             taskGroupStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
         } else {
-            taskGroupStatus.setErrorMessage(communication.getThrowableMessage());
+            String compressedMsg = StrUtil.compressMiddle(communication.getThrowableMessage(), MSG_SIZE, MSG_SIZE);
+            taskGroupStatus.setErrorMessage(compressedMsg);
         }
 
-        DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
+        try {
+            DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
+        } catch (Exception e) {
+            LOG.error("Exception when report task group communication", e);
+        }
     }
 
 }

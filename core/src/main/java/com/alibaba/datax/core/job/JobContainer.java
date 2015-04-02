@@ -111,6 +111,8 @@ public class JobContainer extends AbstractContainer {
 
             this.invokeHooks();
         } catch (Throwable e) {
+            LOG.error("Exception when job run", e);
+
             hasException = true;
 
             if (e instanceof OutOfMemoryError) {
