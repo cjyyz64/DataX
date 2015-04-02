@@ -132,38 +132,9 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                 preparedStatement.executeBatch();
                 connection.commit();
             } catch (TddlNestableRuntimeException e) {
-                LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
-                connection.rollback();
-                doOneInsert(connection, buffer);
-            } catch (Exception e) {
+                LOG.warn("插入失败. 存在脏数据. 因为:" + e.getMessage());
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
-            } finally {
-                DBUtil.closeDBResources(preparedStatement, null);
-            }
-        }
-
-        @Override
-        protected void doOneInsert(Connection connection, List<Record> buffer) {
-            PreparedStatement preparedStatement = null;
-            try {
-                connection.setAutoCommit(true);
-                preparedStatement = connection
-                        .prepareStatement(this.writeRecordSql);
-
-                for (Record record : buffer) {
-                    try {
-                        preparedStatement = fillPreparedStatement(
-                                preparedStatement, record);
-                        preparedStatement.execute();
-                    } catch (TddlNestableRuntimeException e) {
-                        LOG.debug(e.toString());
-                        this.taskPluginCollector.collectDirtyRecord(record, e);
-                    } finally {
-                        // 最后不要忘了关闭 preparedStatement
-                        preparedStatement.clearParameters();
-                    }
-                }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
