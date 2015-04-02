@@ -56,6 +56,9 @@ public class OdpsWriter extends Writer {
             this.projectName = this.originalConfig.getString(Key.PROJECT);
             this.tableName = this.originalConfig.getString(Key.TABLE);
 
+            //check isCompress
+            this.originalConfig.getBool(Key.IS_COMPRESS, false);
+
             this.partition = OdpsUtil.formatPartition(this.originalConfig
                     .getString(Key.PARTITION, ""));
             this.originalConfig.set(Key.PARTITION, this.partition);
@@ -195,6 +198,7 @@ public class OdpsWriter extends Writer {
         private String tableName;
         private String partition;
         private boolean emptyAsNull;
+        private boolean isCompress;
 
         private TableTunnel.UploadSession managerUpload;
         private TableTunnel.UploadSession workerUpload;
@@ -216,6 +220,7 @@ public class OdpsWriter extends Writer {
 
             this.emptyAsNull = this.sliceConfig.getBool(Key.EMPTY_AS_NULL);
             this.blockSizeInMB = this.sliceConfig.getInt(Key.BLOCK_SIZE_IN_MB);
+            this.isCompress = this.sliceConfig.getBool(Key.IS_COMPRESS, false);
             if (this.blockSizeInMB < 1 || this.blockSizeInMB > 512) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
                         String.format("您配置的blockSizeInMB:%s 参数错误. 正确的配置是[1-512]之间的整数. 请修改此参数的值为该区间内的数值", this.blockSizeInMB));
@@ -254,7 +259,7 @@ public class OdpsWriter extends Writer {
                 TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();
 
                 OdpsWriterProxy proxy = new OdpsWriterProxy(this.workerUpload, this.blockSizeInMB, blockId,
-                        columnPositions, taskPluginCollector, this.emptyAsNull);
+                        columnPositions, taskPluginCollector, this.emptyAsNull, this.isCompress);
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
 

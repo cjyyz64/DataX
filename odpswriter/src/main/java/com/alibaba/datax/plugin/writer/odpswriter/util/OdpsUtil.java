@@ -136,9 +136,9 @@ public class OdpsUtil {
     public static List<String> listOdpsPartitions(Table table) {
         List<String> parts = new ArrayList<String>();
         try {
-            List<Column> columns = table.getSchema().getPartitionColumns();
-            for(Column column : columns) {
-                parts.add(column.getName());
+            List<Partition> partitions = table.getPartitions();
+            for(Partition partition : partitions) {
+                parts.add(partition.getPartitionSpec().toString());
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.GET_PARTITION_FAIL, String.format("获取 ODPS 目的表:%s 的所有分区失败. 请联系 ODPS 管理员处理.",
@@ -347,12 +347,12 @@ public class OdpsUtil {
     }
 
     public static void slaveWriteOneBlock(final TableTunnel.UploadSession slaveUpload, final ProtobufRecordPack protobufRecordPack,
-                                          final long blockId) {
+                                          final long blockId, final boolean isCompress) {
         try {
             RetryUtil.executeWithRetry(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                    TunnelRecordWriter tunnelRecordWriter = (TunnelRecordWriter)slaveUpload.openRecordWriter(blockId);
+                    TunnelRecordWriter tunnelRecordWriter = (TunnelRecordWriter)slaveUpload.openRecordWriter(blockId, isCompress);
                     tunnelRecordWriter.write(protobufRecordPack);
                     tunnelRecordWriter.close();
                     return null;
@@ -454,7 +454,7 @@ public class OdpsUtil {
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
                     if (!isPartitionExists) {
-                        LOG.info("Try to add partition:[{}] in table:[{}] by drop it and then add it..", partition,
+                        LOG.info("Try to add partition:[{}] in table:[{}].", partition,
                                 table.getName());
                         OdpsUtil.addPart(odps, table, partition);
                     }

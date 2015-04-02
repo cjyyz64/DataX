@@ -42,10 +42,11 @@ public class OdpsWriterProxy {
     private List<Integer> columnPositions;
     private List<OdpsType> tableOriginalColumnTypeList;
     private boolean emptyAsNull;
+    private boolean isCompress;
 
     public OdpsWriterProxy(TableTunnel.UploadSession slaveUpload, int blockSizeInMB,
                            AtomicLong blockId, List<Integer> columnPositions,
-                           TaskPluginCollector taskPluginCollector, boolean emptyAsNull)
+                           TaskPluginCollector taskPluginCollector, boolean emptyAsNull, boolean isCompress)
             throws IOException, TunnelException {
         this.slaveUpload = slaveUpload;
         this.schema = this.slaveUpload.getSchema();
@@ -57,6 +58,7 @@ public class OdpsWriterProxy {
         this.columnPositions = columnPositions;
         this.taskPluginCollector = taskPluginCollector;
         this.emptyAsNull = emptyAsNull;
+        this.isCompress = isCompress;
 
         // 初始化与 buffer 区相关的值
         this.max_buffer_length = blockSizeInMB * 1024 * 1024;
@@ -87,7 +89,7 @@ public class OdpsWriterProxy {
         if (recordPackByteSize >= max_buffer_length) {
 
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    protobufRecordPack, blockId.get());
+                    protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
@@ -102,7 +104,7 @@ public class OdpsWriterProxy {
         // complete protobuf stream, then write to http
         if (recordPackByteSize != 0) {
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    protobufRecordPack, blockId.get());
+                    protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
