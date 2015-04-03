@@ -254,11 +254,6 @@ public class CommonRdbmsWriter {
                     this.jdbcUrl, username, password);
             DBUtil.dealWithSessionConfig(connection, writerSliceConfig,
                     this.dataBaseType, BASIC_MESSAGE);
-            try {
-                connection.setAutoCommit(false);
-            } catch (Exception e) {
-                throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
-            }
             startWriteWithConnection(recordReceiver, taskPluginCollector, connection);
         }
 
@@ -288,6 +283,7 @@ public class CommonRdbmsWriter {
                 throws SQLException {
             PreparedStatement preparedStatement = null;
             try {
+                connection.setAutoCommit(false);
                 preparedStatement = connection
                         .prepareStatement(this.writeRecordSql);
 
