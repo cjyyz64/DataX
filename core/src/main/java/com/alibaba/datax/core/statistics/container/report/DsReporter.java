@@ -47,6 +47,7 @@ public class DsReporter extends AbstractReporter {
         try {
             DataxServiceUtil.updateJobInfo(jobId, jobStatus);
         } catch (Exception e) {
+            // TODO jobId status to log
             LOG.error("Exception when report job communication", e);
         }
     }
@@ -77,6 +78,7 @@ public class DsReporter extends AbstractReporter {
         try {
             DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
         } catch (Exception e) {
+            // TODO jobId status to log
             LOG.error("Exception when report task group communication", e);
         }
     }
