@@ -35,7 +35,7 @@ public class OdpsWriterProxy {
     private TableTunnel.UploadSession slaveUpload;
     private TableSchema schema;
     private long recordPackByteSize = 0;
-    private int max_buffer_length;
+    private int maxBufferSize;
     private ProtobufRecordPack protobufRecordPack;
     private AtomicLong blockId;
 
@@ -61,7 +61,7 @@ public class OdpsWriterProxy {
         this.isCompress = isCompress;
 
         // 初始化与 buffer 区相关的值
-        this.max_buffer_length = blockSizeInMB * 1024 * 1024;
+        this.maxBufferSize = blockSizeInMB * 1024 * 1024;
         printColumnLess = true;
 
         //todo:怎么初始化
@@ -86,7 +86,7 @@ public class OdpsWriterProxy {
         protobufRecordPack.append(record);
         recordPackByteSize = recordPackByteSize + recordByteSize;
 
-        if (recordPackByteSize >= max_buffer_length) {
+        if (recordPackByteSize >= maxBufferSize) {
 
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
                     protobufRecordPack, blockId.get(), this.isCompress);

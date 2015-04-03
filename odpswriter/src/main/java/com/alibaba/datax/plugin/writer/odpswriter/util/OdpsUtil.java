@@ -20,9 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 public class OdpsUtil {
@@ -319,8 +317,10 @@ public class OdpsUtil {
 
         LOG.info("Try to start sqlTask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
 
-        //todo:unchecked
-        Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, null, null);
+        //todo:bizId set 打印日志
+        Map<String,String> hintMap = new HashMap<String, String>();
+        hintMap.put("biz_id","");
+        Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, hintMap, null);
         instance.waitForSuccess();
         Instance.TaskStatus status = instance.getTaskStatus().get(taskName);
 

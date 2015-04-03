@@ -13,7 +13,6 @@ import com.aliyun.odps.Odps;
 import com.aliyun.odps.Table;
 import com.aliyun.odps.TableSchema;
 import com.aliyun.odps.tunnel.TableTunnel;
-import com.aliyun.odps.tunnel.io.ProtobufRecordPack;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
