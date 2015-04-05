@@ -6,6 +6,9 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.base.Strings;
 import com.mongodb.*;
 import org.slf4j.Logger;
@@ -59,10 +62,9 @@ public class MongoDBWriter extends Writer{
         private Integer batchSize = null;
         private boolean isContainArray = false;
         private String splitter = " ";
-        private String mongodbColumnMeta = null;
-
-        private boolean isUpsert = false;
-        private String uniqueKey = "id";
+        private JSONArray mongodbColumnMeta = null;
+        private JSONObject upsertInfoMeta = null;
+        private static int BATCH_SIZE = 1000;
 
 
         @Override
@@ -72,25 +74,23 @@ public class MongoDBWriter extends Writer{
                 throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
             }
             DB db = mongoClient.getDB(database);
-            logger.warn("db="+db+" database="+database+ " collection="+this.collection+" meta="+mongodbColumnMeta);
             DBCollection col = db.getCollection(this.collection);
-            List<String> columnMetaList = Arrays.asList(mongodbColumnMeta.split(","));
             List<Record> writerBuffer = new ArrayList<Record>(this.batchSize);
             Record record = null;
             while((record = lineReceiver.getFromReader()) != null) {
                 writerBuffer.add(record);
                 if(writerBuffer.size() >= this.batchSize) {
-                    doBatchInsert(col,writerBuffer,columnMetaList);
+                    doBatchInsert(col,writerBuffer,mongodbColumnMeta);
                     writerBuffer.clear();
                 }
             }
             if(!writerBuffer.isEmpty()) {
-                doBatchInsert(col,writerBuffer,columnMetaList);
+                doBatchInsert(col,writerBuffer,mongodbColumnMeta);
                 writerBuffer.clear();
             }
         }
 
-        private void doBatchInsert(DBCollection collection,List<Record> writerBuffer, List<String> columnMetaList) {
+        private void doBatchInsert(DBCollection collection,List<Record> writerBuffer, JSONArray columnMeta) {
 
             List<DBObject> dataList = new ArrayList<DBObject>();
 
@@ -102,7 +102,7 @@ public class MongoDBWriter extends Writer{
 
                     if(Strings.isNullOrEmpty(record.getColumn(i).asString())) {
 
-                        data.put(columnMetaList.get(i), record.getColumn(i).asString());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                         continue;
                     }
                     if(record.getColumn(i) instanceof StringColumn){
@@ -110,38 +110,42 @@ public class MongoDBWriter extends Writer{
                         if(this.isContainArray) {
                             if(!Strings.isNullOrEmpty(this.splitter)) {
                                 //logger.warn("columnMeta="+columnMetaList.get(i)+" record="+record+" record.getColumn("+i+")="+record.getColumn(i).asString());
-                                data.put(columnMetaList.get(i), record.getColumn(i).asString().split(this.splitter));
+                                String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
+                                String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
+                                if(type.toLowerCase().equals("array")) {
+                                    data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
+                                }
                             }
                         } else {
-                            data.put(columnMetaList.get(i), record.getColumn(i).asString());
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                         }
 
                     } else if(record.getColumn(i) instanceof LongColumn) {
 
-                        data.put(columnMetaList.get(i),record.getColumn(i).asLong());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asLong());
 
                     } else if(record.getColumn(i) instanceof DateColumn) {
 
-                        data.put(columnMetaList.get(i),record.getColumn(i).asDate());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asDate());
 
                     } else if(record.getColumn(i) instanceof DoubleColumn) {
 
-                        data.put(columnMetaList.get(i),record.getColumn(i).asDouble());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asDouble());
 
                     } else if(record.getColumn(i) instanceof BoolColumn) {
 
-                        data.put(columnMetaList.get(i),record.getColumn(i).asBoolean());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asBoolean());
 
                     } else if(record.getColumn(i) instanceof NullColumn) {
 
-                        data.put(columnMetaList.get(i),null);
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),null);
 
                     } else if(record.getColumn(i) instanceof BytesColumn) {
 
-                        data.put(columnMetaList.get(i),record.getColumn(i).asBytes());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asBytes());
 
                     } else {
-                        data.put(columnMetaList.get(i),record.getColumn(i).asString());
+                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asString());
                     }
                 }
                 dataList.add(data);
@@ -149,13 +153,14 @@ public class MongoDBWriter extends Writer{
             /**
              * 如果存在重复的值覆盖
              */
-            if(this.isUpsert) {
+            if(this.upsertInfoMeta != null) {
                 BulkWriteOperation bulkUpsert = collection.initializeUnorderedBulkOperation();
-                if(!Strings.isNullOrEmpty(this.uniqueKey)) {
+                String uniqueKey = this.upsertInfoMeta.getString(KeyConstant.UNIQUE_KEY);
+                if(!Strings.isNullOrEmpty(uniqueKey)) {
                     for(DBObject data : dataList) {
                         BasicDBObject query = new BasicDBObject();
-                        if(data.get(this.uniqueKey) != null) {
-                            query.put(this.uniqueKey,data.get(this.uniqueKey));
+                        if(uniqueKey != null) {
+                            query.put(uniqueKey,data.get(uniqueKey));
                         }
                         bulkUpsert.find(query).upsert().replaceOne(data);
                     }
@@ -172,28 +177,18 @@ public class MongoDBWriter extends Writer{
         @Override
         public void init() {
             this.writerSliceConfig = this.getPluginJobConf();
-
-            this.isAuth = writerSliceConfig.getBool(KeyConstant.MONGO_IS_AUTH);
-            if(this.isAuth) {
-                this.userName = writerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
-                this.password = writerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
-                if(isAuth) {
-                    if(Strings.isNullOrEmpty(userName) || Strings.isNullOrEmpty(password)) {
-                        return;
-                    }
-                    this.mongoClient = MongoUtil.initCredentialMongoClient(this.writerSliceConfig,userName,password);
-                }
+            this.userName = writerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
+            this.password = writerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+            if(!Strings.isNullOrEmpty(userName) && !Strings.isNullOrEmpty(password)) {
+                this.mongoClient = MongoUtil.initCredentialMongoClient(this.writerSliceConfig,userName,password);
             } else {
                 this.mongoClient = MongoUtil.initMongoClient(this.writerSliceConfig);
             }
             this.database = writerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             this.collection = writerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
-            this.batchSize = writerSliceConfig.getInt(KeyConstant.BATCH_SIZE);
-            this.isContainArray = writerSliceConfig.getBool(KeyConstant.IS_CONTAIN_ARRAY);
-            this.splitter = writerSliceConfig.getString(KeyConstant.ARRAY_SPLITTER);
-            this.mongodbColumnMeta = writerSliceConfig.getString(KeyConstant.MONGO_COLUMN);
-            this.isUpsert = writerSliceConfig.getBool(KeyConstant.IS_UPSERT);
-            this.uniqueKey = writerSliceConfig.getString(KeyConstant.UNIQUE_KEY);
+            this.batchSize = BATCH_SIZE;
+            this.mongodbColumnMeta = JSON.parseArray(writerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
+            this.upsertInfoMeta = JSON.parseObject(writerSliceConfig.getString(KeyConstant.UPSERT_INFO));
         }
 
         @Override
