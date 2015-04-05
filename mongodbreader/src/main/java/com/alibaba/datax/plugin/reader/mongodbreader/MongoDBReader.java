@@ -40,10 +40,9 @@ public class MongoDBReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.isAuth = originalConfig.getBool(KeyConstant.MONGO_IS_AUTH);
-            if(this.isAuth) {
                 this.userName = originalConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = originalConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+            if(!Strings.isNullOrEmpty(this.userName) && !Strings.isNullOrEmpty(this.password)) {
                 this.mongoClient = MongoUtil.initCredentialMongoClient(originalConfig,userName,password);
             } else {
                 this.mongoClient = MongoUtil.initMongoClient(originalConfig);
@@ -116,12 +115,11 @@ public class MongoDBReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.isAuth = readerSliceConfig.getBool(KeyConstant.MONGO_IS_AUTH);
-            if(isAuth) {
                 this.userName = readerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = readerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+            if(!Strings.isNullOrEmpty(userName) && !Strings.isNullOrEmpty(password)) {
                 mongoClient = MongoUtil.initCredentialMongoClient(readerSliceConfig,userName,password);
-            } else{
+            } else {
                 mongoClient = MongoUtil.initMongoClient(readerSliceConfig);
             }
             this.database = readerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);

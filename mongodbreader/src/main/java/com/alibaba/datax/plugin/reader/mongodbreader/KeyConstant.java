@@ -7,41 +7,45 @@ public class KeyConstant {
     /**
      * mongodb 的 host 地址
      */
-    public static final String MONGO_HOST = "mongo_host";
-    /**
-     * mongodb 的 端口号
-     */
-    public static final String MONGO_PORT = "mongo_port";
+    public static final String MONGO_ADDRESS = "address";
     /**
      * mongodb 的用户名
      */
-    public static final String MONGO_USER_NAME = "mongo_user_name";
+    public static final String MONGO_USER_NAME = "userName";
     /**
      * mongodb 密码
      */
-    public static final String MONGO_USER_PASSWORD = "mongo_user_password";
-    /**
-     * 是否验证权限
-     */
-    public static final String MONGO_IS_AUTH = "mongo_user_auth";
+    public static final String MONGO_USER_PASSWORD = "userPassword";
     /**
      * mongodb 数据库名
      */
-    public static final String MONGO_DB_NAME = "mongo_db_name";
+    public static final String MONGO_DB_NAME = "dbName";
     /**
      * mongodb 集合名
      */
-    public static final String MONGO_COLLECTION_NAME = "mongo_collection_name";
+    public static final String MONGO_COLLECTION_NAME = "collectionName";
     /**
      * mongodb 的列
      */
-    public static final String MONGO_COLUMN = "mongo_column";
+    public static final String MONGO_COLUMN = "column";
     /**
-     * 起始Id
+     * 每个列的名字
      */
-    public static final String SKIP_COUNT = "skip_count";
+    public static final String COLUMN_NAME = "name";
     /**
-     * 批量的个数
+     * 每个列的类型
      */
-    public static final String BATCH_SIZE = "batch_size";
+    public static final String COLUMN_TYPE = "type";
+    /**
+     * 列分隔符
+     */
+    public static final String COLUMN_SPLITTER = "splitter";
+    /**
+     * 跳过的列数
+     */
+    public static final String SKIP_COUNT = "skipCount";
+    /**
+     * 批量获取的记录数
+     */
+    public static final String BATCH_SIZE = "batchSize";
 }
