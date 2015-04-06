@@ -73,6 +73,10 @@ public class MongoDBReader extends Reader {
         private String mongodbColumnMeta = null;
         private String skipCount = null;
         private Long batchSize = null;
+        /**
+         * 每页数据的大小
+         */
+        private int pageSize = 1000;
 
         @Override
         public void startRead(RecordSender recordSender) {
@@ -87,28 +91,42 @@ public class MongoDBReader extends Reader {
             DBCollection col = db.getCollection(this.collection);
             DBObject obj = new BasicDBObject();
             obj.put("_id",1);
-            DBCursor dbCursor = col.find().sort(obj).skip(Integer.valueOf(skipCount)).limit((int)(long)batchSize);
-            while(dbCursor.hasNext()) {
-                DBObject item = dbCursor.next();
-                Record record = recordSender.createRecord();
-                for(String column : columnMetaList) {
-                    Object tempCol = item.get(column);
-                    if(tempCol == null) {
-                        continue;
-                    }
-                    if(tempCol instanceof Double) {
-                        record.addColumn(new DoubleColumn((Double)tempCol));
-                    } else if(tempCol instanceof Boolean) {
-                        record.addColumn(new BoolColumn((Boolean)tempCol));
-                    } else if(tempCol instanceof Date) {
-                        record.addColumn(new DateColumn((Date)tempCol));
-                    } else if(tempCol instanceof Integer || tempCol instanceof Long) {
-                        record.addColumn(new LongColumn((Long)tempCol));
+
+            long pageCount = batchSize / pageSize;
+            long modCount = batchSize % pageSize;
+
+            for(int i = 0; i <= pageCount; i++) {
+                skipCount += i * pageCount;
+                if (i == pageCount) {
+                    if (modCount == 0) {
+                        break;
                     } else {
-                        record.addColumn(new StringColumn(tempCol.toString()));
+                        pageCount = modCount;
                     }
                 }
-                recordSender.sendToWriter(record);
+                DBCursor dbCursor = col.find().sort(obj).skip(Integer.valueOf(skipCount)).limit((int) (long) pageCount);
+                while (dbCursor.hasNext()) {
+                    DBObject item = dbCursor.next();
+                    Record record = recordSender.createRecord();
+                    for (String column : columnMetaList) {
+                        Object tempCol = item.get(column);
+                        if (tempCol == null) {
+                            continue;
+                        }
+                        if (tempCol instanceof Double) {
+                            record.addColumn(new DoubleColumn((Double) tempCol));
+                        } else if (tempCol instanceof Boolean) {
+                            record.addColumn(new BoolColumn((Boolean) tempCol));
+                        } else if (tempCol instanceof Date) {
+                            record.addColumn(new DateColumn((Date) tempCol));
+                        } else if (tempCol instanceof Integer || tempCol instanceof Long) {
+                            record.addColumn(new LongColumn((Long) tempCol));
+                        } else {
+                            record.addColumn(new StringColumn(tempCol.toString()));
+                        }
+                    }
+                    recordSender.sendToWriter(record);
+                }
             }
         }
 
