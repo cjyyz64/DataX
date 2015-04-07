@@ -42,7 +42,7 @@ public class MongoUtil {
     public static MongoClient initCredentialMongoClient(Configuration conf,String userName,String password) {
 
         List<Object> addressList = conf.getList(KeyConstant.MONGO_ADDRESS);
-        if(isHostPortPattern(addressList)) {
+        if(!isHostPortPattern(addressList)) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
@@ -63,6 +63,9 @@ public class MongoUtil {
      * @return
      */
     private static boolean isHostPortPattern(List<Object> addressList) {
+        for(Object obj : addressList) {
+            System.out.println(obj);
+        }
         boolean isMatch = false;
         for(Object address : addressList) {
             String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";
@@ -95,9 +98,8 @@ public class MongoUtil {
         try {
             ArrayList hostAddress = new ArrayList();
             hostAddress.add("127.0.0.1:27017");
-            List<ServerAddress> addressList = MongoUtil.parseServerAddress(hostAddress);
-            System.out.println(addressList.size());
-        } catch (UnknownHostException e) {
+            System.out.println(MongoUtil.isHostPortPattern(hostAddress));
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
