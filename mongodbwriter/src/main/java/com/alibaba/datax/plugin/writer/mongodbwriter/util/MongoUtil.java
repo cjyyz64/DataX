@@ -41,7 +41,11 @@ public class MongoUtil {
 
     public static MongoClient initCredentialMongoClient(Configuration conf,String userName,String password) {
 
-        String address = conf.getString(KeyConstant.MONGO_ADDRESS);
+        List<Object> addressList = conf.getList(KeyConstant.MONGO_ADDRESS);
+        for(Object obj : addressList) {
+            System.out.println(obj);
+        }
+        String address = "";
         if(isHostPortPattern(address)) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
@@ -90,5 +94,14 @@ public class MongoUtil {
             }
         }
         return addressList;
+    }
+
+    public static void main(String[] args) {
+        try {
+            List<ServerAddress> addressList = MongoUtil.parseServerAddress("127.0.0.1:27017");
+            System.out.println(addressList.size());
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 }
