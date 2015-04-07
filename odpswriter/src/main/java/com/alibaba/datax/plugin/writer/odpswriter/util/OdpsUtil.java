@@ -73,22 +73,6 @@ public class OdpsUtil {
                 .replaceAll(" *, *", ",").replaceAll("'", "");
     }
 
-//    public static TableTunnel initTableTunnel(Configuration originalConfig) {
-//        String accountType = originalConfig.getString(Key.ACCOUNT_TYPE);
-//        String accessId = originalConfig.getString(Key.ACCESS_ID);
-//        String accessKey = originalConfig.getString(Key.ACCESS_KEY);
-//
-//        String tunnelServer = originalConfig.getString(Key.TUNNEL_SERVER);
-//
-//        Account tunnelAccount = new Account(accountType, accessId, accessKey);
-//        if (Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(accountType)) {
-//            tunnelAccount.setAlgorithm(Constant.TAOBAO_ACCOUNT_TYPE_ALGORITHM);
-//        }
-//
-//        com.alibaba.odps.tunnel.Configuration tunnelConfig =
-//                new com.alibaba.odps.tunnel.Configuration(tunnelAccount, tunnelServer);
-//        return new TableTunnel(tunnelConfig);
-//    }
 
     public static Odps initOdpsProject(Configuration originalConfig) {
         String accountType = originalConfig.getString(Key.ACCOUNT_TYPE);
@@ -98,7 +82,7 @@ public class OdpsUtil {
         String odpsServer = originalConfig.getString(Key.ODPS_SERVER);
         String project = originalConfig.getString(Key.PROJECT);
 
-        Account account = null;
+        Account account;
         if (accountType.equalsIgnoreCase(Constant.DEFAULT_ACCOUNT_TYPE)) {
             account = new AliyunAccount(accessId, accessKey);
         } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
@@ -319,7 +303,7 @@ public class OdpsUtil {
 
         //todo:bizId set 打印日志
         Map<String,String> hintMap = new HashMap<String, String>();
-        hintMap.put("biz_id","");
+        hintMap.put("biz_id", "biz_id^");
         Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, hintMap, null);
         instance.waitForSuccess();
         Instance.TaskStatus status = instance.getTaskStatus().get(taskName);

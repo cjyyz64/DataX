@@ -64,15 +64,13 @@ public class OdpsWriterProxy {
         this.maxBufferSize = blockSizeInMB * 1024 * 1024;
         printColumnLess = true;
 
-        //todo:怎么初始化
-        //this.tunnelRecordWriter = (TunnelRecordWriter)slaveUpload.openRecordWriter(blockId.longValue());
     }
 
     public void writeOneRecord(
             com.alibaba.datax.common.element.Record dataXRecord,
             List<Long> blocks) throws Exception {
 
-        Pair<Record, Integer> recordPair = dataxRecordToOdpsRecord(dataXRecord, schema);
+        Pair<Record, Integer> recordPair = dataxRecordToOdpsRecord(dataXRecord);
 
         if(recordPair == null) {
             return;
@@ -115,8 +113,7 @@ public class OdpsWriterProxy {
     }
 
     public Pair<Record,Integer> dataxRecordToOdpsRecord(
-            com.alibaba.datax.common.element.Record dataXRecord,
-            TableSchema schema) throws Exception {
+            com.alibaba.datax.common.element.Record dataXRecord) throws Exception {
         int sourceColumnCount = dataXRecord.getColumnNumber();
         Record odpsRecord = slaveUpload.newRecord();
 

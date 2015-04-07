@@ -93,7 +93,6 @@ public class OdpsWriter extends Writer {
         public void prepare() {
             String accessId = null;
             String accessKey = null;
-
             if (Constant.DEFAULT_ACCOUNT_TYPE
                     .equalsIgnoreCase(this.accountType)) {
                 this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
@@ -103,17 +102,14 @@ public class OdpsWriter extends Writer {
                     LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
                             accessKey);
                 }
-
                 LOG.info("accessId:[{}] .", accessId);
             }
-
 
             // init odps config
             this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
             //检查表等配置是否正确
             this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
-
 
             OdpsUtil.dealTruncate(this.odps, this.table, this.partition, this.truncate);
         }
