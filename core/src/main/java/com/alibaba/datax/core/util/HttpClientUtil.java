@@ -19,6 +19,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class HttpClientUtil {
@@ -32,7 +33,9 @@ public class HttpClientUtil {
     //构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
     private static int HTTP_TIMEOUT_INMILLIONSECONDS;
 
-    private final int POOL_SIZE = 20;
+    private static final int POOL_SIZE = 20;
+
+    private static ThreadPoolExecutor asyncExecutor = RetryUtil.createThreadPoolExecutor();
 
     public static void setHttpTimeoutInMillionSeconds(int httpTimeoutInMillionSeconds) {
         HTTP_TIMEOUT_INMILLIONSECONDS = httpTimeoutInMillionSeconds;
@@ -141,7 +144,7 @@ public class HttpClientUtil {
                 public String call() throws Exception {
                     return executeAndGet(httpRequestBase);
                 }
-            }, retryTimes, retryInterval, true, HTTP_TIMEOUT_INMILLIONSECONDS + 1000);
+            }, retryTimes, retryInterval, true, HTTP_TIMEOUT_INMILLIONSECONDS + 1000, asyncExecutor);
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
         }
