@@ -109,7 +109,7 @@ public class MongoDBWriter extends Writer{
                         String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
                         if(type.toLowerCase().equals("array")) {
                             System.out.println("type="+type+",splitter="+splitter);
-                            if(splitter != null && splitter != "") {
+                            if(splitter == null || splitter == "") {
                                 throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
                             }
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
