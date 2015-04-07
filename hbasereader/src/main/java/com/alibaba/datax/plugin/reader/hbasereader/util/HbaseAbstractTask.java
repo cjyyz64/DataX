@@ -83,7 +83,7 @@ public abstract class HbaseAbstractTask {
 
         lastResult = result;
 
-        // nay be null
+        // may be null
         return result;
     }
 }

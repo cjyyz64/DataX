@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.*;
 import com.alibaba.fastjson.JSON;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.fs.Path;
@@ -20,7 +19,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public final class HbaseUtil {
     private static Logger LOG = LoggerFactory.getLogger(HbaseUtil.class);
@@ -28,9 +26,6 @@ public final class HbaseUtil {
     private static final String META_SCANNER_CACHING = "100";
 
     private static final int TETRAD_TYPE_COUNT = 4;
-    
-    public static AtomicInteger htableCounter = new AtomicInteger(0);
-    public static AtomicInteger adminCounter = new AtomicInteger(0);
 
     public static void doPretreatment(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.HBASE_CONFIG,
@@ -273,10 +268,8 @@ public final class HbaseUtil {
             org.apache.hadoop.conf.Configuration conf = HbaseUtil.getHbaseConf(hbaseConnConf);
             conf.set("hbase.meta.scanner.caching", META_SCANNER_CACHING);
 
-            HTable htable = HTableManager.createHTable(conf, tableName);            
-            LOG.info("create htable, table counter now is " + htableCounter.incrementAndGet());
+            HTable htable = HTableManager.createHTable(conf, tableName);
             admin = HTableManager.createHBaseAdmin(conf);
-            LOG.info("create admin, admin counter now is " + adminCounter.incrementAndGet());
             check(admin, htable);
 
             return htable;
@@ -286,7 +279,6 @@ public final class HbaseUtil {
             if (admin != null) {
                 try {
                     admin.close();
-                    LOG.info("close admin, admin counter now is " + adminCounter.decrementAndGet());
                 } catch (IOException e) {
                     // ignore it
                 }
