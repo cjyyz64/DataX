@@ -107,7 +107,7 @@ public class MongoDBWriter extends Writer{
                         //处理数组类型
                         String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
                         String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
-                        System.out.println("splitter="+splitter);
+                        System.out.println("type="+type+",splitter="+splitter);
                         if(type.toLowerCase().equals("array")) {
                             if(splitter != null && splitter != "") {
                                 throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
