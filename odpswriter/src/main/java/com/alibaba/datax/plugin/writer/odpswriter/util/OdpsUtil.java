@@ -301,10 +301,8 @@ public class OdpsUtil {
 
         LOG.info("Try to start sqlTask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
 
-        //todo:bizId set 打印日志
-        Map<String,String> hintMap = new HashMap<String, String>();
-        hintMap.put("biz_id", "biz_id^");
-        Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, hintMap, null);
+        //todo:biz_id set (目前ddl先不做)
+        Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, null, null);
         instance.waitForSuccess();
         Instance.TaskStatus status = instance.getTaskStatus().get(taskName);
 
