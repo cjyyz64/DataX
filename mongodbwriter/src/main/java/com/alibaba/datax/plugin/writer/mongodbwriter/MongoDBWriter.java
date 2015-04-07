@@ -53,14 +53,12 @@ public class MongoDBWriter extends Writer{
         private Configuration writerSliceConfig;
         private MongoClient mongoClient;
 
-        private boolean isAuth = false;
         private String userName = null;
         private String password = null;
 
         private String database = null;
         private String collection = null;
         private Integer batchSize = null;
-        private boolean isContainArray = false;
         private String splitter = " ";
         private JSONArray mongodbColumnMeta = null;
         private JSONObject upsertInfoMeta = null;
@@ -107,19 +105,16 @@ public class MongoDBWriter extends Writer{
                     }
                     if(record.getColumn(i) instanceof StringColumn){
                         //处理数组类型
-                        if(this.isContainArray) {
-                            if(!Strings.isNullOrEmpty(this.splitter)) {
-                                //logger.warn("columnMeta="+columnMetaList.get(i)+" record="+record+" record.getColumn("+i+")="+record.getColumn(i).asString());
-                                String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
-                                String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
-                                if(type.toLowerCase().equals("array")) {
-                                    data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
-                                }
+                        String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
+                        String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
+                        if(type.toLowerCase().equals("array")) {
+                            if(Strings.isNullOrEmpty(splitter)) {
+                                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
                             }
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
                         } else {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                         }
-
                     } else if(record.getColumn(i) instanceof LongColumn) {
 
                         data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asLong());
