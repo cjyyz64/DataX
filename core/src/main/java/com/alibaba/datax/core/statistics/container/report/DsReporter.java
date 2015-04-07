@@ -7,6 +7,7 @@ import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ExceptionTracker;
 import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import com.alibaba.fastjson.JSON;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +48,9 @@ public class DsReporter extends AbstractReporter {
         try {
             DataxServiceUtil.updateJobInfo(jobId, jobStatus);
         } catch (Exception e) {
-            // TODO jobId status to log
-            LOG.error("Exception when report job communication", e);
+            LOG.error("Exception when report job communication, jobId: " + jobId +
+                            ", status: " + JSON.toJSONString(jobStatus),
+                    e);
         }
     }
 
@@ -78,8 +80,10 @@ public class DsReporter extends AbstractReporter {
         try {
             DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
         } catch (Exception e) {
-            // TODO jobId status to log
-            LOG.error("Exception when report task group communication", e);
+            LOG.error("Exception when report task group communication, job: " + jobId +
+                            ", task group: " + taskGroupId +
+                            ", status: " + JSON.toJSONString(taskGroupStatus),
+                    e);
         }
     }
 
