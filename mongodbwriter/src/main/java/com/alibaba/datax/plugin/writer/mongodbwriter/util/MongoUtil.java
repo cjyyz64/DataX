@@ -24,12 +24,12 @@ public class MongoUtil {
 
     public static MongoClient initMongoClient(Configuration conf) {
 
-        String address = conf.getString(KeyConstant.MONGO_ADDRESS);
-        if(Strings.isNullOrEmpty(address)) {
+        List<Object> addressList = conf.getList(KeyConstant.MONGO_ADDRESS);
+        if(addressList == null || addressList.size() <= 0) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
-            return new MongoClient(parseServerAddress(address));
+            return new MongoClient(parseServerAddress(addressList));
         } catch (UnknownHostException e) {
            throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_ADDRESS,"不合法的地址");
         } catch (NumberFormatException e) {
@@ -42,16 +42,12 @@ public class MongoUtil {
     public static MongoClient initCredentialMongoClient(Configuration conf,String userName,String password) {
 
         List<Object> addressList = conf.getList(KeyConstant.MONGO_ADDRESS);
-        for(Object obj : addressList) {
-            System.out.println(obj);
-        }
-        String address = "";
-        if(isHostPortPattern(address)) {
+        if(isHostPortPattern(addressList)) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
             MongoCredential credential = MongoCredential.createMongoCRCredential(userName, "admin", password.toCharArray());
-            return new MongoClient(parseServerAddress(address), Arrays.asList(credential));
+            return new MongoClient(parseServerAddress(addressList), Arrays.asList(credential));
 
         } catch (UnknownHostException e) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_ADDRESS,"不合法的地址");
@@ -63,15 +59,14 @@ public class MongoUtil {
     }
     /**
      * 判断地址类型是否符合要求
-     * @param addressListStr
+     * @param addressList
      * @return
      */
-    private static boolean isHostPortPattern(String addressListStr) {
-        Iterable<String> ms = Splitter.on(",").split(addressListStr);
+    private static boolean isHostPortPattern(List<Object> addressList) {
         boolean isMatch = false;
-        for(String address : ms) {
+        for(Object address : addressList) {
             String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";
-            if(address.matches(regex)) {
+            if(((String)address).matches(regex)) {
                 isMatch = true;
             }
         }
@@ -79,15 +74,15 @@ public class MongoUtil {
     }
     /**
      * 转换为mongo地址协议
-     * @param address
+     * @param rawAddressList
      * @return
      */
-    private static List<ServerAddress> parseServerAddress(String address) throws UnknownHostException{
+    private static List<ServerAddress> parseServerAddress(List<Object> rawAddressList) throws UnknownHostException{
         List<ServerAddress> addressList = new ArrayList<ServerAddress>();
-        Map<String,String> ms = Splitter.on(",").withKeyValueSeparator(":").split(address);
-        for(Map.Entry<String,String> temp : ms.entrySet()) {
+        for(Object address : rawAddressList) {
+            String[] tempAddress = ((String)address).split(":");
             try {
-                ServerAddress sa = new ServerAddress(temp.getKey(),Integer.valueOf(temp.getValue()));
+                ServerAddress sa = new ServerAddress(tempAddress[0],Integer.valueOf(tempAddress[1]));
                 addressList.add(sa);
             } catch (UnknownHostException e) {
                 throw new UnknownHostException();
@@ -98,7 +93,9 @@ public class MongoUtil {
 
     public static void main(String[] args) {
         try {
-            List<ServerAddress> addressList = MongoUtil.parseServerAddress("127.0.0.1:27017");
+            ArrayList hostAddress = new ArrayList();
+            hostAddress.add("127.0.0.1:27017");
+            List<ServerAddress> addressList = MongoUtil.parseServerAddress(hostAddress);
             System.out.println(addressList.size());
         } catch (UnknownHostException e) {
             e.printStackTrace();
