@@ -130,7 +130,6 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     preparedStatement.addBatch();
                 }
                 preparedStatement.executeBatch();
-                connection.commit();
             } catch (TddlNestableRuntimeException e) {
                 LOG.warn("插入失败. 存在脏数据. 因为:" + e.getMessage());
                 throw DataXException.asDataXException(
