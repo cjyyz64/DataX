@@ -28,7 +28,6 @@ public class MongoDBReader extends Reader {
 
         private MongoClient mongoClient;
 
-        private boolean isAuth = false;
         private String userName = null;
         private String password = null;
 
@@ -63,7 +62,6 @@ public class MongoDBReader extends Reader {
 
         private MongoClient mongoClient;
 
-        private boolean isAuth = false;
         private String userName = null;
         private String password = null;
 
