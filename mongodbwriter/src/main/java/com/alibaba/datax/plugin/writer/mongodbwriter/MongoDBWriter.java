@@ -148,7 +148,9 @@ public class MongoDBWriter extends Writer{
             /**
              * 如果存在重复的值覆盖
              */
-            if(this.upsertInfoMeta != null) {
+            if(this.upsertInfoMeta != null &&
+                    this.upsertInfoMeta.getString(KeyConstant.IS_UPSERT) != null &&
+                    this.upsertInfoMeta.getString(KeyConstant.IS_UPSERT).equals("true")) {
                 BulkWriteOperation bulkUpsert = collection.initializeUnorderedBulkOperation();
                 String uniqueKey = this.upsertInfoMeta.getString(KeyConstant.UNIQUE_KEY);
                 if(!Strings.isNullOrEmpty(uniqueKey)) {
