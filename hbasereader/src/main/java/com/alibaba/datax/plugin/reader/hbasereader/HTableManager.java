@@ -24,10 +24,4 @@ public final class HTableManager {
             hTable.close();
         }
     }
-
-    public static void closeHBaseAdmin(HBaseAdmin hBaseAdmin) throws IOException {
-        if (hBaseAdmin != null) {
-            hBaseAdmin.close();
-        }
-    }
 }

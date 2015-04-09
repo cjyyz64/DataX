@@ -270,7 +270,6 @@ public final class HbaseUtil {
 
             HTable htable = HTableManager.createHTable(conf, tableName);
             admin = HTableManager.createHBaseAdmin(conf);
-
             check(admin, htable);
 
             return htable;

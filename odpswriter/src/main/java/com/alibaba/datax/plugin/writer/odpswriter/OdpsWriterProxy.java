@@ -4,15 +4,22 @@ import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
-import com.alibaba.odps.tunnel.Column;
-import com.alibaba.odps.tunnel.RecordSchema;
-import com.alibaba.odps.tunnel.Upload;
-import com.alibaba.odps.tunnel.io.ProtobufRecordWriter;
-import com.alibaba.odps.tunnel.io.Record;
+
+import com.aliyun.odps.OdpsType;
+import com.aliyun.odps.TableSchema;
+
+import com.aliyun.odps.data.Record;
+
+import com.aliyun.odps.tunnel.TableTunnel;
+
+import com.aliyun.odps.tunnel.TunnelException;
+import com.aliyun.odps.tunnel.io.ProtobufRecordPack;
+
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -25,62 +32,67 @@ public class OdpsWriterProxy {
 
     private TaskPluginCollector taskPluginCollector;
 
-    private Upload slaveUpload;
-    private RecordSchema schema;
-    private ByteArrayOutputStream byteArrayOutputStream;
-    private int max_buffer_length;
-    private ProtobufRecordWriter protobufRecordWriter;
+    private TableTunnel.UploadSession slaveUpload;
+    private TableSchema schema;
+    private long recordPackByteSize = 0;
+    private int maxBufferSize;
+    private ProtobufRecordPack protobufRecordPack;
     private AtomicLong blockId;
 
     private List<Integer> columnPositions;
-    private List<Column.Type> tableOriginalColumnTypeList;
+    private List<OdpsType> tableOriginalColumnTypeList;
     private boolean emptyAsNull;
+    private boolean isCompress;
 
-    public OdpsWriterProxy(Upload slaveUpload, int blockSizeInMB,
+    public OdpsWriterProxy(TableTunnel.UploadSession slaveUpload, int blockSizeInMB,
                            AtomicLong blockId, List<Integer> columnPositions,
-                           TaskPluginCollector taskPluginCollector, boolean emptyAsNull)
-            throws IOException {
+                           TaskPluginCollector taskPluginCollector, boolean emptyAsNull, boolean isCompress)
+            throws IOException, TunnelException {
         this.slaveUpload = slaveUpload;
         this.schema = this.slaveUpload.getSchema();
         this.tableOriginalColumnTypeList = OdpsUtil
                 .getTableOriginalColumnTypeList(this.schema);
 
-        this.byteArrayOutputStream = new ByteArrayOutputStream(
-                (blockSizeInMB + 1) * 1024 * 1024);
-        this.protobufRecordWriter = new ProtobufRecordWriter(schema,
-                byteArrayOutputStream);
+        this.protobufRecordPack = new ProtobufRecordPack(this.schema);
         this.blockId = blockId;
         this.columnPositions = columnPositions;
         this.taskPluginCollector = taskPluginCollector;
         this.emptyAsNull = emptyAsNull;
+        this.isCompress = isCompress;
 
         // 初始化与 buffer 区相关的值
-        this.max_buffer_length = blockSizeInMB * 1024 * 1024;
+        this.maxBufferSize = blockSizeInMB * 1024 * 1024;
         printColumnLess = true;
+
     }
 
     public void writeOneRecord(
             com.alibaba.datax.common.element.Record dataXRecord,
             List<Long> blocks) throws Exception {
 
-        Record record = dataxRecordToOdpsRecord(dataXRecord, schema);
+        Pair<Record, Integer> recordPair = dataxRecordToOdpsRecord(dataXRecord);
 
+        if(recordPair == null) {
+            return;
+        }
+        Record record = recordPair.getLeft();
+        int recordByteSize = recordPair.getRight();
         if (null == record) {
             return;
         }
 
-        protobufRecordWriter.write(record);
+        protobufRecordPack.append(record);
+        recordPackByteSize = recordPackByteSize + recordByteSize;
 
-        if (byteArrayOutputStream.size() >= max_buffer_length) {
-            protobufRecordWriter.close();
+        if (recordPackByteSize >= maxBufferSize) {
+
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    this.byteArrayOutputStream, blockId.get());
+                    protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
-            byteArrayOutputStream.reset();
-            protobufRecordWriter = new ProtobufRecordWriter(schema,
-                    byteArrayOutputStream);
+            recordPackByteSize = 0;
+            protobufRecordPack = new ProtobufRecordPack(this.schema);
 
             this.blockId.incrementAndGet();
         }
@@ -88,24 +100,22 @@ public class OdpsWriterProxy {
 
     public void writeRemainingRecord(List<Long> blocks) throws Exception {
         // complete protobuf stream, then write to http
-        protobufRecordWriter.close();
-        if (byteArrayOutputStream.size() != 0) {
+        if (recordPackByteSize != 0) {
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
-                    this.byteArrayOutputStream, blockId.get());
+                    protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
             // reset the buffer for next block
-            byteArrayOutputStream.reset();
+            recordPackByteSize = 0;
+            protobufRecordPack = new ProtobufRecordPack(this.schema);
         }
     }
 
-    public Record dataxRecordToOdpsRecord(
-            com.alibaba.datax.common.element.Record dataXRecord,
-            RecordSchema schema) throws Exception {
+    public Pair<Record,Integer> dataxRecordToOdpsRecord(
+            com.alibaba.datax.common.element.Record dataXRecord) throws Exception {
         int sourceColumnCount = dataXRecord.getColumnNumber();
-        int destColumnCount = schema.getColumnCount();
-        Record odpsRecord = new Record(destColumnCount);
+        Record odpsRecord = slaveUpload.newRecord();
 
         int userConfiguredColumnNumber = this.columnPositions.size();
 //todo
@@ -128,12 +138,14 @@ public class OdpsWriterProxy {
 
         int currentIndex;
         int sourceIndex = 0;
+
+        int recordByteSize = 0;
         try {
             com.alibaba.datax.common.element.Column columnValue;
 
             for (; sourceIndex < sourceColumnCount; sourceIndex++) {
                 currentIndex = columnPositions.get(sourceIndex);
-                Column.Type type = this.tableOriginalColumnTypeList
+                OdpsType type = this.tableOriginalColumnTypeList
                         .get(currentIndex);
                 columnValue = dataXRecord.getColumn(sourceIndex);
 
@@ -146,27 +158,32 @@ public class OdpsWriterProxy {
                 }
 
                 switch (type) {
-                    case ODPS_STRING:
+                    case STRING:
                         odpsRecord.setString(currentIndex, columnValue.asString());
+                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
-                    case ODPS_BIGINT:
+                    case BIGINT:
                         odpsRecord.setBigint(currentIndex, columnValue.asLong());
+                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
-                    case ODPS_BOOLEAN:
+                    case BOOLEAN:
                         odpsRecord.setBoolean(currentIndex, columnValue.asBoolean());
+                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
-                    case ODPS_DATETIME:
+                    case DATETIME:
                         odpsRecord.setDatetime(currentIndex, columnValue.asDate());
+                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
-                    case ODPS_DOUBLE:
+                    case DOUBLE:
                         odpsRecord.setDouble(currentIndex, columnValue.asDouble());
+                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     default:
                         break;
                 }
             }
 
-            return odpsRecord;
+            return new ImmutablePair<Record, Integer>(odpsRecord, recordByteSize);
         } catch (Exception e) {
             String message = String.format(
                     "写入 ODPS 目的表时遇到了脏数据, 因为源端第[%s]个字段, 具体值[%s] 的数据不符合 ODPS 对应字段的格式要求，请检查该数据并作出修改 或者您可以增大阀值，忽略这条记录.", sourceIndex,

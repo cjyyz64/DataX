@@ -3,16 +3,21 @@ package com.alibaba.datax.core.writer.tddlwriter;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.taobao.tddl.common.exception.TddlNestableRuntimeException;
 import com.taobao.tddl.optimizer.core.datatype.DataType;
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.List;
 
 /**
  * Date: 15/3/19 下午4:05
@@ -64,15 +69,24 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                     case Types.FLOAT:
                     case Types.REAL:
                     case Types.DOUBLE:
-                        preparedStatement.setBigDecimal(i + 1, record.getColumn(i).asBigDecimal());
+                        strValue = record.getColumn(i).asString();
+                        if (emptyAsNull && StringUtils.isBlank(strValue)) {
+                            preparedStatement.setString(i + 1, null);
+                        } else {
+                            preparedStatement.setBigDecimal(i + 1, record.getColumn(i).asBigDecimal());
+                        }
                         break;
                     case DataType.DATETIME_SQL_TYPE:
                         preparedStatement = super.fillPreparedStatementColumnType(preparedStatement, i, Types.TIMESTAMP, record.getColumn(i));
                         break;
                     case Types.BOOLEAN:
-                        preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        strValue = record.getColumn(i).asString();
+                        if (emptyAsNull && StringUtils.isBlank(strValue)) {
+                            preparedStatement.setString(i + 1, null);
+                        } else {
+                            preparedStatement.setBoolean(i + 1, record.getColumn(i).asBoolean());
+                        }
                         break;
-
                     case DataType.YEAR_SQL_TYPE:
                         if (this.resultSetMetaData.getRight().get(i)
                                 .equalsIgnoreCase("YearType")) {
@@ -101,6 +115,31 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
                 }
             }
             return preparedStatement;
+        }
+
+        @Override
+        protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
+            PreparedStatement preparedStatement = null;
+            try {
+                preparedStatement = connection
+                        .prepareStatement(this.writeRecordSql);
+
+                for (Record record : buffer) {
+                    preparedStatement = fillPreparedStatement(
+                            preparedStatement, record);
+                    preparedStatement.addBatch();
+                }
+                preparedStatement.executeBatch();
+            } catch (TddlNestableRuntimeException e) {
+                LOG.warn("插入失败. 存在脏数据. 因为:" + e.getMessage());
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            } finally {
+                DBUtil.closeDBResources(preparedStatement, null);
+            }
         }
     }
 

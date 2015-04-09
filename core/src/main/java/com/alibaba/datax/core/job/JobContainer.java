@@ -111,6 +111,8 @@ public class JobContainer extends AbstractContainer {
 
             this.invokeHooks();
         } catch (Throwable e) {
+            LOG.error("Exception when job run", e);
+
             hasException = true;
 
             if (e instanceof OutOfMemoryError) {
@@ -418,11 +420,15 @@ public class JobContainer extends AbstractContainer {
 
         Communication reportCommunication = CommunicationTool.getReportCommunication(communication, tempComm, this.totalStage);
 
-//        communication.setLongCounter(CommunicationManager.BYTE_SPEED, CommunicationManager.getTotalReadBytes(communication) / transferCosts);
-//        communication.setLongCounter(CommunicationManager.RECORD_SPEED, CommunicationManager.getTotalReadRecords(communication) / transferCosts);
-//
-//        communication.setLongCounter("totalReadBytes", CommunicationManager.getTotalReadBytes(communication));
-//        communication.setLongCounter("totalReadRecords", CommunicationManager.getTotalReadRecords(communication));
+        // 字节速率
+        long byteSpeedPerSecond = communication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES)
+                / transferCosts;
+
+        long recordSpeedPerSecond = communication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS)
+                / transferCosts;
+
+        reportCommunication.setLongCounter(CommunicationTool.BYTE_SPEED, byteSpeedPerSecond);
+        reportCommunication.setLongCounter(CommunicationTool.RECORD_SPEED, recordSpeedPerSecond);
 
         super.getContainerCommunicator().report(reportCommunication);
 
@@ -439,12 +445,10 @@ public class JobContainer extends AbstractContainer {
                 "任务总计耗时",
                 String.valueOf(totalCosts) + "s",
                 "任务平均流量",
-                StrUtil.stringify(communication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES)
-                        / transferCosts)
+                StrUtil.stringify(byteSpeedPerSecond)
                         + "/s",
                 "记录写入速度",
-                String.valueOf(communication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS)
-                        / transferCosts)
+                String.valueOf(recordSpeedPerSecond)
                         + "rec/s", "读出记录总数",
                 String.valueOf(CommunicationTool.getTotalReadRecords(communication)),
                 "读写失败总数",
@@ -621,8 +625,9 @@ public class JobContainer extends AbstractContainer {
      * 处理：我们先将这负责4个channel的taskGroup处理掉，逻辑是：
      * 先按平均为3个tasks找4个channel，设置taskGroupId为0，
      * 接下来就像发牌一样轮询分配task到剩下的包含平均channel数的taskGroup中
-     *
+     * <p/>
      * TODO delete it
+     *
      * @param averTaskPerChannel
      * @param channelNumber
      * @param channelsPerTaskGroup

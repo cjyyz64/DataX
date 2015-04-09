@@ -124,11 +124,7 @@ public class Engine {
 
         ConfigurationValidate.doValidate(configuration);
         Engine engine = new Engine();
-        try {
-            engine.start(configuration);
-        } catch (Throwable e) {
-            throw e;
-        }
+        engine.start(configuration);
     }
 
 
