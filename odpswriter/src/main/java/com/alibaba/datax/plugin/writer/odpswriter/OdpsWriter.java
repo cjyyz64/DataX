@@ -38,6 +38,7 @@ public class OdpsWriter extends Writer {
 
         private String projectName;
         private String tableName;
+        private String tunnelServer;
         private String partition;
         private String accountType;
         private boolean truncate;
@@ -54,6 +55,7 @@ public class OdpsWriter extends Writer {
 
             this.projectName = this.originalConfig.getString(Key.PROJECT);
             this.tableName = this.originalConfig.getString(Key.TABLE);
+            this.tunnelServer = this.originalConfig.getString(Key.TUNNEL_SERVER, null);
 
             //check isCompress
             this.originalConfig.getBool(Key.IS_COMPRESS, false);
@@ -125,6 +127,9 @@ public class OdpsWriter extends Writer {
 
             // 此处获取到 masterUpload 只是为了拿到 RecordSchema,以完成对 column 的处理
             TableTunnel tableTunnel = new TableTunnel(this.odps);
+            if (StringUtils.isNoneBlank(tunnelServer)) {
+                tableTunnel.setEndpoint(tunnelServer);
+            }
 
             this.masterUpload = OdpsUtil.createMasterTunnelUpload(
                     tableTunnel, this.projectName, this.tableName, this.partition);
@@ -191,6 +196,7 @@ public class OdpsWriter extends Writer {
 
         private String projectName;
         private String tableName;
+        private String tunnelServer;
         private String partition;
         private boolean emptyAsNull;
         private boolean isCompress;
@@ -209,6 +215,7 @@ public class OdpsWriter extends Writer {
 
             this.projectName = this.sliceConfig.getString(Key.PROJECT);
             this.tableName = this.sliceConfig.getString(Key.TABLE);
+            this.tunnelServer = this.sliceConfig.getString(Key.TUNNEL_SERVER, null);
             this.partition = OdpsUtil.formatPartition(this.sliceConfig
                     .getString(Key.PARTITION, ""));
             this.sliceConfig.set(Key.PARTITION, this.partition);
@@ -232,6 +239,10 @@ public class OdpsWriter extends Writer {
             this.odps = OdpsUtil.initOdpsProject(this.sliceConfig);
 
             TableTunnel tableTunnel = new TableTunnel(this.odps);
+            if (StringUtils.isNoneBlank(tunnelServer)) {
+                tableTunnel.setEndpoint(tunnelServer);
+            }
+
             this.managerUpload = OdpsUtil.createMasterTunnelUpload(tableTunnel, this.projectName,
                     this.tableName, this.partition);
             this.uploadId = this.managerUpload.getId();
