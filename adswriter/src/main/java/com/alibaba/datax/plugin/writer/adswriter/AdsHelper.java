@@ -23,9 +23,6 @@ public class AdsHelper {
     private String password;
     private String schema;
 
-    public AdsHelper() {
-    }
-
     public AdsHelper(String adsUrl, String userName, String password, String schema) {
         this.adsURL = adsUrl;
         this.userName = userName;

@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
+import com.alibaba.datax.plugin.writer.adswriter.TransferProjectConf;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import org.slf4j.Logger;
@@ -38,7 +39,7 @@ public class AdsUtil {
 
     /*生成AdsHelp实例
     * */
-    public static AdsHelper createAdsHelp(Configuration originalConfig){
+    public static AdsHelper createAdsHelper(Configuration originalConfig){
         //Get adsUrl,userName,password,schema等参数,创建AdsHelp实例
         String adsUrl = originalConfig.getString(Key.ADS_URL);
         String userName = originalConfig.getString(Key.USERNAME);
@@ -47,27 +48,29 @@ public class AdsUtil {
         return new AdsHelper(adsUrl,userName,password,schema);
     }
 
+    public static AdsHelper createAdsHelperWithOdpsAccount(Configuration originalConfig) {
+        String adsUrl = originalConfig.getString(Key.ADS_URL);
+        String userName = originalConfig.getString(TransferProjectConf.KEY_ACCESS_ID);
+        String password = originalConfig.getString(TransferProjectConf.KEY_ACCESS_KEY);
+        String schema = originalConfig.getString(Key.SCHEMA);
+        return new AdsHelper(adsUrl, userName, password, schema);
+    }
+
     /*生成ODPSWriter Plugin所需要的配置文件
     * */
-    public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta){
+    public static Configuration generateConf(Configuration originalConfig, String odpsTableName, TableMeta tableMeta, TransferProjectConf transConf){
         Configuration newConfig = originalConfig.clone();
-        String endPoint = PropertyLoader.getString(Key.CONFIG_ODPS_SERVER);
-        String tunnel = PropertyLoader.getString(Key.CONFIG_TUNNEL);
-        String accessId = PropertyLoader.getString(Key.CONFIG_ACCESS_ID);
-        String accessKey = PropertyLoader.getString(Key.CONFIG_ACCESS_KEY);
-        String project = PropertyLoader.getString(Key.CONFIG_PROJECT);
-        boolean truncate = PropertyLoader.getBoolean(Key.CONFIG_TRUNCATE);
         newConfig.set(Key.ODPSTABLENAME, odpsTableName);
-        newConfig.set(Key.ODPS_SERVER,endPoint);
-        newConfig.set(Key.TUNNEL_SERVER,tunnel);
-        newConfig.set(Key.ACCESS_ID,accessId);
-        newConfig.set(Key.ACCESS_KEY,accessKey);
-        newConfig.set(Key.PROJECT,project);
-        newConfig.set(Key.TRUNCATE, truncate);
+        newConfig.set(Key.ODPS_SERVER, transConf.getOdpsServer());
+        newConfig.set(Key.TUNNEL_SERVER,transConf.getOdpsTunnel());
+        newConfig.set(Key.ACCESS_ID,transConf.getAccessId());
+        newConfig.set(Key.ACCESS_KEY,transConf.getAccessKey());
+        newConfig.set(Key.PROJECT,transConf.getProject());
+        newConfig.set(Key.TRUNCATE, true);
         newConfig.set(Key.PARTITION,null);
 //        newConfig.remove(Key.PARTITION);
         List<FieldSchema> cols = tableMeta.getCols();
-        List<String> allColumns = new ArrayList();
+        List<String> allColumns = new ArrayList<String>();
         if(cols != null && !cols.isEmpty()){
             for(FieldSchema col:cols){
                 allColumns.add(col.getName());
@@ -92,9 +95,8 @@ public class AdsUtil {
     public static String transferOdpsPartitionToAds(String odpsPartition){
         if(odpsPartition == null || odpsPartition.isEmpty())
             return null;
-        String reqular = formatPartition(odpsPartition);
-        String adsPartition = new String(reqular);
-        String[] partitions = reqular.split("/");
+        String adsPartition = formatPartition(odpsPartition);;
+        String[] partitions = adsPartition.split("/");
         for(int last = partitions.length; last > 0; last--){
 
             String partitionPart = partitions[last-1];
