@@ -72,7 +72,6 @@ public class MongoDBReader extends Reader {
         private String collection = null;
 
         private JSONArray mongodbColumnMeta = null;
-        private String skipCount = null;
         private Long batchSize = null;
         /**
          * 每页数据的大小
@@ -82,7 +81,7 @@ public class MongoDBReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
 
-            if(Strings.isNullOrEmpty(skipCount) || batchSize == null ||
+            if(batchSize == null ||
                              mongoClient == null || database == null ||
                              collection == null  || mongodbColumnMeta == null) {
                 throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
@@ -94,7 +93,7 @@ public class MongoDBReader extends Reader {
 
             long pageCount = batchSize / pageSize;
             long modCount = batchSize % pageSize;
-
+            int skipCount = 0;
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageCount;
                 if (i == pageCount) {
@@ -105,7 +104,7 @@ public class MongoDBReader extends Reader {
                     }
                 }
                 System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
-                DBCursor dbCursor = col.find().sort(obj).skip(Integer.valueOf(skipCount)).limit((int) (long) pageCount);
+                DBCursor dbCursor = col.find().sort(obj).skip(skipCount).limit((int) (long) pageCount);
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
                     Record record = recordSender.createRecord();
@@ -157,7 +156,6 @@ public class MongoDBReader extends Reader {
             this.database = readerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             this.collection = readerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
             this.mongodbColumnMeta = JSON.parseArray(readerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
-            this.skipCount = readerSliceConfig.getString(KeyConstant.SKIP_COUNT);
             this.batchSize = readerSliceConfig.getLong(KeyConstant.BATCH_SIZE);
         }
 
