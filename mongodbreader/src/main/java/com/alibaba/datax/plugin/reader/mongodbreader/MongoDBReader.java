@@ -104,7 +104,7 @@ public class MongoDBReader extends Reader {
                     }
                 }
                 System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
-                DBCursor dbCursor = col.find().sort(obj).skip(skipCount).limit((int) (long) pageCount);
+                DBCursor dbCursor = col.find().sort(obj).skip(skipCount).limit((int) (long) pageSize);
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
                     Record record = recordSender.createRecord();
