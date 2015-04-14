@@ -104,6 +104,7 @@ public class MongoDBReader extends Reader {
                         pageCount = modCount;
                     }
                 }
+                System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
                 DBCursor dbCursor = col.find().sort(obj).skip(Integer.valueOf(skipCount)).limit((int) (long) pageCount);
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
