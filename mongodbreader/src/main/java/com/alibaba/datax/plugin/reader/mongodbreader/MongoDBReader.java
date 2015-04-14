@@ -97,6 +97,7 @@ public class MongoDBReader extends Reader {
 
             long pageCount = batchSize / pageSize;
             long modCount = batchSize % pageSize;
+            System.out.println("skipCount="+skipCount);
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageCount;
                 if (i == pageCount) {
