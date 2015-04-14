@@ -6,14 +6,17 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.mongodbreader.util.CollectionSplitUtil;
 import com.alibaba.datax.plugin.reader.mongodbreader.util.MongoUtil;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.mongodb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.lang.reflect.Array;
+import java.util.*;
 
 /**
  * Created by jianying.wcj on 2015/3/19 0019.
@@ -68,7 +71,7 @@ public class MongoDBReader extends Reader {
         private String database = null;
         private String collection = null;
 
-        private String mongodbColumnMeta = null;
+        private JSONArray mongodbColumnMeta = null;
         private String skipCount = null;
         private Long batchSize = null;
         /**
@@ -84,7 +87,6 @@ public class MongoDBReader extends Reader {
                              collection == null  || mongodbColumnMeta == null) {
                 throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
             }
-            List<String> columnMetaList = Arrays.asList(mongodbColumnMeta.split(","));
             DB db = mongoClient.getDB(database);
             DBCollection col = db.getCollection(this.collection);
             DBObject obj = new BasicDBObject();
@@ -106,8 +108,10 @@ public class MongoDBReader extends Reader {
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
                     Record record = recordSender.createRecord();
-                    for (String column : columnMetaList) {
-                        Object tempCol = item.get(column);
+                    Iterator columnItera = mongodbColumnMeta.iterator();
+                    while (columnItera.hasNext()) {
+                        JSONObject column = (JSONObject)columnItera.next();
+                        Object tempCol = item.get(column.getString(KeyConstant.COLUMN_NAME));
                         if (tempCol == null) {
                             continue;
                         }
@@ -120,7 +124,18 @@ public class MongoDBReader extends Reader {
                         } else if (tempCol instanceof Integer || tempCol instanceof Long) {
                             record.addColumn(new LongColumn((Long) tempCol));
                         } else {
-                            record.addColumn(new StringColumn(tempCol.toString()));
+                            if(KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
+                                String splitter = column.getString(KeyConstant.COLUMN_SPLITTER);
+                                if(Strings.isNullOrEmpty(splitter)) {
+                                    throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,"splitter 不能为空!");
+                                } else {
+                                    ArrayList array = (ArrayList)tempCol;
+                                    String tempArrayStr = Joiner.on(splitter).join(array);
+                                    record.addColumn(new StringColumn(tempArrayStr));
+                                }
+                            } else {
+                                record.addColumn(new StringColumn(tempCol.toString()));
+                            }
                         }
                     }
                     recordSender.sendToWriter(record);
@@ -140,7 +155,7 @@ public class MongoDBReader extends Reader {
             }
             this.database = readerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             this.collection = readerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
-            this.mongodbColumnMeta = readerSliceConfig.getString(KeyConstant.MONGO_COLUMN);
+            this.mongodbColumnMeta = JSON.parseArray(readerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
             this.skipCount = readerSliceConfig.getString(KeyConstant.SKIP_COUNT);
             this.batchSize = readerSliceConfig.getLong(KeyConstant.BATCH_SIZE);
         }
