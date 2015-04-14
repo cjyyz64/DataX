@@ -100,7 +100,7 @@ public class MongoDBReader extends Reader {
             System.out.println("skipCount="+skipCount);
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageCount;
-                if(modCount == 0 && i == (pageCount-1)) {
+                if(modCount == 0 && i == pageCount) {
                     break;
                 }
                 if (i == pageCount) {
