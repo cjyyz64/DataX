@@ -65,11 +65,6 @@ public class CollectionSplitUtil {
             entry.interval = batchSize * i;
             intervalCountList.add(entry);
         }
-        int j = 0;
-        for(Entry entry : intervalCountList) {
-            System.out.println("index="+j+"batchSize="+entry.batchSize+" interval="+entry.interval);
-            j++;
-        }
         return intervalCountList;
     }
 

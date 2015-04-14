@@ -100,12 +100,11 @@ public class MongoDBReader extends Reader {
             System.out.println("skipCount="+skipCount);
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageCount;
+                if(modCount == 0 && i == (pageCount-1)) {
+                    break;
+                }
                 if (i == pageCount) {
-                    if (modCount == 0) {
-                        break;
-                    } else {
                         pageCount = modCount;
-                    }
                 }
                 System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
                 DBCursor dbCursor = col.find().sort(obj).skip((int)(long)skipCount).limit((int) (long) pageSize);
