@@ -74,6 +74,10 @@ public class MongoDBReader extends Reader {
         private JSONArray mongodbColumnMeta = null;
         private Long batchSize = null;
         /**
+         * 用来控制每个task取值的offset
+         */
+        private Long skipCount = null;
+        /**
          * 每页数据的大小
          */
         private int pageSize = 1000;
@@ -93,7 +97,6 @@ public class MongoDBReader extends Reader {
 
             long pageCount = batchSize / pageSize;
             long modCount = batchSize % pageSize;
-            int skipCount = 0;
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageCount;
                 if (i == pageCount) {
@@ -104,7 +107,7 @@ public class MongoDBReader extends Reader {
                     }
                 }
                 System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
-                DBCursor dbCursor = col.find().sort(obj).skip(skipCount).limit((int) (long) pageSize);
+                DBCursor dbCursor = col.find().sort(obj).skip((int)(long)skipCount).limit((int) (long) pageSize);
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
                     Record record = recordSender.createRecord();
@@ -157,6 +160,7 @@ public class MongoDBReader extends Reader {
             this.collection = readerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
             this.mongodbColumnMeta = JSON.parseArray(readerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
             this.batchSize = readerSliceConfig.getLong(KeyConstant.BATCH_SIZE);
+            this.skipCount = readerSliceConfig.getLong(KeyConstant.SKIP_COUNT);
         }
 
         @Override
