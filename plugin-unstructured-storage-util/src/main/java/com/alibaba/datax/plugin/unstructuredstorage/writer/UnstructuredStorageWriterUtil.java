@@ -279,7 +279,8 @@ public class UnstructuredStorageWriterUtil {
 					if (!isDateColumn) {
 						sb.append(column.asString());
 					} else {
-						if (null != dateFormat) {
+						//if (null != dateFormat) {
+					    if (StringUtils.isNotBlank(dateFormat)) {
 							try {
 								SimpleDateFormat dateParse = new SimpleDateFormat(
 										dateFormat);
