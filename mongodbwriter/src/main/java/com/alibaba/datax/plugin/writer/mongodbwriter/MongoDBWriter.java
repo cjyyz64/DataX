@@ -59,7 +59,6 @@ public class MongoDBWriter extends Writer{
         private String database = null;
         private String collection = null;
         private Integer batchSize = null;
-        private String splitter = " ";
         private JSONArray mongodbColumnMeta = null;
         private JSONObject upsertInfoMeta = null;
         private static int BATCH_SIZE = 1000;
@@ -69,7 +68,8 @@ public class MongoDBWriter extends Writer{
         public void startWrite(RecordReceiver lineReceiver) {
             if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)
                     || mongoClient == null || mongodbColumnMeta == null || batchSize == null) {
-                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
+                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                                                MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
             }
             DB db = mongoClient.getDB(database);
             DBCollection col = db.getCollection(this.collection);
@@ -107,9 +107,10 @@ public class MongoDBWriter extends Writer{
                         //处理数组类型
                         String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
                         String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
-                        if(type.toLowerCase().equals("array")) {
-                            if(splitter == null || splitter == "") {
-                                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
+                        if(KeyConstant.isArrayType(type.toLowerCase())) {
+                            if(Strings.isNullOrEmpty(splitter)) {
+                                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                                        MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
                             }
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
                         } else {
@@ -150,7 +151,7 @@ public class MongoDBWriter extends Writer{
              */
             if(this.upsertInfoMeta != null &&
                     this.upsertInfoMeta.getString(KeyConstant.IS_UPSERT) != null &&
-                    this.upsertInfoMeta.getString(KeyConstant.IS_UPSERT).equals("true")) {
+                    KeyConstant.isValueTrue(this.upsertInfoMeta.getString(KeyConstant.IS_UPSERT))) {
                 BulkWriteOperation bulkUpsert = collection.initializeUnorderedBulkOperation();
                 String uniqueKey = this.upsertInfoMeta.getString(KeyConstant.UNIQUE_KEY);
                 if(!Strings.isNullOrEmpty(uniqueKey)) {
@@ -163,7 +164,8 @@ public class MongoDBWriter extends Writer{
                     }
                     bulkUpsert.execute();
                 } else {
-                    throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE, "不合法参数");
+                    throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                            MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
                 }
             } else {
                 collection.insert(dataList);
