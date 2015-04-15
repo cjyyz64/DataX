@@ -373,6 +373,7 @@ public class OdpsReader extends Reader {
         }
 
         private void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) {
+
             int count = 1;
             while(retryTimes > 0) {
                 try {
