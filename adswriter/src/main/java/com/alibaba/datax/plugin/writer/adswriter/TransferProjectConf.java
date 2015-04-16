@@ -7,13 +7,13 @@ import com.alibaba.datax.common.util.Configuration;
  */
 public class TransferProjectConf {
 
-    public final static String KEY_ACCESS_ID = "odpsAccount.accessId";
-    public final static String KEY_ACCESS_KEY = "odpsAccount.accessKey";
-    public final static String KEY_ACCOUNT = "odpsAccount.account";
-    public final static String KEY_ODPS_SERVER = "odpsAccount.odpsServer";
-    public final static String KEY_ODPS_TUNNEL = "odpsAccount.odpsTunnel";
-    public final static String KEY_ACCOUNT_TYPE = "odpsAccount.accountType";
-    public final static String KEY_PROJECT = "odpsAccount.project";
+    public final static String KEY_ACCESS_ID = "odps.accessId";
+    public final static String KEY_ACCESS_KEY = "odps.accessKey";
+    public final static String KEY_ACCOUNT = "odps.account";
+    public final static String KEY_ODPS_SERVER = "odps.odpsServer";
+    public final static String KEY_ODPS_TUNNEL = "odps.odpsTunnel";
+    public final static String KEY_ACCOUNT_TYPE = "odps.accountType";
+    public final static String KEY_PROJECT = "odps.project";
 
     private String accessId;
     private String accessKey;
@@ -25,13 +25,13 @@ public class TransferProjectConf {
 
     public static  TransferProjectConf create(Configuration adsWriterConf) {
         TransferProjectConf res = new TransferProjectConf();
-        res.accessId = adsWriterConf.getNecessaryValue(KEY_ACCESS_ID, AdsWriterErrorCode.REQUIRED_VALUE);
-        res.accessKey = adsWriterConf.getNecessaryValue(KEY_ACCESS_KEY, AdsWriterErrorCode.REQUIRED_VALUE);
-        res.account = adsWriterConf.getNecessaryValue(KEY_ACCOUNT, AdsWriterErrorCode.REQUIRED_VALUE);
-        res.odpsServer = adsWriterConf.getNecessaryValue(KEY_ODPS_SERVER, AdsWriterErrorCode.REQUIRED_VALUE);
+        res.accessId = adsWriterConf.getString(KEY_ACCESS_ID);
+        res.accessKey = adsWriterConf.getString(KEY_ACCESS_KEY);
+        res.account = adsWriterConf.getString(KEY_ACCOUNT);
+        res.odpsServer = adsWriterConf.getString(KEY_ODPS_SERVER);
         res.odpsTunnel = adsWriterConf.getString(KEY_ODPS_TUNNEL);
         res.accountType = adsWriterConf.getString(KEY_ACCOUNT_TYPE, "aliyun");
-        res.project = adsWriterConf.getNecessaryValue(KEY_PROJECT, AdsWriterErrorCode.REQUIRED_VALUE);
+        res.project = adsWriterConf.getString(KEY_PROJECT);
         return res;
     }
 

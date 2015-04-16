@@ -8,7 +8,6 @@ import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
-import com.alibaba.datax.plugin.writer.adswriter.util.PropertyLoader;
 import com.alibaba.datax.plugin.writer.odpswriter.OdpsWriter;
 import com.aliyun.odps.Instance;
 import com.aliyun.odps.Odps;
@@ -22,11 +21,13 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-
+/**
+ * 逻辑复杂，请看文档：http://gitlab.alibaba-inc.com/datax/datax/wikis/datax-plugin-adswriter
+ */
 public class AdsWriter extends Writer {
     public static class Job extends Writer.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Writer.Job.class);
-        private final static String ODPS_READER = "odpsreader";
+        public final static String ODPS_READER = "odpsreader";
 
         private OdpsWriter.Job odpsWriterJobProxy = new OdpsWriter.Job();
         private Configuration originalConfig;
@@ -71,7 +72,8 @@ public class AdsWriter extends Writer {
             }
 
             Odps odps = new Odps(odpsAccount);
-            odps.setEndpoint(transProjConf.getOdpsTunnel());
+            odps.setEndpoint(transProjConf.getOdpsServer());
+            odps.setDefaultProject(transProjConf.getProject());
 
             TableMeta tableMeta;
             try {
@@ -107,6 +109,8 @@ public class AdsWriter extends Writer {
 
         /**
          * 当reader是odps的时候，直接call ads的load接口，完成后退出。
+         * 这种情况下，用户在odps reader里头填写的参数只有部分有效。
+         * 其中accessId、accessKey是忽略掉iao的。
          */
         private void transferFromOdpsAndExit() {
             this.readerConfig = super.getReaderConf();
@@ -154,13 +158,17 @@ public class AdsWriter extends Writer {
             if (super.getReaderPluginName().equals(ODPS_READER)){
                 project = this.readerConfig.getString(Key.PROJECT);
             }else{
-                project = PropertyLoader.getString(this.transProjConf.getProject());
+                project = this.transProjConf.getProject();
             }
             String partition = this.originalConfig.getString(Key.PARTITION);
             String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,odpsPartition);
-            boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITER);
+            /**
+             * 因为之前检查过，所以不用担心unbox的时候NPE
+             */
+            boolean overwrite = this.originalConfig.getBool(Key.OVER_WRITE);
             try {
                 String id = helper.loadData(table,partition,sourcePath,overwrite);
+                LOG.info("ADS Load Data任务已经提交，job id: " + id);
                 boolean terminated = false;
                 int time = 0;
                 while(!terminated)

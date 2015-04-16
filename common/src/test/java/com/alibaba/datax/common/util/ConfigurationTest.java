@@ -1,5 +1,6 @@
 package com.alibaba.datax.common.util;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.StringUtils;
@@ -669,5 +670,30 @@ public class ConfigurationTest {
 		expectedEx.expectMessage("com.alibaba.fastjson.JSONObject cannot be cast to java.util.List");
 		List aStringCantConvertToList = configuration.getList("job.setting");
 	}
+
+    @Test
+    public void test_getNecessaryValue() {
+        Configuration configuration = Configuration.newDefault();
+        configuration.set("a.b.c", "XX");
+        configuration.set("x.y.z", "true");
+        configuration.getNecessaryValue("a.b.c", CommonErrorCode.CONFIG_ERROR);
+        configuration.getNecessaryBool("x.y.z", CommonErrorCode.CONFIG_ERROR);
+    }
+
+
+    @Test
+    public void test_getNecessaryValue2() {
+        expectedEx.expect(DataXException.class);
+        Configuration configuration = Configuration.newDefault();
+        configuration.set("x.y.z", "yes");
+        configuration.getNecessaryBool("x.y.z", CommonErrorCode.CONFIG_ERROR);
+    }
+
+    @Test
+    public void test_getNecessaryValue3() {
+        expectedEx.expect(DataXException.class);
+        Configuration configuration = Configuration.newDefault();
+        configuration.getNecessaryBool("x.y.z", CommonErrorCode.CONFIG_ERROR);
+    }
 
 }

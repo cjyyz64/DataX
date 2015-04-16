@@ -15,7 +15,7 @@ public final class Key {
 
     public final static String Life_CYCLE = "lifeCycle";
 
-    public final static String OVER_WRITER = "overWrite";
+    public final static String OVER_WRITE = "overWrite";
 
     /**
      * 以下是odps writer的key

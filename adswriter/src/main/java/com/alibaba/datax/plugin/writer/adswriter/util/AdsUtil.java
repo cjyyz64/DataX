@@ -33,8 +33,16 @@ public class AdsUtil {
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.Life_CYCLE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
+        Integer lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
+        if(lifeCycle <= 0) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "配置项[lifeCycle]的值必须大于零.");
+        }
         originalConfig.getNecessaryValue(Key.ADS_TABLE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
+        Boolean overwrite = originalConfig.getBool(Key.OVER_WRITE);
+        if (overwrite == null) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.REQUIRED_VALUE, "配置项[overWrite]是必填项.");
+        }
     }
 
     /*生成AdsHelp实例
