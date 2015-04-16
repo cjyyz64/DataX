@@ -11,7 +11,7 @@ public class TransferProjectConf {
     public final static String KEY_ACCESS_KEY = "odps.accessKey";
     public final static String KEY_ACCOUNT = "odps.account";
     public final static String KEY_ODPS_SERVER = "odps.odpsServer";
-    public final static String KEY_ODPS_TUNNEL = "odps.odpsTunnel";
+    public final static String KEY_ODPS_TUNNEL = "odps.tunnelServer";
     public final static String KEY_ACCOUNT_TYPE = "odps.accountType";
     public final static String KEY_PROJECT = "odps.project";
 
