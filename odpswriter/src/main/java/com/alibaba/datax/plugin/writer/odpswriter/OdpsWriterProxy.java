@@ -130,7 +130,7 @@ public class OdpsWriterProxy {
         } else if (sourceColumnCount < userConfiguredColumnNumber) {
             if (printColumnLess) {
                 LOG.warn(
-                        "源表的列个数小于目的表的列个数，源表列数是:{} 目的表列数是:{} , 数目不匹配. DataX 会把目的端多出的咧的值设置为空值. 如果这个默认配置不符合您的期望，请保持源表和目的表配置的列数目保持一致.",
+                        "源表的列个数小于目的表的列个数，源表列数是:{} 目的表列数是:{} , 数目不匹配. DataX 会把目的端多出的列的值设置为空值. 如果这个默认配置不符合您的期望，请保持源表和目的表配置的列数目保持一致.",
                         sourceColumnCount, userConfiguredColumnNumber);
             }
             printColumnLess = false;

@@ -391,7 +391,8 @@ public class UnstructuredStorageReaderUtil {
 							} else {
 								String formatString = columnConfig
 										.getString(Key.FORMAT);
-								if (null != formatString) {
+								//if (null != formatString) {
+								if (StringUtils.isNotBlank(formatString)) {
 									// 用户自己配置的格式转换
 									SimpleDateFormat format = new SimpleDateFormat(
 											formatString);

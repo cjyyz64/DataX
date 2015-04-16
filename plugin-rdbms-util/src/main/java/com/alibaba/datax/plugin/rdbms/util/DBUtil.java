@@ -470,6 +470,11 @@ public final class DBUtil {
                 sessionConfig.add("set transaction policy 4");
                 DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
                 break;
+            case MySql:
+                sessionConfig = config.getList(Key.SESSION,
+                        new ArrayList<String>(), String.class);
+                DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
+                break;
             default:
                 break;
         }

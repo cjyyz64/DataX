@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.hbasereader.*;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.fs.Path;
@@ -166,23 +167,26 @@ public final class HbaseUtil {
         }
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
 
-        Map<String, String> map;
         try {
-            map = JSON.parseObject(hbaseConf, Map.class);
+            Map<String, String> map = JSON.parseObject(hbaseConf,
+                    new TypeReference<Map<String, String>>() {
+                    });
+
+            // / 用户配置的 key-value 对 来表示 hbaseConf
+            Validate.isTrue(map != null, "hbaseConfig 不能为空 Map 结构!");
+            for (Map.Entry<String, String> entry : map.entrySet()) {
+                conf.set(entry.getKey(), entry.getValue());
+            }
+            return conf;
         } catch (Exception e) {
-            // 用户配置的hbase配置文件路径
-            LOG.warn("尝试把您配置的 hbaseConfig: {} 当成文件路径进行解析.", hbaseConf);
+            // 用户配置的 hbase 配置文件路径
+            LOG.warn("尝试把您配置的 hbaseConfig: {} \n 当成 json 解析时遇到错误:", e);
+            LOG.warn("现在尝试把您配置的 hbaseConfig: {} \n 当成文件路径进行解析.", hbaseConf);
             conf.addResource(new Path(hbaseConf));
 
             LOG.warn("您配置的 hbaseConfig 是文件路径, 是不推荐的行为:因为当您的这个任务迁移到其他机器运行时，很可能出现该路径不存在的错误. 建议您把此项配置改成标准的 Hbase 连接信息，请联系 Hbase PE 获取该信息.");
             return conf;
         }
-
-        // / 用户配置的 key-value 对 来表示hbaseConf
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            conf.set(entry.getKey(), entry.getValue());
-        }
-        return conf;
     }
 
     private static void checkTetradType(Configuration configuration, String mode) {

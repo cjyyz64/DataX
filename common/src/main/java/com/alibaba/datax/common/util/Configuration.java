@@ -138,6 +138,16 @@ public class Configuration {
 		return value;
 	}
 
+    public Boolean getNecessaryBool(String key, ErrorCode errorCode) {
+        Boolean value = this.getBool(key);
+        if (value == null) {
+            throw DataXException.asDataXException(errorCode,
+                    String.format("您提供配置文件有误，[%s]是必填参数，不允许为空或者留白 .", key));
+        }
+
+        return value;
+    }
+
 	/**
 	 * 根据用户提供的json path，寻址具体的对象。
 	 * <p/>

@@ -3,6 +3,7 @@
  */
 package com.alibaba.datax.plugin.writer.adswriter;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
@@ -22,9 +23,6 @@ public class AdsHelper {
     private String userName;
     private String password;
     private String schema;
-
-    public AdsHelper() {
-    }
 
     public AdsHelper(String adsUrl, String userName, String password, String schema) {
         this.adsURL = adsUrl;
@@ -125,6 +123,10 @@ public class AdsHelper {
                 columnInfo.setComment(rs.getString(5));
                 columnInfoList.add(columnInfo);
             }
+            if (columnInfoList.isEmpty()) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.NO_ADS_TABLE, table + "不存在或者查询不到列信息. ");
+            }
+
             tableInfo.setColumns(columnInfoList);
             tableInfo.setTableSchema(schema);
             tableInfo.setTableName(table);
@@ -135,6 +137,8 @@ public class AdsHelper {
             throw new AdsException(AdsException.OTHER, e.getMessage(), e);
         } catch (SQLException e) {
             throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        } catch ( DataXException e) {
+            throw e;
         } catch (Exception e) {
             throw new AdsException(AdsException.OTHER, e.getMessage(), e);
         } finally {
