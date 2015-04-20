@@ -19,6 +19,7 @@ import com.aliyun.odps.task.SQLTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -116,8 +117,14 @@ public class AdsWriter extends Writer {
             this.readerConfig = super.getReaderConf();
             String odpsTableName = this.readerConfig.getString(Key.ODPSTABLENAME);
             List<String> userConfiguredPartitions = this.readerConfig.getList(Key.PARTITION, String.class);
+
+            if (userConfiguredPartitions == null) {
+                userConfiguredPartitions = Collections.emptyList();
+            }
+
             if(userConfiguredPartitions.size() > 1)
                 throw DataXException.asDataXException(AdsWriterErrorCode.ODPS_PARTITION_FAILED, "");
+
             if(userConfiguredPartitions.size() == 0){
                 loadAdsData(adsHelper, odpsTableName,null);
             }else{
