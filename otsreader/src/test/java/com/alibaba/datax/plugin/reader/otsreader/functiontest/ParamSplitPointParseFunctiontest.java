@@ -18,16 +18,6 @@ public class ParamSplitPointParseFunctiontest {
     private static String tableName = "ots_reader_proxy_split_parse_functiontest";
     private static Configuration p = Utils.loadConf();
     private static final Logger LOG = LoggerFactory.getLogger(ParamSplitPointParseFunctiontest.class);
-  
-    /*
-    public void setUp() {
-        try {
-            Utils.deleteTable(ots, tableName);
-        } catch (Exception e) {                
-            e.printStackTrace();               
-        }                                      
-    }
-    */
 
     /**
      * PartitionKey为 String时
