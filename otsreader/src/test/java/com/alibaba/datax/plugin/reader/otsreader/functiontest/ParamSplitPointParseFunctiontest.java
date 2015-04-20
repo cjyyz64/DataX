@@ -18,7 +18,17 @@ public class ParamSplitPointParseFunctiontest {
     private static String tableName = "ots_reader_proxy_split_parse_functiontest";
     private static Configuration p = Utils.loadConf();
     private static final Logger LOG = LoggerFactory.getLogger(ParamSplitPointParseFunctiontest.class);
-    
+  
+    /*
+    public void setUp() {
+        try {
+            Utils.deleteTable(ots, tableName);
+        } catch (Exception e) {                
+            e.printStackTrace();               
+        }                                      
+    }
+    */
+
     /**
      * PartitionKey为 String时
      * @throws Exception 
@@ -33,11 +43,7 @@ public class ParamSplitPointParseFunctiontest {
             tableMeta.addPrimaryKeyColumn("Pid", PrimaryKeyType.INTEGER);
             tableMeta.addPrimaryKeyColumn("Mid", PrimaryKeyType.INTEGER);
             tableMeta.addPrimaryKeyColumn("Gid", PrimaryKeyType.STRING);
-            try {
-                Utils.createTable(ots, tableName, tableMeta);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } 
+            Utils.createTable(ots, tableName, tableMeta);
             ots.shutdown();
         }
         
@@ -136,11 +142,7 @@ public class ParamSplitPointParseFunctiontest {
             tableMeta.addPrimaryKeyColumn("Pid", PrimaryKeyType.STRING);
             tableMeta.addPrimaryKeyColumn("Mid", PrimaryKeyType.INTEGER);
             tableMeta.addPrimaryKeyColumn("Gid", PrimaryKeyType.STRING);
-            try {
-                Utils.createTable(ots, tableName, tableMeta);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } 
+            Utils.createTable(ots, tableName, tableMeta);
             ots.shutdown();
         }
         
