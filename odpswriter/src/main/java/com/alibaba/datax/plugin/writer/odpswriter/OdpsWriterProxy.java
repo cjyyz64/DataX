@@ -37,6 +37,7 @@ public class OdpsWriterProxy {
     private long recordPackByteSize = 0;
     private int maxBufferSize;
     private ProtobufRecordPack protobufRecordPack;
+    private int protobufCapacity;
     private AtomicLong blockId;
 
     private List<Integer> columnPositions;
@@ -53,7 +54,6 @@ public class OdpsWriterProxy {
         this.tableOriginalColumnTypeList = OdpsUtil
                 .getTableOriginalColumnTypeList(this.schema);
 
-        this.protobufRecordPack = new ProtobufRecordPack(this.schema);
         this.blockId = blockId;
         this.columnPositions = columnPositions;
         this.taskPluginCollector = taskPluginCollector;
@@ -61,7 +61,9 @@ public class OdpsWriterProxy {
         this.isCompress = isCompress;
 
         // 初始化与 buffer 区相关的值
-        this.maxBufferSize = blockSizeInMB * 1024 * 1024;
+        this.maxBufferSize = (blockSizeInMB - 4) * 1024 * 1024;
+        this.protobufCapacity = (blockSizeInMB - 2) * 1024 * 1024;
+        this.protobufRecordPack = new ProtobufRecordPack(this.schema, null, this.protobufCapacity);
         printColumnLess = true;
 
     }
@@ -92,7 +94,7 @@ public class OdpsWriterProxy {
 
             blocks.add(blockId.get());
             recordPackByteSize = 0;
-            protobufRecordPack = new ProtobufRecordPack(this.schema);
+            protobufRecordPack.reset();
 
             this.blockId.incrementAndGet();
         }
@@ -108,7 +110,7 @@ public class OdpsWriterProxy {
             blocks.add(blockId.get());
             // reset the buffer for next block
             recordPackByteSize = 0;
-            protobufRecordPack = new ProtobufRecordPack(this.schema);
+            protobufRecordPack.reset();
         }
     }
 
