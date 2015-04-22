@@ -15,8 +15,6 @@ import com.aliyun.odps.tunnel.TableTunnel;
 import com.aliyun.odps.tunnel.TunnelException;
 import com.aliyun.odps.tunnel.io.ProtobufRecordPack;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +32,6 @@ public class OdpsWriterProxy {
 
     private TableTunnel.UploadSession slaveUpload;
     private TableSchema schema;
-    private long recordPackByteSize = 0;
     private int maxBufferSize;
     private ProtobufRecordPack protobufRecordPack;
     private int protobufCapacity;
@@ -62,7 +59,7 @@ public class OdpsWriterProxy {
 
         // 初始化与 buffer 区相关的值
         this.maxBufferSize = (blockSizeInMB - 4) * 1024 * 1024;
-        this.protobufCapacity = (blockSizeInMB - 2) * 1024 * 1024;
+        this.protobufCapacity = blockSizeInMB * 1024 * 1024;
         this.protobufRecordPack = new ProtobufRecordPack(this.schema, null, this.protobufCapacity);
         printColumnLess = true;
 
@@ -72,49 +69,38 @@ public class OdpsWriterProxy {
             com.alibaba.datax.common.element.Record dataXRecord,
             List<Long> blocks) throws Exception {
 
-        Pair<Record, Integer> recordPair = dataxRecordToOdpsRecord(dataXRecord);
+        Record record = dataxRecordToOdpsRecord(dataXRecord);
 
-        if(recordPair == null) {
-            return;
-        }
-        Record record = recordPair.getLeft();
-        int recordByteSize = recordPair.getRight();
         if (null == record) {
             return;
         }
-
         protobufRecordPack.append(record);
-        recordPackByteSize = recordPackByteSize + recordByteSize;
 
-        if (recordPackByteSize >= maxBufferSize) {
-
+        if (protobufRecordPack.getTotalBytes() >= maxBufferSize) {
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
                     protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
-            recordPackByteSize = 0;
             protobufRecordPack.reset();
-
             this.blockId.incrementAndGet();
         }
     }
 
     public void writeRemainingRecord(List<Long> blocks) throws Exception {
         // complete protobuf stream, then write to http
-        if (recordPackByteSize != 0) {
+        if (protobufRecordPack.getTotalBytes() != 0) {
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
                     protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
 
             blocks.add(blockId.get());
             // reset the buffer for next block
-            recordPackByteSize = 0;
             protobufRecordPack.reset();
         }
     }
 
-    public Pair<Record,Integer> dataxRecordToOdpsRecord(
+    public Record dataxRecordToOdpsRecord(
             com.alibaba.datax.common.element.Record dataXRecord) throws Exception {
         int sourceColumnCount = dataXRecord.getColumnNumber();
         Record odpsRecord = slaveUpload.newRecord();
@@ -140,8 +126,6 @@ public class OdpsWriterProxy {
 
         int currentIndex;
         int sourceIndex = 0;
-
-        int recordByteSize = 0;
         try {
             com.alibaba.datax.common.element.Column columnValue;
 
@@ -162,30 +146,25 @@ public class OdpsWriterProxy {
                 switch (type) {
                     case STRING:
                         odpsRecord.setString(currentIndex, columnValue.asString());
-                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     case BIGINT:
                         odpsRecord.setBigint(currentIndex, columnValue.asLong());
-                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     case BOOLEAN:
                         odpsRecord.setBoolean(currentIndex, columnValue.asBoolean());
-                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     case DATETIME:
                         odpsRecord.setDatetime(currentIndex, columnValue.asDate());
-                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     case DOUBLE:
                         odpsRecord.setDouble(currentIndex, columnValue.asDouble());
-                        recordByteSize = recordByteSize + columnValue.getByteSize();
                         break;
                     default:
                         break;
                 }
             }
 
-            return new ImmutablePair<Record, Integer>(odpsRecord, recordByteSize);
+            return odpsRecord;
         } catch (Exception e) {
             String message = String.format(
                     "写入 ODPS 目的表时遇到了脏数据, 因为源端第[%s]个字段, 具体值[%s] 的数据不符合 ODPS 对应字段的格式要求，请检查该数据并作出修改 或者您可以增大阀值，忽略这条记录.", sourceIndex,
