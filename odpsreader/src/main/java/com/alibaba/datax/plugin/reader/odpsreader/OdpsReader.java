@@ -382,7 +382,7 @@ public class OdpsReader extends Reader {
                 } catch (DataXException e) {
                     if(OdpsReaderErrorCode.ODPS_READ_TIMEOUT.getCode().equals(e.getErrorCode().getCode())) {
                         try {
-                            LOG.info("odps read-time-out, 重试第{}次",count++);
+                            LOG.warn("odps read-time-out, 重试第{}次",count++);
                             Thread.sleep(retryInterval);
                             retryTimes--;
                         } catch (InterruptedException ignored) {
