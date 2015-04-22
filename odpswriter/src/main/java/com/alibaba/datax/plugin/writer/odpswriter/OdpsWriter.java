@@ -82,6 +82,9 @@ public class OdpsWriter extends Writer {
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
+            if(this.blockSizeInMB < 8) {
+                this.blockSizeInMB = 8;
+            }
             this.originalConfig.set(Key.BLOCK_SIZE_IN_MB, this.blockSizeInMB);
             LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 
