@@ -31,7 +31,7 @@ public class HttpClientUtil {
     private volatile static HttpClientUtil clientUtil;
 
     //构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
-    private static int HTTP_TIMEOUT_INMILLIONSECONDS;
+    private static int HTTP_TIMEOUT_INMILLIONSECONDS = 30000;
 
     private static final int POOL_SIZE = 20;
 
