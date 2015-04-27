@@ -363,7 +363,6 @@ public class OdpsReader extends Reader {
                         columnTypeMap, parsedColumns, partition, this.isPartitionedTable,
                         start, count, this.isCompress);
 
-                //readerProxy.doRead();
                 retryDoRead(3,2000,readerProxy);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
