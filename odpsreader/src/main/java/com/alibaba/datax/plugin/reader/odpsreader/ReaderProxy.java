@@ -65,7 +65,7 @@ public class ReaderProxy {
                     start++;
                     count--;
                 } catch(IOException e) {
-                    //throw 一个特殊的异常, 外层捕获该异常进行重试。//todo recordReader.close()?需要么
+                    //throw 一个特殊的异常, 外层捕获该异常进行重试
                     LOG.warn("warn : odps reader exception: {}", e.getMessage());
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
                 }
