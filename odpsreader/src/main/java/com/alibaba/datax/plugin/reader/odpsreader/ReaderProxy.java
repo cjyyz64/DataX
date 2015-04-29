@@ -106,11 +106,10 @@ public class ReaderProxy {
                 }
             }
             recordReader.close();
-        } catch (IOException e) {
+        } catch (DataXException e) {
+            throw e;
+        } catch (Exception e) {
             // warn: if dirty
-            throw DataXException.asDataXException(
-                    OdpsReaderErrorCode.READ_DATA_FAIL, e);
-        } catch (TunnelException e) {
             throw DataXException.asDataXException(
                     OdpsReaderErrorCode.READ_DATA_FAIL, e);
         }
