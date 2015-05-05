@@ -7,11 +7,14 @@ import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordReader;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.aliyun.odps.tunnel.TableTunnel;
+import com.aliyun.odps.tunnel.TunnelException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,62 +25,89 @@ public class ReaderProxy {
     private static boolean IS_DEBUG = LOG.isDebugEnabled();
 
     private RecordSender recordSender;
-    private RecordReader recordReader;
+    private TableTunnel.DownloadSession downloadSession;
     private Map<String, OdpsType> columnTypeMap;
     private List<Pair<String, ColumnType>> parsedColumns;
     private String partition;
     private boolean isPartitionTable;
 
-    public ReaderProxy(RecordSender recordSender, RecordReader recordReader,
+    private long start;
+    private long count;
+    private boolean isCompress;
+
+    public ReaderProxy(RecordSender recordSender, TableTunnel.DownloadSession downloadSession,
             Map<String, OdpsType> columnTypeMap,
             List<Pair<String, ColumnType>> parsedColumns, String partition,
-            boolean isPartitionTable) {
+            boolean isPartitionTable, long start, long count, boolean isCompress) {
         this.recordSender = recordSender;
-        this.recordReader = recordReader;
+        this.downloadSession = downloadSession;
         this.columnTypeMap = columnTypeMap;
         this.parsedColumns = parsedColumns;
         this.partition = partition;
         this.isPartitionTable = isPartitionTable;
+        this.start = start;
+        this.count = count;
+        this.isCompress = isCompress;
     }
 
     // warn: odps 分区列和正常列不能重名, 所有列都不不区分大小写
     public void doRead() {
         try {
+            LOG.info("start={}, count={}",start, count);
+            RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
+
             Record odpsRecord;
             Map<String, String> partitionMap = this
                     .parseCurrentPartitionValue();
-            while ((odpsRecord = recordReader.read()) != null) {
-                com.alibaba.datax.common.element.Record dataXRecord = recordSender
-                        .createRecord();
-                // warn: for PARTITION||NORMAL columnTypeMap's key
-                // sets(columnName) is big than parsedColumns's left
-                // sets(columnName), always contain
-                for (Pair<String, ColumnType> pair : this.parsedColumns) {
-                    String columnName = pair.getLeft();
-                    switch (pair.getRight()) {
-                    case PARTITION:
-                        String partitionColumnValue = this
-                                .getPartitionColumnValue(partitionMap,
-                                        columnName);
-                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
-                                this.columnTypeMap.get(columnName),
-                                partitionColumnValue, true);
-                        break;
-                    case NORMAL:
-                        this.odpsColumnToDataXField(odpsRecord, dataXRecord,
-                                this.columnTypeMap.get(columnName), columnName,
-                                false);
-                        break;
-                    case CONSTANT:
-                        dataXRecord.addColumn(new StringColumn(columnName));
-                        break;
-                    default:
-                        break;
-                    }
+            while (true) {
+                try {
+                    odpsRecord = recordReader.read();
+                    start++;
+                    count--;
+                } catch(IOException e) {
+                    //throw 一个特殊的异常, 外层捕获该异常进行重试
+                    LOG.warn("warn : odps reader exception: {}", e.getMessage());
+                    throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
                 }
-                recordSender.sendToWriter(dataXRecord);
+
+                if (odpsRecord != null) {
+
+                    com.alibaba.datax.common.element.Record dataXRecord = recordSender
+                            .createRecord();
+                    // warn: for PARTITION||NORMAL columnTypeMap's key
+                    // sets(columnName) is big than parsedColumns's left
+                    // sets(columnName), always contain
+                    for (Pair<String, ColumnType> pair : this.parsedColumns) {
+                        String columnName = pair.getLeft();
+                        switch (pair.getRight()) {
+                            case PARTITION:
+                                String partitionColumnValue = this
+                                        .getPartitionColumnValue(partitionMap,
+                                                columnName);
+                                this.odpsColumnToDataXField(odpsRecord, dataXRecord,
+                                        this.columnTypeMap.get(columnName),
+                                        partitionColumnValue, true);
+                                break;
+                            case NORMAL:
+                                this.odpsColumnToDataXField(odpsRecord, dataXRecord,
+                                        this.columnTypeMap.get(columnName), columnName,
+                                        false);
+                                break;
+                            case CONSTANT:
+                                dataXRecord.addColumn(new StringColumn(columnName));
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+                    recordSender.sendToWriter(dataXRecord);
+                } else {
+                    break;
+                }
             }
             recordReader.close();
+        } catch (DataXException e) {
+            throw e;
         } catch (Exception e) {
             // warn: if dirty
             throw DataXException.asDataXException(
