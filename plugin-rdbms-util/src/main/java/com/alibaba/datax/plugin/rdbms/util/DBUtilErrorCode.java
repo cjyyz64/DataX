@@ -11,7 +11,7 @@ public enum DBUtilErrorCode implements ErrorCode {
     COLUMN_SPLIT_ERROR("DBUtilErrorCode-13", "根据主键进行切分失败."),
     SET_SESSION_ERROR("DBUtilErrorCode-14", "设置 session 失败."),
 
-    REQUIRED_VALUE("DBUtilErrorCode-00", "您缺失了必须填写的参数值."),
+    REQUIRED_VALUE("DBUtilErrorCode-03", "您缺失了必须填写的参数值."),
     ILLEGAL_VALUE("DBUtilErrorCode-02", "您填写的参数值不合法."),
     ILLEGAL_SPLIT_PK("DBUtilErrorCode-04", "您填写的主键列不合法, DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型."),
     SQL_EXECUTE_FAIL("DBUtilErrorCode-06", "执行数据库 Sql 失败, 请检查您的配置的 column/table/where/querySql或者向 DBA 寻求帮助."),
@@ -23,7 +23,7 @@ public enum DBUtilErrorCode implements ErrorCode {
 
     // only for writer
     WRITE_DATA_ERROR("DBUtilErrorCode-05", "往您配置的写入表中写入数据时失败."),
-    NO_INSERT_PRIVILEGE("DBUtilErrorCode-05","数据库没有写权限，请联系DBA"),;
+    NO_INSERT_PRIVILEGE("DBUtilErrorCode-11","数据库没有写权限，请联系DBA"),;
 
     private final String code;
 
