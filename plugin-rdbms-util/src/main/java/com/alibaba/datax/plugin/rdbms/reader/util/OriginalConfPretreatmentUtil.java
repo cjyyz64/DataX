@@ -30,6 +30,14 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.PASSWORD,
                 DBUtilErrorCode.REQUIRED_VALUE);
+        String where = originalConfig.getString(Key.WHERE, null);
+        if(StringUtils.isNotBlank(where)) {
+            String whereImprove = where.trim();
+            if(whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
+                whereImprove = whereImprove.substring(0,whereImprove.length()-2);
+            }
+            originalConfig.set(Key.WHERE, whereImprove);
+        }
 
         simplifyConf(originalConfig);
     }
