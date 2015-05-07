@@ -7,14 +7,13 @@ import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordReader;
 
-import java.io.IOException;
+
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.aliyun.odps.tunnel.TableTunnel;
-import com.aliyun.odps.tunnel.TunnelException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,13 +61,14 @@ public class ReaderProxy {
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
-                    start++;
-                    count--;
-                } catch(IOException e) {
+                } catch(Exception e) {
                     //throw 一个特殊的异常, 外层捕获该异常进行重试
                     LOG.warn("warn : odps reader exception: {}", e.getMessage());
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
                 }
+                //记录已经读取的点
+                start++;
+                count--;
 
                 if (odpsRecord != null) {
 
