@@ -77,14 +77,14 @@ def exec_sort_script(project, src_table, odps_column,
 def exec_datax_job(project, src_table, odps_column, suffix,
                    dst_table, hbase_rowkey, hbase_column, hdfs_config, hbase_config, cluster_id, hbase_output, concurrency,
                    bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
-                   access_id, access_key, tunnel_server, odps_server):
+                   access_id, access_key, tunnel_server, odps_server,compress):
     phase_name = "DataX: ODPSWriter -> HBaseBulkWriter"
     util.log_phase(phase_name)
 
     jobJSON = build_datax_job_config(project, src_table, odps_column, suffix,
                    dst_table, hbase_rowkey, hbase_column, hdfs_config, hbase_config, cluster_id, hbase_output, concurrency,
                    bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
-                   access_id, access_key, tunnel_server, odps_server)
+                   access_id, access_key, tunnel_server, odps_server,compress)
     jobConfigPath = 'datax_hbasebulkwriter_job.json'
     fileHandler = open(jobConfigPath,'w')
     fileHandler.write(jobJSON)
@@ -102,7 +102,7 @@ def exec_datax_job(project, src_table, odps_column, suffix,
 def build_datax_job_config(project, src_table, odps_column, suffix,
                    dst_table, hbase_rowkey, hbase_column, hdfs_config, hbase_config, cluster_id, hbase_output, concurrency,
                    bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
-                   access_id, access_key, tunnel_server, odps_server):
+                   access_id, access_key, tunnel_server, odps_server,compress):
     if not odpsutil.is_empty(suffix):
         suffix = "_" + suffix
     src_table = "t_datax_odps2hbase_table_%s%s" % (src_table, suffix)
@@ -129,11 +129,12 @@ def build_datax_job_config(project, src_table, odps_column, suffix,
     columnJSON = columnJSON + '],'
     partitionJSON = '"partition" : ["datax_pt=*"],'
     splitJSON = '"splitMode" : "record",'
+    compressJSON = '"isCompress" : "' + compress + '",'
     if not odpsutil.is_empty(odps_server):
       serverJSON = '"odpsServer" : "' + odps_server + '",'
     if not odpsutil.is_empty(tunnel_server):
       tunnelJSON = '"tunnelServer" : "' + tunnel_server + '"'
-    parameterJSON = '"parameter" : {' + accessIdJSON + accessKeyJSON + projectJSON + tableJSON + columnJSON + partitionJSON + splitJSON + serverJSON + tunnelJSON + '}'
+    parameterJSON = '"parameter" : {' + accessIdJSON + accessKeyJSON + projectJSON + tableJSON + columnJSON + partitionJSON + splitJSON + compressJSON + serverJSON + tunnelJSON + '}'
     readerJSON = '"reader" : { "name" : "odpsreader", ' + parameterJSON + '},' 
     
     #build json config for hbasebulkwriter
@@ -197,7 +198,7 @@ def run(project, src_table, odps_column,
         dst_table, hbase_rowkey, hbase_column, hbase_output, concurrency,
         partition, suffix, bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
         hdfs_config, hbase_config, cluster_id,
-        access_id, access_key, tunnel_server, odps_server, datax_home, datax_job_xml):
+        access_id, access_key, tunnel_server, odps_server, datax_home, datax_job_xml,compress):
     init_constants(project, cluster_id, datax_home, datax_job_xml, access_id, access_key)
     if util.is_empty(hdfs_config):
         hdfs_config = hbaseutil.generate_conf("hdfs-site.xml")
@@ -211,7 +212,7 @@ def run(project, src_table, odps_column,
     exec_datax_job(project, src_table, odps_column, suffix,
                    dst_table, hbase_rowkey, hbase_column, hdfs_config, hbase_config, cluster_id, hbase_output, concurrency,
                    bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
-                   access_id, access_key, tunnel_server, odps_server)
+                   access_id, access_key, tunnel_server, odps_server,compress)
 
 
 if __name__ == "__main__":
@@ -257,6 +258,8 @@ if __name__ == "__main__":
                       default="")
     parser.add_option("--datax_job_xml", dest="datax_job_xml", help="[ODPS][option] datax job xml path", metavar="datax_job_xml",
                       default="")
+    parser.add_option("--compress", dest="compress", help="[ODPS][option] odps reader isCompress", metavar="compress",
+                          default="false")
 
     (options, args) = parser.parse_args(sys.argv)
 
@@ -272,4 +275,4 @@ if __name__ == "__main__":
                  options.partition, options.suffix, options.bucket_num, options.time_col, options.start_ts, options.null_mode, options.dynamic_qualifier, options.rowkey_type, options.truncate,
                  options.hdfs_config, options.hbase_config, options.cluster_id,
                  options.access_id, options.access_key, options.tunnel_server, options.odps_server,
-                 options.datax_home, options.datax_job_xml))
+                 options.datax_home, options.datax_job_xml, options.compress))
