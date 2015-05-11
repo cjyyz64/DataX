@@ -125,7 +125,7 @@ public class UnstructuredStorageWriterUtil {
         String fileFormat = writerConfiguration.getString(Key.FILE_FORMAT,
                 Constant.FILE_FORMAT_PLAIN_TEXT);
         if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
-                || !Constant.FILE_FORMAT_PLAIN_TEXT.equals(fileFormat)) {
+                && !Constant.FILE_FORMAT_PLAIN_TEXT.equals(fileFormat)) {
             throw DataXException.asDataXException(
                     UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
                     String.format("您配置的fileFormat [%s]错误, 支持csv, plainText两种.",
