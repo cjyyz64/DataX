@@ -4,6 +4,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.unstructuredstorage.writer.Constant;
+import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterErrorCode;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
 import com.google.common.collect.Sets;
 
@@ -164,6 +166,19 @@ public class TxtFileWriter extends Writer {
                 throw DataXException.asDataXException(
                         TxtFileWriterErrorCode.ILLEGAL_VALUE, String.format(
                                 "仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+            }
+            
+            // fileFormat check
+            String fileFormat = this.writerSliceConfig
+                    .getString(
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_FORMAT,
+                            Constant.FILE_FORMAT_PLAIN_TEXT);
+            if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
+                    || !Constant.FILE_FORMAT_PLAIN_TEXT.equals(fileFormat)) {
+                throw DataXException.asDataXException(
+                        TxtFileWriterErrorCode.ILLEGAL_VALUE, String.format(
+                                "您配置的fileFormat [%s]错误, 支持csv, plainText两种.",
+                                fileFormat));
             }
         }
 

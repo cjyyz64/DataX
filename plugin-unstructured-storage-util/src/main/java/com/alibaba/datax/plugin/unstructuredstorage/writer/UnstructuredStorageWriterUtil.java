@@ -4,8 +4,11 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import org.anarres.lzo.LzoCompressor1x_1;
@@ -35,6 +38,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.csvreader.CsvWriter;
 import com.google.common.collect.Sets;
 
 public class UnstructuredStorageWriterUtil {
@@ -116,6 +120,17 @@ public class UnstructuredStorageWriterUtil {
 			writerConfiguration.set(Key.FIELD_DELIMITER,
 					Constant.DEFAULT_FIELD_DELIMITER);
 		}
+		
+        // fileFormat check
+        String fileFormat = writerConfiguration.getString(Key.FILE_FORMAT,
+                Constant.FILE_FORMAT_PLAIN_TEXT);
+        if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
+                || !Constant.FILE_FORMAT_PLAIN_TEXT.equals(fileFormat)) {
+            throw DataXException.asDataXException(
+                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
+                    String.format("您配置的fileFormat [%s]错误, 支持csv, plainText两种.",
+                            fileFormat));
+        }
 	}
 
 	public static void writeToStream(RecordReceiver lineReceiver,
@@ -233,6 +248,10 @@ public class UnstructuredStorageWriterUtil {
 		// 兼容format & dataFormat
 		String dateFormat = config.getString(Key.DATE_FORMAT);
 		
+        // warn: default false
+        String fileFormat = config.getString(Key.FILE_FORMAT,
+                Constant.FILE_FORMAT_PLAIN_TEXT);
+		
 		String delimiterInStr = config.getString(Key.FIELD_DELIMITER);
 		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 			throw DataXException.asDataXException(
@@ -248,68 +267,128 @@ public class UnstructuredStorageWriterUtil {
 		char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
 				Constant.DEFAULT_FIELD_DELIMITER);
 
-		Record record = null;
-		while ((record = lineReceiver.getFromReader()) != null) {
-			MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
-					.transportOneRecord(record, nullFormat, dateFormat,
-							fieldDelimiter, taskPluginCollector);
-			if (!transportResult.getRight()) {
-				writer.write(transportResult.getLeft());
-			}
-		}
+        Record record = null;
+        while ((record = lineReceiver.getFromReader()) != null) {
+            MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
+                    .transportOneRecord(record, nullFormat, dateFormat,
+                            fieldDelimiter, fileFormat, taskPluginCollector);
+            if (!transportResult.getRight()) {
+                writer.write(transportResult.getLeft());
+            }
+        }
 	}
 
-	/**
-	 * @return MutablePair<String, Boolean> left: formated data line; right: is
-	 *         dirty data or not, true means meeting dirty data
-	 * */
-	public static MutablePair<String, Boolean> transportOneRecord(
-			Record record, String nullFormat, String dateFormat,
-			char fieldDelimiter, TaskPluginCollector taskPluginCollector) {
-		MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
-		transportResult.setRight(false);
-		StringBuilder sb = new StringBuilder();
-		int recordLength = record.getColumnNumber();
-		if (0 != recordLength) {
-			Column column;
-			for (int i = 0; i < recordLength; i++) {
-				column = record.getColumn(i);
-				if (null != column.getRawData()) {
-					boolean isDateColumn = column instanceof DateColumn;
-					if (!isDateColumn) {
-						sb.append(column.asString());
-					} else {
-						//if (null != dateFormat) {
-					    if (StringUtils.isNotBlank(dateFormat)) {
-							try {
-								SimpleDateFormat dateParse = new SimpleDateFormat(
-										dateFormat);
-								sb.append(dateParse.format(column.asDate()));
-							} catch (Exception e) {
-								// warn: 此处认为似乎脏数据
-								String message = String.format(
-										"使用您配置的格式 [%s] 转换 [%s] 错误.",
-										dateFormat, column.asString());
-								taskPluginCollector.collectDirtyRecord(record,
-										message);
-								transportResult.setRight(true);
-								break;
-							}
-						} else {
-							sb.append(column.asString());
-						}
-					}
-				} else {
-					// warn: it's all ok if nullFormat is null
-					sb.append(nullFormat);
-				}
-				if (i != recordLength - 1) {
-					sb.append(fieldDelimiter);
-				}
-			}
-		}
-		sb.append(IOUtils.LINE_SEPARATOR);
-		transportResult.setLeft(sb.toString());
-		return transportResult;
-	}
+    /**
+     * @return MutablePair<String, Boolean> left: formated data line; right: is
+     *         dirty data or not, true means meeting dirty data
+     * */
+    public static MutablePair<String, Boolean> transportOneRecord(
+            Record record, String nullFormat, String dateFormat,
+            char fieldDelimiter, String fileFormat,
+            TaskPluginCollector taskPluginCollector) {
+        MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
+        transportResult.setRight(false);
+
+        StringWriter sw = new StringWriter();
+        List<String> splitedRows = new ArrayList<String>();
+        CsvWriter csvWriter = new CsvWriter(sw, fieldDelimiter);
+        csvWriter.setTextQualifier('"');
+        // warn: false means plain text(old way), true means strict csv format
+        if (Constant.FILE_FORMAT_PLAIN_TEXT.equals(fileFormat)) {
+            csvWriter.setUseTextQualifier(false);
+        } else {
+            csvWriter.setUseTextQualifier(true);
+        }
+        // warn: in linux is \n , in windows is \r\n
+        csvWriter.setRecordDelimiter(IOUtils.LINE_SEPARATOR.charAt(0));
+
+        int recordLength = record.getColumnNumber();
+        if (0 != recordLength) {
+            Column column;
+            for (int i = 0; i < recordLength; i++) {
+                column = record.getColumn(i);
+                if (null != column.getRawData()) {
+                    boolean isDateColumn = column instanceof DateColumn;
+                    if (!isDateColumn) {
+                        splitedRows.add(column.asString());
+                    } else {
+                        // if (null != dateFormat) {
+                        if (StringUtils.isNotBlank(dateFormat)) {
+                            try {
+                                SimpleDateFormat dateParse = new SimpleDateFormat(
+                                        dateFormat);
+                                splitedRows.add(dateParse.format(column
+                                        .asDate()));
+                            } catch (Exception e) {
+                                // warn: 此处认为似乎脏数据
+                                String message = String.format(
+                                        "使用您配置的格式 [%s] 转换 [%s] 错误.",
+                                        dateFormat, column.asString());
+                                taskPluginCollector.collectDirtyRecord(record,
+                                        message);
+                                transportResult.setRight(true);
+                                break;
+                            }
+                        } else {
+                            splitedRows.add(column.asString());
+                        }
+                    }
+                } else {
+                    // warn: it's all ok if nullFormat is null
+                    splitedRows.add(nullFormat);
+                }
+            }
+        }
+        UnstructuredStorageWriterUtil.csvWriteSlience(csvWriter, splitedRows);
+        transportResult.setLeft(sw.toString());
+        // sw.close(); //no need do this
+        return transportResult;
+    }
+
+    private static void csvWriteSlience(CsvWriter csvWriter,
+            List<String> splitedRows) {
+        try {
+            csvWriter
+                    .writeRecord((String[]) splitedRows.toArray(new String[0]));
+        } catch (IOException e) {
+            // shall not happen
+            throw DataXException.asDataXException(
+                    UnstructuredStorageWriterErrorCode.RUNTIME_EXCEPTION,
+                    String.format("转换CSV格式失败[%s]",
+                            StringUtils.join(splitedRows, " ")));
+        }
+    }
+
+    public static void main(String[] args) {
+        StringWriter sw = new StringWriter();
+        CsvWriter csvWriter = new CsvWriter(sw, ",".charAt(0));
+        try {
+            csvWriter.setUseTextQualifier(false);
+            System.out.println("Comment:" + csvWriter.getComment());
+            System.out.println("delimiter:" + csvWriter.getDelimiter());
+            System.out.println("escapeMode:" + csvWriter.getEscapeMode());
+            System.out.println("forceQualifier:"
+                    + csvWriter.getForceQualifier());
+            System.out.println("recordDelimiter:"
+                    + csvWriter.getRecordDelimiter());
+            System.out.println("textQualifier:" + csvWriter.getTextQualifier());
+            System.out.println("useTextQualifier:"
+                    + csvWriter.getUseTextQualifier());
+            csvWriter.write("1,\"'");
+            csvWriter.endRecord();
+            csvWriter.write("1,,");
+            csvWriter.endRecord();
+
+            csvWriter.setUseTextQualifier(true);
+            System.out.println("useTextQualifier:"
+                    + csvWriter.getUseTextQualifier());
+            csvWriter.write("11,\"'");
+            csvWriter.endRecord();
+            csvWriter.write("1,,");
+            csvWriter.endRecord();
+            System.out.println(sw.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
