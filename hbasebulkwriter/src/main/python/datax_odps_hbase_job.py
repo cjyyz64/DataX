@@ -5,6 +5,7 @@ __copyright__ = '2014 Alibaba Inc.'
 
 from optparse import OptionParser
 import sys
+import os
 from datax_util import OdpsUtil, HBaseUtil, Util
 
 
@@ -112,7 +113,14 @@ def build_datax_job_config(project, src_table, odps_column, suffix,
       accessIdJSON = '"accessId" : "' + access_id + '",'
     if not odpsutil.is_empty(access_key):
       accessKeyJSON = '"accessKey" : "' + access_key + '",'
-    projectJSON = '"project" : "' + project + '",'
+    if os.environ.get('SKYNET_SYSTEMID', '') == '':
+      projectName = os.environ.get('SKYNET_PACKAGEID', '')
+    else:
+      projectName = os.environ.get('SKYNET_PACKAGEID', '') + '_' + os.environ.get('SKYNET_SYSTEMID', '')
+    ## 测试环境没有SKYNET环境变量
+    if odpsutil.is_empty(projectName):
+      projectName = project
+    projectJSON = '"project" : "' + projectName + '",'
     tableJSON = '"table" : "' + src_table + '",'
     columnJSON = '"column" : [' 
     columnArray = odps_column.split(',')
