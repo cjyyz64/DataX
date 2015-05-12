@@ -5,9 +5,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterUtil;
-import com.google.common.collect.Sets;
 
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.PrefixFileFilter;
@@ -20,7 +18,6 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -53,6 +50,8 @@ public class TxtFileWriter extends Writer {
             if (null != dateFormatOld) {
                 LOG.warn("您使用format配置日期格式化, 这是不推荐的行为, 请优先使用dateFormat配置项, 两项同时存在则使用dateFormat.");
             }
+            UnstructuredStorageWriterUtil
+                    .validateParameter(this.writerSliceConfig);
         }
 
         private void validateParameter() {
@@ -60,25 +59,6 @@ public class TxtFileWriter extends Writer {
                     .getNecessaryValue(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_NAME,
                             TxtFileWriterErrorCode.REQUIRED_VALUE);
-
-            String writeMode = this.writerSliceConfig
-                    .getNecessaryValue(
-                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE,
-                            TxtFileWriterErrorCode.REQUIRED_VALUE);
-            writeMode = writeMode.trim();
-            Set<String> supportedWriteModes = Sets.newHashSet("truncate",
-                    "append", "nonConflict");
-            if (!supportedWriteModes.contains(writeMode)) {
-                throw DataXException
-                        .asDataXException(
-                                TxtFileWriterErrorCode.ILLEGAL_VALUE,
-                                String.format(
-                                        "仅支持 truncate, append, nonConflict 三种模式, 不支持您配置的 writeMode 模式 : [%s]",
-                                        writeMode));
-            }
-            this.writerSliceConfig
-                    .set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.WRITE_MODE,
-                            writeMode);
 
             String path = this.writerSliceConfig.getNecessaryValue(Key.PATH,
                     TxtFileWriterErrorCode.REQUIRED_VALUE);
@@ -108,62 +88,6 @@ public class TxtFileWriter extends Writer {
                 throw DataXException.asDataXException(
                         TxtFileWriterErrorCode.SECURITY_NOT_ENOUGH,
                         String.format("您没有权限创建文件路径 : [%s] ", path), se);
-            }
-
-            String encoding = this.writerSliceConfig
-                    .getString(
-                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
-                            com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_ENCODING);
-            if (StringUtils.isBlank(encoding)) {
-                this.writerSliceConfig
-                        .set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
-                                null);
-            } else {
-                try {
-                    encoding = encoding.trim();
-                    this.writerSliceConfig
-                            .set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.ENCODING,
-                                    encoding);
-                    Charsets.toCharset(encoding);
-                } catch (UnsupportedCharsetException uce) {
-                    throw DataXException.asDataXException(
-                            TxtFileWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("不支持您配置的编码格式:[%s]", encoding), uce);
-                } catch (Exception e) {
-                    throw DataXException.asDataXException(
-                            TxtFileWriterErrorCode.CONFIG_INVALID_EXCEPTION,
-                            String.format("编码配置异常, 请联系我们: %s", e.getMessage()),
-                            e);
-                }
-            }
-
-            // only support compress types
-            String compress = this.writerSliceConfig
-                    .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
-            if (StringUtils.isBlank(compress)) {
-                this.writerSliceConfig
-                        .set(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS,
-                                null);
-            } else {
-                Set<String> supportedCompress = Sets
-                        .newHashSet("gzip", "bzip2");
-                if (!supportedCompress.contains(compress.toLowerCase().trim())) {
-                    throw DataXException
-                            .asDataXException(
-                                    TxtFileWriterErrorCode.ILLEGAL_VALUE,
-                                    String.format(
-                                            "仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
-                                            compress));
-                }
-            }
-
-            String delimiterInStr = this.writerSliceConfig
-                    .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FIELD_DELIMITER);
-            // warn: if have, length must be one
-            if (null != delimiterInStr && 1 != delimiterInStr.length()) {
-                throw DataXException.asDataXException(
-                        TxtFileWriterErrorCode.ILLEGAL_VALUE, String.format(
-                                "仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
             }
         }
 

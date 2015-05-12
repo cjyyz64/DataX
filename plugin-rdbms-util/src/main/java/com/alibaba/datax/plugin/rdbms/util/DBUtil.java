@@ -56,7 +56,7 @@ public final class DBUtil {
                             }
                         }
                     }
-                    throw new Exception("No available jdbcURL yet.");
+                    throw new Exception("DataX无法连接对应的数据库，可能原因是：1) 配置的ip/port/database/jdbc错误，无法连接。2) 配置的username/password错误，鉴权失败。请和DBA确认该数据库的连接信息是否正确。");
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
@@ -285,12 +285,15 @@ public final class DBUtil {
 
     public static List<String> getTableColumns(DataBaseType dataBaseType,
                                                String jdbcUrl, String user, String pass, String tableName) {
+        Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
+        return getTableColumnsByConn(conn, tableName, "jdbcUrl:"+jdbcUrl);
+    }
+
+    public static List<String> getTableColumnsByConn(Connection conn, String tableName, String basicMsg) {
         List<String> columns = new ArrayList<String>();
-        Connection conn = null;
         Statement statement = null;
         ResultSet rs = null;
         try {
-            conn = getConnection(dataBaseType, jdbcUrl, user, pass);
             statement = conn.createStatement();
             String queryColumnSql = String.format("select * from %s where 1=2",
                     tableName);
@@ -303,7 +306,7 @@ public final class DBUtil {
         } catch (SQLException e) {
             throw DataXException
                     .asDataXException(DBUtilErrorCode.GET_COLUMN_INFO_FAILED,
-                            String.format("获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置项中的 jdbcUrl 和 table 信息. 错误信息上下文: jdbcUrl:[%s],table:[%s]", jdbcUrl, tableName), e);
+                            String.format("获取字段信息失败. 根据您的配置信息，获取表的所有字段名称时失败. 该错误可能是由于配置错误导致，请检查您的配置信息. 错误配置信息上下文: %s,table:[%s]", basicMsg, tableName), e);
         } finally {
             DBUtil.closeDBResources(rs, statement, conn);
         }
@@ -465,6 +468,11 @@ public final class DBUtil {
                 // 用于关闭 drds 的分布式事务开关
                 sessionConfig = new ArrayList<String>();
                 sessionConfig.add("set transaction policy 4");
+                DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
+                break;
+            case MySql:
+                sessionConfig = config.getList(Key.SESSION,
+                        new ArrayList<String>(), String.class);
                 DBUtil.doDealWithSessionConfig(conn, sessionConfig, message);
                 break;
             default:

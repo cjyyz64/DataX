@@ -14,6 +14,7 @@ import java.util.List;
 public class HbaseReader extends Reader {
     public static class Job extends Reader.Job {
         private static Logger LOG = LoggerFactory.getLogger(Job.class);
+        private static boolean IS_DEBUG = LOG.isDebugEnabled();
 
         private Configuration originalConfig;
 
@@ -23,7 +24,9 @@ public class HbaseReader extends Reader {
 
             HbaseUtil.doPretreatment(this.originalConfig);
 
-            LOG.debug("After init(), now originalConfig is:\n{}\n", this.originalConfig);
+            if (IS_DEBUG) {
+                LOG.debug("After init(), now originalConfig is:\n{}\n", this.originalConfig);
+            }
         }
 
         @Override
@@ -49,7 +52,7 @@ public class HbaseReader extends Reader {
 
     public static class Task extends Reader.Task {
         private Configuration taskConfig;
-
+        private static Logger LOG = LoggerFactory.getLogger(Task.class);
         private HbaseAbstractTask hbaseTaskProxy;
 
         @Override
@@ -91,6 +94,7 @@ public class HbaseReader extends Reader {
                 try {
                     fetchOK = this.hbaseTaskProxy.fetchLine(record);
                 } catch (Exception e) {
+                    LOG.info("Exception", e);
                     super.getTaskPluginCollector().collectDirtyRecord(record, e);
                     continue;
                 }

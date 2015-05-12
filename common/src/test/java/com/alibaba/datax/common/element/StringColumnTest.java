@@ -202,4 +202,15 @@ public class StringColumnTest extends BaseTest {
 			Assert.assertTrue(true);
 		}
 	}
+
+    @Test
+    public void testEmptyString() {
+        StringColumn column = new StringColumn("");
+        try {
+            BigDecimal num = column.asBigDecimal();
+        } catch(Exception e) {
+            Assert.assertTrue(e.getMessage().contains("String [\"\"] 不能转为BigDecimal"));
+        }
+
+    }
 }

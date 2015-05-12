@@ -110,7 +110,7 @@ public class Common {
             } else {
                 ColumnValue v = values.get(col.getName());
                 if (v == null) {
-                    line.addColumn(null);
+                    line.addColumn(new StringColumn(null));
                 } else {
                     switch(v.getType()) {
                     case STRING:  line.addColumn(new StringColumn(v.asString())); break;

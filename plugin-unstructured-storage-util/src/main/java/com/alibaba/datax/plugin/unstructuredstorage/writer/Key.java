@@ -23,4 +23,7 @@ public class Key {
     public static final String FORMAT = "format";
     // for writers ' data format
     public static final String DATE_FORMAT = "dateFormat";
+    
+    // csv or plain text
+    public static final String FILE_FORMAT = "fileFormat";
 }

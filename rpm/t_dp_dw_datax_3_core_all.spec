@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
-Version:201503162300
+Version:201505061930
 Release: %(echo $RELEASE)%{?dist}
 
 Summary: datax 3 core
@@ -27,12 +27,14 @@ export LANG=zh_CN.UTF-8
 grep -q "^cug-tbdp:" /etc/group &>/dev/null || groupadd -g 508 cug-tbdp &>/dev/null || true
 grep -q "^taobao:" /etc/passwd &>/dev/null || useradd -u 503 -g cug-tbdp taobao &>/dev/null || true
 find %{_prefix}/log -type f -mtime +7 -exec rm -rf {} \;
-rm -rf %{_prefix}/plugins/
+rm -rf %{_prefix}/plugin/
+rm -rf %{_prefix}/lib/
 
 
 %build
 cd ${OLDPWD}/../
 
+export MAVEN_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=128m"
 /home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
 
 %install

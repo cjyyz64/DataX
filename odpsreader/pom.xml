@@ -34,13 +34,14 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
+            <version>16.0.1</version>
 		</dependency>
 
 		<!-- ref:http://odps.alibaba-inc.com/doc/prddoc/odps_sdk_v2/sdk.html -->
 		<dependency>
 			<groupId>com.aliyun.odps</groupId>
 			<artifactId>odps-sdk-core-internal</artifactId>
-			<version>0.13.2</version>
+			<version>0.16.2</version>
 		</dependency>
 
 		<dependency>

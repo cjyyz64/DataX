@@ -3,6 +3,10 @@ package com.alibaba.datax.plugin.reader.oceanbasereader.utils;
 import com.google.common.base.Preconditions;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -15,6 +19,75 @@ public class RowkeyMeta implements Serializable,Iterable<RowkeyMeta.Entry> {
 		this.fields = fields;
 	}
 
+    public static enum BoundValue{
+        OB_MIN{
+            @Override
+            public String toString(){
+                return "__OB__MIN__";
+            }
+        },OB_MAX{
+            @Override
+            public String toString(){
+                return "__OB__MAX__";
+            }
+        };
+
+        public static boolean isMin(Object value){
+           return value != null && (value == OB_MIN || OB_MIN.toString().equalsIgnoreCase(value.toString()));
+        }
+
+        public static boolean isMax(Object value){
+            return value!= null && (value == OB_MAX || OB_MAX.toString().equalsIgnoreCase(value.toString()));
+        }
+    }
+
+    private static enum Type {
+
+        INT {
+            @Override
+            public Long value(ResultSet result, String name) throws SQLException{
+                return result.getLong(name);
+            }
+        }, VARCHAR {
+            @Override
+            public String value(ResultSet result, String name) throws SQLException {
+                return result.getString(name);
+            }
+        },
+        TIMESTAMP {
+            @Override
+            public Timestamp value(ResultSet result, String name) throws SQLException {
+                return result.getTimestamp(name);
+            }
+        },
+        NUMERIC {
+            @Override
+            public BigDecimal value(ResultSet result, String name) throws SQLException {
+                return result.getBigDecimal(name);
+            }
+        }, UNKNOW {
+            @Override
+            public <T> T value(ResultSet result, String name) throws SQLException {
+                throw new IllegalArgumentException("not support field type for " + name);
+            }
+        }, BOOL {
+            @Override
+            public Boolean value(ResultSet result, String name) throws SQLException {
+                return result.getBoolean(name);
+            }
+        };
+
+        public abstract <T> T value(ResultSet result,String name) throws SQLException;
+
+        public static Type type(String label) {
+            label = label.toUpperCase();
+            for (Type type : Type.values()) {
+                if (label.toUpperCase().contains(type.name()))
+                    return type;
+            }
+            return UNKNOW;
+        }
+    }
 	public static class Entry implements Serializable,Comparable<Entry> {
 
 		public final String name;
@@ -29,39 +102,10 @@ public class RowkeyMeta implements Serializable,Iterable<RowkeyMeta.Entry> {
 			this.position = position;
 		}
 
-        public String convert(String value) {
-            return type.convert(value);
+        public <T> T value(ResultSet result,String name) throws Exception{
+            return type.value(result,name);
         }
 
-		private enum Type {
-
-			INT, VARCHAR {
-				@Override
-				public String convert(String value) {
-					return "'" + value + "'";
-				}
-			},
-			TIMESTAMP {
-				@Override
-				public String convert(String value) {
-					return "timestamp'" + value + "'";
-				}
-			},
-			NUMERIC, UNKNOW, BOOL;
-
-            public String convert(String value) {
-                return value;
-            }
-
-			public static Type type(String label) {
-				label = label.toUpperCase();
-				for (Type type : Type.values()) {
-					if (label.toUpperCase().contains(type.name()))
-						return type;
-				}
-				return UNKNOW;
-			}
-		}
 
 		@Override
 		public int compareTo(Entry o) {
@@ -87,7 +131,7 @@ public class RowkeyMeta implements Serializable,Iterable<RowkeyMeta.Entry> {
 
 		public Builder addEntry(String name, String type, String id, int position) {
 			Preconditions.checkState(!hasBuild,"can't call addEntry() once build() has called");
-			fields.add(new Entry(name, Entry.Type.type(type), id, position));
+			fields.add(new Entry(name, Type.type(type), id, position));
 			return this;
 		}
 

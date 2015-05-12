@@ -30,30 +30,10 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-        <!-- 支持taobao账号连接tunnel/odps -->
         <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk16</artifactId>
-            <version>1.46</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.odps</groupId>
-            <artifactId>tunnel</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/src/main/libs/odps-tunnel-sdk-1.0.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.google.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>1.6</version>
-            <scope>system</scope>
-            <systemPath>${basedir}/src/main/libs/gson-1.6.jar.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.odps.internal</groupId>
-            <artifactId>odps-api-sdk</artifactId>
-            <version>s13.0.0-rc4</version>
+            <groupId>com.aliyun.odps</groupId>
+            <artifactId>odps-sdk-core-internal</artifactId>
+            <version>0.16.6</version>
         </dependency>
 
         <!-- httpclient begin -->

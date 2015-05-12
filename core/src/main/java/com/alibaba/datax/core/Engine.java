@@ -58,10 +58,6 @@ public class Engine {
         container.start();
     }
 
-    private static String copyRight() {
-        String title = "\nDataX, From Alibaba ! \nCopyright (C) 2010-2015, Alibaba Group. All Rights Reserved.\n";
-        return title;
-    }
 
     // 注意屏蔽敏感信息
     private static String filterJobConfiguration(
@@ -121,8 +117,6 @@ public class Engine {
         }
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
 
-        LOG.info("\n" + Engine.copyRight());
-        
 
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 
@@ -130,11 +124,7 @@ public class Engine {
 
         ConfigurationValidate.doValidate(configuration);
         Engine engine = new Engine();
-        try {
-            engine.start(configuration);
-        } catch (Throwable e) {
-            throw e;
-        }
+        engine.start(configuration);
     }
 
 

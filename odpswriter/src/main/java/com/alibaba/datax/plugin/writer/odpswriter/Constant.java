@@ -10,8 +10,6 @@ public class Constant {
 
     public static final String TAOBAO_ACCOUNT_TYPE = "taobao";
 
-    public static final String TAOBAO_ACCOUNT_TYPE_ALGORITHM = "rsa";
-
     public static final String COLUMN_POSITION = "columnPosition";
 
 }

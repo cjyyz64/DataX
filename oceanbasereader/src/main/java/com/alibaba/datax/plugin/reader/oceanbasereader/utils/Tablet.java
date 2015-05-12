@@ -2,42 +2,23 @@ package com.alibaba.datax.plugin.reader.oceanbasereader.utils;
 
 import com.alibaba.datax.plugin.reader.oceanbasereader.ast.SelectExpression;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 
 import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class Tablet implements Serializable{
 
     public final RowkeyMeta meta;
-    public final String startkey;
-    public final String endkey;
-    public static final String MIN = "min";
-    public static final String MAX = "max";
+    public final List<?> startkey;
+    public final List<?> endkey;
 
-    public Tablet(RowkeyMeta meta,String startkey, String endkey){
+    public Tablet(RowkeyMeta meta, List<?> startkey, List<?> endkey) {
         this.meta = meta;
         this.startkey = startkey;
         this.endkey = endkey;
-    }
-
-    public Tablet(RowkeyMeta meta, List<String> startkey, List<String> endkey) {
-        this.meta = meta;
-        this.startkey = this.vector(startkey);
-        this.endkey = this.vector(endkey);
-    }
-
-    private String vector(List<String> rowkey) {
-        Preconditions.checkArgument(rowkey != null && !rowkey.isEmpty(), "expect rowkey not-null");
-        if (rowkey.get(0).contains("__OB__MIN__")) return MIN;
-        if (rowkey.get(0).contains("__OB__MAX__")) return MAX;
-        StringBuilder builder = new StringBuilder("(");
-        for (RowkeyMeta.Entry entry : meta) {
-            String value = rowkey.get(entry.position - 1);
-            builder.append(entry.convert(value)).append(",");
-        }
-        builder.append(")");
-        return builder.deleteCharAt(builder.lastIndexOf(",")).toString();
     }
 
     private String vector() {
@@ -49,23 +30,62 @@ public class Tablet implements Serializable{
         return builder.deleteCharAt(builder.lastIndexOf(",")).toString();
     }
 
-    public String sql(SelectExpression select, String boundRowkey, int limit) {
+    private String placeholder() {
+        StringBuilder builder = new StringBuilder("(");
+        for (RowkeyMeta.Entry entry : meta) {
+            builder.append("?").append(",");
+        }
+        builder.append(")");
+        return builder.deleteCharAt(builder.lastIndexOf(",")).toString();
+    }
+
+    public String sql(SelectExpression select, List<?> boundRowkey, int limit) {
         String sql = select.toSQL();
         String keyword = select.where == null ? "where" : "and";
-        boolean min = boundRowkey == null && this.startkey.equals(MIN);
-        boolean max = this.endkey.equals(MAX);
+        boolean min = boundRowkey.isEmpty() && RowkeyMeta.BoundValue.isMin(this.startkey.get(0));
+        boolean max = RowkeyMeta.BoundValue.isMax(this.endkey.get(0));
         if (min && max) {
             return String.format("%s limit %s", sql, limit);
         } else if (min) {
-            return String.format("%s %s %s <= %s limit %s", sql, keyword, vector(), endkey, limit);
+            return String.format("%s %s %s <= %s limit %s", sql, keyword, vector(), placeholder(), limit);
         } else if (max) {
-            if(boundRowkey == null){
-                return String.format("%s %s %s >= %s limit %s", sql, keyword, vector(), startkey, limit);
-            }else {
-                return String.format("%s %s %s > %s limit %s", sql, keyword, vector(), boundRowkey, limit);
-            }
+            return String.format("%s %s %s > %s limit %s", sql, keyword, vector(), placeholder(), limit);
         } else {
-            return String.format("%s %s (%s > %s and %s <= %s) limit %s", sql, keyword, vector(), boundRowkey == null ? startkey : boundRowkey, vector(), endkey, limit);
+            return String.format("%s %s (%s > %s and %s <= %s) limit %s", sql, keyword, vector(), placeholder(), vector(), placeholder(), limit);
+        }
+    }
+
+    public List<?> parameters(List<?> boundRowkey) {
+        class Helper{
+            private List<?> parameters(List<?> a, List<?> b){
+                List<?> parameters = Lists.newArrayListWithCapacity(a.size() + b.size());
+                parameters.addAll((Collection)a);
+                parameters.addAll((Collection)b);
+                return parameters;
+            }
+        }
+        boolean min = RowkeyMeta.BoundValue.isMin(this.startkey.get(0));
+        boolean max = RowkeyMeta.BoundValue.isMax(this.endkey.get(0));
+        if(boundRowkey.isEmpty()){
+            if (min && max) {
+                return Collections.emptyList();
+            } else if (min) {
+                return endkey;
+            } else if (max) {
+                return startkey;
+            } else {
+                return new Helper().parameters(startkey,endkey);
+            }
+        }else {
+            if (min && max) {
+                return boundRowkey;
+            } else if (min) {
+                return new Helper().parameters(boundRowkey,endkey);
+            } else if (max) {
+                return boundRowkey;
+            } else {
+                return new Helper().parameters(boundRowkey,endkey);
+            }
         }
     }
 
@@ -83,8 +103,4 @@ public class Tablet implements Serializable{
         return Objects.hashCode(meta, startkey, endkey);
     }
 
-
-    public boolean wholeRange(){
-        return MIN.equals(startkey) && MAX.equals(endkey);
-    }
 }

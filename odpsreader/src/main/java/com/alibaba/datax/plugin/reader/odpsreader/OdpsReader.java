@@ -9,7 +9,6 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
-import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -50,10 +49,14 @@ public class OdpsReader extends Reader {
 
             dealSplitMode(this.originalConfig);
 
+            //check isCompress
+            this.originalConfig.getBool(Key.IS_COMPRESS, false);
+
             this.odps = OdpsUtil.initOdps(this.originalConfig);
             String tableName = this.originalConfig.getString(Key.TABLE);
+            String projectName = this.originalConfig.getString(Key.PROJECT);
 
-            this.table = OdpsUtil.getTable(this.odps, tableName);
+            this.table = OdpsUtil.getTable(this.odps, projectName, tableName);
             this.originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                     OdpsUtil.isPartitionedTable(table));
 
@@ -264,9 +267,11 @@ public class OdpsReader extends Reader {
         private String tunnelServer;
         private Odps odps = null;
         private Table table = null;
+        private String projectName = null;
         private String tableName = null;
         private boolean isPartitionedTable;
         private String sessionId;
+        private boolean isCompress;
 
         @Override
         public void init() {
@@ -275,17 +280,21 @@ public class OdpsReader extends Reader {
                     Key.TUNNEL_SERVER, null);
 
             this.odps = OdpsUtil.initOdps(this.readerSliceConf);
-
+            this.projectName = this.readerSliceConf.getString(Key.PROJECT);
             this.tableName = this.readerSliceConf.getString(Key.TABLE);
-            this.table = OdpsUtil.getTable(this.odps, tableName);
+            this.table = OdpsUtil.getTable(this.odps, projectName, tableName);
             this.isPartitionedTable = this.readerSliceConf
                     .getBool(Constant.IS_PARTITIONED_TABLE);
             this.sessionId = this.readerSliceConf.getString(Constant.SESSION_ID, null);
 
+
+
+            this.isCompress = this.readerSliceConf.getBool(Key.IS_COMPRESS, false);
+
             // sessionId 为空的情况是：切分级别只到 partition 的情况
             if (StringUtils.isBlank(this.sessionId)) {
                 DownloadSession session = OdpsUtil.createMasterSessionForPartitionedTable(odps,
-                        tunnelServer, tableName, this.readerSliceConf.getString(Key.PARTITION));
+                        tunnelServer, projectName, tableName, this.readerSliceConf.getString(Key.PARTITION));
                 this.sessionId = session.getId();
             }
 
@@ -303,10 +312,10 @@ public class OdpsReader extends Reader {
 
             if (this.isPartitionedTable) {
                 downloadSession = OdpsUtil.getSlaveSessionForPartitionedTable(this.odps, this.sessionId,
-                        this.tunnelServer, this.tableName, partition);
+                        this.tunnelServer, this.projectName, this.tableName, partition);
             } else {
                 downloadSession = OdpsUtil.getSlaveSessionForNonPartitionedTable(this.odps, this.sessionId,
-                        this.tunnelServer, this.tableName);
+                        this.tunnelServer, this.projectName, this.tableName);
             }
 
             long start = this.readerSliceConf.getLong(Constant.START_INDEX, 0);
@@ -338,8 +347,6 @@ public class OdpsReader extends Reader {
             }
 
             try {
-                RecordReader recordReader = downloadSession.openRecordReader(
-                        start, count);
                 List<Configuration> parsedColumnsTmp = this.readerSliceConf
                         .getListConfiguration(Constant.PARSED_COLUMNS);
                 List<Pair<String, ColumnType>> parsedColumns = new ArrayList<Pair<String, ColumnType>>();
@@ -352,15 +359,38 @@ public class OdpsReader extends Reader {
                             columnName, columnType));
 
                 }
-                ReaderProxy readerProxy = new ReaderProxy(recordSender,
-                        recordReader, columnTypeMap, parsedColumns, partition,
-                        this.isPartitionedTable);
-                readerProxy.doRead();
+                ReaderProxy readerProxy = new ReaderProxy(recordSender, downloadSession,
+                        columnTypeMap, parsedColumns, partition, this.isPartitionedTable,
+                        start, count, this.isCompress);
+
+                retryDoRead(3,2000,readerProxy);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
                         String.format("源头表:%s 的分区:%s 读取失败, 请联系 ODPS 管理员查看错误详情.", this.tableName, partition), e);
             }
 
+        }
+
+        private void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) {
+
+            int count = 1;
+            while(retryTimes > 0) {
+                try {
+                    readerProxy.doRead();
+                    break;
+                } catch (DataXException e) {
+                    if(OdpsReaderErrorCode.ODPS_READ_TIMEOUT.getCode().equals(e.getErrorCode().getCode())) {
+                        try {
+                            LOG.warn("odps read-time-out, 重试第{}次",count++);
+                            Thread.sleep(retryInterval);
+                            retryTimes--;
+                        } catch (InterruptedException ignored) {
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+            }
         }
 
         @Override

@@ -217,6 +217,12 @@ public class TxtFileReader extends Reader {
 			// warn:每个slice拖且仅拖一个文件,
 			// int splitNumber = adviceNumber;
 			int splitNumber = this.sourceFiles.size();
+            if (0 == splitNumber) {
+                throw DataXException.asDataXException(
+                        TxtFileReaderErrorCode.EMPTY_DIR_EXCEPTION, String
+                                .format("未能找到待读取的文件,请确认您的配置项path: %s",
+                                        this.originConfig.getString(Key.PATH)));
+            }
 
 			List<List<String>> splitedSourceFiles = this.splitSourceFiles(
 					this.sourceFiles, splitNumber);

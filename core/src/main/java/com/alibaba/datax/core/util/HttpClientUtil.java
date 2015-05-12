@@ -19,6 +19,7 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadPoolExecutor;
 
 
 public class HttpClientUtil {
@@ -30,9 +31,11 @@ public class HttpClientUtil {
     private volatile static HttpClientUtil clientUtil;
 
     //构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
-    private static int HTTP_TIMEOUT_INMILLIONSECONDS;
+    private static int HTTP_TIMEOUT_INMILLIONSECONDS = 5000;
 
-    private final int POOL_SIZE = 20;
+    private static final int POOL_SIZE = 20;
+
+    private static ThreadPoolExecutor asyncExecutor = RetryUtil.createThreadPoolExecutor();
 
     public static void setHttpTimeoutInMillionSeconds(int httpTimeoutInMillionSeconds) {
         HTTP_TIMEOUT_INMILLIONSECONDS = httpTimeoutInMillionSeconds;
@@ -41,9 +44,6 @@ public class HttpClientUtil {
     public static synchronized HttpClientUtil getHttpClientUtil() {
         if (null == clientUtil) {
             synchronized (HttpClientUtil.class) {
-                Properties prob  = SecretUtil.getSecurityProperties();
-                HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
-
                 if (null == clientUtil) {
                     clientUtil = new HttpClientUtil();
                 }
@@ -52,7 +52,9 @@ public class HttpClientUtil {
         return clientUtil;
     }
 
-    private HttpClientUtil() {
+    public HttpClientUtil() {
+        Properties prob  = SecretUtil.getSecurityProperties();
+        HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
         initApacheHttpClient();
     }
 
@@ -136,12 +138,12 @@ public class HttpClientUtil {
 
     public String executeAndGetWithRetry(final HttpRequestBase httpRequestBase, final int retryTimes, final long retryInterval) {
         try {
-            return RetryUtil.executeWithRetry(new Callable<String>() {
+            return RetryUtil.asyncExecuteWithRetry(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
                     return executeAndGet(httpRequestBase);
                 }
-            }, retryTimes, retryInterval, true);
+            }, retryTimes, retryInterval, true, HTTP_TIMEOUT_INMILLIONSECONDS + 1000, asyncExecutor);
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
         }

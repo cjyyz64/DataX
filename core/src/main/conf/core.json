@@ -27,7 +27,8 @@
                     "record": 10000
                 },
                 "flowControlInterval": 20,
-                "capacity": 512
+                "capacity": 512,
+                "byteCapacity": 67108864
             },
             "exchanger": {
                 "class": "com.alibaba.datax.core.plugin.BufferedRecordExchanger",

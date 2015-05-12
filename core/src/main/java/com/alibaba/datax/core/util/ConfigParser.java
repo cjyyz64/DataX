@@ -10,8 +10,7 @@ import org.apache.http.client.methods.HttpGet;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public final class ConfigParser {
     /**
@@ -44,13 +43,21 @@ public final class ConfigParser {
 
         boolean isJobResourceFromHttp = jobResource.trim().toLowerCase().startsWith("http");
 
+        //设置httpclient的 HTTP_TIMEOUT_INMILLIONSECONDS
+        Configuration coreConfig = ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH);
+        int httpTimeOutInMillionSeconds = coreConfig.getInt(
+                CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
+        HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
+
+        HttpClientUtil httpClientUtil = new HttpClientUtil();
+
         if (isJobResourceFromHttp) {
             try {
                 URL url = new URL(jobResource);
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
 
-                jobContent = HttpClientUtil.getHttpClientUtil().executeAndGetWithRetry(httpGet, 6, 1000l);
+                jobContent = httpClientUtil.executeAndGetWithRetry(httpGet, 6, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
@@ -72,27 +79,39 @@ public final class ConfigParser {
     private static Configuration parsePluginConfig() {
         Configuration configuration = Configuration.newDefault();
 
+        Set<String> pluginSet = new HashSet<String>();
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_READER_HOME)) {
+            Configuration eachReaderConfig = ConfigParser.parseOnePluginConfig(each, "reader", pluginSet);
             configuration.merge(
-                    ConfigParser.parseOnePluginConfig(each, "reader"), true);
+                    eachReaderConfig, true);
         }
 
         for (final String each : ConfigParser
                 .getDirAsList(CoreConstant.DATAX_PLUGIN_WRITER_HOME)) {
+            Configuration eachWriterConfig = ConfigParser.parseOnePluginConfig(each, "writer", pluginSet);
             configuration.merge(
-                    ConfigParser.parseOnePluginConfig(each, "writer"), true);
+                    eachWriterConfig, true);
         }
 
         return configuration;
     }
 
+
     public static Configuration parseOnePluginConfig(final String path,
-                                                     final String type) {
+                                                     final String type,
+                                                     Set<String> pluginSet) {
         String filePath = path + File.separator + "plugin.json";
         Configuration configuration = Configuration.from(new File(filePath));
 
         String pluginPath = configuration.getString("path");
+        String pluginName = configuration.getString("name");
+        if(!pluginSet.contains(pluginName)) {
+            pluginSet.add(pluginName);
+        } else {
+            throw DataXException.asDataXException(FrameworkErrorCode.PLUGIN_INIT_ERROR, "插件加载失败,存在重复插件:" + filePath);
+        }
+
         boolean isDefaultPath = StringUtils.isBlank(pluginPath);
         if (isDefaultPath) {
             configuration.set("path", path);

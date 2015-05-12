@@ -1,6 +1,7 @@
 package com.alibaba.datax.common.util;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -68,6 +69,17 @@ public class StrUtil {
         }
 
         return retString;
+    }
+
+    public static String compressMiddle(String s, int headLength, int tailLength) {
+        Validate.notNull(s, "Input string must not be null");
+        Validate.isTrue(headLength > 0, "Head length must be larger than 0");
+        Validate.isTrue(tailLength > 0, "Tail length must be larger than 0");
+
+        if(headLength + tailLength >= s.length()) {
+            return s;
+        }
+        return s.substring(0, headLength) + "..." + s.substring(s.length() - tailLength);
     }
 
 }

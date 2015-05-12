@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.hbasereader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.hbasereader.HTableManager;
 import com.alibaba.datax.plugin.reader.hbasereader.HbaseReaderErrorCode;
 import com.alibaba.datax.plugin.reader.hbasereader.Key;
 import org.apache.hadoop.hbase.HConstants;
@@ -47,12 +48,10 @@ public final class HbaseSplitUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(HbaseReaderErrorCode.SPLIT_ERROR, "切分源头 Hbase 表失败.", e);
         } finally {
-            if (null != htable) {
-                try {
-                    htable.close();
-                } catch (Exception e) {
-                    //
-                }
+            try {
+                HTableManager.closeHTable(htable);
+            } catch (Exception e) {
+                //
             }
         }
     }

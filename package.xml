@@ -156,6 +156,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>adswriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>streamwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -191,14 +198,14 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>mongodbwriter/target/datax/</directory>
+            <directory>hbasebulkwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>mongodbreader/target/datax/</directory>
+            <directory>tddlwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

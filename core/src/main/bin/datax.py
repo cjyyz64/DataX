@@ -14,6 +14,7 @@ from string import Template
 
 DATAX_HOME = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+DATAX_VERSION = 'UNKNOWN_DATAX_VERSION'
 CLASS_PATH = ("%s/lib/*:.") % (DATAX_HOME)
 LOGBACK_FILE = ("%s/conf/logback.xml") % (DATAX_HOME)
 DEFAULT_JVM = "-Xms1g -Xmx1g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=%s/log" % (DATAX_HOME)
@@ -139,7 +140,17 @@ def buildStartCommand(options, args):
     return Template(ENGINE_COMMAND).substitute(**commandMap)
 
 
+def printCopyright():
+    print '''
+DataX (%s), From Alibaba !
+Copyright (C) 2010-2015, Alibaba Group. All Rights Reserved.
+
+''' % DATAX_VERSION
+    sys.stdout.flush()
+
+
 if __name__ == "__main__":
+    printCopyright()
     parser = getOptionParser()
     options, args = parser.parse_args(sys.argv[1:])
     if len(args) != 1:
