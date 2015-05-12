@@ -145,6 +145,7 @@ public class CommonRdbmsWriter {
         private List<String> preSqls;
         private List<String> postSqls;
         protected int batchSize;
+        protected int batchByteSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;
 
@@ -174,6 +175,7 @@ public class CommonRdbmsWriter {
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
@@ -212,6 +214,7 @@ public class CommonRdbmsWriter {
             calcWriteRecordSql();
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
+            int bufferBytes = 0;
             try {
                 Record record;
                 while ((record = recordReceiver.getFromReader()) != null) {
@@ -227,21 +230,25 @@ public class CommonRdbmsWriter {
                     }
 
                     writeBuffer.add(record);
+                    bufferBytes += record.getByteSize();
 
-                    if (writeBuffer.size() >= batchSize) {
+                    if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         doBatchInsert(connection, writeBuffer);
                         writeBuffer.clear();
+                        bufferBytes = 0;
                     }
                 }
                 if (!writeBuffer.isEmpty()) {
                     doBatchInsert(connection, writeBuffer);
                     writeBuffer.clear();
+                    bufferBytes = 0;
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
+                bufferBytes = 0;
                 DBUtil.closeDBResources(null, null, connection);
             }
         }

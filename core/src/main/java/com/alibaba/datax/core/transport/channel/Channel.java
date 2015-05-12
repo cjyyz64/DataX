@@ -25,6 +25,8 @@ public abstract class Channel {
 
     protected int capacity;
 
+    protected int byteCapacity;
+
     protected long byteSpeed; // bps: bytes/s
 
     protected long recordSpeed; // tps: records/s
@@ -71,7 +73,8 @@ public abstract class Channel {
         this.recordSpeed = recordSpeed;
         this.flowControlInterval = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
-
+        this.byteCapacity = configuration.getInt(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 64 * 1024 * 1024);
         this.configuration = configuration;
     }
 
