@@ -9,6 +9,10 @@ public class KeyConstant {
      */
     public static final String MONGO_ADDRESS = "address";
     /**
+     * 数组类型
+     */
+    public static final String ARRAY_TYPE = "array";
+    /**
      * mongodb 的用户名
      */
     public static final String MONGO_USER_NAME = "userName";
@@ -52,4 +56,20 @@ public class KeyConstant {
      * 指定用来判断是否覆盖的 业务主键
      */
     public static final String UNIQUE_KEY = "upsertKey";
+    /**
+     * 判断是否为数组类型
+     * @param type 数据类型
+     * @return
+     */
+    public static boolean isArrayType(String type) {
+        return ARRAY_TYPE.equals(type);
+    }
+    /**
+     * 判断一个值是否为true
+     * @param value
+     * @return
+     */
+    public static boolean isValueTrue(String value){
+        return "true".equals(value);
+    }
 }

@@ -53,6 +53,10 @@ public class KeyConstant {
      */
     public static final String BATCH_SIZE = "batchSize";
     /**
+     * MongoDB的idmeta
+     */
+    public static final String MONGO_PRIMIARY_ID_META = "_id";
+    /**
      * 判断是否为数组类型
      * @param type 数据类型
      * @return

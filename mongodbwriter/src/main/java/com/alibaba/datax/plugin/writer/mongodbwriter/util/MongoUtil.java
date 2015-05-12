@@ -63,9 +63,6 @@ public class MongoUtil {
      * @return
      */
     private static boolean isHostPortPattern(List<Object> addressList) {
-        for(Object obj : addressList) {
-            System.out.println(obj);
-        }
         boolean isMatch = false;
         for(Object address : addressList) {
             String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";

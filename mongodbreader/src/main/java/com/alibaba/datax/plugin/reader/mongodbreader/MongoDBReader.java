@@ -23,8 +23,6 @@ import java.util.*;
  */
 public class MongoDBReader extends Reader {
 
-    private static final Logger logger = LoggerFactory.getLogger(MongoDBReader.class);
-
     public static class Job extends Reader.Job {
 
         private Configuration originalConfig = null;
@@ -60,7 +58,6 @@ public class MongoDBReader extends Reader {
 
     public static class Task extends Reader.Task {
 
-        private static final Logger logger = LoggerFactory.getLogger(Task.class);
         private Configuration readerSliceConfig;
 
         private MongoClient mongoClient;
@@ -88,27 +85,26 @@ public class MongoDBReader extends Reader {
             if(batchSize == null ||
                              mongoClient == null || database == null ||
                              collection == null  || mongodbColumnMeta == null) {
-                throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
+                throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,
+                        MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
             }
             DB db = mongoClient.getDB(database);
             DBCollection col = db.getCollection(this.collection);
             DBObject obj = new BasicDBObject();
-            obj.put("_id",1);
+            obj.put(KeyConstant.MONGO_PRIMIARY_ID_META,1);
 
             long pageCount = batchSize / pageSize;
             long modCount = batchSize % pageSize;
-            System.out.println("skipCount="+skipCount);
+
             for(int i = 0; i <= pageCount; i++) {
                 skipCount += i * pageSize;
-                System.out.println("********** modCount="+modCount+" ****** pageCount="+pageCount+" modCount="+modCount+" i="+i);
                 if(modCount == 0 && i == pageCount) {
                     break;
                 }
                 if (i == pageCount) {
                         pageCount = modCount;
                 }
-                System.out.println("skipCount="+skipCount+" pageCount="+pageCount);
-                DBCursor dbCursor = col.find().sort(obj).skip((int)(long)skipCount).limit((int) (long) pageSize);
+                DBCursor dbCursor = col.find().sort(obj).skip(skipCount.intValue()).limit(pageSize);
                 while (dbCursor.hasNext()) {
                     DBObject item = dbCursor.next();
                     Record record = recordSender.createRecord();
@@ -131,7 +127,8 @@ public class MongoDBReader extends Reader {
                             if(KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
                                 String splitter = column.getString(KeyConstant.COLUMN_SPLITTER);
                                 if(Strings.isNullOrEmpty(splitter)) {
-                                    throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,"splitter 不能为空!");
+                                    throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,
+                                            MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
                                 } else {
                                     ArrayList array = (ArrayList)tempCol;
                                     String tempArrayStr = Joiner.on(splitter).join(array);

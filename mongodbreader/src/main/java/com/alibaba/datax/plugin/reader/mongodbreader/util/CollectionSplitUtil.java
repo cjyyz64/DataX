@@ -24,9 +24,9 @@ public class CollectionSplitUtil {
 
         String collectionName = originalSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
 
-        System.out.println("dbName="+dbName+" collectionName="+collectionName+" mongoClient="+mongoClient);
         if(Strings.isNullOrEmpty(dbName) || Strings.isNullOrEmpty(collectionName) || mongoClient == null) {
-            throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE, "不合法参数");
+            throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,
+                    MongoDBReaderErrorCode.ILLEGAL_VALUE.getDescription());
         }
 
         DB db = mongoClient.getDB(dbName);
@@ -50,6 +50,7 @@ public class CollectionSplitUtil {
         if(totalCount < 0) {
             return intervalCountList;
         }
+        // 100 6 => 16 mod 4
         long batchSize = totalCount/adviceNumber;
         for(int i = 0; i < adviceNumber; i++) {
             Entry entry = new Entry();
