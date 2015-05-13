@@ -1,10 +1,12 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter.test;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter.test;
 
-import com.alibaba.datax.core.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * Date: 15/5/8 下午3:01
@@ -18,11 +20,9 @@ public class GroovyRuleExecutorTest {
         Map<String, Object> columnValues = new HashMap<String, Object>();
         columnValues.put("id", 15L);
         GroovyRuleExecutor groovyRule = new GroovyRuleExecutor("((#id#).longValue() % 40)", "test_{0}");
-        Long before = System.currentTimeMillis();
-        for (int i = 0; i < 10000; i++) {
-            System.out.println(groovyRule.eval(columnValues, null));
-        }
-        System.out.println("耗时：" + (System.currentTimeMillis() - before));
+        String result = groovyRule.executeRule(columnValues);
+        assertEquals(result, "test_15");
+        System.out.println(groovyRule.executeRule(columnValues));
     }
 
     @Test
@@ -32,7 +32,7 @@ public class GroovyRuleExecutorTest {
         Long before = System.currentTimeMillis();
         for (int i = 0; i < 16; i++) {
             columnValues.put("id", i);
-            System.out.println(i + " ," +  groovyRule.eval(columnValues, null));
+            System.out.println(i + " ," +  groovyRule.executeRule(columnValues));
         }
         System.out.println("耗时：" + (System.currentTimeMillis() - before));
     }

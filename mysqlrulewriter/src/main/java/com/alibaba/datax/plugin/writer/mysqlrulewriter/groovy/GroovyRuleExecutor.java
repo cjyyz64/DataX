@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter.groovy;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy;
 
 import com.taobao.tddl.rule.impl.WrappedGroovyRule;
 import com.taobao.tddl.rule.utils.AdvancedParameterParser;
