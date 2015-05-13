@@ -1,8 +1,10 @@
 package com.alibaba.datax.core.writer.mysqlrulewriter.buffer;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 import java.sql.Connection;
@@ -22,11 +24,10 @@ public class RuleWriterDbBuffer {
     private Map<String, List<Record>> tableBuffer = new HashMap<String, List<Record>>();
     private Connection connection;
 
-    public Connection initConnection(Configuration writerSliceConfig, String userName, String password) {
+    public void initConnection(Configuration writerSliceConfig, String userName, String password) {
         String BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
         connection = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, userName, password);
         DBUtil.dealWithSessionConfig(connection, writerSliceConfig, DataBaseType.MySql, BASIC_MESSAGE);
-        return connection;
     }
 
     public void initTableBuffer(List<String> tableList) {
@@ -38,7 +39,8 @@ public class RuleWriterDbBuffer {
     public void addRecord(Record record, String tableName) {
         List<Record> recordList = tableBuffer.get(tableName);
         if(recordList == null) {
-            throw new RuntimeException("该table不存在，tableName:" + tableName + String.format(",jdbcUrl:[%s]", this.jdbcUrl));
+            throw DataXException.asDataXException(
+                    DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的table不存在, 算出的tableName=" + tableName + ",db="+jdbcUrl+", 请检查您配置的规则.");
         }
         recordList.add(record);
     }
