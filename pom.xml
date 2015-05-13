@@ -70,6 +70,8 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
+        <module>mongodbreader</module>
+        <module>mongodbwriter</module>
 
         <module>adswriter</module>
     </modules>
