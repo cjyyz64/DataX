@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.ocswriter;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
@@ -11,6 +12,7 @@ import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.auth.AuthDescriptor;
 import net.spy.memcached.auth.PlainCallbackHandler;
+import net.spy.memcached.internal.OperationFuture;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,11 +121,19 @@ public class OcsWriter extends Writer {
         String value = null;
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
-            Record record = lineReceiver.getFromReader();
-            key = buildKey(record);
-            value = buildValue(record);
-            while (!client.set(key, expireTime, value).getStatus().isSuccess()) {
-                CommonUtils.sleepInMs(10L);
+            Record record;
+            while ((record = lineReceiver.getFromReader()) != null) {
+                key = buildKey(record);
+                value = buildValue(record);
+
+                while (true) {
+                    OperationFuture<Boolean> future = client.set(key, expireTime, value);
+                    if (future != null && future.getStatus().isSuccess()) {
+                        break;
+                    } else {
+                        CommonUtils.sleepInMs(10L);
+                    }
+                }
             }
         }
 
@@ -135,7 +145,12 @@ public class OcsWriter extends Writer {
             tmpValue.clear();
             int colNum = record.getColumnNumber();
             for (int i = 0; i < colNum; i++) {
-                tmpValue.add(record.getColumn(i).toString());
+                Column col = record.getColumn(i);
+                if (col != null) {
+                    tmpValue.add(record.getColumn(i).toString());
+                } else {
+                    tmpValue.add("");
+                }
             }
             return StringUtils.join(tmpValue, delimiter);
         }
@@ -147,15 +162,22 @@ public class OcsWriter extends Writer {
         private String buildKey(Record record) {
             tmpKey.clear();
             for (int index : indexes) {
-                tmpKey.add(record.getColumn(index).asString());
+                Column col = record.getColumn(index);
+                if (col != null) {
+                    tmpKey.add(record.getColumn(index).asString());
+                }
             }
-            return StringUtils.join(tmpKey, delimiter);
+            if (tmpKey.size() == 0) {
+                return "";
+            } else {
+                return StringUtils.join(tmpKey, delimiter);
+            }
         }
 
         @Override
         public void destroy() {
             if (client != null) {
-//                client.shutdown();
+                client.shutdown();
             }
         }
     }
