@@ -2,9 +2,9 @@ package com.alibaba.datax.plugin.writer.adswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.adsload.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
-import com.alibaba.datax.plugin.writer.adswriter.TransferProjectConf;
+import com.alibaba.datax.plugin.writer.adswriter.adsload.TransferProjectConf;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import org.slf4j.Logger;
@@ -19,6 +19,27 @@ import java.util.List;
 public class AdsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(AdsUtil.class);
 
+    public static Configuration adsConfToRdbmsConf(Configuration orinalConfig) {
+        Configuration rdbmsConf = orinalConfig.clone();
+        String schema = rdbmsConf.getString(Key.SCHEMA);
+        String adsUrl = rdbmsConf.getString(Key.ADS_URL);
+        String table = rdbmsConf.getString(Key.ADS_TABLE);
+        String jdbcUrl = "jdbc:mysql://" + adsUrl + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+
+        rdbmsConf.set(Key.RDBMS_JDBC_URL, jdbcUrl);
+        rdbmsConf.set(Key.RDBMS_TABLE, table);
+
+        //Configuration.from()
+
+        rdbmsConf.remove(Key.SCHEMA);
+        rdbmsConf.remove(Key.ADS_URL);
+        rdbmsConf.remove(Key.ADS_TABLE);
+
+        Configuration newConf = rdbmsConf.clone();
+
+        return newConf;
+    }
+
     /*检查配置文件中必填的配置项是否都已填
     * */
     public static void checkNecessaryConfig(Configuration originalConfig) {
@@ -32,6 +53,8 @@ public class AdsUtil {
         originalConfig.getNecessaryValue(Key.SCHEMA,
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.Life_CYCLE,
+                AdsWriterErrorCode.REQUIRED_VALUE);
+        originalConfig.getNecessaryValue(Key.WRITE_MODE,
                 AdsWriterErrorCode.REQUIRED_VALUE);
         Integer lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
         if(lifeCycle <= 0) {

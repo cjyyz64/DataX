@@ -137,13 +137,13 @@ public class CommonRdbmsWriter {
         private DataBaseType dataBaseType;
         private static final String VALUE_HOLDER = "?";
 
-        private String username;
-        private String password;
-        private String jdbcUrl;
+        protected String username;
+        protected String password;
+        protected String jdbcUrl;
         protected String table;
         protected List<String> columns;
-        private List<String> preSqls;
-        private List<String> postSqls;
+        protected List<String> preSqls;
+        protected List<String> postSqls;
         protected int batchSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;

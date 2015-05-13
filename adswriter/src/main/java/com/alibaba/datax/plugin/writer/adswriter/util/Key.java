@@ -17,6 +17,18 @@ public final class Key {
 
     public final static String OVER_WRITE = "overWrite";
 
+    public final static String WRITE_MODE = "writeMode";
+
+
+    /**
+     * rdbms key
+     */
+    public final static String RDBMS_JDBC_URL = "connection[0].jdbcUrl";
+
+    public final static String RDBMS_TABLE = "connection[0].table[0]";
+
+
+
     /**
      * 以下是odps writer的key
      */

@@ -1,9 +1,11 @@
 /**
  * 
  */
-package com.alibaba.datax.plugin.writer.adswriter;
+package com.alibaba.datax.plugin.writer.adswriter.adsload;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.writer.adswriter.AdsException;
+import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
@@ -68,7 +70,7 @@ public class AdsHelper {
      * 
      * @param table The table
      * @return The table meta information
-     * @throws AdsException
+     * @throws com.alibaba.datax.plugin.writer.adswriter.AdsException
      */
     public TableInfo getTableInfo(String table) throws AdsException {
 
