@@ -72,6 +72,7 @@
         <module>plugin-unstructured-storage-util</module>
 
         <module>adswriter</module>
+        <module>ocswriter</module>
     </modules>
 
     <dependencyManagement>
