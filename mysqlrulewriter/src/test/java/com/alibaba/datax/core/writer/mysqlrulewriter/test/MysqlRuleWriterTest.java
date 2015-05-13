@@ -24,7 +24,7 @@ public class MysqlRuleWriterTest extends BasicWriterPluginTest {
     @TestLogger(log = "测试basic1.json. 配置多个jdbcUrl,多个table,运行时，通过程序自动生成 queryS1ql 进行数据读取.")
     @Test
     public void testBasic1() {
-        int readerSliceNumber = 30;
+        int readerSliceNumber = 8;
         super.doWriterTest("basic1.json", readerSliceNumber);
     }
 
