@@ -31,4 +31,11 @@ public final class Key {
 
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 
+    public final static String DB_NAME_PATTERN = "dbNamePattern";
+
+    public final static String DB_RULE = "dbRule";
+
+    public final static String TABLE_NAME_PATTERN = "tableNamePattern";
+
+    public final static String TABLE_RULE = "tableRule";
 }

@@ -1,0 +1,51 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "mysqlrulewriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "root",
+                        "password": "root",
+                        "dbNamePattern" : "datax_3_mysqlwriter",
+                        "dbRule" : "",
+                        "tableNamePattern" : "mysql_writer_test_case40_{0}",
+                        "tableRule" : "((#i1#).longValue() % 30)",
+                        "column": [
+                            "i1",
+                            "i2",
+                            "i3",
+                            "v1",
+                            "v2",
+                            "d1",
+                            "d2",
+                            "b1",
+                            "t1"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "mysql_writer_test_case40_[0-29]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlwriter"
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where i1 < 1001;"
+                        ],
+                        "postSql": [
+                            "update @table set t1 = now() where i1 = 1;"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
