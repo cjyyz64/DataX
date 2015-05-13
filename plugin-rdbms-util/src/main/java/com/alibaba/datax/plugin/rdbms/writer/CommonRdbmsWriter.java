@@ -134,22 +134,22 @@ public class CommonRdbmsWriter {
         protected static final Logger LOG = LoggerFactory
                 .getLogger(Task.class);
 
-        private DataBaseType dataBaseType;
+        protected DataBaseType dataBaseType;
         private static final String VALUE_HOLDER = "?";
 
-        private String username;
-        private String password;
-        private String jdbcUrl;
+        protected String username;
+        protected String password;
+        protected String jdbcUrl;
         protected String table;
         protected List<String> columns;
-        private List<String> preSqls;
-        private List<String> postSqls;
+        protected List<String> preSqls;
+        protected List<String> postSqls;
         protected int batchSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-        private static String BASIC_MESSAGE;
+        protected static String BASIC_MESSAGE;
 
         protected static String INSERT_OR_REPLACE_TEMPLATE;
 
