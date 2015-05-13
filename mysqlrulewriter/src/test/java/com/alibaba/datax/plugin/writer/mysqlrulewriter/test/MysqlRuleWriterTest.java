@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter.test;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter.test;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.core.transport.record.DefaultRecord;

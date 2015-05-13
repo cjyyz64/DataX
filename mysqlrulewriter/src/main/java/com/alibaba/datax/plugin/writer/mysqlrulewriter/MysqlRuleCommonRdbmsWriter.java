@@ -1,12 +1,12 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
-import com.alibaba.datax.core.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
