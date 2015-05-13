@@ -14,10 +14,10 @@
                         "writeMode": "replace",
                         "username": "root",
                         "password": "root",
-                        "dbNamePattern" : "datax_3_mysqlwriter",
-                        "dbRule" : "",
-                        "tableNamePattern" : "mysql_writer_test_case40_{0}",
-                        "tableRule" : "((#i1#).longValue() % 30)",
+                        "dbNamePattern" : "datax_3_mysqlrulewriter_{00}",
+                        "dbRule" : "((#i1#).longValue() % 8).intdiv(4)",
+                        "tableNamePattern" : "mysql_writer_test_case00_{0}",
+                        "tableRule" : "((#i1#).longValue() % 8)",
                         "column": [
                             "i1",
                             "i2",
@@ -32,9 +32,15 @@
                         "connection": [
                             {
                                 "table": [
-                                    "mysql_writer_test_case40_[0-29]"
+                                    "mysql_writer_test_case00_[0-3]"
                                 ],
-                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlwriter"
+                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlrulewriter_00"
+                            },
+                            {
+                                "table": [
+                                    "mysql_writer_test_case00_[4-7]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlrulewriter_01"
                             }
                         ],
                         "preSql": [

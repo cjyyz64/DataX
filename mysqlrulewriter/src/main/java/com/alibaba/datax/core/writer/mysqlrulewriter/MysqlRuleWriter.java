@@ -45,15 +45,17 @@ public class MysqlRuleWriter extends Writer {
             String username = originalConfig.getString(Key.USERNAME);
             String password = originalConfig.getString(Key.PASSWORD);
 
+            List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
+            // 此处删除掉PRE SQL配置
+            originalConfig.remove(Key.PRE_SQL);
+
             List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                     Object.class);
             for(Object connConfObject : conns) {
                 Configuration connConf = Configuration.from(connConfObject.toString());
                 // 这里的 jdbcUrl 已经 append 了合适后缀参数
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
-                List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
-                // 此处删除掉PRE SQL配置
-                originalConfig.remove(Key.PRE_SQL);
+
                 List<String> tableList = connConf.getList(Key.TABLE, String.class);
                 for (String table : tableList) {
                     List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(preSqls, table);
