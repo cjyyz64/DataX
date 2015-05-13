@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter;
 
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
