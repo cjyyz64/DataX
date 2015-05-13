@@ -259,7 +259,7 @@ if __name__ == "__main__":
     parser.add_option("--datax_job_xml", dest="datax_job_xml", help="[ODPS][option] datax job xml path", metavar="datax_job_xml",
                       default="")
     parser.add_option("--compress", dest="compress", help="[ODPS][option] odps reader isCompress", metavar="compress",
-                          default="true")
+                          default="false")
 
     (options, args) = parser.parse_args(sys.argv)
 
