@@ -14,7 +14,6 @@ import net.spy.memcached.auth.PlainCallbackHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -79,7 +78,6 @@ public class OcsWriter extends Writer {
         String delimiter;
         int expireTime;
         int batchSize;
-        BASE64Encoder encoder = new BASE64Encoder();
 
         @Override
         public void init() {
@@ -137,7 +135,7 @@ public class OcsWriter extends Writer {
             tmpValue.clear();
             int colNum = record.getColumnNumber();
             for (int i = 0; i < colNum; i++) {
-                tmpValue.add(encoder.encode(record.getColumn(i).toString().getBytes()));
+                tmpValue.add(record.getColumn(i).toString());
             }
             return StringUtils.join(tmpValue, delimiter);
         }
@@ -157,7 +155,7 @@ public class OcsWriter extends Writer {
         @Override
         public void destroy() {
             if (client != null) {
-                client.shutdown();
+//                client.shutdown();
             }
         }
     }
