@@ -30,8 +30,20 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.PASSWORD,
                 DBUtilErrorCode.REQUIRED_VALUE);
+        dealWhere(originalConfig);
 
         simplifyConf(originalConfig);
+    }
+
+    public static void dealWhere(Configuration originalConfig) {
+        String where = originalConfig.getString(Key.WHERE, null);
+        if(StringUtils.isNotBlank(where)) {
+            String whereImprove = where.trim();
+            if(whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
+                whereImprove = whereImprove.substring(0,whereImprove.length()-1);
+            }
+            originalConfig.set(Key.WHERE, whereImprove);
+        }
     }
 
     /**
