@@ -19,9 +19,21 @@ public class GroovyRuleExecutorTest {
         columnValues.put("id", 15L);
         GroovyRuleExecutor groovyRule = new GroovyRuleExecutor("((#id#).longValue() % 40)", "test_{0}");
         Long before = System.currentTimeMillis();
-//        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10000; i++) {
             System.out.println(groovyRule.eval(columnValues, null));
-//        }
+        }
+        System.out.println("耗时：" + (System.currentTimeMillis() - before));
+    }
+
+    @Test
+    public void testRuleExecute() {
+        Map<String, Object> columnValues = new HashMap<String, Object>();
+        GroovyRuleExecutor groovyRule = new GroovyRuleExecutor("((#id#).longValue() % 8).intdiv(4)", "datax_3_mysqlrulewriter_{00}");
+        Long before = System.currentTimeMillis();
+        for (int i = 0; i < 16; i++) {
+            columnValues.put("id", i);
+            System.out.println(i + " ," +  groovyRule.eval(columnValues, null));
+        }
         System.out.println("耗时：" + (System.currentTimeMillis() - before));
     }
 
