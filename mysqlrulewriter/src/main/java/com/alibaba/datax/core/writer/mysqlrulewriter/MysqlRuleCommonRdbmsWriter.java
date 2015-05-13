@@ -14,6 +14,7 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.MutablePair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -46,7 +47,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
         private String tableRule;
 
-        private String metaTable;
+        private MutablePair<String, String> metaDbTablePair = new MutablePair<String, String>();;
 
         private Map<String, String> tableWriteSqlMap = new HashMap<String, String>();
 
@@ -81,8 +82,9 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
             //init buffer map
             List<Object> conns = writerSliceConfig.getList(Constant.CONN_MARK, Object.class);
-            for(Object connConfObject : conns) {
-                Configuration connConf = Configuration.from(connConfObject.toString());
+
+            for(int i = 0; i < conns.size(); i++) {
+                Configuration connConf = Configuration.from(conns.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> tableList = connConf.getList(Key.TABLE, String.class);
                 RuleWriterDbBuffer writerBuffer = new RuleWriterDbBuffer();
@@ -90,8 +92,10 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 writerBuffer.initTableBuffer(tableList);
                 String dbName = getDbNameFromJdbcUrl(jdbcUrl);
                 bufferMap.put(dbName, writerBuffer);
-                if(tableList.size() > 0) {
-                    metaTable = tableList.get(0);
+                //确定获取meta元信息的db和table
+                if(i == 0 && tableList.size() > 0) {
+                    metaDbTablePair.setLeft(dbName);
+                    metaDbTablePair.setRight(tableList.get(0));
                 }
                 for(String tableName : tableList) {
                     tableWriteSqlMap.put(tableName, String.format(INSERT_OR_REPLACE_TEMPLATE, tableName));
@@ -114,14 +118,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
         @Override
         public void startWrite(RecordReceiver recordReceiver, Configuration writerSliceConfig, TaskPluginCollector taskPluginCollector) {
-            Connection oneConn = null;
+
             for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
-                oneConn = entry.getValue().initConnection(writerSliceConfig, username, password);
+                entry.getValue().initConnection(writerSliceConfig, username, password);
             }
             this.taskPluginCollector = taskPluginCollector;
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
-            this.resultSetMetaData = DBUtil.getColumnMetaData(oneConn, metaTable, StringUtils.join(this.columns, ","));
+            Connection metaConn = bufferMap.get(metaDbTablePair.getLeft()).getConnection();
+            String metaTable = metaDbTablePair.getRight();
+            this.resultSetMetaData = DBUtil.getColumnMetaData(metaConn, metaTable, StringUtils.join(this.columns, ","));
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             try {
@@ -171,6 +177,11 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 String dbName = dbRuleExecutor.executeRule(recordMap);
                 String tableName = tableRuleExecutor.executeRule(recordMap);
                 RuleWriterDbBuffer ruleWriterDbBuffer = bufferMap.get(dbName);
+                if(ruleWriterDbBuffer == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db不存在，算出的dbName=" + dbName + ", 请检查您配置的规则.");
+                }
+
                 ruleWriterDbBuffer.addRecord(record, tableName);
             }
 
