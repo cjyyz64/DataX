@@ -1,4 +1,4 @@
-package com.alibaba.datax.core.writer.mysqlrulewriter.buffer;
+package com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
