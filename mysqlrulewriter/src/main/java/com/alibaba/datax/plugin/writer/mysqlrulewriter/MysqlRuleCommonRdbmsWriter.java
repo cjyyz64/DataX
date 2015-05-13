@@ -59,13 +59,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
         public void init(Configuration writerSliceConfig) {
             this.username = writerSliceConfig.getString(Key.USERNAME);
             this.password = writerSliceConfig.getString(Key.PASSWORD);
-            //获取规则
             this.dbNamePattern = writerSliceConfig.getString(Key.DB_NAME_PATTERN);
             this.dbRule = writerSliceConfig.getString(Key.DB_RULE);
-            this.dbRule = (dbRule == null) ? "" : dbRule;
+            if(dbRule == null) {
+                dbRule = "";
+            }
             this.tableNamePattern = writerSliceConfig.getString(Key.TABLE_NAME_PATTERN);
             this.tableRule = writerSliceConfig.getString(Key.TABLE_RULE);
-            this.tableRule = (tableRule == null) ? "" : tableRule;
+            if(tableRule == null) {
+                tableRule = "";
+            }
 
             dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
             tableRuleExecutor = new GroovyRuleExecutor(tableRule, tableNamePattern);
@@ -77,7 +80,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
 
-            //init writerbuffer map,每一个db对应一个buffer
+            //init buffer map
             List<Object> conns = writerSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
             for(int i = 0; i < conns.size(); i++) {
@@ -90,19 +93,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 String dbName = getDbNameFromJdbcUrl(jdbcUrl);
                 bufferMap.put(dbName, writerBuffer);
                 //确定获取meta元信息的db和table
-                //TODO 改成一个
                 if(i == 0 && tableList.size() > 0) {
                     metaDbTablePair.setLeft(dbName);
                     metaDbTablePair.setRight(tableList.get(0));
                 }
-                //init每一个table的insert语句
                 for(String tableName : tableList) {
                     tableWriteSqlMap.put(tableName, String.format(INSERT_OR_REPLACE_TEMPLATE, tableName));
                 }
             }
         }
 
-        //TODO URL解析类
         private String getDbNameFromJdbcUrl(String jdbcUrl) {
             return jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1, jdbcUrl.indexOf("?"));
         }
@@ -189,32 +189,25 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
                 RuleWriterDbBuffer dbBuffer = entry.getValue();
                 Connection connection = dbBuffer.getConnection();
-                PreparedStatement preparedStatement = null;
                 try {
                     connection.setAutoCommit(false);
                     for (Map.Entry<String, List<Record>> tableBufferEntry : dbBuffer.getTableBuffer().entrySet()) {
                         String tableName = tableBufferEntry.getKey();
                         List<Record> recordList = tableBufferEntry.getValue();
                         String writeRecordSql = tableWriteSqlMap.get(tableName);
-                        preparedStatement = connection.prepareStatement(writeRecordSql);
+                        PreparedStatement preparedStatement = connection.prepareStatement(writeRecordSql);
                         for (Record record : recordList) {
                             preparedStatement = fillPreparedStatement(preparedStatement, record);
                             preparedStatement.addBatch();
                         }
                         preparedStatement.executeBatch();
-//                        recordList.clear();
+                        recordList.clear();
                     }
-                    //TODO commit之后再清空，单元测试覆盖
                     connection.commit();
                 } catch (SQLException e) {
                     LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
                     connection.rollback();
                     doRuleOneInsert(connection, dbBuffer);
-                } catch (Exception e) {
-                    throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, e);
-                } finally {
-                    DBUtil.closeDBResources(preparedStatement, null);
                 }
             }
         }
@@ -239,7 +232,6 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                             preparedStatement.clearParameters();
                         }
                     }
-                    //TODO 清理
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
