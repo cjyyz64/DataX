@@ -141,14 +141,10 @@ public final class OriginalConfPretreatmentUtil {
                     List<String> allColumns = DBUtil.getTableColumns(
                             DATABASE_TYPE, jdbcUrl, username, password,
                             tableName);
+                    LOG.info("table:[{}] has columns:[{}].",
+                            tableName, StringUtils.join(allColumns, ","));
                     // warn:注意mysql表名区分大小写
                     allColumns = ListUtil.valueToLowerCase(allColumns);
-
-                    if (IS_DEBUG) {
-                        LOG.debug("table:[{}] has userConfiguredColumns:[{}].",
-                                tableName, StringUtils.join(allColumns, ","));
-                    }
-
                     List<String> quotedColumns = new ArrayList<String>();
 
                     for (String column : userConfiguredColumns) {
@@ -173,8 +169,7 @@ public final class OriginalConfPretreatmentUtil {
                     originalConfig.set(Key.COLUMN,
                             StringUtils.join(quotedColumns, ","));
                     if (StringUtils.isNotBlank(splitPk)) {
-
-                        if (!allColumns.contains(splitPk)) {
+                        if (!allColumns.contains(splitPk.toLowerCase())) {
                             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                                     String.format("您的配置文件中的列配置信息有误. 因为根据您的配置，您读取的数据库表:%s 中没有主键名为:%s. 请检查您的配置并作出修改.", tableName, splitPk));
                         }

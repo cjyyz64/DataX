@@ -7,7 +7,7 @@ public class HBaseConsts {
   /**
    * The home of plugin
    */
-  public static final String PLUGIN_HOME = System.getenv("DATAX_HOME") + "/plugin/writer/hbasebulkwriter/";
+  public static final String PLUGIN_HOME = System.getProperty("datax.home","/home/admin/datax3") + "/plugin/writer/hbasebulkwriter/";
 
   /**
    * Default values of plugin params
