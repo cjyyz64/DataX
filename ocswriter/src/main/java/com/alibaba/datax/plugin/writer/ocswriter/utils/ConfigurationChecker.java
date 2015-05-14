@@ -48,7 +48,7 @@ public class ConfigurationChecker {
         Preconditions.checkArgument(StringUtils.isNoneBlank(indexes), "indexes could not be blank");
         for (String index : indexes.split(",")) {
             try {
-                Preconditions.checkArgument(Integer.parseInt(index) >= 0, "index could not be less than zero");
+                Preconditions.checkArgument(Integer.parseInt(index) >= 0, "index could not be less than 0");
             } catch (NumberFormatException e) {
                 Preconditions.checkArgument(false, "illegal index");
             }
@@ -60,9 +60,12 @@ public class ConfigurationChecker {
         String writerFormat = config.getString(Key.WRITE_FORMAT, "text");
         Preconditions.checkArgument(EnumUtils.isValidEnum(WRITE_MODE.class, writerMode.toLowerCase()), String.format("not supported write format:%s, recommended:%s", writerFormat, StringUtils.join(WRITE_FORMAT.values(), ",")));
 
+        int expireTime = config.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE);
+        Preconditions.checkArgument(expireTime > 0, "expire time must be bigger than 0");
+
+        int batchSiz = config.getInt(Key.BATCH_SIZE, 100);
+        Preconditions.checkArgument(batchSiz > 0, "batch size must be bigger than 0");
         //fieldDelimiter不需要检查，默认为\u0001
-        //expireTime不需要检查，默认为Integer.MAX_VALUE
-        //batchSize默认为1000
     }
 
     /**

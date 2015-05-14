@@ -7,6 +7,8 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.ocswriter.utils.CommonUtils;
 import com.alibaba.datax.plugin.writer.ocswriter.utils.ConfigurationChecker;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.MemcachedClient;
@@ -16,8 +18,10 @@ import net.spy.memcached.internal.OperationFuture;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.misc.BASE64Encoder;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +81,7 @@ public class OcsWriter extends Writer {
         private Configuration configuration;
         MemcachedClient client;
         Set<Integer> indexes = new HashSet<Integer>();
-        String delimiter;
+        String delimiter = "\u0001";
         int expireTime;
         int batchSize;
 
@@ -114,11 +118,13 @@ public class OcsWriter extends Writer {
                         AddrUtil.getAddresses(proxy + ":" + port));
             } catch (IOException e) {
                 logger.error("", e);
+                Preconditions.checkArgument(false, "init memcached client failed");
             }
         }
 
         String key = null;
         String value = null;
+
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
             Record record;
@@ -138,6 +144,9 @@ public class OcsWriter extends Writer {
         }
 
         ArrayList<String> tmpValue = new ArrayList<String>();
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        BASE64Encoder encoder = new BASE64Encoder();
+
         /**
          * 构建key
          */
@@ -147,7 +156,31 @@ public class OcsWriter extends Writer {
             for (int i = 0; i < colNum; i++) {
                 Column col = record.getColumn(i);
                 if (col != null) {
-                    tmpValue.add(record.getColumn(i).toString());
+                    String value;
+                    Column.Type type = col.getType();
+                    switch (type) {
+                        case STRING:
+                            value = col.asString();
+                            break;
+                        case BOOL:
+                            value = col.asBoolean().toString();
+                            break;
+                        case DOUBLE:
+                            value = String.valueOf(col.asDouble());
+                            break;
+                        case LONG:
+                            value = String.valueOf(col.asLong());
+                            break;
+                        case DATE:
+                            value = dateFormat.format(col.asDate());
+                            break;
+                        case BYTES:
+                            value = encoder.encode(col.asBytes());
+                            break;
+                        default:
+                            value = "";
+                    }
+                    tmpValue.add(value);
                 } else {
                     tmpValue.add("");
                 }
@@ -155,7 +188,13 @@ public class OcsWriter extends Writer {
             return StringUtils.join(tmpValue, delimiter);
         }
 
+        @VisibleForTesting
+        public String buildValue_test(Record record) {
+            return this.buildValue(record);
+        }
+
         ArrayList<String> tmpKey = new ArrayList<String>();
+
         /**
          * 构建value
          */
@@ -172,6 +211,16 @@ public class OcsWriter extends Writer {
             } else {
                 return StringUtils.join(tmpKey, delimiter);
             }
+        }
+
+        @VisibleForTesting
+        public String buildKey_test(Record record) {
+            return this.buildKey(record);
+        }
+
+        @VisibleForTesting
+        public void setIndexes(HashSet<Integer> indexes) {
+            this.indexes = indexes;
         }
 
         @Override
