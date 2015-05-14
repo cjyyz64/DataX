@@ -131,10 +131,6 @@ public class MongoDBWriter extends Writer{
 
                         data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asBoolean());
 
-                    } else if(record.getColumn(i) instanceof NullColumn) {
-
-                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),null);
-
                     } else if(record.getColumn(i) instanceof BytesColumn) {
 
                         data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asBytes());
