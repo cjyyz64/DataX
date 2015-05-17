@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.alibaba.datax.plugin.writer.adswriter.adsload;
+package com.alibaba.datax.plugin.writer.adswriter.load;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.writer.adswriter.AdsException;

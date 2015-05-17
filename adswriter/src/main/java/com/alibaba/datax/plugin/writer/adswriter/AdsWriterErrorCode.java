@@ -13,7 +13,9 @@ public enum AdsWriterErrorCode implements ErrorCode {
             "\"partition\":[\"pt=1,ds=*\"](读取test表下面，一级分区pt=1下面的所有二级分区)； \n" +
             "\"partition\":[\"pt=1,ds=hangzhou\"](读取test表下面，一级分区pt=1下面，二级分区ds=hz的数据)"),
     ADS_LOAD_ODPS_FAILED("AdsWriter-07", "ADS从ODPS导数据失败，请联系ADS 技术支持，先检查ADS账号是否已加到该ODPS Project中。ADS账号为："),
-    INVALID_CONFIG_VALUE("AdsWriter-08", "不合法的配置值.");
+    INVALID_CONFIG_VALUE("AdsWriter-08", "不合法的配置值."),
+
+    GET_ADS_TABLE_MEATA_FAILED("AdsWriter-11", "获取ADS table原信息失败");
 
     private final String code;
     private final String description;

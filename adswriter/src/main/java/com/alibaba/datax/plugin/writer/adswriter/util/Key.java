@@ -20,21 +20,12 @@ public final class Key {
     public final static String WRITE_MODE = "writeMode";
 
 
-    /**
-     * rdbms key
-     */
-    public final static String RDBMS_JDBC_URL = "connection[0].jdbcUrl";
-
-    public final static String RDBMS_TABLE = "connection[0].table[0]";
-
-
+    public final static String COLUMN = "column";
 
     /**
      * 以下是odps writer的key
      */
     public final static String PARTITION = "partition";
-
-    public final static String COLUMN = "column";
 
     public final static String ODPSTABLENAME = "table";
 

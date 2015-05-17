@@ -2,8 +2,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.adswriter.*;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
-import com.alibaba.datax.plugin.writer.adswriter.adsload.AdsHelper;
-import com.alibaba.datax.plugin.writer.adswriter.adsload.TableMetaHelper;
+import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.load.TableMetaHelper;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.aliyun.odps.Instance;
@@ -219,7 +219,7 @@ public class AdsWriteUnitTest {
                 "    \"lifeCycle\": 2,\n" +
                 "    \"overWrite\": true\n" +
                 "}");
-        Configuration result = AdsUtil.adsConfToRdbmsConf(configuration);
-        System.out.println(result);
+        //Configuration result = AdsUtil.adsConfToRdbmsConf(configuration);
+        //System.out.println(result);
     }
 }

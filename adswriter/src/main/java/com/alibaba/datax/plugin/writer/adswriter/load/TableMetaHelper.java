@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.adswriter.adsload;
+package com.alibaba.datax.plugin.writer.adswriter.load;
 
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
