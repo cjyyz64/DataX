@@ -177,15 +177,13 @@ public class StreamWriter extends Writer {
             LOG.info("begin do write...");
             String fileFullPath = buildFilePath(path, fileName);
             LOG.info(String.format("write to file : [%s]", fileFullPath));
-
-            OutputStream outputStream = null;
+            BufferedWriter writer = null;
             try {
                 File newFile = new File(fileFullPath);
                 newFile.createNewFile();
-                outputStream = new FileOutputStream(newFile, true);
 
-                BufferedWriter writer = new BufferedWriter(
-                        new OutputStreamWriter(outputStream, "UTF-8"));
+                writer = new BufferedWriter(
+                        new OutputStreamWriter(new FileOutputStream(newFile, true), "UTF-8"));
 
                 Record record;
                 int count =0;
@@ -203,6 +201,8 @@ public class StreamWriter extends Writer {
                 writer.flush();
             } catch (Exception e) {
                 throw DataXException.asDataXException(StreamWriterErrorCode.RUNTIME_EXCEPTION, e);
+            } finally {
+                IOUtils.closeQuietly(writer);
             }
         }
 

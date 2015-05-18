@@ -56,4 +56,48 @@ public class ReaderSplitUtilTest {
         return readerConfig;
     }
 
+
+    @Test
+    public void testDealWhere() {
+        Configuration configuration = Configuration.newDefault();
+        String whereCondition = "gmtCreate > '2015-05-07'";
+
+        String whereTest1 = whereCondition + ";";
+        configuration.set("where",whereTest1);
+        OriginalConfPretreatmentUtil.dealWhere(configuration);
+        String whereTest1Improve = configuration.getString("where");
+        Assert.assertEquals(whereTest1Improve,whereCondition);
+
+        String whereTest2 = whereCondition + ";  ";
+        configuration.set("where",whereTest2);
+        OriginalConfPretreatmentUtil.dealWhere(configuration);
+        String whereTest2Improve = configuration.getString("where");
+        Assert.assertEquals(whereTest2Improve,whereCondition);
+
+
+        String whereTest3 = whereCondition + "；";
+        configuration.set("where",whereTest3);
+        OriginalConfPretreatmentUtil.dealWhere(configuration);
+        String whereTest3Improve = configuration.getString("where");
+        Assert.assertEquals(whereTest3Improve,whereCondition);
+
+        String whereTest4 = whereCondition + "；   ";
+        configuration.set("where",whereTest4);
+        OriginalConfPretreatmentUtil.dealWhere(configuration);
+        String whereTest4Improve = configuration.getString("where");
+        Assert.assertEquals(whereTest4Improve,whereCondition);
+
+        System.out.println("whereCondition: " + whereCondition);
+        System.out.println("----------------------------------");
+        System.out.println("whereTest1: " + whereTest1);
+        System.out.println("whereTest2: " + whereTest2);
+        System.out.println("whereTest3: " + whereTest3);
+        System.out.println("whereTest4: " + whereTest4);
+        System.out.println("----------------------------------");
+        System.out.println("whereTest1Improve: " + whereTest1Improve);
+        System.out.println("whereTest2Improve: " + whereTest2Improve);
+        System.out.println("whereTest3Improve: " + whereTest3Improve);
+        System.out.println("whereTest4Improve: " + whereTest4Improve);
+    }
+
 }

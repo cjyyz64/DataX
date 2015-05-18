@@ -64,7 +64,7 @@ public class CommonRdbmsReader {
         private String mandatoryEncoding;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-        private static String BASIC_MESSAGE;
+        private String basicMsg;
 
         public Task(DataBaseType dataBaseType) {
             this.dataBaseType = dataBaseType;
@@ -79,7 +79,7 @@ public class CommonRdbmsReader {
             this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
             this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 
-            BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
+            basicMsg = String.format("jdbcUrl:[%s]", this.jdbcUrl);
         }
 
         public void startRead(Configuration readerSliceConfig,
@@ -88,14 +88,14 @@ public class CommonRdbmsReader {
             String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
 
             LOG.info("Begin to read record by Sql: [{}\n] {}.",
-                    querySql, BASIC_MESSAGE);
+                    querySql, basicMsg);
 
             Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
                     username, password);
 
             // session config .etc related
             DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
-                    this.dataBaseType, BASIC_MESSAGE);
+                    this.dataBaseType, basicMsg);
 
             int columnNumber = 0;
             ResultSet rs = null;
@@ -110,12 +110,12 @@ public class CommonRdbmsReader {
                 }
 
                 LOG.info("Finished read record by Sql: [{}\n] {}.",
-                        querySql, BASIC_MESSAGE);
+                        querySql, basicMsg);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.READ_RECORD_FAIL, String.format(
                                 "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
-                                BASIC_MESSAGE, querySql), e);
+                                basicMsg, querySql), e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
