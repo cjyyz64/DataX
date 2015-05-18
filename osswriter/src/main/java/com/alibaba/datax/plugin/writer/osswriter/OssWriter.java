@@ -249,7 +249,7 @@ public class OssWriter extends Writer {
             this.fileFormat = this.writerSliceConfig
                     .getString(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_FORMAT,
-                            com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.FILE_FORMAT_PLAIN_TEXT);
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.FILE_FORMAT_TEXT);
         }
 
         @Override

@@ -10,5 +10,5 @@ public class Constant {
 	
 	public static final String FILE_FORMAT_CSV = "csv";
 	
-	public static final String FILE_FORMAT_PLAIN_TEXT = "plainText";
+	public static final String FILE_FORMAT_TEXT = "text";
 }
