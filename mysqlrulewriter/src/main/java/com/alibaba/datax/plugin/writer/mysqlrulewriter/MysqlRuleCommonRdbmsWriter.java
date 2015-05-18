@@ -90,6 +90,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 String dbName = getDbNameFromJdbcUrl(jdbcUrl);
                 bufferMap.put(dbName, writerBuffer);
                 //确定获取meta元信息的db和table
+                //TODO 改成一个
                 if(i == 0 && tableList.size() > 0) {
                     metaDbTablePair.setLeft(dbName);
                     metaDbTablePair.setRight(tableList.get(0));
@@ -101,6 +102,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             }
         }
 
+        //TODO URL解析类
         private String getDbNameFromJdbcUrl(String jdbcUrl) {
             return jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1, jdbcUrl.indexOf("?"));
         }
@@ -200,8 +202,9 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                             preparedStatement.addBatch();
                         }
                         preparedStatement.executeBatch();
-                        recordList.clear();
+//                        recordList.clear();
                     }
+                    //TODO commit之后再清空，单元测试覆盖
                     connection.commit();
                 } catch (SQLException e) {
                     LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
@@ -236,6 +239,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                             preparedStatement.clearParameters();
                         }
                     }
+                    //TODO 清理
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
