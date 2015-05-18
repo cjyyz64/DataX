@@ -286,9 +286,12 @@ public class UnstructuredStorageWriterUtil {
             Record record, String nullFormat, String dateFormat,
             char fieldDelimiter, String fileFormat,
             TaskPluginCollector taskPluginCollector) {
+        // warn: default is null
+        if (null == nullFormat) {
+            nullFormat = "null";
+        }
         MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
         transportResult.setRight(false);
-
         List<String> splitedRows = new ArrayList<String>();
         int recordLength = record.getColumnNumber();
         if (0 != recordLength) {
