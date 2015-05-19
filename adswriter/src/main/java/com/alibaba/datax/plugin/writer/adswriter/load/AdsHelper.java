@@ -222,7 +222,7 @@ public class AdsHelper {
         sb.append(" INTO TABLE ");
         sb.append(schema + "." + table);
         if (partition != null && !partition.trim().equals("")) {
-            sb.append(" PARTITION " + partition);
+            sb.append(" PARTITION " + "(" + partition + ")");
         }
 
         Connection connection = null;

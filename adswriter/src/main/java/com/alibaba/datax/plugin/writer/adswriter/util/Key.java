@@ -22,6 +22,8 @@ public final class Key {
 
     public final static String COLUMN = "column";
 
+    public final static String BATCH_SIZE = "batchSize";
+
     /**
      * 以下是odps writer的key
      */
