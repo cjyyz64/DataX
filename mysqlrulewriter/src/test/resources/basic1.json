@@ -1,0 +1,57 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "mysqlrulewriter",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "root",
+                        "password": "root",
+                        "dbNamePattern" : "datax_3_mysqlrulewriter_{00}",
+                        "dbRule" : "((#i1#).longValue() % 8).intdiv(4)",
+                        "tableNamePattern" : "mysql_writer_test_case00_{0}",
+                        "tableRule" : "((#i1#).longValue() % 8)",
+                        "column": [
+                            "i1",
+                            "i2",
+                            "i3",
+                            "v1",
+                            "v2",
+                            "d1",
+                            "d2",
+                            "b1",
+                            "t1"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "mysql_writer_test_case00_[0-3]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlrulewriter_00"
+                            },
+                            {
+                                "table": [
+                                    "mysql_writer_test_case00_[4-7]"
+                                ],
+                                "jdbcUrl": "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlrulewriter_01"
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where i1 < 1001;"
+                        ],
+                        "postSql": [
+                            "update @table set t1 = now() where i1 = 1;"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
