@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.ocswriter;
 
 import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.plugin.writer.ocswriter.utils.CommonUtils;
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.MemcachedClient;
@@ -72,9 +73,13 @@ public class TestOcsWriter {
 //        logger.info(client.get(key1).toString());
 //        logger.info(client.get(key2).toString());
 //        Assert.assertEquals(client.get("key_zd"), "value_zd");
-//        Assert.assertEquals(client.get("key_cl"), null);
+//        Object value_cl = client.get("key_cl");
+//        Assert.assertEquals(value_cl, null);
+//        logger.info(value_cl == null ? "value of key_cl is null" : value_cl.toString());
 //        client.set(key1, 2, value1);
 //        CommonUtils.sleepInMs(3000L);
+//        Object value_new = client.get(key1);
+//        logger.info(value_new == null ? String.format("value of %s is null", key1) : value_new.toString());
 //        Assert.assertNull(client.get(key1));
 //    }
 

@@ -137,6 +137,7 @@ public class OcsWriter extends Writer {
                     if (future != null && future.getStatus().isSuccess()) {
                         break;
                     } else {
+                        logger.info("write into ocs failed, retry in 10ms");
                         CommonUtils.sleepInMs(10L);
                     }
                 }
