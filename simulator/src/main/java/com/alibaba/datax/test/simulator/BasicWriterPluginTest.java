@@ -28,6 +28,8 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
     protected Writer.Job writerMaster = null;
 
+    public List<Record> dirRecordList = new ArrayList<Record>();
+
     @BeforeClass
     public static void checkPluginPackageDir() {
         PLUGIN_PATH = getPluginDir();
@@ -138,6 +140,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
             @Override
             public void collectDirtyRecord(Record dirtyRecord, Throwable t, String errorMessage) {
                 System.out.println("=======捕捉到脏数据,record=" + dirtyRecord + ",e=" + t + ",errorMsg=" + errorMessage);
+                dirRecordList.add(dirtyRecord);
             }
 
             @Override

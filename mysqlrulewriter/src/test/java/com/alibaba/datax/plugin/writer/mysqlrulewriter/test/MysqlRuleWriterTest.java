@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static junit.framework.Assert.assertEquals;
+
 /**
  * Date: 15/5/10 下午7:09
  *
@@ -36,6 +38,8 @@ public class MysqlRuleWriterTest extends BasicWriterPluginTest {
         hasDirData = true;
         int readerSliceNumber = 8;
         super.doWriterTest("basic1.json", readerSliceNumber);
+        System.out.println(super.dirRecordList.size());
+        assertEquals(dirRecordList.size(), 8);
     }
 
     @Override
