@@ -6,6 +6,7 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
@@ -129,6 +130,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
                 PluginType.WRITER, getTestPluginName());
 
         writerRunner.setJobConf(jobConf);
+        writerRunner.setRunnerCommunication(new Communication());
         writerRunner.setRecordReceiver(new RecordReceiverForTest(
                 buildDataForWriter()));
 

@@ -56,7 +56,6 @@ public class MysqlRuleWriter extends Writer {
             List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
             originalConfig.remove(Key.PRE_SQL);
 
-            //TODO String.class
             List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
             for(Object connConfObject : conns) {
                 Configuration connConf = Configuration.from(connConfObject.toString());
@@ -76,11 +75,11 @@ public class MysqlRuleWriter extends Writer {
                     }
                 }
             }
-            //TODO 减少计算
-            LOG.debug("After job prepare(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("After job prepare(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());
+            }
         }
 
-        //TODO copy风险 一个tg一个配置
         @Override
         public List<Configuration> split(int mandatoryNumber) {
             Configuration simplifiedConf = this.originalConfig;
