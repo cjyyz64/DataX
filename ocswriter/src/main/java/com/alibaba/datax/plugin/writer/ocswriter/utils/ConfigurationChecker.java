@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.ocswriter.utils;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.ocswriter.Key;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -54,11 +55,11 @@ public class ConfigurationChecker {
             }
         }
 
-        String writerMode = config.getString(Key.WRITE_MODE);
-        Preconditions.checkArgument(EnumUtils.isValidEnum(WRITE_MODE.class, writerMode.toLowerCase()), String.format("not supported write mode:%s, recommended:%s", writerMode, StringUtils.join(WRITE_MODE.values(), ",")));
+        String writerMode = config.getString(Key.WRITE_MODE, "set");
+        Preconditions.checkArgument(StringUtils.isNoneBlank(writerMode) && EnumUtils.isValidEnum(WRITE_MODE.class, writerMode.toLowerCase()), String.format("not supported write mode:%s, recommended:%s", writerMode, StringUtils.join(WRITE_MODE.values(), ",")));
 
         String writerFormat = config.getString(Key.WRITE_FORMAT, "text");
-        Preconditions.checkArgument(EnumUtils.isValidEnum(WRITE_MODE.class, writerMode.toLowerCase()), String.format("not supported write format:%s, recommended:%s", writerFormat, StringUtils.join(WRITE_FORMAT.values(), ",")));
+        Preconditions.checkArgument(StringUtils.isNotBlank(writerFormat) && EnumUtils.isValidEnum(WRITE_FORMAT.class, writerFormat.toLowerCase()), String.format("not supported write format:%s, recommended:%s", writerFormat, StringUtils.join(WRITE_FORMAT.values(), ",")));
 
         int expireTime = config.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE);
         Preconditions.checkArgument(expireTime > 0, "expire time must be bigger than 0");
@@ -79,5 +80,15 @@ public class ConfigurationChecker {
         } catch (IOException e) {
             Preconditions.checkArgument(false, String.format("unknown host:%s", proxy));
         }
+    }
+
+    @VisibleForTesting
+    public static void paramCheck_test(Configuration configuration) {
+        paramCheck(configuration);
+    }
+
+    @VisibleForTesting
+    public static void hostReachableCheck_test(Configuration configuration) {
+        hostReachableCheck(configuration);
     }
 }

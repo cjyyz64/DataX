@@ -37,17 +37,17 @@ public class TestOcsWriter {
 
     @BeforeClass
     public void setup() {
-
-        AuthDescriptor ad = new AuthDescriptor(new String[]{"PLAIN"}, new PlainCallbackHandler(username, password));
-        try {
-            client = new MemcachedClient(
-                    new ConnectionFactoryBuilder().setProtocol(ConnectionFactoryBuilder.Protocol.BINARY)
-                            .setAuthDescriptor(ad)
-                            .build(),
-                    AddrUtil.getAddresses(proxy + ":" + port));
-        } catch (IOException e) {
-            logger.error("", e);
-        }
+//
+//        AuthDescriptor ad = new AuthDescriptor(new String[]{"PLAIN"}, new PlainCallbackHandler(username, password));
+//        try {
+//            client = new MemcachedClient(
+//                    new ConnectionFactoryBuilder().setProtocol(ConnectionFactoryBuilder.Protocol.BINARY)
+//                            .setAuthDescriptor(ad)
+//                            .build(),
+//                    AddrUtil.getAddresses(proxy + ":" + port));
+//        } catch (IOException e) {
+//            logger.error("", e);
+//        }
     }
 
     @BeforeMethod
@@ -84,6 +84,19 @@ public class TestOcsWriter {
 //    }
 
     @Test
+    public void testBuildKey_0() {
+        Record record = EasyMock.createMock(Record.class);
+        EasyMock.expect(record.getColumnNumber()).andReturn(4).anyTimes();
+        EasyMock.expect(record.getColumn(1)).andReturn(null).anyTimes();
+        EasyMock.replay(record);
+        HashSet<Integer> index = new HashSet<Integer>();
+        index.add(1);
+        this.task.setIndexes(index);
+        String act = this.task.buildKey_test(record);
+        logger.info(act);
+        Assert.assertEquals(act, "");
+    }
+    @Test
     public void testBuildKey_1() {
         ArrayList<Column> columns = new ArrayList<Column>();
         columns.add(new StringColumn("key_000"));
@@ -119,6 +132,27 @@ public class TestOcsWriter {
         Assert.assertEquals(act, "key_000\u0001key_001");
     }
 
+
+    @Test
+    public void testBuildValue_0() {
+        ArrayList<Column> columns = new ArrayList<Column>();
+        columns.add(new LongColumn(12345567890L));
+        columns.add(new DoubleColumn(1.2345000000012));
+        columns.add(new StringColumn("value_000"));
+        columns.add(new DateColumn(new Date(1431595942234L)));
+        columns.add(new BytesColumn("shit and shit".getBytes()));
+        Record record = EasyMock.createMock(Record.class);
+        EasyMock.expect(record.getColumnNumber()).andReturn(5).anyTimes();
+        EasyMock.expect(record.getColumn(0)).andReturn(columns.get(0)).anyTimes();
+        EasyMock.expect(record.getColumn(1)).andReturn(columns.get(1)).anyTimes();
+        EasyMock.expect(record.getColumn(2)).andReturn(columns.get(2)).anyTimes();
+        EasyMock.expect(record.getColumn(3)).andReturn(columns.get(3)).anyTimes();
+        EasyMock.expect(record.getColumn(4)).andReturn(columns.get(4)).anyTimes();
+        EasyMock.replay(record);
+        String act = this.task.buildValue_test(record);
+        logger.info(act);
+        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001c2hpdCBhbmQgc2hpdA==");
+    }
     @Test
     public void testBuildValue_1() {
         ArrayList<Column> columns = new ArrayList<Column>();
@@ -128,7 +162,7 @@ public class TestOcsWriter {
         columns.add(new DateColumn(new Date(1431595942234L)));
         columns.add(new BoolColumn(true));
         Record record = EasyMock.createMock(Record.class);
-        EasyMock.expect(record.getColumnNumber()).andReturn(4).anyTimes();
+        EasyMock.expect(record.getColumnNumber()).andReturn(5).anyTimes();
         EasyMock.expect(record.getColumn(0)).andReturn(columns.get(0)).anyTimes();
         EasyMock.expect(record.getColumn(1)).andReturn(columns.get(1)).anyTimes();
         EasyMock.expect(record.getColumn(2)).andReturn(columns.get(2)).anyTimes();
@@ -137,11 +171,36 @@ public class TestOcsWriter {
         EasyMock.replay(record);
         String act = this.task.buildValue_test(record);
         logger.info(act);
-        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234");
+        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001true");
+    }
+
+    @Test
+    public void testBuildValue_2() {
+        ArrayList<Column> columns = new ArrayList<Column>();
+        columns.add(new LongColumn(12345567890L));
+        columns.add(new DoubleColumn(1.2345000000012));
+        columns.add(new StringColumn("value_000"));
+        columns.add(new DateColumn(new Date(1431595942234L)));
+        columns.add(new BoolColumn(true));
+        columns.add(null);
+        Record record = EasyMock.createMock(Record.class);
+        EasyMock.expect(record.getColumnNumber()).andReturn(5).anyTimes();
+        EasyMock.expect(record.getColumn(0)).andReturn(columns.get(0)).anyTimes();
+        EasyMock.expect(record.getColumn(1)).andReturn(columns.get(1)).anyTimes();
+        EasyMock.expect(record.getColumn(2)).andReturn(columns.get(2)).anyTimes();
+        EasyMock.expect(record.getColumn(3)).andReturn(columns.get(3)).anyTimes();
+        EasyMock.expect(record.getColumn(4)).andReturn(columns.get(5)).anyTimes();
+        EasyMock.replay(record);
+        String act = this.task.buildValue_test(record);
+        logger.info(act);
+        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001");
     }
 
     @AfterClass
     public void destroy() {
+        if (task != null) {
+            task.destroy();
+        }
         if (client != null) {
             client.shutdown();
         }
