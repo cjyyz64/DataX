@@ -20,10 +20,20 @@ import java.util.List;
 @RunWith(LoggedRunner.class)
 public class MysqlRuleWriterTest extends BasicWriterPluginTest {
 
+    private boolean hasDirData = false;
 
     @TestLogger(log = "测试basic1.json. 配置多个jdbcUrl,多个table,运行时，通过程序自动生成 queryS1ql 进行数据读取.")
     @Test
     public void testBasic1() {
+        hasDirData = false;
+        int readerSliceNumber = 8;
+        super.doWriterTest("basic1.json", readerSliceNumber);
+    }
+
+    @TestLogger(log = "测试basic1.json. 配置多个jdbcUrl,多个table,运行时，有一条脏数据")
+    @Test
+    public void testDirDataBasic1() {
+        hasDirData = true;
         int readerSliceNumber = 8;
         super.doWriterTest("basic1.json", readerSliceNumber);
     }
@@ -36,6 +46,20 @@ public class MysqlRuleWriterTest extends BasicWriterPluginTest {
             r.addColumn(new LongColumn(i));
             r.addColumn(new LongColumn(6));
             r.addColumn(new LongColumn(6));
+            r.addColumn(new StringColumn("api"));
+            r.addColumn(new StringColumn("api"));
+            r.addColumn(new DoubleColumn("5.5"));
+            r.addColumn(new DoubleColumn("5.5"));
+            r.addColumn(new BoolColumn(false));
+            r.addColumn(new DateColumn(new Date()));
+            list.add(r);
+        }
+
+        if(hasDirData) {
+            Record r = new DefaultRecord();
+            r.addColumn(new LongColumn(101));
+            r.addColumn(new StringColumn("abc"));
+            r.addColumn(new StringColumn("abc"));
             r.addColumn(new StringColumn("api"));
             r.addColumn(new StringColumn("api"));
             r.addColumn(new DoubleColumn("5.5"));

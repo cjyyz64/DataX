@@ -4,6 +4,7 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -133,6 +134,17 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
         writerRunner.setRunnerCommunication(new Communication());
         writerRunner.setRecordReceiver(new RecordReceiverForTest(
                 buildDataForWriter()));
+        writerRunner.setTaskPluginCollector(new TaskPluginCollector() {
+            @Override
+            public void collectDirtyRecord(Record dirtyRecord, Throwable t, String errorMessage) {
+                System.out.println("=======捕捉到脏数据,record=" + dirtyRecord + ",e=" + t + ",errorMsg=" + errorMessage);
+            }
+
+            @Override
+            public void collectMessage(String key, String value) {
+                System.out.println("======key=" + key + ",value=" + value);
+            }
+        });
 
         return writerRunner;
 

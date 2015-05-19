@@ -44,10 +44,4 @@ public class MysqlRuleCommonRdbmsWriterTest {
         assertEquals("datax_3_mysqlwriter", task.getDbNameFromJdbcUrl(jdbcUrl));
     }
 
-    @Test
-    public void testStartWrite() throws Exception {
-
-
-    }
-
 }
