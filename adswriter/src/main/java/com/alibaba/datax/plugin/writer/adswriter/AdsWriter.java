@@ -311,7 +311,7 @@ public class AdsWriter extends Writer {
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.post();
             } else {
-
+                //do noting until now
             }
         }
 
@@ -320,7 +320,7 @@ public class AdsWriter extends Writer {
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.destroy();
             } else {
-
+                //do noting until now
             }
         }
     }

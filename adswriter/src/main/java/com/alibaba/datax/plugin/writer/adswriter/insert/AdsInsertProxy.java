@@ -117,12 +117,8 @@ public class AdsInsertProxy {
                 try {
                     String sql = generateInsertSql(record);
                     int status = statement.executeUpdate(sql);
-                    if(status == 0) {
-                        this.taskPluginCollector.collectDirtyRecord(record, "插入数据失败，请检查字段类型是否匹配");
-                    }
                 } catch (SQLException e) {
                     LOG.debug(e.toString());
-
                     this.taskPluginCollector.collectDirtyRecord(record, e);
                 }
             }
