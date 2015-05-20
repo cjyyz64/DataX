@@ -13,6 +13,6 @@ public class LocalScheduler extends ProcessInnerScheduler{
     @Override
     public boolean isJobKilling(Long jobId) {
         Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
-        return jobInfo.getData() == State.KILLING.value();
+        return jobInfo.getData() != null && jobInfo.getData() == State.KILLING.value();
     }
 }
