@@ -21,8 +21,12 @@ public class ConfigurationChecker {
         hostReachableCheck(config);
     }
 
-    private enum WRITE_MODE {
-        set
+    public enum WRITE_MODE {
+        set,
+        add,
+        replace,
+        append,
+        prepend
     }
 
     private enum WRITE_FORMAT {

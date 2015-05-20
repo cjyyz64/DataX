@@ -100,7 +100,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:null, recommended:set")
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:null, recommended:set,add,replace,append,prepend")
     public void testWriteMode_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -116,7 +116,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:replace, recommended:set")
+    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:shit, recommended:set,add,replace,append,prepend")
     public void testWriteMode_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -126,7 +126,7 @@ public class TestConfigurationChecker {
         EasyMock.expect(conf.getString(Key.INDEXES, "0")).andReturn("0,2").anyTimes();
         EasyMock.expect(conf.getString(Key.INDEXES)).andReturn("2,3").anyTimes();
         EasyMock.expect(conf.getString(Key.WRITE_MODE)).andReturn(null).anyTimes();
-        EasyMock.expect(conf.getString(Key.WRITE_MODE, "set")).andReturn("replace").anyTimes();
+        EasyMock.expect(conf.getString(Key.WRITE_MODE, "set")).andReturn("shit").anyTimes();
         EasyMock.replay(conf);
         logger.info("proxy:{},port:{},user:{},password:{},index:{},writeMode:{}", conf.getString(Key.PROXY), conf.getString(Key.PORT), conf.getString(Key.USER), conf.getString(Key.PASSWORD), conf.getString(Key.INDEXES), conf.getString(Key.WRITE_MODE));
         ConfigurationChecker.paramCheck_test(conf);
@@ -232,16 +232,8 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "proxy:www.shit.com is not reachable")
-    public void testHostReachableCheck_0() {
-        EasyMock.expect(conf.getString(Key.PROXY)).andReturn("www.shit.com").anyTimes();
-        EasyMock.replay(conf);
-        logger.info("proxy:{}", conf.getString(Key.PROXY));
-        ConfigurationChecker.hostReachableCheck_test(conf);
-    }
-
     @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "unknown host:abc")
-    public void testHostReachableCheck_1() {
+    public void testHostReachableCheck_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("abc").anyTimes();
         EasyMock.replay(conf);
         logger.info("proxy:{}", conf.getString(Key.PROXY));
@@ -249,7 +241,7 @@ public class TestConfigurationChecker {
     }
 
     @Test
-    public void testHostReachableCheck_2() {
+    public void testHostReachableCheck_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.0.0.1").anyTimes();
         EasyMock.replay(conf);
         logger.info("proxy:{}", conf.getString(Key.PROXY));

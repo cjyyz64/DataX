@@ -84,6 +84,7 @@ public class OcsWriter extends Writer {
         String delimiter = "\u0001";
         int expireTime;
         int batchSize;
+        private ConfigurationChecker.WRITE_MODE writeMode;
 
         @Override
         public void init() {
@@ -102,6 +103,7 @@ public class OcsWriter extends Writer {
             delimiter = this.configuration.getString(Key.FIELD_DELIMITER, "\u0001");
             expireTime = this.configuration.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE);
             batchSize = this.configuration.getInt(Key.BATCH_SIZE, 1);
+            writeMode = ConfigurationChecker.WRITE_MODE.valueOf(this.configuration.getString(Key.WRITE_MODE));
 
             String proxy = this.configuration.getString(Key.PROXY);
             String port = this.configuration.getString(Key.PORT, "11211");
@@ -132,8 +134,26 @@ public class OcsWriter extends Writer {
                 key = buildKey(record);
                 value = buildValue(record);
 
+                OperationFuture<Boolean> future;
                 while (true) {
-                    OperationFuture<Boolean> future = client.set(key, expireTime, value);
+                    switch (writeMode){
+                        case set:
+                            future = client.set(key, expireTime, value);
+                            break;
+                        case add:
+                            future = client.add(key, expireTime, value);
+                            break;
+                        case replace:
+                            future = client.replace(key, expireTime, value);
+                            break;
+                        case append:
+                            future = client.append(0L, key, value);
+                            break;
+                        case prepend:
+                            future = client.prepend(0L, key, value);
+                            break;
+                    }
+                    future = client.set(key, expireTime, value);
                     if (future != null && future.getStatus().isSuccess()) {
                         break;
                     } else {
