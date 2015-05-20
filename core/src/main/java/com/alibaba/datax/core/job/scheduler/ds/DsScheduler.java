@@ -102,6 +102,10 @@ public class DsScheduler extends AbstractScheduler {
     @Override
     public boolean isJobKilling(Long jobId) {
         Result<Integer> jobInfo = DataxServiceUtil.getJobInfo(jobId);
-        return jobInfo.getData() != null && jobInfo.getData() == State.KILLING.value();
+        if(jobInfo.getData() == null) {
+            LOG.warn("获取server端 state == null");
+            return false;
+        }
+        return jobInfo.getData() == State.KILLING.value();
     }
 }
