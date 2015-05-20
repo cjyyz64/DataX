@@ -54,7 +54,9 @@ public class MysqlRuleWriter extends Writer {
 
             //获取presql配置，并执行
             List<String> preSqls = originalConfig.getList(Key.PRE_SQL, String.class);
-            originalConfig.remove(Key.PRE_SQL);
+            if(preSqls == null || preSqls.size() == 0) {
+                return;
+            }
 
             List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
             for(Object connConfObject : conns) {
@@ -99,6 +101,10 @@ public class MysqlRuleWriter extends Writer {
                     Object.class);
             List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                     String.class);
+            if(postSqls == null || postSqls.size() == 0) {
+                return;
+            }
+
             for(Object connConfObject : conns) {
                 Configuration connConf = Configuration.from(connConfObject.toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
