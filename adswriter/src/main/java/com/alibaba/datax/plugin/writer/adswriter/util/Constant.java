@@ -8,6 +8,6 @@ public class Constant {
 
     public static final String REPLACEMODE = "replace";
 
-    public static final int DEFAULT_BATCH_SIZE = 512;
+    public static final int DEFAULT_BATCH_SIZE = 32;
 
 }
