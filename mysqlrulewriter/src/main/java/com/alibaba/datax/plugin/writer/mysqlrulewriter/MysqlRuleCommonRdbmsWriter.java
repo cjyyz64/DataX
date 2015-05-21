@@ -172,7 +172,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             }
         }
 
-        public void calcRuleAndDoBatchInsert(List<Record> recordBuffer) throws SQLException {
+        public void calcRuleAndDoBatchInsert(List<Record> recordBuffer) {
             //calcRule add all record
             for(Record record : recordBuffer) {
                 Map<String, Object> recordMap = convertRecord2Map(record);
@@ -190,20 +190,33 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             //do batchInsert
             for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
                 RuleWriterDbBuffer dbBuffer = entry.getValue();
+                String dbName = entry.getKey();
                 Connection connection = dbBuffer.getConnection();
                 PreparedStatement preparedStatement = null;
+
                 try {
                     connection.setAutoCommit(false);
                     for (Map.Entry<String, List<Record>> tableBufferEntry : dbBuffer.getTableBuffer().entrySet()) {
                         String tableName = tableBufferEntry.getKey();
                         List<Record> recordList = tableBufferEntry.getValue();
                         String writeRecordSql = tableWriteSqlMap.get(tableName);
-                        preparedStatement = connection.prepareStatement(writeRecordSql);
-                        for (Record record : recordList) {
-                            preparedStatement = fillPreparedStatement(preparedStatement, record);
-                            preparedStatement.addBatch();
+                        try {
+                            preparedStatement = connection.prepareStatement(writeRecordSql);
+                            for (Record record : recordList) {
+                                preparedStatement = fillPreparedStatement(preparedStatement, record);
+                                preparedStatement.addBatch();
+                            }
+                            preparedStatement.executeBatch();
+                        } catch (SQLException e) {
+                            LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
+                            connection.rollback();
+                            doRuleOneInsert(connection, tableName, recordList);
+                        } catch (Exception e) {
+                            throw DataXException.asDataXException(
+                                    DBUtilErrorCode.WRITE_DATA_ERROR, "写入数据失败,dbName=" + dbName + ",tableName=" + tableName, e);
+                        } finally {
+                            DBUtil.closeDBResources(preparedStatement, null);
                         }
-                        preparedStatement.executeBatch();
                     }
                     connection.commit();
 
@@ -213,41 +226,30 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                         recordList.clear();
                     }
                 } catch (SQLException e) {
-                    LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
-                    connection.rollback();
-                    doRuleOneInsert(connection, dbBuffer);
-                } catch (Exception e) {
-                    throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, e);
-                } finally {
-                    DBUtil.closeDBResources(preparedStatement, null);
+                    throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "写入数据失败,dbName=" + dbName, e);
                 }
             }
         }
 
-        protected void doRuleOneInsert(Connection connection, RuleWriterDbBuffer dbBuffer) {
+        protected void doRuleOneInsert(Connection connection,String tableName, List<Record> recordList) {
             PreparedStatement preparedStatement = null;
             try {
                 connection.setAutoCommit(true);
-                for (Map.Entry<String, List<Record>> entry : dbBuffer.getTableBuffer().entrySet()) {
-                    String tableName = entry.getKey();
-                    preparedStatement = connection.prepareStatement(this.tableWriteSqlMap.get(tableName));
-                    List<Record> recordList = entry.getValue();
-                    for (Record record : recordList) {
-                        try {
-                            preparedStatement = fillPreparedStatement(preparedStatement, record);
-                            preparedStatement.execute();
-                        } catch (SQLException e) {
-                            LOG.debug(e.toString());
-                            this.taskPluginCollector.collectDirtyRecord(record, e);
-                        } finally {
-                            // 最后不要忘了关闭 preparedStatement
-                            preparedStatement.clearParameters();
-                        }
+                preparedStatement = connection.prepareStatement(this.tableWriteSqlMap.get(tableName));
+                for (Record record : recordList) {
+                    try {
+                        preparedStatement = fillPreparedStatement(preparedStatement, record);
+                        preparedStatement.execute();
+                    } catch (SQLException e) {
+                        LOG.debug(e.toString());
+                        this.taskPluginCollector.collectDirtyRecord(record, e);
+                    } finally {
+                        // 最后不要忘了关闭 preparedStatement
+                        preparedStatement.clearParameters();
                     }
-                    //在commit之后完成清理
-                    recordList.clear();
                 }
+                //在commit之后完成清理
+                recordList.clear();
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
