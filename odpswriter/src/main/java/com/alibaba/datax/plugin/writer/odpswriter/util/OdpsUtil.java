@@ -146,7 +146,7 @@ public class OdpsUtil {
         String truncateNonPartitionedTableSql = "truncate table " + tab.getName() + ";";
 
         try {
-            runSqlTask(odps, truncateNonPartitionedTableSql);
+            runSqlTaskWithRetry(odps, truncateNonPartitionedTableSql);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR,
                     String.format(" 清空 ODPS 目的表:%s 失败, 请联系 ODPS 管理员处理.", tab.getName()), e);
@@ -181,7 +181,7 @@ public class OdpsUtil {
         addPart.append("alter table ").append(table.getName()).append(" add IF NOT EXISTS partition(")
                 .append(partSpec).append(");");
         try {
-            runSqlTask(odps, addPart.toString());
+            runSqlTaskWithRetry(odps, addPart.toString());
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
                     String.format("添加 ODPS 目的表的分区失败. 错误发生在添加 ODPS 的项目:%s 的表:%s 的分区:%s. 请联系 ODPS 管理员处理.",
@@ -261,7 +261,7 @@ public class OdpsUtil {
                 .append(" drop IF EXISTS partition(").append(partSpec)
                 .append(");");
         try {
-            runSqlTask(odps, dropPart.toString());
+            runSqlTaskWithRetry(odps, dropPart.toString());
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
                     String.format("Drop  ODPS 目的表分区失败. 错误发生在项目:%s 的表:%s 的分区:%s .请联系 ODPS 管理员处理.",
@@ -288,8 +288,32 @@ public class OdpsUtil {
         return partSpec.toString();
     }
 
+    /**
+     * 该方法只有在 sql 为幂等的，且odps抛出异常时候才可以重试
+     *
+     * @param odps
+     * @param query
+     * @throws Exception
+     */
+    private static void runSqlTaskWithRetry(final Odps odps, final String query) throws Exception {
+        try {
+            runSqlTask(odps, query);
+        } catch (DataXException e) {
+            if(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(e.getErrorCode())) {
+                RetryUtil.executeWithRetry(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        runSqlTask(odps, query);
+                        return null;
+                    }
+                }, MAX_RETRY_TIME, 1000, true);
+            } else {
+                throw e;
+            }
+        }
+    }
 
-    private static void runSqlTask(Odps odps, String query) throws Exception {
+    private static void runSqlTask(Odps odps, String query) {
         if (StringUtils.isBlank(query)) {
             return;
         }
@@ -299,14 +323,22 @@ public class OdpsUtil {
         LOG.info("Try to start sqlTask:[{}] to run odps sql:[\n{}\n] .", taskName, query);
 
         //todo:biz_id set (目前ddl先不做)
-        Instance instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, null, null);
-        instance.waitForSuccess();
-        Instance.TaskStatus status = instance.getTaskStatus().get(taskName);
-
-        if (!Instance.TaskStatus.Status.SUCCESS.equals(status.getStatus())) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_FAILED,
-                    String.format("ODPS 目的表在运行 ODPS SQL失败, 返回值为:%s. 请联系 ODPS 管理员处理. SQL 内容为:[\n%s\n].", instance.getTaskResults().get(taskName),
-                            query));
+        Instance instance;
+        Instance.TaskStatus status;
+        try {
+            instance = SQLTask.run(odps, odps.getDefaultProject(), query, taskName, null, null);
+            instance.waitForSuccess();
+            status = instance.getTaskStatus().get(taskName);
+            if (!Instance.TaskStatus.Status.SUCCESS.equals(status.getStatus())) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_FAILED,
+                        String.format("ODPS 目的表在运行 ODPS SQL失败, 返回值为:%s. 请联系 ODPS 管理员处理. SQL 内容为:[\n%s\n].", instance.getTaskResults().get(taskName),
+                                query));
+            }
+        } catch (DataXException e) {
+            throw e;
+        } catch (Exception e) {
+            throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION,
+                    String.format("ODPS 目的表在运行 ODPS SQL 时抛出异常, 请联系 ODPS 管理员处理. SQL 内容为:[\n%s\n].", query), e);
         }
     }
 
