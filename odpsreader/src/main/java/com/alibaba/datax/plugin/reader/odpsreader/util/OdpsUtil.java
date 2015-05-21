@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.odpsreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.ColumnType;
 import com.alibaba.datax.plugin.reader.odpsreader.Constant;
 import com.alibaba.datax.plugin.reader.odpsreader.Key;
@@ -10,6 +11,7 @@ import com.aliyun.odps.*;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
+import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel;
 import com.aliyun.odps.tunnel.TunnelException;
 
@@ -22,9 +24,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public final class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
+
+    public static int MAX_RETRY_TIME = 10;
 
     public static void checkNecessaryConfig(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.ODPS_SERVER, OdpsReaderErrorCode.REQUIRED_VALUE);
@@ -38,6 +43,16 @@ public final class OdpsUtil {
                     "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
         }
 
+    }
+
+    public static void dealMaxRetryTime(Configuration originalConfig) {
+        int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
+                OdpsUtil.MAX_RETRY_TIME);
+        if (maxRetryTime < 1 || maxRetryTime > OdpsUtil.MAX_RETRY_TIME) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1, 且不能大于 " + OdpsUtil.MAX_RETRY_TIME +
+                    ". 推荐的配置方式是给maxRetryTime 配置2-11之间的某个值. 请您检查配置并做出相应修改.");
+        }
+        MAX_RETRY_TIME = maxRetryTime;
     }
 
     public static Odps initOdps(Configuration originalConfig) {
@@ -302,5 +317,22 @@ public final class OdpsUtil {
         }
 
         return downloadSession;
+    }
+
+
+
+    public static RecordReader getRecordReader(final TableTunnel.DownloadSession downloadSession, final long start, final long count,
+                                                     final boolean isCompress) {
+        try {
+            return RetryUtil.executeWithRetry(new Callable<RecordReader>() {
+                @Override
+                public RecordReader call() throws Exception {
+                    return downloadSession.openRecordReader(start, count, isCompress);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.OPEN_RECORD_READER_FAILED,
+                    "open RecordReader失败. 请联系 ODPS 管理员处理.", e);
+        }
     }
 }
