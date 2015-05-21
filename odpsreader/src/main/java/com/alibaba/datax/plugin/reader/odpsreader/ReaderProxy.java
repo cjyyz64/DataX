@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.reader.odpsreader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordReader;
@@ -53,7 +54,8 @@ public class ReaderProxy {
     public void doRead() {
         try {
             LOG.info("start={}, count={}",start, count);
-            RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
+            //RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
+            RecordReader recordReader = OdpsUtil.getRecordReader(downloadSession, start, count, isCompress);
 
             Record odpsRecord;
             Map<String, String> partitionMap = this

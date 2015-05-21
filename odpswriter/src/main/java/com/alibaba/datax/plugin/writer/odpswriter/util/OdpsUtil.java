@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 public class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
 
-    public static int MAX_RETRY_TIME = 4;
+    public static int MAX_RETRY_TIME = 10;
 
     public static void checkNecessaryConfig(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.ODPS_SERVER,
@@ -56,11 +56,10 @@ public class OdpsUtil {
     public static void dealMaxRetryTime(Configuration originalConfig) {
         int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
                 OdpsUtil.MAX_RETRY_TIME);
-        if (maxRetryTime < 1) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1. " +
-                    "推荐的配置方式是给maxRetryTime 配置2-5之间的某个值. 请您检查配置并做出相应修改.");
+        if (maxRetryTime < 1 || maxRetryTime > OdpsUtil.MAX_RETRY_TIME) {
+            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1, 且不能大于 " + OdpsUtil.MAX_RETRY_TIME +
+                    ". 推荐的配置方式是给maxRetryTime 配置2-11之间的某个值. 请您检查配置并做出相应修改.");
         }
-
         MAX_RETRY_TIME = maxRetryTime;
     }
 
