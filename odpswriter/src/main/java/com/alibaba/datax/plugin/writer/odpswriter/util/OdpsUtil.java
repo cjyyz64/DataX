@@ -148,7 +148,7 @@ public class OdpsUtil {
         String truncateNonPartitionedTableSql = "truncate table " + tab.getName() + ";";
 
         try {
-            runSqlTaskWithRetry(odps, truncateNonPartitionedTableSql);
+            runSqlTaskWithRetry(odps, truncateNonPartitionedTableSql, MAX_RETRY_TIME, 1000, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.TABLE_TRUNCATE_ERROR,
                     String.format(" 清空 ODPS 目的表:%s 失败, 请联系 ODPS 管理员处理.", tab.getName()), e);
@@ -183,7 +183,7 @@ public class OdpsUtil {
         addPart.append("alter table ").append(table.getName()).append(" add IF NOT EXISTS partition(")
                 .append(partSpec).append(");");
         try {
-            runSqlTaskWithRetry(odps, addPart.toString());
+            runSqlTaskWithRetry(odps, addPart.toString(), MAX_RETRY_TIME, 1000, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
                     String.format("添加 ODPS 目的表的分区失败. 错误发生在添加 ODPS 的项目:%s 的表:%s 的分区:%s. 请联系 ODPS 管理员处理.",
@@ -263,7 +263,7 @@ public class OdpsUtil {
                 .append(" drop IF EXISTS partition(").append(partSpec)
                 .append(");");
         try {
-            runSqlTaskWithRetry(odps, dropPart.toString());
+            runSqlTaskWithRetry(odps, dropPart.toString(), MAX_RETRY_TIME, 1000, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsWriterErrorCode.ADD_PARTITION_FAILED,
                     String.format("Drop  ODPS 目的表分区失败. 错误发生在项目:%s 的表:%s 的分区:%s .请联系 ODPS 管理员处理.",
@@ -291,28 +291,41 @@ public class OdpsUtil {
     }
 
     /**
-     * 该方法只有在 sql 为幂等的，且odps抛出异常时候才可以重试
+     * 该方法只有在 sql 为幂等的才可以使用，且odps抛出异常时候才会进行重试
      *
-     * @param odps
-     * @param query
+     * @param odps    odps
+     * @param query   执行sql
      * @throws Exception
      */
-    private static void runSqlTaskWithRetry(final Odps odps, final String query) throws Exception {
-        try {
-            runSqlTask(odps, query);
-        } catch (DataXException e) {
-            if(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(e.getErrorCode())) {
-                RetryUtil.executeWithRetry(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        runSqlTask(odps, query);
-                        return null;
+    private static void runSqlTaskWithRetry(final Odps odps, final String query, int retryTimes,
+                                            long sleepTimeInMilliSecond, boolean exponential) throws Exception {
+        Exception saveException = null;
+        for(int i = 0; i < retryTimes; i++) {
+            try {
+                runSqlTask(odps, query);
+            } catch (DataXException e) {
+                if (OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(e.getErrorCode())) {
+                    LOG.debug("Exception when calling callable", e);
+                    saveException = e;
+                    if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
+                        long timeToSleep;
+                        if (exponential) {
+                            timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);
+                        } else {
+                            timeToSleep = sleepTimeInMilliSecond;
+                        }
+
+                        try {
+                            Thread.sleep(timeToSleep);
+                        } catch (InterruptedException ignored) {
+                        }
                     }
-                }, MAX_RETRY_TIME, 1000, true);
-            } else {
-                throw e;
+                } else {
+                    throw e;
+                }
             }
         }
+        throw saveException;
     }
 
     private static void runSqlTask(Odps odps, String query) {
