@@ -5,6 +5,7 @@
     <groupId>com.alibaba.datax</groupId>
     <artifactId>datax-all</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+
     <name>datax-all</name>
     <packaging>pom</packaging>
 
@@ -64,6 +65,7 @@
         <module>osswriter</module>
         <module>tddlwriter</module>
         <module>hbasebulkwriter</module>
+        <module>hbasebulkwriter2</module>
         <!--hook-->
         <module>dqchook</module>
 

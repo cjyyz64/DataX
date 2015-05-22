@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.hbasebulkwriter.tools;
+package com.alibaba.datax.plugin.writer.hbasebulkwriter2.tools;
 
 import com.alibaba.datax.common.util.Configuration;
 

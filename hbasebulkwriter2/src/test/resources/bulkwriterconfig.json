@@ -1,0 +1,45 @@
+{
+"fixedcolumn" : {
+	"hbase_table" : "tmp_dws_crd_dm_rsm_cti_out_dd",
+	"hbase_rowkey" : [
+		{"index" : 0 , "htype" : "long"},
+		{"index" : 1 , "htype" : "string"},
+		{"index" : -1 , "htype" : "string", "constant" : "0"}
+	],
+	"hbase_column" : [
+		{"index" : 3 , "hname" : "cf:col1", "htype" : "long"},
+		{"index" : 4 , "hname" : "cf:col2", "htype" : "string"}
+	],
+	"hbase_output" : "/group/${部门名-项目名}/${hbase_table}-${uuid}",
+	"hbase_config" : "http://schedule@{env}inside.cheetah.alibaba-inc.com/scheduler/res?id=410691",
+	"hdfs_config" : "http://schedule@{env}inside.cheetah.alibaba-inc.com/scheduler/res?id=410694",
+	#"cluster_id" : "23"
+	
+	"optional" : {
+	    "null_mode" : "EMPTY_BYTES",
+		"bucket_num" : 0,
+		"start_ts" : 347326482387
+		"time_col" : 1
+		#"truncate_table" : "true"
+		#"encoding" : "utf-8"
+	}
+} ,
+"dynamiccolumn" : {
+	"hbase_table" : "tmp_dws_crd_dm_rsm_cti_out_dd",
+	"rowkey_type" : "string",
+	"hbase_column" : {
+		"type" : "prefix",
+		"rules" : [
+			{"pattern" : "cf:col_", "htype" : "long"},
+			{"pattern" : "cf:mal_", "htype" : "string}
+		]
+	},
+	"hbase_output" : "/group/${部门名-项目名}/${hbase_table}-${uuid}",
+	"hbase_config" : "http://schedule@{env}inside.cheetah.alibaba-inc.com/scheduler/res?id=410691",
+	"hdfs_config" : "http://schedule@{env}inside.cheetah.alibaba-inc.com/scheduler/res?id=410694"
+	#"cluster_id" : "23"
+	"optional" : {
+		#"truncate_table" : "true"
+		#"encoding" : "utf-8"
+	}
+}

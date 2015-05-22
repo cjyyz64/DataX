@@ -1,12 +1,5 @@
-package com.alibaba.datax.plugin.writer.hbasebulkwriter;
+package com.alibaba.datax.plugin.writer.hbasebulkwriter2;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.FixedColumnSchemaBuilder;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.RowkeySchemaBuilder;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.column.FixedHBaseColumn;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.util.PhoenixEncoder;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Result;
@@ -19,6 +12,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter2.ConfigurationBuilders.FixedColumnSchemaBuilder;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter2.ConfigurationBuilders.RowkeySchemaBuilder;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter2.util.PhoenixEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
