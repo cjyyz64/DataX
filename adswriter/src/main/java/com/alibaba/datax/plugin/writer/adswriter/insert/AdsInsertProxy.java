@@ -112,24 +112,27 @@ public class AdsInsertProxy {
 
     protected void doOneInsert(Connection connection, List<Record> buffer) {
         Statement statement = null;
+        String sql = null;
         try {
             connection.setAutoCommit(true);
             statement = connection.createStatement();
 
             for (Record record : buffer) {
                 try {
-                    String sql = generateInsertSql(record);
+                    sql = generateInsertSql(record);
                     int status = statement.executeUpdate(sql);
                 } catch (SQLException e) {
-                    LOG.debug(e.toString());
+                    LOG.error("sql: " + sql);
+                    LOG.error(e.toString());
                     this.taskPluginCollector.collectDirtyRecord(record, e);
                 }
             }
         } catch (Exception e) {
+            LOG.error("sql: " + sql);
+            LOG.error("插入异常", e);
             throw DataXException.asDataXException(
                     DBUtilErrorCode.WRITE_DATA_ERROR, e);
         } finally {
-
             DBUtil.closeDBResources(statement, null);
         }
     }
@@ -159,8 +162,12 @@ public class AdsInsertProxy {
             case Types.LONGVARCHAR:
             case Types.NVARCHAR:
             case Types.LONGNVARCHAR:
-
-                sqlSb.append("'").append(column.asString()).append("'");
+                String strValue = column.asString();
+                if(null == strValue) {
+                    sqlSb.append("null");
+                } else {
+                    sqlSb.append("'").append(column.asString()).append("'");
+                }
                 break;
 
             case Types.SMALLINT:
@@ -171,11 +178,11 @@ public class AdsInsertProxy {
             case Types.FLOAT:
             case Types.REAL:
             case Types.DOUBLE:
-                String strValue = column.asString();
-                if(emptyAsNull && "".equals(strValue)){
+                String numValue = column.asString();
+                if(emptyAsNull && "".equals(numValue) || numValue == null){
                     sqlSb.append("null");
-                }else{
-                    sqlSb.append(strValue);
+                } else{
+                    sqlSb.append(numValue);
                 }
                 break;
 
@@ -209,8 +216,11 @@ public class AdsInsertProxy {
 
                 if (null != utilDate) {
                     sqlDate = new java.sql.Date(utilDate.getTime());
+                    sqlSb.append("'").append(sqlDate).append("'");
+                } else {
+                    sqlSb.append("null");
                 }
-                sqlSb.append("'").append(sqlDate).append("'");
+                //sqlSb.append("'").append(sqlDate).append("'");
                 //}
                 break;
 
@@ -225,8 +235,11 @@ public class AdsInsertProxy {
 
                 if (null != utilDate) {
                     sqlTime = new java.sql.Time(utilDate.getTime());
+                    sqlSb.append("'").append(sqlTime).append("'");
+                } else {
+                    sqlSb.append("null");
                 }
-                sqlSb.append("'").append(sqlTime).append("'");
+                //sqlSb.append("'").append(sqlTime).append("'");
                 break;
 
             case Types.TIMESTAMP:
@@ -241,13 +254,21 @@ public class AdsInsertProxy {
                 if (null != utilDate) {
                     sqlTimestamp = new java.sql.Timestamp(
                             utilDate.getTime());
+                    sqlSb.append("'").append(sqlTimestamp).append("'");
+                } else {
+                    sqlSb.append("null");
                 }
-                sqlSb.append("'").append(sqlTimestamp).append("'");
+                //sqlSb.append("'").append(sqlTimestamp).append("'");
                 break;
 
             case Types.BOOLEAN:
             case Types.BIT:
-                sqlSb.append("'").append(column.asString()).append("'");
+                String bitValue = column.asString();
+                if(bitValue == null) {
+                    sqlSb.append("null");
+                } else {
+                    sqlSb.append("'").append(bitValue).append("'");
+                }
                 break;
             default:
                 throw DataXException

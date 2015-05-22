@@ -66,12 +66,13 @@ public class AdsWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            AdsUtil.checkNecessaryConfig(this.originalConfig);
             this.writeMode = this.originalConfig.getString(Key.WRITE_MODE);
 
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
+                AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 loadModeInit();
             } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.REPLACEMODE.equalsIgnoreCase(this.writeMode)) {
+                AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(originalConfig);
                 AdsInsertUtil.dealColumnConf(originalConfig, allColumns);
 
@@ -91,7 +92,7 @@ public class AdsWriter extends Writer {
             /**
              * 如果是从odps导入到ads，直接load data然后System.exit()
              */
-            if (super.getReaderPluginName().equals(ODPS_READER)){
+            if (super.getReaderPluginName().equals(ODPS_READER)) {
                 transferFromOdpsAndExit();
             }
 
@@ -206,13 +207,13 @@ public class AdsWriter extends Writer {
             }
         }
 
-        private void loadAdsData(AdsHelper helper, String odpsTableName, String odpsPartition){
+        private void loadAdsData(AdsHelper helper, String odpsTableName, String odpsPartition) {
 
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project;
-            if (super.getReaderPluginName().equals(ODPS_READER)){
+            if (super.getReaderPluginName().equals(ODPS_READER)) {
                 project = this.readerConfig.getString(Key.PROJECT);
-            }else{
+            } else {
                 project = this.transProjConf.getProject();
             }
             String partition = this.originalConfig.getString(Key.PARTITION);
@@ -226,8 +227,7 @@ public class AdsWriter extends Writer {
                 LOG.info("ADS Load Data任务已经提交，job id: " + id);
                 boolean terminated = false;
                 int time = 0;
-                while(!terminated)
-                {
+                while(!terminated) {
                     Thread.sleep(120000);
                     terminated = helper.checkLoadDataJobStatus(id);
                     time += 2;
@@ -235,11 +235,11 @@ public class AdsWriter extends Writer {
                 }
                 LOG.info("ADS 导数据已成功");
             } catch (AdsException e) {
-                if (super.getReaderPluginName().equals(ODPS_READER)){
+                if (super.getReaderPluginName().equals(ODPS_READER)) {
                     // TODO 使用云账号
                     AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED.setAdsAccount(helper.getUserName());
                     throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED,e);
-                }else{
+                } else {
                     throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_TEMP_ODPS_FAILED,e);
                 }
             } catch (InterruptedException e) {

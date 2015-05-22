@@ -125,7 +125,7 @@ public class AdsInsertUtil {
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
 
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                ListUtil.makeSureBInA(tableColumns, userConfiguredColumns, false);
+                ListUtil.makeSureBInA(tableColumns, userConfiguredColumns, true);
             }
         }
     }
