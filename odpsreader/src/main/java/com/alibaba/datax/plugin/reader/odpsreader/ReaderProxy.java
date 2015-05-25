@@ -107,7 +107,8 @@ public class ReaderProxy {
                     break;
                 }
             }
-            recordReader.close();
+            //fixed, 避免recordReader.close失败，跟鸣天确认过，可以不用关闭RecordReader
+            //recordReader.close();
         } catch (DataXException e) {
             throw e;
         } catch (Exception e) {
