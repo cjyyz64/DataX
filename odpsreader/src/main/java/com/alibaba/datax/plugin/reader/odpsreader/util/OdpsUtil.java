@@ -13,7 +13,6 @@ import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
 import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel;
-import com.aliyun.odps.tunnel.TunnelException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -237,86 +236,131 @@ public final class OdpsUtil {
         }
     }
 
-    public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps,
-                                                                                        String tunnelServer, String projectName, String tableName) {
+    public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps, String tunnelServer,
+                                                                                        final String projectName, final String tableName) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
         try {
-            downloadSession = tunnel.createDownloadSession(
-                    projectName, tableName);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.createDownloadSession(
+                            projectName, tableName);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
 
-        return downloadSession;
+//        TableTunnel.DownloadSession downloadSession = null;
+//        try {
+//            downloadSession = tunnel.createDownloadSession(
+//                    projectName, tableName);
+//        } catch (TunnelException e) {
+//            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+//        }
+//
+//        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, String sessionId,
-                                                                                    String tunnelServer, String projectName, String tableName) {
+    public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, final String sessionId,
+                                                                                    String tunnelServer, final String projectName, final String tableName) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
         try {
-            downloadSession = tunnel.getDownloadSession(
-                    projectName, tableName, sessionId);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.getDownloadSession(
+                            projectName, tableName, sessionId);
+                }
+            }, MAX_RETRY_TIME ,1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
 
-        return downloadSession;
+//        TableTunnel.DownloadSession downloadSession = null;
+//        try {
+//            downloadSession = tunnel.getDownloadSession(
+//                    projectName, tableName, sessionId);
+//        } catch (TunnelException e) {
+//            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
+//        }
+//
+//        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps,
-                                                                                     String tunnelServer, String projectName, String tableName, String partition) {
+    public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps, String tunnelServer,
+                                                                                     final String projectName, final String tableName, String partition) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
-
-        PartitionSpec partitionSpec = new PartitionSpec(partition);
+        final PartitionSpec partitionSpec = new PartitionSpec(partition);
 
         try {
-            downloadSession = tunnel.createDownloadSession(
-                    projectName, tableName, partitionSpec);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.createDownloadSession(
+                            projectName, tableName, partitionSpec);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
 
-        return downloadSession;
+//        TableTunnel.DownloadSession downloadSession = null;
+//        try {
+//            downloadSession = tunnel.createDownloadSession(
+//                    projectName, tableName, partitionSpec);
+//        } catch (TunnelException e) {
+//            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
+//        }
+
+//        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, String sessionId,
-                                                                                 String tunnelServer, String projectName, String tableName, String partition) {
+    public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, final String sessionId,
+                                                                                 String tunnelServer, final String projectName, final String tableName, String partition) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
-
-        PartitionSpec partitionSpec = new PartitionSpec(partition);
-
+        final PartitionSpec partitionSpec = new PartitionSpec(partition);
         try {
-            downloadSession = tunnel.getDownloadSession(
-                    projectName, tableName, partitionSpec, sessionId);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.getDownloadSession(
+                            projectName, tableName, partitionSpec, sessionId);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
 
-        return downloadSession;
+//        TableTunnel.DownloadSession downloadSession = null;
+//        try {
+//            downloadSession = tunnel.getDownloadSession(
+//                    projectName, tableName, partitionSpec, sessionId);
+//        } catch (TunnelException e) {
+//            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
+//        }
+//
+//        return downloadSession;
     }
 
 
