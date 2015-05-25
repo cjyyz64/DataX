@@ -238,7 +238,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                             preparedStatement = fillPreparedStatement(preparedStatement, record);
                             preparedStatement.execute();
                         } catch (SQLException e) {
-                            LOG.debug(e.toString());
+                            LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:" + e.toString());
                             this.taskPluginCollector.collectDirtyRecord(record, e);
                         } finally {
                             // 最后不要忘了关闭 preparedStatement
