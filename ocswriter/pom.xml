@@ -16,12 +16,21 @@
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-common</artifactId>
             <version>${datax-project-version}</version>
-            <!--<exclusions>-->
-                <!--<exclusion>-->
-                    <!--<artifactId>slf4j-log4j12</artifactId>-->
-                    <!--<groupId>org.slf4j</groupId>-->
-                <!--</exclusion>-->
-            <!--</exclusions>-->
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-core</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>simulator</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>plugin-rdbms-util</artifactId>
+            <version>${datax-project-version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -61,6 +70,7 @@
                     <target>1.6</target>
                     <encoding>${project-sourceEncoding}</encoding>
                 </configuration>
+                <version>3.2</version>
             </plugin>
             <!-- assembly plugin -->
             <plugin>

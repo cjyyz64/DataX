@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.ocswriter;
 
 import com.alibaba.datax.common.element.*;
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.writer.ocswriter.utils.CommonUtils;
 import net.spy.memcached.AddrUtil;
 import net.spy.memcached.ConnectionFactoryBuilder;
@@ -23,32 +24,31 @@ import java.util.HashSet;
  * Creator: yuanqi@alibaba-inc.com
  */
 @Test
-public class TestOcsWriter {
+public class OcsWriterTest {
 
-    Logger logger = LoggerFactory.getLogger(TestOcsWriter.class);
+    Logger logger = LoggerFactory.getLogger(OcsWriterTest.class);
 
     MemcachedClient client = null;
-    String username = "4aae568b4ff543d2";
-    String password = "ocsPassword_123";
-    String proxy = "10.232.4.25";
-    String port = "11211";
+    String username = "cde6950d8efa4a87";
+    String password = "12345678Aa";
+    String proxy = "10.101.72.137";
+    String port = "11218";
 
     OcsWriter.Task task;
 
-    @BeforeClass
-    public void setup() {
-//
-//        AuthDescriptor ad = new AuthDescriptor(new String[]{"PLAIN"}, new PlainCallbackHandler(username, password));
-//        try {
-//            client = new MemcachedClient(
-//                    new ConnectionFactoryBuilder().setProtocol(ConnectionFactoryBuilder.Protocol.BINARY)
-//                            .setAuthDescriptor(ad)
-//                            .build(),
-//                    AddrUtil.getAddresses(proxy + ":" + port));
-//        } catch (IOException e) {
-//            logger.error("", e);
-//        }
-    }
+        @BeforeClass
+        public void setup() {
+            AuthDescriptor ad = new AuthDescriptor(new String[]{"PLAIN"}, new PlainCallbackHandler(username, password));
+            try {
+                client = new MemcachedClient(
+                        new ConnectionFactoryBuilder().setProtocol(ConnectionFactoryBuilder.Protocol.BINARY)
+                                .setAuthDescriptor(ad)
+                                .build(),
+                        AddrUtil.getAddresses(proxy + ":" + port));
+            } catch (IOException e) {
+                logger.error("", e);
+            }
+        }
 
     @BeforeMethod
     public void beforeMethod() {
@@ -60,44 +60,55 @@ public class TestOcsWriter {
         this.task = null;
     }
 
-//    @Test
-//    @Deprecated
-//    public void testOcsWrite() throws InterruptedException {
-//        String key1 = "key_xl";
-//        String value1 = "value_xl";
-//        String key2 = "key_zd";
-//        String value2 = "value_zd";
-//
-//        client.set(key1, 200, value1);
-//        client.set(key2, 200, value2);
-//        logger.info(client.get(key1).toString());
-//        logger.info(client.get(key2).toString());
-//        Assert.assertEquals(client.get("key_zd"), "value_zd");
-//        Object value_cl = client.get("key_cl");
-//        Assert.assertEquals(value_cl, null);
-//        logger.info(value_cl == null ? "value of key_cl is null" : value_cl.toString());
-//        client.set(key1, 2, value1);
-//        CommonUtils.sleepInMs(3000L);
-//        Object value_new = client.get(key1);
-//        logger.info(value_new == null ? String.format("value of %s is null", key1) : value_new.toString());
-//        Assert.assertNull(client.get(key1));
-//    }
+    @Test
+    public void testOcsWrite() throws InterruptedException {
+        String key1 = "key_xl";
+        String value1 = "value_xl";
+        String key2 = "key_zd";
+        String value2 = "value_zd";
+
+        client.set(key1, 200, value1);
+        client.set(key2, 200, value2);
+        logger.info(client.get(key1).toString());
+        logger.info(client.get(key2).toString());
+        Assert.assertEquals(client.get("key_zd"), "value_zd");
+        Object value_cl = client.get("key_cl");
+        Assert.assertEquals(value_cl, null);
+        logger.info(value_cl == null ? "value of key_cl is null" : value_cl.toString());
+        client.set(key1, 2, value1);
+        CommonUtils.sleepInMs(3000L);
+        Object value_new = client.get(key1);
+        logger.info(value_new == null ? String.format("value of %s is null", key1) : value_new.toString());
+        Assert.assertNull(client.get(key1));
+    }
 
     @Test
     public void testBuildKey_0() {
+        Record record = EasyMock.createMock(Record.class);
+        Column col = new StringColumn("shit");
+        EasyMock.expect(record.getColumnNumber()).andReturn(4).anyTimes();
+        EasyMock.expect(record.getColumn(1)).andReturn(col).anyTimes();
+        EasyMock.replay(record);
+        HashSet<Integer> index = new HashSet<Integer>();
+        index.add(1);
+        this.task.setIndexesFromUser(index);
+        String act = this.task.buildKey_test(record);
+        Assert.assertEquals(act, "shit");
+    }
+
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "DIRTY_RECORD - 不存在第1列")
+    public void testBuildKey_1() {
         Record record = EasyMock.createMock(Record.class);
         EasyMock.expect(record.getColumnNumber()).andReturn(4).anyTimes();
         EasyMock.expect(record.getColumn(1)).andReturn(null).anyTimes();
         EasyMock.replay(record);
         HashSet<Integer> index = new HashSet<Integer>();
         index.add(1);
-        this.task.setIndexes(index);
-        String act = this.task.buildKey_test(record);
-        logger.info(act);
-        Assert.assertEquals(act, "");
+        this.task.setIndexesFromUser(index);
+        this.task.buildKey_test(record);
     }
     @Test
-    public void testBuildKey_1() {
+    public void testBuildKey_2() {
         ArrayList<Column> columns = new ArrayList<Column>();
         columns.add(new StringColumn("key_000"));
         Record record = EasyMock.createMock(Record.class);
@@ -106,14 +117,14 @@ public class TestOcsWriter {
         EasyMock.replay(record);
         HashSet<Integer> index = new HashSet<Integer>();
         index.add(0);
-        this.task.setIndexes(index);
+        this.task.setIndexesFromUser(index);
         String act = this.task.buildKey_test(record);
         logger.info(act);
         Assert.assertEquals(act, "key_000");
     }
 
     @Test
-    public void testBuildKey_2() {
+    public void testBuildKey_3() {
         ArrayList<Column> columns = new ArrayList<Column>();
         columns.add(new StringColumn("key_000"));
         columns.add(new StringColumn("key_001"));
@@ -126,14 +137,14 @@ public class TestOcsWriter {
         index.add(1);
         index.add(0);
         logger.info(index.toString());
-        this.task.setIndexes(index);
+        this.task.setIndexesFromUser(index);
         String act = this.task.buildKey_test(record);
         logger.info(act);
         Assert.assertEquals(act, "key_000\u0001key_001");
     }
 
 
-    @Test
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "DIRTY_RECORD - 不支持的数据格式:BYTES")
     public void testBuildValue_0() {
         ArrayList<Column> columns = new ArrayList<Column>();
         columns.add(new LongColumn(12345567890L));
@@ -149,9 +160,7 @@ public class TestOcsWriter {
         EasyMock.expect(record.getColumn(3)).andReturn(columns.get(3)).anyTimes();
         EasyMock.expect(record.getColumn(4)).andReturn(columns.get(4)).anyTimes();
         EasyMock.replay(record);
-        String act = this.task.buildValue_test(record);
-        logger.info(act);
-        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001c2hpdCBhbmQgc2hpdA==");
+        this.task.buildValue_test(record);
     }
     @Test
     public void testBuildValue_1() {
@@ -171,10 +180,10 @@ public class TestOcsWriter {
         EasyMock.replay(record);
         String act = this.task.buildValue_test(record);
         logger.info(act);
-        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001true");
+        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22\u0001true");
     }
 
-    @Test
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "DIRTY_RECORD - record中不存在第4个字段")
     public void testBuildValue_2() {
         ArrayList<Column> columns = new ArrayList<Column>();
         columns.add(new LongColumn(12345567890L));
@@ -191,9 +200,7 @@ public class TestOcsWriter {
         EasyMock.expect(record.getColumn(3)).andReturn(columns.get(3)).anyTimes();
         EasyMock.expect(record.getColumn(4)).andReturn(columns.get(5)).anyTimes();
         EasyMock.replay(record);
-        String act = this.task.buildValue_test(record);
-        logger.info(act);
-        Assert.assertEquals(act, "12345567890\u00011.2345000000012\u0001value_000\u00012015-05-14 17:32:22.234\u0001");
+        this.task.buildValue_test(record);
     }
 
     @AfterClass

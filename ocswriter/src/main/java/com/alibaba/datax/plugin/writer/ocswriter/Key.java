@@ -23,5 +23,5 @@ public final class Key {
 
     public final static String BATCH_SIZE = "batchSize";
 
-    public final static String INDEXES = "index";
+    public final static String INDEXES = "indexes";
 }

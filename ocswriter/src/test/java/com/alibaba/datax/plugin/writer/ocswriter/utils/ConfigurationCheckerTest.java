@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.ocswriter.utils;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.ocswriter.Key;
 import org.easymock.EasyMock;
@@ -13,9 +14,8 @@ import org.testng.annotations.Test;
  * Creator: yuanqi@alibaba-inc.com
  */
 @Test
-public class TestConfigurationChecker {
-    Logger logger = LoggerFactory.getLogger(TestConfigurationChecker.class);
-
+public class ConfigurationCheckerTest {
+    Logger logger = LoggerFactory.getLogger(ConfigurationCheckerTest.class);
     Configuration conf;
 
     @BeforeMethod
@@ -23,7 +23,7 @@ public class TestConfigurationChecker {
         conf = EasyMock.createMock(Configuration.class);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "proxy of ocs could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - ocs服务地址proxy不能设置为空")
     public void testProxy_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn(null).anyTimes();
         EasyMock.replay(conf);
@@ -31,7 +31,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "proxy of ocs could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - ocs服务地址proxy不能设置为空")
     public void testProxy_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("").anyTimes();
         EasyMock.replay(conf);
@@ -39,9 +39,11 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "port of ocs could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - ocs端口port不能设置为空")
     public void testPort_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
+        EasyMock.expect(conf.getString(Key.USER)).andReturn("user").anyTimes();
+        EasyMock.expect(conf.getString(Key.PASSWORD)).andReturn("user").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn(null).anyTimes();
         EasyMock.expect(conf.getString(Key.PORT)).andReturn(null).anyTimes();
         EasyMock.replay(conf);
@@ -49,7 +51,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "user name could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - 访问ocs的用户userName不能设置为空")
     public void testUser_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -60,7 +62,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "password could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - 访问ocs的用户passWord不能设置为空")
     public void testPassword_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -72,7 +74,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "indexes could not be blank")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - 当做key的列编号indexes不能为空")
     public void testIndex_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -86,7 +88,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "illegal index")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "ILLEGAL_PARAM_VALUE - 列编号indexes必须为逗号分隔的非负整数")
     public void testIndex_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -100,7 +102,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:null, recommended:set,add,replace,append,prepend")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - 操作方式writeMode不能为空")
     public void testWriteMode_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -116,7 +118,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write mode:shit, recommended:set,add,replace,append,prepend")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "ILLEGAL_PARAM_VALUE - 不支持操作方式shit，仅支持set,add,replace,append,prepend")
     public void testWriteMode_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -125,14 +127,13 @@ public class TestConfigurationChecker {
         EasyMock.expect(conf.getString(Key.PASSWORD)).andReturn("zd").anyTimes();
         EasyMock.expect(conf.getString(Key.INDEXES, "0")).andReturn("0,2").anyTimes();
         EasyMock.expect(conf.getString(Key.INDEXES)).andReturn("2,3").anyTimes();
-        EasyMock.expect(conf.getString(Key.WRITE_MODE)).andReturn(null).anyTimes();
-        EasyMock.expect(conf.getString(Key.WRITE_MODE, "set")).andReturn("shit").anyTimes();
+        EasyMock.expect(conf.getString(Key.WRITE_MODE)).andReturn("shit").anyTimes();
         EasyMock.replay(conf);
         logger.info("proxy:{},port:{},user:{},password:{},index:{},writeMode:{}", conf.getString(Key.PROXY), conf.getString(Key.PORT), conf.getString(Key.USER), conf.getString(Key.PASSWORD), conf.getString(Key.INDEXES), conf.getString(Key.WRITE_MODE));
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write format:null, recommended:text")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "REQUIRED_VALUE - 写入格式writeFormat不能为空")
     public void testWriteFormat_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -150,7 +151,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "not supported write format:binary, recommended:text")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "ILLEGAL_PARAM_VALUE - 不支持写入格式binary，仅支持text")
     public void testWriteFormat_1() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -168,7 +169,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "expire time must be bigger than 0")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "ILLEGAL_PARAM_VALUE - 数据过期时间设置expireTime不能小于0")
     public void testExpireTime_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -181,14 +182,14 @@ public class TestConfigurationChecker {
         EasyMock.expect(conf.getString(Key.WRITE_MODE, "set")).andReturn("set").anyTimes();
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT, "text")).andReturn("text").anyTimes();
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT)).andReturn("text").anyTimes();
-        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME)).andReturn(0).anyTimes();
-        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE)).andReturn(0).anyTimes();
+        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME)).andReturn(-1).anyTimes();
+        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, 0)).andReturn(-1).anyTimes();
         EasyMock.replay(conf);
         logger.info("proxy:{},port:{},user:{},password:{},index:{},writeMode:{},writeFormat:{},expireTime:{}", conf.getString(Key.PROXY), conf.getString(Key.PORT), conf.getString(Key.USER), conf.getString(Key.PASSWORD), conf.getString(Key.INDEXES), conf.getString(Key.WRITE_MODE), conf.getString(Key.WRITE_FORMAT), conf.getInt(Key.EXPIRE_TIME));
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "batch size must be bigger than 0")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "ILLEGAL_PARAM_VALUE - 批量写入大小设置batchSize必须大于0")
     public void testBatchSize_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("127.1.1.1").anyTimes();
         EasyMock.expect(conf.getString(Key.PORT, "11211")).andReturn("110").anyTimes();
@@ -202,7 +203,7 @@ public class TestConfigurationChecker {
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT, "text")).andReturn("text").anyTimes();
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT)).andReturn("text").anyTimes();
         EasyMock.expect(conf.getInt(Key.EXPIRE_TIME)).andReturn(1000).anyTimes();
-        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE)).andReturn(100).anyTimes();
+        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, 0)).andReturn(100).anyTimes();
         EasyMock.expect(conf.getInt(Key.BATCH_SIZE)).andReturn(-1).anyTimes();
         EasyMock.expect(conf.getInt(Key.BATCH_SIZE, 100)).andReturn(-1).anyTimes();
         EasyMock.replay(conf);
@@ -224,7 +225,7 @@ public class TestConfigurationChecker {
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT, "text")).andReturn("text").anyTimes();
         EasyMock.expect(conf.getString(Key.WRITE_FORMAT)).andReturn("text").anyTimes();
         EasyMock.expect(conf.getInt(Key.EXPIRE_TIME)).andReturn(1000).anyTimes();
-        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, Integer.MAX_VALUE)).andReturn(100).anyTimes();
+        EasyMock.expect(conf.getInt(Key.EXPIRE_TIME, 0)).andReturn(100).anyTimes();
         EasyMock.expect(conf.getInt(Key.BATCH_SIZE)).andReturn(1).anyTimes();
         EasyMock.expect(conf.getInt(Key.BATCH_SIZE, 100)).andReturn(1).anyTimes();
         EasyMock.replay(conf);
@@ -232,7 +233,7 @@ public class TestConfigurationChecker {
         ConfigurationChecker.paramCheck_test(conf);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class, expectedExceptionsMessageRegExp = "unknown host:abc")
+    @Test(expectedExceptions = DataXException.class, expectedExceptionsMessageRegExp = "HOST_UNREACHABLE - 不存在的host地址:abc")
     public void testHostReachableCheck_0() {
         EasyMock.expect(conf.getString(Key.PROXY)).andReturn("abc").anyTimes();
         EasyMock.replay(conf);
