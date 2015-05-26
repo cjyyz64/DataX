@@ -5,9 +5,9 @@ package com.alibaba.datax.plugin.writer.ocswriter;
  * Creator: yuanqi@alibaba-inc.com
  */
 public final class Key {
-    public final static String USER = "userName";
+    public final static String USER = "username";
 
-    public final static String PASSWORD = "passWord";
+    public final static String PASSWORD = "password";
 
     public final static String PROXY = "proxy";
 
