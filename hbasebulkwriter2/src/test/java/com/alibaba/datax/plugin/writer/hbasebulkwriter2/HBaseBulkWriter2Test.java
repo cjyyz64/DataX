@@ -4,12 +4,14 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.conf.DynamicColumnConf;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.conf.FixColumnConf;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.conf.HBaseJobParameterConf;
+import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;
 import com.alibaba.fastjson.JSON;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -20,7 +22,16 @@ import java.util.List;
 /**
  * Created by liqiang on 15/5/25.
  */
-public class HBaseBulkWriter2Test {
+
+@RunWith(LoggedRunner.class)
+public class HBaseBulkWriter2Test{// extends BasicWriterPluginTest {
+
+//    @TestLogger(log = "测试fixcolumn_job0.json.")
+//    @Test
+//    public void testBasic0() throws Exception{
+//        int readerSliceNumber = 1;
+//        super.doWriterTest("fixcolumn_job0.json", readerSliceNumber);
+//    }
 
     @Test
     public void testGetPartitions() throws Exception {
@@ -151,13 +162,11 @@ public class HBaseBulkWriter2Test {
         String rowkey_type = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
 
 
-
-
         HBaseBulkWriter2.Job job = new HBaseBulkWriter2.Job();
         Method method = job.getClass()
-                .getDeclaredMethod("getSortColumn", List.class,String.class,String.class);
+                .getDeclaredMethod("getSortColumn", List.class, String.class, String.class);
         method.setAccessible(true);
-        String sort_column= (String)method.invoke(job, odps_column, hbase_rowkey, rowkey_type);
+        String sort_column = (String) method.invoke(job, odps_column, hbase_rowkey, rowkey_type);
 
         System.out.println(sort_column);
         System.out.println(JSON.toJSONString(job.fixColumnConf));
@@ -169,13 +178,13 @@ public class HBaseBulkWriter2Test {
         configuration.set("job.content[0].reader.parameter.partition", "datax_pt=*");
 
         Method method2 = job.getClass()
-                .getDeclaredMethod("getFixColumnConf",Configuration.class);
+                .getDeclaredMethod("getFixColumnConf", Configuration.class);
         method2.setAccessible(true);
-        HBaseJobParameterConf res= (HBaseJobParameterConf)method2.invoke(job, writerOriginPluginConf);
+        HBaseJobParameterConf res = (HBaseJobParameterConf) method2.invoke(job, writerOriginPluginConf);
         Assert.assertTrue(res instanceof FixColumnConf);
         System.out.println(JSON.toJSONString(res));
 
-        Assert.assertEquals(JSON.toJSONString(res),"{\"hbase_column\":[{\"hname\":\"cf:name\",\"htype\":\"string\",\"index\":\"1\"},{\"hname\":\"cf:age\",\"htype\":\"int\",\"index\":\"2\"},{\"hname\":\"cf:birthday\",\"htype\":\"string\",\"index\":\"3\"}],\"hbase_config\":\"test_hbase_config\",\"hbase_output\":\"test_hbase_output\",\"hbase_rowkey\":[{\"htype\":\"string\",\"index\":\"0\"}],\"hbase_table\":\"test_hbase_table\",\"hdfs_config\":\"test_hdfs_config\"}");
+        Assert.assertEquals(JSON.toJSONString(res), "{\"hbase_column\":[{\"hname\":\"cf:name\",\"htype\":\"string\",\"index\":\"1\"},{\"hname\":\"cf:age\",\"htype\":\"int\",\"index\":\"2\"},{\"hname\":\"cf:birthday\",\"htype\":\"string\",\"index\":\"3\"}],\"hbase_config\":\"test_hbase_config\",\"hbase_output\":\"test_hbase_output\",\"hbase_rowkey\":[{\"htype\":\"string\",\"index\":\"0\"}],\"hbase_table\":\"test_hbase_table\",\"hdfs_config\":\"test_hdfs_config\"}");
 
         configuration.set("job.content[0].writer.parameter.fixedcolumn", JSON.toJSONString(res));
 
@@ -197,13 +206,11 @@ public class HBaseBulkWriter2Test {
         String rowkey_type = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
 
 
-
-
         HBaseBulkWriter2.Job job = new HBaseBulkWriter2.Job();
         Method method = job.getClass()
-                .getDeclaredMethod("getSortColumn", List.class,String.class,String.class);
+                .getDeclaredMethod("getSortColumn", List.class, String.class, String.class);
         method.setAccessible(true);
-        String sort_column= (String)method.invoke(job, odps_column, hbase_rowkey, rowkey_type);
+        String sort_column = (String) method.invoke(job, odps_column, hbase_rowkey, rowkey_type);
 
         System.out.println(sort_column);
         System.out.println(JSON.toJSONString(job.fixColumnConf));
@@ -215,9 +222,9 @@ public class HBaseBulkWriter2Test {
         configuration.set("job.content[0].reader.parameter.partition", "datax_pt=*");
 
         Method method2 = job.getClass()
-                .getDeclaredMethod("getDynamicColumnConf",Configuration.class);
+                .getDeclaredMethod("getDynamicColumnConf", Configuration.class);
         method2.setAccessible(true);
-        HBaseJobParameterConf res= (HBaseJobParameterConf)method2.invoke(job, writerOriginPluginConf);
+        HBaseJobParameterConf res = (HBaseJobParameterConf) method2.invoke(job, writerOriginPluginConf);
         Assert.assertTrue(res instanceof DynamicColumnConf);
         System.out.println(JSON.toJSONString(res));
 
@@ -227,5 +234,29 @@ public class HBaseBulkWriter2Test {
 
         System.out.println(configuration.toString());
     }
-
+//
+//    @Override
+//    protected List<Record> buildDataForWriter() {
+//        List<Record> list = new ArrayList<Record>();
+//        Record r = new DefaultRecord();
+//        String id = "id1";
+//        String name = "name1";
+//        int age = 100;
+//        String birthday = "birthday1";
+//        String gender = "gender";
+//
+//        r.addColumn(new StringColumn(id));
+//        r.addColumn(new StringColumn(name));
+//        r.addColumn(new LongColumn(age));
+//        r.addColumn(new StringColumn(birthday));
+//        r.addColumn(new StringColumn(gender));
+//
+//        list.add(r);
+//        return list;
+//    }
+//
+//    @Override
+//    protected String getTestPluginName() {
+//        return "hbasebulkwriter2";
+//    }
 }
