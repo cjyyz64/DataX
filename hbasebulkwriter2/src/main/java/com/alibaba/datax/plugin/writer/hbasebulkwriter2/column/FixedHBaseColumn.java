@@ -12,6 +12,7 @@ import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -53,15 +54,16 @@ public class FixedHBaseColumn extends HBaseColumn {
   }
 
   public static byte[] toRow(ArrayList<Column> line, int bucketNum,
-                             List<FixedHBaseColumn> rowkeyList) {
+                             List<FixedHBaseColumn> rowkeyList) throws SQLException {
     byte[] rowkey = {};
     for (FixedHBaseColumn column : rowkeyList) {
       try {
         if (column.index != -1) {
           Column field = line.get(column.index);
           if (field.getRawData() == null) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME,
-                "The value of field which combined into rowkey is not allowed to null.");
+//            throw DataXException.asDataXException(BulkWriterError.RUNTIME,
+//                "The value of field which combined into rowkey is not allowed to null.");
+              throw new SQLException( "The value of field which combined into rowkey is not allowed to null.");
           }
           byte[] value = DataTypeConvertor.toBytes(field, column.type);
           rowkey = Bytes.add(rowkey, value);
@@ -69,8 +71,9 @@ public class FixedHBaseColumn extends HBaseColumn {
           rowkey = Bytes.add(rowkey, column.fixed);
         }
       } catch (Throwable e) {
-        throw DataXException.asDataXException(BulkWriterError.RUNTIME, String.format("fail parse row on %s column",
-            column.index), e);
+//        throw DataXException.asDataXException(BulkWriterError.RUNTIME, String.format("fail parse row on %s column",
+//            column.index), e);
+          throw new SQLException(String.format("fail parse row on %s column",column.index), e);
       }
     }
     if (bucketNum != -1) {
@@ -81,7 +84,7 @@ public class FixedHBaseColumn extends HBaseColumn {
 
   public static KeyValue[] toKVs(ArrayList<Column> line, byte[] rowkey,
       List<FixedHBaseColumn> columnList, String encoding, long timestamp,
-      String nullMode) {
+      String nullMode) throws SQLException {
     KeyValue[] kvs = new KeyValue[columnList.size()];
     nullMode = nullMode.toUpperCase();
     for (FixedHBaseColumn hbaseColumn : columnList) {
@@ -106,8 +109,9 @@ public class FixedHBaseColumn extends HBaseColumn {
           }
         }
       } catch (Throwable e) {
-        throw DataXException.asDataXException(BulkWriterError.RUNTIME, String.format(
-            "fail parse column on %s column", hbaseColumn.index), e);
+//        throw DataXException.asDataXException(BulkWriterError.RUNTIME, String.format(
+//            "fail parse column on %s column", hbaseColumn.index), e);
+          throw new SQLException(String.format("fail parse column on %s column", hbaseColumn.index), e);
       }
     }
     return kvs;

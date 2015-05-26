@@ -21,6 +21,7 @@ import com.alibaba.datax.plugin.writer.hbasebulkwriter2.ConfigurationBuilders.Ro
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.util.PhoenixEncoder;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,7 +97,7 @@ public class FixedHBaseColumnTest {
   }
 
   @Test
-  public void testToKVs() throws JSONException {
+  public void testToKVs() throws JSONException,SQLException {
     RowkeySchemaBuilder rowkeySchemaBuilder = new RowkeySchemaBuilder();
     rowkeySchemaBuilder.addColumn(0, "ph_long");
     rowkeySchemaBuilder.addConstant("byte", "2");

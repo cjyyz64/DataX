@@ -389,7 +389,7 @@ public class HBaseBulkWriter2 extends Writer {
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
-            bulker.startWrite(new HBaseLineReceiver(lineReceiver));
+            bulker.startWrite(new HBaseLineReceiver(lineReceiver),super.getTaskPluginCollector());
         }
     }
 }

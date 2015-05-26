@@ -7,6 +7,7 @@ import com.alibaba.datax.plugin.writer.hbasebulkwriter2.BulkWriterError;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class DynamicHBaseColumn extends HBaseColumn {
    * @return
    */
   public static KeyValue toKV(ArrayList<Column> line,
-      HBaseColumn.HBaseDataType rowkeyType, List<DynamicHBaseColumn> columnList) {
+      HBaseColumn.HBaseDataType rowkeyType, List<DynamicHBaseColumn> columnList) throws SQLException {
     final int ROWKEY_INDEX = 0;
     final int COLUMN_INDEX = 1;
     final int TIMESTAMP_INDEX = 2;
@@ -54,7 +55,7 @@ public class DynamicHBaseColumn extends HBaseColumn {
         }
       }
       if (kv == null) {
-        throw DataXException.asDataXException(BulkWriterError.RUNTIME, String.format("Couldn't find column(%s) type.", columnStr));
+          throw new SQLException(String.format("Couldn't find column(%s) type.", columnStr));
       }
     } else {
       kv = new KeyValue(rowkey, family, qualifier, timestamp, KeyValue.Type.DeleteColumn);

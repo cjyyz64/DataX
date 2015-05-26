@@ -9,6 +9,8 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.hbase.util.Bytes;
 
+import java.sql.SQLException;
+
 public class DataTypeConvertor {
     public static byte[] toBoolBytes(BoolColumn dataxBool, HBaseDataType hbaseDataType) {
         if (dataxBool.getRawData() == null) {
@@ -80,14 +82,14 @@ public class DataTypeConvertor {
 //    throw DataXException.asDataXException(BulkWriterError.RUNTIME_CAST, String.format("can not convert datax NULL to hbase %s" , hbaseDataType));
 //  }
 
-    public static byte[] toBytes(Column dataxColumn, HBaseDataType hbaseDataType) {
+    public static byte[] toBytes(Column dataxColumn, HBaseDataType hbaseDataType) throws SQLException {
         return toBytes(dataxColumn, hbaseDataType, "utf-8");
     }
 
-    public static byte[] toBytes(Column dataxColumn, HBaseDataType hbaseDataType, String encoding) {
+    public static byte[] toBytes(Column dataxColumn, HBaseDataType hbaseDataType, String encoding) throws SQLException {
 
         if (dataxColumn.getRawData() == null) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME_CAST, "input dataxColumn is null");
+            throw new SQLException("input dataxColumn is null");
         }
         byte[] bytes = null;
 

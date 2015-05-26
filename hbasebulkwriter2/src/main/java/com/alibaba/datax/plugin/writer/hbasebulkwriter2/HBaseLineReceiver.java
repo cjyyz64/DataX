@@ -8,21 +8,42 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import java.util.ArrayList;
 
 public class HBaseLineReceiver {
-  RecordReceiver receiver;
 
-  public HBaseLineReceiver(RecordReceiver receiver) {
-    this.receiver = receiver;
-  }
+    public static class HBaseRecord {
+        private final Record record;
+        private final ArrayList<Column> line;
 
-  public ArrayList<Column> read() {
-    Record originLine = receiver.getFromReader();
-    if (originLine == null) {
-      return null;
+        public HBaseRecord(Record record, ArrayList<Column> line) {
+            this.record = record;
+            this.line = line;
+        }
+
+        public Record getRecord() {
+            return record;
+        }
+
+        public ArrayList<Column> getLine() {
+            return line;
+        }
+
+
     }
-    ArrayList<Column> line = new ArrayList<Column>(originLine.getColumnNumber());
-    for (int i = 0; i < originLine.getColumnNumber(); i++) {
-      line.add(originLine.getColumn(i));
+
+    RecordReceiver receiver;
+
+    public HBaseLineReceiver(RecordReceiver receiver) {
+        this.receiver = receiver;
     }
-    return line;
-  }
+
+    public HBaseRecord read() {
+        Record originLine = receiver.getFromReader();
+        if (originLine == null) {
+            return null;
+        }
+        ArrayList<Column> line = new ArrayList<Column>(originLine.getColumnNumber());
+        for (int i = 0; i < originLine.getColumnNumber(); i++) {
+            line.add(originLine.getColumn(i));
+        }
+        return new HBaseRecord(originLine, line);
+    }
 }

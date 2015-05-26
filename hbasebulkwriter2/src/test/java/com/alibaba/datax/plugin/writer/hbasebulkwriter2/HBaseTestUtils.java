@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -287,22 +288,26 @@ public class HBaseTestUtils {
       private long index = 0;
       private long count = -1;
 
-      public ArrayList<Column> read() {
+      public HBaseRecord read(){
         if (count == -1) {
-          byte[] rowkey = FixedHBaseColumn.toRow(line, -1, rowkeyList);
-          KeyValue[] kvs = FixedHBaseColumn.toKVs(line, rowkey, columnList, "utf-8", System.currentTimeMillis(), HBaseConsts.NULL_MODE_DEFAULT);
-          int valueLen = 0;
-          for (KeyValue kv : kvs) {
-            valueLen += kv.getValueLength();
-          }
-          count = size / valueLen;
+            try {
+                byte[] rowkey = FixedHBaseColumn.toRow(line, -1, rowkeyList);
+                KeyValue[] kvs = FixedHBaseColumn.toKVs(line, rowkey, columnList, "utf-8", System.currentTimeMillis(), HBaseConsts.NULL_MODE_DEFAULT);
+                int valueLen = 0;
+                for (KeyValue kv : kvs) {
+                  valueLen += kv.getValueLength();
+                }
+                count = size / valueLen;
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         if (index < count) {
           line.add(0, new StringColumn(base + index + ""));
           line.add(1, new StringColumn(base + index + ""));
           index++;
-          return line;
+          return new HBaseRecord(null,line);
         } else {
           return null;
         }
@@ -342,7 +347,7 @@ public class HBaseTestUtils {
       HBaseBulker writer =
           HBaseTestUtils.initWriter(new HBaseBulker(), rowkeyList, columnList);
       long start = System.currentTimeMillis();
-      writer.startWrite(receiver);
+      writer.startWrite(receiver,null);
       long end = System.currentTimeMillis();
       writer.finish();
       long spent = end - start;
