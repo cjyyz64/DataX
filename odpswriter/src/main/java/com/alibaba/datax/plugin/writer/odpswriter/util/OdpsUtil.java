@@ -31,8 +31,6 @@ public class OdpsUtil {
     public static void checkNecessaryConfig(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.ODPS_SERVER,
                 OdpsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.TUNNEL_SERVER,
-                OdpsWriterErrorCode.REQUIRED_VALUE);
 
         originalConfig.getNecessaryValue(Key.PROJECT,
                 OdpsWriterErrorCode.REQUIRED_VALUE);
