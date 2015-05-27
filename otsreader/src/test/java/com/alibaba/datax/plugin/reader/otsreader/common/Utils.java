@@ -150,10 +150,12 @@ public class Utils {
         // drop table
         DeleteTableRequest deleteTableRequest = new DeleteTableRequest();
         deleteTableRequest.setTableName(tableName);
+        
+        Thread.sleep(5 * 1000);
         try {
             ots.deleteTable(deleteTableRequest);
         } catch (Exception e) {
-            //e.printStackTrace();
+            e.printStackTrace();
         }
 
         Thread.sleep(5 * 1000);
