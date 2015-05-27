@@ -87,7 +87,7 @@ public final class RetryUtil {
                 try {
                     return call(callable);
                 } catch (Exception e) {
-                    LOG.debug("Exception when calling callable", e);
+                    LOG.error("Exception when calling callable, 即将尝试执行第"+(i+1)+"次重试. 异常Msg:" + e.getMessage());
                     saveException = e;
                     if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
                         long timeToSleep;
@@ -103,7 +103,6 @@ public final class RetryUtil {
                         }
                     }
                 }
-
             }
             throw saveException;
         }
