@@ -43,15 +43,14 @@ public final class ConfigParser {
 
         boolean isJobResourceFromHttp = jobResource.trim().toLowerCase().startsWith("http");
 
-        //设置httpclient的 HTTP_TIMEOUT_INMILLIONSECONDS
-        Configuration coreConfig = ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH);
-        int httpTimeOutInMillionSeconds = coreConfig.getInt(
-                CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
-        HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
-
-        HttpClientUtil httpClientUtil = new HttpClientUtil();
-
         if (isJobResourceFromHttp) {
+            //设置httpclient的 HTTP_TIMEOUT_INMILLIONSECONDS
+            Configuration coreConfig = ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH);
+            int httpTimeOutInMillionSeconds = coreConfig.getInt(
+                    CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
+            HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
+
+            HttpClientUtil httpClientUtil = new HttpClientUtil();
             try {
                 URL url = new URL(jobResource);
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
