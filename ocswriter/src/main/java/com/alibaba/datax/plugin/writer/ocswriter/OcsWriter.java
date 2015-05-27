@@ -29,7 +29,10 @@ import java.util.concurrent.TimeUnit;
 /**
  * Time:    2015-05-06 16:01
  * Creator: yuanqi@alibaba-inc.com
- * TODO 1，控制速度 2、MemcachedClient连接超时情况处理
+ * TODO
+ * 1，控制速度
+ * 2、MemcachedClient长连接长时间不写入数据可能会被server强行关闭
+ * 3、以后支持json格式的value
  */
 public class OcsWriter extends Writer {
 
@@ -112,7 +115,7 @@ public class OcsWriter extends Writer {
 
         /**
          * 建立ocs客户端连接
-         * 重试10次，间隔时间指数增长
+         * 重试9次，间隔时间指数增长
          */
         private MemcachedClient getMemcachedConn(final String proxy, final String port, final AuthDescriptor ad) throws Exception {
             return RetryUtil.executeWithRetry(new Callable<MemcachedClient>() {
@@ -124,7 +127,7 @@ public class OcsWriter extends Writer {
                                     .build(),
                             AddrUtil.getAddresses(proxy + ":" + port));
                 }
-            }, 10, 1000L, true);
+            }, 9, 1000L, true);
         }
 
         @Override
@@ -136,7 +139,19 @@ public class OcsWriter extends Writer {
                 try {
                     key = buildKey(record);
                     value = buildValue(record);
-                    commit(key, value);
+                    switch (writeMode) {
+                        case set:
+                        case replace:
+                        case add:
+                            commitWithRetry(key, value);
+                            break;
+                        case append:
+                        case prepend:
+                            commit(key, value);
+                            break;
+                        default:
+                            //没有default，因为参数检查的时候已经判断，不可能出现5中模式之外的模式
+                    }
                 } catch (Exception e) {
                     this.taskPluginCollector.collectDirtyRecord(record, e);
                 }
@@ -144,40 +159,48 @@ public class OcsWriter extends Writer {
         }
 
         /**
+         * 没有重试的commit
+         */
+        private void commit(final String key, final String value) {
+            OperationFuture<Boolean> future;
+            switch (writeMode) {
+                case set:
+                    future = client.set(key, expireTime, value);
+                    break;
+                case add:
+                    //幂等原则：相同的输入得到相同的输出，不管调用多少次。
+                    //所以add和replace是幂等的。
+                    future = client.add(key, expireTime, value);
+                    break;
+                case replace:
+                    future = client.replace(key, expireTime, value);
+                    break;
+                //todo 【注意】append和prepend重跑任务不能支持幂等，使用需谨慎，不需要重试
+                case append:
+                    future = client.append(0L, key, value);
+                    break;
+                case prepend:
+                    future = client.prepend(0L, key, value);
+                    break;
+                default:
+                    throw DataXException.asDataXException(OcsWriterErrorCode.DIRTY_RECORD, String.format("不支持的写入模式%s", writeMode.toString()));
+                    //因为前面参数校验的时候已经判断，不可能存在5中操作之外的类型。
+            }
+            //【注意】getStatus()返回为null有可能是因为get()超时导致，此种情况当做脏数据处理。但有可能数据已经成功写入ocs。
+            if (future == null || future.getStatus() == null || !future.getStatus().isSuccess()) {
+                throw DataXException.asDataXException(OcsWriterErrorCode.COMMIT_FAILED, "提交数据到ocs失败");
+            }
+        }
+
+        /**
          * 提交数据到ocs，有重试机制
          */
-        private boolean commit(final String key, final String value) throws Exception {
-            return RetryUtil.executeWithRetry(new Callable<Boolean>() {
+        private void commitWithRetry(final String key, final String value) throws Exception {
+            RetryUtil.executeWithRetry(new Callable<Object>() {
                 @Override
-                public Boolean call() throws Exception {
-                    OperationFuture<Boolean> future = null;
-                    switch (writeMode) {
-                        case set:
-                            future = client.set(key, expireTime, value);
-                            break;
-                        case add:
-                            //幂等原则：相同的输入得到相同的输出，不管调用多少次。
-                            //所以add和replace是幂等的。
-                            future = client.add(key, expireTime, value);
-                            break;
-                        case replace:
-                            future = client.replace(key, expireTime, value);
-                            break;
-                        //todo 【注意】append和prepend重跑任务不能支持幂等，使用需谨慎
-                        case append:
-                            future = client.append(0L, key, value);
-                            break;
-                        case prepend:
-                            future = client.prepend(0L, key, value);
-                            break;
-                        default:
-                            //因为前面参数校验的时候已经判断，不可能存在5中操作之外的类型。所以，不需要default。
-                    }
-                    //【注意】getStatus()返回为null有可能是因为get()超时导致，此种情况当做脏数据处理。但有可能数据已经成功写入ocs。
-                    if (future == null || future.getStatus() == null || !future.getStatus().isSuccess()) {
-                        throw DataXException.asDataXException(OcsWriterErrorCode.COMMIT_FAILED, "提交数据到ocs失败");
-                    }
-                    return Boolean.TRUE;
+                public Object call() throws Exception {
+                    commit(key, value);
+                    return null;
                 }
             }, 3, 1000L, false);
         }
@@ -232,13 +255,18 @@ public class OcsWriter extends Writer {
                     throw DataXException.asDataXException(OcsWriterErrorCode.DIRTY_RECORD, String.format("不存在第%s列", index));
                 }
                 Column.Type type = col.getType();
+                String value;
                 switch (type) {
                     case STRING:
                     case BOOL:
                     case DOUBLE:
                     case LONG:
                     case DATE:
-                        keyList.add(col.asString());
+                        value = col.asString();
+                        if (value != null && value.contains(delimiter)) {
+                            throw DataXException.asDataXException(OcsWriterErrorCode.DIRTY_RECORD, String.format("主键中包含分隔符:%s", value));
+                        }
+                        keyList.add(value);
                         break;
                     default:
                         //目前不支持二进制，如果遇到二进制，则当做脏数据处理
@@ -253,19 +281,23 @@ public class OcsWriter extends Writer {
         }
 
         /**
-         * shutdown中会有数据异步提交，等待5min。
-         * 1、此处有可能抛出RuntimeException，如果遇到RuntimeException则任务失败。
-         * 2、不能保证5分钟后所有数据都已经提交到ocs，所以5min之内还未返回true，则认为任务失败。
+         * shutdown中会有数据异步提交，需要重试。
          */
         @Override
         public void destroy() {
             try {
-                if (client == null || client.shutdown(300L, TimeUnit.SECONDS)) {
-                    return;
-                }
-                throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient失败");
+                RetryUtil.executeWithRetry(new Callable<Object>() {
+                    @Override
+                    public Object call() throws Exception {
+                        if (client == null || client.shutdown(10L, TimeUnit.MILLISECONDS)) {
+                            return null;
+                        } else {
+                            throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient失败");
+                        }
+                    }
+                }, 9, 1000L, true);
             } catch (Exception e) {
-                throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient时发生异常", e);
+                throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient失败", e);
             }
         }
 
