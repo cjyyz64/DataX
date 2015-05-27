@@ -34,7 +34,12 @@ public abstract class BasicPluginTest {
 
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<String>();
-        commands.add("mvn");
+        String osName = System.getProperty("os.name");
+        if(osName.contains("Windows")) {
+            commands.add("mvn.bat");
+        } else {
+            commands.add("mvn");
+        }
         commands.add("install");
         commands.add("-Dmaven.test.skip=true");
         pb.command(commands);

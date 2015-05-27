@@ -175,7 +175,7 @@ public final class DBUtil {
                     return DBUtil.connect(dataBaseType, jdbcUrl, username,
                             password);
                 }
-            }, Constant.MAX_TRY_TIMES, 1000L, true);
+            }, 9, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.CONN_DB_ERROR,
