@@ -179,7 +179,7 @@ public class OcsWriter extends Writer {
                     }
                     return Boolean.TRUE;
                 }
-            }, 10, 100L, true);
+            }, 3, 1000L, false);
         }
 
         /**
