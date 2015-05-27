@@ -51,6 +51,7 @@
 
         <!-- writer -->
         <module>mysqlwriter</module>
+        <module>mysqlrulewriter</module>
         <module>drdswriter</module>
         <module>odpswriter</module>
         <module>txtfilewriter</module>
@@ -70,6 +71,8 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
+        <module>mongodbreader</module>
+        <module>mongodbwriter</module>
 
         <module>adswriter</module>
         <module>ocswriter</module>
@@ -87,11 +90,11 @@
                 <artifactId>fastjson</artifactId>
                 <version>${fastjson-version}</version>
             </dependency>
-            <!--<dependency>-->
-                <!--<groupId>com.google.guava</groupId>-->
-                <!--<artifactId>guava</artifactId>-->
-                <!--<version>${guava-version}</version>-->
-            <!--</dependency>-->
+            <!--<dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava-version}</version>
+            </dependency>-->
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>

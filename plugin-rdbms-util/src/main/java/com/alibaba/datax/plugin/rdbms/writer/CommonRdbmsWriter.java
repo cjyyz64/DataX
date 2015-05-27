@@ -134,22 +134,23 @@ public class CommonRdbmsWriter {
         protected static final Logger LOG = LoggerFactory
                 .getLogger(Task.class);
 
-        private DataBaseType dataBaseType;
+        protected DataBaseType dataBaseType;
         private static final String VALUE_HOLDER = "?";
 
-        private String username;
-        private String password;
-        private String jdbcUrl;
+        protected String username;
+        protected String password;
+        protected String jdbcUrl;
         protected String table;
         protected List<String> columns;
-        private List<String> preSqls;
-        private List<String> postSqls;
+        protected List<String> preSqls;
+        protected List<String> postSqls;
         protected int batchSize;
+        protected int batchByteSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-        private static String BASIC_MESSAGE;
+        protected static String BASIC_MESSAGE;
 
         protected static String INSERT_OR_REPLACE_TEMPLATE;
 
@@ -174,6 +175,7 @@ public class CommonRdbmsWriter {
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
@@ -212,6 +214,7 @@ public class CommonRdbmsWriter {
             calcWriteRecordSql();
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
+            int bufferBytes = 0;
             try {
                 Record record;
                 while ((record = recordReceiver.getFromReader()) != null) {
@@ -227,21 +230,25 @@ public class CommonRdbmsWriter {
                     }
 
                     writeBuffer.add(record);
+                    bufferBytes += record.getByteSize();
 
-                    if (writeBuffer.size() >= batchSize) {
+                    if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         doBatchInsert(connection, writeBuffer);
                         writeBuffer.clear();
+                        bufferBytes = 0;
                     }
                 }
                 if (!writeBuffer.isEmpty()) {
                     doBatchInsert(connection, writeBuffer);
                     writeBuffer.clear();
+                    bufferBytes = 0;
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
+                bufferBytes = 0;
                 DBUtil.closeDBResources(null, null, connection);
             }
         }

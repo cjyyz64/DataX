@@ -4,8 +4,10 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
@@ -25,6 +27,8 @@ import java.util.concurrent.Executors;
 public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
     protected Writer.Job writerMaster = null;
+
+    public List<Record> dirRecordList = new ArrayList<Record>();
 
     @BeforeClass
     public static void checkPluginPackageDir() {
@@ -129,8 +133,21 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
                 PluginType.WRITER, getTestPluginName());
 
         writerRunner.setJobConf(jobConf);
+        writerRunner.setRunnerCommunication(new Communication());
         writerRunner.setRecordReceiver(new RecordReceiverForTest(
                 buildDataForWriter()));
+        writerRunner.setTaskPluginCollector(new TaskPluginCollector() {
+            @Override
+            public void collectDirtyRecord(Record dirtyRecord, Throwable t, String errorMessage) {
+                System.out.println("=======捕捉到脏数据,record=" + dirtyRecord + ",e=" + t + ",errorMsg=" + errorMessage);
+                dirRecordList.add(dirtyRecord);
+            }
+
+            @Override
+            public void collectMessage(String key, String value) {
+                System.out.println("======key=" + key + ",value=" + value);
+            }
+        });
 
         return writerRunner;
 

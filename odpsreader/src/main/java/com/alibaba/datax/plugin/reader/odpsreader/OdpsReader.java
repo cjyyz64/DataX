@@ -9,7 +9,6 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
-import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -348,8 +347,6 @@ public class OdpsReader extends Reader {
             }
 
             try {
-                RecordReader recordReader = downloadSession.openRecordReader(
-                        start, count, this.isCompress);
                 List<Configuration> parsedColumnsTmp = this.readerSliceConf
                         .getListConfiguration(Constant.PARSED_COLUMNS);
                 List<Pair<String, ColumnType>> parsedColumns = new ArrayList<Pair<String, ColumnType>>();
@@ -362,15 +359,38 @@ public class OdpsReader extends Reader {
                             columnName, columnType));
 
                 }
-                ReaderProxy readerProxy = new ReaderProxy(recordSender,
-                        recordReader, columnTypeMap, parsedColumns, partition,
-                        this.isPartitionedTable);
-                readerProxy.doRead();
+                ReaderProxy readerProxy = new ReaderProxy(recordSender, downloadSession,
+                        columnTypeMap, parsedColumns, partition, this.isPartitionedTable,
+                        start, count, this.isCompress);
+
+                retryDoRead(3,2000,readerProxy);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
                         String.format("源头表:%s 的分区:%s 读取失败, 请联系 ODPS 管理员查看错误详情.", this.tableName, partition), e);
             }
 
+        }
+
+        private void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) {
+
+            int count = 1;
+            while(retryTimes > 0) {
+                try {
+                    readerProxy.doRead();
+                    break;
+                } catch (DataXException e) {
+                    if(OdpsReaderErrorCode.ODPS_READ_TIMEOUT.getCode().equals(e.getErrorCode().getCode())) {
+                        try {
+                            LOG.warn("odps read-time-out, 重试第{}次",count++);
+                            Thread.sleep(retryInterval);
+                            retryTimes--;
+                        } catch (InterruptedException ignored) {
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+            }
         }
 
         @Override

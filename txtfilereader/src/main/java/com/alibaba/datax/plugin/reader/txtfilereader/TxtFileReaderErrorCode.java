@@ -16,7 +16,8 @@ public enum TxtFileReaderErrorCode implements ErrorCode {
 	READ_FILE_IO_ERROR("TxtFileReader-07", "您配置的文件在读取时出现IO异常."),
 	SECURITY_NOT_ENOUGH("TxtFileReader-08", "您缺少权限执行相应的文件操作."),
 	CONFIG_INVALID_EXCEPTION("TxtFileReader-09", "您的参数配置错误."),
-	RUNTIME_EXCEPTION("TxtFileReader-10", "出现运行时异常, 请联系我们");
+	RUNTIME_EXCEPTION("TxtFileReader-10", "出现运行时异常, 请联系我们"),
+	EMPTY_DIR_EXCEPTION("TxtFileReader-11", "您尝试读取的文件目录为空."),;
 
 	private final String code;
 	private final String description;
