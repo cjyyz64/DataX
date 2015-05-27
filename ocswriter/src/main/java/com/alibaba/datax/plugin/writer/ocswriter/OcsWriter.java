@@ -289,13 +289,13 @@ public class OcsWriter extends Writer {
                 RetryUtil.executeWithRetry(new Callable<Object>() {
                     @Override
                     public Object call() throws Exception {
-                        if (client == null || client.shutdown(10L, TimeUnit.MILLISECONDS)) {
+                        if (client == null || client.shutdown(10000L, TimeUnit.MILLISECONDS)) {
                             return null;
                         } else {
                             throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient失败");
                         }
                     }
-                }, 9, 1000L, true);
+                }, 8, 1000L, true);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OcsWriterErrorCode.SHUTDOWN_FAILED, "关闭ocsClient失败", e);
             }
