@@ -75,6 +75,7 @@
         <module>mongodbwriter</module>
 
         <module>adswriter</module>
+        <module>ocswriter</module>
     </modules>
 
     <dependencyManagement>
