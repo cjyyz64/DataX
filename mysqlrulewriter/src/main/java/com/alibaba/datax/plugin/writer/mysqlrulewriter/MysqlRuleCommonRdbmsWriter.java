@@ -73,6 +73,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
             this.columnNumber = this.columns.size();
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
@@ -132,6 +133,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             this.resultSetMetaData = DBUtil.getColumnMetaData(metaConn, metaTable, StringUtils.join(this.columns, ","));
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
+            int bufferBytes = 0;
             try {
                 Record record;
                 while ((record = recordReceiver.getFromReader()) != null) {
@@ -147,10 +149,12 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                     }
 
                     writeBuffer.add(record);
+                    bufferBytes += record.getByteSize();
 
-                    if (writeBuffer.size() >= batchSize) {
+                    if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         calcRuleAndDoBatchInsert(writeBuffer);
                         writeBuffer.clear();
+                        bufferBytes = 0;
                     }
                 }
                 if (!writeBuffer.isEmpty()) {
