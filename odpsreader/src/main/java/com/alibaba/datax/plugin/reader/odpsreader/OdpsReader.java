@@ -363,7 +363,7 @@ public class OdpsReader extends Reader {
                         columnTypeMap, parsedColumns, partition, this.isPartitionedTable,
                         start, count, this.isCompress);
 
-                retryDoRead(3,2000,readerProxy);
+                retryDoRead(10, 2000, readerProxy);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
                         String.format("源头表:%s 的分区:%s 读取失败, 请联系 ODPS 管理员查看错误详情.", this.tableName, partition), e);
@@ -371,8 +371,7 @@ public class OdpsReader extends Reader {
 
         }
 
-        private void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) {
-
+        public void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) throws Exception {
             int count = 1;
             while(retryTimes > 0) {
                 try {
@@ -380,11 +379,13 @@ public class OdpsReader extends Reader {
                     break;
                 } catch (DataXException e) {
                     if(OdpsReaderErrorCode.ODPS_READ_TIMEOUT.getCode().equals(e.getErrorCode().getCode())) {
+                        LOG.warn("odps read-time-out, 重试第{}次",count++);
                         try {
-                            LOG.warn("odps read-time-out, 重试第{}次",count++);
                             Thread.sleep(retryInterval);
-                            retryTimes--;
-                        } catch (InterruptedException ignored) {
+                        } catch (InterruptedException ignored) {}
+                        retryTimes--;
+                        if(retryTimes <= 0) {
+                            throw e;
                         }
                     } else {
                         throw e;
