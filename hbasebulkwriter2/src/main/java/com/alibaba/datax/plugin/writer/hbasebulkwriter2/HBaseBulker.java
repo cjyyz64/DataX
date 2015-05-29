@@ -6,6 +6,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.DynamicHBaseColumn;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.HBaseColumn;
+import com.google.common.base.Strings;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
@@ -66,6 +67,7 @@ public class HBaseBulker {
     }
 
     public int init(Configuration dataxConf) throws IOException {
+
         if (dataxConf.get(PluginKeys.PREFIX_FIXED) != null) {
             LOG.info("bulkwriter in fixed column mode");
             loadFixedColumnConfig(dataxConf);
@@ -73,10 +75,9 @@ public class HBaseBulker {
             LOG.info("bulkwriter in dynamic column mode");
             loadDynamicColumnConfig(dataxConf);
         } else {
-            throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "can not find fixedcolumn or dynamiccolumn in conf");
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME,
+                    "DATAX FATAL! 没有生成有效的配置(缺少fixedcolumn or dynamiccolumn)");
         }
-
         if (this.hbaseConf == null) {
             this.hbaseConf = HBaseHelper.getConfiguration(hdfsConfPath,
                     hbaseConfPath, diamondClusterId);
@@ -173,21 +174,18 @@ public class HBaseBulker {
                 false);
         this.encoding = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.ENCODING, "utf-8");
         this.hdfsOutputDir = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.OUTPUT);
-        if (this.hdfsOutputDir == null) {
-            throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_output.");
+        if (Strings.isNullOrEmpty(this.hdfsOutputDir)) {
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME,
+                    "DATAX FATAL! 没有生成有效的配置(缺少hbase_output),请联系askdatax");
         }
+
         this.isDynamicQualifier = false;
     }
 
     public int prepare() {
-        try {
-            HBaseHelper.checkTmpOutputDir(hbaseConf, hdfsOutputDir);
-            HBaseColumn.checkColumnList(htable, columnList);
-        } catch (Exception e) {
-            throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, e);
-        }
 
+        HBaseHelper.checkTmpOutputDir(hbaseConf, hdfsOutputDir, 10);
+        HBaseColumn.checkColumnList(htable, columnList, 10);
         return 0;
     }
 
@@ -205,7 +203,7 @@ public class HBaseBulker {
             }
             return 0;
         } catch (Throwable e) {
-            HBaseHelper.clearTmpOutputDir(hbaseConf, hdfsOutputDir);
+            clearDir();
             throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
         }
     }
@@ -247,8 +245,12 @@ public class HBaseBulker {
             LOG.error("BulkLoad error.", e);
             throw DataXException.asDataXException(BulkWriterError.HBASE_ERROR, e);
         } finally {
-            HBaseHelper.clearTmpOutputDir(hbaseConf, hdfsOutputDir);
+            clearDir();
         }
         return 0;
+    }
+
+    public void clearDir(){
+        HBaseHelper.clearTmpOutputDir(hbaseConf,  hdfsOutputDir);
     }
 }

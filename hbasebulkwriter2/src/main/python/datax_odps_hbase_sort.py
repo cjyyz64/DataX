@@ -143,9 +143,9 @@ if __name__ == "__main__":
     if odpsutil.is_empty(options.datax_home):
         options.datax_home = "/home/admin/datax3"
 
-    res_file = "t_datax_odps2hbase_resource_%s%s" % (options.src_table, options.suffix)
-    fun_name = "t_datax_odps2hbase_function_%s%s" % (options.src_table, options.suffix)
-    tmp_table = "t_datax_odps2hbase_table_%s%s" % (options.src_table, options.suffix)
+    res_file = "t_dx3_o2h_res_%s%s" % (options.src_table, options.suffix)
+    fun_name = "t_dx3_o2h_fun_%s%s" % (options.src_table, options.suffix)
+    tmp_table = "t_dx3_o2h_tbl_%s%s" % (options.src_table, options.suffix)
 
     create_tmp_table(options.src_table, tmp_table)
     regions = get_hbase_regions_json(options.dst_table, options.hbase_config, options.cluster_id, options.datax_home)

@@ -1,9 +1,9 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter2;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.hadoop.compression.lzo.LzoCodec;
 import com.taobao.diamond.client.Diamond;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.Callable;
 
 public class HBaseHelper {
 
@@ -61,7 +63,7 @@ public class HBaseHelper {
     public static void checkConf(Configuration conf) {
         String uri = conf.get("fs.default.name");
         if (!uri.startsWith("hdfs")) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME,"Check the parameter of fs.default.name in hdfs-site.xml, now is "
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "Check the parameter of fs.default.name in hdfs-site.xml, now is "
                     + uri);
         }
     }
@@ -71,20 +73,49 @@ public class HBaseHelper {
         fs.getStatus();
     }
 
-    public static void checkTmpOutputDir(Configuration conf, String outputDir)
+    public static void checkTmpOutputDir(final Configuration conf, final String outputDir, int retryTimes) {
+
+        try {
+            RetryUtil.executeWithRetry(new Callable<Integer>() {
+                @Override
+                public Integer call() throws Exception {
+                    FileSystem fs = FileSystem.get(conf);
+                    Path path = new Path(outputDir);
+
+                    if (!fs.exists(path)) {
+                        fs.mkdirs(path);
+                    }
+                    return 0;
+                }
+            }, retryTimes, 1, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(BulkWriterError.IO, "请联系hbase同学检查hadoop集群", e);
+        }
+
+
+        LOG.info("checkTmpOutputDir => " + outputDir);
+    }
+
+    public static String checkOutputDirAndMake(Configuration conf, String outputDir)
             throws IOException {
         if (outputDir == null || outputDir.trim().length() == 0) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME,"Check the value of output parameter in job xml.");
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "DATAX FATAL! 没有生成有效的配置(缺少hbase_output),请联系askdatax");
         }
 
         FileSystem fs = FileSystem.get(conf);
+
         Path path = new Path(outputDir);
-        if (!fs.exists(path)) {
-            fs.mkdirs(path);
-        } else {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME,String.format(
-                    "Clear up the dir %s created by tasks before.", outputDir));
+
+        Random random = new Random();
+        //一直重试下去
+        while (fs.exists(path)) {
+            LOG.info("checkOutputDirAndMake# {} 目录已经存在，尝试创建新的目录... ", outputDir);
+            outputDir = outputDir + "_" + random.nextInt(100000);
+            path = new Path(outputDir);
         }
+        fs.mkdirs(path);
+        LOG.info("checkOutputDirAndMake# 使用的目录为{} ", outputDir);
+        return outputDir;
     }
 
     @SuppressWarnings("deprecation")
@@ -97,6 +128,8 @@ public class HBaseHelper {
                     String.format("Clean tmpOutputDir %s failed!", outputDir),
                     e);
         }
+
+        LOG.info("clearTmpOutputDir# 目标目录{}",outputDir);
     }
 
     public static void loadNativeLibrary() {
@@ -107,14 +140,14 @@ public class HBaseHelper {
             if (e.getMessage().contains("already loaded in another classloader")) {
                 LOG.info("Native libraries already loaded.");
             } else {
-                throw DataXException.asDataXException(BulkWriterError.RUNTIME,e);
+                throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
             }
         }
     }
 
     public static void checkNativeLzoLibrary(Configuration conf) {
         if (!LzoCodec.isNativeLzoLoaded(conf)) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME,"Load native-lzo failed!");
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "Load native-lzo failed!");
         }
     }
 
@@ -134,7 +167,7 @@ public class HBaseHelper {
             // Because the bug of HADOOP-7614
             Configuration tmpConf = new Configuration();
             tmpConf.addResource(in);
-            for (Map.Entry<String, String> kv: tmpConf) {
+            for (Map.Entry<String, String> kv : tmpConf) {
                 conf.set(kv.getKey(), kv.getValue());
             }
         }
@@ -173,7 +206,7 @@ public class HBaseHelper {
                 conf = getConfigurationByClusterId(conf, clusterId);
             } catch (Exception e) {
                 LOG.error("Get cluster configuration file from diamond failed.", e);
-                throw DataXException.asDataXException(BulkWriterError.RUNTIME,e);
+                throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
             }
         }
 

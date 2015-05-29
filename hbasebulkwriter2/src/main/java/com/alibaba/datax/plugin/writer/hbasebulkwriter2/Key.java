@@ -5,6 +5,11 @@ public final class Key {
     /**
      * 此处声明插件用到的需要插件使用者提供的配置项
      */
+
+    public final static String HDFS_DIR_BULKLOAD = "/group/datax3_hbasebulkwrite";
+
+    public final static String ODPS_TMP_TBL_PREFIX = "t_dx3_o2h_tbl";
+
     public final static String USERNAME = "username";
 
     public final static String READER = "job.content[0].reader";
@@ -48,9 +53,9 @@ public final class Key {
 
     public static final String KEY_HBASE_COLUMN = "hbase_column";
 
-    public static final String KEY_HBASE_OUTPUT = "hbase_output";
-
     public static final String KEY_HBASE_CONFIG = "hbase_config";
+
+    public static final String KEY_HBASE_OUTPUT = "hbase_output";
 
     public static final String KEY_CLUSTERID = "clusterId";
 
