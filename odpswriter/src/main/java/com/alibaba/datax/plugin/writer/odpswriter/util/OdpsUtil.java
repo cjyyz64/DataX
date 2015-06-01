@@ -309,8 +309,14 @@ public class OdpsUtil {
                         long timeToSleep;
                         if (exponential) {
                             timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);
+                            if(timeToSleep >= 128 * 1000) {
+                                timeToSleep = 128 * 1000;
+                            }
                         } else {
                             timeToSleep = sleepTimeInMilliSecond;
+                            if(timeToSleep >= 128 * 1000) {
+                                timeToSleep = 128 * 1000;
+                            }
                         }
 
                         try {
