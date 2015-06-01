@@ -295,7 +295,7 @@ public class OdpsUtil {
      * @param query   执行sql
      * @throws Exception
      */
-    private static void runSqlTaskWithRetry(final Odps odps, final String query, int retryTimes,
+    public static void runSqlTaskWithRetry(final Odps odps, final String query, int retryTimes,
                                             long sleepTimeInMilliSecond, boolean exponential) throws Exception {
         Exception saveException = null;
         for(int i = 0; i < retryTimes; i++) {
