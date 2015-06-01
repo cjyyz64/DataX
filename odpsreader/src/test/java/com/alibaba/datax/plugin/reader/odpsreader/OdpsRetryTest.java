@@ -10,6 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.Matchers.anyInt;
 
 /**
  * Date: 2015/5/28 17:01
@@ -32,7 +33,7 @@ public class OdpsRetryTest {
                     System.out.println("execute do read.....");
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, "mock read time out...");
                 }
-            }).when(readerProxy).doRead();
+            }).when(readerProxy).doRead(anyInt());
             //execute retry
             odpsReaderTask.retryDoRead(3, 1000, readerProxy);
         } catch (Exception e) {
@@ -57,7 +58,7 @@ public class OdpsRetryTest {
                 System.out.println("execute do read.....");
                 return null;
             }
-        }).when(readerProxy).doRead();
+        }).when(readerProxy).doRead(anyInt());
         odpsReaderTask.retryDoRead(3, 1000, readerProxy);
         assertTrue(retryTime.get() == 0);
     }

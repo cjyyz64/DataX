@@ -371,11 +371,11 @@ public class OdpsReader extends Reader {
 
         }
 
-        public void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) throws Exception {
+        public void retryDoRead(Integer retryTimes, long retryInterval, ReaderProxy readerProxy) throws Exception {
             int count = 1;
             while(retryTimes > 0) {
                 try {
-                    readerProxy.doRead();
+                    readerProxy.doRead(retryTimes);
                     break;
                 } catch (DataXException e) {
                     if(OdpsReaderErrorCode.ODPS_READ_TIMEOUT.getCode().equals(e.getErrorCode().getCode())) {

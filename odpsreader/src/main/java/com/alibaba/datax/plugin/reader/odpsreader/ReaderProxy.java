@@ -50,7 +50,7 @@ public class ReaderProxy {
     }
 
     // warn: odps 分区列和正常列不能重名, 所有列都不不区分大小写
-    public void doRead() {
+    public void doRead(Integer retryTimes) {
         try {
             LOG.info("start={}, count={}",start, count);
             RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
@@ -61,6 +61,8 @@ public class ReaderProxy {
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
+                    //重试次数重置为10
+                    retryTimes = 10;
                 } catch(Exception e) {
                     //throw 一个特殊的异常, 外层捕获该异常进行重试
                     LOG.warn("warn : odps reader exception: {}", e.getMessage());
