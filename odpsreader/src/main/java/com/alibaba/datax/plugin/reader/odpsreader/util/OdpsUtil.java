@@ -255,16 +255,6 @@ public final class OdpsUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
-
-//        TableTunnel.DownloadSession downloadSession = null;
-//        try {
-//            downloadSession = tunnel.createDownloadSession(
-//                    projectName, tableName);
-//        } catch (TunnelException e) {
-//            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
-//        }
-//
-//        return downloadSession;
     }
 
     public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, final String sessionId,
@@ -286,16 +276,6 @@ public final class OdpsUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
-
-//        TableTunnel.DownloadSession downloadSession = null;
-//        try {
-//            downloadSession = tunnel.getDownloadSession(
-//                    projectName, tableName, sessionId);
-//        } catch (TunnelException e) {
-//            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
-//        }
-//
-//        return downloadSession;
     }
 
     public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps, String tunnelServer,
@@ -319,16 +299,6 @@ public final class OdpsUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
-
-//        TableTunnel.DownloadSession downloadSession = null;
-//        try {
-//            downloadSession = tunnel.createDownloadSession(
-//                    projectName, tableName, partitionSpec);
-//        } catch (TunnelException e) {
-//            throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
-//        }
-
-//        return downloadSession;
     }
 
     public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, final String sessionId,
@@ -351,16 +321,6 @@ public final class OdpsUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
-
-//        TableTunnel.DownloadSession downloadSession = null;
-//        try {
-//            downloadSession = tunnel.getDownloadSession(
-//                    projectName, tableName, partitionSpec, sessionId);
-//        } catch (TunnelException e) {
-//            throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
-//        }
-//
-//        return downloadSession;
     }
 
 
