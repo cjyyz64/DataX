@@ -61,7 +61,7 @@ public class ReaderProxy {
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
-                    //重试次数重置为10
+                    //read成功后将外层传入的重试次数重置为10
                     retryTimes = 10;
                 } catch(Exception e) {
                     //throw 一个特殊的异常, 外层捕获该异常进行重试
