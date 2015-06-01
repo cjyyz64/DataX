@@ -75,6 +75,8 @@ public class CoreConstant {
 
     public static final String DATAX_JOB_SETTING_ERRORLIMIT_PERCENT = "job.setting.errorLimit.percentage";
 
+    public static final String DATAX_JOB_SETTING_DRYRUN = "job.setting.dryRun";
+
     // ----------------------------- 局部使用的变量
     public static final String JOB_WRITER = "reader";
 
