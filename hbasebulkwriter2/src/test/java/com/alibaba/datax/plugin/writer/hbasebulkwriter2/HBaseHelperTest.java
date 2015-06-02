@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter2;
 
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
@@ -9,13 +11,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -43,7 +42,7 @@ public class HBaseHelperTest {
   @Test
   public void testCreateRecordWriter() {
     try {
-      HBaseHelper.checkTmpOutputDir(conf, tmpOutputDir);
+      HBaseHelper.checkTmpOutputDir(conf, tmpOutputDir,1);
       HFileWriter writer = HBaseHelper.createHFileWriter(new HTable(conf, ""), conf, tmpOutputDir);
       assertNotNull(writer);
 
@@ -61,11 +60,24 @@ public class HBaseHelperTest {
 
   @Test
   public void testCheckTmpOutputDir() {
-    try {
-      HBaseHelper.checkTmpOutputDir(conf, tmpOutputDir);
-    } catch (IOException e) {
-      LOG.error("Check Error", e);
-      assertTrue(false);
-    }
+      HBaseHelper.checkTmpOutputDir(conf, tmpOutputDir,1);
+
   }
+
+    @Test
+    public void testGetConfFromHmc() throws Exception {
+        HBaseHelper.getConfFromHMC("DATAX3-TEST","");
+
+    }
+
+    @Test
+    public void testGetConfig() throws Exception {
+
+        Configuration conf=HBaseHelper.getConfiguration(null,null,"DATAX3-TEST","",null);
+        assertEquals(conf.get("dfs.nameservices"),"hdfscluster-perf");
+        assertEquals(conf.get("dfs.namenode.rpc-address.hdfscluster-perf.nn1"),"10.101.88.59:8020");
+        assertEquals(conf.get("dfs.namenode.rpc-address.hdfscluster-perf.nn2"),"10.101.85.53:8020");
+        assertEquals(conf.get("zookeeper.znode.parent"),"/hbase-datax3");
+        assertEquals(conf.get("hbase.zookeeper.quorum"),"10.101.88.59,10.101.85.53,10.101.87.52");
+    }
 }

@@ -6,16 +6,18 @@ import os
 import shutil
 import sys
 import uuid
-from datax_util import OdpsUtil
+from datax_util import OdpsUtil, Util
 
 __email__ = 'haosong.hhs@alibaba-inc.com'
 __copyright__ = '2014 Alibaba Inc.'
 
 
-def get_hbase_regions_json(dst_table, hbase_config, cluster_id, datax_home):
+def get_hbase_regions_json(dst_table, hbase_config, hbase_clusterName, hbase_hmcAddress, cluster_id, datax_home):
+    util.log_phase("HBaseBulkWriter2 Phase1.2 => get_hbase_regions_json", is_end=False)
     path = "/tmp/regions_%s" % str(uuid.uuid1())
-    cmd = "java -jar %s/plugin/writer/hbasebulkwriter2/datax-odps-hbase-udf.jar -t '%s' -c '%s' -l '%s' -o '%s' " \
-          % (datax_home, dst_table, hbase_config, cluster_id, path)
+    cmd = "java -jar %s/plugin/writer/hbasebulkwriter2/datax-odps-hbase-udf.jar " \
+          " -t '%s' -c '%s' -l '%s' -n '%s' -d '%s' -o '%s' " \
+          % (datax_home, dst_table, hbase_config, cluster_id, hbase_clusterName, hbase_hmcAddress, path)
     result = odpsutil.execute(cmd)
     assert result[0] == 0, "ERROR: Get HBase regions failed: %s ." % result[2]
 
@@ -28,10 +30,12 @@ def get_hbase_regions_json(dst_table, hbase_config, cluster_id, datax_home):
     cmd = "rm -rf %s" % path
     odpsutil.execute(cmd)
 
+    util.log_phase("HBaseBulkWriter2 Phase1.2 => get_hbase_regions_json", is_end=True)
     return regions_json
 
 
 def register_udf(regions, fun_name, res_file, datax_home):
+    util.log_phase("HBaseBulkWriter2 Phase1.3 => register_udf", is_end=False)
     res_path = "/tmp/%s" % res_file
     with open(res_path, "w") as fp:
         fp.write(json.dumps(regions))
@@ -43,16 +47,26 @@ def register_udf(regions, fun_name, res_file, datax_home):
     odpsutil.add_udf_jar(tmp_udf_path)
     odpsutil.create_udf_fun(fun_name, 'com.alibaba.datax.plugin.writer.hbasebulkwriter2.tools.HBaseRegionRouter',
                             tmp_udf_file, res_files=[res_file])
+    util.log_phase("HBaseBulkWriter2 Phase1.3 => register_udf", is_end=True)
 
+
+def clearResource(res_file, fun_name):
+    util.log_phase("HBaseBulkWriter2 Phase1.5 => clearResource", is_end=False)
+    tmp_udf_file = "datax-odps-hbase-udf.%s.jar" % res_file
+    odpsutil.drop_res(res_file)
+    odpsutil.drop_res(tmp_udf_file)
+    odpsutil.drop_udf_fun(fun_name)
+    util.log_phase("HBaseBulkWriter2 Phase1.5 => clearResource", is_end=True)
 
 def create_tmp_table(src_table, tmp_table):
+    util.log_phase("HBaseBulkWriter2 Phase1.1 create_tmp_table => odps tmp Table", is_end=False)
     odpsutil.drop_table(tmp_table)
     columns = []
     for column_tuple in odpsutil.get_column_tuple(src_table):
         columns.append("%s %s" % (column_tuple[0], column_tuple[1]))
     sql = "create table %s (%s) partitioned by(datax_pt string) lifecycle 5" % (tmp_table, ",".join(columns))
     odpsutil.execute_sql(sql, delay=False)
-
+    util.log_phase("HBaseBulkWriter2 Phase1.1 create_tmp_table => odps tmp Table", is_end=True)
 
 def to_udf_params(src_table, sort_column):
     column_dict = odpsutil.get_column_dict(src_table)
@@ -71,6 +85,7 @@ def to_udf_params(src_table, sort_column):
 
 
 def sort(src_table, partition, sort_column, tmp_table, regions_num, res_file, fun_name, bucket_num, dynamic_qualifier, rowkey_type):
+    util.log_phase("HBaseBulkWriter2 Phase1.4 => odps sort", is_end=False)
     sort_columns = to_udf_params(src_table, sort_column)
 
     if dynamic_qualifier == "true":
@@ -99,6 +114,7 @@ def sort(src_table, partition, sort_column, tmp_table, regions_num, res_file, fu
           "select %s,%s as datax_pt from %s %s distribute by cast (datax_pt as bigint) sort by %s" \
           % (regions_num, tmp_table, ",".join(columns), region_location_fun, src_table, partition, sort_field)
     odpsutil.execute_sql(sql, delay=False)
+    util.log_phase("HBaseBulkWriter2 Phase1.4 => odps sort", is_end=True)
 
 
 if __name__ == "__main__":
@@ -110,6 +126,8 @@ if __name__ == "__main__":
     parser.add_option("--dst_table", dest="dst_table", help="[HBase] dest table", metavar="dst_table")
     parser.add_option("--hbase_config", dest="hbase_config", help="[HBase] hbase-site.xml location",
                       metavar="hbase_config")
+    parser.add_option("--hbase_clusterName", dest="hbase_clusterName", help="[HBase] cluster Name from HMC", metavar="hbase_clusterName", default="")
+    parser.add_option("--hbase_hmcAddress", dest="hbase_hmcAddress", help="[HBase] HMC address", metavar="hbase_hmcAddress", default="http://socs.alibaba-inc.com/open/api/hbase/getHbaseConfig")
     parser.add_option("--cluster_id", dest="cluster_id", help="[HBase] cluster id", metavar="cluster_id", default="")
 
     parser.add_option("--suffix", dest="suffix", help="[ODPS][option] suffix", metavar="suffix", default="")
@@ -127,6 +145,8 @@ if __name__ == "__main__":
                       default="")
 
     (options, args) = parser.parse_args(sys.argv)
+
+    util = Util()
 
     odpsutil = OdpsUtil(options.project, options.access_id, options.access_key)
 
@@ -147,8 +167,12 @@ if __name__ == "__main__":
     fun_name = "t_dx3_o2h_fun_%s%s" % (options.src_table, options.suffix)
     tmp_table = "t_dx3_o2h_tbl_%s%s" % (options.src_table, options.suffix)
 
-    create_tmp_table(options.src_table, tmp_table)
-    regions = get_hbase_regions_json(options.dst_table, options.hbase_config, options.cluster_id, options.datax_home)
-    register_udf(regions, fun_name, res_file, options.datax_home)
-    sort(options.src_table, options.partition, options.sort_column, tmp_table, len(regions), res_file, fun_name,
-         options.bucket_num, options.dynamic_qualifier,options.rowkey_type)
+    try:
+        create_tmp_table(options.src_table, tmp_table)
+        regions = get_hbase_regions_json(options.dst_table, options.hbase_config, options.hbase_clusterName,
+                                     options.hbase_hmcAddress, options.cluster_id, options.datax_home)
+        register_udf(regions, fun_name, res_file, options.datax_home)
+        sort(options.src_table, options.partition, options.sort_column, tmp_table, len(regions), res_file, fun_name,
+             options.bucket_num, options.dynamic_qualifier, options.rowkey_type)
+    finally:
+        clearResource(res_file, fun_name)

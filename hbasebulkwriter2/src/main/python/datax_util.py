@@ -278,6 +278,10 @@ class OdpsUtil(Util):
         sql = "drop function %s" % fun_name
         self.execute_sql(sql, delay=delay)
 
+    def drop_res(self, res_nanme, delay=False):
+        sql = "drop resource %s" % res_nanme
+        self.execute_sql(sql, delay=delay)
+
     def add_res_path(self, res_path, delay=False):
         sql = "add file %s -f" % res_path
         self.execute_sql(sql, delay=delay)

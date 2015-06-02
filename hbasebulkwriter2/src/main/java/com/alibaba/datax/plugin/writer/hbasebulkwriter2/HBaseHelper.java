@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.hbasebulkwriter2;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.RetryUtil;
-import com.hadoop.compression.lzo.LzoCodec;
+import com.google.common.base.Strings;
 import com.taobao.diamond.client.Diamond;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -10,11 +10,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.io.compress.LzoCodec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -23,6 +26,8 @@ public class HBaseHelper {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(HBaseHelper.class);
+
+    private static final String USERID_SKYNET = System.getenv("SKYNET_ONDUTY_WORKNO");
 
     public static HFileWriter createHFileWriter(HTable htable, Configuration conf,
                                                 String outputDir) throws IOException {
@@ -63,7 +68,7 @@ public class HBaseHelper {
     public static void checkConf(Configuration conf) {
         String uri = conf.get("fs.default.name");
         if (!uri.startsWith("hdfs")) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "Check the parameter of fs.default.name in hdfs-site.xml, now is "
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "fs.default.name in hdfs-site.xml参数错误，请联系HBase PE!, now is "
                     + uri);
         }
     }
@@ -129,7 +134,7 @@ public class HBaseHelper {
                     e);
         }
 
-        LOG.info("clearTmpOutputDir# 目标目录{}",outputDir);
+        LOG.info("clearTmpOutputDir# 目标目录{}", outputDir);
     }
 
     public static void loadNativeLibrary() {
@@ -191,25 +196,113 @@ public class HBaseHelper {
         return conf;
     }
 
-    public static Configuration getConfiguration(String hdfsConfPath, String hbaseConfPath, String clusterId) {
+    public static Configuration getConfiguration(String hdfsConfPath, String hbaseConfPath, String clusterName, String hmcAddress, String clusterId) {
         Configuration conf = new Configuration();
-        if (StringUtils.isNotEmpty(hdfsConfPath)) {
-            conf.addResource(new Path(hdfsConfPath));
-        }
 
-        if (StringUtils.isNotEmpty(hbaseConfPath)) {
-            conf.addResource(new Path(hbaseConfPath));
-        }
+        if (Strings.isNullOrEmpty(clusterName)) {
+            if (StringUtils.isNotEmpty(hdfsConfPath)) {
+                conf.addResource(new Path(hdfsConfPath));
+            }
 
-        if (StringUtils.isNotEmpty(clusterId)) {
-            try {
-                conf = getConfigurationByClusterId(conf, clusterId);
-            } catch (Exception e) {
-                LOG.error("Get cluster configuration file from diamond failed.", e);
-                throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
+            if (StringUtils.isNotEmpty(hbaseConfPath)) {
+                conf.addResource(new Path(hbaseConfPath));
+            }
+
+            if (StringUtils.isNotEmpty(clusterId)) {
+                try {
+                    conf = getConfigurationByClusterId(conf, clusterId);
+                } catch (Exception e) {
+                    LOG.error("Get cluster configuration file from diamond failed.", e);
+                    throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
+                }
+            }
+        } else {
+            Map<String, String> mapConf = getConfFromHMCWithRetry(clusterName, hmcAddress);
+            for (Map.Entry<String, String> entry : mapConf.entrySet()) {
+                LOG.info("hbase conf value: " + entry.getKey() + " => " + entry.getValue());
+                conf.set(entry.getKey(), entry.getValue());
             }
         }
 
+
         return conf;
+    }
+
+    public static Map<String, String> getConfFromHMCWithRetry(final String clusterName, final String hmcAddress) {
+
+        Map<String, String> res = null;
+        try {
+            res = RetryUtil.executeWithRetry(new Callable<Map<String, String>>() {
+                @Override
+                public Map<String, String> call() throws Exception {
+                    return getConfFromHMC(clusterName, hmcAddress);
+                }
+            }, 15, 1, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "获取hdfs目录失败，请联系hbase同学检查hdfs集群", e);
+        }
+        return res;
+    }
+
+    public static Map<String, String> getConfFromHMC(String clusterName, String hmcAddress) throws Exception {
+
+
+        if (Strings.isNullOrEmpty(hmcAddress)) {
+            LOG.warn("hmcAddress为空，尝试使用默认值! ");
+            hmcAddress = "http://socs.alibaba-inc.com/open/api/hbase/getHbaseConfig";
+        }
+        if (hmcAddress.endsWith("/")) {
+            hmcAddress = hmcAddress.substring(0, hmcAddress.length());
+        }
+
+        String userId = USERID_SKYNET;
+        if (Strings.isNullOrEmpty(userId)) {
+            LOG.warn("环境变量SKYNET_ONDUTY_WORKNO为空，尝试使用默认值");
+            userId = "068141";
+        }
+
+        String guid = "guid=" + "hbase." + clusterName + ".table";
+
+
+        String urlstr = hmcAddress + "?" + guid + "&userId=" + userId;
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(urlstr);
+
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(20000);
+            conn.setReadTimeout(60000);
+            conn.setDoInput(true);
+            conn.connect();
+
+            InputStream in = conn.getInputStream();
+            String result = IOUtils.toString(in, "UTF-8");
+            System.out.println("=========> " + conn.getResponseCode());
+            System.out.println("=========> " + result);
+
+
+
+            int resCode = conn.getResponseCode();
+            if (resCode != 200) {
+                throw new Exception(String.format("从HMC获取conf出错(code=%s)，url=%s,message=%s", resCode, urlstr, result));
+            }else{
+                com.alibaba.datax.common.util.Configuration config = com.alibaba.datax.common.util.Configuration.from(result);
+                Map<String,String> map1=config.get("data.hbaseSite",Map.class);
+                Map<String,String> map2=config.get("data.hdfsSite",Map.class);
+                map1.putAll(map2);
+                System.out.println("=========> " + map1);
+                return map1;
+            }
+
+        } catch (Exception e) {
+            LOG.error("从HMC获取conf出错,Exception({})", e.getMessage(), e);
+            throw e;
+        } finally {
+            if (conn != null) {
+                IOUtils.close(conn);
+            }
+        }
+
     }
 }

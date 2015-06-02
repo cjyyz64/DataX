@@ -23,6 +23,8 @@ public class HBaseBulker {
     private org.apache.hadoop.conf.Configuration hbaseConf;
     private String hdfsConfPath;
     private String hbaseConfPath;
+    private String hbaseClusterName;
+    private String hmcAddress;
     // diamond cluster id, use diamond to save hbase-site.xml and hdfs-site.xml, diamond is a service
     @Deprecated
     private String diamondClusterId;
@@ -80,7 +82,7 @@ public class HBaseBulker {
         }
         if (this.hbaseConf == null) {
             this.hbaseConf = HBaseHelper.getConfiguration(hdfsConfPath,
-                    hbaseConfPath, diamondClusterId);
+                    hbaseConfPath, hbaseClusterName, hmcAddress, diamondClusterId);
         }
         HBaseHelper.checkConf(this.hbaseConf);
         HBaseHelper.checkHdfsVersion(this.hbaseConf);
@@ -100,7 +102,7 @@ public class HBaseBulker {
         this.table = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.TABLE);
         if (this.table == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_table.");
+                    "Missing config hbase_table.请联系askdatax ");
         }
         String rowkeyTypeStr = conf
                 .getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.ROWKEY_TYPE);
@@ -110,20 +112,26 @@ public class HBaseBulker {
         this.rowkeyType = HBaseColumn.HBaseDataType.parseStr(rowkeyTypeStr);
         if (this.rowkeyType == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config rowkey_type.");
+                    "Missing config rowkey_type. 请联系askdatax");
         }
         this.columnList = DynamicHBaseColumn.parseColumnStr(conf
                 .getConfiguration(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.COLUMN));
+
+        this.hbaseClusterName = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + Key.KEY_HBASE_CLUSTER_NAME);
+
+        this.hmcAddress = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + Key.KEY_HBASE_HMC_ADDRESS);
+
         this.hbaseConfPath = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.HBASE_CONFIG);
-        if (this.hbaseConfPath == null) {
+        if (Strings.isNullOrEmpty(this.hbaseConfPath) && Strings.isNullOrEmpty(this.hbaseClusterName)) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_config.");
+                    "DATAX Fatal! 缺少hbase_config和hbaseClusterName，2者并选其一. 请联系askdatax");
         }
         this.hdfsConfPath = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.HDFS_CONFIG);
-        if (this.hdfsConfPath == null) {
+        if (Strings.isNullOrEmpty(this.hdfsConfPath) && Strings.isNullOrEmpty(this.hbaseClusterName)) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hdfs_config.");
+                    "DATAX Fatal! 缺少hdfsConfPath和hbaseClusterName，2者并选其一. 请联系askdatax");
         }
+
         this.diamondClusterId = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.CLUSTER_ID);
         this.isTruncateTable = conf.getBool(
                 PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.TRUNCATE, false);
@@ -131,7 +139,7 @@ public class HBaseBulker {
         this.hdfsOutputDir = conf.getString(PluginKeys.PREFIX_DYNAMIC + "." + PluginKeys.OUTPUT);
         if (this.hdfsOutputDir == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_output.");
+                    "DATAX Fatal! 缺少 config hbase_output.请联系askdatax ");
         }
         this.isDynamicQualifier = true;
     }
@@ -140,26 +148,33 @@ public class HBaseBulker {
         this.table = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.TABLE);
         if (this.table == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_table.");
+                    "Missing config hbase_table. 请联系askdatax");
         }
         this.rowkeyList = FixedHBaseColumn.parseRowkeySchema(conf
                 .getListConfiguration(PluginKeys.PREFIX_FIXED + "." + PluginKeys.ROWKEY));
         if (this.rowkeyList == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_rowkey.");
+                    "Missing config hbase_rowkey. 请联系askdatax");
         }
         this.columnList = FixedHBaseColumn.parseColumnSchema(conf
                 .getListConfiguration(PluginKeys.PREFIX_FIXED + "." + PluginKeys.COLUMN));
+
+
+        this.hbaseClusterName = conf.getString(PluginKeys.PREFIX_FIXED + "." + Key.KEY_HBASE_CLUSTER_NAME);
+
+        this.hmcAddress = conf.getString(PluginKeys.PREFIX_FIXED + "." + Key.KEY_HBASE_HMC_ADDRESS);
+
         this.hbaseConfPath = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.HBASE_CONFIG);
-        if (this.hbaseConfPath == null) {
+        if (Strings.isNullOrEmpty(this.hbaseConfPath) && Strings.isNullOrEmpty(this.hbaseClusterName)) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hbase_config.");
+                    "DATAX Fatal! 缺少hbase_config和hbaseClusterName，2者并选其一. 请联系askdatax");
         }
         this.hdfsConfPath = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.HDFS_CONFIG);
-        if (this.hdfsConfPath == null) {
+        if (Strings.isNullOrEmpty(this.hdfsConfPath) && Strings.isNullOrEmpty(this.hbaseClusterName)) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                    "Missing config hdfs_config.");
+                    "DATAX Fatal! 缺少hdfsConfPath和hbaseClusterName，2者并选其一. 请联系askdatax");
         }
+
         this.diamondClusterId = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.CLUSTER_ID);
         this.nullMode = conf.getString(PluginKeys.PREFIX_FIXED + "." + PluginKeys.NULL_MODE,
                 "EMPTY_BYTES");
@@ -191,6 +206,7 @@ public class HBaseBulker {
 
     @SuppressWarnings("unchecked")
     public int startWrite(HBaseLineReceiver receiver, TaskPluginCollector taskPluginCollector) {
+        LOG.info("================ HBaseBulkWriter Phase 2 odps=>hdfs starting... ================ ");
         try {
             hfileWriter = HBaseHelper.createHFileWriter(htable, hbaseConf, hdfsOutputDir);
             if (!isDynamicQualifier) {
@@ -201,11 +217,13 @@ public class HBaseBulker {
                 WritePolicer.dynamic(hfileWriter, receiver, rowkeyType,
                         (List<DynamicHBaseColumn>) columnList, taskPluginCollector);
             }
+            LOG.info("================ HBaseBulkWriter Phase 2 odps=>hdfs finish... ================ ");
             return 0;
         } catch (Throwable e) {
             clearDir();
             throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
         }
+
     }
 
     public int finish() {
@@ -222,6 +240,8 @@ public class HBaseBulker {
     }
 
     public int post() {
+
+        LOG.info("================ HBaseBulkWriter Phase 3 hbase doBulkLoad starting... ================ ");
         try {
             String uri = hbaseConf.get("fs.default.name");
             if (isTruncateTable) {
@@ -247,10 +267,11 @@ public class HBaseBulker {
         } finally {
             clearDir();
         }
+        LOG.info("================ HBaseBulkWriter Phase 3 hbase doBulkLoad finish... ================ ");
         return 0;
     }
 
-    public void clearDir(){
-        HBaseHelper.clearTmpOutputDir(hbaseConf,  hdfsOutputDir);
+    public void clearDir() {
+        HBaseHelper.clearTmpOutputDir(hbaseConf, hdfsOutputDir);
     }
 }

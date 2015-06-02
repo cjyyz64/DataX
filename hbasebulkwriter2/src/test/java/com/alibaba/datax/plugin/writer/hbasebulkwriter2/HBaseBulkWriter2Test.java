@@ -229,9 +229,7 @@ public class HBaseBulkWriter2Test{// extends BasicWriterPluginTest {
         Assert.assertTrue(res instanceof DynamicColumnConf);
         System.out.println(JSON.toJSONString(res));
 
-       //Assert.assertEquals(JSON.toJSONString(res),"{\"hbase_column\":{\"rules\":[{\"htype\":\"string\",\"pattern\":\"cf:name\"},{\"htype\":\"int\",\"pattern\":\"cf:age\"}],\"type\":\"prefix\"},\"hbase_config\":\"test_hbase_config\",\"hbase_output\":\"/datax3bulkwrite_1234/test_hbase_table\",\"hbase_table\":\"test_hbase_table\",\"hdfs_config\":\"test_hdfs_config\",\"rowkey_type\":\"string\"}");
-
-        configuration.set("job.content[0].writer.parameter.fixedcolumn", JSON.toJSONString(res));
+        configuration.set("job.content[0].writer.parameter.dynamiccolumn", JSON.toJSONString(res));
 
         System.out.println(configuration.toString());
     }

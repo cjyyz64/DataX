@@ -14,6 +14,8 @@ public class FixColumnConf implements HBaseJobParameterConf {
     public List<HbaseColumn> hbase_column = Lists.newArrayList();;
     public String hbase_output;
     public String hbase_config;
+    public String hbase_cluster_name;
+    public String hbase_hmc_address;
     public String hdfs_config;
     public Map<String, String> optional;
 
@@ -78,7 +80,15 @@ public class FixColumnConf implements HBaseJobParameterConf {
         return hdfs_config;
     }
 
+    public String getHbase_cluster_name() {
+        return hbase_cluster_name;
+    }
+
     public Map<String, String> getOptional() {
         return optional;
+    }
+
+    public String getHbase_hmc_address() {
+        return hbase_hmc_address;
     }
 }

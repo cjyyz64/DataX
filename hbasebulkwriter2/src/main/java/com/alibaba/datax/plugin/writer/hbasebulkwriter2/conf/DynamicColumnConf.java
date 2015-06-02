@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.writer.hbasebulkwriter2.conf;
 import com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by liqiang on 15/5/25.
@@ -12,9 +13,11 @@ public class DynamicColumnConf implements HBaseJobParameterConf {
     public String rowkey_type;
     public HbaseColumn hbase_column = new HbaseColumn();
     public String hbase_output;
+    public String hbase_cluster_name;
+    public String hbase_hmc_address;
     public String hbase_config;
     public String hdfs_config;
-
+    public Map<String, String> optional;
 
     public static class HbaseColumn {
         public String type = "prefix";
@@ -64,5 +67,18 @@ public class DynamicColumnConf implements HBaseJobParameterConf {
 
     public String getHdfs_config() {
         return hdfs_config;
+    }
+
+
+    public String getHbase_cluster_name() {
+        return hbase_cluster_name;
+    }
+
+    public String getHbase_hmc_address() {
+        return hbase_hmc_address;
+    }
+
+    public Map<String, String> getOptional() {
+        return optional;
     }
 }

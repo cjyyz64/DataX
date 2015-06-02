@@ -53,17 +53,21 @@ public final class Key {
 
     public static final String KEY_HBASE_COLUMN = "hbase_column";
 
+    public static final String KEY_HBASE_CLUSTER_NAME = "hbase_cluster_name";
+
+    public static final String KEY_HBASE_HMC_ADDRESS = "hbase_hmc_address";
+
     public static final String KEY_HBASE_CONFIG = "hbase_config";
 
     public static final String KEY_HBASE_OUTPUT = "hbase_output";
 
     public static final String KEY_CLUSTERID = "clusterId";
 
-    public static final String KEY_BUCKETNUM = "bucketNum";
-
     public static final String KEY_HDFS_CONFIG = "hdfs_config";
 
     public static final String KEY_OPTIONAL = "optional";
+
+    public static final String KEY_OPTIONAL_BUCKETNUM = "optional.bucketNum";
 
 
 }

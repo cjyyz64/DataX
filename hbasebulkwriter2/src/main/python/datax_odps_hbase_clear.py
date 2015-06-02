@@ -29,5 +29,5 @@ if __name__ == "__main__":
     odpsutil = OdpsUtil(options.project, options.access_id, options.access_key)
 
     odpsutil.drop_table(options.table)
-    util.log_phase("HBaseBulkWriter2 Clear ODPS tmp Table", is_end=True)
+    util.log_phase("HBaseBulkWriter2 final phase => Clear ODPS tmp Table", is_end=True)
     sys.exit()
