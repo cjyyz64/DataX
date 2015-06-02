@@ -26,7 +26,7 @@ public final class DBUtil {
     public static String chooseJdbcUrl(final DataBaseType dataBaseType,
                                        final List<String> jdbcUrls, final String username,
                                        final String password, final List<String> preSql,
-                                       final boolean checkSlave) throws Exception {
+                                       final boolean checkSlave) {
 
         if (null == jdbcUrls || jdbcUrls.isEmpty()) {
             throw DataXException.asDataXException(
@@ -64,11 +64,10 @@ public final class DBUtil {
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
-            throw e;
-//            throw DataXException.asDataXException(
-//                    DBUtilErrorCode.CONN_DB_ERROR,
-//                    String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
-//                            StringUtils.join(jdbcUrls, ",")), e);
+            throw DataXException.asDataXException(
+                    DBUtilErrorCode.CONN_DB_ERROR,
+                    String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
+                            StringUtils.join(jdbcUrls, ",")), e);
         }
 
     }
