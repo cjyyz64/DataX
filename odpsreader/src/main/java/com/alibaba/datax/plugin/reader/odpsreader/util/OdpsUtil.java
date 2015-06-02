@@ -49,7 +49,7 @@ public final class OdpsUtil {
                 OdpsUtil.MAX_RETRY_TIME);
         if (maxRetryTime < 1 || maxRetryTime > OdpsUtil.MAX_RETRY_TIME) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1, 且不能大于 " + OdpsUtil.MAX_RETRY_TIME +
-                    ". 推荐的配置方式是给maxRetryTime 配置2-11之间的某个值. 请您检查配置并做出相应修改.");
+                    ". 推荐的配置方式是给maxRetryTime 配置1-11之间的某个值. 请您检查配置并做出相应修改.");
         }
         MAX_RETRY_TIME = maxRetryTime;
     }
