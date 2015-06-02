@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.reader.odpsreader;
 
 import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -10,7 +12,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
 
 /**
  * Date: 2015/5/28 17:01
@@ -33,7 +34,7 @@ public class OdpsRetryTest {
                     System.out.println("execute do read.....");
                     throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, "mock read time out...");
                 }
-            }).when(readerProxy).doRead(anyInt());
+            }).when(readerProxy).doRead();
             //execute retry
             odpsReaderTask.retryDoRead(3, 1000, readerProxy);
         } catch (Exception e) {
@@ -58,8 +59,60 @@ public class OdpsRetryTest {
                 System.out.println("execute do read.....");
                 return null;
             }
-        }).when(readerProxy).doRead(anyInt());
+        }).when(readerProxy).doRead();
         odpsReaderTask.retryDoRead(3, 1000, readerProxy);
         assertTrue(retryTime.get() == 0);
     }
+
+    @Test
+    public void testRetryDoReadOk2() throws Exception {
+        final AtomicInteger retryTime = new AtomicInteger(0);
+        try {
+            OdpsReader.Task odpsReaderTask = new OdpsReader.Task();
+            //mock readerProxy
+            ReaderProxy readerProxy = PowerMockito.mock(ReaderProxy.class);
+            PowerMockito.doAnswer(new Answer<Pair<DataXException, Long>>() {
+                @Override
+                public Pair<DataXException, Long> answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    retryTime.addAndGet(1);
+                    System.out.println("execute do read.....");
+                    Pair<DataXException, Long> pair = new ImmutablePair<DataXException, Long>(
+                            DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, "mock read time out 1..."),
+                            5L);
+                   return pair;
+                }
+            }).doAnswer(new Answer<Pair<DataXException, Long>>() {
+                @Override
+                public Pair<DataXException, Long> answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    retryTime.addAndGet(1);
+                    System.out.println("execute do read.....");
+                    Pair<DataXException, Long> pair = new ImmutablePair<DataXException, Long>(
+                            DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, "mock read time out 2..."),
+                            5L);
+                    return pair;
+                }
+            }).doAnswer(new Answer<Pair<DataXException, Long>>() {
+                @Override
+                public Pair<DataXException, Long> answer(InvocationOnMock invocationOnMock) throws Throwable {
+                    retryTime.addAndGet(1);
+                    System.out.println("execute do read.....");
+                    Pair<DataXException, Long> pair = new ImmutablePair<DataXException, Long>(
+                            DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, "mock read time out 3..."),
+                            6L);
+                    return pair;
+                }
+            }).when(readerProxy).doRead();
+            //execute retry
+            odpsReaderTask.retryDoRead(3, 1000, readerProxy);
+        } catch (Exception e) {
+            assertTrue(e instanceof DataXException);
+            DataXException exception = (DataXException) e;
+            assertEquals(exception.getErrorCode(), OdpsReaderErrorCode.ODPS_READ_TIMEOUT);
+            assertTrue(exception.getMessage().contains("mock read time out 3"));
+            e.printStackTrace();
+        } finally {
+            assertEquals(retryTime.get(), 12);
+        }
+    }
+
 }

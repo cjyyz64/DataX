@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.aliyun.odps.tunnel.TableTunnel;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +51,7 @@ public class ReaderProxy {
     }
 
     // warn: odps 分区列和正常列不能重名, 所有列都不不区分大小写
-    public void doRead(Integer retryTimes) {
+    public Pair<DataXException, Long> doRead() {
         try {
             LOG.info("start={}, count={}",start, count);
             RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
@@ -61,12 +62,14 @@ public class ReaderProxy {
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
-                    //read成功后将外层传入的重试次数重置为10
-                    retryTimes = 10;
                 } catch(Exception e) {
                     //throw 一个特殊的异常, 外层捕获该异常进行重试
                     LOG.warn("warn : odps reader exception: {}", e.getMessage());
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
+                    Pair<DataXException, Long> pair = new ImmutablePair<DataXException, Long>(
+                            DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e),
+                            start);
+                    return pair;
+                    //throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
                 }
                 //记录已经读取的点
                 start++;
@@ -115,6 +118,7 @@ public class ReaderProxy {
             throw DataXException.asDataXException(
                     OdpsReaderErrorCode.READ_DATA_FAIL, e);
         }
+        return null;
     }
 
     private Map<String, String> parseCurrentPartitionValue() {
