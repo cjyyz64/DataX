@@ -5,7 +5,7 @@ public final class Constant {
     static final int MAX_TRY_TIMES = 4;
 
     static final String MYSQL_DATABASE = "Unknown database";
-    static final String MYSQL_CONNEXP = "CommunicationsException";
+    static final String MYSQL_CONNEXP = "Communications link failure";
     static final String MYSQL_ACCDENIED = "Access denied";
 
     static final String ORACLE_DATABASE = "ORA-12505";
