@@ -373,6 +373,7 @@ public class OdpsReader extends Reader {
 
         public void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) throws Exception {
             int count = 1;
+            int originRetryTimes = retryTimes;
 
             long lastIndex = -1;
             while(retryTimes > 0) {
@@ -380,8 +381,9 @@ public class OdpsReader extends Reader {
                     Pair<DataXException, Long> pair = readerProxy.doRead();
                     if(pair != null) {
                         long nowIndex = pair.getRight();
+                        //上次read的点位 和 这次的点位不同的话,证明上次已经重试成功,将retryTimes 重置为 初始值
                         if(lastIndex != nowIndex && lastIndex != -1) {
-                            retryTimes = 10;
+                            retryTimes = originRetryTimes;
                             count = 1;
                         }
                         lastIndex = nowIndex;

@@ -111,7 +111,7 @@ public class OdpsRetryTest {
             assertTrue(exception.getMessage().contains("mock read time out 3"));
             e.printStackTrace();
         } finally {
-            assertEquals(retryTime.get(), 12);
+            assertEquals(retryTime.get(), 5);
         }
     }
 
