@@ -14,6 +14,8 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 
@@ -46,15 +48,15 @@ public class OdpsUtilTest {
     public void testRunSqlTaskWithRetryOK() throws Exception {
         PowerMockito.spy(OdpsUtil.class);
         //PowerMockito.doNothing().when(OdpsUtil.class, "runSqlTask", (Odps)anyObject(), anyString());
-        int realRetryTimes = 0;
+        final AtomicInteger realRetryTimes = new AtomicInteger(0);
         PowerMockito.doAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                //realRetryTimes ++;
+                realRetryTimes.addAndGet(1);
+                System.out.println("执行成功，无须重试");
                 return null;
             }
         }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
-        long startTime = System.currentTimeMillis();
         try {
             OdpsUtil.runSqlTaskWithRetry(
                     new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
@@ -64,10 +66,7 @@ public class OdpsUtilTest {
             Assert.assertTrue(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(((DataXException) e).getErrorCode()));
             System.out.println("ok");
         }
-        long endTime = System.currentTimeMillis();
-        long sleepInterval = endTime - startTime;
-        System.out.println("sleepInterval: " + sleepInterval);
-        Assert.assertTrue(sleepInterval > 7000);
+        Assert.assertEquals(new AtomicInteger(1), realRetryTimes);
     }
 
 
