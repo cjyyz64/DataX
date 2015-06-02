@@ -95,21 +95,26 @@ public class JobContainer extends AbstractContainer {
         boolean hasException = false;
         try {
             this.startTimeStamp = System.currentTimeMillis();
+            boolean isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
+            if(isDryRun) {
+                LOG.info("jobContainer starts to do preCheck ...");
+                this.preCheck();
+            } else {
+                LOG.debug("jobContainer starts to do init ...");
+                this.init();
+                LOG.debug("jobContainer starts to do prepare ...");
+                this.prepare();
+                LOG.debug("jobContainer starts to do split ...");
+                this.totalStage = this.split();
+                LOG.debug("jobContainer starts to do schedule ...");
+                this.schedule();
+                LOG.debug("jobContainer starts to do post ...");
+                this.post();
 
-            LOG.debug("jobContainer starts to do init ...");
-            this.init();
-            LOG.debug("jobContainer starts to do prepare ...");
-            this.prepare();
-            LOG.debug("jobContainer starts to do split ...");
-            this.totalStage = this.split();
-            LOG.debug("jobContainer starts to do schedule ...");
-            this.schedule();
-            LOG.debug("jobContainer starts to do post ...");
-            this.post();
+                LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
 
-            LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
-
-            this.invokeHooks();
+                this.invokeHooks();
+            }
         } catch (Throwable e) {
             LOG.error("Exception when job run", e);
 
@@ -159,6 +164,30 @@ public class JobContainer extends AbstractContainer {
                 this.logStatistics();
             }
         }
+    }
+
+    private void preCheck() {
+        this.init();
+        this.preCheckReader();
+        this.preCheckWriter();
+    }
+
+    private void preCheckReader() {
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.READER, this.readerPluginName));
+        LOG.info(String.format("DataX Reader.Job [%s] do preCheck work .",
+                this.readerPluginName));
+        this.jobReader.preCheck();
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+    }
+
+    private void preCheckWriter() {
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.WRITER, this.writerPluginName));
+        LOG.info(String.format("DataX Writer.Job [%s] do prepare work .",
+                this.writerPluginName));
+        this.jobWriter.preCheck();
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
     /**
