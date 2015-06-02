@@ -191,11 +191,44 @@ public final class DBUtil {
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
-            throw DataXException.asDataXException(
-                    DBUtilErrorCode.CONN_DB_ERROR, e);
+            throw  analysisException(dataBaseType,e);
         }
     }
 
+    private static DataXException analysisException(DataBaseType dataBaseType, Exception e){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            DBUtilErrorCode dbUtilErrorCode = mySqlConnectionErrorAna(e.getMessage());
+            return DataXException.asDataXException(dbUtilErrorCode,e);
+        }else if (dataBaseType.equals(DataBaseType.Oracle)){
+            DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
+            return DataXException.asDataXException(dbUtilErrorCode,e);
+
+        }else{
+            return DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,e);
+        }
+    }
+
+    private static DBUtilErrorCode mySqlConnectionErrorAna(String e){
+        if (e.contains(Constant.MYSQL_DATABASE)){
+            return DBUtilErrorCode.MYSQL_CONN_DB_ERROR;
+        }else if (e.contains(Constant.MYSQL_CONNEXP)){
+            return DBUtilErrorCode.MYSQL_CONN_IPPORT_ERROR;
+        }else if (e.contains(Constant.MYSQL_ACCDENIED)){
+            return DBUtilErrorCode.MYSQL_CONN_USERPWD_ERROR;
+        }
+        return DBUtilErrorCode.CONN_DB_ERROR;
+    }
+
+    private static DBUtilErrorCode oracleConnectionErrorAna(String e){
+        if (e.contains(Constant.ORACLE_DATABASE)){
+            return DBUtilErrorCode.ORACLE_CONN_DB_ERROR;
+        }else if (e.contains(Constant.ORACLE_CONNEXP)){
+            return DBUtilErrorCode.ORACLE_CONN_IPPORT_ERROR;
+        }else if (e.contains(Constant.ORACLE_ACCDENIED)){
+            return DBUtilErrorCode.ORACLE_CONN_USERPWD_ERROR;
+        }
+        return DBUtilErrorCode.CONN_DB_ERROR;
+    }
     /**
      * a wrapped method to execute select-like sql statement .
      *

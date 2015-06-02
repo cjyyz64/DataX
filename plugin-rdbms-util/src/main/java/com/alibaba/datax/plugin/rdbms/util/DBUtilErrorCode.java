@@ -4,6 +4,15 @@ import com.alibaba.datax.common.spi.ErrorCode;
 
 //TODO
 public enum DBUtilErrorCode implements ErrorCode {
+    //连接错误
+    MYSQL_CONN_USERPWD_ERROR("MYSQLErrCode-01","用户名或者密码错误，连接失败，请联系DBA确认"),
+    MYSQL_CONN_IPPORT_ERROR("MYSQLErrCode-02","IP地址或者Port错误，请联系DBA确认"),
+    MYSQL_CONN_DB_ERROR("MYSQLErrCode-03","数据库不存在，请联系DBA确认"),
+
+    ORACLE_CONN_USERPWD_ERROR("ORACLEErrCode-01","用户名或者密码错误，连接失败，请联系DBA确认"),
+    ORACLE_CONN_IPPORT_ERROR("ORACLEErrCode-02","IP地址或者Port错误，请联系DBA确认"),
+    ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库不存在，请联系DBA确认"),
+
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
     GET_COLUMN_INFO_FAILED("DBUtilErrorCode-01", "获取表字段相关信息失败."),
