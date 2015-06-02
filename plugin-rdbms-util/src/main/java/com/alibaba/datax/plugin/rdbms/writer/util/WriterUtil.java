@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 
@@ -84,7 +83,10 @@ public final class WriterUtil {
 
         List<String> renderedSqls = new ArrayList<String>();
         for (String sql : preOrPostSqls) {
-            renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+            //preSql为空时，不加入执行队列
+            if (StringUtils.isNoneBlank(sql)) {
+                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+            }
         }
 
         return renderedSqls;
@@ -106,7 +108,7 @@ public final class WriterUtil {
             DBUtil.closeDBResources(null, stmt, null);
         }
     }
-    
+
     public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode){
 		boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
 				|| writeMode.trim().toLowerCase().startsWith("replace");
