@@ -7,9 +7,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,13 +110,51 @@ public class CommonRdbmsReader {
                 LOG.info("Finished read record by Sql: [{}\n] {}.",
                         querySql, basicMsg);
             } catch (Exception e) {
-                throw DataXException.asDataXException(
-                        DBUtilErrorCode.READ_RECORD_FAIL, String.format(
-                                "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
-                                basicMsg, querySql), e);
+                throw analysisException(this.dataBaseType,e,querySql);
+//                throw DataXException.asDataXException(
+//                        DBUtilErrorCode.READ_RECORD_FAIL, String.format(
+//                                "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
+//                                basicMsg, querySql), e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
+        }
+
+        private DataXException analysisException(DataBaseType dataBaseType, Exception e,String querySql){
+            if (dataBaseType.equals(DataBaseType.MySql)){
+                DBUtilErrorCode dbUtilErrorCode = mySqlConnectionErrorAna(e.getMessage());
+                return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
+            }else if (dataBaseType.equals(DataBaseType.Oracle)){
+                DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
+                return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
+            }else{
+                return DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,querySql+e);
+            }
+        }
+
+        private DBUtilErrorCode mySqlConnectionErrorAna(String e){
+            if (e.contains(Constant.MYSQL_TABLE_NAME_ERR1) && e.contains(Constant.MYSQL_TABLE_NAME_ERR2)){
+                return DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR;
+            }else if (e.contains(Constant.MYSQL_INSERT_PRI)){
+                return DBUtilErrorCode.MYSQL_QUERY_INSERT_PRI_ERROR;
+            }else if (e.contains(Constant.MYSQL_COLUMN1) && e.contains(Constant.MYSQL_COLUMN2)){
+                return DBUtilErrorCode.MYSQL_QUERY_COLUMN_ERROR;
+            }else if (e.contains(Constant.MYSQL_WHERE)){
+                return DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR;
+            }
+            return DBUtilErrorCode.READ_RECORD_FAIL;
+        }
+
+        private DBUtilErrorCode oracleConnectionErrorAna(String e){
+            if (e.contains(Constant.ORACLE_TABLE_NAME)){
+                return DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR;
+            }else if (e.contains(Constant.ORACLE_SQL)){
+                return DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR;
+            }else if (e.contains(Constant.ORACLE_INSERT_PRI)){
+                return DBUtilErrorCode.ORACLE_QUERY_INSERT_PRI_ERROR;
+            }
+
+            return DBUtilErrorCode.READ_RECORD_FAIL;
         }
 
         public void post(Configuration originalConfig) {

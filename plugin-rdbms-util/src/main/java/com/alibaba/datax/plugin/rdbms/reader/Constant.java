@@ -18,4 +18,15 @@ public final class Constant {
     public static String QUERY_SQL_TEMPLATE_WITHOUT_WHERE = "select %s from %s ";
 
     public static String QUERY_SQL_TEMPLATE = "select %s from %s where (%s)";
+
+    static final String MYSQL_TABLE_NAME_ERR1 = "Table";
+    static final String MYSQL_TABLE_NAME_ERR2 = "doesn't exist";
+    static final String MYSQL_INSERT_PRI = "SELECT command denied to user";
+    static final String MYSQL_COLUMN1 = "Unknown column";
+    static final String MYSQL_COLUMN2 = "field list";
+    static final String MYSQL_WHERE = "where clause";
+
+    static final String ORACLE_TABLE_NAME = "table or view does not exist";
+    static final String ORACLE_INSERT_PRI = "insufficient privileges";
+    static final String ORACLE_SQL = "invalid identifier";
 }

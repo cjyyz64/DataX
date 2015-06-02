@@ -13,6 +13,17 @@ public enum DBUtilErrorCode implements ErrorCode {
     ORACLE_CONN_IPPORT_ERROR("ORACLEErrCode-02","IP地址或者Port错误，请联系DBA确认"),
     ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库不存在，请联系DBA确认"),
 
+    //execute query错误
+    MYSQL_QUERY_TABLE_NAME_ERROR("MYSQLErrCode-04","表不存在，请联系DBA确认"),
+    MYSQL_QUERY_SQL_ERROR("MYSQLErrCode-05","SQL语句错误，请检查Where条件"),
+    MYSQL_QUERY_COLUMN_ERROR("MYSQLErrCode-06","Column错误，请检查列名称"),
+    MYSQL_QUERY_INSERT_PRI_ERROR("MYSQLErrCode-07","没有读权限，请联系DBA确认"),
+
+    ORACLE_QUERY_TABLE_NAME_ERROR("ORACLEErrCode-04","表不存在，请联系DBA确认"),
+    ORACLE_QUERY_SQL_ERROR("ORACLEErrCode-05","SQL语句错误，请检查Column或者Where条件"),
+    ORACLE_QUERY_INSERT_PRI_ERROR("ORACLEErrCode-06","没有读权限，请联系DBA确认"),
+
+
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),

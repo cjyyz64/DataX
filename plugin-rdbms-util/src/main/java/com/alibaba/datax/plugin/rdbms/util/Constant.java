@@ -12,4 +12,6 @@ public final class Constant {
     static final String ORACLE_CONNEXP = "The Network Adapter could not establish the connection";
     static final String ORACLE_ACCDENIED = "ORA-01017";
 
+
+
 }
