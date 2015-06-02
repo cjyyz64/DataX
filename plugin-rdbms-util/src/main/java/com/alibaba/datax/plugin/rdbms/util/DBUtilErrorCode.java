@@ -13,6 +13,7 @@ public enum DBUtilErrorCode implements ErrorCode {
     ORACLE_CONN_IPPORT_ERROR("ORACLEErrCode-02","IP地址或者Port错误，请联系DBA确认"),
     ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库不存在，请联系DBA确认"),
 
+    JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
     GET_COLUMN_INFO_FAILED("DBUtilErrorCode-01", "获取表字段相关信息失败."),

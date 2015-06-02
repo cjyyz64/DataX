@@ -28,4 +28,20 @@ public class DBUtilTest {
         System.out.println(allColumns);
 
     }
+
+//    @Test(enabled=false)
+//    public void mySQLDBNameErrTest(){
+//        DataBaseType dataBaseType = DataBaseType.MySql;
+//        List<String> jdbcUrls = new ArrayList<String>();
+//        jdbcUrls.add("jdbc:mysql://10.101.83.3:3306/bad_database");
+//        String username = "root";
+//        String password = "root";
+//        List<String> preSql = null;
+//        boolean checkSlave = false;
+//        try{
+//            DBUtil.chooseJdbcUrl(dataBaseType,jdbcUrls,username,password,preSql,checkSlave);
+//        }catch (Exception e){
+//            Assert.assertEquals(e.getMessage(), DBUtilErrorCode.MYSQL_CONN_DB_ERROR.toString());
+//        }
+//    }
 }
