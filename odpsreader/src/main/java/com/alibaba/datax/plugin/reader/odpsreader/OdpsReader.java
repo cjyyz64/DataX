@@ -363,7 +363,6 @@ public class OdpsReader extends Reader {
                         columnTypeMap, parsedColumns, partition, this.isPartitionedTable,
                         start, count, this.isCompress);
 
-//                retryDoRead(10, 2000, readerProxy);
                 readerProxy.doRead();
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
@@ -372,41 +371,6 @@ public class OdpsReader extends Reader {
 
         }
 
-//        public void retryDoRead(int retryTimes, long retryInterval, ReaderProxy readerProxy) throws Exception {
-//            int count = 1;
-//            int originRetryTimes = retryTimes;
-//
-//            long lastIndex = -1;
-//            while(retryTimes > 0) {
-//                try {
-//                    Pair<DataXException, Long> pair = readerProxy.doRead();
-//                    if(pair != null) {
-//                        long nowIndex = pair.getRight();
-//                        //上次read的点位 和 这次的点位不同的话,证明上次已经重试成功,将retryTimes 重置为 初始值
-//                        if(lastIndex != nowIndex && lastIndex != -1) {
-//                            retryTimes = originRetryTimes;
-//                            count = 1;
-//                        }
-//                        lastIndex = nowIndex;
-//                        throw pair.getLeft();
-//                    }
-//                    break;
-//                } catch (DataXException e) {
-//                    if(OdpsReaderErrorCode.ODPS_READ_EXCEPTION.getCode().equals(e.getErrorCode().getCode())) {
-//                        LOG.warn("odps read-time-out, 重试第{}次",count++);
-//                        try {
-//                            Thread.sleep(retryInterval);
-//                        } catch (InterruptedException ignored) {}
-//                        retryTimes--;
-//                        if(retryTimes <= 0) {
-//                            throw e;
-//                        }
-//                    } else {
-//                        throw e;
-//                    }
-//                }
-//            }
-//        }
 
         @Override
         public void post() {

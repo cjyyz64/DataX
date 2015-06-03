@@ -64,11 +64,16 @@ public class ReaderProxy {
                 try {
                     odpsRecord = recordReader.read();
                 } catch(Exception e) {
-                    //throw 一个特殊的异常, 外层捕获该异常进行重试
+                    //odps read 异常后重试10次
                     LOG.warn("warn : odps read exception: {}", e.getMessage());
                     if(retryTimes < 10) {
-                        LOG.warn("odps read-time-exception, 重试第{}次", retryTimes++);
-                        Thread.sleep(2000);
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        recordReader = downloadSession.openRecordReader(start, count, isCompress);
+                        LOG.warn("odps-read-exception, 重试第{}次", retryTimes);
+                        retryTimes++;
                         continue;
                     } else {
                         throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_EXCEPTION, e);
@@ -121,7 +126,6 @@ public class ReaderProxy {
             throw DataXException.asDataXException(
                     OdpsReaderErrorCode.READ_DATA_FAIL, e);
         }
-        //return null;
     }
 
     private Map<String, String> parseCurrentPartitionValue() {
