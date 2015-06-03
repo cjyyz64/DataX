@@ -47,7 +47,6 @@ public class OdpsUtilTest {
     @Test
     public void testRunSqlTaskWithRetryOK() throws Exception {
         PowerMockito.spy(OdpsUtil.class);
-        //PowerMockito.doNothing().when(OdpsUtil.class, "runSqlTask", (Odps)anyObject(), anyString());
         final AtomicInteger realRetryTimes = new AtomicInteger(0);
         PowerMockito.doAnswer(new Answer<Object>() {
             @Override
@@ -57,16 +56,11 @@ public class OdpsUtilTest {
                 return null;
             }
         }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
-        try {
-            OdpsUtil.runSqlTaskWithRetry(
-                    new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
-                    4, 1000, true);
-        } catch (Exception e) {
-            Assert.assertTrue(e instanceof DataXException);
-            Assert.assertTrue(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(((DataXException) e).getErrorCode()));
-            System.out.println("ok");
-        }
-        Assert.assertEquals(new AtomicInteger(1), realRetryTimes);
+
+        OdpsUtil.runSqlTaskWithRetry(
+                new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
+                4, 1000, true);
+        Assert.assertEquals(1, realRetryTimes.get());
     }
 
 
