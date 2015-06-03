@@ -63,5 +63,51 @@ public class OdpsUtilTest {
         Assert.assertEquals(1, realRetryTimes.get());
     }
 
+    @Test
+    public void testRunSqlTaskWithRetry_Exception() throws Exception {
+        PowerMockito.spy(OdpsUtil.class);
+        final AtomicInteger realRetryTimes = new AtomicInteger(0);
+        PowerMockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                realRetryTimes.addAndGet(1);
+                throw new Exception("不可重试异常");
+                //return null;
+            }
+        }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
+
+        try {
+            OdpsUtil.runSqlTaskWithRetry(
+                    new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
+                    4, 1000, true);
+        } catch (Exception e) {
+            Assert.assertEquals(e.getMessage(), "不可重试异常");
+        }
+        Assert.assertEquals(1, realRetryTimes.get());
+    }
+
+    @Test
+    public void testRunSqlTaskWithRetry_DataxException_可重试() throws Exception {
+        PowerMockito.spy(OdpsUtil.class);
+        final AtomicInteger realRetryTimes = new AtomicInteger(0);
+        PowerMockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                realRetryTimes.addAndGet(1);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION, "可重试异常");
+                //return null;
+            }
+        }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
+
+        try {
+            OdpsUtil.runSqlTaskWithRetry(
+                    new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
+                    4, 1000, true);
+        } catch (DataXException e) {
+            Assert.assertEquals(e.getErrorCode(), OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION);
+        }
+        Assert.assertEquals(4, realRetryTimes.get());
+    }
+
 
 }
