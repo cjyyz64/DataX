@@ -38,6 +38,11 @@ public class MysqlReader extends Reader {
         }
 
         @Override
+        public void preCheck(){
+            init();
+        }
+
+        @Override
         public List<Configuration> split(int adviceNumber) {
             return this.commonRdbmsReaderJob.split(this.originalConfig, adviceNumber);
         }
