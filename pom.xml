@@ -87,7 +87,6 @@
 
         <module>adswriter</module>
         <module>ocswriter</module>
-    <module>sqlserverwriter</module>
   </modules>
 
     <dependencyManagement>
