@@ -9,7 +9,7 @@ public enum OdpsReaderErrorCode implements ErrorCode {
     GET_DOWNLOADSESSION_FAIL("OdpsReader-04", "获取 ODPS 的 downloadSession 失败."),
     READ_DATA_FAIL("OdpsReader-05", "读取 ODPS 源头表失败."),
     GET_ID_KEY_FAIL("OdpsReader-06", "获取 accessId/accessKey 失败."),
-    ODPS_READ_TIMEOUT("OdpsReader-07", "读取 odps 超时");
+    ODPS_READ_EXCEPTION("OdpsReader-07", "读取 odps 超时");
 
     private final String code;
     private final String description;
