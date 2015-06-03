@@ -167,9 +167,81 @@ public class JobContainer extends AbstractContainer {
     }
 
     private void preCheck() {
-        this.init();
+        this.preCheckInit();
         this.preCheckReader();
         this.preCheckWriter();
+    }
+
+    private void preCheckInit() {
+        this.jobId = this.configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
+
+        if (this.jobId < 0) {
+            LOG.info("Set jobId = 0");
+            this.jobId = 0;
+            this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
+                    this.jobId);
+        }
+
+        Thread.currentThread().setName("job-" + this.jobId);
+
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
+                this.getContainerCommunicator());
+        this.jobReader = this.preCheckReaderInit(jobPluginCollector);
+        this.jobWriter = this.preCheckWriterInit(jobPluginCollector);
+    }
+
+    private Reader.Job preCheckReaderInit(JobPluginCollector jobPluginCollector) {
+        this.readerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.READER, this.readerPluginName));
+
+        Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
+                PluginType.READER, this.readerPluginName);
+
+        // 设置reader的jobConfig
+        jobReader.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的readerConfig
+        jobReader.setReaderConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的writerConfig
+        jobReader.setWriterConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
+
+
+        jobReader.setJobPluginCollector(jobPluginCollector);
+
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+        return jobReader;
+    }
+
+
+    private Writer.Job preCheckWriterInit(JobPluginCollector jobPluginCollector) {
+        this.writerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.WRITER, this.writerPluginName));
+
+        Writer.Job jobWriter = (Writer.Job) LoadUtil.loadJobPlugin(
+                PluginType.WRITER, this.writerPluginName);
+
+        // 设置writer的jobConfig
+        jobWriter.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
+        // 设置reader的readerConfig
+        jobWriter.setReaderConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的writerConfig
+        jobWriter.setWriterConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
+        jobWriter.setReaderPluginName(this.readerPluginName);
+        jobWriter.setJobPluginCollector(jobPluginCollector);
+
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+
+        return jobWriter;
     }
 
     private void preCheckReader() {
