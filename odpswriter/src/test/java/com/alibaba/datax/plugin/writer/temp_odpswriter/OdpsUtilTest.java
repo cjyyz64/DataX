@@ -109,5 +109,31 @@ public class OdpsUtilTest {
         Assert.assertEquals(4, realRetryTimes.get());
     }
 
+    @Test
+    public void testRunSqlTaskWithRetry_第一次异常_第二次成功() throws Exception {
+        PowerMockito.spy(OdpsUtil.class);
+        final AtomicInteger realRetryTimes = new AtomicInteger(0);
+        PowerMockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                realRetryTimes.addAndGet(1);
+                if(realRetryTimes.get() ==2) {
+                    System.out.println("执行成功，无须重试");
+                    return null;
+                } else {
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION, "可重试异常");
+                }
+                //return null;
+            }
+        }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
+
+
+        OdpsUtil.runSqlTaskWithRetry(
+                new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
+                4, 1000, true);
+
+        Assert.assertEquals(2, realRetryTimes.get());
+    }
+
 
 }
