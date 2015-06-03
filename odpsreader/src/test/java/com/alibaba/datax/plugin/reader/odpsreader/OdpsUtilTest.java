@@ -4,6 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.Odps;
 import com.aliyun.odps.account.AliyunAccount;
+import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel;
 import com.aliyun.odps.tunnel.TunnelException;
 import org.junit.Assert;
@@ -18,6 +19,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyLong;
 
@@ -62,6 +64,28 @@ public class OdpsUtilTest {
             Assert.assertTrue(e instanceof DataXException);
             Assert.assertTrue(e.getMessage().contains("third exception"));
         }
+
+        System.out.println("ok");
+    }
+
+    @Test
+    public void testGetRecordReaderOK() throws IOException, TunnelException, NoSuchFieldException, IllegalAccessException {
+        int start = 10;
+        int count = 100;
+        final TableTunnel.DownloadSession mockSession = Mockito.mock(TableTunnel.DownloadSession.class);
+        OdpsUtil.MAX_RETRY_TIME =2;
+        final RecordReader recordReader = mockSession.openRecordReader(1L,2);
+
+        PowerMockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                return recordReader;
+            }
+        })
+                .when(mockSession).openRecordReader(anyLong(), anyLong(), anyBoolean());
+
+
+        OdpsUtil.getRecordReader(mockSession, start, count, false);
 
         System.out.println("ok");
     }
