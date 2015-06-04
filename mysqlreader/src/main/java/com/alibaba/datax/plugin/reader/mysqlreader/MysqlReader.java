@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
@@ -8,14 +7,10 @@ import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.util.List;
 
 public class MysqlReader extends Reader {
@@ -53,62 +48,9 @@ public class MysqlReader extends Reader {
                 String jdbcUrl = conf.getString(Key.JDBC_URL);
                 String username = conf.getString(Key.USERNAME);
                 String password = conf.getString(Key.PASSWORD);
-                Connection conn = DBUtil.getConnection(DATABASE_TYPE.MySql, jdbcUrl,
-                        username, password);
-                int fetchSize = 1;
-                ResultSet rs = null;
-                try {
-                    rs = DBUtil.query(conn, querySql, fetchSize);
-
-                } catch (Exception e) {
-                    throw analysisException(DATABASE_TYPE.MySql,e,querySql);
-//                throw DataXException.asDataXException(
-//                        DBUtilErrorCode.READ_RECORD_FAIL, String.format(
-//                                "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
-//                                basicMsg, querySql), e);
-                } finally {
-                    DBUtil.closeDBResources(null, conn);
-                }
+                new Thread(new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql)).start();
             }
         }
-
-
-    private DataXException analysisException(DataBaseType dataBaseType, Exception e,String querySql){
-        if (dataBaseType.equals(DataBaseType.MySql)){
-            DBUtilErrorCode dbUtilErrorCode = mySqlConnectionErrorAna(e.getMessage());
-            return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
-        }else if (dataBaseType.equals(DataBaseType.Oracle)){
-            DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
-            return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
-        }else{
-            return DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,querySql+e);
-        }
-    }
-
-    private DBUtilErrorCode mySqlConnectionErrorAna(String e){
-//        if (e.contains(Constant.MYSQL_TABLE_NAME_ERR1) && e.contains(Constant.MYSQL_TABLE_NAME_ERR2)){
-//            return DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR;
-//        }else if (e.contains(Constant.MYSQL_INSERT_PRI)){
-//            return DBUtilErrorCode.MYSQL_QUERY_INSERT_PRI_ERROR;
-//        }else if (e.contains(Constant.MYSQL_COLUMN1) && e.contains(Constant.MYSQL_COLUMN2)){
-//            return DBUtilErrorCode.MYSQL_QUERY_COLUMN_ERROR;
-//        }else if (e.contains(Constant.MYSQL_WHERE)){
-//            return DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR;
-//        }
-        return DBUtilErrorCode.READ_RECORD_FAIL;
-    }
-
-    private DBUtilErrorCode oracleConnectionErrorAna(String e){
-//        if (e.contains(Constant.ORACLE_TABLE_NAME)){
-//            return DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR;
-//        }else if (e.contains(Constant.ORACLE_SQL)){
-//            return DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR;
-//        }else if (e.contains(Constant.ORACLE_INSERT_PRI)){
-//            return DBUtilErrorCode.ORACLE_QUERY_INSERT_PRI_ERROR;
-//        }
-
-        return DBUtilErrorCode.READ_RECORD_FAIL;
-    }
 
         @Override
         public List<Configuration> split(int adviceNumber) {
