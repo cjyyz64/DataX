@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
@@ -7,9 +8,13 @@ import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.alibaba.druid.sql.parser.ParserException;
 
 import java.util.List;
 
@@ -43,13 +48,24 @@ public class MysqlReader extends Reader {
         public void preCheck(int adviceNumber){
             init();
             List<Configuration> confs = ReaderSplitUtil.doSplit(this.originalConfig,adviceNumber);
-            for (Configuration conf:confs){
-                String querySql = conf.getString(Key.QUERY_SQL);
-                String jdbcUrl = conf.getString(Key.JDBC_URL);
-                String username = conf.getString(Key.USERNAME);
-                String password = conf.getString(Key.PASSWORD);
-                new Thread(new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql)).start();
+            String querySql = confs.get(0).getString(Key.QUERY_SQL);
+            try{
+                boolean isPassSqlParser = DBUtil.sqlValid(querySql, DataBaseType.MySql);
+                if (isPassSqlParser){
+                    for (Configuration conf:confs){
+                        String jdbcUrl = conf.getString(Key.JDBC_URL);
+                        String username = conf.getString(Key.USERNAME);
+                        String password = conf.getString(Key.PASSWORD);
+                        new Thread(new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql)).start();
+                    }
+                }
+            }catch (ParserException e){
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.CONN_DB_ERROR,
+                        String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
+                                StringUtils.join(querySql, ",")), e);
             }
+
         }
 
         @Override

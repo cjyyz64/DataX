@@ -36,10 +36,7 @@ public class PreCheckTask implements Runnable {
                 this.userName, password);
         int fetchSize = 1;
         try {
-            boolean isPassSqlParser = DBUtil.sqlValid(querySql, DataBaseType.MySql);
-            if (isPassSqlParser == true){
-                DBUtil.query(conn, querySql, fetchSize);
-            }
+            DBUtil.query(conn, querySql, fetchSize);
         } catch (Exception e) {
             LOG.error(e.getMessage());
         } finally {
