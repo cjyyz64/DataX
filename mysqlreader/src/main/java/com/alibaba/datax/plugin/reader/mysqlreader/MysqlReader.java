@@ -57,13 +57,17 @@ public class MysqlReader extends Reader {
                         String username = conf.getString(Key.USERNAME);
                         String password = conf.getString(Key.PASSWORD);
                         new Thread(new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql)).start();
+                        Thread.sleep(60000);
                     }
+                    Thread.sleep(120000);
                 }
             }catch (ParserException e){
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.CONN_DB_ERROR,
                         String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
                                 StringUtils.join(querySql, ",")), e);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
 
         }
