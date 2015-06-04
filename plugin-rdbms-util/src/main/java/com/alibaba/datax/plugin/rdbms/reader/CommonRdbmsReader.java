@@ -7,7 +7,10 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
-import com.alibaba.datax.plugin.rdbms.util.*;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.druid.sql.parser.ParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,23 +101,32 @@ public class CommonRdbmsReader {
             int columnNumber = 0;
             ResultSet rs = null;
             try {
-                rs = DBUtil.query(conn, querySql, fetchSize);
-                ResultSetMetaData metaData = rs.getMetaData();
-                columnNumber = metaData.getColumnCount();
+                boolean isPassSqlValid = DBUtil.sqlValid(querySql,dataBaseType);
+                if (isPassSqlValid == true){
+                    rs = DBUtil.query(conn, querySql, fetchSize);
+                    ResultSetMetaData metaData = rs.getMetaData();
+                    columnNumber = metaData.getColumnCount();
 
-                while (rs.next()) {
-                    ResultSetReadProxy.transportOneRecord(recordSender, rs,
-                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                    while (rs.next()) {
+                        ResultSetReadProxy.transportOneRecord(recordSender, rs,
+                                metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                    }
+
+                    LOG.info("Finished read record by Sql: [{}\n] {}.",
+                            querySql, basicMsg);
+                }
+            } catch (ParserException e){
+                if (dataBaseType.equals(DataBaseType.MySql)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR,querySql+e);
+                }else if (dataBaseType.equals(DataBaseType.Oracle)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,querySql+e);
+                }else{
+                    throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
                 }
 
-                LOG.info("Finished read record by Sql: [{}\n] {}.",
-                        querySql, basicMsg);
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw analysisException(this.dataBaseType,e,querySql);
-//                throw DataXException.asDataXException(
-//                        DBUtilErrorCode.READ_RECORD_FAIL, String.format(
-//                                "读数据库数据失败. 上下文信息是:%s , 执行的语句是:[%s]",
-//                                basicMsg, querySql), e);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
@@ -128,7 +140,7 @@ public class CommonRdbmsReader {
                 DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
                 return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
             }else{
-                return DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,querySql+e);
+                return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
             }
         }
 

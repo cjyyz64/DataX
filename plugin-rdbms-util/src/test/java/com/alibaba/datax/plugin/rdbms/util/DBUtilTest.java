@@ -1,7 +1,10 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
+import com.alibaba.druid.sql.parser.ParserException;
+import junit.framework.Assert;
 import org.junit.Test;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class DBUtilTest {
@@ -27,6 +30,39 @@ public class DBUtilTest {
                 pass, tableName);
         System.out.println(allColumns);
 
+    }
+
+    @Test
+    public void queryTest(){
+        String jdbcUrl = "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlreader";
+        String user = "root";
+        String pass = "root";
+        String tableName = "`bvt_case_1rows_5split`";
+        Connection conn = DBUtil.getConnection(DataBaseType.MySql,jdbcUrl,user,pass);
+
+    }
+
+    @Test
+    public void sqlValidFalseTest(){
+        String sql = "select distinct desc from bvt_case_1_rows_5split";
+        try {
+            boolean isValid = DBUtil.sqlValid(sql,DataBaseType.MySql);
+            Assert.assertFalse(isValid);
+        }catch (ParserException e){
+            System.out.println(e.getMessage());
+            Assert.assertNotNull(e);
+        }
+    }
+
+    @Test
+    public void sqlValidTrueTest(){
+        String sql = "select distinct id from bvt_case_1_rows_5split";
+        try {
+            boolean isValid = DBUtil.sqlValid(sql,DataBaseType.MySql);
+            Assert.assertTrue(isValid);
+        }catch (ParserException e){
+            System.out.println(e.getMessage());
+        }
     }
 
 //    @Test(enabled=false)

@@ -92,7 +92,7 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
         this.writerPluginName = writerPluginName;
     }
 
-    public void preCheck() {
+    public void preCheck(int adviceNumber) {
     }
 
 	public void prepare() {
