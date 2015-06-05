@@ -101,6 +101,64 @@ public final class ReaderSplitUtil {
         return splittedConfigs;
     }
 
+    public static List<Configuration> doPreCheckSplit(
+            Configuration originalSliceConfig, int adviceNumber) {
+        boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
+
+        String column = originalSliceConfig.getString(Key.COLUMN);
+        String where = originalSliceConfig.getString(Key.WHERE, null);
+
+        List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
+
+        List<Configuration> splittedConfigs = new ArrayList<Configuration>();
+
+        for (int i = 0, len = conns.size(); i < len; i++) {
+            Configuration sliceConfig = originalSliceConfig.clone();
+
+            Configuration connConf = Configuration.from(conns.get(i).toString());
+            String jdbcUrl = connConf.getString(Key.JDBC_URL);
+            sliceConfig.set(Key.JDBC_URL, jdbcUrl);
+
+            // 抽取 jdbcUrl 中的 ip/port 进行资源使用的打标，以提供给 core 做有意义的 shuffle 操作
+            sliceConfig.set(CommonConstant.LOAD_BALANCE_RESOURCE_MARK, DataBaseType.parseIpFromJdbcUrl(jdbcUrl));
+
+            sliceConfig.remove(Constant.CONN_MARK);
+
+            Configuration tempSlice;
+
+            // 说明是配置的 table 方式
+            if (isTableMode) {
+                // 已在之前进行了扩展和`处理，可以直接使用
+                List<String> tables = connConf.getList(Key.TABLE, String.class);
+
+                Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
+
+                String splitPk = originalSliceConfig.getString(Key.SPLIT_PK, null);
+                for (String table : tables) {
+                    tempSlice = sliceConfig.clone();
+                    tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
+                            .buildQuerySql(column, table, where));
+                    splittedConfigs.add(tempSlice);
+                }
+
+            } else {
+                // 说明是配置的 querySql 方式
+                List<String> sqls = connConf.getList(Key.QUERY_SQL,
+                        String.class);
+
+                // TODO 是否check 配置为多条语句？？
+                for (String querySql : sqls) {
+                    tempSlice = sliceConfig.clone();
+                    tempSlice.set(Key.QUERY_SQL, querySql);
+                    splittedConfigs.add(tempSlice);
+                }
+            }
+
+        }
+
+        return splittedConfigs;
+    }
+
     private static int calculateEachTableShouldSplittedNumber(int adviceNumber,
                                                               int tableNumber) {
         double tempNum = 1.0 * adviceNumber / tableNumber;
