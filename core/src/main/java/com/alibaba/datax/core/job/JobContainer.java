@@ -252,18 +252,22 @@ public class JobContainer extends AbstractContainer {
     private void preCheckReader(int needChannelNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.READER, this.readerPluginName));
-        LOG.info(String.format("DataX Reader.Job [%s] do preCheck work .",
+        LOG.info(String.format("DataX Reader.Job [%s] start to do preCheck work .",
                 this.readerPluginName));
         this.jobReader.preCheck(needChannelNumber);
+        LOG.info(String.format("DataX Reader.Job [%s] finish preCheck work .",
+                this.readerPluginName));
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
     private void preCheckWriter(int needChannelNumber) {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
-        LOG.info(String.format("DataX Writer.Job [%s] do prepare work .",
+        LOG.info(String.format("DataX Writer.Job [%s] start to do preCheck work .",
                 this.writerPluginName));
         this.jobWriter.preCheck(needChannelNumber);
+        LOG.info(String.format("DataX Writer.Job [%s] finish preCheck work .",
+                this.writerPluginName));
         classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
