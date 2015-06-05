@@ -6,12 +6,18 @@ import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.*;
 import com.alibaba.druid.sql.parser.ParserException;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsRangeSplitWrap;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -66,9 +72,9 @@ public class SingleTableSplitUtil {
                     splitPkName, "'", DATABASE_TYPE);
         } else if (isLongType) {
             rangeList = RdbmsRangeSplitWrap.splitAndWrap(
-                    Long.parseLong(minMaxPK.getLeft().toString()),
-                    Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
-                    splitPkName);
+                    new BigInteger(minMaxPK.getLeft().toString()),
+                    new BigInteger(minMaxPK.getRight().toString()),
+                    adviceNum, splitPkName);
         } else {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
