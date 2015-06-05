@@ -6,11 +6,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.util.concurrent.Callable;
 
 /**
  * Created by judy.lt on 2015/6/4.
  */
-public class PreCheckTask implements Runnable {
+public class PreCheckTask implements Callable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(PreCheckTask.class);
     private String userName;
     private String password;
@@ -31,7 +32,7 @@ public class PreCheckTask implements Runnable {
     }
 
     @Override
-    public void run() {
+    public Boolean call() {
         Connection conn = DBUtil.getConnection(this.dataBaseType, this.jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
@@ -42,6 +43,6 @@ public class PreCheckTask implements Runnable {
         } finally {
             DBUtil.closeDBResources(null, conn);
         }
-
+        return false;
     }
 }

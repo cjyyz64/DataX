@@ -11,12 +11,17 @@ import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.druid.sql.parser.ParserException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.alibaba.druid.sql.parser.ParserException;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MysqlReader extends Reader {
 
@@ -49,17 +54,27 @@ public class MysqlReader extends Reader {
             init();
             List<Configuration> confs = ReaderSplitUtil.doSplit(this.originalConfig,adviceNumber);
             String querySql = confs.get(0).getString(Key.QUERY_SQL);
+            ExecutorService exec;
             try{
                 boolean isPassSqlParser = DBUtil.sqlValid(querySql, DataBaseType.MySql);
+                if (confs.size() < 10){
+                    exec = Executors.newFixedThreadPool(confs.size());
+                }else{
+                    exec = Executors.newFixedThreadPool(10);
+                }
+                Collection<PreCheckTask> taskList = new ArrayList<PreCheckTask>();
                 if (isPassSqlParser){
                     for (Configuration conf:confs){
                         String jdbcUrl = conf.getString(Key.JDBC_URL);
                         String username = conf.getString(Key.USERNAME);
                         String password = conf.getString(Key.PASSWORD);
-                        new Thread(new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql)).start();
-                        Thread.sleep(60000);
+                        PreCheckTask t = new PreCheckTask(username,password,querySql,jdbcUrl,DataBaseType.MySql);
+                        taskList.add(t);
                     }
-                    Thread.sleep(120000);
+                    List<Future<Boolean>> preCheckRsts = exec.invokeAll(taskList);
+                    for (Future<Boolean> rst:preCheckRsts){
+
+                    }
                 }
             }catch (ParserException e){
                 throw DataXException.asDataXException(
