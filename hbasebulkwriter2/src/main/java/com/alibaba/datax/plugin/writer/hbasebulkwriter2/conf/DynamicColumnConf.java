@@ -9,15 +9,18 @@ import java.util.Map;
  * Created by liqiang on 15/5/25.
  */
 public class DynamicColumnConf implements HBaseJobParameterConf {
-    public String hbase_table;
-    public String rowkey_type;
-    public HbaseColumn hbase_column = new HbaseColumn();
-    public String hbase_output;
-    public String hbase_cluster_name;
-    public String hbase_hmc_address;
-    public String hbase_config;
-    public String hdfs_config;
-    public Map<String, String> optional;
+    public String hbaseTable;
+    public String rowkeyType;
+    public HbaseColumn hbaseColumn = new HbaseColumn();
+    public String hbaseOutput;
+    public String hbaseConfig;
+    public String hdfsConfig;
+    public String nullMode;
+    public String startTs;
+    public String timeCol;
+    public String bucketNum;
+    public String encoding;
+    public Map<String, String> configuration;
 
     public static class HbaseColumn {
         public String type = "prefix";
@@ -45,40 +48,51 @@ public class DynamicColumnConf implements HBaseJobParameterConf {
         }
     }
 
-    public String getHbase_table() {
-        return hbase_table;
+    public String getHbaseTable() {
+        return hbaseTable;
     }
 
-    public String getRowkey_type() {
-        return rowkey_type;
+    public String getRowkeyType() {
+        return rowkeyType;
     }
 
-    public HbaseColumn getHbase_column() {
-        return hbase_column;
+    public HbaseColumn getHbaseColumn() {
+        return hbaseColumn;
     }
 
-    public String getHbase_output() {
-        return hbase_output;
+    public String getHbaseOutput() {
+        return hbaseOutput;
     }
 
-    public String getHbase_config() {
-        return hbase_config;
+    public String getHbaseConfig() {
+        return hbaseConfig;
     }
 
-    public String getHdfs_config() {
-        return hdfs_config;
+    public String getHdfsConfig() {
+        return hdfsConfig;
     }
 
-
-    public String getHbase_cluster_name() {
-        return hbase_cluster_name;
+    public String getNullMode() {
+        return nullMode;
     }
 
-    public String getHbase_hmc_address() {
-        return hbase_hmc_address;
+    public String getStartTs() {
+        return startTs;
     }
 
-    public Map<String, String> getOptional() {
-        return optional;
+    public String getTimeCol() {
+        return timeCol;
+    }
+
+    public String getBucketNum() {
+        return bucketNum;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public Map<String, String> getConfiguration() {
+        return configuration;
     }
 }

@@ -17,21 +17,24 @@ public class DynamicColumnConfTest {
         hBaseRule1.pattern="cf:col";
         hBaseRule1.htype="string";
 
-        dynamicColumnConf.hbase_column=new DynamicColumnConf.HbaseColumn();
-        dynamicColumnConf.hbase_column.rules= Lists.newArrayList();
-        dynamicColumnConf.hbase_column.rules.add(hBaseRule1);
+        dynamicColumnConf.hbaseColumn=new DynamicColumnConf.HbaseColumn();
+        dynamicColumnConf.hbaseColumn.rules= Lists.newArrayList();
+        dynamicColumnConf.hbaseColumn.rules.add(hBaseRule1);
 
-        dynamicColumnConf.hbase_table="table123";
-        dynamicColumnConf.rowkey_type="string";
+        dynamicColumnConf.hbaseTable="table123";
+        dynamicColumnConf.rowkeyType="string";
 
-        dynamicColumnConf.hbase_output="hbaseout123";
-        dynamicColumnConf.hbase_config="hbasexml";
-        dynamicColumnConf.hdfs_config="hdfsxml";
+        dynamicColumnConf.hbaseOutput="hbaseout123";
+        dynamicColumnConf.hbaseConfig="hbasexml";
+        dynamicColumnConf.hdfsConfig="hdfsxml";
+        dynamicColumnConf.nullMode="EMPTY_BYTES";
+        dynamicColumnConf.timeCol="2";
+        dynamicColumnConf.encoding="utf-8";
 
         System.out.println(JSON.toJSONString(dynamicColumnConf));
 
-        String result ="{\"hbase_column\":{\"rules\":[{\"htype\":\"string\",\"pattern\":\"cf:col\"}],\"type\":\"prefix\"},\"hbase_config\":\"hbasexml\",\"hbase_output\":\"hbaseout123\",\"hbase_table\":\"table123\",\"hdfs_config\":\"hdfsxml\",\"rowkey_type\":\"string\"}";
+        String result ="{\"encoding\":\"utf-8\",\"hbaseColumn\":{\"rules\":[{\"htype\":\"string\",\"pattern\":\"cf:col\"}],\"type\":\"prefix\"},\"hbaseConfig\":\"hbasexml\",\"hbaseOutput\":\"hbaseout123\",\"hbaseTable\":\"table123\",\"hdfsConfig\":\"hdfsxml\",\"nullMode\":\"EMPTY_BYTES\",\"rowkeyType\":\"string\",\"timeCol\":\"2\"}";
 
-        Assert.assertEquals(result,JSON.toJSONString(dynamicColumnConf));
+        Assert.assertEquals(result, JSON.toJSONString(dynamicColumnConf));
     }
 }

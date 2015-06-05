@@ -9,6 +9,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.Engine;
 import com.alibaba.datax.core.container.util.HookInvoker;
 import com.alibaba.datax.core.container.util.JobAssignUtil;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
@@ -187,6 +188,7 @@ public class JobContainer extends AbstractContainer {
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
                 this.getContainerCommunicator());
+        //必须先Reader ，后Writer
         this.jobReader = this.initJobReader(jobPluginCollector);
         this.jobWriter = this.initJobWriter(jobPluginCollector);
     }
@@ -224,9 +226,11 @@ public class JobContainer extends AbstractContainer {
                 this.getContainerCommunicator());
         handler.setJobPluginCollector(jobPluginCollector);
 
+        //todo configuration的安全性，将来必须保证
         handler.preHandler(configuration);
         classLoaderSwapper.restoreCurrentThreadClassLoader();
 
+        LOG.info("After PreHandler: \n" + Engine.filterJobConfiguration(configuration) + "\n");
     }
 
     private void postHandle() {

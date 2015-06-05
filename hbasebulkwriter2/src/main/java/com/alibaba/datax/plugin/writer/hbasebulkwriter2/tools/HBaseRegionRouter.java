@@ -36,14 +36,13 @@ public class HBaseRegionRouter extends UDF {
     private static final String ARG_TABLE = "t";
     private static final String ARG_CONF_PATH = "c";
     private static final String ARG_CLUSTER_ID = "l";
-    private static final String ARG_CLUSTER_NAME = "n";
-    private static final String ARG_HBASE_HMCADDRESS = "d";
+    private static final String ARG_CONFIGURATION = "n";
     private static final String ARG_REGIONS_FILE = "o";
     //private static final String PREFIX_PHOENIX_TYPE = "ph_";
     public static byte[][] keysArr = null;
 
-    public static JSONArray getRegionsJson(String table, String confPath, String clusterName, String hmcAddress, String clusterId) {
-        Configuration conf = HBaseHelper.getConfiguration(null, confPath, clusterName,hmcAddress, clusterId);
+    public static JSONArray getRegionsJson(String table, String confPath, String configStr, String clusterId) {
+        Configuration conf = HBaseHelper.getConfiguration(null, confPath, configStr, clusterId);
         JSONArray regionsJson = new JSONArray();
         HTable htable = null;
         try {
@@ -89,8 +88,7 @@ public class HBaseRegionRouter extends UDF {
         Options options = new Options();
         options.addOption(ARG_TABLE, true, "HBase table name");
         options.addOption(ARG_CONF_PATH, true, "HBase configure file path");
-        options.addOption(ARG_CLUSTER_NAME, true, "HBase cluster name from HMC");
-        options.addOption(ARG_HBASE_HMCADDRESS, true, "HBase HMC Adress ");
+        options.addOption(ARG_CONFIGURATION, true, "HBase Configuration json(map.class)");
         options.addOption(ARG_CLUSTER_ID, true, "HBase cluster id");
         options.addOption(ARG_REGIONS_FILE, true, "HBase regions information output");
         CommandLineParser parser = new PosixParser();
@@ -103,11 +101,10 @@ public class HBaseRegionRouter extends UDF {
 
             final String confPath = line.getOptionValue(ARG_CONF_PATH);
             final String clusterId = line.getOptionValue(ARG_CLUSTER_ID);
-            final String clusterName = line.getOptionValue(ARG_CLUSTER_NAME);
-            final String hmcAddress = line.getOptionValue(ARG_HBASE_HMCADDRESS);
+            final String configStr = line.getOptionValue(ARG_CONFIGURATION);
             final String regionsFile = line.getOptionValue(ARG_REGIONS_FILE);
 
-            LOG.info(String.format("HBaseRegionRouter run confPath=%s,clusterId=%s,clusterName=%s,hmcAddress=%s,regionsFile=%s", confPath, clusterId, clusterName, hmcAddress, regionsFile));
+            LOG.info(String.format("HBaseRegionRouter run confPath=%s,clusterId=%s,configStr=%s,regionsFile=%s", confPath, clusterId, configStr, regionsFile));
             if (StringUtils.isEmpty(regionsFile)) {
                 HBaseHelper.disableLogger();
             }
@@ -116,7 +113,7 @@ public class HBaseRegionRouter extends UDF {
             Future<JSONArray> future = executor.submit(new Callable<JSONArray>() {
                 @Override
                 public JSONArray call() {
-                    return getRegionsJson(table, confPath, clusterName, hmcAddress, clusterId);
+                    return getRegionsJson(table, confPath, configStr, clusterId);
                 }
             });
             JSONArray regionsJson = future.get(30, TimeUnit.SECONDS);

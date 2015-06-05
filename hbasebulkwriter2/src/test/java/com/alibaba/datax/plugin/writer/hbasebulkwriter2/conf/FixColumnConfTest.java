@@ -5,8 +5,6 @@ import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.HashMap;
-
 /**
  * Created by liqiang on 15/5/25.
  */
@@ -25,30 +23,31 @@ public class FixColumnConfTest {
         hbaseColumn2.index="1";
         hbaseColumn2.hname="cf:age";
         hbaseColumn2.htype="int";
-        fixColumnConf.hbase_column= Lists.newArrayList();
-        fixColumnConf.hbase_column.add(hbaseColumn1);
-        fixColumnConf.hbase_column.add(hbaseColumn2);
+        fixColumnConf.hbaseColumn= Lists.newArrayList();
+        fixColumnConf.hbaseColumn.add(hbaseColumn1);
+        fixColumnConf.hbaseColumn.add(hbaseColumn2);
 
         FixColumnConf.RowkeyColumn rowkeyColumn1= new FixColumnConf.RowkeyColumn();
         rowkeyColumn1.index="0";
         rowkeyColumn1.htype="string";
         rowkeyColumn1.constant="xxx";
 
-        fixColumnConf.hbase_rowkey=Lists.newArrayList();
-        fixColumnConf.hbase_rowkey.add(rowkeyColumn1);
+        fixColumnConf.hbaseRowkey=Lists.newArrayList();
+        fixColumnConf.hbaseRowkey.add(rowkeyColumn1);
 
-        fixColumnConf.hbase_table="test123";
-        fixColumnConf.hbase_output="output123";
-        fixColumnConf.hbase_config="hbase.xml";
-        fixColumnConf.hdfs_config="hdfs.xml";
-        fixColumnConf.optional=new HashMap<String, String>();
-        fixColumnConf.optional.put("null_mode","EMPTY_BYTES");
+        fixColumnConf.hbaseTable="test123";
+        fixColumnConf.hbaseOutput="output123";
+        fixColumnConf.hbaseConfig="hbase.xml";
+        fixColumnConf.hdfsConfig="hdfs.xml";
+        fixColumnConf.nullMode="EMPTY_BYTES";
+        fixColumnConf.timeCol="2";
+        fixColumnConf.encoding="utf-8";
 
         System.out.println(JSON.toJSONString(fixColumnConf));
 
-        String result="{\"hbase_column\":[{\"hname\":\"cf:name\",\"htype\":\"string\",\"index\":\"1\"},{\"hname\":\"cf:age\",\"htype\":\"int\",\"index\":\"1\"}],\"hbase_config\":\"hbase.xml\",\"hbase_output\":\"output123\",\"hbase_rowkey\":[{\"constant\":\"xxx\",\"htype\":\"string\",\"index\":\"0\"}],\"hbase_table\":\"test123\",\"hdfs_config\":\"hdfs.xml\",\"optional\":{\"null_mode\":\"EMPTY_BYTES\"}}";
+       String result="{\"encoding\":\"utf-8\",\"hbaseColumn\":[{\"hname\":\"cf:name\",\"htype\":\"string\",\"index\":\"1\"},{\"hname\":\"cf:age\",\"htype\":\"int\",\"index\":\"1\"}],\"hbaseConfig\":\"hbase.xml\",\"hbaseOutput\":\"output123\",\"hbaseRowkey\":[{\"constant\":\"xxx\",\"htype\":\"string\",\"index\":\"0\"}],\"hbaseTable\":\"test123\",\"hdfsConfig\":\"hdfs.xml\",\"nullMode\":\"EMPTY_BYTES\",\"timeCol\":\"2\"}";
 
-        Assert.assertEquals(result,JSON.toJSONString(fixColumnConf));
+        Assert.assertEquals(result, JSON.toJSONString(fixColumnConf));
     }
 
 }

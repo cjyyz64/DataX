@@ -6,6 +6,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.HTable;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -65,19 +65,12 @@ public class HBaseHelperTest {
   }
 
     @Test
-    public void testGetConfFromHmc() throws Exception {
-        HBaseHelper.getConfFromHMC("DATAX3-TEST","");
-
+    public void testGetConf() throws Exception {
+        String configstr ="{\"dfs.client.failover.proxy.provider.hdfscluster-perf\":\"org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider\",\"dfs.ha.namenodes.hdfscluster-perf\":\"nn1,nn2\",\"dfs.namenode.rpc-address.hdfscluster-perf.nn1\":\"10.101.88.59:8020\",\"dfs.namenode.rpc-address.hdfscluster-perf.nn2\":\"10.101.85.53:8020\",\"dfs.nameservices\":\"hdfscluster-perf\",\"fs.defaultFS\":\"hdfs://hdfscluster-perf\",\"hbase.zookeeper.quorum\":\"10.101.88.59,10.101.85.53,10.101.87.52\",\"zookeeper.znode.parent\":\"/hbase-datax3\"}";
+        Configuration conf=HBaseHelper.getConfiguration(null,null,configstr,null);
+        Assert.assertEquals(conf.get("fs.defaultFS"),"hdfs://hdfscluster-perf");
+        Assert.assertEquals(conf.get("fs.default.name"),"hdfs://hdfscluster-perf");
     }
 
-    @Test
-    public void testGetConfig() throws Exception {
 
-        Configuration conf=HBaseHelper.getConfiguration(null,null,"DATAX3-TEST","",null);
-        assertEquals(conf.get("dfs.nameservices"),"hdfscluster-perf");
-        assertEquals(conf.get("dfs.namenode.rpc-address.hdfscluster-perf.nn1"),"10.101.88.59:8020");
-        assertEquals(conf.get("dfs.namenode.rpc-address.hdfscluster-perf.nn2"),"10.101.85.53:8020");
-        assertEquals(conf.get("zookeeper.znode.parent"),"/hbase-datax3");
-        assertEquals(conf.get("hbase.zookeeper.quorum"),"10.101.88.59,10.101.85.53,10.101.87.52");
-    }
 }

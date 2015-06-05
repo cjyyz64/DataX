@@ -12,12 +12,12 @@ __email__ = 'haosong.hhs@alibaba-inc.com'
 __copyright__ = '2014 Alibaba Inc.'
 
 
-def get_hbase_regions_json(dst_table, hbase_config, hbase_clusterName, hbase_hmcAddress, cluster_id, datax_home):
+def get_hbase_regions_json(dst_table, hbase_config, configurationStr, cluster_id, datax_home):
     util.log_phase("HBaseBulkWriter2 Phase1.2 => get_hbase_regions_json", is_end=False)
     path = "/tmp/regions_%s" % str(uuid.uuid1())
     cmd = "java -jar %s/plugin/writer/hbasebulkwriter2/datax-odps-hbase-udf.jar " \
-          " -t '%s' -c '%s' -l '%s' -n '%s' -d '%s' -o '%s' " \
-          % (datax_home, dst_table, hbase_config, cluster_id, hbase_clusterName, hbase_hmcAddress, path)
+          " -t '%s' -c '%s' -l '%s' -n '%s' -o '%s' " \
+          % (datax_home, dst_table, hbase_config, cluster_id, configurationStr, path)
     result = odpsutil.execute(cmd)
     assert result[0] == 0, "ERROR: Get HBase regions failed: %s ." % result[2]
 
@@ -125,9 +125,8 @@ if __name__ == "__main__":
     parser.add_option("--sort_column", dest="sort_column", help="[ODPS] sort column", metavar="sort_column")
     parser.add_option("--dst_table", dest="dst_table", help="[HBase] dest table", metavar="dst_table")
     parser.add_option("--hbase_config", dest="hbase_config", help="[HBase] hbase-site.xml location",
-                      metavar="hbase_config")
-    parser.add_option("--hbase_clusterName", dest="hbase_clusterName", help="[HBase] cluster Name from HMC", metavar="hbase_clusterName", default="")
-    parser.add_option("--hbase_hmcAddress", dest="hbase_hmcAddress", help="[HBase] HMC address", metavar="hbase_hmcAddress", default="http://socs.alibaba-inc.com/open/api/hbase/getHbaseConfig")
+                      metavar="hbase_config", default="")
+    parser.add_option("--configuration", dest="configuration", help="[HBase] configuration json from HMC", metavar="configuration", default="")
     parser.add_option("--cluster_id", dest="cluster_id", help="[HBase] cluster id", metavar="cluster_id", default="")
 
     parser.add_option("--suffix", dest="suffix", help="[ODPS][option] suffix", metavar="suffix", default="")
@@ -169,8 +168,8 @@ if __name__ == "__main__":
 
     try:
         create_tmp_table(options.src_table, tmp_table)
-        regions = get_hbase_regions_json(options.dst_table, options.hbase_config, options.hbase_clusterName,
-                                     options.hbase_hmcAddress, options.cluster_id, options.datax_home)
+        regions = get_hbase_regions_json(options.dst_table, options.hbase_config, options.configuration,
+                                     options.cluster_id, options.datax_home)
         register_udf(regions, fun_name, res_file, options.datax_home)
         sort(options.src_table, options.partition, options.sort_column, tmp_table, len(regions), res_file, fun_name,
              options.bucket_num, options.dynamic_qualifier, options.rowkey_type)

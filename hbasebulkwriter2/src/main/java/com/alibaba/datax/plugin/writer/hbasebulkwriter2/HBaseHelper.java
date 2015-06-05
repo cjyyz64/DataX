@@ -16,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
@@ -180,129 +178,64 @@ public class HBaseHelper {
         return conf;
     }
 
-    private static Configuration getConfigurationByClusterId(Configuration conf, String clusterId) throws IOException {
-        if (conf == null) {
-            conf = new Configuration();
-        }
+    private static Configuration getConfigurationByClusterId(Configuration conf, String clusterId) {
 
-        if (StringUtils.isNotEmpty(clusterId)) {
-            String dataId = String.format(HBaseConsts.DIAMOND_DATA_ID_HBASE_CONF, clusterId);
-            conf = getConfigurationByClusterIdAndDataId(conf, clusterId, dataId);
-
-            dataId = String.format(HBaseConsts.DIAMOND_DATA_ID_HDFS_CONF, clusterId);
-            conf = getConfigurationByClusterIdAndDataId(conf, clusterId, dataId);
-        }
-
-        return conf;
-    }
-
-    public static Configuration getConfiguration(String hdfsConfPath, String hbaseConfPath, String clusterName, String hmcAddress, String clusterId) {
-        Configuration conf = new Configuration();
-
-        if (Strings.isNullOrEmpty(clusterName)) {
-            if (StringUtils.isNotEmpty(hdfsConfPath)) {
-                conf.addResource(new Path(hdfsConfPath));
-            }
-
-            if (StringUtils.isNotEmpty(hbaseConfPath)) {
-                conf.addResource(new Path(hbaseConfPath));
+        try {
+            if (conf == null) {
+                conf = new Configuration();
             }
 
             if (StringUtils.isNotEmpty(clusterId)) {
-                try {
-                    conf = getConfigurationByClusterId(conf, clusterId);
-                } catch (Exception e) {
-                    LOG.error("Get cluster configuration file from diamond failed.", e);
-                    throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
-                }
-            }
-        } else {
-            Map<String, String> mapConf = getConfFromHMCWithRetry(clusterName, hmcAddress);
-            for (Map.Entry<String, String> entry : mapConf.entrySet()) {
-                LOG.info("hbase conf value: " + entry.getKey() + " => " + entry.getValue());
-                conf.set(entry.getKey(), entry.getValue());
-            }
-        }
+                String dataId = String.format(HBaseConsts.DIAMOND_DATA_ID_HBASE_CONF, clusterId);
+                conf = getConfigurationByClusterIdAndDataId(conf, clusterId, dataId);
 
+                dataId = String.format(HBaseConsts.DIAMOND_DATA_ID_HDFS_CONF, clusterId);
+                conf = getConfigurationByClusterIdAndDataId(conf, clusterId, dataId);
+            }
+        } catch (Exception e) {
+            LOG.error("Get cluster configuration file from diamond failed.", e);
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, e);
+        }
 
         return conf;
     }
 
-    public static Map<String, String> getConfFromHMCWithRetry(final String clusterName, final String hmcAddress) {
+    public static Configuration getConfigurationByPath(String hdfsConfPath, String hbaseConfPath) {
+        Configuration conf = new Configuration();
 
-        Map<String, String> res = null;
-        try {
-            res = RetryUtil.executeWithRetry(new Callable<Map<String, String>>() {
-                @Override
-                public Map<String, String> call() throws Exception {
-                    return getConfFromHMC(clusterName, hmcAddress);
-                }
-            }, 15, 1, true);
-        } catch (Exception e) {
-            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "获取hdfs目录失败，请联系hbase同学检查hdfs集群", e);
+        if (StringUtils.isNotEmpty(hdfsConfPath)) {
+            conf.addResource(new Path(hdfsConfPath));
         }
-        return res;
+
+        if (StringUtils.isNotEmpty(hbaseConfPath)) {
+            conf.addResource(new Path(hbaseConfPath));
+        }
+
+        return conf;
     }
 
-    public static Map<String, String> getConfFromHMC(String clusterName, String hmcAddress) throws Exception {
+    public static Configuration getConfigurationByConf(Map<String, String> configuration) {
+        Configuration conf = new Configuration();
 
-
-        if (Strings.isNullOrEmpty(hmcAddress)) {
-            LOG.warn("hmcAddress为空，尝试使用默认值! ");
-            hmcAddress = "http://socs.alibaba-inc.com/open/api/hbase/getHbaseConfig";
-        }
-        if (hmcAddress.endsWith("/")) {
-            hmcAddress = hmcAddress.substring(0, hmcAddress.length());
+        for (Map.Entry<String, String> entry : configuration.entrySet()) {
+            LOG.info("hbase conf value: " + entry.getKey() + " => " + entry.getValue());
+            conf.set(entry.getKey(), entry.getValue());
         }
 
-        String userId = USERID_SKYNET;
-        if (Strings.isNullOrEmpty(userId)) {
-            LOG.warn("环境变量SKYNET_ONDUTY_WORKNO为空，尝试使用默认值");
-            userId = "068141";
+        return conf;
+    }
+
+    public static Configuration getConfiguration(String hdfsConfPath, String hbaseConfPath, String configurationStr, String clusterId) {
+        if (!Strings.isNullOrEmpty(hdfsConfPath) || !Strings.isNullOrEmpty(hbaseConfPath)) {
+            LOG.info("HbaseHelper  => hdfsConfPath=" + hdfsConfPath + " ,hbaseConfPath=" + hbaseConfPath);
+            return getConfigurationByPath(hdfsConfPath, hbaseConfPath);
+        } else if (!Strings.isNullOrEmpty(configurationStr)) {
+            Map<String, String> configuration = com.alibaba.datax.common.util.Configuration.from(configurationStr).get("", Map.class);
+            LOG.info("HbaseHelper  => configuration=" + configuration);
+            return getConfigurationByConf(configuration);
+        } else {
+            LOG.info("HbaseHelper  => clusterId=" + clusterId);
+            return getConfigurationByClusterId(null, clusterId);
         }
-
-        String guid = "guid=" + "hbase." + clusterName + ".table";
-
-
-        String urlstr = hmcAddress + "?" + guid + "&userId=" + userId;
-        HttpURLConnection conn = null;
-        try {
-            URL url = new URL(urlstr);
-
-            conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(20000);
-            conn.setReadTimeout(60000);
-            conn.setDoInput(true);
-            conn.connect();
-
-            InputStream in = conn.getInputStream();
-            String result = IOUtils.toString(in, "UTF-8");
-            System.out.println("=========> " + conn.getResponseCode());
-            System.out.println("=========> " + result);
-
-
-
-            int resCode = conn.getResponseCode();
-            if (resCode != 200) {
-                throw new Exception(String.format("从HMC获取conf出错(code=%s)，url=%s,message=%s", resCode, urlstr, result));
-            }else{
-                com.alibaba.datax.common.util.Configuration config = com.alibaba.datax.common.util.Configuration.from(result);
-                Map<String,String> map1=config.get("data.hbaseSite",Map.class);
-                Map<String,String> map2=config.get("data.hdfsSite",Map.class);
-                map1.putAll(map2);
-                System.out.println("=========> " + map1);
-                return map1;
-            }
-
-        } catch (Exception e) {
-            LOG.error("从HMC获取conf出错,Exception({})", e.getMessage(), e);
-            throw e;
-        } finally {
-            if (conn != null) {
-                IOUtils.close(conn);
-            }
-        }
-
     }
 }

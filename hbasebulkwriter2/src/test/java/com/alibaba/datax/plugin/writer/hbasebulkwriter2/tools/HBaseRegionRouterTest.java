@@ -55,7 +55,6 @@ public class HBaseRegionRouterTest {
   //@AfterClass
   public static void tearDownClass() {
     try {
-      // FIXME
       //destroyTargetTable();
       //destroySourceTable();
     } catch (Exception e) {
@@ -125,7 +124,7 @@ public class HBaseRegionRouterTest {
   public void testFindRegionNum() throws JSONException {
     HBaseRegionRouter router = new HBaseRegionRouter();
     JSONArray regionsJson =
-        HBaseRegionRouter.getRegionsJson(targetTable, tmpHBaseSite,null,null, null);
+        HBaseRegionRouter.getRegionsJson(targetTable, tmpHBaseSite,null, null);
     byte[][] keysArr = router.toKeysArr(regionsJson);
     byte[] rowkey = Bytes.add(Bytes.toBytes(4l), Bytes.toBytes(-1l));
     int index = router.findRegionNum(keysArr, rowkey);
@@ -136,7 +135,7 @@ public class HBaseRegionRouterTest {
   @Test
   public void testGetRegionsJson() {
     JSONArray regionsJson =
-        HBaseRegionRouter.getRegionsJson(targetTable, tmpHBaseSite,null,null, null);
+        HBaseRegionRouter.getRegionsJson(targetTable, tmpHBaseSite,null, null);
     assertEquals(regionsJson.length(), 10);
   }
 

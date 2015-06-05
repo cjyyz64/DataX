@@ -26,9 +26,22 @@ import java.util.concurrent.Callable;
 public class HBaseBulkWriter2 extends Writer {
 
     public static final String DATAX_HOME = System.getProperty("datax.home", "/home/admin/datax3");
+    public static final String PYTHON_HOME = System.getenv("PYTHON_HOME");
     public static final String PLUGIN_HOME = DATAX_HOME + "/plugin/writer/hbasebulkwriter2";
     public static final String ODPS_SORT_SCRIPT = PLUGIN_HOME + "/datax_odps_hbase_sort.py";
     public static final String ODPS_CLEAR_SCRIPT = PLUGIN_HOME + "/datax_odps_hbase_clear.py";
+    private static String pythonCmd = "python";
+
+    static {
+
+        if (!Strings.isNullOrEmpty(PYTHON_HOME)) {
+            if (PYTHON_HOME.endsWith("/")) {
+                pythonCmd = PYTHON_HOME + "python";
+            } else {
+                pythonCmd = PYTHON_HOME + "/python";
+            }
+        }
+    }
 
 
     public static class Job extends Writer.Job {
@@ -51,7 +64,7 @@ public class HBaseBulkWriter2 extends Writer {
         public void init() {
             dataxConf = getPluginJobConf();
 
-            if (Strings.isNullOrEmpty(dataxConf.getString(PluginKeys.PREFIX_FIXED)) && Strings.isNullOrEmpty(dataxConf.getString(PluginKeys.PREFIX_DYNAMIC))) {
+            if (Strings.isNullOrEmpty(dataxConf.getString(Key.PREFIX_FIXED)) && Strings.isNullOrEmpty(dataxConf.getString(Key.PREFIX_DYNAMIC))) {
                 throw DataXException.asDataXException(BulkWriterError.RUNTIME,
                         "DATAX FATAL! 没有生成有效的配置(缺少fixedcolumn or dynamiccolumn),请联系askdatax");
             }
@@ -103,7 +116,6 @@ public class HBaseBulkWriter2 extends Writer {
         @Override
         public void post() {
             bulker.post();
-            clearOdpsTmpTable();
         }
 
         @Override
@@ -118,8 +130,8 @@ public class HBaseBulkWriter2 extends Writer {
 
             if (1 == odps_column.size()
                     && "*".equals(odps_column.get(0))) {
-                LOG.error("odps_column不能配置为*");
-                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "odps_column不能配置为*");
+                LOG.error("odpsColumn不能配置为*");
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "odpsColumn不能配置为*");
 
             }
 
@@ -127,33 +139,47 @@ public class HBaseBulkWriter2 extends Writer {
             String rowkey_type = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
 
             if (Strings.isNullOrEmpty(hbase_rowkey) && Strings.isNullOrEmpty(rowkey_type)) {
-                LOG.error("hbase_rowkey和rowkey_type不能同时为空");
-                throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING, "hbase_rowkey和rowkey_type不能同时为空");
+                LOG.error("hbaseRowkey和rowkeyType不能同时为空");
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING, "hbaseRowkey和rowkeyType不能同时为空");
             }
 
             if (!Strings.isNullOrEmpty(hbase_rowkey) && !Strings.isNullOrEmpty(rowkey_type)) {
-                LOG.error("hbase_rowkey和rowkey_type不能同时配置");
-                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "hbase_rowkey和rowkey_type不能同时配置");
+                LOG.error("hbaseRowkey和rowkeyType不能同时配置");
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "hbaseRowkey和rowkeyType不能同时配置");
             }
 
-            if (Strings.isNullOrEmpty(writerOriginPluginConf.getString(Key.KEY_HBASE_CLUSTER_NAME))
+            if (!Strings.isNullOrEmpty(writerOriginPluginConf.getString(Key.KEY_TIME_COL))
+                    &&
+                    !Strings.isNullOrEmpty(writerOriginPluginConf.getString(Key.KEY_START_TS))
+                    ) {
+                LOG.error("timeCol和startTs不能同时配置");
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "timeCol和startTs不能同时配置");
+            }
+
+            Map<String, String> configuration = writerOriginPluginConf.get(Key.KEY_HBASE_CONFIGURATION, Map.class);
+            String configurationStr = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIGURATION);
+
+            if ((configuration == null || configuration.size() < 1)
                     && (Strings.isNullOrEmpty(writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG)) || Strings.isNullOrEmpty(writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG)))) {
                 throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
-                        "需要配置hbase_cluster_name 或者 配置hbase_config以及hdfs_config，2者必须其一.");
+                        "需要配置hbaseClusterName 或者 配置hbaseConfig以及hdfsConfig，2者必须其一.");
             }
 
             String sort_column = getSortColumn(odps_column, hbase_rowkey, rowkey_type);
 
             String odpsProject = readerOriginPluginConf.getString(Key.KEY_PROJECT);
             String odpsTable = readerOriginPluginConf.getString(Key.KEY_TABLE);
+
+
             List<String> partition = readerOriginPluginConf.getList(Key.KEY_PARTITION, String.class);
 
             String dstTable = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
+            if (Strings.isNullOrEmpty(dstTable)) {
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
+                        "Missing config hbaseTable. 请检查配置.");
+            }
+
             String hbaseXml = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
-            String clusterName = writerOriginPluginConf.getString(Key.KEY_HBASE_CLUSTER_NAME);
-
-            String hmcAddress = writerOriginPluginConf.getString(Key.KEY_HBASE_HMC_ADDRESS);
-
             //
             String clusterId = writerOriginPluginConf.getString(Key.KEY_CLUSTERID);
 
@@ -185,7 +211,9 @@ public class HBaseBulkWriter2 extends Writer {
             }
 
             final List<String> cmdList = new ArrayList<String>();
-            cmdList.add("python");
+
+
+            cmdList.add(pythonCmd);
             cmdList.add(ODPS_SORT_SCRIPT);
             cmdList.add("--project");
             cmdList.add(odpsProject);
@@ -209,14 +237,9 @@ public class HBaseBulkWriter2 extends Writer {
                 cmdList.add(hbaseXml);
             }
 
-            if (!Strings.isNullOrEmpty(clusterName)) {
-                cmdList.add("--hbase_clusterName");
-                cmdList.add(clusterName);
-            }
-
-            if (!Strings.isNullOrEmpty(hmcAddress)) {
-                cmdList.add("--hbase_hmcAddress");
-                cmdList.add(hmcAddress);
+            if (!Strings.isNullOrEmpty(configurationStr)) {
+                cmdList.add("--configuration");
+                cmdList.add(configurationStr);
             }
 
             if (!Strings.isNullOrEmpty(clusterId)) {
@@ -270,18 +293,15 @@ public class HBaseBulkWriter2 extends Writer {
             HBaseJobParameterConf hBaseJobParameterConf;
             String mode;
             if ("true".equals(dynamicQualifier)) {
-                mode = "dynamiccolumn";
+                mode = Key.PREFIX_DYNAMIC;
                 hBaseJobParameterConf = getDynamicColumnConf(writerOriginPluginConf, suffix);
             } else {
-                mode = "fixedcolumn";
+                mode = Key.PREFIX_FIXED;
                 hBaseJobParameterConf = getFixColumnConf(writerOriginPluginConf, suffix);
             }
 
 
             jobConfiguration.set("job.content[0].writer.parameter." + mode, hBaseJobParameterConf);
-
-            LOG.info("final reader job.json: {}", jobConfiguration.getString("job.content[0].reader"));
-            LOG.info("final wirter job.json: {}", jobConfiguration.getString("job.content[0].writer"));
 
             LOG.info("================ HBaseBulkWriter Phase 1 preHandler finish... ================ ");
 
@@ -321,7 +341,7 @@ public class HBaseBulkWriter2 extends Writer {
 
 
             List<String> cmdList = new ArrayList<String>();
-            cmdList.add("python");
+            cmdList.add(pythonCmd);
             cmdList.add(ODPS_CLEAR_SCRIPT);
             cmdList.add("--project");
             cmdList.add(odpsProject);
@@ -392,18 +412,20 @@ public class HBaseBulkWriter2 extends Writer {
                 hbaseColumn.index = ele[0];
                 hbaseColumn.htype = ele[1];
                 hbaseColumn.hname = ele[2];
-                fixColumnConf.getHbase_column().add(hbaseColumn);
+                fixColumnConf.getHbaseColumn().add(hbaseColumn);
             }
 
-            fixColumnConf.hbase_table = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
+            fixColumnConf.hbaseTable = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
             //需要检查hdfs目录，确保目录唯一，否则更换为新的目录名
-            fixColumnConf.hbase_output = getUniqHDFSDirName(writerOriginPluginConf, suffix, fixColumnConf.hbase_table);
-            fixColumnConf.hbase_config = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
-            fixColumnConf.hbase_cluster_name = writerOriginPluginConf.getString(Key.KEY_HBASE_CLUSTER_NAME);
-            fixColumnConf.hbase_hmc_address = writerOriginPluginConf.getString(Key.KEY_HBASE_HMC_ADDRESS);
-            fixColumnConf.hdfs_config = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
-            fixColumnConf.optional = (Map<String, String>) writerOriginPluginConf.get(Key.KEY_OPTIONAL, Map.class);
-
+            fixColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, fixColumnConf.hbaseTable);
+            fixColumnConf.hbaseConfig = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
+            fixColumnConf.hdfsConfig = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
+            fixColumnConf.nullMode = writerOriginPluginConf.getString(Key.KEY_NULL_MODE);
+            fixColumnConf.startTs = writerOriginPluginConf.getString(Key.KEY_START_TS);
+            fixColumnConf.timeCol = writerOriginPluginConf.getString(Key.KEY_TIME_COL);
+            fixColumnConf.bucketNum = writerOriginPluginConf.getString(Key.KEY_BUCKET_NUM);
+            fixColumnConf.encoding = writerOriginPluginConf.getString(Key.KEY_ENCODING);
+            fixColumnConf.configuration = (Map<String, String>) writerOriginPluginConf.get(Key.KEY_HBASE_CONFIGURATION, Map.class);
 
             return fixColumnConf;
         }
@@ -416,18 +438,21 @@ public class HBaseBulkWriter2 extends Writer {
                 DynamicColumnConf.HBaseRule hBaseRule = new DynamicColumnConf.HBaseRule();
                 hBaseRule.pattern = ele[1];
                 hBaseRule.htype = ele[0];
-                dynamicColumnConf.getHbase_column().getRules().add(hBaseRule);
+                dynamicColumnConf.getHbaseColumn().getRules().add(hBaseRule);
             }
 
-            dynamicColumnConf.hbase_table = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
+            dynamicColumnConf.hbaseTable = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
             //需要检查hdfs目录，确保目录唯一，否则更换为新的目录名
-            dynamicColumnConf.hbase_output = getUniqHDFSDirName(writerOriginPluginConf, suffix, dynamicColumnConf.hbase_table);
-            dynamicColumnConf.hbase_config = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
-            dynamicColumnConf.hbase_cluster_name = writerOriginPluginConf.getString(Key.KEY_HBASE_CLUSTER_NAME);
-            dynamicColumnConf.hbase_hmc_address = writerOriginPluginConf.getString(Key.KEY_HBASE_HMC_ADDRESS);
-            dynamicColumnConf.hdfs_config = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
-            dynamicColumnConf.rowkey_type = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
-            dynamicColumnConf.optional = (Map<String, String>) writerOriginPluginConf.get(Key.KEY_OPTIONAL, Map.class);
+            dynamicColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, dynamicColumnConf.hbaseTable);
+            dynamicColumnConf.hbaseConfig = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
+            dynamicColumnConf.hdfsConfig = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
+            dynamicColumnConf.rowkeyType = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
+            dynamicColumnConf.nullMode = writerOriginPluginConf.getString(Key.KEY_NULL_MODE);
+            dynamicColumnConf.startTs = writerOriginPluginConf.getString(Key.KEY_START_TS);
+            dynamicColumnConf.timeCol = writerOriginPluginConf.getString(Key.KEY_TIME_COL);
+            dynamicColumnConf.bucketNum = writerOriginPluginConf.getString(Key.KEY_BUCKET_NUM);
+            dynamicColumnConf.encoding = writerOriginPluginConf.getString(Key.KEY_ENCODING);
+            dynamicColumnConf.configuration = (Map<String, String>) writerOriginPluginConf.get(Key.KEY_HBASE_CONFIGURATION, Map.class);
             return dynamicColumnConf;
         }
 
@@ -435,8 +460,8 @@ public class HBaseBulkWriter2 extends Writer {
             final org.apache.hadoop.conf.Configuration conf = HBaseHelper.getConfiguration(
                     writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG),
                     writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG),
-                    writerOriginPluginConf.getString(Key.KEY_HBASE_CLUSTER_NAME),
-                    writerOriginPluginConf.getString(Key.KEY_HBASE_HMC_ADDRESS), null);
+                    writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIGURATION),
+                    null);
 
             String configHDFSPath = writerOriginPluginConf.getString(Key.KEY_HBASE_OUTPUT);
 
@@ -480,7 +505,7 @@ public class HBaseBulkWriter2 extends Writer {
                         hbaseRowkey.index = String.valueOf(index);
                         hbaseRowkey.htype = typ;
 
-                        fixColumnConf.getHbase_rowkey().add(hbaseRowkey);
+                        fixColumnConf.getHbaseRowkey().add(hbaseRowkey);
 
                     } else {
                         if (elem.length != 3) {
@@ -499,7 +524,7 @@ public class HBaseBulkWriter2 extends Writer {
                         hbaseRowkey.htype = typ;
                         hbaseRowkey.constant = fixed;
 
-                        fixColumnConf.getHbase_rowkey().add(hbaseRowkey);
+                        fixColumnConf.getHbaseRowkey().add(hbaseRowkey);
                     }
                 }
             } else {
@@ -533,7 +558,7 @@ public class HBaseBulkWriter2 extends Writer {
         public void init() {
             dataxConf = getPluginJobConf();
 
-            if (Strings.isNullOrEmpty(dataxConf.getString(PluginKeys.PREFIX_FIXED)) && Strings.isNullOrEmpty(dataxConf.getString(PluginKeys.PREFIX_DYNAMIC))) {
+            if (Strings.isNullOrEmpty(dataxConf.getString(Key.PREFIX_FIXED)) && Strings.isNullOrEmpty(dataxConf.getString(Key.PREFIX_DYNAMIC))) {
                 throw DataXException.asDataXException(BulkWriterError.RUNTIME,
                         "DATAX FATAL! 没有生成有效的配置(缺少fixedcolumn or dynamiccolumn),请联系askdatax");
             }

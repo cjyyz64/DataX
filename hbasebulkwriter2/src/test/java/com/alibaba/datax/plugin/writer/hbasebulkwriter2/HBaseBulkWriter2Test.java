@@ -193,6 +193,50 @@ public class HBaseBulkWriter2Test{// extends BasicWriterPluginTest {
     }
 
     @Test
+    public void testWriterJobJsonForFix1() throws Exception {
+        String path = HBaseBulkWriter2Test.class.getClassLoader()
+                .getResource("fixcolumn_job1.json").getFile();
+        Configuration configuration = Configuration.from(new File(path));
+
+
+        Configuration readerOriginPluginConf = configuration.getConfiguration(Key.READER_PARAMETER);
+        Configuration writerOriginPluginConf = configuration.getConfiguration(Key.WRITER_PARAMETER + "." + Key.PARAMETER_TYPE_ORIGIN);
+        //"job.content[0].reader.parameter.column"
+        List<String> odps_column = readerOriginPluginConf.getList(Key.KEY_COLUMN, String.class);
+        String hbase_rowkey = writerOriginPluginConf.getString(Key.KEY_HBASE_ROWKEY);
+        String rowkey_type = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
+
+
+        HBaseBulkWriter2.Job job = new HBaseBulkWriter2.Job();
+        Method method = job.getClass()
+                .getDeclaredMethod("getSortColumn", List.class, String.class, String.class);
+        method.setAccessible(true);
+        String sort_column = (String) method.invoke(job, odps_column, hbase_rowkey, rowkey_type);
+
+        System.out.println(sort_column);
+        System.out.println(JSON.toJSONString(job.fixColumnConf));
+
+        //change the origin configuration
+
+        //for reader:
+        configuration.set("job.content[0].reader.parameter.table", "t_datax_odps2hbase_table");
+        configuration.set("job.content[0].reader.parameter.partition", Lists.newArrayList("datax_pt=*"));
+
+        Method method2 = job.getClass()
+                .getDeclaredMethod("getFixColumnConf", Configuration.class,String.class);
+        method2.setAccessible(true);
+        HBaseJobParameterConf res = (HBaseJobParameterConf) method2.invoke(job, writerOriginPluginConf,"_1234");
+        Assert.assertTrue(res instanceof FixColumnConf);
+        System.out.println("123 => "+JSON.toJSONString(res));
+
+        //Assert.assertEquals(JSON.toJSONString(res), "{\"hbase_column\":[{\"hname\":\"cf:name\",\"htype\":\"string\",\"index\":\"1\"},{\"hname\":\"cf:age\",\"htype\":\"int\",\"index\":\"2\"},{\"hname\":\"cf:birthday\",\"htype\":\"string\",\"index\":\"3\"}],\"hbase_config\":\"test_hbase_config\",\"hbase_output\":\"/datax3bulkwrite_1234/test_hbase_table\",\"hbase_rowkey\":[{\"htype\":\"string\",\"index\":\"0\"}],\"hbase_table\":\"test_hbase_table\",\"hdfs_config\":\"test_hdfs_config\"}");
+
+        configuration.set("job.content[0].writer.parameter.fixedcolumn", JSON.toJSONString(res));
+
+        System.out.println("234 => "+configuration.toString());
+    }
+
+    @Test
     public void testWriterJobJsonForDynamic() throws Exception {
         String path = HBaseBulkWriter2Test.class.getClassLoader()
                 .getResource("dynamic_job0.json").getFile();
