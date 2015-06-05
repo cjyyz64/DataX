@@ -1,11 +1,14 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -15,34 +18,37 @@ public class PreCheckTask implements Callable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(PreCheckTask.class);
     private String userName;
     private String password;
-    private String querySql;
-    private String jdbcUrl;
+    private Configuration connection;
     private DataBaseType dataBaseType;
 
     public PreCheckTask(String userName,
                         String password,
-                        String querySql,
-                        String jdbcUrl,
+                        Configuration connection,
                         DataBaseType dataBaseType){
+        this.connection = connection;
         this.userName=userName;
         this.password=password;
-        this.querySql=querySql;
-        this.jdbcUrl= jdbcUrl;
         this.dataBaseType = dataBaseType;
     }
 
     @Override
     public Boolean call() {
-        Connection conn = DBUtil.getConnection(this.dataBaseType, this.jdbcUrl,
+        String jdbcUrl = this.connection.getString(Key.JDBC_URL);
+        List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
+        Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
-        try {
-            DBUtil.query(conn, querySql, fetchSize);
-        } catch (Exception e) {
-            LOG.error(e.getMessage());
-        } finally {
-            DBUtil.closeDBResources(null, conn);
+        for (int i=0;i<querySqls.size();i++){
+            String querySql = querySqls.get(i).toString();
+            try {
+                DBUtil.query(conn, querySql, fetchSize);
+            } catch (Exception e) {
+                LOG.error(e.getMessage());
+                return false;
+            } finally {
+                DBUtil.closeDBResources(null, conn);
+            }
         }
-        return false;
+        return true;
     }
 }

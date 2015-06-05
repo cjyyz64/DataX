@@ -1,10 +1,12 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import org.apache.commons.io.FileUtils;
+import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,6 +58,22 @@ public class ReaderSplitUtilTest {
         return readerConfig;
     }
 
+    @Test
+    public void preCheckSplitTest(){
+        Configuration originalConf;
+        try{
+            originalConf = getAndInitConfigFromClasspath("mysqlreader_multiTable.json");
+            Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConf);
+            List<Object> conns = queryConf.getList(Constant.CONN_MARK, Object.class);
+            for (int i = 0, len = conns.size(); i < len; i++) {
+                Configuration connConf = Configuration.from(conns.get(i).toString());
+                List<Object> querys = connConf.getList(Key.QUERY_SQL, Object.class);
+                Assert.assertEquals(2,querys.size());
+            }
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
+    }
 
     @Test
     public void testDealWhere() {
