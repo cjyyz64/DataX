@@ -46,6 +46,34 @@ public class OdpsWriter extends Writer {
         private TableTunnel.UploadSession masterUpload;
         private int blockSizeInMB;
 
+
+        public void preCheck() {
+            this.init();
+            this.prepare();
+            this.preCheckColumn();
+        }
+
+        public void preCheckColumn() {
+            List<Configuration> configurations = new ArrayList<Configuration>();
+
+            // 此处获取到 masterUpload 只是为了拿到 RecordSchema,以完成对 column 的处理
+            TableTunnel tableTunnel = new TableTunnel(this.odps);
+            if (StringUtils.isNoneBlank(tunnelServer)) {
+                tableTunnel.setEndpoint(tunnelServer);
+            }
+
+            this.masterUpload = OdpsUtil.createMasterTunnelUpload(
+                    tableTunnel, this.projectName, this.tableName, this.partition);
+            this.uploadId = this.masterUpload.getId();
+            LOG.info("Master uploadId:[{}].", this.uploadId);
+
+            TableSchema schema = this.masterUpload.getSchema();
+            List<String> allColumns = OdpsUtil.getAllColumns(schema);
+            LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
+
+            dealColumn(this.originalConfig, allColumns);
+        }
+
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();

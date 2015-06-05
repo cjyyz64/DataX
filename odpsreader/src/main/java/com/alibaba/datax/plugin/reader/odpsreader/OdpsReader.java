@@ -35,6 +35,10 @@ public class OdpsReader extends Reader {
         private Odps odps;
         private Table table;
 
+        public void preCheck() {
+            this.init();
+        }
+
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
