@@ -18,6 +18,10 @@ public class OracleWriter extends Writer {
 		private Configuration originalConfig = null;
 		private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
+        public void preCheck() {
+            this.init();
+        }
+
 		@Override
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();

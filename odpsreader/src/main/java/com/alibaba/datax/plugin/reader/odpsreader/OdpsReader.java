@@ -35,7 +35,7 @@ public class OdpsReader extends Reader {
         private Odps odps;
         private Table table;
 
-        public void preCheck(int adviseNumber) {
+        public void preCheck() {
             this.init();
         }
 
