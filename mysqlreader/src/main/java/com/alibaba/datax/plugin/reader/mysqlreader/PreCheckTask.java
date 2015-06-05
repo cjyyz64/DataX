@@ -41,6 +41,7 @@ public class PreCheckTask implements Callable<Boolean> {
         for (int i=0;i<querySqls.size();i++){
             String querySql = querySqls.get(i).toString();
             try {
+                DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
             } catch (Exception e) {
                 LOG.error(e.getMessage());

@@ -46,10 +46,8 @@ public class DBUtilTest {
     public void sqlValidFalseTest(){
         String sql = "select distinct desc from bvt_case_1_rows_5split";
         try {
-            boolean isValid = DBUtil.sqlValid(sql,DataBaseType.MySql);
-            Assert.assertFalse(isValid);
+            DBUtil.sqlValid(sql,DataBaseType.MySql);
         }catch (ParserException e){
-            System.out.println(e.getMessage());
             Assert.assertNotNull(e);
         }
     }
@@ -58,10 +56,21 @@ public class DBUtilTest {
     public void sqlValidTrueTest(){
         String sql = "select distinct id from bvt_case_1_rows_5split";
         try {
-            boolean isValid = DBUtil.sqlValid(sql,DataBaseType.MySql);
-            Assert.assertTrue(isValid);
+            DBUtil.sqlValid(sql,DataBaseType.MySql);
+            Assert.assertTrue(true);
         }catch (ParserException e){
-            System.out.println(e.getMessage());
+            Assert.assertNull(e);
+        }
+    }
+
+    @Test
+    public void sqlValidNullTest(){
+        String sql = "";
+        try {
+            DBUtil.sqlValid(sql,DataBaseType.MySql);
+            Assert.assertTrue(true);
+        }catch (ParserException e){
+            Assert.assertNull(e);
         }
     }
 

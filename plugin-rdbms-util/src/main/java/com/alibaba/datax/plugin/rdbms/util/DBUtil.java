@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
-import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import org.apache.commons.lang3.StringUtils;
@@ -550,14 +549,9 @@ public final class DBUtil {
         DBUtil.closeDBResources(stmt, null);
     }
 
-    public static boolean sqlValid(String sql, DataBaseType dataBaseType){
+    public static void sqlValid(String sql, DataBaseType dataBaseType){
         SQLStatementParser statementParser = SQLParserUtils.createSQLStatementParser(sql,dataBaseType.getTypeName());
-        List<SQLStatement> sqlStatements = statementParser.parseStatementList();
-        if (sqlStatements != null && !sqlStatements.isEmpty()){
-            return true;
-        }else{
-            return false;
-        }
+        statementParser.parseStatementList();
     }
 
 }
