@@ -18,7 +18,7 @@ import java.util.concurrent.Callable;
 /**
  * Created by judy.lt on 2015/6/4.
  */
-public class PreCheckTask implements Callable<Boolean> {
+public class PreCheckTask implements Callable<Boolean>{
     private static final Logger LOG = LoggerFactory.getLogger(PreCheckTask.class);
     private String userName;
     private String password;

@@ -15,8 +15,10 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class MysqlReader extends Reader {
 
@@ -67,13 +69,29 @@ public class MysqlReader extends Reader {
                 PreCheckTask t = new PreCheckTask(username,password,connConf,DataBaseType.MySql);
                 taskList.add(t);
             }
+            List<Future<Boolean>> results = new ArrayList<Future<Boolean>>();
             try {
-                exec.invokeAll(taskList);
-            } catch(DataXException e){
+                results = exec.invokeAll(taskList);
+            } catch (DataXException e){
                 LOG.error(e.getMessage());
             }catch (InterruptedException e) {
                 e.printStackTrace();
+            }catch (Exception e){
+                LOG.error(e.getMessage());
             }
+
+            for (int i = 0; i < results.size();i++){
+                try{
+                    Boolean rst = results.get(i).get();
+                }catch (DataXException e){
+                    LOG.error(e.getMessage());
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
+            exec.shutdown();
         }
 
         @Override
