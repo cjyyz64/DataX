@@ -96,6 +96,11 @@ public final class OriginalConfPretreatmentUtil {
 
 
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
+            String dbName = DBUtil.getDbName(jdbcUrl);
+            if (dbName != null){
+                originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
+                        i, Key.DBNAME), dbName);
+            }
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,

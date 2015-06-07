@@ -38,4 +38,6 @@ public final class Key {
     public final static String TABLE_NAME_PATTERN = "tableNamePattern";
 
     public final static String TABLE_RULE = "tableRule";
+
+    public final static String DBNAME = "dbName";
 }

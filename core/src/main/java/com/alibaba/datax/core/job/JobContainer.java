@@ -175,6 +175,7 @@ public class JobContainer extends AbstractContainer {
         }
         this.preCheckReader();
         this.preCheckWriter();
+        LOG.info("PreCheck通过");
     }
 
     private void preCheckInit() {

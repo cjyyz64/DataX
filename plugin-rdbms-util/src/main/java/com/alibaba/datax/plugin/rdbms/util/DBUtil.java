@@ -151,6 +151,16 @@ public final class DBUtil {
         return false;
     }
 
+    public static String getDbName(String jdbcURL){
+        String[] urls = jdbcURL.split("/");
+        String dbName;
+        if (urls != null && urls.length != 0) {
+            dbName = urls[3];
+            return dbName;
+        } else
+            return null;
+    }
+
     /**
      * 检查表是否具有insert 权限
      * insert on *.* 或者 insert on database.* 时验证通过
@@ -160,14 +170,9 @@ public final class DBUtil {
      * @author ZiChi
      * @version 1.0 2015-01-28
      */
-    public static boolean hasInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList) {
+    public static boolean hasInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String dbName, String userName, String password, List<String> tableList) {
         /*准备参数*/
-        String[] urls = jdbcURL.split("/");
-        String dbName;
-        if (urls != null && urls.length != 0) {
-            dbName = urls[3];
-        } else
-            return false;
+
 
         String dbPattern = "`" + dbName + "`.*";
         Collection<String> tableNames = new HashSet<String>(tableList.size());
