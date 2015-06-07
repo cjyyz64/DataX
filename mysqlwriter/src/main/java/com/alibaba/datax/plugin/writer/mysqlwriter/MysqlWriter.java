@@ -38,14 +38,14 @@ public class MysqlWriter extends Writer {
             String preSql = this.originalConfig.getString(Key.PRE_SQL);
             String postSql = this.originalConfig.getString(Key.POST_SQL);
             try{
-                if (preSql != null || !preSql.isEmpty()){
+                if (preSql != null && !preSql.isEmpty()){
                     DBUtil.sqlValid(preSql,DATABASE_TYPE);
                 }
             }catch (ParserException e){
                 throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
             }
             try{
-                if (postSql != null || !postSql.isEmpty()){
+                if (postSql != null && !postSql.isEmpty()){
                     DBUtil.sqlValid(postSql,DATABASE_TYPE);
                 }
             }catch (ParserException e){
