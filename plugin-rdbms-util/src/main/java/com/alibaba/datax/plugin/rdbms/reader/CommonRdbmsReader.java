@@ -47,7 +47,7 @@ public class CommonRdbmsReader {
                     originalConfig.toJSON());
         }
 
-        public void preCheck(Configuration originalConfig){
+        public void preCheck(Configuration originalConfig,DataBaseType dataBaseType){
             Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConfig);
             List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
             String username = queryConf.getString(Key.USERNAME);
@@ -61,7 +61,7 @@ public class CommonRdbmsReader {
             Collection<PreCheckTask> taskList = new ArrayList<PreCheckTask>();
             for (int i = 0, len = connList.size(); i < len; i++){
                 Configuration connConf = Configuration.from(connList.get(i).toString());
-                PreCheckTask t = new PreCheckTask(username,password,connConf,DataBaseType.MySql);
+                PreCheckTask t = new PreCheckTask(username,password,connConf,dataBaseType);
                 taskList.add(t);
             }
             List<Future<Boolean>> results = new ArrayList<Future<Boolean>>();

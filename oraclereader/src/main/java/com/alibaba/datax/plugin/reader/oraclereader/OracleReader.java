@@ -45,7 +45,7 @@ public class OracleReader extends Reader {
             this.originalConfig = super.getPluginJobConf();
             this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsReaderJob.init(this.originalConfig);
-            this.commonRdbmsReaderJob.preCheck(this.originalConfig);
+            this.commonRdbmsReaderJob.preCheck(this.originalConfig,DATABASE_TYPE);
         }
 
 		@Override
