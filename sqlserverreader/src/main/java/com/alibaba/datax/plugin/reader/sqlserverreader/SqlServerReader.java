@@ -21,7 +21,7 @@ public class SqlServerReader extends Reader {
 
 		@Override
 		public void init() {
-
+            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 			int fetchSize = this.originalConfig.getInt(
 					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
@@ -37,7 +37,7 @@ public class SqlServerReader extends Reader {
 					fetchSize);
 
 			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-					DATABASE_TYPE);
+					DATABASE_TYPE,isPreCheck);
 			this.commonRdbmsReaderJob.init(this.originalConfig);
 		}
 
