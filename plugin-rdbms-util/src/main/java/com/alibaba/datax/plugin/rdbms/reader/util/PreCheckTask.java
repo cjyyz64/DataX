@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.reader.mysqlreader;
+package com.alibaba.datax.plugin.rdbms.reader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;

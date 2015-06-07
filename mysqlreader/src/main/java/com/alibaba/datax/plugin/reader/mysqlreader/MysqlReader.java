@@ -1,24 +1,15 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
-import com.alibaba.datax.plugin.rdbms.reader.Key;
-import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class MysqlReader extends Reader {
 
@@ -53,45 +44,8 @@ public class MysqlReader extends Reader {
             this.originalConfig = super.getPluginJobConf();
             this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsReaderJob.init(this.originalConfig);
-            Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(this.originalConfig);
-            List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
-            String username = queryConf.getString(Key.USERNAME);
-            String password = queryConf.getString(Key.PASSWORD);
-            ExecutorService exec;
-            if (connList.size() < 10){
-                exec = Executors.newFixedThreadPool(connList.size());
-            }else{
-                exec = Executors.newFixedThreadPool(10);
-            }
-            Collection<PreCheckTask> taskList = new ArrayList<PreCheckTask>();
-            for (int i = 0, len = connList.size(); i < len; i++){
-                Configuration connConf = Configuration.from(connList.get(i).toString());
-                PreCheckTask t = new PreCheckTask(username,password,connConf,DataBaseType.MySql);
-                taskList.add(t);
-            }
-            List<Future<Boolean>> results = new ArrayList<Future<Boolean>>();
-            try {
-                results = exec.invokeAll(taskList);
-            } catch (DataXException e){
-                LOG.error(e.getMessage());
-            }catch (InterruptedException e) {
-                e.printStackTrace();
-            }catch (Exception e){
-                LOG.error(e.getMessage());
-            }
+            this.commonRdbmsReaderJob.preCheck(this.originalConfig);
 
-            for (int i = 0; i < results.size();i++){
-                try{
-                    Boolean rst = results.get(i).get();
-                }catch (DataXException e){
-                    LOG.error(e.getMessage());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (ExecutionException e) {
-                    e.printStackTrace();
-                }
-            }
-            exec.shutdown();
         }
 
         @Override

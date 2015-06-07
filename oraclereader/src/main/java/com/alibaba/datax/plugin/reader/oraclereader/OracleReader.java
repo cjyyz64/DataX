@@ -39,6 +39,15 @@ public class OracleReader extends Reader {
 			dealHint(this.originalConfig);
 		}
 
+        @Override
+        public void preCheck(){
+            boolean isPreCheck = true;
+            this.originalConfig = super.getPluginJobConf();
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsReaderJob.init(this.originalConfig);
+            this.commonRdbmsReaderJob.preCheck(this.originalConfig);
+        }
+
 		@Override
 		public List<Configuration> split(int adviceNumber) {
 			return this.commonRdbmsReaderJob.split(this.originalConfig,
