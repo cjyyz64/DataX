@@ -33,10 +33,10 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void preCheck(){
+            init();
             /*检查PreSql跟PostSql语句*/
             String preSql = this.originalConfig.getString(Key.PRE_SQL);
             String postSql = this.originalConfig.getString(Key.POST_SQL);
-            init();
             try{
                 if (preSql != null || !preSql.isEmpty()){
                     DBUtil.sqlValid(preSql,DATABASE_TYPE);
