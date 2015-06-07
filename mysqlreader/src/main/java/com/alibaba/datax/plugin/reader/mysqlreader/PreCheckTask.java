@@ -36,7 +36,7 @@ public class PreCheckTask implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() {
+    public Boolean call() throws DataXException{
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
         Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
