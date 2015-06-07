@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
@@ -16,7 +17,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class MysqlReader extends Reader {
 
@@ -69,7 +69,9 @@ public class MysqlReader extends Reader {
             }
             try {
                 exec.invokeAll(taskList);
-            } catch (InterruptedException e) {
+            } catch(DataXException e){
+                LOG.error(e.getMessage());
+            }catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
