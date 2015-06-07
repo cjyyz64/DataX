@@ -1,10 +1,13 @@
 package com.alibaba.datax.plugin.reader.mysqlreader;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
+import com.alibaba.druid.sql.parser.ParserException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +47,15 @@ public class PreCheckTask implements Callable<Boolean> {
             try {
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
-            } catch (Exception e) {
+            } catch (ParserException e){
+                if (dataBaseType.equals(DataBaseType.MySql)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR, querySql + e);
+                }else if (dataBaseType.equals(DataBaseType.Oracle)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,querySql+e);
+                }else{
+                    throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
+                }
+            }catch (Exception e) {
                 RdbmsException.asQueryException(this.dataBaseType, e, querySql);
             } finally {
                 DBUtil.closeDBResources(null, conn);

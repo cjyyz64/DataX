@@ -5,6 +5,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.*;
+import com.alibaba.druid.sql.parser.ParserException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -140,8 +141,17 @@ public class SingleTableSplitUtil {
             conn = DBUtil.getConnection(DATABASE_TYPE, jdbcURL, username,
                     password);
             try {
+                DBUtil.sqlValid(pkRangeSQL,DATABASE_TYPE);
                 rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
-            } catch (Exception e) {
+            } catch (ParserException e){
+                if (DATABASE_TYPE.equals(DataBaseType.MySql)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR,pkRangeSQL+e);
+                }else if (DATABASE_TYPE.equals(DataBaseType.Oracle)){
+                    throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,pkRangeSQL+e);
+                }else{
+                    throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,pkRangeSQL+e);
+                }
+            }catch (Exception e) {
                 throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL);
             }
             ResultSetMetaData rsMetaData = rs.getMetaData();

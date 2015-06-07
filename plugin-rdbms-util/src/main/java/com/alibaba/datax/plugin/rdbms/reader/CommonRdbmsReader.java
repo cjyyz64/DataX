@@ -123,8 +123,7 @@ public class CommonRdbmsReader {
                     throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
                 }
 
-            }
-            catch (Exception e) {
+            }catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType,e,querySql);
             } finally {
                 DBUtil.closeDBResources(null, conn);
