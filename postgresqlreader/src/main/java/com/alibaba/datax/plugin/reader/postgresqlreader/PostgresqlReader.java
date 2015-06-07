@@ -21,6 +21,7 @@ public class PostgresqlReader extends Reader {
 
         @Override
         public void init() {
+            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
             int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     Constant.DEFAULT_FETCH_SIZE);
@@ -30,7 +31,7 @@ public class PostgresqlReader extends Reader {
             }
             this.originalConfig.set(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE, fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE);
+            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
 

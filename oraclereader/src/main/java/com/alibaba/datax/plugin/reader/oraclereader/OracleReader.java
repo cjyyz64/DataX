@@ -26,12 +26,13 @@ public class OracleReader extends Reader {
 
 		@Override
 		public void init() {
+            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 			
 			dealFetchSize(this.originalConfig);
 
 			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-					DATABASE_TYPE);
+					DATABASE_TYPE,isPreCheck);
 			this.commonRdbmsReaderJob.init(this.originalConfig);
 
 			// 注意：要在 this.commonRdbmsReaderJob.init(this.originalConfig); 之后执行，这样可以直接快速判断是否是querySql 模式
