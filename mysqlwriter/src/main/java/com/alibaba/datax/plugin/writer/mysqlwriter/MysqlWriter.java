@@ -33,17 +33,21 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void preCheck(){
-            init();
             /*检查PreSql跟PostSql语句*/
             String preSql = this.originalConfig.getString(Key.PRE_SQL);
             String postSql = this.originalConfig.getString(Key.POST_SQL);
+            init();
             try{
-                DBUtil.sqlValid(preSql,DATABASE_TYPE);
+                if (preSql != null || !preSql.isEmpty()){
+                    DBUtil.sqlValid(preSql,DATABASE_TYPE);
+                }
             }catch (ParserException e){
                 throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
             }
             try{
-                DBUtil.sqlValid(postSql,DATABASE_TYPE);
+                if (postSql != null || !postSql.isEmpty()){
+                    DBUtil.sqlValid(postSql,DATABASE_TYPE);
+                }
             }catch (ParserException e){
                 throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
             }
@@ -52,7 +56,7 @@ public class MysqlWriter extends Writer {
             String password = this.originalConfig.getString(Key.PASSWORD);
             List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
                     Object.class);
-            
+
             for (int i = 0, len = connections.size(); i < len; i++) {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
