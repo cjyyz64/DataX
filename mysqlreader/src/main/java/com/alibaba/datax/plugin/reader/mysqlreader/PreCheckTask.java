@@ -4,6 +4,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,7 @@ public class PreCheckTask implements Callable<Boolean> {
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
             } catch (Exception e) {
-                LOG.error(e.getMessage());
-                return false;
+                RdbmsException.asQueryException(this.dataBaseType, e, querySql);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }

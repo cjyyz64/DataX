@@ -4,13 +4,22 @@ public final class Constant {
     static final int TIMEOUT_SECONDS = 3;
     static final int MAX_TRY_TIMES = 4;
 
-    static final String MYSQL_DATABASE = "Unknown database";
-    static final String MYSQL_CONNEXP = "Communications link failure";
-    static final String MYSQL_ACCDENIED = "Access denied";
+    public static final String MYSQL_DATABASE = "Unknown database";
+    public static final String MYSQL_CONNEXP = "Communications link failure";
+    public static final String MYSQL_ACCDENIED = "Access denied";
+    public static final String MYSQL_TABLE_NAME_ERR1 = "Table";
+    public static final String MYSQL_TABLE_NAME_ERR2 = "doesn't exist";
+    public static final String MYSQL_INSERT_PRI = "SELECT command denied to user";
+    public static final String MYSQL_COLUMN1 = "Unknown column";
+    public static final String MYSQL_COLUMN2 = "field list";
+    public static final String MYSQL_WHERE = "where clause";
 
-    static final String ORACLE_DATABASE = "ORA-12505";
-    static final String ORACLE_CONNEXP = "The Network Adapter could not establish the connection";
-    static final String ORACLE_ACCDENIED = "ORA-01017";
+    public static final String ORACLE_DATABASE = "ORA-12505";
+    public static final String ORACLE_CONNEXP = "The Network Adapter could not establish the connection";
+    public static final String ORACLE_ACCDENIED = "ORA-01017";
+    public static final String ORACLE_TABLE_NAME = "table or view does not exist";
+    public static final String ORACLE_INSERT_PRI = "insufficient privileges";
+    public static final String ORACLE_SQL = "invalid identifier";
 
 
 

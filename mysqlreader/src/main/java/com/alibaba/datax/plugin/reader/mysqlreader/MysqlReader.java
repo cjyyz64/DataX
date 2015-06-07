@@ -69,9 +69,6 @@ public class MysqlReader extends Reader {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            for (Future<Boolean> rst:preCheckRsts){
-
-            }
         }
 
         @Override
