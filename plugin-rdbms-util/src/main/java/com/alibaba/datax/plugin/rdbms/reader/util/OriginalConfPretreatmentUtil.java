@@ -21,10 +21,11 @@ public final class OriginalConfPretreatmentUtil {
             .getLogger(OriginalConfPretreatmentUtil.class);
 
     private static boolean IS_DEBUG = LOG.isDebugEnabled();
+    public static boolean IS_PRECHECK;
 
     public static DataBaseType DATABASE_TYPE;
 
-    public static void doPretreatment(Configuration originalConfig,boolean isPreCheck) {
+    public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
         originalConfig.getNecessaryValue(Key.USERNAME,
                 DBUtilErrorCode.REQUIRED_VALUE);
@@ -32,7 +33,7 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         dealWhere(originalConfig);
 
-        simplifyConf(originalConfig,isPreCheck);
+        simplifyConf(originalConfig,IS_PRECHECK);
     }
 
     public static void dealWhere(Configuration originalConfig) {

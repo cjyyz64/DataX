@@ -26,14 +26,15 @@ public class CommonRdbmsReader {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        public Job(DataBaseType dataBaseType) {
+        public Job(DataBaseType dataBaseType,boolean isPreCheck) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
+            OriginalConfPretreatmentUtil.IS_PRECHECK = isPreCheck;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
         }
 
-        public void init(Configuration originalConfig,boolean isPreCheck) {
+        public void init(Configuration originalConfig) {
 
-            OriginalConfPretreatmentUtil.doPretreatment(originalConfig,isPreCheck);
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
 
             LOG.debug("After job init(), job config now is:[\n{}\n]",
                     originalConfig.toJSON());

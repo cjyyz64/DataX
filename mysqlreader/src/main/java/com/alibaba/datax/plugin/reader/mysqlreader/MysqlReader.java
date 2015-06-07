@@ -41,16 +41,16 @@ public class MysqlReader extends Reader {
 
             this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
-            this.commonRdbmsReaderJob.init(this.originalConfig,isPreCheck);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
         @Override
         public void preCheck(){
             boolean isPreCheck = true;
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
-            this.commonRdbmsReaderJob.init(this.originalConfig,isPreCheck);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsReaderJob.init(this.originalConfig);
             Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(this.originalConfig);
             List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
             String username = queryConf.getString(Key.USERNAME);
