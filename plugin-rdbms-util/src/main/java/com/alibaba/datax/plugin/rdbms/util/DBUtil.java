@@ -76,7 +76,7 @@ public final class DBUtil {
     public static String chooseJdbcUrlWithoutRetry(final DataBaseType dataBaseType,
                                        final List<String> jdbcUrls, final String username,
                                        final String password, final List<String> preSql,
-                                       final boolean checkSlave) {
+                                       final boolean checkSlave) throws Exception {
 
         if (null == jdbcUrls || jdbcUrls.isEmpty()) {
             throw DataXException.asDataXException(
@@ -97,7 +97,7 @@ public final class DBUtil {
                         connOK = testConnWithoutRetry(dataBaseType,
                                 url, username, password, checkSlave);
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        throw e;
                     }
                 }
                 if (connOK) {
