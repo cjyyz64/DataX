@@ -4,13 +4,14 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
+import com.alibaba.datax.plugin.rdbms.writer.Constant;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.druid.sql.parser.ParserException;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -33,19 +34,34 @@ public class MysqlWriter extends Writer {
         @Override
         public void preCheck(){
             init();
+            /*检查PreSql跟PostSql语句*/
+            String preSql = this.originalConfig.getString(Key.PRE_SQL);
+            String postSql = this.originalConfig.getString(Key.POST_SQL);
+            try{
+                DBUtil.sqlValid(preSql,DATABASE_TYPE);
+            }catch (ParserException e){
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
+            }
+            try{
+                DBUtil.sqlValid(postSql,DATABASE_TYPE);
+            }catch (ParserException e){
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
+            }
             /*检查insert 权限*/
             String username = this.originalConfig.getString(Key.USERNAME);
             String password = this.originalConfig.getString(Key.PASSWORD);
-            String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
-            List<Object> tablesList = this.originalConfig.getList(Key.TABLE);
-            List<String> expandedTables = new ArrayList<String>();
-            for (Object table:tablesList){
-                expandedTables.add(table.toString());
-            }
-            boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
+            List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
+                    Object.class);
+            
+            for (int i = 0, len = connections.size(); i < len; i++) {
+                Configuration connConf = Configuration.from(connections.get(i).toString());
+                String jdbcUrl = connConf.getString(Key.JDBC_URL);
+                List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
+                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
 
-            if(!hasInsertPri){
-                throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                if(!hasInsertPri){
+                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                }
             }
         }
 

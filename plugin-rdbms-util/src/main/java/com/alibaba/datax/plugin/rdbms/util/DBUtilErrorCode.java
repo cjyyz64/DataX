@@ -23,6 +23,9 @@ public enum DBUtilErrorCode implements ErrorCode {
     ORACLE_QUERY_SQL_ERROR("ORACLEErrCode-05","SQL语句错误，请检查Column或者Where条件"),
     ORACLE_QUERY_INSERT_PRI_ERROR("ORACLEErrCode-06","没有读权限，请联系DBA确认"),
 
+    //PreSql,Post Sql错误
+    MYSQL_PRE_SQL_ERROR("MYSQLErrCode-08","PreSQL语法错误，请检查"),
+    MYSQL_POST_SQL_ERROR("MYSQLErrCode-09","PostSql语法错误，请检查"),
 
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
