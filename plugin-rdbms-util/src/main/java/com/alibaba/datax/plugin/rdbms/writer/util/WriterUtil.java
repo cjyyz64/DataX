@@ -4,7 +4,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.SqlFormatUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 
@@ -124,4 +124,40 @@ public final class WriterUtil {
 		return writeDataSqlTemplate;
 	}
 
+    public static void preCheckPrePareOrPostSQL(Configuration originalConfig, DataBaseType type) {
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
+                Object.class);
+        Configuration connConf = Configuration.from(conns.get(0)
+                .toString());
+
+        String table = connConf.getList(Key.TABLE, String.class).get(0);
+
+        List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
+                String.class);
+        List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
+                preSqls, table);
+
+        if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+
+            LOG.info("Begin to preCheck preSqls:[{}].",
+                    StringUtils.join(renderedPreSqls, ";"));
+            for(String sql : renderedPreSqls) {
+                DBUtil.sqlValid(sql, type);
+            }
+        }
+
+        List<String> postSqls = originalConfig.getList(Key.POST_SQL,
+                String.class);
+        List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
+                postSqls, table);
+
+        if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+
+            LOG.info("Begin to preCheck postSqls:[{}].",
+                    StringUtils.join(renderedPreSqls, ";"));
+            for(String sql : renderedPostSqls) {
+                DBUtil.sqlValid(sql, type);
+            }
+        }
+    }
 }
