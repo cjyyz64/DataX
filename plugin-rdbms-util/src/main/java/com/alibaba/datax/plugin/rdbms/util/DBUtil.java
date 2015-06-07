@@ -206,6 +206,27 @@ public final class DBUtil {
         return false;
     }
 
+
+    public static boolean hasOracleInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList) {
+
+        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
+        String sqlTemplate = "insert into %s(select * from %s where 1 = 2)";
+
+        boolean hasInsertPrivilege = true;
+        Statement stmt = null;
+        for(String tableName : tableList) {
+            String sql = String.format(sqlTemplate, tableName, tableName);
+            try {
+                stmt = connection.createStatement();
+                executeSqlWithoutResultSet(stmt, sql);
+            } catch (Exception e) {
+                hasInsertPrivilege = false;
+                LOG.warn("User [" + userName +"] has no insert privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+            }
+        }
+        return hasInsertPrivilege;
+    }
+
     /**
      * Get direct JDBC connection
      * <p/>
@@ -465,6 +486,7 @@ public final class DBUtil {
             throws SQLException {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
+
         return query(stmt, sql);
     }
 
