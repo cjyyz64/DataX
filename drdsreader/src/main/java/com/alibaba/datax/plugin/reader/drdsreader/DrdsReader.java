@@ -10,11 +10,10 @@ import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.TableExpandUtil;
-
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 public class DrdsReader extends Reader {
 
@@ -28,6 +27,7 @@ public class DrdsReader extends Reader {
 
 		@Override
 		public void init() {
+            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 			int fetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE,
 					Integer.MIN_VALUE);
@@ -35,7 +35,7 @@ public class DrdsReader extends Reader {
 			this.validateConfiguration();
 
 			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-					DATABASE_TYPE);
+					DATABASE_TYPE,isPreCheck);
 			this.commonRdbmsReaderJob.init(this.originalConfig);
 		}
 
