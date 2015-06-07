@@ -35,21 +35,25 @@ public class MysqlWriter extends Writer {
         public void preCheck(){
             init();
             /*检查PreSql跟PostSql语句*/
-            String preSql = this.originalConfig.getString(Key.PRE_SQL);
-            String postSql = this.originalConfig.getString(Key.POST_SQL);
+            List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,String.class);
+            List<String> postSqls = this.originalConfig.getList(Key.POST_SQL,String.class);
             try{
-                if (preSql != null && !preSql.isEmpty()){
-                    DBUtil.sqlValid(preSql,DATABASE_TYPE);
+                if (preSqls != null && !preSqls.isEmpty()){
+                    for (String preSql:preSqls){
+                        DBUtil.sqlValid(preSql,DATABASE_TYPE);
+                    }
                 }
             }catch (ParserException e){
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage());
             }
             try{
-                if (postSql != null && !postSql.isEmpty()){
-                    DBUtil.sqlValid(postSql,DATABASE_TYPE);
+                if (postSqls != null && !postSqls.isEmpty()){
+                    for (String postSql:postSqls){
+                        DBUtil.sqlValid(postSql,DATABASE_TYPE);
+                    }
                 }
             }catch (ParserException e){
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage()+preSql);
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage());
             }
             /*检查insert 权限*/
             String username = this.originalConfig.getString(Key.USERNAME);
