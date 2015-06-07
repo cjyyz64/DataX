@@ -31,9 +31,9 @@ public class CommonRdbmsReader {
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
         }
 
-        public void init(Configuration originalConfig) {
+        public void init(Configuration originalConfig,boolean isPreCheck) {
 
-            OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig,isPreCheck);
 
             LOG.debug("After job init(), job config now is:[\n{}\n]",
                     originalConfig.toJSON());

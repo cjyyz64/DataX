@@ -71,7 +71,41 @@ public final class DBUtil {
                     String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
                             StringUtils.join(jdbcUrls, ",")), e);
         }
+    }
 
+    public static String chooseJdbcUrlWithoutRetry(final DataBaseType dataBaseType,
+                                       final List<String> jdbcUrls, final String username,
+                                       final String password, final List<String> preSql,
+                                       final boolean checkSlave) {
+
+        if (null == jdbcUrls || jdbcUrls.isEmpty()) {
+            throw DataXException.asDataXException(
+                    DBUtilErrorCode.CONF_ERROR,
+                    String.format("您的jdbcUrl的配置信息有错, 因为jdbcUrl[%s]不能为空. 请检查您的配置并作出修改.",
+                            StringUtils.join(jdbcUrls, ",")));
+        }
+
+        boolean connOK = false;
+        for (String url : jdbcUrls) {
+            if (StringUtils.isNotBlank(url)) {
+                url = url.trim();
+                if (null != preSql && !preSql.isEmpty()) {
+                    connOK = testConnWithoutRetry(dataBaseType,
+                            url, username, password, preSql);
+                } else {
+                    try {
+                        connOK = testConnWithoutRetry(dataBaseType,
+                                url, username, password, checkSlave);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (connOK) {
+                    return url;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -197,7 +231,7 @@ public final class DBUtil {
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
-            throw RdbmsException.asDataXException(dataBaseType,e);
+            throw RdbmsException.asDataXException(dataBaseType, e);
         }
     }
 
@@ -392,7 +426,6 @@ public final class DBUtil {
         } finally {
             DBUtil.closeDBResources(null, connection);
         }
-
         return false;
     }
 
