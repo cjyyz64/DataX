@@ -184,7 +184,7 @@ public final class DBUtil {
                     if (!tableName.equals("*") && tableNames.contains(tableName))
                         tableNames.remove(tableName);
                 } else {
-                    if (grantRecord.contains("INSERT")) {
+                    if (grantRecord.contains("INSERT") ||grantRecord.contains("ALL PRIVILEGES")) {
                         if (grantRecord.contains("*.*"))
                             return true;
                         else if (grantRecord.contains(dbPattern)) {

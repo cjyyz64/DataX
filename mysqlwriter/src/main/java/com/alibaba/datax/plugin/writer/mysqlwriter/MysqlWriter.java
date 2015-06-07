@@ -1,11 +1,16 @@
 package com.alibaba.datax.plugin.writer.mysqlwriter;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -23,6 +28,25 @@ public class MysqlWriter extends Writer {
 
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
+        }
+
+        @Override
+        public void preCheck(){
+            init();
+            /*检查insert 权限*/
+            String username = this.originalConfig.getString(Key.USERNAME);
+            String password = this.originalConfig.getString(Key.PASSWORD);
+            String jdbcUrl = this.originalConfig.getString(Key.JDBC_URL);
+            List<Object> tablesList = this.originalConfig.getList(Key.TABLE);
+            List<String> expandedTables = new ArrayList<String>();
+            for (Object table:tablesList){
+                expandedTables.add(table.toString());
+            }
+            boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
+
+            if(!hasInsertPri){
+                throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+            }
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
