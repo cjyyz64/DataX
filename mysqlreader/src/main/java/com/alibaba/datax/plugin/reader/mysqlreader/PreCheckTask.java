@@ -56,7 +56,7 @@ public class PreCheckTask implements Callable<Boolean> {
                     throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
                 }
             }catch (Exception e) {
-                RdbmsException.asQueryException(this.dataBaseType, e, querySql);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }

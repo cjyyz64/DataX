@@ -67,9 +67,8 @@ public class MysqlReader extends Reader {
                 PreCheckTask t = new PreCheckTask(username,password,connConf,DataBaseType.MySql);
                 taskList.add(t);
             }
-            List<Future<Boolean>> preCheckRsts = null;
             try {
-                preCheckRsts = exec.invokeAll(taskList);
+                exec.invokeAll(taskList);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
