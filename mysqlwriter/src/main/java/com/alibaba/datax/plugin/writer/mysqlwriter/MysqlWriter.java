@@ -25,17 +25,15 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void init() {
-            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
         @Override
         public void preCheck(){
-            boolean isPreCheck = true;
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
 
             /*检查PreSql跟PostSql语句*/

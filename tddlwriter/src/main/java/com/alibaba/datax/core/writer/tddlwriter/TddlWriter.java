@@ -29,7 +29,6 @@ public class TddlWriter extends Writer {
 
         @Override
         public void init() {
-            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
             //check appName,table
             originalConfig.getNecessaryValue(Key.TDDL_APP_NAME, DBUtilErrorCode.REQUIRED_VALUE);
@@ -42,7 +41,7 @@ public class TddlWriter extends Writer {
             OriginalConfPretreatmentUtil.doCheckBatchSize(originalConfig);
             //deal config
             String table = originalConfig.getString(Key.TABLE);
-            OriginalConfPretreatmentUtil.dealColumnConf(originalConfig, tddlConnectionFactory, table,isPreCheck);
+            OriginalConfPretreatmentUtil.dealColumnConf(originalConfig, tddlConnectionFactory, table);
             OriginalConfPretreatmentUtil.dealWriteMode(originalConfig);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());

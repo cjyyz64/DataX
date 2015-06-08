@@ -22,7 +22,6 @@ public class OracleWriter extends Writer {
 		private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         public void preCheck() {
-
             this.init();
             WriterUtil.preCheckPrePareOrPostSQL(originalConfig, DATABASE_TYPE);
 
@@ -45,7 +44,6 @@ public class OracleWriter extends Writer {
 
 		@Override
 		public void init() {
-            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 
 			// warn：not like mysql, oracle only support insert mode, don't use
@@ -60,7 +58,7 @@ public class OracleWriter extends Writer {
 			}
 
 			this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(
-					DATABASE_TYPE,isPreCheck);
+					DATABASE_TYPE);
 			this.commonRdbmsWriterJob.init(this.originalConfig);
 		}
 

@@ -101,12 +101,13 @@ public final class OriginalConfPretreatmentUtil {
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
     }
 
-    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable,boolean isPreCheck) {
+    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable) {
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
+            boolean isPreCheck = originalConfig.getBool("dtrRun", false);
             List<String> allColumns;
             if (isPreCheck){
                 allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
@@ -146,7 +147,7 @@ public final class OriginalConfPretreatmentUtil {
                 "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
         JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(DATABASE_TYPE, jdbcUrl, username, password);
-        dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable,isPreCheck);
+        dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
     }
 
     public static void dealWriteMode(Configuration originalConfig) {

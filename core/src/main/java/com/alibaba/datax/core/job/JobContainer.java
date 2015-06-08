@@ -206,6 +206,8 @@ public class JobContainer extends AbstractContainer {
         Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
                 PluginType.READER, this.readerPluginName);
 
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER + ".dryRun", true);
+
         // 设置reader的jobConfig
         jobReader.setPluginJobConf(this.configuration.getConfiguration(
                 CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
@@ -232,6 +234,8 @@ public class JobContainer extends AbstractContainer {
 
         Writer.Job jobWriter = (Writer.Job) LoadUtil.loadJobPlugin(
                 PluginType.WRITER, this.writerPluginName);
+
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER + ".dryRun", true);
 
         // 设置writer的jobConfig
         jobWriter.setPluginJobConf(this.configuration.getConfiguration(
