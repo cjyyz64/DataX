@@ -1,5 +1,12 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter;
 
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.FixedColumnSchemaBuilder;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.RowkeySchemaBuilder;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter.column.FixedHBaseColumn;
+import com.alibaba.datax.plugin.writer.hbasebulkwriter.util.PhoenixEncoder;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.Result;
@@ -12,15 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.StringColumn;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.FixedColumnSchemaBuilder;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.HBaseConsts;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.ConfigurationBuilders.RowkeySchemaBuilder;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.column.FixedHBaseColumn;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.util.PhoenixEncoder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,7 +149,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     System.out.println(fixedcolumn.toString());
@@ -179,7 +177,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     System.out.println(fixedcolumn.toString());
@@ -226,7 +224,7 @@ public class FixedHBaseColumnTest {
     rowkeyArray.put(rowkeyElement);
     fixedcolumn.put("hbase_rowkey", rowkeyArray);
 
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     JSONObject option = new JSONObject();
@@ -284,7 +282,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
 
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     
@@ -318,7 +316,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     System.out.println(fixedcolumn.toString());
     
@@ -352,7 +350,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     System.out.println(fixedcolumn.toString());
@@ -405,7 +403,7 @@ public class FixedHBaseColumnTest {
     JSONArray columnArray = new JSONArray();
     columnArray.put(columnElement);
     fixedcolumn.put("hbase_column", columnArray);
-    fixedcolumn.put("hbase_output", "/hbasebulkwriter");
+    fixedcolumn.put("hbase_output", "/hbasebulkwriter2");
     fixedcolumn.put("hbase_config", "hbase-site.xml");
     fixedcolumn.put("hdfs_config", "hdfs-site.xml");
     JSONObject option = new JSONObject();

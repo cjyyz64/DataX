@@ -5,6 +5,14 @@
     <groupId>com.alibaba.datax</groupId>
     <artifactId>datax-all</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <dependencies>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>1.3</version>
+        </dependency>
+    </dependencies>
+
     <name>datax-all</name>
     <packaging>pom</packaging>
 
@@ -23,6 +31,7 @@
         <mysql-connector-java-version>5.1.34</mysql-connector-java-version>
         <junit-version>4.11</junit-version>
         <tddl.version>5.1.17</tddl.version>
+
 
         <project-sourceEncoding>UTF-8</project-sourceEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -64,6 +73,7 @@
         <module>osswriter</module>
         <module>tddlwriter</module>
         <module>hbasebulkwriter</module>
+        <module>hbasebulkwriter2</module>
         <!--hook-->
         <module>dqchook</module>
 
