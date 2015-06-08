@@ -15,10 +15,10 @@ public class RdbmsException extends DataXException{
         if (dataBaseType.equals(DataBaseType.MySql)){
             DBUtilErrorCode dbUtilErrorCode = mySqlConnectionErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_CONN_DB_ERROR ){
-                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+" 具体错误信息为："+e);
             }
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_CONN_USERPWD_ERROR ){
-                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+" 具体错误信息为："+e);
             }
             return DataXException.asDataXException(dbUtilErrorCode,e);
         }
@@ -26,10 +26,10 @@ public class RdbmsException extends DataXException{
         if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_CONN_DB_ERROR ){
-                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+" 具体错误信息为："+e);
             }
             if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_CONN_USERPWD_ERROR ){
-                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+" 具体错误信息为："+e);
             }
             return DataXException.asDataXException(dbUtilErrorCode,e);
         }
@@ -72,24 +72,21 @@ public class RdbmsException extends DataXException{
         if (dataBaseType.equals(DataBaseType.MySql)){
             DBUtilErrorCode dbUtilErrorCode = mySqlQueryErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR && table != null){
-                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
-            }
-            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR){
-                return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+" 执行的SQL为:"+querySql+" 具体错误信息为："+e);
             }
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_SELECT_PRI_ERROR){
-                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+" 具体错误信息为："+e);
             }
 
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
 
         }else if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleQueryErrorAna(e.getMessage());
-            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR){
-                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
+            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR && table != null){
+                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+" 执行的SQL为:"+querySql+" 具体错误信息为："+e);
             }
             if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_SELECT_PRI_ERROR){
-                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
+                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+" 具体错误信息为："+e);
             }
 
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
