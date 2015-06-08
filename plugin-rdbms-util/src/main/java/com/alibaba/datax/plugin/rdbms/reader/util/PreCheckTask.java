@@ -44,7 +44,10 @@ public class PreCheckTask implements Callable<Boolean>{
         int fetchSize = 1;
         for (int i=0;i<querySqls.size();i++){
             String querySql = querySqls.get(i).toString();
-            String table = tables.get(i).toString();
+            String table = null;
+            if (tables != null && !tables.isEmpty()){
+                table = tables.get(i).toString();
+            }
             try {
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
