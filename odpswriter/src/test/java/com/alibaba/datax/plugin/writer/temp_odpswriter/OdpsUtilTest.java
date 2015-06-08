@@ -27,7 +27,7 @@ import static org.mockito.Matchers.anyString;
 public class OdpsUtilTest {
 
     @Test
-    public void testRunSqlTaskWithRetry() {
+    public void testRunSqlTaskWithRetry_重试3次_时间大于7s() {
         long startTime = System.currentTimeMillis();
         try {
             OdpsUtil.runSqlTaskWithRetry(
@@ -64,7 +64,7 @@ public class OdpsUtilTest {
     }
 
     @Test
-    public void testRunSqlTaskWithRetry_Exception() throws Exception {
+    public void testRunSqlTaskWithRetry_不可重试Exception() throws Exception {
         PowerMockito.spy(OdpsUtil.class);
         final AtomicInteger realRetryTimes = new AtomicInteger(0);
         PowerMockito.doAnswer(new Answer<Object>() {
@@ -72,7 +72,6 @@ public class OdpsUtilTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 realRetryTimes.addAndGet(1);
                 throw new Exception("不可重试异常");
-                //return null;
             }
         }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
 
@@ -82,6 +81,28 @@ public class OdpsUtilTest {
                     4, 1000, true);
         } catch (Exception e) {
             Assert.assertEquals(e.getMessage(), "不可重试异常");
+        }
+        Assert.assertEquals(1, realRetryTimes.get());
+    }
+
+    @Test
+    public void testRunSqlTaskWithRetry_不可重试DataxException() throws Exception {
+        PowerMockito.spy(OdpsUtil.class);
+        final AtomicInteger realRetryTimes = new AtomicInteger(0);
+        PowerMockito.doAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                realRetryTimes.addAndGet(1);
+                throw DataXException.asDataXException(OdpsWriterErrorCode.RUN_SQL_FAILED, "不可重试异常");
+            }
+        }).when(OdpsUtil.class, "runSqlTask", (Odps) anyObject(), anyString());
+
+        try {
+            OdpsUtil.runSqlTaskWithRetry(
+                    new Odps(new AliyunAccount("datax_test_ID", "datax_test_key")), "select * from table",
+                    4, 1000, true);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("不可重试异常"));
         }
         Assert.assertEquals(1, realRetryTimes.get());
     }

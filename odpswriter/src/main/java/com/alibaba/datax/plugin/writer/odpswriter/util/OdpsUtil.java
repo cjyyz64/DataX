@@ -297,7 +297,6 @@ public class OdpsUtil {
      */
     public static void runSqlTaskWithRetry(final Odps odps, final String query, int retryTimes,
                                             long sleepTimeInMilliSecond, boolean exponential) throws Exception {
-        Exception saveException = null;
         for(int i = 0; i < retryTimes; i++) {
             try {
                 runSqlTask(odps, query);
@@ -305,7 +304,6 @@ public class OdpsUtil {
             } catch (DataXException e) {
                 if (OdpsWriterErrorCode.RUN_SQL_ODPS_EXCEPTION.equals(e.getErrorCode())) {
                     LOG.debug("Exception when calling callable", e);
-                    saveException = e;
                     if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
                         long timeToSleep;
                         if (exponential) {
@@ -324,13 +322,16 @@ public class OdpsUtil {
                             Thread.sleep(timeToSleep);
                         } catch (InterruptedException ignored) {
                         }
+                    } else {
+                        throw e;
                     }
                 } else {
                     throw e;
                 }
+            } catch (Exception e) {
+                throw e;
             }
         }
-        throw saveException;
     }
 
     public static void runSqlTask(Odps odps, String query) {
