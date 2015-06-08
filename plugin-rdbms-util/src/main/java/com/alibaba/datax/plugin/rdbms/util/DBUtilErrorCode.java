@@ -14,12 +14,12 @@ public enum DBUtilErrorCode implements ErrorCode {
     ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库名称错误，原因可能是你填写的数据库名称不存在或拼写错误，请检查数据库实例名称或者联系DBA确认该实例是否存在并且在正常服务。"),
 
     //execute query错误
-    MYSQL_QUERY_TABLE_NAME_ERROR("MYSQLErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。该表名为："),
+    MYSQL_QUERY_TABLE_NAME_ERROR("MYSQLErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。"),
     MYSQL_QUERY_SQL_ERROR("MYSQLErrCode-05","SQL语句执行出错，原因可能是你填写的where条件不正确，请检查Where条件是否存在拼写或语法错误。"),
     MYSQL_QUERY_COLUMN_ERROR("MYSQLErrCode-06","SQL语句执行出错，原因可能是你填写的列不存在，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来。"),
     MYSQL_QUERY_SELECT_PRI_ERROR("MYSQLErrCode-07","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权。"),
 
-    ORACLE_QUERY_TABLE_NAME_ERROR("ORACLEErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。该表名为："),
+    ORACLE_QUERY_TABLE_NAME_ERROR("ORACLEErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。"),
     ORACLE_QUERY_SQL_ERROR("ORACLEErrCode-05","SQL语句执行出错，原因可能是你填写的列不存在或者where条件不符合要求，1，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来;  2，请检查Where条件是否存在拼写或语法错误。"),
     ORACLE_QUERY_SELECT_PRI_ERROR("ORACLEErrCode-06","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权。"),
 

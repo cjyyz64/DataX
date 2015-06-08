@@ -68,19 +68,29 @@ public class RdbmsException extends DataXException{
         return DBUtilErrorCode.CONN_DB_ERROR;
     }
 
-    public static DataXException asQueryException(DataBaseType dataBaseType, Exception e,String querySql,String table){
+    public static DataXException asQueryException(DataBaseType dataBaseType, Exception e,String querySql,String table,String userName){
         if (dataBaseType.equals(DataBaseType.MySql)){
             DBUtilErrorCode dbUtilErrorCode = mySqlQueryErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR){
                 return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
             }
+            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_SELECT_PRI_ERROR){
+                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
+            }
+
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+
         }else if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleQueryErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR){
                 return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
             }
+            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_SELECT_PRI_ERROR){
+                return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
+            }
+
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+
         }else{
             return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
         }
@@ -108,6 +118,16 @@ public class RdbmsException extends DataXException{
             return DBUtilErrorCode.ORACLE_QUERY_SELECT_PRI_ERROR;
         }
         return DBUtilErrorCode.READ_RECORD_FAIL;
+    }
+
+    public static DataXException asSqlParserException(DataBaseType dataBaseType, Exception e,String querySql){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
+        }else if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
+        }else{
+            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+        }
     }
 
 }

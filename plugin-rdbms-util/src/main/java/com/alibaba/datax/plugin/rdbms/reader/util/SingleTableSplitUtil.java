@@ -145,15 +145,9 @@ public class SingleTableSplitUtil {
                 DBUtil.sqlValid(pkRangeSQL,DATABASE_TYPE);
                 rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
             } catch (ParserException e){
-                if (DATABASE_TYPE.equals(DataBaseType.MySql)){
-                    throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR,pkRangeSQL+e);
-                }else if (DATABASE_TYPE.equals(DataBaseType.Oracle)){
-                    throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,pkRangeSQL+e);
-                }else{
-                    throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,pkRangeSQL+e);
-                }
+                throw RdbmsException.asSqlParserException(DATABASE_TYPE,e,pkRangeSQL);
             }catch (Exception e) {
-                throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL,table);
+                throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL,table,username);
             }
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
