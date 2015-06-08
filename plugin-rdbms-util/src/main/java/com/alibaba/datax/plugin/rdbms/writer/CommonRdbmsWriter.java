@@ -32,9 +32,10 @@ public class CommonRdbmsWriter {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        public Job(DataBaseType dataBaseType) {
+        public Job(DataBaseType dataBaseType,boolean isPreCheck) {
             this.dataBaseType = dataBaseType;
             OriginalConfPretreatmentUtil.DATABASE_TYPE = this.dataBaseType;
+            OriginalConfPretreatmentUtil.IS_PRECHECK = isPreCheck;
         }
 
         public void init(Configuration originalConfig) {

@@ -267,7 +267,19 @@ public final class DBUtil {
                     DBUtilErrorCode.CONN_DB_ERROR,
                     String.format("数据库连接失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", jdbcUrl), e);
         }
+    }
 
+    /**
+     * Get direct JDBC connection
+     * <p/>
+     * if connecting failed, try to connect for MAX_TRY_TIMES times
+     * <p/>
+     * NOTE: In DataX, we don't need connection pool in fact
+     */
+    public static Connection getConnectionWithoutRetry(final DataBaseType dataBaseType,
+                                           final String jdbcUrl, final String username, final String password) {
+        return DBUtil.connect(dataBaseType, jdbcUrl, username,
+                password);
     }
 
     private static synchronized Connection connect(DataBaseType dataBaseType,

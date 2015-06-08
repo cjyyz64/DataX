@@ -18,6 +18,7 @@ public final class OriginalConfPretreatmentUtil {
             .getLogger(OriginalConfPretreatmentUtil.class);
 
     public static DataBaseType DATABASE_TYPE;
+    public static boolean IS_PRECHECK;
 
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
@@ -28,7 +29,7 @@ public final class OriginalConfPretreatmentUtil {
 
         simplifyConf(originalConfig);
 
-        dealColumnConf(originalConfig);
+        dealColumnConf(originalConfig,IS_PRECHECK);
         dealWriteMode(originalConfig);
     }
 
@@ -64,8 +65,6 @@ public final class OriginalConfPretreatmentUtil {
                 originalConfig.set(String.format("%s[%d].%s", com.alibaba.datax.plugin.rdbms.reader.Constant.CONN_MARK,
                         i, Key.DBNAME), dbName);
             }
-
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
                     jdbcUrl);
@@ -103,14 +102,18 @@ public final class OriginalConfPretreatmentUtil {
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
     }
 
-    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable) {
+    public static void dealColumnConf(Configuration originalConfig, ConnectionFactory connectionFactory, String oneTable,boolean isPreCheck) {
         List<String> userConfiguredColumns = originalConfig.getList(Key.COLUMN, String.class);
         if (null == userConfiguredColumns || userConfiguredColumns.isEmpty()) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
-
-            List<String> allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            List<String> allColumns;
+            if (isPreCheck){
+                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            }else{
+                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
                     StringUtils.join(allColumns, ","));
@@ -134,7 +137,7 @@ public final class OriginalConfPretreatmentUtil {
         }
     }
 
-    public static void dealColumnConf(Configuration originalConfig) {
+    public static void dealColumnConf(Configuration originalConfig,boolean isPreCheck) {
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL));
 
@@ -144,7 +147,7 @@ public final class OriginalConfPretreatmentUtil {
                 "%s[0].%s[0]", Constant.CONN_MARK, Key.TABLE));
 
         JdbcConnectionFactory jdbcConnectionFactory = new JdbcConnectionFactory(DATABASE_TYPE, jdbcUrl, username, password);
-        dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
+        dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable,isPreCheck);
     }
 
     public static void dealWriteMode(Configuration originalConfig) {
