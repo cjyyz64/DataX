@@ -110,7 +110,7 @@ public final class OriginalConfPretreatmentUtil {
         } else {
             List<String> allColumns;
             if (isPreCheck){
-                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
             }else{
                 allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
             }
