@@ -46,6 +46,7 @@ public class OdpsReader extends Reader {
             }
 
             OdpsUtil.checkNecessaryConfig(this.originalConfig);
+            OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
             dealSplitMode(this.originalConfig);
 

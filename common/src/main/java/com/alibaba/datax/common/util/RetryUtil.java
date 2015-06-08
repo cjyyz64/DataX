@@ -9,6 +9,8 @@ public final class RetryUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(RetryUtil.class);
 
+    private static final long MAX_SLEEP_MILLISECOND = 256 * 1000;
+
     /**
      * 重试次数工具方法.
      *
@@ -93,8 +95,14 @@ public final class RetryUtil {
                         long timeToSleep;
                         if (exponential) {
                             timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);
+                            if(timeToSleep >= MAX_SLEEP_MILLISECOND) {
+                                timeToSleep = MAX_SLEEP_MILLISECOND;
+                            }
                         } else {
                             timeToSleep = sleepTimeInMilliSecond;
+                            if(timeToSleep >= MAX_SLEEP_MILLISECOND) {
+                                timeToSleep = MAX_SLEEP_MILLISECOND;
+                            }
                         }
 
                         try {
