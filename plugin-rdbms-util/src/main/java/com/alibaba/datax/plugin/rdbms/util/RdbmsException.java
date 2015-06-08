@@ -11,17 +11,28 @@ public class RdbmsException extends DataXException{
         super(errorCode,message);
     }
 
-    public static DataXException asDataXException(DataBaseType dataBaseType,Exception e){
+    public static DataXException asConnException(DataBaseType dataBaseType,Exception e,String userName,String dbName){
         if (dataBaseType.equals(DataBaseType.MySql)){
             DBUtilErrorCode dbUtilErrorCode = mySqlConnectionErrorAna(e.getMessage());
+            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_CONN_DB_ERROR ){
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+"。 具体错误信息为："+e);
+            }
+            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_CONN_USERPWD_ERROR ){
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+"。 具体错误信息为："+e);
+            }
             return DataXException.asDataXException(dbUtilErrorCode,e);
         }
 
         if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleConnectionErrorAna(e.getMessage());
+            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_CONN_DB_ERROR ){
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库名称为："+dbName+"。 具体错误信息为："+e);
+            }
+            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_CONN_USERPWD_ERROR ){
+                return DataXException.asDataXException(dbUtilErrorCode,"该数据库用户名为："+userName+"。 具体错误信息为："+e);
+            }
             return DataXException.asDataXException(dbUtilErrorCode,e);
         }
-
         return DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,e);
     }
 
@@ -57,13 +68,19 @@ public class RdbmsException extends DataXException{
         return DBUtilErrorCode.CONN_DB_ERROR;
     }
 
-    public static DataXException asQueryException(DataBaseType dataBaseType, Exception e,String querySql){
+    public static DataXException asQueryException(DataBaseType dataBaseType, Exception e,String querySql,String table){
         if (dataBaseType.equals(DataBaseType.MySql)){
             DBUtilErrorCode dbUtilErrorCode = mySqlQueryErrorAna(e.getMessage());
-            return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
+            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR){
+                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
+            }
+            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
         }else if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleQueryErrorAna(e.getMessage());
-            return DataXException.asDataXException(dbUtilErrorCode,querySql+e);
+            if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR){
+                return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+"。 执行的SQL为:"+querySql+" 具体错误信息为："+e);
+            }
+            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
         }else{
             return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
         }
@@ -72,8 +89,8 @@ public class RdbmsException extends DataXException{
     public static DBUtilErrorCode mySqlQueryErrorAna(String e){
         if (e.contains(Constant.MYSQL_TABLE_NAME_ERR1) && e.contains(Constant.MYSQL_TABLE_NAME_ERR2)){
             return DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR;
-        }else if (e.contains(Constant.MYSQL_INSERT_PRI)){
-            return DBUtilErrorCode.MYSQL_QUERY_INSERT_PRI_ERROR;
+        }else if (e.contains(Constant.MYSQL_SELECT_PRI)){
+            return DBUtilErrorCode.MYSQL_QUERY_SELECT_PRI_ERROR;
         }else if (e.contains(Constant.MYSQL_COLUMN1) && e.contains(Constant.MYSQL_COLUMN2)){
             return DBUtilErrorCode.MYSQL_QUERY_COLUMN_ERROR;
         }else if (e.contains(Constant.MYSQL_WHERE)){
@@ -87,8 +104,8 @@ public class RdbmsException extends DataXException{
             return DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR;
         }else if (e.contains(Constant.ORACLE_SQL)){
             return DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR;
-        }else if (e.contains(Constant.ORACLE_INSERT_PRI)){
-            return DBUtilErrorCode.ORACLE_QUERY_INSERT_PRI_ERROR;
+        }else if (e.contains(Constant.ORACLE_SELECT_PRI)){
+            return DBUtilErrorCode.ORACLE_QUERY_SELECT_PRI_ERROR;
         }
         return DBUtilErrorCode.READ_RECORD_FAIL;
     }

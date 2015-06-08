@@ -62,7 +62,7 @@ public final class OriginalConfPretreatmentUtil {
             String dbName = DBUtil.getDbName(jdbcUrl);
             if (dbName != null){
                 originalConfig.set(String.format("%s[%d].%s", com.alibaba.datax.plugin.rdbms.reader.Constant.CONN_MARK,
-                        i, com.alibaba.datax.plugin.rdbms.reader.Key.DBNAME), dbName);
+                        i, Key.DBNAME), dbName);
             }
 
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);

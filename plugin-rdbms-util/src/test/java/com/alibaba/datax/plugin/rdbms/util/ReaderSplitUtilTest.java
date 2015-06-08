@@ -1,12 +1,12 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.ReaderSplitUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import org.apache.commons.io.FileUtils;
-import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,8 +30,10 @@ public class ReaderSplitUtilTest {
 
     @Test
     public void testSplit单表按主键切分自动增加切分Num() throws Exception {
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = false;
         //总体切分数充足
-        Configuration readerConfig = getAndInitConfigFromClasspath("mysqlreader_pk_enough.json");
+        Configuration readerConfig = getAndInitConfigFromClasspath("mysqlreader_pk_enough.json",dataBaseType,isPreCheck);
         //切分数为3
         List<Configuration> configList = ReaderSplitUtil.doSplit(readerConfig, 3);
         //单表按主键切分，切分数为n*2+1，在加上pk is null 的情况，一共为2*(n+1)份
@@ -41,8 +43,10 @@ public class ReaderSplitUtilTest {
 
     @Test
     public void testSplit单表按主键切分全表总切分数小于channel数() throws Exception {
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = false;
         //总体切分数最多是4个
-        Configuration readerConfig = getAndInitConfigFromClasspath("mysqlreader_pk_not_enough.json");
+        Configuration readerConfig = getAndInitConfigFromClasspath("mysqlreader_pk_not_enough.json",dataBaseType,isPreCheck);
         //切分数为3
         List<Configuration> configList = ReaderSplitUtil.doSplit(readerConfig, 3);
         //单表按主键切分，切分数为n*2+1，在加上pk is null 的情况，一共为2*(n+1)份
@@ -50,10 +54,12 @@ public class ReaderSplitUtilTest {
         Assert.assertEquals(configList.size(), 4);
     }
 
-    public Configuration getAndInitConfigFromClasspath(String classpathConfigName) throws IOException {
+    public Configuration getAndInitConfigFromClasspath(String classpathConfigName,DataBaseType dataBaseType,boolean isPreCheck) throws IOException {
         String configStr = FileUtils.readFileToString(new File(Thread.currentThread().getContextClassLoader().getResource(classpathConfigName).getFile()));
         Configuration readerConfig = Configuration.from(configStr);
         readerConfig.set("fetchSize", Integer.MIN_VALUE);
+        OriginalConfPretreatmentUtil.IS_PRECHECK=isPreCheck;
+        OriginalConfPretreatmentUtil.DATABASE_TYPE= dataBaseType;
         OriginalConfPretreatmentUtil.doPretreatment(readerConfig);
         return readerConfig;
     }
@@ -62,7 +68,9 @@ public class ReaderSplitUtilTest {
     public void preCheckSplitTest(){
         Configuration originalConf;
         try{
-            originalConf = getAndInitConfigFromClasspath("mysqlreader_multiTable.json");
+            DataBaseType dataBaseType = DataBaseType.MySql;
+            boolean isPreCheck = true;
+            originalConf = getAndInitConfigFromClasspath("mysqlreader_multiTable.json",dataBaseType,isPreCheck);
             Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConf);
             List<Object> conns = queryConf.getList(Constant.CONN_MARK, Object.class);
             for (int i = 0, len = conns.size(); i < len; i++) {
@@ -74,6 +82,86 @@ public class ReaderSplitUtilTest {
             System.out.println(e.getMessage());
         }
     }
+
+    /*实跑表名配置错误*/
+    @Test
+    public void tableNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = false;
+        Configuration originalConf;
+        try{
+            originalConf = getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+        }
+    }
+
+    /*PreCheck 表名配置错误*/
+    @Test
+    public void preCheckTableNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = true;
+        try{
+            getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+        }
+    }
+
+    /*实跑dbName配置错误*/
+    @Test
+    public void dbNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = false;
+        try{
+            getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+        }
+    }
+
+    /*PreCheck dbName配置错误*/
+    @Test
+    public void preCheckDbNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = true;
+        try{
+            getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+        }
+    }
+
+    /*实跑用户名配置错误*/
+    @Test
+    public void userNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = false;
+        try{
+            getAndInitConfigFromClasspath("mysqlreader_userName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库用户名为"));
+        }
+    }
+
+    /*PreCheck 用户名配置错误*/
+    @Test
+    public void preCheckUserNameErrTest(){
+        DataBaseType dataBaseType = DataBaseType.MySql;
+        boolean isPreCheck = true;
+        try{
+            getAndInitConfigFromClasspath("mysqlreader_userName_Err.json",dataBaseType,isPreCheck);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().toString().contains("该数据库用户名为"));
+        }
+    }
+
 
     @Test
     public void testDealWhere() {

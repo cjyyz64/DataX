@@ -85,6 +85,7 @@ public final class OriginalConfPretreatmentUtil {
                     .getList(Key.JDBC_URL, String.class);
             List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
+
             String jdbcUrl;
             if (isPreCheck){
                 jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(DATABASE_TYPE, jdbcUrls,

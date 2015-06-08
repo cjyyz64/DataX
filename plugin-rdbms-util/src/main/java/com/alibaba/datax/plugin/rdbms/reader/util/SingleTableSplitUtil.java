@@ -133,6 +133,7 @@ public class SingleTableSplitUtil {
         String jdbcURL = configuration.getString(Key.JDBC_URL);
         String username = configuration.getString(Key.USERNAME);
         String password = configuration.getString(Key.PASSWORD);
+        String table = configuration.getString(Key.TABLE);
 
         Connection conn = null;
         ResultSet rs = null;
@@ -152,7 +153,7 @@ public class SingleTableSplitUtil {
                     throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,pkRangeSQL+e);
                 }
             }catch (Exception e) {
-                throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL);
+                throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL,table);
             }
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {

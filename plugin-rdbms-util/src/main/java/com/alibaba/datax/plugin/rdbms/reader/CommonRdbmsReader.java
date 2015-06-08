@@ -139,6 +139,7 @@ public class CommonRdbmsReader {
                               RecordSender recordSender,
                               TaskPluginCollector taskPluginCollector, int fetchSize) {
             String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
+            String table = readerSliceConfig.getString(Key.TABLE);
 
             LOG.info("Begin to read record by Sql: [{}\n] {}.",
                     querySql, basicMsg);
@@ -174,7 +175,7 @@ public class CommonRdbmsReader {
                 }
 
             }catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }

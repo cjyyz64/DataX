@@ -272,12 +272,13 @@ public final class DBUtil {
 
     private static synchronized Connection connect(DataBaseType dataBaseType,
                                                    String url, String user, String pass) {
+        String dbName = DBUtil.getDbName(url);
         try {
             Class.forName(dataBaseType.getDriverClassName());
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
             return DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
-            throw RdbmsException.asDataXException(dataBaseType, e);
+            throw RdbmsException.asConnException(dataBaseType, e,user,dbName);
         }
     }
 

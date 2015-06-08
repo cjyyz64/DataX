@@ -39,11 +39,13 @@ public class PreCheckTask implements Callable<Boolean>{
     public Boolean call() throws DataXException{
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
+        List<Object> tables = this.connection.getList(Key.TABLE,Object.class);
         Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
         for (int i=0;i<querySqls.size();i++){
             String querySql = querySqls.get(i).toString();
+            String table = tables.get(i).toString();
             try {
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
@@ -56,7 +58,7 @@ public class PreCheckTask implements Callable<Boolean>{
                     throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
                 }
             }catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
