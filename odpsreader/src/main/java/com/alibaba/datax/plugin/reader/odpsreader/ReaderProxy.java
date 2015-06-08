@@ -58,13 +58,26 @@ public class ReaderProxy {
             Record odpsRecord;
             Map<String, String> partitionMap = this
                     .parseCurrentPartitionValue();
+
+            int retryTimes = 1;
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
                 } catch(Exception e) {
-                    //throw 一个特殊的异常, 外层捕获该异常进行重试
-                    LOG.warn("warn : odps reader exception: {}", e.getMessage());
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
+                    //odps read 异常后重试10次
+                    LOG.warn("warn : odps read exception: {}", e.getMessage());
+                    if(retryTimes < 10) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        recordReader = downloadSession.openRecordReader(start, count, isCompress);
+                        LOG.warn("odps-read-exception, 重试第{}次", retryTimes);
+                        retryTimes++;
+                        continue;
+                    } else {
+                        throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_EXCEPTION, e);
+                    }
                 }
                 //记录已经读取的点
                 start++;
