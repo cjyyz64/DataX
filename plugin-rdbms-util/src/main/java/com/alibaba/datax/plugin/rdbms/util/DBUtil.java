@@ -218,11 +218,11 @@ public final class DBUtil {
         Statement insertStmt = null;
         Statement deleteStmt = null;
         for(String tableName : tableList) {
-            String testInsertPrivilegeSql = String.format(insertTemplate, tableName, tableName);
-            String testDeletePrivilegeSQL = String.format(deleteTemplate, tableName);
+            String checkInsertPrivilegeSql = String.format(insertTemplate, tableName, tableName);
+            String checkDeletePrivilegeSQL = String.format(deleteTemplate, tableName);
             try {
                 insertStmt = connection.createStatement();
-                executeSqlWithoutResultSet(insertStmt, testInsertPrivilegeSql);
+                executeSqlWithoutResultSet(insertStmt, checkInsertPrivilegeSql);
             } catch (Exception e) {
                 hasInsertPrivilege = false;
                 LOG.warn("User [" + userName +"] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
@@ -230,7 +230,7 @@ public final class DBUtil {
 
             try {
                 deleteStmt = connection.createStatement();
-                executeSqlWithoutResultSet(deleteStmt, testDeletePrivilegeSQL);
+                executeSqlWithoutResultSet(deleteStmt, checkDeletePrivilegeSQL);
             } catch (Exception e) {
                 hasInsertPrivilege = false;
                 LOG.warn("User [" + userName +"] has no 'delete' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
