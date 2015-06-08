@@ -5,27 +5,29 @@ import com.alibaba.datax.common.spi.ErrorCode;
 //TODO
 public enum DBUtilErrorCode implements ErrorCode {
     //连接错误
-    MYSQL_CONN_USERPWD_ERROR("MYSQLErrCode-01","数据库用户名或者密码错误，原因可能是你填写的账号或密码不存在或存在拼写错误，请检查填写的账号密码或者联系DBA确认账号和密码是否正确。"),
-    MYSQL_CONN_IPPORT_ERROR("MYSQLErrCode-02","数据库服务的IP地址或者Port错误，原因可能是你填写的IP地址或者Port不存在或存在拼写错误，请检查填写的IP地址和Port或者联系DBA确认IP地址和Port是否正确。如果是同步中心用户请联系DBA确认idb上录入的IP和PORT信息和数据库的当前实际信息是一致的。"),
-    MYSQL_CONN_DB_ERROR("MYSQLErrCode-03","数据库名称错误，原因可能是你填写的数据库名称不存在或拼写错误，请检查数据库实例名称或者联系DBA确认该实例是否存在并且在正常服务。"),
+    MYSQL_CONN_USERPWD_ERROR("MYSQLErrCode-01","数据库用户名或者密码错误，原因可能是你填写的账号或密码不存在或存在拼写错误，请检查填写的账号密码或者联系DBA确认账号和密码是否正确"),
+    MYSQL_CONN_IPPORT_ERROR("MYSQLErrCode-02","数据库服务的IP地址或者Port错误，原因可能是你填写的IP地址或者Port不存在或存在拼写错误，请检查填写的IP地址和Port或者联系DBA确认IP地址和Port是否正确。如果是同步中心用户请联系DBA确认idb上录入的IP和PORT信息和数据库的当前实际信息是一致的"),
+    MYSQL_CONN_DB_ERROR("MYSQLErrCode-03","数据库名称错误，原因可能是你填写的数据库名称不存在或拼写错误，请检查数据库实例名称或者联系DBA确认该实例是否存在并且在正常服务"),
 
-    ORACLE_CONN_USERPWD_ERROR("ORACLEErrCode-01","数据库用户名或者密码错误，原因可能是你填写的账号或密码不存在或存在拼写错误，请检查填写的账号密码或者联系DBA确认账号和密码是否正确。"),
-    ORACLE_CONN_IPPORT_ERROR("ORACLEErrCode-02","数据库服务的IP地址或者Port错误，原因可能是你填写的IP地址或者Port不存在或存在拼写错误，请检查填写的IP地址和Port或者联系DBA确认IP地址和Port是否正确。如果是同步中心用户请联系DBA确认idb上录入的IP和PORT信息和数据库的当前实际信息是一致的。"),
-    ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库名称错误，原因可能是你填写的数据库名称不存在或拼写错误，请检查数据库实例名称或者联系DBA确认该实例是否存在并且在正常服务。"),
+    ORACLE_CONN_USERPWD_ERROR("ORACLEErrCode-01","数据库用户名或者密码错误，原因可能是你填写的账号或密码不存在或存在拼写错误，请检查填写的账号密码或者联系DBA确认账号和密码是否正确"),
+    ORACLE_CONN_IPPORT_ERROR("ORACLEErrCode-02","数据库服务的IP地址或者Port错误，原因可能是你填写的IP地址或者Port不存在或存在拼写错误，请检查填写的IP地址和Port或者联系DBA确认IP地址和Port是否正确。如果是同步中心用户请联系DBA确认idb上录入的IP和PORT信息和数据库的当前实际信息是一致的"),
+    ORACLE_CONN_DB_ERROR("ORACLEErrCode-03","数据库名称错误，原因可能是你填写的数据库名称不存在或拼写错误，请检查数据库实例名称或者联系DBA确认该实例是否存在并且在正常服务"),
 
     //execute query错误
-    MYSQL_QUERY_TABLE_NAME_ERROR("MYSQLErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。"),
-    MYSQL_QUERY_SQL_ERROR("MYSQLErrCode-05","SQL语句执行出错，原因可能是你填写的where条件不正确，请检查Where条件是否存在拼写或语法错误。"),
-    MYSQL_QUERY_COLUMN_ERROR("MYSQLErrCode-06","SQL语句执行出错，原因可能是你填写的列不存在，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来。"),
-    MYSQL_QUERY_SELECT_PRI_ERROR("MYSQLErrCode-07","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权。"),
+    MYSQL_QUERY_TABLE_NAME_ERROR("MYSQLErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在"),
+    MYSQL_QUERY_SQL_ERROR("MYSQLErrCode-05","SQL语句执行出错，原因可能是你填写的where条件不正确，请检查Where条件是否存在拼写或语法错误"),
+    MYSQL_QUERY_COLUMN_ERROR("MYSQLErrCode-06","SQL语句执行出错，原因可能是你填写的列不存在，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来"),
+    MYSQL_QUERY_SELECT_PRI_ERROR("MYSQLErrCode-07","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权"),
 
-    ORACLE_QUERY_TABLE_NAME_ERROR("ORACLEErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在。"),
-    ORACLE_QUERY_SQL_ERROR("ORACLEErrCode-05","SQL语句执行出错，原因可能是你填写的列不存在或者where条件不符合要求，1，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来;  2，请检查Where条件是否存在拼写或语法错误。"),
-    ORACLE_QUERY_SELECT_PRI_ERROR("ORACLEErrCode-06","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权。"),
+    ORACLE_QUERY_TABLE_NAME_ERROR("ORACLEErrCode-04","表不存在，原因可能是你填写的表不存在或拼写错误，请检查表名或者联系DBA确认该表是否存在"),
+    ORACLE_QUERY_SQL_ERROR("ORACLEErrCode-05","SQL语句执行出错，原因可能是你填写的列不存在或者where条件不符合要求，1，请检查该列是否存在，如果是常量或者变量，请使用英文单引号’包起来;  2，请检查Where条件是否存在拼写或语法错误"),
+    ORACLE_QUERY_SELECT_PRI_ERROR("ORACLEErrCode-06","读表数据出错，因为账号没有读表的权限，请联系DBA确认该账号的权限并授权"),
+    ORACLE_QUERY_SQL_PARSER_ERROR("ORACLEErrCode-07","SQL语法出错，请检查Where条件是否存在拼写或语法错误"),
 
     //PreSql,Post Sql错误
     MYSQL_PRE_SQL_ERROR("MYSQLErrCode-08","PreSQL语法错误，请检查"),
     MYSQL_POST_SQL_ERROR("MYSQLErrCode-09","PostSql语法错误，请检查"),
+    MYSQL_QUERY_SQL_PARSER_ERROR("MYSQLErrCode-10","SQL语法出错，请检查Where条件是否存在拼写或语法错误"),
 
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),

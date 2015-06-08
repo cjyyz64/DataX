@@ -78,7 +78,7 @@ public class RdbmsException extends DataXException{
                 return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
             }
 
-            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
 
         }else if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleQueryErrorAna(e.getMessage());
@@ -89,7 +89,7 @@ public class RdbmsException extends DataXException{
                 return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+"。 具体错误信息为："+e);
             }
 
-            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+            return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
 
         }else{
             return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
@@ -122,9 +122,9 @@ public class RdbmsException extends DataXException{
 
     public static DataXException asSqlParserException(DataBaseType dataBaseType, Exception e,String querySql){
         if (dataBaseType.equals(DataBaseType.MySql)){
-            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_PARSER_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
         }else if (dataBaseType.equals(DataBaseType.Oracle)){
-            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_PARSER_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
         }else{
             throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
         }
