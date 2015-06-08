@@ -29,9 +29,10 @@ public class MysqlRuleWriter extends Writer {
 
         @Override
         public void init() {
+            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
 
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsWriterJob.init(this.originalConfig);
             // 检查 db/table规则 配置（必填）
             originalConfig.getNecessaryValue(Key.DB_NAME_PATTERN, DBUtilErrorCode.REQUIRED_VALUE);

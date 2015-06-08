@@ -27,7 +27,6 @@ public class MysqlWriter extends Writer {
         public void init() {
             boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
-
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
@@ -36,9 +35,9 @@ public class MysqlWriter extends Writer {
         public void preCheck(){
             boolean isPreCheck = true;
             this.originalConfig = super.getPluginJobConf();
-
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsWriterJob.init(this.originalConfig);
+
             /*检查PreSql跟PostSql语句*/
             List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,String.class);
             List<String> postSqls = this.originalConfig.getList(Key.POST_SQL,String.class);

@@ -20,6 +20,7 @@ public class PostgresqlWriter extends Writer {
 
 		@Override
 		public void init() {
+            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 
 			// warn：not like mysql, PostgreSQL only support insert mode, don't use
@@ -29,7 +30,7 @@ public class PostgresqlWriter extends Writer {
 					String.format("写入模式(writeMode)配置有误. 因为PostgreSQL不支持配置参数项 writeMode: %s, PostgreSQL仅使用insert sql 插入数据. 请检查您的配置并作出修改.", writeMode));
 			}
 
-			this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+			this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
 			this.commonRdbmsWriterMaster.init(this.originalConfig);
 		}
 

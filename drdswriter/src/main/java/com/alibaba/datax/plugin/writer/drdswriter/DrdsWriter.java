@@ -23,6 +23,7 @@ public class DrdsWriter extends Writer {
 
         @Override
         public void init() {
+            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
             String writeMode = this.originalConfig.getString(Key.WRITE_MODE, DEFAULT_WRITEMODE);
             if (!DEFAULT_WRITEMODE.equalsIgnoreCase(writeMode) &&
@@ -33,7 +34,7 @@ public class DrdsWriter extends Writer {
             }
 
             this.originalConfig.set(Key.WRITE_MODE, writeMode);
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE,isPreCheck);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
