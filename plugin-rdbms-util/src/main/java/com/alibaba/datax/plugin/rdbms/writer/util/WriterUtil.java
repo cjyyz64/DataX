@@ -84,7 +84,7 @@ public final class WriterUtil {
         List<String> renderedSqls = new ArrayList<String>();
         for (String sql : preOrPostSqls) {
             //preSql为空时，不加入执行队列
-            if (StringUtils.isNoneBlank(sql)) {
+            if (StringUtils.isNotBlank(sql)) {
                 renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
             }
         }
