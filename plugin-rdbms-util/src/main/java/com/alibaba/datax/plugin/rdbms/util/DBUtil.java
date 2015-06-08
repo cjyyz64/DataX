@@ -207,22 +207,39 @@ public final class DBUtil {
     }
 
 
-    public static boolean hasOracleInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList) {
+    public static boolean hasOracleInsertDeletePrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
 
-        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
-        String sqlTemplate = "insert into %s(select * from %s where 1 = 2)";
+        Connection connection = connect(DataBaseType.Oracle, jdbcURL, userName, password);
+        String insertTemplate = "insert into %s(select * from %s where 1 = 2)";
+
+        String deleteTemplate = "delete from %s WHERE 1 = 2";
 
         boolean hasInsertPrivilege = true;
-        Statement stmt = null;
+        Statement insertStmt = null;
+        Statement deleteStmt = null;
         for(String tableName : tableList) {
-            String sql = String.format(sqlTemplate, tableName, tableName);
+            String testInsertPrivilegeSql = String.format(insertTemplate, tableName, tableName);
+            String testDeletePrivilegeSQL = String.format(deleteTemplate, tableName);
             try {
-                stmt = connection.createStatement();
-                executeSqlWithoutResultSet(stmt, sql);
+                insertStmt = connection.createStatement();
+                executeSqlWithoutResultSet(insertStmt, testInsertPrivilegeSql);
             } catch (Exception e) {
                 hasInsertPrivilege = false;
-                LOG.warn("User [" + userName +"] has no insert privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+                LOG.warn("User [" + userName +"] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
             }
+
+            try {
+                deleteStmt = connection.createStatement();
+                executeSqlWithoutResultSet(deleteStmt, testDeletePrivilegeSQL);
+            } catch (Exception e) {
+                hasInsertPrivilege = false;
+                LOG.warn("User [" + userName +"] has no 'delete' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+            }
+        }
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            LOG.warn("connection close failed, " + e.getMessage());
         }
         return hasInsertPrivilege;
     }

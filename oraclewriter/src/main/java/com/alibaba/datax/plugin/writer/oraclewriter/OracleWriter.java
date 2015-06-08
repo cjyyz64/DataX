@@ -34,7 +34,7 @@ public class OracleWriter extends Writer {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.hasOracleInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
+                boolean hasInsertPri = DBUtil.hasOracleInsertDeletePrivilege(jdbcUrl, username, password, expandedTables);
 
                 if(!hasInsertPri){
                     throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
