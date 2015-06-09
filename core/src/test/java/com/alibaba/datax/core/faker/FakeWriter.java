@@ -48,6 +48,14 @@ public class FakeWriter extends Writer {
 		public void destroy() {
 			System.out.println("fake writer job destroyed!");
 		}
+
+        public void preHandler(Configuration jobConfiguration){
+            jobConfiguration.set("job.preHandler.test","writePreDone");
+        }
+
+        public void postHandler(Configuration jobConfiguration){
+            jobConfiguration.set("job.postHandler.test","writePostDone");
+        }
 	}
 
 	public static final class Task extends Writer.Task {

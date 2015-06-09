@@ -6,9 +6,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
-import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordSenderForTest;
 import org.junit.Assert;
@@ -17,7 +17,10 @@ import org.junit.BeforeClass;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -43,8 +46,12 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
             File pluginJsonFile = new File(pluginDir + File.separator
                     + "plugin.json");
 
+            Configuration configuration = Configuration.from(pluginJsonFile);
+            String plugingname = configuration.getString("name");
+            System.out.println("name =" + plugingname + ",conf => " + configuration.toString());
+
             String mainJarPath = pluginDir + File.separator
-                    + getPluginMainJarName(pluginDir);
+                    + getPluginMainJarName(pluginDir, plugingname);
             File pluginMainJarFile = new File(mainJarPath);
 
             Assert.assertTrue("libs should be a dir.", libsDir.isDirectory());
@@ -56,7 +63,8 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
                     "reader", pluginSet);
             Assert.assertTrue("plugin.json file should be a json file.",
                     pluginJsonFile.exists() && pluginJsonFile.isFile()
-                            && null != PLUGIN_CONF);
+                            && null != PLUGIN_CONF
+            );
 
             System.out.println("got pluginConf: " + PLUGIN_CONF.toJSON());
 
@@ -117,13 +125,15 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
                             .currentThread().getClass().getResource("/").getPath()
                             + (jobConf.getString("jobName") == null ? String.valueOf(i)
                             : jobConf.getString("jobName")), "readerRunner", i,
-                    getTestPluginName());
+                    getTestPluginName()
+            );
 
             OutputStream output = buildDataOutput(tempOutputName);
 
             ReaderRunner readerRunner = getReaderRunner(jobs.get(i),
                     (int) slaveId, output == null ? null : new PrintWriter(
-                            output), allTempRecordForTest.get(i));
+                            output), allTempRecordForTest.get(i)
+            );
             completionService.submit(readerRunner, v);
         }
 

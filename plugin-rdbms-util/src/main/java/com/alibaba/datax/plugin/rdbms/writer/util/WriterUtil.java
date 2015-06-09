@@ -84,7 +84,10 @@ public final class WriterUtil {
 
         List<String> renderedSqls = new ArrayList<String>();
         for (String sql : preOrPostSqls) {
-            renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+            //preSql为空时，不加入执行队列
+            if (StringUtils.isNotBlank(sql)) {
+                renderedSqls.add(sql.replace(Constant.TABLE_NAME_PLACEHOLDER, tableName));
+            }
         }
 
         return renderedSqls;
@@ -106,7 +109,7 @@ public final class WriterUtil {
             DBUtil.closeDBResources(null, stmt, null);
         }
     }
-    
+
     public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode){
 		boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
 				|| writeMode.trim().toLowerCase().startsWith("replace");

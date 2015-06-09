@@ -1,10 +1,10 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter.tools;
 
+import com.alibaba.datax.common.util.Configuration;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
-import com.alibaba.datax.common.util.Configuration;
 
 public class DataxTest {
    public static void main(String[] args) throws IOException {

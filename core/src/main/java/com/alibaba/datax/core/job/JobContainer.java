@@ -2,12 +2,14 @@ package com.alibaba.datax.core.job;
 
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.plugin.JobPluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
+import com.alibaba.datax.core.Engine;
 import com.alibaba.datax.core.container.util.HookInvoker;
 import com.alibaba.datax.core.container.util.JobAssignUtil;
 import com.alibaba.datax.core.job.scheduler.AbstractScheduler;
@@ -27,6 +29,7 @@ import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,6 +103,9 @@ public class JobContainer extends AbstractContainer {
                 LOG.info("jobContainer starts to do preCheck ...");
                 this.preCheck();
             } else {
+                LOG.debug("jobContainer starts to do preHandle ...");
+                this.preHandle();
+
                 LOG.debug("jobContainer starts to do init ...");
                 this.init();
                 LOG.debug("jobContainer starts to do prepare ...");
@@ -111,6 +117,8 @@ public class JobContainer extends AbstractContainer {
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
 
+                LOG.debug("jobContainer starts to do postHandle ...");
+                this.postHandle();
                 LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
 
                 this.invokeHooks();
@@ -290,6 +298,7 @@ public class JobContainer extends AbstractContainer {
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
                 this.getContainerCommunicator());
+        //必须先Reader ，后Writer
         this.jobReader = this.initJobReader(jobPluginCollector);
         this.jobWriter = this.initJobWriter(jobPluginCollector);
     }
@@ -298,6 +307,75 @@ public class JobContainer extends AbstractContainer {
         this.prepareJobReader();
         this.prepareJobWriter();
     }
+
+    private void preHandle() {
+        String handlerPluginTypeStr = this.configuration.getString(
+                CoreConstant.DATAX_JOB_PREHANDLER_PLUGINTYPE);
+        if(!StringUtils.isNotEmpty(handlerPluginTypeStr)){
+            return;
+        }
+        PluginType handlerPluginType;
+        try {
+            handlerPluginType = PluginType.valueOf(handlerPluginTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.CONFIG_ERROR,
+                    String.format("Job preHandler's pluginType(%s) set error, reason(%s)", handlerPluginTypeStr.toUpperCase(), e.getMessage()));
+        }
+
+        String handlerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME);
+
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                handlerPluginType, handlerPluginName));
+
+        AbstractJobPlugin handler = LoadUtil.loadJobPlugin(
+                handlerPluginType, handlerPluginName);
+
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
+                this.getContainerCommunicator());
+        handler.setJobPluginCollector(jobPluginCollector);
+
+        //todo configuration的安全性，将来必须保证
+        handler.preHandler(configuration);
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+
+        LOG.info("After PreHandler: \n" + Engine.filterJobConfiguration(configuration) + "\n");
+    }
+
+    private void postHandle() {
+        String handlerPluginTypeStr = this.configuration.getString(
+                CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINTYPE);
+
+        if(!StringUtils.isNotEmpty(handlerPluginTypeStr)){
+            return;
+        }
+        PluginType handlerPluginType;
+        try {
+            handlerPluginType = PluginType.valueOf(handlerPluginTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.CONFIG_ERROR,
+                    String.format("Job postHandler's pluginType(%s) set error, reason(%s)", handlerPluginTypeStr.toUpperCase(), e.getMessage()));
+        }
+
+        String handlerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINNAME);
+
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                handlerPluginType, handlerPluginName));
+
+        AbstractJobPlugin handler = LoadUtil.loadJobPlugin(
+                handlerPluginType, handlerPluginName);
+
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
+                this.getContainerCommunicator());
+        handler.setJobPluginCollector(jobPluginCollector);
+
+        handler.postHandler(configuration);
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+    }
+
 
     /**
      * 执行reader和writer最细粒度的切分，需要注意的是，writer的切分结果要参照reader的切分结果，
@@ -563,7 +641,8 @@ public class JobContainer extends AbstractContainer {
                         + "rec/s", "读出记录总数",
                 String.valueOf(CommunicationTool.getTotalReadRecords(communication)),
                 "读写失败总数",
-                String.valueOf(CommunicationTool.getTotalErrorRecords(communication))));
+                String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
+        ));
     }
 
     /**
@@ -698,7 +777,8 @@ public class JobContainer extends AbstractContainer {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
                     String.format("reader切分的task数目[%d]不等于writer切分的task数目[%d].",
-                            readerTasksConfigs.size(), writerTasksConfigs.size()));
+                            readerTasksConfigs.size(), writerTasksConfigs.size())
+            );
         }
 
         List<Configuration> contentConfigs = new ArrayList<Configuration>();

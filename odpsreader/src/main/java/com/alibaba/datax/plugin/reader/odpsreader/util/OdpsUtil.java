@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.odpsreader.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.ColumnType;
 import com.alibaba.datax.plugin.reader.odpsreader.Constant;
 import com.alibaba.datax.plugin.reader.odpsreader.Key;
@@ -10,8 +11,8 @@ import com.aliyun.odps.*;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
+import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel;
-import com.aliyun.odps.tunnel.TunnelException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -22,9 +23,12 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public final class OdpsUtil {
     private static final Logger LOG = LoggerFactory.getLogger(OdpsUtil.class);
+
+    public static int MAX_RETRY_TIME = 10;
 
     public static void checkNecessaryConfig(Configuration originalConfig) {
         originalConfig.getNecessaryValue(Key.ODPS_SERVER, OdpsReaderErrorCode.REQUIRED_VALUE);
@@ -38,6 +42,16 @@ public final class OdpsUtil {
                     "正确的配置方式是给 column 配置上您需要读取的列名称,用英文逗号分隔.");
         }
 
+    }
+
+    public static void dealMaxRetryTime(Configuration originalConfig) {
+        int maxRetryTime = originalConfig.getInt(Key.MAX_RETRY_TIME,
+                OdpsUtil.MAX_RETRY_TIME);
+        if (maxRetryTime < 1 || maxRetryTime > OdpsUtil.MAX_RETRY_TIME) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE, "您所配置的maxRetryTime 值错误. 该值不能小于1, 且不能大于 " + OdpsUtil.MAX_RETRY_TIME +
+                    ". 推荐的配置方式是给maxRetryTime 配置1-11之间的某个值. 请您检查配置并做出相应修改.");
+        }
+        MAX_RETRY_TIME = maxRetryTime;
     }
 
     public static Odps initOdps(Configuration originalConfig) {
@@ -222,85 +236,107 @@ public final class OdpsUtil {
         }
     }
 
-    public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps,
-                                                                                        String tunnelServer, String projectName, String tableName) {
+    public static TableTunnel.DownloadSession createMasterSessionForNonPartitionedTable(Odps odps, String tunnelServer,
+                                                                                        final String projectName, final String tableName) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
         try {
-            downloadSession = tunnel.createDownloadSession(
-                    projectName, tableName);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.createDownloadSession(
+                            projectName, tableName);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
-
-        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, String sessionId,
-                                                                                    String tunnelServer, String projectName, String tableName) {
+    public static TableTunnel.DownloadSession getSlaveSessionForNonPartitionedTable(Odps odps, final String sessionId,
+                                                                                    String tunnelServer, final String projectName, final String tableName) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
         try {
-            downloadSession = tunnel.getDownloadSession(
-                    projectName, tableName, sessionId);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.getDownloadSession(
+                            projectName, tableName, sessionId);
+                }
+            }, MAX_RETRY_TIME ,1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
-
-        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps,
-                                                                                     String tunnelServer, String projectName, String tableName, String partition) {
+    public static TableTunnel.DownloadSession createMasterSessionForPartitionedTable(Odps odps, String tunnelServer,
+                                                                                     final String projectName, final String tableName, String partition) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
-
-        PartitionSpec partitionSpec = new PartitionSpec(partition);
+        final PartitionSpec partitionSpec = new PartitionSpec(partition);
 
         try {
-            downloadSession = tunnel.createDownloadSession(
-                    projectName, tableName, partitionSpec);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.createDownloadSession(
+                            projectName, tableName, partitionSpec);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.CREATE_DOWNLOADSESSION_FAIL, e);
         }
-
-        return downloadSession;
     }
 
-    public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, String sessionId,
-                                                                                 String tunnelServer, String projectName, String tableName, String partition) {
+    public static TableTunnel.DownloadSession getSlaveSessionForPartitionedTable(Odps odps, final String sessionId,
+                                                                                 String tunnelServer, final String projectName, final String tableName, String partition) {
 
-        TableTunnel tunnel = new TableTunnel(odps);
+        final TableTunnel tunnel = new TableTunnel(odps);
         if (StringUtils.isNoneBlank(tunnelServer)) {
             tunnel.setEndpoint(tunnelServer);
         }
 
-        TableTunnel.DownloadSession downloadSession = null;
-
-        PartitionSpec partitionSpec = new PartitionSpec(partition);
-
+        final PartitionSpec partitionSpec = new PartitionSpec(partition);
         try {
-            downloadSession = tunnel.getDownloadSession(
-                    projectName, tableName, partitionSpec, sessionId);
-        } catch (TunnelException e) {
+            return RetryUtil.executeWithRetry(new Callable<TableTunnel.DownloadSession>() {
+                @Override
+                public TableTunnel.DownloadSession call() throws Exception {
+                    return tunnel.getDownloadSession(
+                            projectName, tableName, partitionSpec, sessionId);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.GET_DOWNLOADSESSION_FAIL, e);
         }
+    }
 
-        return downloadSession;
+
+
+    public static RecordReader getRecordReader(final TableTunnel.DownloadSession downloadSession, final long start, final long count,
+                                                     final boolean isCompress) {
+        try {
+            return RetryUtil.executeWithRetry(new Callable<RecordReader>() {
+                @Override
+                public RecordReader call() throws Exception {
+                    return downloadSession.openRecordReader(start, count, isCompress);
+                }
+            }, MAX_RETRY_TIME, 1000, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.OPEN_RECORD_READER_FAILED,
+                    "open RecordReader失败. 请联系 ODPS 管理员处理.", e);
+        }
     }
 }

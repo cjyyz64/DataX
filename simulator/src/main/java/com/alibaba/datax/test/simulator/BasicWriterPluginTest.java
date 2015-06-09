@@ -9,16 +9,18 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
-import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -39,14 +41,18 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
         if (pluginDir.isDirectory()) {
             File[] filesInPluginDir = pluginDir.listFiles();
-            Assert.assertEquals(3, filesInPluginDir.length);
+            Assert.assertTrue(filesInPluginDir.length >= 3);
 
             File libsDir = new File(pluginDir + File.separator + "libs");
             File pluginJsonFile = new File(pluginDir + File.separator
                     + "plugin.json");
 
+            Configuration configuration=Configuration.from(pluginJsonFile);
+            String plugingname=configuration.getString("name");
+            System.out.println("name ="+plugingname+",conf => "+configuration.toString());
+
             String mainJarPath = pluginDir + File.separator
-                    + getPluginMainJarName(pluginDir);
+                    + getPluginMainJarName(pluginDir,plugingname);
             File pluginMainJarFile = new File(mainJarPath);
 
             Assert.assertTrue("libs should be a dir.", libsDir.isDirectory());

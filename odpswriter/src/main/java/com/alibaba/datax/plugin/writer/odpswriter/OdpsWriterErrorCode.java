@@ -18,7 +18,9 @@ public enum OdpsWriterErrorCode implements ErrorCode {
 
     COMMIT_BLOCK_FAIL("OdpsWriter-10", "提交 block 到 ODPS 目的表失败."),
     RUN_SQL_FAILED("OdpsWriter-11", "执行 ODPS Sql 失败."),
-    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-12", "检查 ODPS 目的表:%s 是否为分区表失败."),;
+    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-12", "检查 ODPS 目的表:%s 是否为分区表失败."),
+
+    RUN_SQL_ODPS_EXCEPTION("OdpsWriter-13", "执行 ODPS Sql 时抛出异常, 可重试"),;
 
     private final String code;
     private final String description;

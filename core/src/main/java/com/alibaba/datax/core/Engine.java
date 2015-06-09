@@ -60,7 +60,7 @@ public class Engine {
 
 
     // 注意屏蔽敏感信息
-    private static String filterJobConfiguration(
+    public static String filterJobConfiguration(
             final Configuration configuration) {
         Configuration jobConfWithSetting = configuration.getConfiguration("job").clone();
 

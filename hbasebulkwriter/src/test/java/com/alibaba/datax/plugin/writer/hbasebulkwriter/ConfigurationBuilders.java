@@ -1,10 +1,9 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter;
 
+import com.alibaba.datax.common.util.Configuration;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import com.alibaba.datax.common.util.Configuration;
 
 
 public class ConfigurationBuilders {

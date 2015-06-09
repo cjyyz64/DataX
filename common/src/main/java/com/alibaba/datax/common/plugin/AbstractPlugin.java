@@ -100,4 +100,12 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
 
 	public void post() {
 	}
+
+    public void preHandler(Configuration jobConfiguration){
+
+    }
+
+    public void postHandler(Configuration jobConfiguration){
+
+    }
 }
