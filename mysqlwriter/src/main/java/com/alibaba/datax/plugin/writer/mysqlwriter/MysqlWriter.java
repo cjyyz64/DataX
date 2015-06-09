@@ -55,7 +55,7 @@ public class MysqlWriter extends Writer {
                     }
                 }
             }catch (ParserException e){
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage());
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_POST_SQL_ERROR,e.getMessage());
             }
             /*检查insert 权限*/
             String username = this.originalConfig.getString(Key.USERNAME);

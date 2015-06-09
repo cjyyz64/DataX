@@ -5,9 +5,10 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
-
+import com.alibaba.druid.sql.parser.ParserException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,18 +94,25 @@ public final class WriterUtil {
         return renderedSqls;
     }
 
-    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
+    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage,DataBaseType dataBaseType) {
         Statement stmt = null;
         String currentSql = null;
         try {
             stmt = conn.createStatement();
             for (String sql : sqls) {
                 currentSql = sql;
+                DBUtil.sqlValid(sql,dataBaseType);
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
+        } catch (ParserException e){
+            throw RdbmsException.asSqlParserException(dataBaseType,e,currentSql);
         } catch (Exception e) {
-            throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
-                    String.format("您的sql配置有误. 因为根据您的配置执行 Sql:%s 语句失败，相关上下文信息是:%s. 请检查您的配置并作出修改.", currentSql, basicMessage), e);
+            if (dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Oracle){
+                throw RdbmsException.asQueryException(dataBaseType,e,currentSql,null,null);
+            }else{
+                throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
+                        String.format("您的sql配置有误. 因为根据您的配置执行 Sql:%s 语句失败，相关上下文信息是:%s. 请检查您的配置并作出修改.", currentSql, basicMessage), e);
+            }
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }

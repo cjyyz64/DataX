@@ -78,7 +78,7 @@ public class CommonRdbmsWriter {
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
-                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
+                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl,dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -119,7 +119,7 @@ public class CommonRdbmsWriter {
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPostSqls, ";"), jdbcUrl);
-                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
+                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl,dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -198,7 +198,7 @@ public class CommonRdbmsWriter {
             if (tableNumber != 1) {
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                         StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);
-                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
+                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE,dataBaseType);
             }
 
             DBUtil.closeDBResources(null, null, connection);
@@ -279,7 +279,7 @@ public class CommonRdbmsWriter {
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
                     StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
-            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
+            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE,dataBaseType);
             DBUtil.closeDBResources(null, null, connection);
         }
 
