@@ -18,7 +18,6 @@ public final class OriginalConfPretreatmentUtil {
             .getLogger(OriginalConfPretreatmentUtil.class);
 
     public static DataBaseType DATABASE_TYPE;
-    public static boolean IS_PRECHECK;
 
     public static void doPretreatment(Configuration originalConfig) {
         // 检查 username/password 配置（必填）
@@ -29,7 +28,7 @@ public final class OriginalConfPretreatmentUtil {
 
         simplifyConf(originalConfig);
 
-        dealColumnConf(originalConfig,IS_PRECHECK);
+        dealColumnConf(originalConfig);
         dealWriteMode(originalConfig);
     }
 
@@ -110,9 +109,9 @@ public final class OriginalConfPretreatmentUtil {
             boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
             List<String> allColumns;
             if (isPreCheck){
-                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
             }else{
-                allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
             }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
@@ -137,7 +136,7 @@ public final class OriginalConfPretreatmentUtil {
         }
     }
 
-    public static void dealColumnConf(Configuration originalConfig,boolean isPreCheck) {
+    public static void dealColumnConf(Configuration originalConfig) {
         String jdbcUrl = originalConfig.getString(String.format("%s[0].%s",
                 Constant.CONN_MARK, Key.JDBC_URL));
 

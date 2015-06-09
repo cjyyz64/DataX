@@ -74,7 +74,7 @@ public class RdbmsException extends DataXException{
             if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_TABLE_NAME_ERROR && table != null){
                 return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+" 执行的SQL为:"+querySql+" 具体错误信息为："+e);
             }
-            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_SELECT_PRI_ERROR){
+            if (dbUtilErrorCode == DBUtilErrorCode.MYSQL_QUERY_SELECT_PRI_ERROR && userName != null){
                 return DataXException.asDataXException(dbUtilErrorCode,"用户名为："+userName+" 具体错误信息为："+e);
             }
 
