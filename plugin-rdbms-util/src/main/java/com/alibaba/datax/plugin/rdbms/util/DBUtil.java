@@ -186,7 +186,7 @@ public final class DBUtil {
                 String[] params = grantRecord.split("\\`");
                 if (params != null && params.length >= 3) {
                     String tableName = params[3];
-                    if (!tableName.equals("*") && tableNames.contains(tableName))
+                    if (params[0].contains("INSERT") && !tableName.equals("*") && tableNames.contains(tableName))
                         tableNames.remove(tableName);
                 } else {
                     if (grantRecord.contains("INSERT") ||grantRecord.contains("ALL PRIVILEGES")) {
