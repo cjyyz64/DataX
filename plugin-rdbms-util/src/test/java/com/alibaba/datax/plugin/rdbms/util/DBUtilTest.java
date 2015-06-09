@@ -74,6 +74,16 @@ public class DBUtilTest {
         }
     }
 
+    @Test
+    public void sqlValidFailedTest(){
+        String sql = "select ＊ from bvt_case_1_rows_5split";
+        try {
+            DBUtil.sqlValid(sql,DataBaseType.MySql);
+        }catch (ParserException e){
+            Assert.assertNull(e);
+        }
+    }
+
 //    @Test(enabled=false)
 //    public void mySQLDBNameErrTest(){
 //        DataBaseType dataBaseType = DataBaseType.MySql;

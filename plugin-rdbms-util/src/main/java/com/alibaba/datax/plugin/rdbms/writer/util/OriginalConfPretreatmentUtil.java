@@ -107,7 +107,7 @@ public final class OriginalConfPretreatmentUtil {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
-            boolean isPreCheck = originalConfig.getBool("dryRun", false);
+            boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
             List<String> allColumns;
             if (isPreCheck){
                 allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
