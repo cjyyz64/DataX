@@ -11,8 +11,18 @@ public enum OdpsReaderErrorCode implements ErrorCode {
     GET_ID_KEY_FAIL("OdpsReader-06", "获取 accessId/accessKey 失败."),
 
     ODPS_READ_EXCEPTION("OdpsReader-07", "读取 odps 异常"),
-    OPEN_RECORD_READER_FAILED("OdpsReader-08", "打开 recordReader 失败.");
+    OPEN_RECORD_READER_FAILED("OdpsReader-08", "打开 recordReader 失败."),
 
+    ODPS_PROJECT_NOT_FOUNT("OdpsReader-10", "您配置的值不合法, odps project 不存在."),  //ODPS-0420111: Project not found
+
+    ODPS_TABLE_NOT_FOUNT("OdpsReader-12", "您配置的值不合法, odps table 不存在"), // ODPS-0130131:Table not found
+
+    ODPS_ACCESS_KEY_ID_NOT_FOUND("OdpsReader-13", "您配置的值不合法, odps accessId,accessKey 不存在"), //ODPS-0410051:Invalid credentials - accessKeyId not found
+
+    ODPS_ACCESS_KEY_INVALID("OdpsReader-14", "您配置的值不合法, odps accessKey 错误"), //ODPS-0410042:Invalid signature value - User signature dose not match
+
+
+    ;
     private final String code;
     private final String description;
 
