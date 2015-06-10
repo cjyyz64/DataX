@@ -29,6 +29,9 @@ public enum DBUtilErrorCode implements ErrorCode {
     MYSQL_POST_SQL_ERROR("MYSQLErrCode-09","PostSql语法错误，请检查"),
     MYSQL_QUERY_SQL_PARSER_ERROR("MYSQLErrCode-10","SQL语法出错，请检查Where条件是否存在拼写或语法错误"),
 
+    ORACLE_PRE_SQL_ERROR("ORACLEErrCode-08", "PreSQL语法错误，请检查"),
+    ORACLE_POST_SQL_ERROR("ORACLEErrCode-09", "PostSql语法错误，请检查"),
+
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
@@ -50,7 +53,9 @@ public enum DBUtilErrorCode implements ErrorCode {
 
     // only for writer
     WRITE_DATA_ERROR("DBUtilErrorCode-05", "往您配置的写入表中写入数据时失败."),
-    NO_INSERT_PRIVILEGE("DBUtilErrorCode-11","数据库没有写权限，请联系DBA"),;
+    NO_INSERT_PRIVILEGE("DBUtilErrorCode-11", "数据库没有写权限，请联系DBA"),
+    NO_DELETE_PRIVILEGE("DBUtilErrorCode-16", "数据库没有DELETE权限，请联系DBA"),
+    ;
 
     private final String code;
 

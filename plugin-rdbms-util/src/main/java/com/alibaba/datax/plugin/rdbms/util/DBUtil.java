@@ -207,19 +207,14 @@ public final class DBUtil {
     }
 
 
-    public static boolean hasOracleInsertDeletePrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
-
+    public static boolean checkOracleInsertPrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
         Connection connection = connect(DataBaseType.Oracle, jdbcURL, userName, password);
         String insertTemplate = "insert into %s(select * from %s where 1 = 2)";
 
-        String deleteTemplate = "delete from %s WHERE 1 = 2";
-
         boolean hasInsertPrivilege = true;
         Statement insertStmt = null;
-        Statement deleteStmt = null;
         for(String tableName : tableList) {
             String checkInsertPrivilegeSql = String.format(insertTemplate, tableName, tableName);
-            String checkDeletePrivilegeSQL = String.format(deleteTemplate, tableName);
             try {
                 insertStmt = connection.createStatement();
                 executeSqlWithoutResultSet(insertStmt, checkInsertPrivilegeSql);
@@ -227,7 +222,23 @@ public final class DBUtil {
                 hasInsertPrivilege = false;
                 LOG.warn("User [" + userName +"] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
             }
+        }
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            LOG.warn("connection close failed, " + e.getMessage());
+        }
+        return hasInsertPrivilege;
+    }
 
+    public static boolean checkOracleDeletePrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
+        Connection connection = connect(DataBaseType.Oracle, jdbcURL, userName, password);
+        String deleteTemplate = "delete from %s WHERE 1 = 2";
+
+        boolean hasInsertPrivilege = true;
+        Statement deleteStmt = null;
+        for(String tableName : tableList) {
+            String checkDeletePrivilegeSQL = String.format(deleteTemplate, tableName);
             try {
                 deleteStmt = connection.createStatement();
                 executeSqlWithoutResultSet(deleteStmt, checkDeletePrivilegeSQL);

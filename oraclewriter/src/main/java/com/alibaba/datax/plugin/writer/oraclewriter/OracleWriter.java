@@ -11,7 +11,10 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.alibaba.druid.sql.parser.ParserException;
+import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OracleWriter extends Writer {
@@ -23,7 +26,20 @@ public class OracleWriter extends Writer {
 
         public void preCheck() {
             this.init();
-            WriterUtil.preCheckPrePareOrPostSQL(originalConfig, DATABASE_TYPE);
+            try {
+                WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
+            } catch (ParserException e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_PRE_SQL_ERROR, e.getMessage());
+            }
+
+            try {
+                WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
+            } catch (ParserException e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_POST_SQL_ERROR, e.getMessage());
+            }
+
+
+            needCheckDeletePrivilege();
 
             String username = this.originalConfig.getString(Key.USERNAME);
             String password = this.originalConfig.getString(Key.PASSWORD);
@@ -34,15 +50,35 @@ public class OracleWriter extends Writer {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.hasOracleInsertDeletePrivilege(jdbcUrl, username, password, expandedTables);
-
-                if(!hasInsertPri){
+                boolean hasInsertPri = DBUtil.checkOracleInsertPrivilege(jdbcUrl, username, password, expandedTables);
+                if(!hasInsertPri) {
                     throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                }
+
+                if(needCheckDeletePrivilege()) {
+                    boolean hasDeletePri = DBUtil.checkOracleDeletePrivilege(jdbcUrl, username, password, expandedTables);
+                    if(!hasDeletePri) {
+                        throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                    }
                 }
             }
         }
 
-		@Override
+        private boolean needCheckDeletePrivilege() {
+            List<String> allSqls =new ArrayList<String>();
+            allSqls.addAll(originalConfig.getList(Key.PRE_SQL, String.class));
+            allSqls.addAll(originalConfig.getList(Key.POST_SQL, String.class));
+            for(String sql : allSqls) {
+                if(StringUtils.isNotBlank(sql)) {
+                    if (sql.trim().toUpperCase().startsWith("DELETE")) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        @Override
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();
 
