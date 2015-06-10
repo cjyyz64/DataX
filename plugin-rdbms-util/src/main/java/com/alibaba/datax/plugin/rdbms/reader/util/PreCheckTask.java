@@ -55,6 +55,20 @@ public class PreCheckTask implements Callable<Boolean>{
             if (tables != null && !tables.isEmpty()){
                 table = tables.get(i).toString();
             }
+
+            /*verify query*/
+            try {
+
+                DBUtil.sqlValid(querySql,dataBaseType);
+                DBUtil.query(conn, querySql, fetchSize);
+            } catch (ParserException e){
+                throw RdbmsException.asSqlParserException(this.dataBaseType,e,querySql);
+            }catch (Exception e) {
+                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table,userName);
+            } finally {
+                DBUtil.closeDBResources(null, conn);
+            }
+
             /*verify splitPK*/
             try{
 
@@ -67,19 +81,6 @@ public class PreCheckTask implements Callable<Boolean>{
                 throw RdbmsException.asSqlParserException(this.dataBaseType,e,splitPkSql);
             }catch (Exception e) {
                 throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId);
-            } finally {
-                DBUtil.closeDBResources(null, conn);
-            }
-
-            /*verify query*/
-            try {
-
-                DBUtil.sqlValid(querySql,dataBaseType);
-                DBUtil.query(conn, querySql, fetchSize);
-            } catch (ParserException e){
-                throw RdbmsException.asSqlParserException(this.dataBaseType,e,querySql);
-            }catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table,userName);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
