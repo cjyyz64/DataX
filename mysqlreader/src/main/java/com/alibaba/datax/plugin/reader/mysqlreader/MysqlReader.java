@@ -39,9 +39,7 @@ public class MysqlReader extends Reader {
 
         @Override
         public void preCheck(){
-            this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
-            this.commonRdbmsReaderJob.init(this.originalConfig);
+            init();
             this.commonRdbmsReaderJob.preCheck(this.originalConfig,DATABASE_TYPE);
 
         }

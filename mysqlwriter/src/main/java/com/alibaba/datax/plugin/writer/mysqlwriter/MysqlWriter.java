@@ -10,6 +10,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.alibaba.druid.sql.parser.ParserException;
 
 import java.util.List;
@@ -32,31 +33,21 @@ public class MysqlWriter extends Writer {
 
         @Override
         public void preCheck(){
-            this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
-            this.commonRdbmsWriterJob.init(this.originalConfig);
+            init();
 
             /*检查PreSql跟PostSql语句*/
-            List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,String.class);
-            List<String> postSqls = this.originalConfig.getList(Key.POST_SQL,String.class);
-            try{
-                if (preSqls != null && !preSqls.isEmpty()){
-                    for (String preSql:preSqls){
-                        DBUtil.sqlValid(preSql,DATABASE_TYPE);
-                    }
-                }
-            }catch (ParserException e){
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR,e.getMessage());
+            try {
+                WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
+            } catch (ParserException e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR, e.getMessage());
             }
-            try{
-                if (postSqls != null && !postSqls.isEmpty()){
-                    for (String postSql:postSqls){
-                        DBUtil.sqlValid(postSql,DATABASE_TYPE);
-                    }
-                }
-            }catch (ParserException e){
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_POST_SQL_ERROR,e.getMessage());
+
+            try {
+                WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
+            } catch (ParserException e) {
+                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR, e.getMessage());
             }
+
             /*检查insert 权限*/
             String username = this.originalConfig.getString(Key.USERNAME);
             String password = this.originalConfig.getString(Key.PASSWORD);

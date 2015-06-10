@@ -128,7 +128,7 @@ public final class ReaderSplitUtil {
                     }
                 }
                 if (!splitPkQuerys.isEmpty()){
-                    connConf.set(Key.SPLIT_PK,splitPkQuerys);
+                    connConf.set(Key.SPLIT_PK_SQL,splitPkQuerys);
                 }
                 connConf.set(Key.QUERY_SQL,querys);
                 queryConfig.set(connPath,connConf);
