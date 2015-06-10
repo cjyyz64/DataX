@@ -1,5 +1,7 @@
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.*;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
@@ -15,6 +17,7 @@ import com.aliyun.odps.task.SQLTask;
 import org.junit.Test;
 
 import java.sql.*;
+import java.util.List;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -221,5 +224,21 @@ public class AdsWriteUnitTest {
                 "}");
         //Configuration result = AdsUtil.adsConfToRdbmsConf(configuration);
         //System.out.println(result);
+    }
+
+    @Test
+    public void test转义字符() {
+//        String temp = "C:\\\\Users\\\\\\hongjiao.hj\\Desktop\\tmp\\项目\\DAYLY-INFO\\";
+//
+//
+//        String abc = temp.replace("\\", "\\\\");
+//        String abc = temp.replaceAll("\\\\", "\\");
+
+        String aaa= "dir\\\\,'C:\\Users\\hongjiao.hj\\Desktop\\tmp\\项目\\DAYLY-INFO\\'";
+
+        String bbb =  aaa.replace("\\","\\\\");
+
+        System.out.println(aaa);
+        System.out.println(bbb);
     }
 }

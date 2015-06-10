@@ -166,7 +166,8 @@ public class AdsInsertProxy {
                 if(null == strValue) {
                     sqlSb.append("null");
                 } else {
-                    sqlSb.append("'").append(column.asString()).append("'");
+                    String optStr = column.asString().replace("\\","\\\\");
+                    sqlSb.append("'").append(optStr).append("'");
                 }
                 break;
 
