@@ -21,17 +21,20 @@ public class PreCheckTask implements Callable<Boolean>{
     private static final Logger LOG = LoggerFactory.getLogger(PreCheckTask.class);
     private String userName;
     private String password;
+    private String splitPkId;
     private Configuration connection;
     private DataBaseType dataBaseType;
 
     public PreCheckTask(String userName,
                         String password,
                         Configuration connection,
-                        DataBaseType dataBaseType){
+                        DataBaseType dataBaseType,
+                        String splitPkId){
         this.connection = connection;
         this.userName=userName;
         this.password=password;
         this.dataBaseType = dataBaseType;
+        this.splitPkId = splitPkId;
     }
 
     @Override
@@ -45,18 +48,32 @@ public class PreCheckTask implements Callable<Boolean>{
         int fetchSize = 1;
         for (int i=0;i<querySqls.size();i++){
 
+            String splitPkSql = null;
             String querySql = querySqls.get(i).toString();
 
             String table = null;
             if (tables != null && !tables.isEmpty()){
                 table = tables.get(i).toString();
             }
-            try {
+            /*verify splitPK*/
+            try{
+
                 if (splitPkSqls != null && !splitPkSqls.isEmpty()){
-                    String splitPkSql = splitPkSqls.get(i).toString();
+                    splitPkSql = splitPkSqls.get(i).toString();
                     DBUtil.sqlValid(splitPkSql,dataBaseType);
                     DBUtil.query(conn, splitPkSql, fetchSize);
                 }
+            }catch (ParserException e){
+                throw RdbmsException.asSqlParserException(this.dataBaseType,e,splitPkSql);
+            }catch (Exception e) {
+                throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId);
+            } finally {
+                DBUtil.closeDBResources(null, conn);
+            }
+
+            /*verify query*/
+            try {
+
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
             } catch (ParserException e){

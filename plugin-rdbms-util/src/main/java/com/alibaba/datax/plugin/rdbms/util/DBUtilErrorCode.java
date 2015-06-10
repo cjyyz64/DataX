@@ -32,6 +32,10 @@ public enum DBUtilErrorCode implements ErrorCode {
     ORACLE_PRE_SQL_ERROR("ORACLEErrCode-08", "PreSQL语法错误，请检查"),
     ORACLE_POST_SQL_ERROR("ORACLEErrCode-09", "PostSql语法错误，请检查"),
 
+    //SplitPK 错误
+    MYSQL_SPLIT_PK_ERROR("MYSQLErrCode-11","SplitPK错误，请检查"),
+    ORACLE_SPLIT_PK_ERROR("ORACLEErrCode-10","SplitPK错误，请检查"),
+
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),
