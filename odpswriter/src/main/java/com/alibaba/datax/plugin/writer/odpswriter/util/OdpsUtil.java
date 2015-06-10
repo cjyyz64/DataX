@@ -46,7 +46,7 @@ public class OdpsUtil {
         // getBool 内部要求，值只能为 true,false 的字符串（大小写不敏感），其他一律报错，不再有默认配置
         Boolean truncate = originalConfig.getBool(Key.TRUNCATE);
         if (null == truncate) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "由于您未配置写入 ODPS 目的表前是否清空表/分区，所以任务失败了 " +
+            throw DataXException.asDataXException(OdpsWriterErrorCode.REQUIRED_VALUE, "[truncate]是必填配置项, 意思是写入 ODPS 目的表前是否清空表/分区. " +
                     "请您增加 truncate 的配置，根据业务需要选择上true 或者 false.");
         }
     }

@@ -39,8 +39,6 @@ public class OracleWriter extends Writer {
             }
 
 
-            needCheckDeletePrivilege();
-
             String username = this.originalConfig.getString(Key.USERNAME);
             String password = this.originalConfig.getString(Key.PASSWORD);
             List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
