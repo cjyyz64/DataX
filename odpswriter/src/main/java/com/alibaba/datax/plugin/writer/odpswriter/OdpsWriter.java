@@ -49,29 +49,35 @@ public class OdpsWriter extends Writer {
 
         public void preCheck() {
             this.init();
-            this.prepare();
-            this.preCheckColumn();
+            this.doPreCheck();
         }
 
-        public void preCheckColumn() {
-            List<Configuration> configurations = new ArrayList<Configuration>();
-
-            // 此处获取到 masterUpload 只是为了拿到 RecordSchema,以完成对 column 的处理
-            TableTunnel tableTunnel = new TableTunnel(this.odps);
-            if (StringUtils.isNoneBlank(tunnelServer)) {
-                tableTunnel.setEndpoint(tunnelServer);
+        public void doPreCheck() {
+            //检查accessId,accessKey配置
+            if (Constant.DEFAULT_ACCOUNT_TYPE
+                    .equalsIgnoreCase(this.accountType)) {
+                this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
+                String accessId = this.originalConfig.getString(Key.ACCESS_ID);
+                String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+                if (IS_DEBUG) {
+                    LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
+                            accessKey);
+                }
+                LOG.info("accessId:[{}] .", accessId);
             }
+            // init odps config
+            this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
 
-            this.masterUpload = OdpsUtil.createMasterTunnelUpload(
-                    tableTunnel, this.projectName, this.tableName, this.partition);
-            this.uploadId = this.masterUpload.getId();
-            LOG.info("Master uploadId:[{}].", this.uploadId);
+            //检查表等配置是否正确
+            this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
 
-            TableSchema schema = this.masterUpload.getSchema();
-            List<String> allColumns = OdpsUtil.getAllColumns(schema);
+            //检查列信息是否正确
+            List<String> allColumns = OdpsUtil.getAllColumns(this.table.getSchema());
             LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
-
             dealColumn(this.originalConfig, allColumns);
+
+            //检查分区信息是否正确
+            OdpsUtil.preCheckPartition(this.odps, this.table, this.partition, this.truncate);
         }
 
         @Override

@@ -90,6 +90,12 @@ public class OdpsUtil {
         }
 
         Odps odps = new Odps(account);
+        boolean isPreCheck = originalConfig.getBool("dryRun", false);
+        if(isPreCheck) {
+            odps.getRestClient().setConnectTimeout(3);
+            odps.getRestClient().setReadTimeout(3);
+            odps.getRestClient().setRetryTimes(2);
+        }
         odps.setDefaultProject(project);
         odps.setEndpoint(odpsServer);
 
@@ -104,9 +110,10 @@ public class OdpsUtil {
             //通过这种方式检查表是否存在
             table.reload();
         } catch (OdpsException e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                    String.format("加载 ODPS 目的表:%s 失败. " +
-                            "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", table.getName()), e);
+            throwDataXExceptionWhenReloadTable(e, tableName);
+//            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+//                    String.format("加载 ODPS 目的表:%s 失败. " +
+//                            "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", table.getName()), e);
         }
 
         return table;
@@ -499,6 +506,79 @@ public class OdpsUtil {
                 }
             }
         }
+    }
+
+
+    /**
+     * 检查odpswriter 插件的分区信息
+     *
+     * @param odps
+     * @param table
+     * @param partition
+     * @param truncate
+     */
+    public static void preCheckPartition(Odps odps, Table table, String partition, boolean truncate) {
+        boolean isPartitionedTable = OdpsUtil.isPartitionedTable(table);
+
+        if (truncate) {
+            //需要 truncate
+            if (isPartitionedTable) {
+                //分区表
+                if (StringUtils.isBlank(partition)) {
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("您没有配置分区信息，因为你配置的表是分区表:%s 如果需要进行 truncate 操作，必须指定需要清空的具体分区. 请修改分区配置，格式形如 pt=${bizdate} .",
+                            table.getName()));
+                }
+            } else {
+                //非分区表
+                if (StringUtils.isNotBlank(partition)) {
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("分区信息配置错误，你的ODPS表是非分区表:%s 进行 truncate 操作时不需要指定具体分区值. 请检查您的分区配置，删除该配置项的值.",
+                            table.getName()));
+                }
+            }
+        } else {
+            //不需要 truncate
+            if (isPartitionedTable) {
+                //分区表
+                if (StringUtils.isBlank(partition)) {
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("您的目的表是分区表，写入分区表:%s 时必须指定具体分区值. 请修改您的分区配置信息，格式形如 格式形如 pt=${bizdate}.", table.getName()));
+                }
+            } else {
+                //非分区表
+                if (StringUtils.isNotBlank(partition)) {
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                            String.format("您的目的表是非分区表，写入非分区表:%s 时不需要指定具体分区值. 请删除分区配置信息", table.getName()));
+                }
+            }
+        }
+    }
+
+    /**
+     * table.reload() 方法抛出的 odps 异常 转化为更清晰的 datax 异常 抛出
+     */
+    public static void throwDataXExceptionWhenReloadTable(OdpsException e, String tableName) {
+        if(e.getMessage() != null) {
+            if(e.getMessage().contains(OdpsExceptionMsg.ODPS_PROJECT_NOT_FOUNT)) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_PROJECT_NOT_FOUNT,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [project] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_TABLE_NOT_FOUNT)) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_TABLE_NOT_FOUNT,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [table] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_ID_NOT_FOUND)) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_ACCESS_KEY_ID_NOT_FOUND,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessId] [accessKey]是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_INVALID)) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_ACCESS_KEY_INVALID,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessKey] 是否正确.", tableName), e);
+            }
+        }
+        throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                String.format("加载 ODPS 源头表:%s 失败. " +
+                        "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
     }
 
 }
