@@ -239,6 +239,10 @@ public class SingleTableSplitUtil {
         String splitPK = configuration.getString(Key.SPLIT_PK).trim();
         String table = configuration.getString(Key.TABLE).trim();
         String where = configuration.getString(Key.WHERE, null);
+        return genPKSql(splitPK,table,where);
+    }
+
+    public static String genPKSql(String splitPK, String table, String where){
 
         String minMaxTemplate = "SELECT MIN(%s),MAX(%s) FROM %s";
         String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
@@ -247,8 +251,8 @@ public class SingleTableSplitUtil {
             pkRangeSQL = String.format("%s WHERE (%s AND %s IS NOT NULL)",
                     pkRangeSQL, where, splitPK);
         }
-
         return pkRangeSQL;
     }
+
 
 }

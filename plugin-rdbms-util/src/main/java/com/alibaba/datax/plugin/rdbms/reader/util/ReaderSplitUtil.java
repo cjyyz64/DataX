@@ -105,6 +105,7 @@ public final class ReaderSplitUtil {
         Configuration queryConfig = originalSliceConfig.clone();
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
 
+        String splitPK = originalSliceConfig.getString(Key.SPLIT_PK).trim();
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
 
@@ -113,6 +114,7 @@ public final class ReaderSplitUtil {
         for (int i = 0, len = conns.size(); i < len; i++){
             Configuration connConf = Configuration.from(conns.get(i).toString());
             List<String> querys = new ArrayList<String>();
+            List<String> splitPkQuerys = new ArrayList<String>();
             String connPath = String.format("connection[%d]",i);
             // 说明是配置的 table 方式
             if (isTableMode) {
@@ -121,6 +123,12 @@ public final class ReaderSplitUtil {
                 Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
                 for (String table : tables) {
                     querys.add(SingleTableSplitUtil.buildQuerySql(column,table,where));
+                    if (splitPK != null && !splitPK.isEmpty()){
+                        splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK,table,where));
+                    }
+                }
+                if (!splitPkQuerys.isEmpty()){
+                    connConf.set(Key.SPLIT_PK,splitPkQuerys);
                 }
                 connConf.set(Key.QUERY_SQL,querys);
                 queryConfig.set(connPath,connConf);

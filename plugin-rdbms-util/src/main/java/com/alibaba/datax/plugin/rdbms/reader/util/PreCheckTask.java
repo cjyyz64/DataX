@@ -38,17 +38,25 @@ public class PreCheckTask implements Callable<Boolean>{
     public Boolean call() throws DataXException{
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
+        List<Object> splitPkSqls = this.connection.getList(Key.SPLIT_PK_SQL, Object.class);
         List<Object> tables = this.connection.getList(Key.TABLE,Object.class);
         Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
         for (int i=0;i<querySqls.size();i++){
+
             String querySql = querySqls.get(i).toString();
+
             String table = null;
             if (tables != null && !tables.isEmpty()){
                 table = tables.get(i).toString();
             }
             try {
+                if (splitPkSqls != null && !splitPkSqls.isEmpty()){
+                    String splitPkSql = splitPkSqls.get(i).toString();
+                    DBUtil.sqlValid(splitPkSql,dataBaseType);
+                    DBUtil.query(conn, splitPkSql, fetchSize);
+                }
                 DBUtil.sqlValid(querySql,dataBaseType);
                 DBUtil.query(conn, querySql, fetchSize);
             } catch (ParserException e){
