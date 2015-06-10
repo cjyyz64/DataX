@@ -15,9 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
@@ -135,12 +133,9 @@ public final class WriterUtil {
 		return writeDataSqlTemplate;
 	}
 
-    public static void preCheckPrePareOrPostSQL(Configuration originalConfig, DataBaseType type) {
-        List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
-                Object.class);
-        Configuration connConf = Configuration.from(conns.get(0)
-                .toString());
-
+    public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type) {
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        Configuration connConf = Configuration.from(conns.get(0).toString());
         String table = connConf.getList(Key.TABLE, String.class).get(0);
 
         List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
@@ -149,26 +144,31 @@ public final class WriterUtil {
                 preSqls, table);
 
         if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
-
             LOG.info("Begin to preCheck preSqls:[{}].",
                     StringUtils.join(renderedPreSqls, ";"));
             for(String sql : renderedPreSqls) {
                 DBUtil.sqlValid(sql, type);
             }
         }
+    }
+
+    public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type) {
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        Configuration connConf = Configuration.from(conns.get(0).toString());
+        String table = connConf.getList(Key.TABLE, String.class).get(0);
 
         List<String> postSqls = originalConfig.getList(Key.POST_SQL,
                 String.class);
         List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
                 postSqls, table);
-
         if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
 
             LOG.info("Begin to preCheck postSqls:[{}].",
-                    StringUtils.join(renderedPreSqls, ";"));
+                    StringUtils.join(renderedPostSqls, ";"));
             for(String sql : renderedPostSqls) {
                 DBUtil.sqlValid(sql, type);
             }
         }
+
     }
 }
