@@ -21,7 +21,6 @@ public final class OriginalConfPretreatmentUtil {
             .getLogger(OriginalConfPretreatmentUtil.class);
 
     private static boolean IS_DEBUG = LOG.isDebugEnabled();
-    public static boolean IS_PRECHECK;
 
     public static DataBaseType DATABASE_TYPE;
 
@@ -33,7 +32,7 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         dealWhere(originalConfig);
 
-        simplifyConf(originalConfig,IS_PRECHECK);
+        simplifyConf(originalConfig);
     }
 
     public static void dealWhere(Configuration originalConfig) {
@@ -55,20 +54,21 @@ public final class OriginalConfPretreatmentUtil {
      * <li>对 table 模式，确定分表个数，并处理 column 转 *事项</li>
      * </ol>
      */
-    private static void simplifyConf(Configuration originalConfig,boolean isPreCheck) {
+    private static void simplifyConf(Configuration originalConfig) {
         boolean isTableMode = recognizeTableOrQuerySqlMode(originalConfig);
         originalConfig.set(Constant.IS_TABLE_MODE, isTableMode);
 
-        dealJdbcAndTable(originalConfig,isPreCheck);
+        dealJdbcAndTable(originalConfig);
 
         dealColumnConf(originalConfig);
     }
 
-    private static void dealJdbcAndTable(Configuration originalConfig,boolean isPreCheck) {
+    private static void dealJdbcAndTable(Configuration originalConfig) {
         String username = originalConfig.getString(Key.USERNAME);
         String password = originalConfig.getString(Key.PASSWORD);
         boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN,false);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);

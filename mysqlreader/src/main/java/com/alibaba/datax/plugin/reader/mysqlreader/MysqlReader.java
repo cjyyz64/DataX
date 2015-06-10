@@ -24,7 +24,6 @@ public class MysqlReader extends Reader {
 
         @Override
         public void init() {
-            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
 
             Integer userConfigedFetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE);
@@ -34,15 +33,14 @@ public class MysqlReader extends Reader {
 
             this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
 
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
             this.commonRdbmsReaderJob.init(this.originalConfig);
         }
 
         @Override
         public void preCheck(){
-            boolean isPreCheck = true;
             this.originalConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE,isPreCheck);
+            this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(DATABASE_TYPE);
             this.commonRdbmsReaderJob.init(this.originalConfig);
             this.commonRdbmsReaderJob.preCheck(this.originalConfig,DATABASE_TYPE);
 

@@ -27,7 +27,6 @@ public class DrdsReader extends Reader {
 
 		@Override
 		public void init() {
-            boolean isPreCheck = false;
 			this.originalConfig = super.getPluginJobConf();
 			int fetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE,
 					Integer.MIN_VALUE);
@@ -35,7 +34,7 @@ public class DrdsReader extends Reader {
 			this.validateConfiguration();
 
 			this.commonRdbmsReaderJob = new CommonRdbmsReader.Job(
-					DATABASE_TYPE,isPreCheck);
+					DATABASE_TYPE);
 			this.commonRdbmsReaderJob.init(this.originalConfig);
 		}
 

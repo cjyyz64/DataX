@@ -39,7 +39,6 @@ public class DB2Reader extends Reader {
 
         @Override
         public void init() {
-            boolean isPreCheck = false;
             this.originalConfig = super.getPluginJobConf();
             int fetchSize = this.originalConfig.getInt(com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     Constant.DEFAULT_FETCH_SIZE);

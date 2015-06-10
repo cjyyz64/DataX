@@ -31,5 +31,7 @@ public final class Key {
 
 	public final static String DBNAME = "dbName";
 
+    public final static String DRYRUN = "dryRun";
+
 
 }

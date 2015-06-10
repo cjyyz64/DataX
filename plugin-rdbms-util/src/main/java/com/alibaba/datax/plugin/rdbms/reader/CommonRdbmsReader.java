@@ -32,9 +32,8 @@ public class CommonRdbmsReader {
         private static final Logger LOG = LoggerFactory
                 .getLogger(Job.class);
 
-        public Job(DataBaseType dataBaseType,boolean isPreCheck) {
+        public Job(DataBaseType dataBaseType) {
             OriginalConfPretreatmentUtil.DATABASE_TYPE = dataBaseType;
-            OriginalConfPretreatmentUtil.IS_PRECHECK = isPreCheck;
             SingleTableSplitUtil.DATABASE_TYPE = dataBaseType;
         }
 
