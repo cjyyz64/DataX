@@ -43,7 +43,7 @@ public class PreCheckTask implements Callable<Boolean>{
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
         List<Object> splitPkSqls = this.connection.getList(Key.SPLIT_PK_SQL, Object.class);
         List<Object> tables = this.connection.getList(Key.TABLE,Object.class);
-        Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
+        Connection conn = DBUtil.getConnectionWithoutRetry(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
         for (int i=0;i<querySqls.size();i++){
