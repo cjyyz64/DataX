@@ -254,8 +254,14 @@ public final class DBUtil {
 
     public static boolean needCheckDeletePrivilege(Configuration originalConfig) {
         List<String> allSqls =new ArrayList<String>();
-        allSqls.addAll(originalConfig.getList(com.alibaba.datax.plugin.rdbms.writer.Key.PRE_SQL, String.class));
-        allSqls.addAll(originalConfig.getList(com.alibaba.datax.plugin.rdbms.writer.Key.POST_SQL, String.class));
+        List<String> preSQLs = originalConfig.getList(Key.PRE_SQL, String.class);
+        List<String> postSQLs = originalConfig.getList(Key.POST_SQL, String.class);
+        if (preSQLs != null && !preSQLs.isEmpty()){
+            allSqls.addAll(preSQLs);
+        }
+        if (postSQLs != null && !postSQLs.isEmpty()){
+            allSqls.addAll(postSQLs);
+        }
         for(String sql : allSqls) {
             if(StringUtils.isNotBlank(sql)) {
                 if (sql.trim().toUpperCase().startsWith("DELETE")) {
