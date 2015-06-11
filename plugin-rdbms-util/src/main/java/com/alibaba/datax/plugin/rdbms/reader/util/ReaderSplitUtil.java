@@ -105,7 +105,7 @@ public final class ReaderSplitUtil {
         Configuration queryConfig = originalSliceConfig.clone();
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
 
-        String splitPK = originalSliceConfig.getString(Key.SPLIT_PK).trim();
+        String splitPK = originalSliceConfig.getString(Key.SPLIT_PK);
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
 
@@ -124,7 +124,7 @@ public final class ReaderSplitUtil {
                 for (String table : tables) {
                     querys.add(SingleTableSplitUtil.buildQuerySql(column,table,where));
                     if (splitPK != null && !splitPK.isEmpty()){
-                        splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK,table,where));
+                        splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK.trim(),table,where));
                     }
                 }
                 if (!splitPkQuerys.isEmpty()){

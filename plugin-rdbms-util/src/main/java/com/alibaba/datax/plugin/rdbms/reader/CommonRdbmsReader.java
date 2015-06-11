@@ -47,7 +47,7 @@ public class CommonRdbmsReader {
 
         public void preCheck(Configuration originalConfig,DataBaseType dataBaseType){
             Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConfig);
-            String splitPK = queryConf.getString(Key.SPLIT_PK).trim();
+            String splitPK = queryConf.getString(Key.SPLIT_PK);
             List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
             String username = queryConf.getString(Key.USERNAME);
             String password = queryConf.getString(Key.PASSWORD);
