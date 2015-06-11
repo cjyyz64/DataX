@@ -80,7 +80,7 @@ public class PreCheckTask implements Callable<Boolean>{
             }catch (ParserException e){
                 throw RdbmsException.asSqlParserException(this.dataBaseType,e,splitPkSql);
             }catch (Exception e) {
-                throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId);
+                throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId.trim());
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }
