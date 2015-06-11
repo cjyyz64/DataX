@@ -207,8 +207,8 @@ public final class DBUtil {
     }
 
 
-    public static boolean checkOracleInsertPrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
-        Connection connection = connect(DataBaseType.Oracle, jdbcURL, userName, password);
+    public static boolean checkInsertPrivilege(DataBaseType dataBaseType, String jdbcURL, String userName, String password, List<String> tableList) {
+        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
         String insertTemplate = "insert into %s(select * from %s where 1 = 2)";
 
         boolean hasInsertPrivilege = true;
@@ -231,8 +231,8 @@ public final class DBUtil {
         return hasInsertPrivilege;
     }
 
-    public static boolean checkOracleDeletePrivilege(String jdbcURL, String userName, String password, List<String> tableList) {
-        Connection connection = connect(DataBaseType.Oracle, jdbcURL, userName, password);
+    public static boolean checkDeletePrivilege(DataBaseType dataBaseType,String jdbcURL, String userName, String password, List<String> tableList) {
+        Connection connection = connect(dataBaseType, jdbcURL, userName, password);
         String deleteTemplate = "delete from %s WHERE 1 = 2";
 
         boolean hasInsertPrivilege = true;
@@ -253,6 +253,20 @@ public final class DBUtil {
             LOG.warn("connection close failed, " + e.getMessage());
         }
         return hasInsertPrivilege;
+    }
+
+    public static boolean needCheckDeletePrivilege(Configuration originalConfig) {
+        List<String> allSqls =new ArrayList<String>();
+        allSqls.addAll(originalConfig.getList(com.alibaba.datax.plugin.rdbms.writer.Key.PRE_SQL, String.class));
+        allSqls.addAll(originalConfig.getList(com.alibaba.datax.plugin.rdbms.writer.Key.POST_SQL, String.class));
+        for(String sql : allSqls) {
+            if(StringUtils.isNotBlank(sql)) {
+                if (sql.trim().toUpperCase().startsWith("DELETE")) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

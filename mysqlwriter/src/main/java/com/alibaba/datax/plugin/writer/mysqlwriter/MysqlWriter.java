@@ -59,10 +59,18 @@ public class MysqlWriter extends Writer {
                 String dbName = connConf.getString(Key.DBNAME);
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl,dbName, username, password, expandedTables);
+                //boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl,dbName, username, password, expandedTables);
+                boolean hasInsertPri = DBUtil.checkInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
 
                 if(!hasInsertPri){
                     throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                }
+
+                if(DBUtil.needCheckDeletePrivilege(this.originalConfig)) {
+                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(DATABASE_TYPE,jdbcUrl, username, password, expandedTables);
+                    if(!hasDeletePri) {
+                        throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                    }
                 }
             }
         }
