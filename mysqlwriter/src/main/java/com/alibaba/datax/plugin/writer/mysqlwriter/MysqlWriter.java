@@ -56,10 +56,9 @@ public class MysqlWriter extends Writer {
 
             for (int i = 0, len = connections.size(); i < len; i++) {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
-                String dbName = connConf.getString(Key.DBNAME);
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                //boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl,dbName, username, password, expandedTables);
+                //boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
                 boolean hasInsertPri = DBUtil.checkInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
 
                 if(!hasInsertPri){

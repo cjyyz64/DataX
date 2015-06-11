@@ -58,11 +58,6 @@ public final class OriginalConfPretreatmentUtil {
                 throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
-            String dbName = DBUtil.getDbName(jdbcUrl);
-            if (dbName != null){
-                originalConfig.set(String.format("%s[%d].%s", com.alibaba.datax.plugin.rdbms.reader.Constant.CONN_MARK,
-                        i, Key.DBNAME), dbName);
-            }
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
                     jdbcUrl);
