@@ -560,25 +560,29 @@ public class OdpsUtil {
         if(e.getMessage() != null) {
             if(e.getMessage().contains(OdpsExceptionMsg.ODPS_PROJECT_NOT_FOUNT)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_PROJECT_NOT_FOUNT,
-                        String.format("加载 ODPS 源头表:%s 失败. " +
-                                "请检查您配置的 ODPS 源头表的 [project] 是否正确.", tableName), e);
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 [project] 是否正确.", tableName), e);
             } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_TABLE_NOT_FOUNT)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_TABLE_NOT_FOUNT,
-                        String.format("加载 ODPS 源头表:%s 失败. " +
-                                "请检查您配置的 ODPS 源头表的 [table] 是否正确.", tableName), e);
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 [table] 是否正确.", tableName), e);
             } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_ID_NOT_FOUND)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_ACCESS_KEY_ID_NOT_FOUND,
-                        String.format("加载 ODPS 源头表:%s 失败. " +
-                                "请检查您配置的 ODPS 源头表的 [accessId] [accessKey]是否正确.", tableName), e);
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 [accessId] [accessKey]是否正确.", tableName), e);
             } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_INVALID)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_ACCESS_KEY_INVALID,
-                        String.format("加载 ODPS 源头表:%s 失败. " +
-                                "请检查您配置的 ODPS 源头表的 [accessKey] 是否正确.", tableName), e);
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 [accessKey] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_DENY)) {
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_ACCESS_DENY,
+                        String.format("加载 ODPS 目的表:%s 失败. " +
+                                "请检查您配置的 ODPS 目的表的 [accessId] [accessKey] [project]是否匹配.", tableName), e);
             }
         }
         throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                String.format("加载 ODPS 源头表:%s 失败. " +
-                        "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
+                String.format("加载 ODPS 目的表:%s 失败. " +
+                        "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
     }
 
 }
