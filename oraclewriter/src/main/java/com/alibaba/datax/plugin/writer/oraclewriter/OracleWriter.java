@@ -4,11 +4,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
-import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 
@@ -23,35 +21,8 @@ public class OracleWriter extends Writer {
 
         public void preCheck() {
             this.init();
-            /*检查PreSql跟PostSql语句*/
-            WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
-            WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
-
-            /*检查insert 跟delete权限*/
-            String username = this.originalConfig.getString(Key.USERNAME);
-            String password = this.originalConfig.getString(Key.PASSWORD);
-            List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
-                    Object.class);
-
-            for (int i = 0, len = connections.size(); i < len; i++) {
-                Configuration connConf = Configuration.from(connections.get(i).toString());
-                String jdbcUrl = connConf.getString(Key.JDBC_URL);
-                List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.checkInsertPrivilege(DATABASE_TYPE,jdbcUrl, username, password, expandedTables);
-                if(!hasInsertPri) {
-                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
-                }
-
-                if(DBUtil.needCheckDeletePrivilege(this.originalConfig)) {
-                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(DATABASE_TYPE,jdbcUrl, username, password, expandedTables);
-                    if(!hasDeletePri) {
-                        throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
-                    }
-                }
-            }
+            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
         }
-
-
 
         @Override
 		public void init() {
@@ -75,6 +46,7 @@ public class OracleWriter extends Writer {
 
 		@Override
 		public void prepare() {
+            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
 			this.commonRdbmsWriterJob.prepare(this.originalConfig);
 		}
 

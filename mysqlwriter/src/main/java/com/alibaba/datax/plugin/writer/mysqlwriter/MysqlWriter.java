@@ -1,15 +1,10 @@
 package com.alibaba.datax.plugin.writer.mysqlwriter;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
-import com.alibaba.datax.plugin.rdbms.writer.Constant;
-import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 
 import java.util.List;
@@ -24,49 +19,22 @@ public class MysqlWriter extends Writer {
         private CommonRdbmsWriter.Job commonRdbmsWriterJob;
 
         @Override
+        public void preCheck(){
+            this.init();
+            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
+        }
+
+        @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
         }
 
-        @Override
-        public void preCheck(){
-            init();
-
-            /*检查PreSql跟PostSql语句*/
-            WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
-            WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
-
-            /*检查insert 跟delete权限*/
-            String username = this.originalConfig.getString(Key.USERNAME);
-            String password = this.originalConfig.getString(Key.PASSWORD);
-            List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
-                    Object.class);
-
-            for (int i = 0, len = connections.size(); i < len; i++) {
-                Configuration connConf = Configuration.from(connections.get(i).toString());
-                String jdbcUrl = connConf.getString(Key.JDBC_URL);
-                List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                //boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE, jdbcUrl, username, password, expandedTables);
-                boolean hasInsertPri = DBUtil.checkInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
-
-                if(!hasInsertPri){
-                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
-                }
-
-                if(DBUtil.needCheckDeletePrivilege(this.originalConfig)) {
-                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(DATABASE_TYPE,jdbcUrl, username, password, expandedTables);
-                    if(!hasDeletePri) {
-                        throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
-                    }
-                }
-            }
-        }
-
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
+            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
             this.commonRdbmsWriterJob.prepare(this.originalConfig);
         }
 

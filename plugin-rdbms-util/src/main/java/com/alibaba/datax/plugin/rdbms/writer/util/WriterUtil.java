@@ -178,6 +178,36 @@ public final class WriterUtil {
 
             }
         }
+    }
 
+    /*目前只支持MySQL Writer跟Oracle Writer*/
+    public static void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
+        /*检查PreSql跟PostSql语句*/
+        WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
+        WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
+
+        /*检查insert 跟delete权限*/
+        String username = originalConfig.getString(Key.USERNAME);
+        String password = originalConfig.getString(Key.PASSWORD);
+        List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
+                Object.class);
+
+        for (int i = 0, len = connections.size(); i < len; i++) {
+            Configuration connConf = Configuration.from(connections.get(i).toString());
+            String jdbcUrl = connConf.getString(Key.JDBC_URL);
+            List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
+            boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
+
+            if(!hasInsertPri){
+                throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+            }
+
+            if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
+                boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
+                if(!hasDeletePri) {
+                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                }
+            }
+        }
     }
 }
