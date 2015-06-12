@@ -147,7 +147,11 @@ public final class WriterUtil {
             LOG.info("Begin to preCheck preSqls:[{}].",
                     StringUtils.join(renderedPreSqls, ";"));
             for(String sql : renderedPreSqls) {
-                DBUtil.sqlValid(sql, type);
+                try{
+                    DBUtil.sqlValid(sql, type);
+                }catch(ParserException e) {
+                    throw RdbmsException.asPreSQLParserException(type,e,sql);
+                }
             }
         }
     }
@@ -166,7 +170,12 @@ public final class WriterUtil {
             LOG.info("Begin to preCheck postSqls:[{}].",
                     StringUtils.join(renderedPostSqls, ";"));
             for(String sql : renderedPostSqls) {
-                DBUtil.sqlValid(sql, type);
+                try{
+                    DBUtil.sqlValid(sql, type);
+                }catch(ParserException e){
+                    throw RdbmsException.asPostSQLParserException(type,e,sql);
+                }
+
             }
         }
 

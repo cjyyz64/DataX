@@ -11,7 +11,6 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
-import com.alibaba.druid.sql.parser.ParserException;
 
 import java.util.List;
 
@@ -36,19 +35,10 @@ public class MysqlWriter extends Writer {
             init();
 
             /*检查PreSql跟PostSql语句*/
-            try {
-                WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
-            } catch (ParserException e) {
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR, e.getMessage());
-            }
+            WriterUtil.preCheckPrePareSQL(originalConfig, DATABASE_TYPE);
+            WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
 
-            try {
-                WriterUtil.preCheckPostSQL(originalConfig, DATABASE_TYPE);
-            } catch (ParserException e) {
-                throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR, e.getMessage());
-            }
-
-            /*检查insert 权限*/
+            /*检查insert 跟delete权限*/
             String username = this.originalConfig.getString(Key.USERNAME);
             String password = this.originalConfig.getString(Key.PASSWORD);
             List<Object> connections = originalConfig.getList(Constant.CONN_MARK,

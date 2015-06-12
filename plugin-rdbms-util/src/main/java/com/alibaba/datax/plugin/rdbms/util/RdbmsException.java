@@ -123,11 +123,33 @@ public class RdbmsException extends DataXException{
     public static DataXException asSqlParserException(DataBaseType dataBaseType, Exception e,String querySql){
         if (dataBaseType.equals(DataBaseType.MySql)){
             throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_QUERY_SQL_PARSER_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
-        }else if (dataBaseType.equals(DataBaseType.Oracle)){
-            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_PARSER_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
-        }else{
-            throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
         }
+        if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_QUERY_SQL_PARSER_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
+        }
+        throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+    }
+
+    public static DataXException asPreSQLParserException(DataBaseType dataBaseType, Exception e,String querySql){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_PRE_SQL_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
+        }
+
+        if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_PRE_SQL_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
+        }
+        throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
+    }
+
+    public static DataXException asPostSQLParserException(DataBaseType dataBaseType, Exception e,String querySql){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_POST_SQL_ERROR, "执行的SQL为:"+querySql+" 具体错误信息为：" + e);
+        }
+
+        if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_POST_SQL_ERROR,"执行的SQL为:"+querySql+" 具体错误信息为：" +e);
+        }
+        throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
     }
 
     public static DataXException asSplitPKException(DataBaseType dataBaseType, Exception e,String splitSql,String splitPkID){
