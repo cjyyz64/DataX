@@ -33,5 +33,6 @@ public abstract class Writer extends BaseObject {
 	 */
 	public abstract static class Task extends AbstractTaskPlugin {
 		public abstract void startWrite(RecordReceiver lineReceiver);
+		public boolean supportFailOver(){return false;}
 	}
 }

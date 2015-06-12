@@ -51,4 +51,9 @@ public class WriterRunner extends AbstractRunner implements Runnable {
             super.destroy();
         }
     }
+    
+    public boolean supportFailOver(){
+    	Writer.Task taskWriter = (Writer.Task) this.getPlugin();
+    	return taskWriter.supportFailOver();
+    }
 }
