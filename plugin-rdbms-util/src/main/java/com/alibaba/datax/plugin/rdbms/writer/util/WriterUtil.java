@@ -205,7 +205,7 @@ public final class WriterUtil {
             if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
                 boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
                 if(!hasDeletePri) {
-                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                    throw DataXException.asDataXException(DBUtilErrorCode.NO_DELETE_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
                 }
             }
         }

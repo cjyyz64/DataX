@@ -368,6 +368,10 @@ public final class OdpsUtil {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_ACCESS_KEY_INVALID,
                         String.format("加载 ODPS 源头表:%s 失败. " +
                                 "请检查您配置的 ODPS 源头表的 [accessKey] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_DENY)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_ACCESS_DENY,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessId] [accessKey] [project]是否匹配.", tableName), e);
             }
         }
         throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,

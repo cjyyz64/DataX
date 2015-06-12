@@ -21,6 +21,8 @@ public enum OdpsReaderErrorCode implements ErrorCode {
 
     ODPS_ACCESS_KEY_INVALID("OdpsReader-14", "您配置的值不合法, odps accessKey 错误"), //ODPS-0410042:Invalid signature value - User signature dose not match
 
+    ODPS_ACCESS_DENY("OdpsReader-15", "拒绝访问, 您不在 您配置的 project 中") //ODPS-0420095: Access Denied - Authorization Failed [4002], You doesn't exist in project
+
 
     ;
     private final String code;
