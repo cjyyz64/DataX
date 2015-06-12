@@ -36,6 +36,12 @@ public enum DBUtilErrorCode implements ErrorCode {
     MYSQL_SPLIT_PK_ERROR("MYSQLErrCode-11","SplitPK错误，请检查"),
     ORACLE_SPLIT_PK_ERROR("ORACLEErrCode-10","SplitPK错误，请检查"),
 
+    //Insert,Delete 权限错误
+    MYSQL_INSERT_ERROR("MYSQLErrCode-12","数据库没有写权限，请联系DBA"),
+    MYSQL_DELETE_ERROR("MYSQLErrCode-13","数据库没有Delete权限，请联系DBA"),
+    ORACLE_INSERT_ERROR("ORACLEErrCode-11","数据库没有写权限，请联系DBA"),
+    ORACLE_DELETE_ERROR("ORACLEErrCode-12","数据库没有Delete权限，请联系DBA"),
+
     JDBC_NULL("DBUtilErrorCode-20","JDBC URL为空，请检查配置"),
     CONF_ERROR("DBUtilErrorCode-00", "您的配置错误."),
     CONN_DB_ERROR("DBUtilErrorCode-10", "连接数据库失败. 请检查您的 账号、密码、数据库名称、IP、Port或者向 DBA 寻求帮助(注意网络环境)."),

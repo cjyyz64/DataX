@@ -199,13 +199,13 @@ public final class WriterUtil {
             boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
 
             if(!hasInsertPri){
-                throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                throw RdbmsException.asDeletePriException(dataBaseType,originalConfig.getString(Key.USERNAME), jdbcUrl);
             }
 
             if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
                 boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
                 if(!hasDeletePri) {
-                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE, originalConfig.getString(Key.USERNAME) + jdbcUrl);
+                    throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                 }
             }
         }

@@ -152,6 +152,28 @@ public class RdbmsException extends DataXException{
         throw DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,"执行的SQL为:"+querySql+" 具体错误信息为："+e);
     }
 
+    public static DataXException asInsertPriException(DataBaseType dataBaseType, String userName,String jdbcUrl){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_INSERT_ERROR, "用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+        }
+
+        if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_INSERT_ERROR,"用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+        }
+        throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,"用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+    }
+
+    public static DataXException asDeletePriException(DataBaseType dataBaseType, String userName,String jdbcUrl){
+        if (dataBaseType.equals(DataBaseType.MySql)){
+            throw DataXException.asDataXException(DBUtilErrorCode.MYSQL_DELETE_ERROR, "用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+        }
+
+        if (dataBaseType.equals(DataBaseType.Oracle)){
+            throw DataXException.asDataXException(DBUtilErrorCode.ORACLE_DELETE_ERROR,"用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+        }
+        throw DataXException.asDataXException(DBUtilErrorCode.NO_DELETE_PRIVILEGE,"用户名为:"+userName+" JDBC URL为："+jdbcUrl);
+    }
+
     public static DataXException asSplitPKException(DataBaseType dataBaseType, Exception e,String splitSql,String splitPkID){
         if (dataBaseType.equals(DataBaseType.MySql)){
 
