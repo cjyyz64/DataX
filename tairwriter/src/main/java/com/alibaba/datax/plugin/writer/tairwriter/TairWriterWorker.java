@@ -27,7 +27,7 @@ class TairWriterWorker {
     private TaskPluginCollector collector = null;
     private TairConfig conf = null;
 
-    private static final int MAX_RETRY_TIMES = 10;
+    private static final int MAX_RETRY_TIMES = 60;
 
     private Serializable key;
     private StringBuilder value;
@@ -48,58 +48,120 @@ class TairWriterWorker {
 
         if ("put".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                put(record);
+                try {
+                    if (!checkColumnValid(record, 2))
+                      continue;
+                    put(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         } else if ("counter".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                setCount(record);
+                try {
+                    if (!checkColumnValid(record, 2))
+                      continue;
+                    setCount(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         } else if ("prefixput".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                prefixPut(record);
+                try {
+                    if (!checkColumnValid(record, 3))
+                      continue;
+                    prefixPut(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         } else if ("prefixcounter".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                prefixSetCount(record);
+                try {
+                    if (!checkColumnValid(record, 3))
+                      continue;
+                    prefixSetCount(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         } else if ("multiprefixput".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                multiPrefixPuts(record);
+                try {
+                    if (!checkColumnValid(record, 2))
+                      continue;
+                    multiPrefixPuts(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         } else if ("multiprefixcounter".equalsIgnoreCase(conf.getWriterType())) {
             while ((record = recordReceiver.getFromReader()) != null) {
-                multiPrefixSetCounts(record);
+                try {
+                    if (!checkColumnValid(record, 2))
+                      continue;
+                    multiPrefixSetCounts(record);
+                } catch (Exception e) {
+                    collector.collectDirtyRecord(record, " This Record throw Exception: " + e.getMessage());
+                }
             }
         }
 
         return 0;
     }
 
-    //TODO: log reduce
-    private int put(Record record) throws Exception {
+    boolean checkColumnValid(Record record, int minColumnNum) {
+
         int fieldNum = record.getColumnNumber();
-        if (fieldNum <= 1) {
-            collector.collectDirtyRecord(record, "filed number must >= 2");
-            return -1;
+        if (fieldNum < minColumnNum) {
+            collector.collectDirtyRecord(record, "filed number must >= " + minColumnNum);
+            return false;
         }
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key can't be null");
-            return -1;
+        for (int i = 0; i < fieldNum; ++i) {
+            if (record.getColumn(i) == null)
+              return false;
         }
 
+        if (null == record.getColumn(0).getRawData()) {
+            collector.collectDirtyRecord(record, "key不能为空");
+            return false;
+        }
+        return true;
+    }
+
+    String getKeyFromColumn(Record record) {
+        String columnKey = "";
+        if (null != conf.getFrontLeadingKey()) {
+            columnKey += conf.getFrontLeadingKey();
+                LOG.info("FrontLeading: " + conf.getFrontLeadingKey());//TODO
+        }
+        columnKey += record.getColumn(0).asString();
+        return columnKey;
+    }
+
+    //TODO: log reduce
+    private int put(Record record) throws Exception {
+
+        key = getKeyFromColumn(record);
         String v = convertColumnToValue(record);
         if (null != v) {
-            retryPut(key, v, expire, record);
+            String errorInfo = retryPut(key, v, expire, record);
+            if (null != errorInfo) {
+                LOG.warn("put fail, record: " + record);
+                collector.collectDirtyRecord(record, errorInfo + ", key:"
+                        + key + "value: " + value);
+                return -1;
+            }
         } else if (conf.isDeleteEmptyRecord()) {
             ResultCode rc = tm.delete(conf.getNamespace(), key);
             if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
                 LOG.warn("delete record:" + record.toString() +  " fail, rc: " + rc.getCode());
                 collector.collectDirtyRecord(record, " delete empty record fail");
+                return -1;
             }
-
         } else {
-            collector.collectDirtyRecord(record, "record all fields(exclude key) are null");
+            collector.collectDirtyRecord(record, "record all value fields are null");
             return -1;
         }
         return 0;
@@ -108,31 +170,27 @@ class TairWriterWorker {
     private int prefixPut(Record record) throws Exception {
         int fieldNum = record.getColumnNumber();
         if (fieldNum != 3) {
-            collector.collectDirtyRecord(record, "prefixPut record field number must be 3");
+            collector.collectDirtyRecord(record, "prefixput record field number must be 3");
+            return -1;
+        }
+
+        if (null == record.getColumn(1).getRawData() ||
+                null == record.getColumn(2).getRawData()) {
+            collector.collectDirtyRecord(record, "skey and value 不能为空");
             return -1;
         }
 
         keyValuePacks.clear();
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key不能为空");
-            return -1;
-        }
-        if (null == record.getColumn(1).asString() ||
-                null == record.getColumn(2).asString()) {
-            collector.collectDirtyRecord(record, "skey value 不能为空");
-            return -1;
-        }
-
+        key = getKeyFromColumn(record);
         Serializable skey = record.getColumn(1).asString();
         Serializable svalue = record.getColumn(2).asString();
         KeyValuePack pack = new KeyValuePack(skey, svalue ,(short) 0, expire);
         keyValuePacks.add(pack);
 
         ResultCode rc = tm.prefixPuts(conf.getNamespace(), key, keyValuePacks).getRc();
-        boolean isRetry = checkResultCode(rc, record);
-        if (isRetry) {
-            collector.collectDirtyRecord(record, "prefixPut 超时");
+        if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
+            String errorInfo = getTairErrorInfo(rc);
+            collector.collectDirtyRecord(record, "prefixput fail: " + errorInfo);
             return -1;
         }
         return 0;
@@ -140,21 +198,16 @@ class TairWriterWorker {
 
     private int multiPrefixPuts(Record record) throws Exception {
         int fieldNum = record.getColumnNumber();
-        if (fieldNum < 2 || fieldNum != 1 + conf.getSkeyList().size()) {
-            collector.collectDirtyRecord(record, "multiprefixPuts record field number must >= 2 and equal skey number + 1");
+        if (fieldNum != 1 + conf.getSkeyList().size()) {
+            collector.collectDirtyRecord(record, "multiprefixput record field number must equal skey number + 1");
             return -1;
         }
 
         keyValuePacks.clear();
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key不能为空");
-            return -1;
-        }
-
+        key = getKeyFromColumn(record);
         // i is index of record data column and column name
         for (int i = 1; i < record.getColumnNumber(); ++i) {
-            if (null != record.getColumn(i).asString()) {
+            if (null != record.getColumn(i).getRawData()) {
                 KeyValuePack pack = new KeyValuePack(conf.getSkeyList().get(i - 1),
                         record.getColumn(i).asString() ,(short) 0, expire);
                 keyValuePacks.add(pack);
@@ -166,9 +219,9 @@ class TairWriterWorker {
             return -1;
         }
         ResultCode rc = tm.prefixPuts(conf.getNamespace(), key, keyValuePacks).getRc();
-        boolean isRetry = checkResultCode(rc, record);
-        if (isRetry) {
-            collector.collectDirtyRecord(record, "prefixPut 超时");
+        if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
+            String errorInfo = getTairErrorInfo(rc);
+            collector.collectDirtyRecord(record, "multiprefixput fail: " + errorInfo);
             return -1;
         }
         return 0;
@@ -177,25 +230,27 @@ class TairWriterWorker {
     private int setCount(Record record) throws Exception {
         int fieldNum = record.getColumnNumber();
         if (fieldNum != 2) {
-            collector.collectDirtyRecord(record, "setCount必须是2个字段");
+            collector.collectDirtyRecord(record, "counter 必须是2个字段");
             return -1;
         }
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key不能为空");
-            return -1;
-        }
-        if (null == record.getColumn(1).getRawData()) {//TODO: all modify
+        key = getKeyFromColumn(record);
+        if (null == record.getColumn(1).getRawData()) {
           collector.collectDirtyRecord(record, "count不能为空");
           return -1;
         }
 
-        int count = record.getColumn(1).asLong().intValue();
+        Long count = record.getColumn(1).asLong();
         if (count < 0 || count > Integer.MAX_VALUE) {
             collector.collectDirtyRecord(record, "数字超出范围 [0, Int_max]");
             return -1;
         }
-        retrySetCount(key, count, expire, record);
+        String errorInfo = retrySetCount(key, count, expire, record);
+        if (null != errorInfo) {
+            LOG.warn("counter fail, record: " + record);
+            collector.collectDirtyRecord(record, errorInfo + ", key:"
+                    + key + "value: " + count);
+            return -1;
+        }
         return 0;
     }
 
@@ -206,22 +261,18 @@ class TairWriterWorker {
             return -1;
         }
 
-        keyValuePacks.clear();
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key不能为空");
-            return -1;
-        }
-        if (null == record.getColumn(1).asString() ||
-                null == record.getColumn(2).asString()) {
-            collector.collectDirtyRecord(record, "skey count 不能为空");
+        if (null == record.getColumn(1).getRawData() ||
+                null == record.getColumn(2).getRawData()) {
+            collector.collectDirtyRecord(record, "skey and count 不能为空");
             return -1;
         }
 
+        keyValuePacks.clear();
+        key = getKeyFromColumn(record);
         Serializable skey = record.getColumn(1).asString();
-        int count = record.getColumn(2).asLong().intValue();//TODO: overflow
+        Long count = record.getColumn(2).asLong();
         if (count >= 0 && count <= Integer.MAX_VALUE) {
-            KeyCountPack pack = new KeyCountPack(skey, count ,(short) 0, expire);
+            KeyCountPack pack = new KeyCountPack(skey, count.intValue(), (short) 0, expire);
             keyCountPacks.add(pack);
         } else {
             collector.collectDirtyRecord(record, "数字超出范围 [0, Int_max]");
@@ -229,9 +280,9 @@ class TairWriterWorker {
         }
 
         ResultCode rc = tm.prefixSetCounts(conf.getNamespace(), key, keyCountPacks).getRc();
-        boolean isRetry = checkResultCode(rc, record);
-        if (isRetry) {
-            collector.collectDirtyRecord(record, "prefixPut 超时");
+        if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
+            String errorInfo = getTairErrorInfo(rc);
+            collector.collectDirtyRecord(record, "prefixcounter fail: " + errorInfo);
             return -1;
         }
         return 0;
@@ -239,28 +290,24 @@ class TairWriterWorker {
 
     private int multiPrefixSetCounts(Record record) throws Exception {
         int fieldNum = record.getColumnNumber();
-        if (fieldNum < 2 || fieldNum != 1 + conf.getSkeyList().size()) {
-            collector.collectDirtyRecord(record, "multiprefixcounter record field number must >= 2 and equal skey number + 1");
-            return -1;
-        }
-        keyCountPacks.clear();
-        key = record.getColumn(0).asString();
-        if (null == key) {
-            collector.collectDirtyRecord(record, "key不能为空");
+        if (fieldNum != 1 + conf.getSkeyList().size()) {
+            collector.collectDirtyRecord(record, "multiprefixcounter record field number must equal skey number + 1");
             return -1;
         }
 
+        keyCountPacks.clear();
+        key = getKeyFromColumn(record);
         for (int i = 1; i < record.getColumnNumber(); ++i) {
-            if (null != record.getColumn(i).asString()) {
-                int count = record.getColumn(i).asLong().intValue();
-                if (count >= 0) {
+            if (null != record.getColumn(i).getRawData()) {
+                Long count = record.getColumn(i).asLong();
+                if (count >= 0 && count <= Integer.MAX_VALUE) {
                     KeyCountPack pack = new KeyCountPack(conf.getSkeyList().get(i - 1),
-                            count, (short) 0, expire);
+                            count.intValue(), (short) 0, expire);
                     keyCountPacks.add(pack);
                 } else {
                     collector.collectDirtyRecord(record, "数字超出范围 [0, Int_max]");
                 }
-            } // null string
+            }
         }
         if (keyCountPacks.size() == 0) {
             LOG.warn("pkey:" + key + " skey is empty");
@@ -269,75 +316,80 @@ class TairWriterWorker {
         }
 
         ResultCode rc = tm.prefixSetCounts(conf.getNamespace(), key, keyCountPacks).getRc();
-        boolean isRetry = checkResultCode(rc, record);
-        if (isRetry) {
-            collector.collectDirtyRecord(record, "prefixPut 超时");
+        if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
+            String errorInfo = getTairErrorInfo(rc);
+            collector.collectDirtyRecord(record, "multiprefixcounter fail: " + errorInfo);
             return -1;
         }
         return 0;
     }
 
-    // will need retry is return true
-    // TODO: fun name
-    private boolean checkResultCode(ResultCode rc, Record record) {
-        if (ResultCode.SUCCESS.getCode() == rc.getCode()) {
-            return false;
-        } else if (ResultCode.TIMEOUT.getCode() == rc.getCode() || ResultCode.CONNERROR.getCode() == rc.getCode()) {
-            LOG.warn("operator key:" + record + " timeout rc:" + rc.getCode());
-            return true;
-        } else if (rc.getCode() == ResultCode.KEYTOLARGE.getCode()) {
-            collector.collectDirtyRecord(record, "Key超过1KB");
-            return false;
+    private String getTairErrorInfo(ResultCode rc) {
+
+        if (rc.getCode() == ResultCode.KEYTOLARGE.getCode()) {
+            return new String("Key超过1KB");
         } else if (rc.getCode() == ResultCode.SERIALIZEERROR.getCode()) {
-            collector.collectDirtyRecord(record, "KV序列化错误");
-            return false;
+            return new String("KV序列化错误");
         } else if (rc.getCode() == ResultCode.VALUETOLARGE.getCode()) {
-            collector.collectDirtyRecord(record, "Value超过1MB");
-            return false;
+            return new String("Value超过1MB");
+        } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
+                || ResultCode.CONNERROR.getCode() == rc.getCode()) {
+            return new String("tair操作超时");
         } else {
-            collector.collectDirtyRecord(record, "tair集群操作失败， rc: " + rc.getCode());
-            return false;
+            return new String("tair集群操作失败， rc: " + rc.getCode());
         }
     }
 
-    // TODO: Object
-    // TODO: dirty move out
-    private int retryPut(Serializable key, Object value, int expire, Record record)
-    {
-        ResultCode rc = ResultCode.SERVERERROR;
-        boolean isRetry = true;
-        int count = -1;
-        while (isRetry && ++count < MAX_RETRY_TIMES) {
-            rc = tm.put(conf.getNamespace(), key, (String)value, 0, expire);
-            isRetry = checkResultCode(rc, record);
-            if (isRetry && doCheck(key, (String)value)) {
-                isRetry = false;   // success actually
+    private String retryPut(Serializable key, String value, int expire, Record record) throws Exception {
+        int cnt = 0;
+        //TODO: loop always
+        while (cnt <= MAX_RETRY_TIMES) {
+            ResultCode rc = tm.put(conf.getNamespace(), key, value, 0, expire);
+            if (ResultCode.SUCCESS.getCode() == rc.getCode()) {
+                return null;
+            } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
+                    || ResultCode.CONNERROR.getCode() == rc.getCode()) {
+                LOG.warn("operator record:" + record + " timeout rc:" + rc.getCode());
+                if (doCheck(key, value)) {
+                    return null;// success actually
+                }
+                ++cnt;
+            } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
+                || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
+                Thread.sleep(1);
+                LOG.error(String.format(
+                        "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+            } else {
+                return getTairErrorInfo(rc);
             }
         }
-        if (count == MAX_RETRY_TIMES) {
-            collector.collectDirtyRecord(record, "tair集群操作重试失败, key:"
-                    + (String)key + "value: " + (String)value + "， rc: " + rc.getCode());
-        }
-        return 0;
+        return new String("timeout retry put fail finally");
     }
 
-    private int retrySetCount(Serializable key, int count, int expire, Record record)
-    {
-        ResultCode rc = ResultCode.SERVERERROR;
-        boolean isRetry = true;
-        int retryCount = -1;
-        while (isRetry && ++retryCount < MAX_RETRY_TIMES) {
-            rc = tm.setCount(conf.getNamespace(), key, count, 0, expire);
-            isRetry = checkResultCode(rc, record);
-            if (isRetry && doCheck(key, ((Integer)count).toString())) {
-                isRetry = false;   // success actually
+    // return error info
+    private String retrySetCount(Serializable key, Long count, int expire, Record record) throws Exception {
+        int cnt = 0;
+        while (cnt <= MAX_RETRY_TIMES) {
+            ResultCode rc = tm.setCount(conf.getNamespace(), key, count.intValue(), 0, expire);
+            if (ResultCode.SUCCESS.getCode() == rc.getCode()) {
+                return null;
+            } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
+                    || ResultCode.CONNERROR.getCode() == rc.getCode()) {
+                LOG.warn("operator key:" + record + " timeout rc:" + rc.getCode());
+                if (doCheck(key, count.toString())) {
+                    return null;// success actually
+                }
+                ++cnt;
+            } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
+                || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
+                Thread.sleep(1);
+                LOG.error(String.format(
+                        "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+            } else {
+                return getTairErrorInfo(rc);
             }
         }
-        if (retryCount == MAX_RETRY_TIMES) {
-            collector.collectDirtyRecord(record, "tair集群操作重试失败, key:"
-                    + (String)key + "value: " + value + "， rc: " + rc.getCode());
-        }
-        return 0;
+        return new String("timeout retry setCount fail finally");
     }
 
     private boolean doCheck(Serializable key, String value) {
@@ -392,8 +444,8 @@ class TairWriterWorker {
             value.delete(0, value.length());
             boolean allIsNull = true;
             for (int i = 1; i < fieldNum; ++i) {
-                String fieldString = record.getColumn(i).asString();
-                if (null != fieldString){
+                if (null != record.getColumn(i).getRawData()){
+                    String fieldString = record.getColumn(i).asString();
                     value.append(fieldString);
                     allIsNull = false;
                 } else {

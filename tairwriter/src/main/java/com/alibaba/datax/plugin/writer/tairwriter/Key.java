@@ -127,4 +127,17 @@ public class Key {
      */
     public final static String DELETE_EMPTY_RECORD = "deleteEmptyRecord";
 
+    /*
+     * @name: uniform front leading string for key or pkey
+     *
+     * @description: uniform front leading string for key or pkey, if config all key or pkey will prepend the string
+     *
+     * @range: non-empty
+     *
+     * @mandatory: false
+     *
+     * @default: empty string
+     */
+    public final static String FRONT_LEADING_KEY = "frontLeadingKey";
+
 }

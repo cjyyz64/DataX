@@ -68,8 +68,8 @@ public class TairWriter extends Writer {
                 tm = TairClientManager.getInstance(conf.getConfigId(), conf.getLanguage(),
                         conf.getCompressionThreshold(), conf.getTimeout());
             } catch (Exception e) {
-                LOG.error("Init tair mc-client failure", e);
-                throw DataXException.asDataXException(TairWriterErrorCode.TairInitError, "tair mc客户端 init()失败" + e.getMessage());
+                LOG.error("Init tair mc-client failure: {}", e);
+                throw DataXException.asDataXException(TairWriterErrorCode.TairInitError, "tair mc客户端 init()失败," + e.getMessage(), e);
             }
             worker = new TairWriterWorker(tm, conf, this.getTaskPluginCollector());
         }
@@ -83,7 +83,7 @@ public class TairWriter extends Writer {
             try {
                 worker.write(recordReceiver);
             } catch (Exception e) {
-              LOG.error("write Exception. {}", e);
+              LOG.error("write Exception: {}", e);
               throw DataXException.asDataXException(TairWriterErrorCode.TairRuntimeError, e.getMessage(), e);
             }
         }

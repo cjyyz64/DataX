@@ -20,6 +20,7 @@ public class TairConfig {
     private List<String> skeyList = null;
     private char fieldDelimiter;
     private boolean deleteEmptyRecord;
+    private String frontLeadingKey;
     private int expire;
     private int compressionThreshold;
     private int timeout;
@@ -29,19 +30,15 @@ public class TairConfig {
     }
 
     public boolean checkValid() {
-        this.configId = conf.getString(Key.CONFIG_ID, null);
+                LOG.info("new code");//TODO
+        this.configId = conf.getNecessaryValue(Key.CONFIG_ID, TairWriterErrorCode.TairInitError);
         this.namespace = conf.getInt(Key.NAMESPACE, -1);
         this.expire = conf.getInt(Key.EXPIRE, 0);
         this.timeout = conf.getInt(Key.TIMEOUT, 2000);
-        this.writerType = conf.getString(Key.WRITER_TYPE, null);
-        this.language = conf.getString(Key.LANGUAGE, null);
+        this.writerType = conf.getNecessaryValue(Key.WRITER_TYPE, TairWriterErrorCode.TairInitError);
+        this.language = conf.getNecessaryValue(Key.LANGUAGE, TairWriterErrorCode.TairInitError);
 
         this.compressionThreshold = conf.getInt(Key.COMPRESSION_THRESHOLD, -1);
-
-        if (configId == null) {
-          error = "configid 为空";
-          return false;
-        }
 
         if (namespace <= 0) {
           error = "无效的 namespace: " + namespace;
@@ -53,10 +50,7 @@ public class TairConfig {
           return false;
         }
 
-        if (language == null) {
-            error = "language must config";
-            return false;
-        } else if (language.equalsIgnoreCase("java")) {
+        if (language.equalsIgnoreCase("java")) {
             if (compressionThreshold <= 0) {
               error = "没有配置或无效的 compressionThreshold: " + compressionThreshold;
               return false;
@@ -129,6 +123,12 @@ public class TairConfig {
             error = "multiprefixput 或 multiprefixcounter 必须指定 skeyList";
             return false;
         }
+
+        this.frontLeadingKey = conf.getString(Key.FRONT_LEADING_KEY, null);
+        if (null != this.frontLeadingKey && this.frontLeadingKey.isEmpty()) {
+          error = "不能配置 frontLeadingKey 为空串";
+          return false;
+        }
         return true;
     }
 
@@ -170,6 +170,10 @@ public class TairConfig {
 
     public List<String> getSkeyList() {
         return skeyList;
+    }
+
+    public String getFrontLeadingKey() {
+      return frontLeadingKey;
     }
 
     public String getErrorString() {
