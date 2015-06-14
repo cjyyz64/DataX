@@ -45,13 +45,13 @@ public class OdpsReader extends Reader {
                 this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
             }
 
+            //检查必要的参数配置
             OdpsUtil.checkNecessaryConfig(this.originalConfig);
+            //重试次数的配置检查
             OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
+            //确定切分模式
             dealSplitMode(this.originalConfig);
-
-            //check isCompress
-            this.originalConfig.getBool(Key.IS_COMPRESS, false);
 
             this.odps = OdpsUtil.initOdps(this.originalConfig);
             String tableName = this.originalConfig.getString(Key.TABLE);
@@ -61,8 +61,7 @@ public class OdpsReader extends Reader {
             this.originalConfig.set(Constant.IS_PARTITIONED_TABLE,
                     OdpsUtil.isPartitionedTable(table));
 
-            boolean isVirtualView = this.table.isVirtualView();
-            if (isVirtualView) {
+            if (this.table.isVirtualView()) {
                 throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                         String.format("源头表:%s 是虚拟视图，DataX 不支持读取虚拟视图.", tableName));
             }

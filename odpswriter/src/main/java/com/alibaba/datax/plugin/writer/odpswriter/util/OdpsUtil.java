@@ -192,7 +192,7 @@ public class OdpsUtil {
 
     public static TableTunnel.UploadSession createMasterTunnelUpload(final TableTunnel tunnel, final String projectName,
                                                   final String tableName, final String partition) {
-        if(StringUtils.isEmpty(partition)) {
+        if(StringUtils.isBlank(partition)) {
             try {
                 return RetryUtil.executeWithRetry(new Callable<TableTunnel.UploadSession>() {
                     @Override
@@ -223,7 +223,7 @@ public class OdpsUtil {
     public static TableTunnel.UploadSession getSlaveTunnelUpload(final TableTunnel tunnel, final String projectName, final String tableName,
                                               final String partition, final String uploadId) {
 
-        if(StringUtils.isEmpty(partition)) {
+        if(StringUtils.isBlank(partition)) {
             try {
                 return RetryUtil.executeWithRetry(new Callable<TableTunnel.UploadSession>() {
                     @Override
