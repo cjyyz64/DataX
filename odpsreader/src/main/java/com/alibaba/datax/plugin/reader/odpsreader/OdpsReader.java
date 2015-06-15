@@ -9,6 +9,7 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
+import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +39,57 @@ public class OdpsReader extends Reader {
         public void preCheck() {
             this.init();
         }
+
+        /**
+         * @unchecked
+         * 该方法目前是通过read一条数据去判断是否有select权限, 但由于链条过长, 需要调用四个走网络接口, 不适合用于校验权限
+         * 要等odps提供了check 权限的方法, 在加上.
+         */
+        public void checkReadPrivilege() {
+            boolean isPartitionTable = this.originalConfig.getBool(Constant.IS_PARTITIONED_TABLE);
+
+            String tunnelServer = this.originalConfig.getString(Key.TUNNEL_SERVER);
+            String projectName = this.originalConfig.getString(Key.PROJECT);
+            String tableName = this.originalConfig.getString(Key.TABLE);
+            String partition = this.originalConfig.getString(Key.PARTITION);
+
+
+            DownloadSession downloadSession = null;
+            if(isPartitionTable) {
+                downloadSession = OdpsUtil.createMasterSessionForPartitionedTable(this.odps, tunnelServer,
+                        projectName, tableName, partition);
+            } else {
+                downloadSession = OdpsUtil.createMasterSessionForNonPartitionedTable(this.odps, tunnelServer,
+                        projectName, tableName);
+            }
+            long count = downloadSession.getRecordCount();
+
+            if (count > 0) {
+                LOG.info(String.format(
+                        "Begin to read ODPS table:%s, partition:%s, startIndex:%s, count:%s.",
+                        tableName, partition, 0, count));
+                try {
+                    RecordReader recordReader = downloadSession.openRecordReader(0, 1);
+                    recordReader.read();
+                } catch (Exception e) {
+                    if(e.getMessage() != null) {
+                        if(e.getMessage().contains("You have NO privilege 'odps:Select'")) {
+                            throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL, "您没有读取该表的权限");
+                        }
+                    }
+
+                    throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL, e);
+
+                }
+            } else if (count == 0) {
+                LOG.warn("odps 源头表的行数为0, 目前无法检验select权限");
+            } else {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
+                        String.format("源头表:%s 的分区:%s  读取行数为负数, 请联系 ODPS 管理员查看表状态!",
+                                tableName, partition));
+            }
+        }
+
 
         @Override
         public void init() {
