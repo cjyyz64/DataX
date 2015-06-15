@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.rdbms.reader;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
@@ -80,7 +81,9 @@ public class CommonRdbmsReader {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     DataXException de = (DataXException) e.getCause();
-                    throw new DataXException(de.getErrorCode(),de.getMessage());
+                    ErrorCode errorCode = de.getErrorCode();
+                    String errMessage = de.getMessage().substring(errorCode.toString().length());
+                    throw new DataXException(errorCode,errMessage);
                 }
             }
             exec.shutdownNow();
