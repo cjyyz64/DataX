@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.rdbms.reader;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
@@ -73,6 +74,8 @@ public class CommonRdbmsReader {
             for (Future<Boolean> result : results){
                 try {
                     result.get();
+                } catch (DataXException e){
+                    throw new DataXException(e.getErrorCode(),e.getMessage());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
