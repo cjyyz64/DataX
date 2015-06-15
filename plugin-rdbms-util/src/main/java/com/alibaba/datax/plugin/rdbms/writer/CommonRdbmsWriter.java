@@ -72,7 +72,7 @@ public class CommonRdbmsWriter {
                 boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
 
                 if(!hasInsertPri){
-                    throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
+                    throw RdbmsException.asInsertPriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                 }
 
                 if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
