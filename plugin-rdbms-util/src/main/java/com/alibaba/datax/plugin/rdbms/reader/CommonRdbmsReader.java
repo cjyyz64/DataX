@@ -81,9 +81,10 @@ public class CommonRdbmsReader {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
                     DataXException de = (DataXException) e.getCause();
-                    ErrorCode errorCode = de.getErrorCode();
-                    String errMessage = de.getMessage().substring(errorCode.toString().length());
-                    throw new DataXException(errorCode,errMessage);
+                    throw de;
+//                    ErrorCode errorCode = de.getErrorCode();
+//                    String errMessage = de.getMessage().substring(errorCode.toString().length());
+//                    throw new DataXException(errorCode,errMessage);
                 }
             }
             exec.shutdownNow();
