@@ -21,4 +21,6 @@ import com.alibaba.datax.common.element.Record;
 public interface RecordReceiver {
 
 	public Record getFromReader();
+
+	public void shutdown();
 }

@@ -5,6 +5,7 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 
 import java.util.List;
 
@@ -79,6 +80,12 @@ public class MysqlWriter extends Writer {
         @Override
         public void destroy() {
             this.commonRdbmsWriterTask.destroy(this.writerSliceConfig);
+        }
+
+        @Override
+        public boolean supportFailOver(){
+            String writeMode = writerSliceConfig.getString(Key.WRITE_MODE);
+            return "replace".equalsIgnoreCase(writeMode);
         }
 
     }

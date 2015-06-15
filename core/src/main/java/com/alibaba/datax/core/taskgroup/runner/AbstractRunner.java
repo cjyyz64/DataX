@@ -99,4 +99,6 @@ public abstract class AbstractRunner {
                 "插件的Communication不能为空");
         this.runnerCommunication = runnerCommunication;
     }
+
+    public abstract void shutdown();
 }

@@ -27,6 +27,10 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL = "core.container.taskGroup.reportInterval";
 
+	public static final String DATAX_CORE_CONTAINER_TASK_FAILOVER_MAXRETRYTIMES = "core.container.task.failOver.maxRetryTimes";
+
+	public static final String DATAX_CORE_CONTAINER_TASK_FAILOVER_RETRYINTERVALINMSEC = "core.container.task.failOver.retryIntervalInMsec";
+
     public static final String DATAX_CORE_DATAXSERVER_ADDRESS = "core.dataXServer.address";
 
     public static final String DATAX_CORE_DATAXSERVER_TIMEOUT = "core.dataXServer.timeout";

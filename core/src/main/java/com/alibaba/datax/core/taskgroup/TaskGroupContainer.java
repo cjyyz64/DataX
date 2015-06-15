@@ -101,7 +101,6 @@ public class TaskGroupContainer extends AbstractContainer {
         Communication nowTaskGroupContainerCommunication = null;
 
         try {
-            
             /**
              * 状态check时间间隔，较短，可以把任务及时分发到对应channel中
              */
@@ -117,6 +116,12 @@ public class TaskGroupContainer extends AbstractContainer {
             // 获取channel数目
             int channelNumber = this.configuration.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
+
+            int taskMaxRetryTimes = this.configuration.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_MAXRETRYTIMES, 1);
+
+            long taskRetryIntervalInMsec = this.configuration.getLong(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_RETRYINTERVALINMSEC, 10000);
             
             List<Configuration> taskConfigs = this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
@@ -132,8 +137,10 @@ public class TaskGroupContainer extends AbstractContainer {
                     this.taskGroupId, channelNumber, taskCountInThisTaskGroup));
             
             this.containerCommunicator.registerCommunication(taskConfigs);
-            
+
             Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs);
+            Map<Integer, Integer> taskAttemptCountMap = buildTaskAttemptMap(taskConfigs);
+            Map<Integer, Long> taskAttemptTimeMap = new HashMap<Integer, Long>();
             Queue<Configuration> taskQueue = buildRemainTasks(taskConfigs);
             List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber);
 
@@ -141,15 +148,20 @@ public class TaskGroupContainer extends AbstractContainer {
             Communication lastTaskGroupContainerCommunication = new Communication();
 
             while (true) {
-            	//1.判断是否已有任务失败
+            	//1.判断task状态
             	boolean failedOrKilled = false;
             	Map<Integer, Communication> communicationMap = containerCommunicator.getCommunicationMap();
             	for(Map.Entry<Integer, Communication> entry : communicationMap.entrySet()){
             		Integer taskId = entry.getKey();
             		Communication taskCommunication = entry.getValue();
-            		if(taskCommunication.getState() == State.FAILED){ //失败
+                    //task最近一次运行时间
+                    taskAttemptTimeMap.put(taskId, taskCommunication.getTimestamp());
+                    //失败，看task是否支持failover，重试次数未超过最大限制
+            		if(taskCommunication.getState() == State.FAILED){
+                        Integer attemptCount = taskAttemptCountMap.get(taskId);
             			TaskExecutor taskExecutor = removeTask(runTasks, taskId);
-            			if(taskExecutor.supportFailOver()){
+            			if(taskExecutor.supportFailOver() && attemptCount < taskMaxRetryTimes){
+                            taskExecutor.shutdown(); //关闭老的executor
             				Configuration taskConfig = taskConfigMap.get(taskId);
             				taskQueue.offer(taskConfig); //重新加入任务列表
             			}else{
@@ -159,7 +171,9 @@ public class TaskGroupContainer extends AbstractContainer {
             		}else if(taskCommunication.getState() == State.KILLED){
             			failedOrKilled = true;
             			break;
-            		}
+            		}else if(taskCommunication.getState() == State.SUCCEEDED){
+                        removeTask(runTasks, taskId);
+                    }
             	}
             	
                 // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
@@ -176,14 +190,25 @@ public class TaskGroupContainer extends AbstractContainer {
                 
                 //3.有任务未执行，且正在运行的任务数小于最大通道限制
                 while(!taskQueue.isEmpty() && runTasks.size() < channelNumber){
-                	Configuration taskConfig = taskQueue.poll();
+                    Integer taskId = taskQueue.peek().getInt(CoreConstant.TASK_ID);
+                    Long lastAttemptTime = taskAttemptTimeMap.get(taskId);
+                    if(lastAttemptTime!=null && (System.currentTimeMillis() - lastAttemptTime) < taskRetryIntervalInMsec){
+                        LOG.info("taskGroup[{}] taskId[{}] has not retrieve retry interval, lastAttemptTime[{}]",
+                                this.taskGroupId, taskId, lastAttemptTime);
+                        break;
+                    }
+                    Integer attemptCount = taskAttemptCountMap.get(taskId);
+                    Configuration taskConfig = taskQueue.remove();
                 	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone());
                 	taskExecutor.doStart();
-                	runTasks.add(taskExecutor);
+                    taskAttemptCountMap.put(taskId, attemptCount+1);
+                    runTasks.add(taskExecutor);
+                    LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] has already start",
+                            this.taskGroupId, taskId, attemptCount+1);
                 }
 
-                //4.任务列表为空，搜集状态为success，且executor已结束--->成功
-                if (taskQueue.isEmpty() && containerCommunicator.collectState() == State.SUCCEEDED && isAllTaskDone(runTasks)) {
+                //4.任务列表为空，executor已结束, 搜集状态为success--->成功
+                if (taskQueue.isEmpty() && isAllTaskDone(runTasks) && containerCommunicator.collectState() == State.SUCCEEDED) {
                 	// 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
                     nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
                     nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
@@ -238,6 +263,15 @@ public class TaskGroupContainer extends AbstractContainer {
         	map.put(taskId, taskConfig);
     	}
     	return map;
+    }
+
+    private Map<Integer, Integer> buildTaskAttemptMap(List<Configuration> configurations){
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
+        for(Configuration taskConfig : configurations){
+            int taskId = taskConfig.getInt(CoreConstant.TASK_ID);
+            map.put(taskId, 0);
+        }
+        return map;
     }
     
     private Queue<Configuration> buildRemainTasks(List<Configuration> configurations){
@@ -364,6 +398,7 @@ public class TaskGroupContainer extends AbstractContainer {
                         FrameworkErrorCode.RUNTIME_ERROR,
                         this.taskCommunication.getThrowable());
             }
+
         }
 
         private AbstractRunner generateRunner(PluginType pluginType) {
@@ -438,6 +473,17 @@ public class TaskGroupContainer extends AbstractContainer {
         
         private boolean supportFailOver(){
         	return writerRunner.supportFailOver();
+        }
+
+        private void shutdown(){
+            writerRunner.shutdown();
+            readerRunner.shutdown();
+            if(writerThread.isAlive()){
+                writerThread.interrupt();
+            }
+            if(readerThread.isAlive()){
+                readerThread.interrupt();
+            }
         }
     }
 }

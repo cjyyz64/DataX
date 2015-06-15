@@ -17,6 +17,7 @@
 package com.alibaba.datax.core.transport.exchanger;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.plugin.RecordReceiver;
@@ -33,6 +34,8 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 	private Configuration configuration;
 
 	private static Class<? extends Record> RECORD_CLASS;
+
+	private volatile boolean shutdown = false;
 
 	@SuppressWarnings("unchecked")
 	public RecordExchanger(final Channel channel) {
@@ -52,6 +55,9 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public Record getFromReader() {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		Record record = this.channel.pull();
 		return (record instanceof TerminateRecord ? null : record);
 	}
@@ -68,6 +74,9 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void sendToWriter(Record record) {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		this.channel.push(record);
 	}
 
@@ -77,6 +86,14 @@ public class RecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void terminate() {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		this.channel.pushTerminate(TerminateRecord.get());
+	}
+
+	@Override
+	public void shutdown(){
+		shutdown = true;
 	}
 }

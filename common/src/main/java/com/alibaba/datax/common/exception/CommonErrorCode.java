@@ -12,7 +12,8 @@ public enum CommonErrorCode implements ErrorCode {
     CONVERT_OVER_FLOW("Common-02", "同步数据出现业务脏数据情况，数据类型转换溢出 ."),
     RETRY_FAIL("Common-10", "方法调用多次仍旧失败 ."),
     RUNTIME_ERROR("Common-11", "运行时内部调用错误 ."),
-    HOOK_INTERNAL_ERROR("Common-12", "Hook运行错误 .");
+    HOOK_INTERNAL_ERROR("Common-12", "Hook运行错误 ."),
+    SHUT_DOWN_TASK("Common-20", "Task收到了shutdown指令，为failover做准备");
 
     private final String code;
 

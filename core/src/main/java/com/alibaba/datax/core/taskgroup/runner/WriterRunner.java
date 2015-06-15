@@ -56,4 +56,8 @@ public class WriterRunner extends AbstractRunner implements Runnable {
     	Writer.Task taskWriter = (Writer.Task) this.getPlugin();
     	return taskWriter.supportFailOver();
     }
+
+    public void shutdown(){
+        recordReceiver.shutdown();
+    }
 }

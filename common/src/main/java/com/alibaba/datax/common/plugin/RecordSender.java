@@ -28,4 +28,5 @@ public interface RecordSender {
 
 	public void terminate();
 
+	public void shutdown();
 }
