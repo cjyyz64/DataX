@@ -72,7 +72,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
             this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
             this.columnNumber = this.columns.size();
-            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, 2048);
             this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
@@ -202,12 +202,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                         String tableName = tableBufferEntry.getKey();
                         List<Record> recordList = tableBufferEntry.getValue();
                         String writeRecordSql = tableWriteSqlMap.get(tableName);
-                        preparedStatement = connection.prepareStatement(writeRecordSql);
-                        for (Record record : recordList) {
-                            preparedStatement = fillPreparedStatement(preparedStatement, record);
-                            preparedStatement.addBatch();
+                        try {
+                            preparedStatement = connection.prepareStatement(writeRecordSql);
+                            for (Record record : recordList) {
+                                preparedStatement = fillPreparedStatement(preparedStatement, record);
+                                preparedStatement.addBatch();
+                            }
+                            preparedStatement.executeBatch();
+                        } finally {
+                            DBUtil.closeDBResources(preparedStatement, null);
                         }
-                        preparedStatement.executeBatch();
                     }
                     connection.commit();
 
