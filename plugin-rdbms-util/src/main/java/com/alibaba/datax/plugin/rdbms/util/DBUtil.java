@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
@@ -502,7 +503,9 @@ public final class DBUtil {
                 }
             }
         }catch (DataXException e){
-            throw new DataXException(e.getErrorCode(),e.getMessage());
+            ErrorCode errorCode = e.getErrorCode();
+            String errMessage = e.getMessage().substring(errorCode.toString().length());
+            throw new DataXException(errorCode,errMessage);
         }catch (Exception e) {
             LOG.warn("test connection of [{}] failed, for {}.", url,
                     e.getMessage());
