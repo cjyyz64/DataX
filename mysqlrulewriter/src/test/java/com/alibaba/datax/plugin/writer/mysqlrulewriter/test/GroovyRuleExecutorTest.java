@@ -26,6 +26,15 @@ public class GroovyRuleExecutorTest {
     }
 
     @Test
+    public void testExecuteStringGroovy() throws Exception {
+        Map<String, Object> columnValues = new HashMap<String, Object>();
+        columnValues.put("id", "test123234234234234234234234234");
+        GroovyRuleExecutor groovyRule = new GroovyRuleExecutor("String table_index = #id#.substring(13,15); int temp = Integer.parseInt(table_index); return String.format(\"%d\",(Integer)temp % 100);", "test_{0}");
+        String result = groovyRule.executeRule(columnValues);
+        System.out.println(groovyRule.executeRule(columnValues));
+    }
+
+    @Test
     public void testRuleExecute() {
         Map<String, Object> columnValues = new HashMap<String, Object>();
         GroovyRuleExecutor groovyRule = new GroovyRuleExecutor("((#id#).longValue() % 8).intdiv(4)", "datax_3_mysqlrulewriter_{00}");
