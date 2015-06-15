@@ -45,7 +45,7 @@ public class OracleWriter extends Writer {
 
 		@Override
 		public void prepare() {
-            this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
+            this.commonRdbmsWriterJob.privilegeValid(this.originalConfig, DATABASE_TYPE);
 			this.commonRdbmsWriterJob.prepare(this.originalConfig);
 		}
 

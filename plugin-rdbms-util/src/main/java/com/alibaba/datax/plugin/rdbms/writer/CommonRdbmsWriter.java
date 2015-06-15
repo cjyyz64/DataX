@@ -48,9 +48,17 @@ public class CommonRdbmsWriter {
         /*目前只支持MySQL Writer跟Oracle Writer;检查PreSQL跟PostSQL语法以及insert，delete权限*/
         public void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
             /*检查PreSql跟PostSql语句*/
+            prePostSqlValid(originalConfig,dataBaseType);
+            privilegeValid(originalConfig,dataBaseType);
+        }
+
+        public void prePostSqlValid(Configuration originalConfig,DataBaseType dataBaseType){
+            /*检查PreSql跟PostSql语句*/
             WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
             WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
+        }
 
+        public void privilegeValid(Configuration originalConfig,DataBaseType dataBaseType){
             /*检查insert 跟delete权限*/
             String username = originalConfig.getString(Key.USERNAME);
             String password = originalConfig.getString(Key.PASSWORD);
