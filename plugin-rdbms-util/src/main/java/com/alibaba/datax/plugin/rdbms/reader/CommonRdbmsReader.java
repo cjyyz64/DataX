@@ -79,7 +79,8 @@ public class CommonRdbmsReader {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
-                    e.printStackTrace();
+                    DataXException de = (DataXException) e.getCause();
+                    throw new DataXException(de.getErrorCode(),de.getMessage());
                 }
             }
             exec.shutdownNow();
