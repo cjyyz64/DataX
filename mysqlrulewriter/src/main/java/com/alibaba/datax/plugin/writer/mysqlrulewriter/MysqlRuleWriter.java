@@ -116,7 +116,7 @@ public class MysqlRuleWriter extends Writer {
                         // 说明有 postSql 配置，则此处删除掉
                         Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl, username, password);
                         LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls, ";"), jdbcUrl);
-                        WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl,DATABASE_TYPE);
+                        WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl, DATABASE_TYPE);
                         DBUtil.closeDBResources(null, null, conn);
                     }
                 }

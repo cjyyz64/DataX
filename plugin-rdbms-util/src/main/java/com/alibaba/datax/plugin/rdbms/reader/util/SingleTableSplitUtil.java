@@ -142,10 +142,7 @@ public class SingleTableSplitUtil {
             conn = DBUtil.getConnection(DATABASE_TYPE, jdbcURL, username,
                     password);
             try {
-                DBUtil.sqlValid(pkRangeSQL,DATABASE_TYPE);
                 rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
-            } catch (ParserException e){
-                throw RdbmsException.asSqlParserException(DATABASE_TYPE,e,pkRangeSQL);
             }catch (Exception e) {
                 throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL,table,username);
             }

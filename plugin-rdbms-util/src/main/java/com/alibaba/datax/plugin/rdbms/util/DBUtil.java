@@ -46,23 +46,20 @@ public final class DBUtil {
                     for (String url : jdbcUrls) {
                         if (StringUtils.isNotBlank(url)) {
                             url = url.trim();
-                            try{
-                                if (null != preSql && !preSql.isEmpty()) {
-                                    connOK = testConnWithoutRetry(dataBaseType,
-                                            url, username, password, preSql);
-                                } else {
-                                    connOK = testConnWithoutRetry(dataBaseType,
-                                            url, username, password, checkSlave);
-                                }
-                                if (connOK) {
-                                    return url;
-                                }
-                            }catch (Exception e){
-                                throw e;
+                            if (null != preSql && !preSql.isEmpty()) {
+                                connOK = testConnWithoutRetry(dataBaseType,
+                                        url, username, password, preSql);
+                            } else {
+                                connOK = testConnWithoutRetry(dataBaseType,
+                                        url, username, password, checkSlave);
+                            }
+                            if (connOK) {
+                                return url;
                             }
                         }
                     }
-                    throw new Exception(DBUtilErrorCode.JDBC_NULL.toString());
+                    throw new Exception("DataX无法连接对应的数据库，可能原因是：1) 配置的ip/port/database/jdbc错误，无法连接。2) 配置的username/password错误，鉴权失败。请和DBA确认该数据库的连接信息是否正确。");
+//                    throw new Exception(DBUtilErrorCode.JDBC_NULL.toString());
                 }
             }, 3, 1000L, true);
         } catch (Exception e) {
@@ -411,7 +408,7 @@ public final class DBUtil {
     public static List<String> getTableColumns(DataBaseType dataBaseType,
                                                String jdbcUrl, String user, String pass, String tableName) {
         Connection conn = getConnection(dataBaseType, jdbcUrl, user, pass);
-        return getTableColumnsByConn(dataBaseType,conn, tableName, "jdbcUrl:"+jdbcUrl);
+        return getTableColumnsByConn(dataBaseType, conn, tableName, "jdbcUrl:"+jdbcUrl);
     }
 
     public static List<String> getTableColumnsByConn(DataBaseType dataBaseType, Connection conn, String tableName, String basicMsg) {
@@ -490,7 +487,7 @@ public final class DBUtil {
     }
 
     public static boolean testConnWithoutRetry(DataBaseType dataBaseType,
-                                               String url, String user, String pass, boolean checkSlave) throws Exception {
+                                               String url, String user, String pass, boolean checkSlave){
         Connection connection = null;
 
         try {
@@ -504,10 +501,11 @@ public final class DBUtil {
                     return true;
                 }
             }
-        } catch (Exception e) {
+        }catch (DataXException e){
+            throw new DataXException(e.getErrorCode(),e.getMessage());
+        }catch (Exception e) {
             LOG.warn("test connection of [{}] failed, for {}.", url,
                     e.getMessage());
-            throw e;
         } finally {
             DBUtil.closeDBResources(null, connection);
         }

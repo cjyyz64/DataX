@@ -5,7 +5,6 @@ import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
-import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 
 import java.util.List;
 
@@ -21,7 +20,7 @@ public class MysqlWriter extends Writer {
         @Override
         public void preCheck(){
             this.init();
-            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
         }
 
         @Override
@@ -34,7 +33,7 @@ public class MysqlWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
-            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
             this.commonRdbmsWriterJob.prepare(this.originalConfig);
         }
 
