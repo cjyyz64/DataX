@@ -69,15 +69,15 @@ public class CommonRdbmsReader {
                 e.printStackTrace();
             }
 
-//            for (Future<Boolean> result : results){
-//                try {
-//                    result.get();
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                } catch (ExecutionException e) {
-//                    e.printStackTrace();
-//                }
-//            }
+            for (Future<Boolean> result : results){
+                try {
+                    result.get();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (ExecutionException e) {
+                    e.printStackTrace();
+                }
+            }
             exec.shutdownNow();
         }
 
