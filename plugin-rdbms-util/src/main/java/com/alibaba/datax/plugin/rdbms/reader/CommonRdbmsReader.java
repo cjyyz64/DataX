@@ -68,19 +68,17 @@ public class CommonRdbmsReader {
             try {
                 results = exec.invokeAll(taskList);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
 
             for (Future<Boolean> result : results){
                 try {
                     result.get();
-                } catch (DataXException e){
-                    throw new DataXException(e.getErrorCode(),e.getMessage());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 } catch (ExecutionException e) {
                     DataXException de = (DataXException) e.getCause();
                     throw de;
+                }catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
             exec.shutdownNow();

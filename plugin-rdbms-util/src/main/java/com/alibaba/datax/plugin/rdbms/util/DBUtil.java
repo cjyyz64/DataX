@@ -501,8 +501,6 @@ public final class DBUtil {
                     return true;
                 }
             }
-        } catch (DataXException e){
-            throw e;
         } catch (Exception e) {
             LOG.warn("test connection of [{}] failed, for {}.", url,
                     e.getMessage());
