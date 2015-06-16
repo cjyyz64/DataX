@@ -22,6 +22,12 @@ public enum OdpsWriterErrorCode implements ErrorCode {
 
     RUN_SQL_ODPS_EXCEPTION("OdpsWriter-13", "执行 ODPS Sql 时抛出异常, 可重试"),
 
+    ACCOUNT_TYPE_ERROR("OdpsWriter-30", "账号类型错误."),
+
+    PARTITION_ERROR("OdpsWriter-31", "分区配置错误."),
+
+    COLUMN_NOT_EXIST("OdpsWriter-32", "用户配置的列不存在."),
+
     ODPS_PROJECT_NOT_FOUNT("OdpsWriter-100", "您配置的值不合法, odps project 不存在."),  //ODPS-0420111: Project not found
 
     ODPS_TABLE_NOT_FOUNT("OdpsWriter-101", "您配置的值不合法, odps table 不存在"), // ODPS-0130131:Table not found

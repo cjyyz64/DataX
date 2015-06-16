@@ -102,7 +102,7 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ACCOUNT_TYPE_ERROR,
                         String.format("账号类型错误，因为你的账号 [%s] 不是datax目前支持的账号类型，目前仅支持aliyun, taobao账号，请修改您的账号信息.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, this.accountType);
