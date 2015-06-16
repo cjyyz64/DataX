@@ -467,7 +467,7 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("您没有配置分区信息，因为你配置的表是分区表:%s 如果需要进行 truncate 操作，必须指定需要清空的具体分区. 请修改分区配置，格式形如 pt=${bizdate} .",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.PARTITION_ERROR, String.format("您没有配置分区信息，因为你配置的表是分区表:%s 如果需要进行 truncate 操作，必须指定需要清空的具体分区. 请修改分区配置，格式形如 pt=${bizdate} .",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate partition=[{}] in table=[{}].", partition, table.getName());
@@ -476,7 +476,7 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE, String.format("分区信息配置错误，你的ODPS表是非分区表:%s 进行 truncate 操作时不需要指定具体分区值. 请检查您的分区配置，删除该配置项的值.",
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.PARTITION_ERROR, String.format("分区信息配置错误，你的ODPS表是非分区表:%s 进行 truncate 操作时不需要指定具体分区值. 请检查您的分区配置，删除该配置项的值.",
                             table.getName()));
                 } else {
                     LOG.info("Try to truncate table:[{}].", table.getName());
@@ -488,7 +488,7 @@ public class OdpsUtil {
             if (isPartitionedTable) {
                 //分区表
                 if (StringUtils.isBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.PARTITION_ERROR,
                             String.format("您的目的表是分区表，写入分区表:%s 时必须指定具体分区值. 请修改您的分区配置信息，格式形如 格式形如 pt=${bizdate}.", table.getName()));
                 } else {
                     boolean isPartitionExists = OdpsUtil.isPartitionExist(table, partition);
@@ -501,7 +501,7 @@ public class OdpsUtil {
             } else {
                 //非分区表
                 if (StringUtils.isNotBlank(partition)) {
-                    throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                    throw DataXException.asDataXException(OdpsWriterErrorCode.PARTITION_ERROR,
                             String.format("您的目的表是非分区表，写入非分区表:%s 时不需要指定具体分区值. 请删除分区配置信息", table.getName()));
                 }
             }
