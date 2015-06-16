@@ -82,14 +82,6 @@ public final class OriginalConfPretreatmentUtil {
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.TABLE), expandedTables);
-            /*mysql 类型，检查insert 权限*/
-//            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
-//                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
-//
-//                if(!hasInsertPri){
-//                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
-//                }
-//            }
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);

@@ -58,9 +58,9 @@
 			<scope>test</scope>
 		</dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>0.10.4</version>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>r05</version>
         </dependency>
     </dependencies>
 </project>

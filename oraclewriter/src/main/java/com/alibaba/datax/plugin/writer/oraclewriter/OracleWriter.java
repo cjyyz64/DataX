@@ -8,7 +8,6 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
-import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 
 import java.util.List;
 
@@ -21,7 +20,7 @@ public class OracleWriter extends Writer {
 
         public void preCheck() {
             this.init();
-            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsWriterJob.writerPreCheck(this.originalConfig, DATABASE_TYPE);
         }
 
         @Override
@@ -46,7 +45,7 @@ public class OracleWriter extends Writer {
 
 		@Override
 		public void prepare() {
-            WriterUtil.writerPreCheck(this.originalConfig,DATABASE_TYPE);
+            this.commonRdbmsWriterJob.privilegeValid(this.originalConfig, DATABASE_TYPE);
 			this.commonRdbmsWriterJob.prepare(this.originalConfig);
 		}
 

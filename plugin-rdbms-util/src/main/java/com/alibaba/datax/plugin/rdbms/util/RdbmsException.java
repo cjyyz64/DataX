@@ -79,8 +79,9 @@ public class RdbmsException extends DataXException{
             }
 
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
+        }
 
-        }else if (dataBaseType.equals(DataBaseType.Oracle)){
+        if (dataBaseType.equals(DataBaseType.Oracle)){
             DBUtilErrorCode dbUtilErrorCode = oracleQueryErrorAna(e.getMessage());
             if (dbUtilErrorCode == DBUtilErrorCode.ORACLE_QUERY_TABLE_NAME_ERROR && table != null){
                 return DataXException.asDataXException(dbUtilErrorCode,"表名为："+table+" 执行的SQL为:"+querySql+" 具体错误信息为："+e);
@@ -91,9 +92,9 @@ public class RdbmsException extends DataXException{
 
             return DataXException.asDataXException(dbUtilErrorCode,"执行的SQL为: "+querySql+" 具体错误信息为："+e);
 
-        }else{
-            return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,querySql+e);
         }
+
+        return DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL, "执行的SQL为: "+querySql+" 具体错误信息为："+e);
     }
 
     public static DBUtilErrorCode mySqlQueryErrorAna(String e){

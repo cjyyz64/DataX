@@ -11,7 +11,7 @@ import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
-import com.alibaba.druid.sql.parser.ParserException;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,8 @@ public class CommonRdbmsReader {
                     originalConfig.toJSON());
         }
 
-        public void preCheck(Configuration originalConfig,DataBaseType dataBaseType){
+        public void preCheck(Configuration originalConfig,DataBaseType dataBaseType) {
+            /*检查每个表是否有读权限，以及querySql跟splik Key是否正确*/
             Configuration queryConf = ReaderSplitUtil.doPreCheckSplit(originalConfig);
             String splitPK = queryConf.getString(Key.SPLIT_PK);
             List<Object> connList = queryConf.getList(Constant.CONN_MARK, Object.class);
@@ -63,29 +64,24 @@ public class CommonRdbmsReader {
                 PreCheckTask t = new PreCheckTask(username,password,connConf,dataBaseType,splitPK);
                 taskList.add(t);
             }
-            List<Future<Boolean>> results = new ArrayList<Future<Boolean>>();
+            List<Future<Boolean>> results = Lists.newArrayList();
             try {
                 results = exec.invokeAll(taskList);
-            } catch (DataXException e){
-                LOG.error(e.getMessage());
-            }catch (InterruptedException e) {
-                e.printStackTrace();
-            }catch (Exception e){
-                LOG.error(e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
 
-            for (int i = 0; i < results.size();i++){
-                try{
-                    results.get(i).get();
-                }catch (DataXException e){
-                    LOG.error(e.getMessage());
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            for (Future<Boolean> result : results){
+                try {
+                    result.get();
                 } catch (ExecutionException e) {
-                    e.printStackTrace();
+                    DataXException de = (DataXException) e.getCause();
+                    throw de;
+                }catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
             }
-            exec.shutdown();
+            exec.shutdownNow();
         }
 
 
@@ -153,7 +149,6 @@ public class CommonRdbmsReader {
             int columnNumber = 0;
             ResultSet rs = null;
             try {
-                DBUtil.sqlValid(querySql,dataBaseType);
                 rs = DBUtil.query(conn, querySql, fetchSize);
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = metaData.getColumnCount();
@@ -164,10 +159,8 @@ public class CommonRdbmsReader {
 
                 LOG.info("Finished read record by Sql: [{}\n] {}.",
                         querySql, basicMsg);
-            } catch (ParserException e){
-                throw RdbmsException.asSqlParserException(this.dataBaseType,e,querySql);
             }catch (Exception e) {
-                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table,username);
+                throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);
             } finally {
                 DBUtil.closeDBResources(null, conn);
             }

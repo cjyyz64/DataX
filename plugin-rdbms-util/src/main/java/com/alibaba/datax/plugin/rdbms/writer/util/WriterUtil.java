@@ -99,18 +99,10 @@ public final class WriterUtil {
             stmt = conn.createStatement();
             for (String sql : sqls) {
                 currentSql = sql;
-                DBUtil.sqlValid(sql,dataBaseType);
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
-        } catch (ParserException e){
-            throw RdbmsException.asSqlParserException(dataBaseType,e,currentSql);
         } catch (Exception e) {
-            if (dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Oracle){
-                throw RdbmsException.asQueryException(dataBaseType,e,currentSql,null,null);
-            }else{
-                throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
-                        String.format("您的sql配置有误. 因为根据您的配置执行 Sql:%s 语句失败，相关上下文信息是:%s. 请检查您的配置并作出修改.", currentSql, basicMessage), e);
-            }
+            throw RdbmsException.asQueryException(dataBaseType,e,currentSql,null,null);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }
@@ -180,34 +172,5 @@ public final class WriterUtil {
         }
     }
 
-    /*目前只支持MySQL Writer跟Oracle Writer*/
-    public static void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
-        /*检查PreSql跟PostSql语句*/
-        WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
-        WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
 
-        /*检查insert 跟delete权限*/
-        String username = originalConfig.getString(Key.USERNAME);
-        String password = originalConfig.getString(Key.PASSWORD);
-        List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
-                Object.class);
-
-        for (int i = 0, len = connections.size(); i < len; i++) {
-            Configuration connConf = Configuration.from(connections.get(i).toString());
-            String jdbcUrl = connConf.getString(Key.JDBC_URL);
-            List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-            boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
-
-            if(!hasInsertPri){
-                throw RdbmsException.asDeletePriException(dataBaseType,originalConfig.getString(Key.USERNAME), jdbcUrl);
-            }
-
-            if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
-                boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
-                if(!hasDeletePri) {
-                    throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
-                }
-            }
-        }
-    }
 }
