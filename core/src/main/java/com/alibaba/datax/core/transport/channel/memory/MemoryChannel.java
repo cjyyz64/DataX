@@ -53,6 +53,11 @@ public class MemoryChannel extends Channel {
 	}
 
 	@Override
+	public void clear(){
+		this.queue.clear();
+	}
+
+	@Override
 	protected void doPush(Record r) {
 		try {
 			this.queue.put(r);

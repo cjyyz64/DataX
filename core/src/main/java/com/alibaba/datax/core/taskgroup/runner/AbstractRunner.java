@@ -25,7 +25,6 @@ public abstract class AbstractRunner {
     public void destroy() {
         if (this.plugin != null) {
             this.plugin.destroy();
-            this.plugin = null;
         }
     }
 

@@ -120,6 +120,8 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 	@Override
 	public void shutdown(){
 		shutdown = true;
+		buffer.clear();
+		channel.clear();
 	}
 
 	private void receive() {

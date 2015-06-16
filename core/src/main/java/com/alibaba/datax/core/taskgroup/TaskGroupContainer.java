@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.taskgroup;
 
 import com.alibaba.datax.common.constant.PluginType;
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
@@ -122,6 +123,8 @@ public class TaskGroupContainer extends AbstractContainer {
 
             long taskRetryIntervalInMsec = this.configuration.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_RETRYINTERVALINMSEC, 10000);
+
+            long taskMaxWaitInMsec = this.configuration.getLong(CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_MAXWAITINMSEC, 60000);
             
             List<Configuration> taskConfigs = this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
@@ -138,11 +141,10 @@ public class TaskGroupContainer extends AbstractContainer {
             
             this.containerCommunicator.registerCommunication(taskConfigs);
 
-            Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs);
-            Map<Integer, Integer> taskAttemptCountMap = buildTaskAttemptMap(taskConfigs);
-            Map<Integer, Long> taskAttemptTimeMap = new HashMap<Integer, Long>();
-            Queue<Configuration> taskQueue = buildRemainTasks(taskConfigs);
-            List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber);
+            Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs); //taskId与task配置
+            Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次实例
+            List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
+            List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
 
             long lastReportTimeStamp = 0;
             Communication lastTaskGroupContainerCommunication = new Communication();
@@ -154,16 +156,16 @@ public class TaskGroupContainer extends AbstractContainer {
             	for(Map.Entry<Integer, Communication> entry : communicationMap.entrySet()){
             		Integer taskId = entry.getKey();
             		Communication taskCommunication = entry.getValue();
-                    //task最近一次运行时间
-                    taskAttemptTimeMap.put(taskId, taskCommunication.getTimestamp());
                     //失败，看task是否支持failover，重试次数未超过最大限制
             		if(taskCommunication.getState() == State.FAILED){
-                        Integer attemptCount = taskAttemptCountMap.get(taskId);
-            			TaskExecutor taskExecutor = removeTask(runTasks, taskId);
-            			if(taskExecutor.supportFailOver() && attemptCount < taskMaxRetryTimes){
+                        taskCommunication.setTimestamp(System.currentTimeMillis());
+                        TaskExecutor taskExecutor = removeTask(runTasks, taskId);
+                        taskFailedExecutorMap.put(taskId, taskExecutor);
+            			if(taskExecutor.supportFailOver() && taskExecutor.getAttemptCount() < taskMaxRetryTimes){
                             taskExecutor.shutdown(); //关闭老的executor
+                            containerCommunicator.resetCommunication(taskId); //将task的状态重置
             				Configuration taskConfig = taskConfigMap.get(taskId);
-            				taskQueue.offer(taskConfig); //重新加入任务列表
+            				taskQueue.add(taskConfig); //重新加入任务列表
             			}else{
             				failedOrKilled = true;
                 			break;
@@ -189,22 +191,38 @@ public class TaskGroupContainer extends AbstractContainer {
                 }
                 
                 //3.有任务未执行，且正在运行的任务数小于最大通道限制
-                while(!taskQueue.isEmpty() && runTasks.size() < channelNumber){
-                    Integer taskId = taskQueue.peek().getInt(CoreConstant.TASK_ID);
-                    Long lastAttemptTime = taskAttemptTimeMap.get(taskId);
-                    if(lastAttemptTime!=null && (System.currentTimeMillis() - lastAttemptTime) < taskRetryIntervalInMsec){
-                        LOG.info("taskGroup[{}] taskId[{}] has not retrieve retry interval, lastAttemptTime[{}]",
-                                this.taskGroupId, taskId, lastAttemptTime);
-                        break;
+                Iterator<Configuration> iterator = taskQueue.iterator();
+                while(iterator.hasNext() && runTasks.size() < channelNumber){
+                    Configuration taskConfig = iterator.next();
+                    Integer taskId = taskConfig.getInt(CoreConstant.TASK_ID);
+                    int attemptCount = 1;
+                    TaskExecutor lastExecutor = taskFailedExecutorMap.get(taskId);
+                    if(lastExecutor!=null){
+                        attemptCount = lastExecutor.getAttemptCount() + 1;
+                        long now = System.currentTimeMillis();
+                        long lastAttemptTime = lastExecutor.getTimeStamp();
+                        if(now - lastAttemptTime < taskRetryIntervalInMsec){  //未到等待时间，继续留在队列
+                            continue;
+                        }
+                        if(!lastExecutor.isShutdown()){ //上次失败的task仍未结束
+                            if(now - lastAttemptTime > taskMaxWaitInMsec){
+                                throw DataXException.asDataXException(CommonErrorCode.WAIT_TIME_EXCEED, "task failover等待超时");
+                            }else{
+                                continue;
+                            }
+                        }else{
+                            LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] has already shutdown",
+                                    this.taskGroupId, taskId, lastExecutor.getAttemptCount());
+                        }
                     }
-                    Integer attemptCount = taskAttemptCountMap.get(taskId);
-                    Configuration taskConfig = taskQueue.remove();
-                	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone());
+                	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone(), attemptCount);
                 	taskExecutor.doStart();
-                    taskAttemptCountMap.put(taskId, attemptCount+1);
+
+                    iterator.remove();
                     runTasks.add(taskExecutor);
-                    LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] has already start",
-                            this.taskGroupId, taskId, attemptCount+1);
+                    taskFailedExecutorMap.remove(taskId);
+                    LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is started",
+                            this.taskGroupId, taskId, attemptCount);
                 }
 
                 //4.任务列表为空，executor已结束, 搜集状态为success--->成功
@@ -265,19 +283,10 @@ public class TaskGroupContainer extends AbstractContainer {
     	return map;
     }
 
-    private Map<Integer, Integer> buildTaskAttemptMap(List<Configuration> configurations){
-        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for(Configuration taskConfig : configurations){
-            int taskId = taskConfig.getInt(CoreConstant.TASK_ID);
-            map.put(taskId, 0);
-        }
-        return map;
-    }
-    
-    private Queue<Configuration> buildRemainTasks(List<Configuration> configurations){
-    	Queue<Configuration> remainTasks = new LinkedList<Configuration>();
+    private List<Configuration> buildRemainTasks(List<Configuration> configurations){
+    	List<Configuration> remainTasks = new LinkedList<Configuration>();
     	for(Configuration taskConfig : configurations){
-    		remainTasks.offer(taskConfig);
+    		remainTasks.add(taskConfig);
     	}
     	return remainTasks;
     }
@@ -312,6 +321,8 @@ public class TaskGroupContainer extends AbstractContainer {
 
         private int taskId;
 
+        private int attemptCount;
+
         private Channel channel;
 
         private Thread readerThread;
@@ -330,7 +341,7 @@ public class TaskGroupContainer extends AbstractContainer {
          */
         private Communication taskCommunication;
 
-        public TaskExecutor(Configuration taskConf) {
+        public TaskExecutor(Configuration taskConf, int attemptCount) {
             // 获取该taskExecutor的配置
             this.taskConfig = taskConf;
             Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER)
@@ -339,6 +350,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
             // 得到taskId
             this.taskId = this.taskConfig.getInt(CoreConstant.TASK_ID);
+            this.attemptCount = attemptCount;
 
             /**
              * 由taskId得到该taskExecutor的Communication
@@ -470,6 +482,14 @@ public class TaskGroupContainer extends AbstractContainer {
         private int getTaskId(){
         	return taskId;
         }
+
+        private long getTimeStamp(){
+            return taskCommunication.getTimestamp();
+        }
+
+        private int getAttemptCount(){
+            return attemptCount;
+        }
         
         private boolean supportFailOver(){
         	return writerRunner.supportFailOver();
@@ -484,6 +504,10 @@ public class TaskGroupContainer extends AbstractContainer {
             if(readerThread.isAlive()){
                 readerThread.interrupt();
             }
+        }
+
+        private boolean isShutdown(){
+            return !readerThread.isAlive() && !writerThread.isAlive();
         }
     }
 }

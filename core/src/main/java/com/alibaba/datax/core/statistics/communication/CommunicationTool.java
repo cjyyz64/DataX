@@ -58,8 +58,8 @@ public final class CommunicationTool {
         long recordsSpeed = (totalReadRecords
                 - getTotalReadRecords(old)) / sec;
 
-        now.setLongCounter(BYTE_SPEED, bytesSpeed);
-        now.setLongCounter(RECORD_SPEED, recordsSpeed);
+        now.setLongCounter(BYTE_SPEED, bytesSpeed < 0 ? 0 : bytesSpeed);
+        now.setLongCounter(RECORD_SPEED, recordsSpeed < 0 ? 0 : recordsSpeed);
         now.setDoubleCounter(PERCENTAGE, now.getLongCounter(STAGE) / (double) totalStage);
 
         if (old.getThrowable() != null) {

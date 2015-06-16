@@ -13,7 +13,8 @@ public enum CommonErrorCode implements ErrorCode {
     RETRY_FAIL("Common-10", "方法调用多次仍旧失败 ."),
     RUNTIME_ERROR("Common-11", "运行时内部调用错误 ."),
     HOOK_INTERNAL_ERROR("Common-12", "Hook运行错误 ."),
-    SHUT_DOWN_TASK("Common-20", "Task收到了shutdown指令，为failover做准备");
+    SHUT_DOWN_TASK("Common-20", "Task收到了shutdown指令，为failover做准备"),
+    WAIT_TIME_EXCEED("Common-21", "等待时间超出范围");
 
     private final String code;
 

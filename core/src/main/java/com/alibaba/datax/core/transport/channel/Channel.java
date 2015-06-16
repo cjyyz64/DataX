@@ -157,6 +157,8 @@ public abstract class Channel {
 
     public abstract boolean isEmpty();
 
+    public abstract void clear();
+
     private long getByteSize(final Collection<Record> rs) {
         long size = 0;
         for (final Record each : rs) {
