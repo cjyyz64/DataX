@@ -49,6 +49,7 @@ public class CommonRdbmsWriter {
         public void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
             /*检查PreSql跟PostSql语句*/
             prePostSqlValid(originalConfig,dataBaseType);
+            /*检查insert 跟delete权限*/
             privilegeValid(originalConfig,dataBaseType);
         }
 
