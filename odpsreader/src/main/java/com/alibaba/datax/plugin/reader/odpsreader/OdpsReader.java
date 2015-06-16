@@ -9,7 +9,6 @@ import com.alibaba.datax.plugin.reader.odpsreader.util.IdAndKeyUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsSplitUtil;
 import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.*;
-import com.aliyun.odps.data.RecordReader;
 import com.aliyun.odps.tunnel.TableTunnel.DownloadSession;
 
 import org.apache.commons.lang3.StringUtils;
@@ -38,56 +37,6 @@ public class OdpsReader extends Reader {
 
         public void preCheck() {
             this.init();
-        }
-
-        /**
-         * @unchecked
-         * 该方法目前是通过read一条数据去判断是否有select权限, 但由于链条过长, 需要调用四个走网络接口, 不适合用于校验权限
-         * 要等odps提供了check 权限的方法, 在加上.
-         */
-        public void checkReadPrivilege() {
-            boolean isPartitionTable = this.originalConfig.getBool(Constant.IS_PARTITIONED_TABLE);
-
-            String tunnelServer = this.originalConfig.getString(Key.TUNNEL_SERVER);
-            String projectName = this.originalConfig.getString(Key.PROJECT);
-            String tableName = this.originalConfig.getString(Key.TABLE);
-            String partition = this.originalConfig.getString(Key.PARTITION);
-
-
-            DownloadSession downloadSession = null;
-            if(isPartitionTable) {
-                downloadSession = OdpsUtil.createMasterSessionForPartitionedTable(this.odps, tunnelServer,
-                        projectName, tableName, partition);
-            } else {
-                downloadSession = OdpsUtil.createMasterSessionForNonPartitionedTable(this.odps, tunnelServer,
-                        projectName, tableName);
-            }
-            long count = downloadSession.getRecordCount();
-
-            if (count > 0) {
-                LOG.info(String.format(
-                        "Begin to read ODPS table:%s, partition:%s, startIndex:%s, count:%s.",
-                        tableName, partition, 0, count));
-                try {
-                    RecordReader recordReader = downloadSession.openRecordReader(0, 1);
-                    recordReader.read();
-                } catch (Exception e) {
-                    if(e.getMessage() != null) {
-                        if(e.getMessage().contains("You have NO privilege 'odps:Select'")) {
-                            throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL, "您没有读取该表的权限");
-                        }
-                    }
-
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL, e);
-
-                }
-            } else if (count == 0) {
-                LOG.warn("odps 源头表的行数为0, 目前无法检验select权限");
-            } else {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.READ_DATA_FAIL,
-                        String.format("源头表:%s 的分区:%s  读取行数为负数, 请联系 ODPS 管理员查看表状态!",
-                                tableName, partition));
-            }
         }
 
 
@@ -119,7 +68,7 @@ public class OdpsReader extends Reader {
 
             boolean isVirtualView = this.table.isVirtualView();
             if (isVirtualView) {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.VIRTUAL_VIEW_NOT_SUPPORT,
                         String.format("源头表:%s 是虚拟视图，DataX 不支持读取虚拟视图.", tableName));
             }
 
@@ -133,7 +82,7 @@ public class OdpsReader extends Reader {
                     splitMode.equalsIgnoreCase(Constant.PARTITION_SPLIT_MODE)) {
                 originalConfig.set(Key.SPLIT_MODE, splitMode);
             } else {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.SPLIT_MODE_ERROR,
                         String.format("您所配置的 splitMode:%s 不正确. splitMode 仅允许配置为 record 或者 partition.", splitMode));
             }
         }
@@ -157,14 +106,14 @@ public class OdpsReader extends Reader {
             if (isPartitionedTable) {
                 // 分区表，需要配置分区
                 if (null == userConfiguredPartitions || userConfiguredPartitions.isEmpty()) {
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                            String.format("分区信息没有配置.由于源头表:%s 为分区表,所以您需要配置其抽取的表的分区信息. 格式形如:pt=hello,ds=hangzhou，请您参考此格式修改该配置项.",
+                    throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_ERROR,
+                            String.format("分区信息没有配置.由于源头表:%s 为分区表, 所以您需要配置其抽取的表的分区信息. 格式形如:pt=hello,ds=hangzhou，请您参考此格式修改该配置项.",
                                     table.getName()));
                 } else {
                     List<String> allPartitions = OdpsUtil.getTableAllPartitions(table);
 
                     if (null == allPartitions || allPartitions.isEmpty()) {
-                        throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                        throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_ERROR,
                                 String.format("分区信息配置错误.源头表:%s 虽然为分区表, 但其实际分区值并不存在. 请确认源头表已经生成该分区，再进行数据抽取.",
                                         table.getName()));
                     }
@@ -174,7 +123,7 @@ public class OdpsReader extends Reader {
 
                     if (null == parsedPartitions || parsedPartitions.isEmpty()) {
                         throw DataXException.asDataXException(
-                                OdpsReaderErrorCode.ILLEGAL_VALUE,
+                                OdpsReaderErrorCode.PARTITION_ERROR,
                                 String.format(
                                         "分区配置错误，根据您所配置的分区没有匹配到源头表中的分区. 源头表所有分区是:[\n%s\n], 您配置的分区是:[\n%s\n]. 请您根据实际情况在作出修改. ",
                                         StringUtils.join(allPartitions, "\n"),
@@ -191,7 +140,7 @@ public class OdpsReader extends Reader {
                 // 非分区表，则不能配置分区
                 if (null != userConfiguredPartitions
                         && !userConfiguredPartitions.isEmpty()) {
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_ERROR,
                             String.format("分区配置错误，源头表:%s 为非分区表, 您不能配置分区. 请您删除该配置项. ", table.getName()));
                 }
             }
@@ -227,7 +176,7 @@ public class OdpsReader extends Reader {
                 comparedPartition = allStandardUserConfiguredPartitions.get(i);
                 comparedPartitionDepth = comparedPartition.split(",").length;
                 if (comparedPartitionDepth != firstPartitionDepth) {
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_ERROR,
                             String.format("分区配置错误, 您所配置的分区级数和该表的实际情况不一致, 比如分区:[%s] 是 %s 级分区, 而分区:[%s] 是 %s 级分区. DataX 是通过英文逗号判断您所配置的分区级数的. 正确的格式形如\"pt=${bizdate}, type=0\" ，请您参考示例修改该配置项. ",
                                     firstPartition, firstPartitionDepth, comparedPartition, comparedPartitionDepth));
                 }
@@ -235,7 +184,7 @@ public class OdpsReader extends Reader {
 
             int tableOriginalPartitionDepth = allStandardPartitions.get(0).split(",").length;
             if (firstPartitionDepth != tableOriginalPartitionDepth) {
-                throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                throw DataXException.asDataXException(OdpsReaderErrorCode.PARTITION_ERROR,
                         String.format("分区配置错误, 您所配置的分区:%s 的级数:%s 与您要读取的 ODPS 源头表的分区级数:%s 不相等. DataX 是通过英文逗号判断您所配置的分区级数的.正确的格式形如\"pt=${bizdate}, type=0\" ，请您参考示例修改该配置项.",
                                 firstPartition, firstPartitionDepth, tableOriginalPartitionDepth));
             }

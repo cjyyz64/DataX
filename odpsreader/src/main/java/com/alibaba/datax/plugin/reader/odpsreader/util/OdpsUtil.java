@@ -79,7 +79,7 @@ public final class OdpsUtil {
         } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ACCOUNT_TYPE_ERROR,
                     String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
         }
 
