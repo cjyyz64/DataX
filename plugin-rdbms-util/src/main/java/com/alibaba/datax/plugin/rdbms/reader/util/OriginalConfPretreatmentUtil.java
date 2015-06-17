@@ -68,6 +68,7 @@ public final class OriginalConfPretreatmentUtil {
         String password = originalConfig.getString(Key.PASSWORD);
         boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN,false);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
@@ -84,10 +85,15 @@ public final class OriginalConfPretreatmentUtil {
                     .getList(Key.JDBC_URL, String.class);
             List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
-            String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
-                    username, password, preSql, checkSlave);
 
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
+            String jdbcUrl;
+            if (isPreCheck){
+                jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(DATABASE_TYPE, jdbcUrls,
+                        username, password, preSql, checkSlave);
+            }else{
+                jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
+                        username, password, preSql, checkSlave);
+            }
 
             // 回写到connection[i].jdbcUrl
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,

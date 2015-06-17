@@ -21,7 +21,6 @@ public class SqlServerReader extends Reader {
 
 		@Override
 		public void init() {
-
 			this.originalConfig = super.getPluginJobConf();
 			int fetchSize = this.originalConfig.getInt(
 					com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,

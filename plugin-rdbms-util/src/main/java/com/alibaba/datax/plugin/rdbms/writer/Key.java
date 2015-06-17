@@ -26,9 +26,6 @@ public final class Key {
     //默认值：32m
     public final static String BATCH_BYTE_SIZE = "batchByteSize";
 
-    //TODO delete it
-    public final static String SESSION = "session";
-
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 
     public final static String DB_NAME_PATTERN = "dbNamePattern";
@@ -38,4 +35,6 @@ public final class Key {
     public final static String TABLE_NAME_PATTERN = "tableNamePattern";
 
     public final static String TABLE_RULE = "tableRule";
+
+    public final static String DRYRUN = "dryRun";
 }

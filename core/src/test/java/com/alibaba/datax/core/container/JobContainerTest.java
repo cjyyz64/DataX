@@ -352,4 +352,18 @@ public class JobContainerTest extends CaseInitializer {
         initMethod.invoke(jobContainer);
         initMethod.setAccessible(false);
     }
+
+    @Test
+    public void testStartDryRun() {
+        String path = JobContainerTest.class.getClassLoader()
+                .getResource(".").getFile();
+
+        this.configuration = ConfigParser.parse(path + File.separator
+                + "dryRunAll.json");
+        LoadUtil.bind(this.configuration);
+
+        JobContainer jobContainer = new JobContainer(
+                this.configuration);
+        jobContainer.start();
+    }
 }

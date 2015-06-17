@@ -60,7 +60,7 @@ public class TddlWriter extends Writer {
                 originalConfig.remove(Key.PRE_SQL);
                 Connection conn = tddlConnectionFactory.getConnecttion();
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.", StringUtils.join(renderedPreSqls, ";"), tddlConnectionFactory.getConnectionInfo());
-                WriterUtil.executeSqls(conn, renderedPreSqls, tddlConnectionFactory.getConnectionInfo());
+                WriterUtil.executeSqls(conn, renderedPreSqls, tddlConnectionFactory.getConnectionInfo(),DATABASE_TYPE);
                 DBUtil.closeDBResources(null, null, conn);
             }
             LOG.debug("After job prepare(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());
@@ -91,7 +91,7 @@ public class TddlWriter extends Writer {
                 Connection conn = tddlConnectionFactory.getConnecttion();
                 LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
                         StringUtils.join(renderedPostSqls, ";"), tddlConnectionFactory.getConnectionInfo());
-                WriterUtil.executeSqls(conn, renderedPostSqls, tddlConnectionFactory.getConnectionInfo());
+                WriterUtil.executeSqls(conn, renderedPostSqls, tddlConnectionFactory.getConnectionInfo(),DATABASE_TYPE);
                 DBUtil.closeDBResources(null, null, conn);
             }
         }

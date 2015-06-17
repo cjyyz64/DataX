@@ -18,7 +18,7 @@ public interface ErrorCode {
 
 	// 错误码描述
 	String getDescription();
-	
+
 	/** 必须提供toString的实现
 	 * 
 	 * <pre>

@@ -30,6 +30,11 @@ public class JdbcConnectionFactory implements ConnectionFactory {
     }
 
     @Override
+    public Connection getConnecttionWithoutRetry() {
+        return DBUtil.getConnectionWithoutRetry(dataBaseType, jdbcUrl, userName, password);
+    }
+
+    @Override
     public String getConnectionInfo() {
         return "jdbcUrl:" + jdbcUrl;
     }

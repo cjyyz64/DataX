@@ -4,18 +4,18 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
-
+import com.alibaba.druid.sql.parser.ParserException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class WriterUtil {
     private static final Logger LOG = LoggerFactory.getLogger(WriterUtil.class);
@@ -92,7 +92,7 @@ public final class WriterUtil {
         return renderedSqls;
     }
 
-    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage) {
+    public static void executeSqls(Connection conn, List<String> sqls, String basicMessage,DataBaseType dataBaseType) {
         Statement stmt = null;
         String currentSql = null;
         try {
@@ -102,8 +102,7 @@ public final class WriterUtil {
                 DBUtil.executeSqlWithoutResultSet(stmt, sql);
             }
         } catch (Exception e) {
-            throw DataXException.asDataXException(DBUtilErrorCode.SQL_EXECUTE_FAIL,
-                    String.format("您的sql配置有误. 因为根据您的配置执行 Sql:%s 语句失败，相关上下文信息是:%s. 请检查您的配置并作出修改.", currentSql, basicMessage), e);
+            throw RdbmsException.asQueryException(dataBaseType,e,currentSql,null,null);
         } finally {
             DBUtil.closeDBResources(null, stmt, null);
         }
@@ -125,5 +124,53 @@ public final class WriterUtil {
 
 		return writeDataSqlTemplate;
 	}
+
+    public static void preCheckPrePareSQL(Configuration originalConfig, DataBaseType type) {
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        Configuration connConf = Configuration.from(conns.get(0).toString());
+        String table = connConf.getList(Key.TABLE, String.class).get(0);
+
+        List<String> preSqls = originalConfig.getList(Key.PRE_SQL,
+                String.class);
+        List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
+                preSqls, table);
+
+        if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+            LOG.info("Begin to preCheck preSqls:[{}].",
+                    StringUtils.join(renderedPreSqls, ";"));
+            for(String sql : renderedPreSqls) {
+                try{
+                    DBUtil.sqlValid(sql, type);
+                }catch(ParserException e) {
+                    throw RdbmsException.asPreSQLParserException(type,e,sql);
+                }
+            }
+        }
+    }
+
+    public static void preCheckPostSQL(Configuration originalConfig, DataBaseType type) {
+        List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+        Configuration connConf = Configuration.from(conns.get(0).toString());
+        String table = connConf.getList(Key.TABLE, String.class).get(0);
+
+        List<String> postSqls = originalConfig.getList(Key.POST_SQL,
+                String.class);
+        List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
+                postSqls, table);
+        if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+
+            LOG.info("Begin to preCheck postSqls:[{}].",
+                    StringUtils.join(renderedPostSqls, ";"));
+            for(String sql : renderedPostSqls) {
+                try{
+                    DBUtil.sqlValid(sql, type);
+                }catch(ParserException e){
+                    throw RdbmsException.asPostSQLParserException(type,e,sql);
+                }
+
+            }
+        }
+    }
+
 
 }

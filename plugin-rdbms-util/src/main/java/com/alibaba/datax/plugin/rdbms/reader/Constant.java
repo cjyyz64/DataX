@@ -18,4 +18,5 @@ public final class Constant {
     public static String QUERY_SQL_TEMPLATE_WITHOUT_WHERE = "select %s from %s ";
 
     public static String QUERY_SQL_TEMPLATE = "select %s from %s where (%s)";
+
 }
