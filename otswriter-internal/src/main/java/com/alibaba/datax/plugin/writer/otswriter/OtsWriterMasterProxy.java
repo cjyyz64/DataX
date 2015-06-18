@@ -66,7 +66,8 @@ public class OtsWriterMasterProxy {
         LOG.debug("Table Meta : {}", GsonParser.metaToJson(meta));
         
         conf.setPrimaryKeyColumn(WriterModelParser.parseOTSPKColumnList(meta, ParamChecker.checkListAndGet(param, Key.PRIMARY_KEY, true)));
-        
+        ParamChecker.checkPrimaryKey(meta, conf.getPrimaryKeyColumn());
+
         conf.setMode(WriterModelParser.parseOTSMode(ParamChecker.checkStringAndGet(param, Key.MODE)));
         
         if (conf.getMode() == OTSMode.MULTI_VERSION) {

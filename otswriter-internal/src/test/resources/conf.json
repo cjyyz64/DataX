@@ -1,10 +1,10 @@
 {
-    "endpoint":"http://10.101.164.172",
-    "accessid":"OTSMultiUser001_accessid",
-    "accesskey":"OTSMultiUser001_accesskey",
-    "instance-name":"wanhong-test",
-    "instance-id":"_mAKkeEfzXx28VSFgD5",
-    "legacy-instance-name":"wanhong-legcy",
-    "public-instance-name":"wanhong-basic",
+    "endpoint":"http://10.101.168.117:7000",
+    "accessid":"OTSMultiUser177_accessid",
+    "accesskey":"OTSMultiUser177_accesskey",
+    "instance-name":"datax-internal",
+    "instance-id":"datax_internal",
+    "legacy-instance-name":"datax-legacy",
+    "public-instance-name":"datax-public",
     "ag-ip":""
 }
