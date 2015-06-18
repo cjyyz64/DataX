@@ -23,7 +23,9 @@ public class OTSErrorMessage {
     public static final String INPUT_PK_COUNT_NOT_EQUAL_META_ERROR = "The count of 'primaryKey' not equal meta, input count : %d, primary key count : %d in meta.";
     
     public static final String INPUT_PK_TYPE_NOT_MATCH_META_ERROR = "The type of 'primaryKey' not match meta, column name : %s, input type: %s, primary key type : %s in meta.";
-    
+
+    public static final String INPUT_PK_NAME_NOT_EXIST_IN_META_ERROR = "The input primary column '%s' is not exist in meta.";
+
     public static final String ATTR_REPEAT_COLUMN_ERROR = "Repeat column '%s' in 'column'.";
     
     public static final String MISSING_PARAMTER_ERROR = "The param '%s' is not exist.";

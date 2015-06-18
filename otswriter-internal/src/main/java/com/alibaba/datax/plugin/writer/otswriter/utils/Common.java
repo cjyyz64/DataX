@@ -143,8 +143,8 @@ public class Common {
                 }
             }
             if (i == attrColumns.size()) {
-             // exception branch
-                throw new OTSCriticalException(String.format(OTSErrorMessage.INPUT_PK_TYPE_NOT_MATCH_META_ERROR, en.getKey(), en.getValue())); 
+                // exception branch
+                throw new OTSCriticalException(String.format(OTSErrorMessage.INPUT_PK_NAME_NOT_EXIST_IN_META_ERROR, en.getKey())); 
             }
         }
         return attrColumnMapping;
