@@ -87,10 +87,10 @@ public final class OriginalConfPretreatmentUtil {
 
 
             String jdbcUrl;
-            if (isPreCheck){
+            if (isPreCheck) {
                 jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(DATABASE_TYPE, jdbcUrls,
                         username, password, preSql, checkSlave);
-            }else{
+            } else {
                 jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
                         username, password, preSql, checkSlave);
             }

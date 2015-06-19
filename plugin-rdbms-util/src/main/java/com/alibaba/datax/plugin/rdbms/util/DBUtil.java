@@ -105,7 +105,10 @@ public final class DBUtil {
                 }
             }
         }
-        return null;
+        throw DataXException.asDataXException(
+                DBUtilErrorCode.CONN_DB_ERROR,
+                String.format("数据库连接失败. 因为根据您配置的连接信息,无法从:%s 中找到可连接的jdbcUrl. 请检查您的配置并作出修改.",
+                        StringUtils.join(jdbcUrls, ",")));
     }
 
     /**
