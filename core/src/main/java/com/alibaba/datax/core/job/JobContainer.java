@@ -514,7 +514,7 @@ public class JobContainer extends AbstractContainer {
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
-                        + "%-26s: %19s\n",
+                        + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n",
                 "任务启动时刻",
                 dateFormat.format(startTimeStamp),
 
@@ -531,7 +531,11 @@ public class JobContainer extends AbstractContainer {
                         + "rec/s", "读出记录总数",
                 String.valueOf(CommunicationTool.getTotalReadRecords(communication)),
                 "读写失败总数",
-                String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
+                String.valueOf(CommunicationTool.getTotalErrorRecords(communication)),
+                "写等待读的次数(读慢)",
+                String.valueOf(communication.getLongCounter(CommunicationTool.WAIT_READER_NUMBERS)),
+                "读等待写的次数(写慢)",
+                String.valueOf(communication.getLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS))
         ));
     }
 

@@ -3,6 +3,8 @@ package com.alibaba.datax.core.statistics.communication;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -37,6 +39,10 @@ public final class CommunicationTool {
 
     private static final String WRITE_SUCCEED_RECORDS = "writeSucceedRecords";
     private static final String WRITE_SUCCEED_BYTES = "writeSucceedBytes";
+
+    public static final String WAIT_WRITER_NUMBERS = "waitWriterNumbers";
+
+    public static final String WAIT_READER_NUMBERS = "waitReaderNumbers";
 
     public static Communication getReportCommunication(Communication now, Communication old, int totalStage) {
         Validate.isTrue(now != null && old != null,
@@ -104,7 +110,7 @@ public final class CommunicationTool {
 
         public static String getSnapshot(final Communication communication) {
             StringBuilder sb = new StringBuilder();
-            sb.append("Total ");
+            sb.append("|| Total ");
             sb.append(getTotal(communication));
             sb.append(" | ");
             sb.append("Speed ");
@@ -115,6 +121,13 @@ public final class CommunicationTool {
             sb.append(" | ");
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
+            sb.append(" | ");
+            sb.append(" WaitWriterNumbers ");
+            sb.append(communication.getLongCounter(WAIT_WRITER_NUMBERS));
+            sb.append(" | ");
+            sb.append(" WaitReaderNumbers ");
+            sb.append(communication.getLongCounter(WAIT_READER_NUMBERS));
+            sb.append(" || ");
             return sb.toString();
         }
 
@@ -175,6 +188,12 @@ public final class CommunicationTool {
             pair = getPercentage(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
+            pair = getWaitReaderCount(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
+            pair = getWaitWriterCount(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
             return JSON.toJSONString(state);
         }
 
@@ -212,6 +231,14 @@ public final class CommunicationTool {
 
         private static Pair<String, String> getErrorMessage(final Communication communication) {
             return new Pair<String, String>("errorMessage", communication.getThrowableMessage());
+        }
+
+        private static Pair<String, Long> getWaitReaderCount(final Communication communication) {
+            return new Pair<String, Long>("waitReaderNumbers", communication.getLongCounter(CommunicationTool.WAIT_READER_NUMBERS));
+        }
+
+        private static Pair<String, Long> getWaitWriterCount(final Communication communication) {
+            return new Pair<String, Long>("waitWriterNumbers", communication.getLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS));
         }
 
         static class Pair<K, V> {
