@@ -216,8 +216,15 @@ public final class DBUtil {
                 insertStmt = connection.createStatement();
                 executeSqlWithoutResultSet(insertStmt, checkInsertPrivilegeSql);
             } catch (Exception e) {
-                hasInsertPrivilege = false;
-                LOG.warn("User [" + userName +"] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+                if(DataBaseType.Oracle.equals(dataBaseType)) {
+                    if(e.getMessage() != null && e.getMessage().contains("insufficient privileges")) {
+                        hasInsertPrivilege = false;
+                        LOG.warn("User [" + userName +"] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+                    }
+                } else {
+                    hasInsertPrivilege = false;
+                    LOG.warn("User [" + userName + "] has no 'insert' privilege on table[" + tableName + "], errorMessage:[{}]", e.getMessage());
+                }
             }
         }
         try {

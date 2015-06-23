@@ -72,7 +72,7 @@ public class CommonRdbmsWriter {
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
                 boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
 
-                if(!hasInsertPri){
+                if(!hasInsertPri) {
                     throw RdbmsException.asInsertPriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                 }
 
