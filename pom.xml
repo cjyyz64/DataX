@@ -75,6 +75,7 @@
         <module>tddlwriter</module>
         <module>hbasebulkwriter</module>
         <module>hbasebulkwriter2</module>
+        <module>tairwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
