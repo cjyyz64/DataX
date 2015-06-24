@@ -182,7 +182,9 @@ public class AdsWriter extends Writer {
                 return this.odpsWriterJobProxy.split(mandatoryNumber);
             } else {
                 List<Configuration> splitResult = new ArrayList<Configuration>();
-                splitResult.add(this.originalConfig.clone());
+                for(int i = 0; i < mandatoryNumber; i++) {
+                    splitResult.add(this.originalConfig.clone());
+                }
                 return splitResult;
             }
         }
