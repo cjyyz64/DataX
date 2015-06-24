@@ -113,7 +113,9 @@ public class HBaseRegionRouter extends UDF {
           return getRegionsJson(table, confPath, clusterId);
         }
       });
-      JSONArray regionsJson = future.get(30, TimeUnit.SECONDS);
+      // 来自线上的超时报错：这个30秒设置是没有必要的，hbase客户端有自己的超时和重试机制。
+      //JSONArray regionsJson = future.get(30, TimeUnit.SECONDS);
+      JSONArray regionsJson = future.get();
 
       if (StringUtils.isEmpty(regionsFile)) {
         System.out.println(regionsJson);

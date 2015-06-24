@@ -3,8 +3,6 @@ package com.alibaba.datax.core.statistics.communication;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.util.HashMap;
@@ -110,7 +108,7 @@ public final class CommunicationTool {
 
         public static String getSnapshot(final Communication communication) {
             StringBuilder sb = new StringBuilder();
-            sb.append("|| Total ");
+            sb.append("Total ");
             sb.append(getTotal(communication));
             sb.append(" | ");
             sb.append("Speed ");
@@ -119,15 +117,14 @@ public final class CommunicationTool {
             sb.append("Error ");
             sb.append(getError(communication));
             sb.append(" | ");
-            sb.append("Percentage ");
-            sb.append(getPercentage(communication));
-            sb.append(" | ");
             sb.append(" WaitWriterNumbers ");
             sb.append(communication.getLongCounter(WAIT_WRITER_NUMBERS));
             sb.append(" | ");
             sb.append(" WaitReaderNumbers ");
             sb.append(communication.getLongCounter(WAIT_READER_NUMBERS));
-            sb.append(" || ");
+            sb.append(" | ");
+            sb.append("Percentage ");
+            sb.append(getPercentage(communication));
             return sb.toString();
         }
 
