@@ -27,7 +27,7 @@ class TairWriterWorker {
     private TaskPluginCollector collector = null;
     private TairConfig conf = null;
 
-    private static final int MAX_RETRY_TIMES = 60;
+    private static final int MAX_RETRY_TIMES = 600;
 
     private Serializable key;
     private StringBuilder value;
@@ -134,13 +134,11 @@ class TairWriterWorker {
         String columnKey = "";
         if (null != conf.getFrontLeadingKey()) {
             columnKey += conf.getFrontLeadingKey();
-                LOG.info("FrontLeading: " + conf.getFrontLeadingKey());//TODO
         }
         columnKey += record.getColumn(0).asString();
         return columnKey;
     }
 
-    //TODO: log reduce
     private int put(Record record) throws Exception {
 
         key = getKeyFromColumn(record);
@@ -155,7 +153,8 @@ class TairWriterWorker {
             }
         } else if (conf.isDeleteEmptyRecord()) {
             ResultCode rc = tm.delete(conf.getNamespace(), key);
-            if (ResultCode.SUCCESS.getCode() != rc.getCode()) {
+            if (ResultCode.SUCCESS.getCode() != rc.getCode()
+                    && ResultCode.DATANOTEXSITS.getCode() != rc.getCode()) {
                 LOG.warn("delete record:" + record.toString() +  " fail, rc: " + rc.getCode());
                 collector.collectDirtyRecord(record, " delete empty record fail");
                 return -1;
@@ -342,7 +341,6 @@ class TairWriterWorker {
 
     private String retryPut(Serializable key, String value, int expire, Record record) throws Exception {
         int cnt = 0;
-        //TODO: loop always
         while (cnt <= MAX_RETRY_TIMES) {
             ResultCode rc = tm.put(conf.getNamespace(), key, value, 0, expire);
             if (ResultCode.SUCCESS.getCode() == rc.getCode()) {

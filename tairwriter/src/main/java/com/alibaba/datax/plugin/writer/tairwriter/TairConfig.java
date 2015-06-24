@@ -30,7 +30,6 @@ public class TairConfig {
     }
 
     public boolean checkValid() {
-                LOG.info("new code");//TODO
         this.configId = conf.getNecessaryValue(Key.CONFIG_ID, TairWriterErrorCode.TairInitError);
         this.namespace = conf.getInt(Key.NAMESPACE, -1);
         this.expire = conf.getInt(Key.EXPIRE, 0);
@@ -44,6 +43,11 @@ public class TairConfig {
           error = "无效的 namespace: " + namespace;
           return false;
         }
+        if (expire < 0) {
+          error = "无效的 expire: " + expire;
+          return false;
+        }
+
 
         if (timeout <= 0) {
           error = "无效的 timeout: " + timeout;
