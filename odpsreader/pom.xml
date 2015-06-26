@@ -41,7 +41,7 @@
 		<dependency>
 			<groupId>com.aliyun.odps</groupId>
 			<artifactId>odps-sdk-core-internal</artifactId>
-			<version>0.16.2</version>
+			<version>0.17.8</version>
 		</dependency>
 
         <dependency>

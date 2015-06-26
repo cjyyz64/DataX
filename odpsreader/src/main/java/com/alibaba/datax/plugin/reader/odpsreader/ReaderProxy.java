@@ -252,6 +252,14 @@ public class ReaderProxy {
             }
             break;
         }
+        case DECIMAL: {
+            if(isPartitionColumn) {
+                dataXRecord.addColumn(new DoubleColumn(columnNameValue));
+            } else {
+                dataXRecord.addColumn(new DoubleColumn(odpsRecord.getDecimal(columnNameValue)));
+            }
+            break;
+        }
         case STRING: {
             if (isPartitionColumn) {
                 dataXRecord.addColumn(new StringColumn(columnNameValue));
