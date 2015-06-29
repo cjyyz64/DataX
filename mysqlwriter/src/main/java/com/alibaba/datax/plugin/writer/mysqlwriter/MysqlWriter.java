@@ -33,7 +33,8 @@ public class MysqlWriter extends Writer {
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
         @Override
         public void prepare() {
-            this.commonRdbmsWriterJob.privilegeValid(this.originalConfig, DATABASE_TYPE);
+            //实跑先不支持 权限 检验
+            //this.commonRdbmsWriterJob.privilegeValid(this.originalConfig, DATABASE_TYPE);
             this.commonRdbmsWriterJob.prepare(this.originalConfig);
         }
 
