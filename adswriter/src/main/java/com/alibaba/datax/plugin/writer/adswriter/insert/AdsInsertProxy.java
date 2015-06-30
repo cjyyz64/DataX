@@ -268,7 +268,7 @@ public class AdsInsertProxy {
                 if(bitValue == null) {
                     sqlSb.append("null");
                 } else {
-                    sqlSb.append("'").append(bitValue).append("'");
+                    sqlSb.append(bitValue);
                 }
                 break;
             default:
