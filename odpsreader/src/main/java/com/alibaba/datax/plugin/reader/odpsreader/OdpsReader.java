@@ -50,13 +50,13 @@ public class OdpsReader extends Reader {
                 this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
             }
 
+            //检查必要的参数配置
             OdpsUtil.checkNecessaryConfig(this.originalConfig);
+            //重试次数的配置检查
             OdpsUtil.dealMaxRetryTime(this.originalConfig);
 
+            //确定切分模式
             dealSplitMode(this.originalConfig);
-
-            //check isCompress
-            this.originalConfig.getBool(Key.IS_COMPRESS, false);
 
             this.odps = OdpsUtil.initOdps(this.originalConfig);
             String tableName = this.originalConfig.getString(Key.TABLE);

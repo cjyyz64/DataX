@@ -63,8 +63,8 @@ public final class OdpsUtil {
 
         String packageAuthorizedProject = originalConfig.getString(Key.PACKAGE_AUTHORIZED_PROJECT);
 
-        String defaultProject = null;
-        if(StringUtils.isEmpty(packageAuthorizedProject)) {
+        String defaultProject;
+        if(StringUtils.isBlank(packageAuthorizedProject)) {
             defaultProject = project;
         } else {
             defaultProject = packageAuthorizedProject;
@@ -97,20 +97,21 @@ public final class OdpsUtil {
     }
 
     public static Table getTable(Odps odps, String projectName, String tableName) {
-        Table table = null;
         try {
-            table = odps.tables().get(projectName, tableName);
-
-            //通过这种方式检查表是否存在
-            table.reload();
-        } catch (OdpsException e) {
-            throwDataXExceptionWhenReloadTable(e, tableName);
-//            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-//                    String.format("加载 ODPS 源头表:%s 失败. " +
-//                            "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
+            //通过这种方式检查表是否存在，失败重试。重试策略：每秒钟重试一次，最大重试3次
+            final Table table = odps.tables().get(projectName, tableName);
+            return RetryUtil.executeWithRetry(new Callable<Table>() {
+                @Override
+                public Table call() throws Exception {
+                    table.reload();
+                    return table;
+                }
+            }, 1000, 3, false);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                    String.format("加载 ODPS 源头表:%s 失败. " +
+                            "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
         }
-
-        return table;
     }
 
     public static boolean isPartitionedTable(Table table) {
