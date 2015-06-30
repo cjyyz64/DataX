@@ -159,6 +159,8 @@ public class OdpsWriterProxy {
                     case DOUBLE:
                         odpsRecord.setDouble(currentIndex, columnValue.asDouble());
                         break;
+                    case DECIMAL:
+                        odpsRecord.setDecimal(currentIndex, columnValue.asBigDecimal());
                     default:
                         break;
                 }
