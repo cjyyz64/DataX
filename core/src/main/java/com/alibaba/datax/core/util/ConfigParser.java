@@ -43,13 +43,21 @@ public final class ConfigParser {
 
         boolean isJobResourceFromHttp = jobResource.trim().toLowerCase().startsWith("http");
 
+
         if (isJobResourceFromHttp) {
+            //设置httpclient的 HTTP_TIMEOUT_INMILLIONSECONDS
+            Configuration coreConfig = ConfigParser.parseCoreConfig(CoreConstant.DATAX_CONF_PATH);
+            int httpTimeOutInMillionSeconds = coreConfig.getInt(
+                    CoreConstant.DATAX_CORE_DATAXSERVER_TIMEOUT, 5000);
+            HttpClientUtil.setHttpTimeoutInMillionSeconds(httpTimeOutInMillionSeconds);
+
+            HttpClientUtil httpClientUtil = new HttpClientUtil();
             try {
                 URL url = new URL(jobResource);
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
 
-                jobContent = HttpClientUtil.getHttpClientUtil().executeAndGetWithRetry(httpGet, 6, 1000l);
+                jobContent = httpClientUtil.executeAndGetWithRetry(httpGet, 6, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }

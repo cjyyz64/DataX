@@ -18,7 +18,27 @@ public enum OdpsWriterErrorCode implements ErrorCode {
 
     COMMIT_BLOCK_FAIL("OdpsWriter-10", "提交 block 到 ODPS 目的表失败."),
     RUN_SQL_FAILED("OdpsWriter-11", "执行 ODPS Sql 失败."),
-    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-12", "检查 ODPS 目的表:%s 是否为分区表失败."),;
+    CHECK_IF_PARTITIONED_TABLE_FAILED("OdpsWriter-12", "检查 ODPS 目的表:%s 是否为分区表失败."),
+
+    RUN_SQL_ODPS_EXCEPTION("OdpsWriter-13", "执行 ODPS Sql 时抛出异常, 可重试"),
+
+    ACCOUNT_TYPE_ERROR("OdpsWriter-30", "账号类型错误."),
+
+    PARTITION_ERROR("OdpsWriter-31", "分区配置错误."),
+
+    COLUMN_NOT_EXIST("OdpsWriter-32", "用户配置的列不存在."),
+
+    ODPS_PROJECT_NOT_FOUNT("OdpsWriter-100", "您配置的值不合法, odps project 不存在."),  //ODPS-0420111: Project not found
+
+    ODPS_TABLE_NOT_FOUNT("OdpsWriter-101", "您配置的值不合法, odps table 不存在"), // ODPS-0130131:Table not found
+
+    ODPS_ACCESS_KEY_ID_NOT_FOUND("OdpsWriter-102", "您配置的值不合法, odps accessId,accessKey 不存在"), //ODPS-0410051:Invalid credentials - accessKeyId not found
+
+    ODPS_ACCESS_KEY_INVALID("OdpsWriter-103", "您配置的值不合法, odps accessKey 错误"), //ODPS-0410042:Invalid signature value - User signature dose not match;
+
+    ODPS_ACCESS_DENY("OdpsWriter-104", "拒绝访问, 您不在 您配置的 project 中") //ODPS-0420095: Access Denied - Authorization Failed [4002], You doesn't exist in project
+
+    ;
 
     private final String code;
     private final String description;

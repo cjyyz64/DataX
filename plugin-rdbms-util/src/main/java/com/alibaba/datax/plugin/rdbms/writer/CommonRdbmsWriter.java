@@ -9,6 +9,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 
@@ -42,6 +43,46 @@ public class CommonRdbmsWriter {
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                     originalConfig.toJSON());
+        }
+
+        /*目前只支持MySQL Writer跟Oracle Writer;检查PreSQL跟PostSQL语法以及insert，delete权限*/
+        public void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
+            /*检查PreSql跟PostSql语句*/
+            prePostSqlValid(originalConfig,dataBaseType);
+            /*检查insert 跟delete权限*/
+            privilegeValid(originalConfig,dataBaseType);
+        }
+
+        public void prePostSqlValid(Configuration originalConfig,DataBaseType dataBaseType){
+            /*检查PreSql跟PostSql语句*/
+            WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
+            WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
+        }
+
+        public void privilegeValid(Configuration originalConfig,DataBaseType dataBaseType){
+            /*检查insert 跟delete权限*/
+            String username = originalConfig.getString(Key.USERNAME);
+            String password = originalConfig.getString(Key.PASSWORD);
+            List<Object> connections = originalConfig.getList(Constant.CONN_MARK,
+                    Object.class);
+
+            for (int i = 0, len = connections.size(); i < len; i++) {
+                Configuration connConf = Configuration.from(connections.get(i).toString());
+                String jdbcUrl = connConf.getString(Key.JDBC_URL);
+                List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
+                boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
+
+                if(!hasInsertPri) {
+                    throw RdbmsException.asInsertPriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
+                }
+
+                if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
+                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
+                    if(!hasDeletePri) {
+                        throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
+                    }
+                }
+            }
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
@@ -78,7 +119,7 @@ public class CommonRdbmsWriter {
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
-                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
+                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl,dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -119,7 +160,7 @@ public class CommonRdbmsWriter {
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPostSqls, ";"), jdbcUrl);
-                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
+                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl,dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -134,22 +175,23 @@ public class CommonRdbmsWriter {
         protected static final Logger LOG = LoggerFactory
                 .getLogger(Task.class);
 
-        private DataBaseType dataBaseType;
+        protected DataBaseType dataBaseType;
         private static final String VALUE_HOLDER = "?";
 
-        private String username;
-        private String password;
-        private String jdbcUrl;
+        protected String username;
+        protected String password;
+        protected String jdbcUrl;
         protected String table;
         protected List<String> columns;
-        private List<String> preSqls;
-        private List<String> postSqls;
+        protected List<String> preSqls;
+        protected List<String> postSqls;
         protected int batchSize;
+        protected int batchByteSize;
         protected int columnNumber = 0;
         protected TaskPluginCollector taskPluginCollector;
 
         // 作为日志显示信息时，需要附带的通用信息。比如信息所对应的数据库连接等信息，针对哪个表做的操作
-        private static String BASIC_MESSAGE;
+        protected static String BASIC_MESSAGE;
 
         protected static String INSERT_OR_REPLACE_TEMPLATE;
 
@@ -174,6 +216,7 @@ public class CommonRdbmsWriter {
             this.preSqls = writerSliceConfig.getList(Key.PRE_SQL, String.class);
             this.postSqls = writerSliceConfig.getList(Key.POST_SQL, String.class);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
@@ -196,7 +239,7 @@ public class CommonRdbmsWriter {
             if (tableNumber != 1) {
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                         StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);
-                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE);
+                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE,dataBaseType);
             }
 
             DBUtil.closeDBResources(null, null, connection);
@@ -212,6 +255,7 @@ public class CommonRdbmsWriter {
             calcWriteRecordSql();
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
+            int bufferBytes = 0;
             try {
                 Record record;
                 while ((record = recordReceiver.getFromReader()) != null) {
@@ -227,21 +271,25 @@ public class CommonRdbmsWriter {
                     }
 
                     writeBuffer.add(record);
+                    bufferBytes += record.getByteSize();
 
-                    if (writeBuffer.size() >= batchSize) {
+                    if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         doBatchInsert(connection, writeBuffer);
                         writeBuffer.clear();
+                        bufferBytes = 0;
                     }
                 }
                 if (!writeBuffer.isEmpty()) {
                     doBatchInsert(connection, writeBuffer);
                     writeBuffer.clear();
+                    bufferBytes = 0;
                 }
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         DBUtilErrorCode.WRITE_DATA_ERROR, e);
             } finally {
                 writeBuffer.clear();
+                bufferBytes = 0;
                 DBUtil.closeDBResources(null, null, connection);
             }
         }
@@ -272,7 +320,7 @@ public class CommonRdbmsWriter {
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
                     StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
-            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE);
+            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE,dataBaseType);
             DBUtil.closeDBResources(null, null, connection);
         }
 

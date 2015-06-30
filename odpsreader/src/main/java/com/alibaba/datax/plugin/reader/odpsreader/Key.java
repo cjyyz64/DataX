@@ -29,4 +29,6 @@ public class Key {
 
     public final static String IS_COMPRESS = "isCompress";
 
+    public final static String MAX_RETRY_TIME = "maxRetryTime";
+
 }

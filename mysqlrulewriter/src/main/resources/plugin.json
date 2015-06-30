@@ -1,0 +1,6 @@
+{
+  "name": "mysqlrulewriter",
+  "class": "com.alibaba.datax.plugin.writer.mysqlrulewriter.MysqlRuleWriter",
+  "description": "useScene: prod. mechanism: Jdbc connection using the database, execute insert sql. warn: The more you know about the database, the less problems you encounter.",
+  "developer": "chinan.hjc, bug reported to : chinan.hjc@alibaba-inc.com"
+}

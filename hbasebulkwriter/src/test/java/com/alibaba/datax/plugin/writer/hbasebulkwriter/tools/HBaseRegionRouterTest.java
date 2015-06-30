@@ -1,12 +1,11 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter.tools;
 
 import com.alibaba.datax.plugin.writer.hbasebulkwriter.HBaseTestUtils;
-import com.alibaba.datax.plugin.writer.hbasebulkwriter.tools.HBaseRegionRouter;
 import com.aliyun.openservices.odps.ODPSConnection;
 import com.aliyun.openservices.odps.Project;
 import com.aliyun.openservices.odps.helper.InstanceRunner;
-import com.aliyun.openservices.odps.jobs.*;
-
+import com.aliyun.openservices.odps.jobs.SqlTask;
+import com.aliyun.openservices.odps.jobs.Task;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -16,11 +15,12 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.junit.*;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class HBaseRegionRouterTest {
 

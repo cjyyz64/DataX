@@ -20,6 +20,8 @@ public enum DataBaseType {
     DB2("db2", "com.ibm.db2.jcc.DB2Driver"),
     ADS("ads","com.mysql.jdbc.Driver");
 
+
+
     private String typeName;
     private String driverClassName;
 
@@ -38,7 +40,7 @@ public enum DataBaseType {
         switch (this) {
             case MySql:
             case DRDS:
-                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false";
+                suffix = "yearIsDateType=false&zeroDateTimeBehavior=convertToNull&tinyInt1isBit=false&rewriteBatchedStatements=true";
                 if (jdbc.contains("?")) {
                     result = jdbc + "&" + suffix;
                 } else {
@@ -181,6 +183,13 @@ public enum DataBaseType {
             return oracle.group(1);
         }
         return null;
+    }
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
     }
 
 }

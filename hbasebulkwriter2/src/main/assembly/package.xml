@@ -1,0 +1,56 @@
+<assembly
+        xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+    <formats>
+        <format>dir</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>plugin.json</include>
+            </includes>
+            <outputDirectory>plugin/writer/hbasebulkwriter2</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/</directory>
+            <includes>
+                <include>hbasebulkwriter2-0.0.1-SNAPSHOT.jar</include>
+            </includes>
+            <outputDirectory>plugin/writer/hbasebulkwriter2</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/</directory>
+            <includes>
+                <include>datax-odps-hbase-udf.jar</include>
+            </includes>
+            <outputDirectory>plugin/writer/hbasebulkwriter2</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/python/</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>plugin/writer/hbasebulkwriter2/</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/main/native/</directory>
+            <includes>
+                <include>lib*</include>
+            </includes>
+            <outputDirectory>plugin/writer/hbasebulkwriter2/libs/native/</outputDirectory>
+        </fileSet>
+    </fileSets>
+
+    <dependencySets>
+        <dependencySet>
+            <scope>runtime</scope>
+            <useProjectArtifact>false</useProjectArtifact>
+            <!--将scope为runtime的依赖包打包到lib目录下。 -->
+            <outputDirectory>plugin/writer/hbasebulkwriter2/libs</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+
+</assembly>  

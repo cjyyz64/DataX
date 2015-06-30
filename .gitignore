@@ -12,3 +12,4 @@ hsf/
 .classpath
 .gitignore
 *.pyc
+*.DS_Store

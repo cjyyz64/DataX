@@ -5,7 +5,6 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.ossreader.util.OssUtil;
-import com.alibaba.datax.plugin.unstructuredstorage.reader.Constant;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.aliyun.oss.ClientException;
 import com.aliyun.oss.OSSClient;
@@ -49,71 +48,78 @@ public class OssReader extends Reader {
 
         private void validate() {
             String endpoint = this.readerOriginConfig.getString(Key.ENDPOINT);
-            if (null == endpoint || endpoint.length() == 0) {
+            if (StringUtils.isBlank(endpoint)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 endpoint");
             }
 
             String accessId = this.readerOriginConfig.getString(Key.ACCESSID);
-            if (null == accessId || accessId.length() == 0) {
+            if (StringUtils.isBlank(accessId)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 accessId");
             }
 
             String accessKey = this.readerOriginConfig.getString(Key.ACCESSKEY);
-            if (null == accessKey || accessKey.length() == 0) {
+            if (StringUtils.isBlank(accessKey)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 accessKey");
             }
 
             String bucket = this.readerOriginConfig.getString(Key.BUCKET);
-            if (null == bucket || endpoint.length() == 0) {
+            if (StringUtils.isBlank(bucket)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 endpoint");
             }
 
             String object = this.readerOriginConfig.getString(Key.OBJECT);
-            if (null == object || object.length() == 0) {
+            if (StringUtils.isBlank(object)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 object");
             }
 
-            String fieldDelimiter = this.readerOriginConfig.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
+            String fieldDelimiter = this.readerOriginConfig
+                    .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
+            // warn: need length 1
             if (null == fieldDelimiter || fieldDelimiter.length() == 0) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
                         "您需要指定 fieldDelimiter");
             }
 
-            String charset = this.readerOriginConfig
+            String encoding = this.readerOriginConfig
                     .getString(
-                            Key.ENCODING,
-                            Constant.DEFAULT_ENCODING);
+                            com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+                            com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
             try {
-                Charsets.toCharset(charset);
+                Charsets.toCharset(encoding);
             } catch (UnsupportedCharsetException uce) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.ILLEGAL_VALUE,
-                        String.format("不支持的编码格式 : [%s]", charset), uce);
+                        String.format("不支持的编码格式 : [%s]", encoding), uce);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.ILLEGAL_VALUE,
                         String.format("运行配置异常 : %s", e.getMessage()), e);
             }
 
-
             // 检测是column 是否为 ["*"] 若是则填为空
             List<Configuration> column = this.readerOriginConfig
                     .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
-            if (null != column && 1 == column.size() && ("\"*\"".equals(column.get(0).toString()) || "'*'".equals(column.get(0).toString()))) {
-                readerOriginConfig.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,new ArrayList<String>());
+            if (null != column
+                    && 1 == column.size()
+                    && ("\"*\"".equals(column.get(0).toString()) || "'*'"
+                            .equals(column.get(0).toString()))) {
+                readerOriginConfig
+                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
+                                new ArrayList<String>());
             } else {
-                // column: 1. index type 2.value type 3.when type is Data, may have
+                // column: 1. index type 2.value type 3.when type is Data, may
+                // have
                 // format
                 List<Configuration> columns = this.readerOriginConfig
                         .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
@@ -150,7 +156,6 @@ public class OssReader extends Reader {
                     }
                 }
             }
-
 
             // only support compress: gzip,bzip2
             String compress = this.readerOriginConfig
@@ -198,7 +203,16 @@ public class OssReader extends Reader {
             List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
 
             // 将每个单独的 object 作为一个 slice
-            List<String> objects = parseOriginObjects(readerOriginConfig.getList(Constants.OBJECT, String.class));
+            List<String> objects = parseOriginObjects(readerOriginConfig
+                    .getList(Constants.OBJECT, String.class));
+            if (0 == objects.size()) {
+                throw DataXException.asDataXException(
+                        OssReaderErrorCode.EMPTY_BUCKET_EXCEPTION,
+                        String.format(
+                                "未能找到待读取的Object,请确认您的配置项bucket: %s object: %s",
+                                this.readerOriginConfig.get(Key.BUCKET),
+                                this.readerOriginConfig.get(Key.OBJECT)));
+            }
 
             for (String object : objects) {
                 Configuration splitedConfig = this.readerOriginConfig.clone();
@@ -212,18 +226,21 @@ public class OssReader extends Reader {
         private List<String> parseOriginObjects(List<String> originObjects) {
             List<String> parsedObjects = new ArrayList<String>();
 
-            for (String object : originObjects){
-                int firstMetaChar = (object.indexOf('*') > object.indexOf('?')) ?
-                        object.indexOf('*') : object.indexOf('?');
+            for (String object : originObjects) {
+                int firstMetaChar = (object.indexOf('*') > object.indexOf('?')) ? object
+                        .indexOf('*') : object.indexOf('?');
 
-                if (firstMetaChar != -1){
-                    int lastDirSeparator = object.lastIndexOf(IOUtils.DIR_SEPARATOR, firstMetaChar);
-                    String parentDir = object.substring(0, lastDirSeparator + 1);
+                if (firstMetaChar != -1) {
+                    int lastDirSeparator = object.lastIndexOf(
+                            IOUtils.DIR_SEPARATOR, firstMetaChar);
+                    String parentDir = object
+                            .substring(0, lastDirSeparator + 1);
                     List<String> remoteObjects = getRemoteObjects(parentDir);
-                    Pattern pattern = Pattern.compile(object.replace("*", ".*").replace("?", ".?"));
+                    Pattern pattern = Pattern.compile(object.replace("*", ".*")
+                            .replace("?", ".?"));
 
-                    for (String remoteObject : remoteObjects){
-                        if (pattern.matcher(remoteObject).matches()){
+                    for (String remoteObject : remoteObjects) {
+                        if (pattern.matcher(remoteObject).matches()) {
                             parsedObjects.add(remoteObject);
                         }
                     }
@@ -234,19 +251,23 @@ public class OssReader extends Reader {
             return parsedObjects;
         }
 
-        private List<String> getRemoteObjects(String parentDir) throws OSSException,ClientException{
+        private List<String> getRemoteObjects(String parentDir)
+                throws OSSException, ClientException {
 
-            LOG.debug(String.format("父文件夹 : %s",parentDir));
+            LOG.debug(String.format("父文件夹 : %s", parentDir));
             List<String> remoteObjects = new ArrayList<String>();
             OSSClient client = OssUtil.initOssClient(readerOriginConfig);
-            try{
-                ListObjectsRequest listObjectsRequest= new ListObjectsRequest(readerOriginConfig.getString(Key.BUCKET));
+            try {
+                ListObjectsRequest listObjectsRequest = new ListObjectsRequest(
+                        readerOriginConfig.getString(Key.BUCKET));
                 listObjectsRequest.setPrefix(parentDir);
                 ObjectListing objectList;
                 do {
                     objectList = client.listObjects(listObjectsRequest);
-                    for (OSSObjectSummary objectSummary : objectList.getObjectSummaries()){
-                        LOG.debug(String.format("找到文件 : %s",objectSummary.getKey()));
+                    for (OSSObjectSummary objectSummary : objectList
+                            .getObjectSummaries()) {
+                        LOG.debug(String.format("找到文件 : %s",
+                                objectSummary.getKey()));
                         remoteObjects.add(objectSummary.getKey());
                     }
                     listObjectsRequest.setMarker(objectList.getNextMarker());
@@ -254,7 +275,7 @@ public class OssReader extends Reader {
                     LOG.debug(String.valueOf(objectList.isTruncated()));
 
                 } while (objectList.isTruncated());
-            } catch (IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
             }
@@ -263,11 +284,10 @@ public class OssReader extends Reader {
         }
     }
 
-    public static class Task extends Reader.Task{
+    public static class Task extends Reader.Task {
         private static Logger LOG = LoggerFactory.getLogger(Reader.Task.class);
 
         private Configuration readerSliceConfig;
-
 
         @Override
         public void startRead(RecordSender recordSender) {
@@ -275,17 +295,13 @@ public class OssReader extends Reader {
             String object = readerSliceConfig.getString(Key.OBJECT);
             OSSClient client = OssUtil.initOssClient(readerSliceConfig);
 
-//            try {
-                OSSObject ossObject = client.getObject(readerSliceConfig.getString(Key.BUCKET), object);
-                InputStream objectStream = ossObject.getObjectContent();
-                UnstructuredStorageReaderUtil.readFromStream(objectStream,
-                        object, this.readerSliceConfig, recordSender,
-                        this.getTaskPluginCollector());
-                recordSender.flush();
-//            } catch (IllegalArgumentException e){
-//                throw DataXException.asDataXException(
-//                        OssReaderErrorCode.OSS_EXCEPTION, e.getMessage());
-//            }
+            OSSObject ossObject = client.getObject(
+                    readerSliceConfig.getString(Key.BUCKET), object);
+            InputStream objectStream = ossObject.getObjectContent();
+            UnstructuredStorageReaderUtil.readFromStream(objectStream, object,
+                    this.readerSliceConfig, recordSender,
+                    this.getTaskPluginCollector());
+            recordSender.flush();
         }
 
         @Override

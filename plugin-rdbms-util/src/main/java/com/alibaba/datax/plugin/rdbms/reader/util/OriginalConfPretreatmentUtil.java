@@ -30,8 +30,20 @@ public final class OriginalConfPretreatmentUtil {
                 DBUtilErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.PASSWORD,
                 DBUtilErrorCode.REQUIRED_VALUE);
+        dealWhere(originalConfig);
 
         simplifyConf(originalConfig);
+    }
+
+    public static void dealWhere(Configuration originalConfig) {
+        String where = originalConfig.getString(Key.WHERE, null);
+        if(StringUtils.isNotBlank(where)) {
+            String whereImprove = where.trim();
+            if(whereImprove.endsWith(";") || whereImprove.endsWith("；")) {
+                whereImprove = whereImprove.substring(0,whereImprove.length()-1);
+            }
+            originalConfig.set(Key.WHERE, whereImprove);
+        }
     }
 
     /**
@@ -56,6 +68,7 @@ public final class OriginalConfPretreatmentUtil {
         String password = originalConfig.getString(Key.PASSWORD);
         boolean checkSlave = originalConfig.getBool(Key.CHECK_SLAVE, false);
         boolean isTableMode = originalConfig.getBool(Constant.IS_TABLE_MODE);
+        boolean isPreCheck = originalConfig.getBool(Key.DRYRUN,false);
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
@@ -72,8 +85,15 @@ public final class OriginalConfPretreatmentUtil {
                     .getList(Key.JDBC_URL, String.class);
             List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
 
-            String jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
-                    username, password, preSql, checkSlave);
+
+            String jdbcUrl;
+            if (isPreCheck) {
+                jdbcUrl = DBUtil.chooseJdbcUrlWithoutRetry(DATABASE_TYPE, jdbcUrls,
+                        username, password, preSql, checkSlave);
+            } else {
+                jdbcUrl = DBUtil.chooseJdbcUrl(DATABASE_TYPE, jdbcUrls,
+                        username, password, preSql, checkSlave);
+            }
 
             jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
 
@@ -141,14 +161,10 @@ public final class OriginalConfPretreatmentUtil {
                     List<String> allColumns = DBUtil.getTableColumns(
                             DATABASE_TYPE, jdbcUrl, username, password,
                             tableName);
+                    LOG.info("table:[{}] has columns:[{}].",
+                            tableName, StringUtils.join(allColumns, ","));
                     // warn:注意mysql表名区分大小写
                     allColumns = ListUtil.valueToLowerCase(allColumns);
-
-                    if (IS_DEBUG) {
-                        LOG.debug("table:[{}] has userConfiguredColumns:[{}].",
-                                tableName, StringUtils.join(allColumns, ","));
-                    }
-
                     List<String> quotedColumns = new ArrayList<String>();
 
                     for (String column : userConfiguredColumns) {
@@ -173,8 +189,7 @@ public final class OriginalConfPretreatmentUtil {
                     originalConfig.set(Key.COLUMN,
                             StringUtils.join(quotedColumns, ","));
                     if (StringUtils.isNotBlank(splitPk)) {
-
-                        if (!allColumns.contains(splitPk)) {
+                        if (!allColumns.contains(splitPk.toLowerCase())) {
                             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                                     String.format("您的配置文件中的列配置信息有误. 因为根据您的配置，您读取的数据库表:%s 中没有主键名为:%s. 请检查您的配置并作出修改.", tableName, splitPk));
                         }

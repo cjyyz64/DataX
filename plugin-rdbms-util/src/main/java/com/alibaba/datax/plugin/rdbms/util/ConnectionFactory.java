@@ -11,6 +11,8 @@ public interface ConnectionFactory {
 
     public Connection getConnecttion();
 
+    public Connection getConnecttionWithoutRetry();
+
     public String getConnectionInfo();
 
 }

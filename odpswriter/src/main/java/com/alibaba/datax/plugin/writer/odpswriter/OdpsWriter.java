@@ -46,6 +46,40 @@ public class OdpsWriter extends Writer {
         private TableTunnel.UploadSession masterUpload;
         private int blockSizeInMB;
 
+
+        public void preCheck() {
+            this.init();
+            this.doPreCheck();
+        }
+
+        public void doPreCheck() {
+            //检查accessId,accessKey配置
+            if (Constant.DEFAULT_ACCOUNT_TYPE
+                    .equalsIgnoreCase(this.accountType)) {
+                this.originalConfig = IdAndKeyUtil.parseAccessIdAndKey(this.originalConfig);
+                String accessId = this.originalConfig.getString(Key.ACCESS_ID);
+                String accessKey = this.originalConfig.getString(Key.ACCESS_KEY);
+                if (IS_DEBUG) {
+                    LOG.debug("accessId:[{}], accessKey:[{}] .", accessId,
+                            accessKey);
+                }
+                LOG.info("accessId:[{}] .", accessId);
+            }
+            // init odps config
+            this.odps = OdpsUtil.initOdpsProject(this.originalConfig);
+
+            //检查表等配置是否正确
+            this.table = OdpsUtil.getTable(odps,this.projectName,this.tableName);
+
+            //检查列信息是否正确
+            List<String> allColumns = OdpsUtil.getAllColumns(this.table.getSchema());
+            LOG.info("allColumnList: {} .", StringUtils.join(allColumns, ','));
+            dealColumn(this.originalConfig, allColumns);
+
+            //检查分区信息是否正确
+            OdpsUtil.preCheckPartition(this.odps, this.table, this.partition, this.truncate);
+        }
+
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
@@ -68,7 +102,7 @@ public class OdpsWriter extends Writer {
                     Constant.DEFAULT_ACCOUNT_TYPE);
             if (!Constant.DEFAULT_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType) &&
                     !Constant.TAOBAO_ACCOUNT_TYPE.equalsIgnoreCase(this.accountType)) {
-                throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
+                throw DataXException.asDataXException(OdpsWriterErrorCode.ACCOUNT_TYPE_ERROR,
                         String.format("账号类型错误，因为你的账号 [%s] 不是datax目前支持的账号类型，目前仅支持aliyun, taobao账号，请修改您的账号信息.", accountType));
             }
             this.originalConfig.set(Key.ACCOUNT_TYPE, this.accountType);
@@ -82,6 +116,9 @@ public class OdpsWriter extends Writer {
             }
 
             this.blockSizeInMB = this.originalConfig.getInt(Key.BLOCK_SIZE_IN_MB, 64);
+            if(this.blockSizeInMB < 8) {
+                this.blockSizeInMB = 8;
+            }
             this.originalConfig.set(Key.BLOCK_SIZE_IN_MB, this.blockSizeInMB);
             LOG.info("blockSizeInMB={}.", this.blockSizeInMB);
 

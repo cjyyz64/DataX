@@ -60,7 +60,10 @@ public class StdoutPluginCollector extends AbstractTaskPluginCollector {
     @Override
     public void collectDirtyRecord(Record dirtyRecord, Throwable t,
                                    String errorMessage) {
-        currentLogNum.incrementAndGet();
+        int logNum = currentLogNum.getAndIncrement();
+        if(logNum==0 && t!=null){
+            LOG.error("", t);
+        }
         if (maxLogNum.intValue() < 0 || currentLogNum.intValue() < maxLogNum.intValue()) {
             LOG.error("脏数据: \n"
                     + this.formatDirty(dirtyRecord, t, errorMessage));

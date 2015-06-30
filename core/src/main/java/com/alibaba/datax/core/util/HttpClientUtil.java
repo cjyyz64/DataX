@@ -31,7 +31,7 @@ public class HttpClientUtil {
     private volatile static HttpClientUtil clientUtil;
 
     //构建httpclient的时候一定要设置这两个参数。淘宝很多生产故障都由此引起
-    private static int HTTP_TIMEOUT_INMILLIONSECONDS;
+    private static int HTTP_TIMEOUT_INMILLIONSECONDS = 5000;
 
     private static final int POOL_SIZE = 20;
 
@@ -44,9 +44,6 @@ public class HttpClientUtil {
     public static synchronized HttpClientUtil getHttpClientUtil() {
         if (null == clientUtil) {
             synchronized (HttpClientUtil.class) {
-                Properties prob  = SecretUtil.getSecurityProperties();
-                HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
-
                 if (null == clientUtil) {
                     clientUtil = new HttpClientUtil();
                 }
@@ -55,7 +52,9 @@ public class HttpClientUtil {
         return clientUtil;
     }
 
-    private HttpClientUtil() {
+    public HttpClientUtil() {
+        Properties prob  = SecretUtil.getSecurityProperties();
+        HttpClientUtil.setBasicAuth(prob.getProperty("auth.user"),prob.getProperty("auth.pass"));
         initApacheHttpClient();
     }
 

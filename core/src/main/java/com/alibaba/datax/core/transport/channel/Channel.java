@@ -25,6 +25,8 @@ public abstract class Channel {
 
     protected int capacity;
 
+    protected int byteCapacity;
+
     protected long byteSpeed; // bps: bytes/s
 
     protected long recordSpeed; // tps: records/s
@@ -34,6 +36,10 @@ public abstract class Channel {
     protected volatile boolean isClosed = false;
 
     protected Configuration configuration = null;
+
+    protected volatile long waitReaderCount = 0;
+
+    protected volatile long waitWriterCount = 0;
 
     private static Boolean isFirstPrint = true;
 
@@ -71,7 +77,8 @@ public abstract class Channel {
         this.recordSpeed = recordSpeed;
         this.flowControlInterval = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
-
+        this.byteCapacity = configuration.getInt(
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 64 * 1024 * 1024);
         this.configuration = configuration;
     }
 
@@ -220,6 +227,12 @@ public abstract class Channel {
             lastCommunication.setLongCounter(CommunicationTool.READ_FAILED_RECORDS,
                     currentCommunication.getLongCounter(CommunicationTool.READ_FAILED_RECORDS));
             lastCommunication.setTimestamp(nowTimestamp);
+
+            //在读的时候进行统计waitCounter即可，因为写（pull）的时候可能正在阻塞，但读的时候已经能读到这个阻塞的counter数
+
+            currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, waitReaderCount);
+            currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, waitWriterCount);
+
         }
     }
 
