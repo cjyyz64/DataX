@@ -98,7 +98,7 @@ public final class OdpsUtil {
 
     public static Table getTable(Odps odps, String projectName, String tableName) {
         try {
-            //通过这种方式检查表是否存在，失败重试。重试策略：每分钟重试一次，最大重试10次
+            //通过这种方式检查表是否存在，失败重试。重试策略：每秒钟重试一次，最大重试3次
             final Table table = odps.tables().get(projectName, tableName);
             return RetryUtil.executeWithRetry(new Callable<Table>() {
                 @Override
@@ -106,7 +106,7 @@ public final class OdpsUtil {
                     table.reload();
                     return table;
                 }
-            }, 60000, 10, false);
+            }, 1000, 3, false);
         } catch (Exception e) {
             throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
                     String.format("加载 ODPS 源头表:%s 失败. " +
