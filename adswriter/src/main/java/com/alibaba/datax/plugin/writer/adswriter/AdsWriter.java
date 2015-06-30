@@ -67,6 +67,10 @@ public class AdsWriter extends Writer {
         public void init() {
             this.originalConfig = super.getPluginJobConf();
             this.writeMode = this.originalConfig.getString(Key.WRITE_MODE);
+            if(null == this.writeMode) {
+                LOG.warn("您未指定[writeMode]参数,  默认采用load模式, load模式只能用于离线表");
+                this.writeMode = Constant.LOADMODE;
+            }
 
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
@@ -80,7 +84,7 @@ public class AdsWriter extends Writer {
                         originalConfig.toJSON());
                 //this.commonRdbmsWriterJob.init(this.originalConfig);
             } else {
-                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert' 或者 'replace'");
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
             }
         }
 
