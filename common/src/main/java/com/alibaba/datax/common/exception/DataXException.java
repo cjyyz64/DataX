@@ -8,7 +8,7 @@ public class DataXException extends RuntimeException {
 
     private ErrorCode errorCode;
 
-    private DataXException(ErrorCode errorCode, String errorMessage) {
+    public DataXException(ErrorCode errorCode, String errorMessage) {
         super(errorCode.toString() + " - " + errorMessage);
         this.errorCode = errorCode;
     }

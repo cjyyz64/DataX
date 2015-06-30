@@ -476,7 +476,8 @@ public class ParamCheckFunctiontest extends BaseTest{
         invalidPrimaryKey("{}", "The item is not string in 'primaryKey'.");
         invalidPrimaryKey("{\"name\":\"Uid\",\"type\":\"String\", \"value\":\"\"}", "The item is not string in 'primaryKey'.");
         invalidPrimaryKey("\"\"", "Can not find the pk('') at ots in 'primaryKey'.");
-        invalidPrimaryKey("\"UID\",\"UID\"", "Duplicate item in 'column' and 'primaryKey', column name : UID .");
+        invalidPrimaryKey("\"UID\"", "The count of 'primaryKey' not equal meta, input count : 1, primary key count : 4 in meta.");
+        invalidPrimaryKey("\"UID\",\"UID\", \"Pid\", \"Mid\"", "Duplicate item in 'column' and 'primaryKey', column name : UID .");
         invalidPrimaryKey(
                   "\"Uid\","
                 + "\"Pid\","

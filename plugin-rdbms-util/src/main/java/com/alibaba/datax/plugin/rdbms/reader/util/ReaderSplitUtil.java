@@ -101,6 +101,51 @@ public final class ReaderSplitUtil {
         return splittedConfigs;
     }
 
+    public static Configuration doPreCheckSplit(Configuration originalSliceConfig) {
+        Configuration queryConfig = originalSliceConfig.clone();
+        boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
+
+        String splitPK = originalSliceConfig.getString(Key.SPLIT_PK);
+        String column = originalSliceConfig.getString(Key.COLUMN);
+        String where = originalSliceConfig.getString(Key.WHERE, null);
+
+        List<Object> conns = queryConfig.getList(Constant.CONN_MARK, Object.class);
+
+        for (int i = 0, len = conns.size(); i < len; i++){
+            Configuration connConf = Configuration.from(conns.get(i).toString());
+            List<String> querys = new ArrayList<String>();
+            List<String> splitPkQuerys = new ArrayList<String>();
+            String connPath = String.format("connection[%d]",i);
+            // 说明是配置的 table 方式
+            if (isTableMode) {
+                // 已在之前进行了扩展和`处理，可以直接使用
+                List<String> tables = connConf.getList(Key.TABLE, String.class);
+                Validate.isTrue(null != tables && !tables.isEmpty(), "您读取数据库表配置错误.");
+                for (String table : tables) {
+                    querys.add(SingleTableSplitUtil.buildQuerySql(column,table,where));
+                    if (splitPK != null && !splitPK.isEmpty()){
+                        splitPkQuerys.add(SingleTableSplitUtil.genPKSql(splitPK.trim(),table,where));
+                    }
+                }
+                if (!splitPkQuerys.isEmpty()){
+                    connConf.set(Key.SPLIT_PK_SQL,splitPkQuerys);
+                }
+                connConf.set(Key.QUERY_SQL,querys);
+                queryConfig.set(connPath,connConf);
+            } else {
+                // 说明是配置的 querySql 方式
+                List<String> sqls = connConf.getList(Key.QUERY_SQL,
+                        String.class);
+                for (String querySql : sqls) {
+                    querys.add(querySql);
+                }
+                connConf.set(Key.QUERY_SQL,querys);
+                queryConfig.set(connPath,connConf);
+            }
+        }
+        return queryConfig;
+    }
+
     private static int calculateEachTableShouldSplittedNumber(int adviceNumber,
                                                               int tableNumber) {
         double tempNum = 1.0 * adviceNumber / tableNumber;

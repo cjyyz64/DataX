@@ -15,6 +15,7 @@ public final class RdbmsRangeSplitWrap {
         return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName, quote, dataBaseType);
     }
 
+    // warn: do not use this method long->BigInteger
     public static List<String> splitAndWrap(long left, long right, int expectSliceNumber, String columnName) {
         long[] tempResult = RangeSplitUtil.doLongSplit(left, right, expectSliceNumber);
         return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName);

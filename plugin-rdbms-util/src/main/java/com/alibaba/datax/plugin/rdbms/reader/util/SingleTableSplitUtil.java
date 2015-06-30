@@ -4,16 +4,20 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.util.*;
+import com.alibaba.druid.sql.parser.ParserException;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsRangeSplitWrap;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -68,9 +72,9 @@ public class SingleTableSplitUtil {
                     splitPkName, "'", DATABASE_TYPE);
         } else if (isLongType) {
             rangeList = RdbmsRangeSplitWrap.splitAndWrap(
-                    Long.parseLong(minMaxPK.getLeft().toString()),
-                    Long.parseLong(minMaxPK.getRight().toString()), adviceNum,
-                    splitPkName);
+                    new BigInteger(minMaxPK.getLeft().toString()),
+                    new BigInteger(minMaxPK.getRight().toString()),
+                    adviceNum, splitPkName);
         } else {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
                     "您配置的切分主键(splitPk) 类型 DataX 不支持. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
@@ -135,6 +139,7 @@ public class SingleTableSplitUtil {
         String jdbcURL = configuration.getString(Key.JDBC_URL);
         String username = configuration.getString(Key.USERNAME);
         String password = configuration.getString(Key.PASSWORD);
+        String table = configuration.getString(Key.TABLE);
 
         Connection conn = null;
         ResultSet rs = null;
@@ -144,8 +149,8 @@ public class SingleTableSplitUtil {
                     password);
             try {
                 rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
-            } catch (Exception e) {
-                throw DataXException.asDataXException(DBUtilErrorCode.SPLIT_FAILED_ILLEGAL_SQL, "DataX尝试切分表发生错误. 执行数据库 Sql 失败, Sql:[" + pkRangeSQL + "].", e);
+            }catch (Exception e) {
+                throw RdbmsException.asQueryException(DATABASE_TYPE, e, pkRangeSQL,table,username);
             }
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
@@ -237,6 +242,10 @@ public class SingleTableSplitUtil {
         String splitPK = configuration.getString(Key.SPLIT_PK).trim();
         String table = configuration.getString(Key.TABLE).trim();
         String where = configuration.getString(Key.WHERE, null);
+        return genPKSql(splitPK,table,where);
+    }
+
+    public static String genPKSql(String splitPK, String table, String where){
 
         String minMaxTemplate = "SELECT MIN(%s),MAX(%s) FROM %s";
         String pkRangeSQL = String.format(minMaxTemplate, splitPK, splitPK,
@@ -245,8 +254,8 @@ public class SingleTableSplitUtil {
             pkRangeSQL = String.format("%s WHERE (%s AND %s IS NOT NULL)",
                     pkRangeSQL, where, splitPK);
         }
-
         return pkRangeSQL;
     }
+
 
 }
