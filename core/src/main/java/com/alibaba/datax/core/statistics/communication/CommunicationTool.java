@@ -38,6 +38,10 @@ public final class CommunicationTool {
     private static final String WRITE_SUCCEED_RECORDS = "writeSucceedRecords";
     private static final String WRITE_SUCCEED_BYTES = "writeSucceedBytes";
 
+    public static final String WAIT_WRITER_NUMBERS = "waitWriterNumbers";
+
+    public static final String WAIT_READER_NUMBERS = "waitReaderNumbers";
+
     public static Communication getReportCommunication(Communication now, Communication old, int totalStage) {
         Validate.isTrue(now != null && old != null,
                 "为汇报准备的新旧metric不能为null");
@@ -113,6 +117,12 @@ public final class CommunicationTool {
             sb.append("Error ");
             sb.append(getError(communication));
             sb.append(" | ");
+            sb.append(" WaitWriterNumbers ");
+            sb.append(communication.getLongCounter(WAIT_WRITER_NUMBERS));
+            sb.append(" | ");
+            sb.append(" WaitReaderNumbers ");
+            sb.append(communication.getLongCounter(WAIT_READER_NUMBERS));
+            sb.append(" | ");
             sb.append("Percentage ");
             sb.append(getPercentage(communication));
             return sb.toString();
@@ -175,6 +185,12 @@ public final class CommunicationTool {
             pair = getPercentage(communication);
             state.put((String) pair.getKey(), pair.getValue());
 
+            pair = getWaitReaderCount(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
+            pair = getWaitWriterCount(communication);
+            state.put((String) pair.getKey(), pair.getValue());
+
             return JSON.toJSONString(state);
         }
 
@@ -212,6 +228,14 @@ public final class CommunicationTool {
 
         private static Pair<String, String> getErrorMessage(final Communication communication) {
             return new Pair<String, String>("errorMessage", communication.getThrowableMessage());
+        }
+
+        private static Pair<String, Long> getWaitReaderCount(final Communication communication) {
+            return new Pair<String, Long>("waitReaderNumbers", communication.getLongCounter(CommunicationTool.WAIT_READER_NUMBERS));
+        }
+
+        private static Pair<String, Long> getWaitWriterCount(final Communication communication) {
+            return new Pair<String, Long>("waitWriterNumbers", communication.getLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS));
         }
 
         static class Pair<K, V> {

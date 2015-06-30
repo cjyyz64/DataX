@@ -39,6 +39,10 @@ public class DsReporter extends AbstractReporter {
         jobStatus.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
         jobStatus.setPercentage(communication.getDoubleCounter("percentage"));
 
+        //todo 等待datax-service-face 1.0.4的mvn
+        //jobStatus.setWaitReaderCount(communication.getLongCounter(CommunicationTool.WAIT_READER_NUMBERS));
+        //jobStatus.setWaitWriterCount(communication.getLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS));
+
         if (communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
             jobStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
         } else {
@@ -69,6 +73,10 @@ public class DsReporter extends AbstractReporter {
 
         taskGroupStatus.setErrorRecords(CommunicationTool.getTotalErrorRecords(communication));
         taskGroupStatus.setErrorBytes(CommunicationTool.getTotalErrorBytes(communication));
+
+        //todo 等待datax-service-face 1.0.4的mvn
+        //taskGroupStatus.setWaitReaderCount(communication.getLongCounter(CommunicationTool.WAIT_READER_NUMBERS));
+        //taskGroupStatus.setWaitWriterCount(communication.getLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS));
 
         if (communication.getThrowable() != null && communication.getThrowable() instanceof NullPointerException) {
             taskGroupStatus.setErrorMessage(ExceptionTracker.trace(communication.getThrowable()));
