@@ -103,21 +103,20 @@ public class OdpsUtil {
     }
 
     public static Table getTable(Odps odps, String projectName, String tableName) {
+        final Table table = odps.tables().get(projectName, tableName);
         try {
             //通过这种方式检查表是否存在，失败重试。重试策略：每秒钟重试一次，最大重试3次
-            final Table table = odps.tables().get(projectName, tableName);
             return RetryUtil.executeWithRetry(new Callable<Table>() {
                 @Override
                 public Table call() throws Exception {
                     table.reload();
                     return table;
                 }
-            }, 1000, 3, false);
+            }, 3, 1000, false);
         } catch (Exception e) {
-            throw DataXException.asDataXException(OdpsWriterErrorCode.ILLEGAL_VALUE,
-                    String.format("加载 ODPS 目的表:%s 失败. " +
-                            "请检查您配置的 ODPS 目的表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
+            throwDataXExceptionWhenReloadTable(e, tableName);
         }
+        return table;
     }
 
     public static List<String> listOdpsPartitions(Table table) {
@@ -557,7 +556,7 @@ public class OdpsUtil {
     /**
      * table.reload() 方法抛出的 odps 异常 转化为更清晰的 datax 异常 抛出
      */
-    public static void throwDataXExceptionWhenReloadTable(OdpsException e, String tableName) {
+    public static void throwDataXExceptionWhenReloadTable(Exception e, String tableName) {
         if(e.getMessage() != null) {
             if(e.getMessage().contains(OdpsExceptionMsg.ODPS_PROJECT_NOT_FOUNT)) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.ODPS_PROJECT_NOT_FOUNT,
