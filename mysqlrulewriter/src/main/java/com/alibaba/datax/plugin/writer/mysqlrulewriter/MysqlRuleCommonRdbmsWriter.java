@@ -30,8 +30,6 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
     public static class Task extends CommonRdbmsWriter.Task {
 
-//        private Map<String, RuleWriterDbBuffer> dbBufferMap = new HashMap<String, RuleWriterDbBuffer>();
-
         private List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
 
         private GroovyRuleExecutor dbRuleExecutor = null;
@@ -94,7 +92,6 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 String dbName = getDbNameFromJdbcUrl(jdbcUrl);
                 writerBuffer.setDbName(dbName);
                 dbBufferList.add(writerBuffer);
-//                dbBufferMap.put(dbName, writerBuffer);
                 //确定获取meta元信息的db和table
                 if(i == 0 && tableList.size() > 0) {
                     metaDbTablePair.setLeft(dbName);
@@ -103,11 +100,6 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 //init每一个table的insert语句
                 for(String tableName : tableList) {
                     tableWriteSqlMap.put(tableName, String.format(INSERT_OR_REPLACE_TEMPLATE, tableName));
-                }
-
-                if(tableList.size() > 0 && tableRuleExecutor == null) {
-                    throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
                 }
             }
 
