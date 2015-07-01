@@ -135,7 +135,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 return;
             }
             //如果分表名都相同，分库名不同，那么可以只填写分库规则
-            if(allTableList.size() != allTableSet.size() && allTableSet.size() == 1) {
+            if(allTableList.size() != allTableSet.size() && allTableSet.size() == 1 && allDbSet.size() > 1) {
                 if(dbRuleExecutor == null) {
                     throw DataXException.asDataXException(
                             DBUtilErrorCode.WRITE_DATA_ERROR, "配置的所有表名都相同，但未配置分库规则，请检查您的配置");
