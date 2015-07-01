@@ -6,12 +6,18 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.writer.mysqlrulewriter.MysqlRuleCommonRdbmsWriter;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Date: 2015/5/19 16:33
@@ -42,6 +48,86 @@ public class MysqlRuleCommonRdbmsWriterTest {
 
         jdbcUrl = "jdbc:mysql://10.232.130.106:3306/datax_3_mysqlwriter";
         assertEquals("datax_3_mysqlwriter", task.getDbNameFromJdbcUrl(jdbcUrl));
+    }
+
+    @Test
+    public void testCheckRule多库多表每一张表都不相同() {
+        MysqlRuleCommonRdbmsWriter.Task task = new MysqlRuleCommonRdbmsWriter.Task(DataBaseType.MySql);
+
+        //多库多表，并且每一张表都不相同，tableRule为必填
+        List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+        dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
+        dbBufferList.add(generateNewBuffer("db02:tb03,tb04"));
+        try {
+            task.checkRule(dbBufferList);
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("但未配置分表规则"));
+        }
+
+        ReflectionTestUtils.setField(task, "tableRuleExecutor", new GroovyRuleExecutor("", ""));
+        task.checkRule(dbBufferList);
+
+        //多库多表，并且每一张表都不相同，tableRule为必填
+        dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+        dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
+        dbBufferList.add(generateNewBuffer("db01:tb03,tb04"));
+        task.checkRule(dbBufferList);
+    }
+
+    @Test
+    public void testCheckRule多库多表表名部分表相同() {
+        MysqlRuleCommonRdbmsWriter.Task task = new MysqlRuleCommonRdbmsWriter.Task(DataBaseType.MySql);
+        ReflectionTestUtils.setField(task, "tableRuleExecutor", new GroovyRuleExecutor("", ""));
+        List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+        dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
+        dbBufferList.add(generateNewBuffer("db02:tb01,tb02"));
+        try {
+            task.checkRule(dbBufferList);
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("但未配置分库规则和分表规则"));
+        }
+
+        ReflectionTestUtils.setField(task, "dbRuleExecutor", new GroovyRuleExecutor("", ""));
+        task.checkRule(dbBufferList);
+    }
+
+    @Test
+    public void testCheckRule多库多表库名全部不同表名全部相同() {
+        MysqlRuleCommonRdbmsWriter.Task task = new MysqlRuleCommonRdbmsWriter.Task(DataBaseType.MySql);
+        List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+        dbBufferList.add(generateNewBuffer("db01:tb01"));
+        dbBufferList.add(generateNewBuffer("db02:tb01"));
+        try {
+            task.checkRule(dbBufferList);
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("但未配置分库规则"));
+        }
+
+        ReflectionTestUtils.setField(task, "dbRuleExecutor", new GroovyRuleExecutor("", ""));
+        task.checkRule(dbBufferList);
+    }
+
+    @Test
+    public void testCheckRule多库多表库名表名全部相同() {
+        MysqlRuleCommonRdbmsWriter.Task task = new MysqlRuleCommonRdbmsWriter.Task(DataBaseType.MySql);
+        List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+        dbBufferList.add(generateNewBuffer("db01:tb01"));
+        dbBufferList.add(generateNewBuffer("db01:tb01"));
+        try {
+            task.checkRule(dbBufferList);
+        } catch (Exception e) {
+            assertTrue(e.getMessage().contains("此种回流方式不支持"));
+        }
+    }
+
+    public RuleWriterDbBuffer generateNewBuffer(String dbTableStr) {
+        String dbName = dbTableStr.split(":")[0];
+        String[] tableArray = dbTableStr.split(":")[1].split(",");
+        RuleWriterDbBuffer ruleWriterDbBuffer = new RuleWriterDbBuffer();
+        ruleWriterDbBuffer.setDbName(dbName);
+        List<String> tableList = Arrays.asList(tableArray);
+        ruleWriterDbBuffer.initTableBuffer(tableList);
+        return ruleWriterDbBuffer;
     }
 
 }

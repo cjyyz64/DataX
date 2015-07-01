@@ -21,6 +21,7 @@ import java.util.Map;
 public class RuleWriterDbBuffer {
 
     private String jdbcUrl;
+    private String dbName;
     private Map<String, List<Record>> tableBuffer = new HashMap<String, List<Record>>();
     private Connection connection;
 
@@ -57,4 +58,11 @@ public class RuleWriterDbBuffer {
         return connection;
     }
 
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
+
+    public String getDbName() {
+        return dbName;
+    }
 }

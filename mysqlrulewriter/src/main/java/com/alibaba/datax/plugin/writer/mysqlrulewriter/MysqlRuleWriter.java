@@ -33,11 +33,6 @@ public class MysqlRuleWriter extends Writer {
 
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
-            // 检查 db/table规则 配置（必填）
-            originalConfig.getNecessaryValue(Key.DB_NAME_PATTERN, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.DB_RULE, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TABLE_NAME_PATTERN, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TABLE_RULE, DBUtilErrorCode.REQUIRED_VALUE);
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）

@@ -117,6 +117,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
             return preparedStatement;
         }
 
+        //跨库事务不支持，不能将autoCommit设置为false
         @Override
         protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
             PreparedStatement preparedStatement = null;

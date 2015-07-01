@@ -32,6 +32,14 @@ public class MysqlRuleWriterTest extends BasicWriterPluginTest {
         super.doWriterTest("basic1.json", readerSliceNumber);
     }
 
+    @TestLogger(log = "测试basic2.json. 配置多个jdbcUrl,多库多表，表名都不同，分库名相同.")
+    @Test
+    public void testBasic2() {
+        hasDirData = false;
+        int readerSliceNumber = 8;
+        super.doWriterTest("basic2.json", readerSliceNumber);
+    }
+
     @TestLogger(log = "测试basic1.json. 配置多个jdbcUrl,多个table,运行时，有一条脏数据")
     @Test
     public void testDirDataBasic1() {
@@ -45,7 +53,7 @@ public class MysqlRuleWriterTest extends BasicWriterPluginTest {
     @Override
     protected List<Record> buildDataForWriter() {
         List<Record> list = new ArrayList<Record>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 1000; i++) {
             Record r = new DefaultRecord();
             r.addColumn(new LongColumn(i));
             r.addColumn(new LongColumn(6));
