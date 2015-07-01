@@ -63,15 +63,24 @@ public class GroovyRuleExecutorTest {
     @Test
     public void testDbTBRules() {
         Map<String, Object> columnValues = new HashMap<String, Object>();
-        columnValues.put("principal_id", "2088000012345678");
-        GroovyRuleExecutor dbRule = new GroovyRuleExecutor("Long.valueOf(#principal_id#.substring(13, 15)).intdiv(5)", "proprod{00}");
+        columnValues.put("natural_person_id", "2088000012345678");
+
+        String dbRuleString = "Long.valueOf(#natural_person_id#.substring(13, 15)).intdiv(10)";
+        String dbPattern = "fenbiao{00}";
+        GroovyRuleExecutor dbRule = new GroovyRuleExecutor(dbRuleString, dbPattern);
         String dbResult = dbRule.executeRule(columnValues);
 
-        GroovyRuleExecutor tbRule = new GroovyRuleExecutor("#principal_id#.substring(13, 15)", "prod_lifetime_new{00}");
+        String tbRuleString = "#natural_person_id#.substring(13, 15)";
+        String tbRulePattern = "fenbiao_test_{00}";
+        GroovyRuleExecutor tbRule = new GroovyRuleExecutor(tbRuleString, tbRulePattern);
         String tbResult = tbRule.executeRule(columnValues);
 
-        System.out.println("principal_id=2088000012345678 , 将会落在" + dbResult + "分库上," + tbResult + "分表上");
+        System.out.println("规则如下:");
+        System.out.println("DbRule:        " + dbRuleString);
+        System.out.println("DbPattern:     " + dbPattern);
+        System.out.println("TableRule:     " + tbRuleString);
+        System.out.println("TablePattern:  " + tbRulePattern);
+        System.out.println("测试natural_person_id=2088000012345678 , 将会落在" + dbResult + "分库上," + tbResult + "分表上");
     }
-
 
 }

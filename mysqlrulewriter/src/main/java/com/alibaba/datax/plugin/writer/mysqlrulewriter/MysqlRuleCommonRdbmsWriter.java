@@ -109,44 +109,51 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                     throw DataXException.asDataXException(
                             DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
                 }
-
             }
 
-
+            //检查规则配置
+            checkRule(dbBufferList);
         }
 
-        public void checkRule() {
+        public void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
             //如果配置的分表名完全不同， 则必须要填写tableRule规则
             List<String> allTableList = new ArrayList<String>();
-            Set<String> allTableSet = new HashSet<String>();
+            List<String> allDbList = new ArrayList<String>();
             for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
                 allTableList.addAll(ruleWriterDbBuffer.getTableBuffer().keySet());
-                allTableSet.addAll(ruleWriterDbBuffer.getTableBuffer().keySet());
+                allDbList.add(ruleWriterDbBuffer.getDbName());
             }
+            Set<String> allTableSet = new HashSet<String>(allTableList);
+            Set<String> allDbSet = new HashSet<String>(allDbList);
+
             //如果是多表，必须要配置table规则
             if(allTableList.size() == allTableSet.size() && allTableSet.size() > 1) {
                 if(tableRuleExecutor == null) {
                     throw DataXException.asDataXException(
                             DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
                 }
+                return;
             }
             //如果分表在每个db下，有部分重复的情况，则dbRule和tableRule都要填写
-            if(allTableList.size() != allTableSet.size() && allTableSet.size() > 1) {
+            if(allTableList.size() != allTableSet.size() && allTableSet.size() > 1 && allDbSet.size() > 1) {
                 if(tableRuleExecutor == null || dbRuleExecutor == null) {
                     throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的多库中的表名有重复的，但未配置分库规则和分表规则，请检查您的配置");
                 }
+                return;
             }
-            //如果分表名都相同，
+            //如果分表名都相同，分库名不同，那么可以只填写分库规则
             if(allTableList.size() != allTableSet.size() && allTableSet.size() == 1) {
-                if(tableRuleExecutor == null || dbRuleExecutor == null) {
+                if(dbRuleExecutor == null) {
                     throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的所有表名都相同，但未配置分库规则，请检查您的配置");
                 }
+                return;
             }
-            //如果配置的分表名在每个conn下部分相同,那么必须要填写分库规则
-            if(dbRuleExecutor == null) {
-
+            //如果分表名和分库名都相同，只是jdbcurl不同，这种不支持
+            if(allDbSet.size() == 1 && allTableSet.size() == 1 && allTableList.size() > 1 && allDbList.size() > 1) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, "配置的table和db名称都相同，此种回流方式不支持");
             }
         }
 
@@ -252,10 +259,10 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 }
                 if(rightBuffer == null) {
                     throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db不存在，算出的dbName=" + dbName + ",tableName="+ tableName +", 请检查您配置的规则.");
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db和table不存在，算出的dbName=" + dbName + ",tableName="+ tableName +", 请检查您配置的规则.");
                 }
                 rightBuffer.addRecord(record, tableName);
-            } else if(dbRuleExecutor != null && tableRuleExecutor == null) {// 完成
+            } else if(dbRuleExecutor != null && tableRuleExecutor == null) {// 只存在dbRule，那么只能是多个分库的所有的table名称都相同
                 String dbName = dbRuleExecutor.executeRule(recordMap);
                 for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
                     if(StringUtils.equals(ruleWriterDbBuffer.getDbName(), dbName)) {
@@ -270,7 +277,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
                 if(rightBuffer.getTableBuffer().keySet().size() != 1) {
                     throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db不存在，算出的dbName=" + dbName +", 请检查您配置的规则.");
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的dbName[" + dbName +"], 存在多张分表，请配置您的分表规则.");
                 }
                 String tableName = (String)rightBuffer.getTableBuffer().keySet().toArray()[0];
                 rightBuffer.addRecord(record, tableName);
