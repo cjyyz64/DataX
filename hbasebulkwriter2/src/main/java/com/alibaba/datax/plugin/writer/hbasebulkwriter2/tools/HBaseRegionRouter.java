@@ -116,7 +116,8 @@ public class HBaseRegionRouter extends UDF {
                     return getRegionsJson(table, confPath, configStr, clusterId);
                 }
             });
-            JSONArray regionsJson = future.get(30, TimeUnit.SECONDS);
+            //JSONArray regionsJson = future.get(30, TimeUnit.SECONDS);
+            JSONArray regionsJson = future.get();
 
             if (StringUtils.isEmpty(regionsFile)) {
                 System.out.println(regionsJson);

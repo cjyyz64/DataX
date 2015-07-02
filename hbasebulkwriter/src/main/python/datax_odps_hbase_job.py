@@ -90,8 +90,13 @@ def exec_datax_job(project, src_table, odps_column, suffix,
     fileHandler.write(jobJSON)
     fileHandler.close()
 
-    cmd = "python %s %s" % (datax_run_scrpit, jobConfigPath)
+    jvm = os.environ.get('JVM_ENV')
+    if jvm:
+        cmd = "python %s -j '%s' %s" % (datax_run_scrpit, jvm, jobConfigPath)
+    else:
+        cmd = "python %s %s" % (datax_run_scrpit, jobConfigPath)
 
+    util.log("datax cmd => "+cmd)
     result = util.execute(cmd)
     assert result[0] == 0, "Execute %s Failed." % cmd
 
@@ -191,7 +196,15 @@ def build_datax_job_config(project, src_table, odps_column, suffix,
 
     writerJSON = '"writer" : { "name" : "hbasebulkwriter", "parameter" : {' + writerJSON + '}}'
     contentJSON = '"content" : [ { ' + readerJSON + writerJSON + ' } ]'
-    settingJSON = '"setting" : { "speed" : { "channel" : 5 } }, '
+
+    channel = os.environ.get('CHANNEL_ENV')
+    if not channel:
+        channel = 5
+
+    if int(channel) > 30:
+        channel = 30
+
+    settingJSON = '"setting" : { "speed" : { "channel" : ' + str(channel) + ' } }, '
     jobJSON = '{ "job" : {' + settingJSON + contentJSON + '}}'
     print 'job config in JSON : ' + jobJSON
     return jobJSON

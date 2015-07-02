@@ -33,11 +33,6 @@ public class MysqlRuleWriter extends Writer {
 
             this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonRdbmsWriterJob.init(this.originalConfig);
-            // 检查 db/table规则 配置（必填）
-            originalConfig.getNecessaryValue(Key.DB_NAME_PATTERN, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.DB_RULE, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TABLE_NAME_PATTERN, DBUtilErrorCode.REQUIRED_VALUE);
-            originalConfig.getNecessaryValue(Key.TABLE_RULE, DBUtilErrorCode.REQUIRED_VALUE);
         }
 
         // 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
@@ -72,7 +67,7 @@ public class MysqlRuleWriter extends Writer {
                         LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                                 StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
-                        WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl);
+                        WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl,DATABASE_TYPE);
                         DBUtil.closeDBResources(null, null, conn);
                     }
                 }
@@ -116,7 +111,7 @@ public class MysqlRuleWriter extends Writer {
                         // 说明有 postSql 配置，则此处删除掉
                         Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl, username, password);
                         LOG.info("Begin to execute postSqls:[{}]. context info:{}.", StringUtils.join(renderedPostSqls, ";"), jdbcUrl);
-                        WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl);
+                        WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl, DATABASE_TYPE);
                         DBUtil.closeDBResources(null, null, conn);
                     }
                 }

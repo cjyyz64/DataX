@@ -98,27 +98,31 @@ public class JobContainer extends AbstractContainer {
         boolean hasException = false;
         try {
             this.startTimeStamp = System.currentTimeMillis();
+            boolean isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
+            if(isDryRun) {
+                LOG.info("jobContainer starts to do preCheck ...");
+                this.preCheck();
+            } else {
+                LOG.debug("jobContainer starts to do preHandle ...");
+                this.preHandle();
 
-            LOG.debug("jobContainer starts to do preHandle ...");
-            this.preHandle();
+                LOG.debug("jobContainer starts to do init ...");
+                this.init();
+                LOG.debug("jobContainer starts to do prepare ...");
+                this.prepare();
+                LOG.debug("jobContainer starts to do split ...");
+                this.totalStage = this.split();
+                LOG.debug("jobContainer starts to do schedule ...");
+                this.schedule();
+                LOG.debug("jobContainer starts to do post ...");
+                this.post();
 
-            LOG.debug("jobContainer starts to do init ...");
-            this.init();
-            LOG.debug("jobContainer starts to do prepare ...");
-            this.prepare();
-            LOG.debug("jobContainer starts to do split ...");
-            this.totalStage = this.split();
-            LOG.debug("jobContainer starts to do schedule ...");
-            this.schedule();
-            LOG.debug("jobContainer starts to do post ...");
-            this.post();
+                LOG.debug("jobContainer starts to do postHandle ...");
+                this.postHandle();
+                LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
 
-            LOG.debug("jobContainer starts to do postHandle ...");
-            this.postHandle();
-
-            LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
-
-            this.invokeHooks();
+                this.invokeHooks();
+            }
         } catch (Throwable e) {
             LOG.error("Exception when job run", e);
 
@@ -168,6 +172,112 @@ public class JobContainer extends AbstractContainer {
                 this.logStatistics();
             }
         }
+    }
+
+    private void preCheck() {
+        this.preCheckInit();
+        this.adjustChannelNumber();
+
+        if (this.needChannelNumber <= 0) {
+            this.needChannelNumber = 1;
+        }
+        this.preCheckReader();
+        this.preCheckWriter();
+        LOG.info("PreCheck通过");
+    }
+
+    private void preCheckInit() {
+        this.jobId = this.configuration.getLong(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -1);
+
+        if (this.jobId < 0) {
+            LOG.info("Set jobId = 0");
+            this.jobId = 0;
+            this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID,
+                    this.jobId);
+        }
+
+        Thread.currentThread().setName("job-" + this.jobId);
+
+        JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
+                this.getContainerCommunicator());
+        this.jobReader = this.preCheckReaderInit(jobPluginCollector);
+        this.jobWriter = this.preCheckWriterInit(jobPluginCollector);
+    }
+
+    private Reader.Job preCheckReaderInit(JobPluginCollector jobPluginCollector) {
+        this.readerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_READER_NAME);
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.READER, this.readerPluginName));
+
+        Reader.Job jobReader = (Reader.Job) LoadUtil.loadJobPlugin(
+                PluginType.READER, this.readerPluginName);
+
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER + ".dryRun", true);
+
+        // 设置reader的jobConfig
+        jobReader.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的readerConfig
+        jobReader.setReaderConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的writerConfig
+        jobReader.setWriterConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
+
+
+        jobReader.setJobPluginCollector(jobPluginCollector);
+
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+        return jobReader;
+    }
+
+
+    private Writer.Job preCheckWriterInit(JobPluginCollector jobPluginCollector) {
+        this.writerPluginName = this.configuration.getString(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME);
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.WRITER, this.writerPluginName));
+
+        Writer.Job jobWriter = (Writer.Job) LoadUtil.loadJobPlugin(
+                PluginType.WRITER, this.writerPluginName);
+
+        this.configuration.set(CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER + ".dryRun", true);
+
+        // 设置writer的jobConfig
+        jobWriter.setPluginJobConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER));
+        // 设置reader的readerConfig
+        jobWriter.setReaderConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER));
+        // 设置reader的writerConfig
+        jobWriter.setWriterConf(this.configuration.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_NAME));
+        jobWriter.setReaderPluginName(this.readerPluginName);
+        jobWriter.setJobPluginCollector(jobPluginCollector);
+
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+
+        return jobWriter;
+    }
+
+    private void preCheckReader() {
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.READER, this.readerPluginName));
+        LOG.info(String.format("DataX Reader.Job [%s] do preCheck work .",
+                this.readerPluginName));
+        this.jobReader.preCheck();
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
+    }
+
+    private void preCheckWriter() {
+        classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
+                PluginType.WRITER, this.writerPluginName));
+        LOG.info(String.format("DataX Writer.Job [%s] do prepare work .",
+                this.writerPluginName));
+        this.jobWriter.preCheck();
+        classLoaderSwapper.restoreCurrentThreadClassLoader();
     }
 
     /**

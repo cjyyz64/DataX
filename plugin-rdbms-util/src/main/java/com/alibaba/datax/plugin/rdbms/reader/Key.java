@@ -23,9 +23,20 @@ public final class Key {
 
     public final static String QUERY_SQL = "querySql";
 
+    public final static String SPLIT_PK_SQL = "splitPkSql";
+
+
     public final static String PRE_SQL = "preSql";
+
+    public final static String POST_SQL = "postSql";
 
     public final static String CHECK_SLAVE = "checkSlave";
 
 	public final static String SESSION = "session";
+
+	public final static String DBNAME = "dbName";
+
+    public final static String DRYRUN = "dryRun";
+
+
 }

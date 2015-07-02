@@ -236,6 +236,18 @@ public final class DataxServiceUtil {
             taskGroupStatus.setErrorBytes(0L);
         }
 
+        //todo 等待datax-service-face 1.0.4的mvn
+//        if(taskGroupStatus.getWaitReaderCount() == null){
+//            taskGroupStatus.setWaitReaderCount(0L);
+//        }
+//        if(taskGroupStatus.getWaitWriterCount() == null){
+//            taskGroupStatus.setWaitWriterCount(0L);
+//        }
+//
+//        communication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, taskGroupStatus.getWaitReaderCount());
+//        communication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, taskGroupStatus.getWaitWriterCount());
+        //
+
         communication.setLongCounter("stage", taskGroupStatus.getStage());
 
         communication.setLongCounter("totalRecords", taskGroupStatus.getTotalRecords());
@@ -257,6 +269,7 @@ public final class DataxServiceUtil {
         communication.setLongCounter("writeFailedBytes", 0);
         communication.setLongCounter("errorBytes", taskGroupStatus.getErrorBytes());
         communication.setLongCounter("totalErrorBytes", taskGroupStatus.getErrorBytes());
+
 
         String errorMessage = taskGroupStatus.getErrorMessage();
         if (StringUtils.isNotBlank(errorMessage)) {

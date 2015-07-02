@@ -63,8 +63,8 @@ public final class OdpsUtil {
 
         String packageAuthorizedProject = originalConfig.getString(Key.PACKAGE_AUTHORIZED_PROJECT);
 
-        String defaultProject = null;
-        if(StringUtils.isEmpty(packageAuthorizedProject)) {
+        String defaultProject;
+        if(StringUtils.isBlank(packageAuthorizedProject)) {
             defaultProject = project;
         } else {
             defaultProject = packageAuthorizedProject;
@@ -79,11 +79,17 @@ public final class OdpsUtil {
         } else if (accountType.equalsIgnoreCase(Constant.TAOBAO_ACCOUNT_TYPE)) {
             account = new TaobaoAccount(accessId, accessKey);
         } else {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+            throw DataXException.asDataXException(OdpsReaderErrorCode.ACCOUNT_TYPE_ERROR,
                     String.format("不支持的账号类型:[%s]. 账号类型目前仅支持aliyun, taobao.", accountType));
         }
 
         Odps odps = new Odps(account);
+        boolean isPreCheck = originalConfig.getBool("dryRun", false);
+        if(isPreCheck) {
+            odps.getRestClient().setConnectTimeout(3);
+            odps.getRestClient().setReadTimeout(3);
+            odps.getRestClient().setRetryTimes(2);
+        }
         odps.setDefaultProject(defaultProject);
         odps.setEndpoint(odpsServer);
 
@@ -91,18 +97,19 @@ public final class OdpsUtil {
     }
 
     public static Table getTable(Odps odps, String projectName, String tableName) {
-        Table table = null;
+        final Table table = odps.tables().get(projectName, tableName);
         try {
-            table = odps.tables().get(projectName, tableName);
-
-            //通过这种方式检查表是否存在
-            table.reload();
-        } catch (OdpsException e) {
-            throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
-                    String.format("加载 ODPS 源头表:%s 失败. " +
-                            "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
+            //通过这种方式检查表是否存在，失败重试。重试策略：每秒钟重试一次，最大重试3次
+            return RetryUtil.executeWithRetry(new Callable<Table>() {
+                @Override
+                public Table call() throws Exception {
+                    table.reload();
+                    return table;
+                }
+            }, 3, 1000, false);
+        } catch (Exception e) {
+            throwDataXExceptionWhenReloadTable(e, tableName);
         }
-
         return table;
     }
 
@@ -338,5 +345,37 @@ public final class OdpsUtil {
             throw DataXException.asDataXException(OdpsReaderErrorCode.OPEN_RECORD_READER_FAILED,
                     "open RecordReader失败. 请联系 ODPS 管理员处理.", e);
         }
+    }
+
+    /**
+     * table.reload() 方法抛出的 odps 异常 转化为更清晰的 datax 异常 抛出
+     */
+    public static void throwDataXExceptionWhenReloadTable(Exception e, String tableName) {
+        if(e.getMessage() != null) {
+            if(e.getMessage().contains(OdpsExceptionMsg.ODPS_PROJECT_NOT_FOUNT)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_PROJECT_NOT_FOUNT,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [project] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_TABLE_NOT_FOUNT)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_TABLE_NOT_FOUNT,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [table] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_ID_NOT_FOUND)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_ACCESS_KEY_ID_NOT_FOUND,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessId] [accessKey]是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_KEY_INVALID)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_ACCESS_KEY_INVALID,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessKey] 是否正确.", tableName), e);
+            } else if(e.getMessage().contains(OdpsExceptionMsg.ODPS_ACCESS_DENY)) {
+                throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_ACCESS_DENY,
+                        String.format("加载 ODPS 源头表:%s 失败. " +
+                                "请检查您配置的 ODPS 源头表的 [accessId] [accessKey] [project]是否匹配.", tableName), e);
+            }
+        }
+        throw DataXException.asDataXException(OdpsReaderErrorCode.ILLEGAL_VALUE,
+                String.format("加载 ODPS 源头表:%s 失败. " +
+                        "请检查您配置的 ODPS 源头表的 project,table,accessId,accessKey,odpsServer等值.", tableName), e);
     }
 }

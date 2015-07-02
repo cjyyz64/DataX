@@ -81,6 +81,8 @@ public class CoreConstant {
 
     public static final String DATAX_JOB_SETTING_ERRORLIMIT_PERCENT = "job.setting.errorLimit.percentage";
 
+    public static final String DATAX_JOB_SETTING_DRYRUN = "job.setting.dryRun";
+
     public static final String DATAX_JOB_PREHANDLER_PLUGINTYPE = "job.preHandler.pluginType";
 
     public static final String DATAX_JOB_PREHANDLER_PLUGINNAME = "job.preHandler.pluginName";

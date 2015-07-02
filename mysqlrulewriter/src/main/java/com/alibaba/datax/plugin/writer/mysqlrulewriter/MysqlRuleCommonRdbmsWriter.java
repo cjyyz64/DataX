@@ -5,24 +5,21 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
-import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
+import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Date: 15/3/19 下午4:05
@@ -33,11 +30,11 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
     public static class Task extends CommonRdbmsWriter.Task {
 
-        private Map<String, RuleWriterDbBuffer> bufferMap = new HashMap<String, RuleWriterDbBuffer>();
+        private List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
 
-        private GroovyRuleExecutor dbRuleExecutor;
+        private GroovyRuleExecutor dbRuleExecutor = null;
 
-        private GroovyRuleExecutor tableRuleExecutor;
+        private GroovyRuleExecutor tableRuleExecutor = null;
 
         private String dbNamePattern;
 
@@ -67,12 +64,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
             this.tableRule = writerSliceConfig.getString(Key.TABLE_RULE);
             this.tableRule = (tableRule == null) ? "" : tableRule;
 
-            dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
-            tableRuleExecutor = new GroovyRuleExecutor(tableRule, tableNamePattern);
+            if(StringUtils.isNotBlank(this.dbRule)) {
+                dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
+            }
+            if(StringUtils.isNoneBlank(this.tableRule)) {
+                tableRuleExecutor = new GroovyRuleExecutor(tableRule, tableNamePattern);
+            }
 
             this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
             this.columnNumber = this.columns.size();
-            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, 2048);
             this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
@@ -89,7 +90,8 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 writerBuffer.setJdbcUrl(jdbcUrl);
                 writerBuffer.initTableBuffer(tableList);
                 String dbName = getDbNameFromJdbcUrl(jdbcUrl);
-                bufferMap.put(dbName, writerBuffer);
+                writerBuffer.setDbName(dbName);
+                dbBufferList.add(writerBuffer);
                 //确定获取meta元信息的db和table
                 if(i == 0 && tableList.size() > 0) {
                     metaDbTablePair.setLeft(dbName);
@@ -99,6 +101,51 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                 for(String tableName : tableList) {
                     tableWriteSqlMap.put(tableName, String.format(INSERT_OR_REPLACE_TEMPLATE, tableName));
                 }
+            }
+
+            //检查规则配置
+            checkRule(dbBufferList);
+        }
+
+        public void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
+            //如果配置的分表名完全不同， 则必须要填写tableRule规则
+            List<String> allTableList = new ArrayList<String>();
+            List<String> allDbList = new ArrayList<String>();
+            for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+                allTableList.addAll(ruleWriterDbBuffer.getTableBuffer().keySet());
+                allDbList.add(ruleWriterDbBuffer.getDbName());
+            }
+            Set<String> allTableSet = new HashSet<String>(allTableList);
+            Set<String> allDbSet = new HashSet<String>(allDbList);
+
+            //如果是多表，必须要配置table规则
+            if(allTableList.size() == allTableSet.size() && allTableSet.size() > 1) {
+                if(tableRuleExecutor == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的tableList为多表，但未配置分表规则，请检查您的配置");
+                }
+                return;
+            }
+            //如果分表在每个db下，有部分重复的情况，则dbRule和tableRule都要填写
+            if(allTableList.size() != allTableSet.size() && allTableSet.size() > 1 && allDbSet.size() > 1) {
+                if(tableRuleExecutor == null || dbRuleExecutor == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的多库中的表名有重复的，但未配置分库规则和分表规则，请检查您的配置");
+                }
+                return;
+            }
+            //如果分表名都相同，分库名不同，那么可以只填写分库规则
+            if(allTableList.size() != allTableSet.size() && allTableSet.size() == 1 && allDbSet.size() > 1) {
+                if(dbRuleExecutor == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "配置的所有表名都相同，但未配置分库规则，请检查您的配置");
+                }
+                return;
+            }
+            //如果分表名和分库名都相同，只是jdbcurl不同，这种不支持
+            if(allDbSet.size() == 1 && allTableSet.size() == 1 && allTableList.size() > 1 && allDbList.size() > 1) {
+                throw DataXException.asDataXException(
+                        DBUtilErrorCode.WRITE_DATA_ERROR, "配置的table和db名称都相同，此种回流方式不支持");
             }
         }
 
@@ -121,16 +168,15 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
 
         @Override
         public void startWrite(RecordReceiver recordReceiver, Configuration writerSliceConfig, TaskPluginCollector taskPluginCollector) {
-
-            for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
-                entry.getValue().initConnection(writerSliceConfig, username, password);
+            for(RuleWriterDbBuffer dbBuffer : dbBufferList) {
+                dbBuffer.initConnection(writerSliceConfig, username, password);
             }
+
             this.taskPluginCollector = taskPluginCollector;
 
             // 用于写入数据的时候的类型根据目的表字段类型转换
-            Connection metaConn = bufferMap.get(metaDbTablePair.getLeft()).getConnection();
             String metaTable = metaDbTablePair.getRight();
-            this.resultSetMetaData = DBUtil.getColumnMetaData(metaConn, metaTable, StringUtils.join(this.columns, ","));
+            this.resultSetMetaData = DBUtil.getColumnMetaData(dbBufferList.get(0).getConnection(), metaTable, StringUtils.join(this.columns, ","));
 
             List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
             int bufferBytes = 0;
@@ -171,29 +217,73 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
         }
 
         public void closeBufferConn() {
-            for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
-                DBUtil.closeDBResources(null, null, entry.getValue().getConnection());
+            for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+                DBUtil.closeDBResources(null, null, ruleWriterDbBuffer.getConnection());
+            }
+        }
+
+        private void calcRuleAndAddBuffer(Record record) {
+            Map<String, Object> recordMap = convertRecord2Map(record);
+            RuleWriterDbBuffer rightBuffer = null;
+
+            //如果dbRule为空,则通过tableName反查出来dbName
+            if(dbRuleExecutor == null && tableRuleExecutor != null) {
+                String tableName = tableRuleExecutor.executeRule(recordMap);
+                for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+                     if(ruleWriterDbBuffer.getTableBuffer().keySet().contains(tableName)) {
+                         rightBuffer = ruleWriterDbBuffer;
+                         break;
+                     }
+                }
+                if(rightBuffer == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的tableName查找对应的db不存在，tableName=" + tableName + ", 请检查您配置的规则.");
+                }
+                rightBuffer.addRecord(record, tableName);
+            } else if(dbRuleExecutor != null && tableRuleExecutor != null) {//两个规则都不为空，需要严格匹配计算出来的dbName和tableName
+                String dbName = dbRuleExecutor.executeRule(recordMap);
+                String tableName = tableRuleExecutor.executeRule(recordMap);
+                for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+                    if(StringUtils.equals(ruleWriterDbBuffer.getDbName(), dbName) && ruleWriterDbBuffer.getTableBuffer().keySet().contains(tableName)) {
+                        rightBuffer = ruleWriterDbBuffer;
+                        break;
+                    }
+                }
+                if(rightBuffer == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db和table不存在，算出的dbName=" + dbName + ",tableName="+ tableName +", 请检查您配置的规则.");
+                }
+                rightBuffer.addRecord(record, tableName);
+            } else if(dbRuleExecutor != null && tableRuleExecutor == null) {// 只存在dbRule，那么只能是多个分库的所有的table名称都相同
+                String dbName = dbRuleExecutor.executeRule(recordMap);
+                for(RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+                    if(StringUtils.equals(ruleWriterDbBuffer.getDbName(), dbName)) {
+                        rightBuffer = ruleWriterDbBuffer;
+                        break;
+                    }
+                }
+                if(rightBuffer == null) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db不存在，算出的dbName=" + dbName +", 请检查您配置的规则.");
+                }
+
+                if(rightBuffer.getTableBuffer().keySet().size() != 1) {
+                    throw DataXException.asDataXException(
+                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的dbName[" + dbName +"], 存在多张分表，请配置您的分表规则.");
+                }
+                String tableName = (String)rightBuffer.getTableBuffer().keySet().toArray()[0];
+                rightBuffer.addRecord(record, tableName);
             }
         }
 
         public void calcRuleAndDoBatchInsert(List<Record> recordBuffer) throws SQLException {
             //calcRule add all record
             for(Record record : recordBuffer) {
-                Map<String, Object> recordMap = convertRecord2Map(record);
-                String dbName = dbRuleExecutor.executeRule(recordMap);
-                String tableName = tableRuleExecutor.executeRule(recordMap);
-                RuleWriterDbBuffer ruleWriterDbBuffer = bufferMap.get(dbName);
-                if(ruleWriterDbBuffer == null) {
-                    throw DataXException.asDataXException(
-                            DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的db不存在，算出的dbName=" + dbName + ", 请检查您配置的规则.");
-                }
-
-                ruleWriterDbBuffer.addRecord(record, tableName);
+                calcRuleAndAddBuffer(record);
             }
 
             //do batchInsert
-            for(Map.Entry<String, RuleWriterDbBuffer> entry : bufferMap.entrySet()) {
-                RuleWriterDbBuffer dbBuffer = entry.getValue();
+            for(RuleWriterDbBuffer dbBuffer : dbBufferList) {
                 Connection connection = dbBuffer.getConnection();
                 PreparedStatement preparedStatement = null;
                 try {
@@ -202,12 +292,16 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                         String tableName = tableBufferEntry.getKey();
                         List<Record> recordList = tableBufferEntry.getValue();
                         String writeRecordSql = tableWriteSqlMap.get(tableName);
-                        preparedStatement = connection.prepareStatement(writeRecordSql);
-                        for (Record record : recordList) {
-                            preparedStatement = fillPreparedStatement(preparedStatement, record);
-                            preparedStatement.addBatch();
+                        try {
+                            preparedStatement = connection.prepareStatement(writeRecordSql);
+                            for (Record record : recordList) {
+                                preparedStatement = fillPreparedStatement(preparedStatement, record);
+                                preparedStatement.addBatch();
+                            }
+                            preparedStatement.executeBatch();
+                        } finally {
+                            DBUtil.closeDBResources(preparedStatement, null);
                         }
-                        preparedStatement.executeBatch();
                     }
                     connection.commit();
 

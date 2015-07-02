@@ -37,6 +37,10 @@ public abstract class Channel {
 
     protected Configuration configuration = null;
 
+    protected volatile long waitReaderCount = 0;
+
+    protected volatile long waitWriterCount = 0;
+
     private static Boolean isFirstPrint = true;
 
     private Communication currentCommunication;
@@ -225,6 +229,12 @@ public abstract class Channel {
             lastCommunication.setLongCounter(CommunicationTool.READ_FAILED_RECORDS,
                     currentCommunication.getLongCounter(CommunicationTool.READ_FAILED_RECORDS));
             lastCommunication.setTimestamp(nowTimestamp);
+
+            //在读的时候进行统计waitCounter即可，因为写（pull）的时候可能正在阻塞，但读的时候已经能读到这个阻塞的counter数
+
+            currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, waitReaderCount);
+            currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, waitWriterCount);
+
         }
     }
 
