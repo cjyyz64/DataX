@@ -99,8 +99,6 @@ public class TaskGroupContainer extends AbstractContainer {
 
     @Override
     public void start() {
-        Communication nowTaskGroupContainerCommunication = null;
-
         try {
             /**
              * 状态check时间间隔，较短，可以把任务及时分发到对应channel中
@@ -142,8 +140,8 @@ public class TaskGroupContainer extends AbstractContainer {
             this.containerCommunicator.registerCommunication(taskConfigs);
 
             Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs); //taskId与task配置
-            Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次实例
             List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
+            Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次失败实例
             List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
 
             long lastReportTimeStamp = 0;
@@ -156,10 +154,12 @@ public class TaskGroupContainer extends AbstractContainer {
             	for(Map.Entry<Integer, Communication> entry : communicationMap.entrySet()){
             		Integer taskId = entry.getKey();
             		Communication taskCommunication = entry.getValue();
+                    if(!taskCommunication.isFinished()){
+                        continue;
+                    }
+                    TaskExecutor taskExecutor = removeTask(runTasks, taskId);
                     //失败，看task是否支持failover，重试次数未超过最大限制
             		if(taskCommunication.getState() == State.FAILED){
-                        taskCommunication.setTimestamp(System.currentTimeMillis());
-                        TaskExecutor taskExecutor = removeTask(runTasks, taskId);
                         taskFailedExecutorMap.put(taskId, taskExecutor);
             			if(taskExecutor.supportFailOver() && taskExecutor.getAttemptCount() < taskMaxRetryTimes){
                             taskExecutor.shutdown(); //关闭老的executor
@@ -173,21 +173,16 @@ public class TaskGroupContainer extends AbstractContainer {
             		}else if(taskCommunication.getState() == State.KILLED){
             			failedOrKilled = true;
             			break;
-            		}else if(taskCommunication.getState() == State.SUCCEEDED){
-                        removeTask(runTasks, taskId);
-                    }
+            		}
             	}
             	
                 // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
                 if (failedOrKilled) {
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-                    this.containerCommunicator.report(reportCommunication);
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, reportCommunication.getThrowable());
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, lastTaskGroupContainerCommunication.getThrowable());
                 }
                 
                 //3.有任务未执行，且正在运行的任务数小于最大通道限制
@@ -200,14 +195,17 @@ public class TaskGroupContainer extends AbstractContainer {
                     if(lastExecutor!=null){
                         attemptCount = lastExecutor.getAttemptCount() + 1;
                         long now = System.currentTimeMillis();
-                        long lastAttemptTime = lastExecutor.getTimeStamp();
-                        if(now - lastAttemptTime < taskRetryIntervalInMsec){  //未到等待时间，继续留在队列
+                        long failedTime = lastExecutor.getTimeStamp();
+                        if(now - failedTime < taskRetryIntervalInMsec){  //未到等待时间，继续留在队列
                             continue;
                         }
                         if(!lastExecutor.isShutdown()){ //上次失败的task仍未结束
-                            if(now - lastAttemptTime > taskMaxWaitInMsec){
+                            if(now - failedTime > taskMaxWaitInMsec){
+                                markCommunicationFailed(taskId);
+                                reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
                                 throw DataXException.asDataXException(CommonErrorCode.WAIT_TIME_EXCEED, "task failover等待超时");
                             }else{
+                                lastExecutor.shutdown(); //再次尝试关闭
                                 continue;
                             }
                         }else{
@@ -228,11 +226,8 @@ public class TaskGroupContainer extends AbstractContainer {
                 //4.任务列表为空，executor已结束, 搜集状态为success--->成功
                 if (taskQueue.isEmpty() && isAllTaskDone(runTasks) && containerCommunicator.collectState() == State.SUCCEEDED) {
                 	// 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCommunicator.report(reportCommunication);
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
                     break;
@@ -241,27 +236,19 @@ public class TaskGroupContainer extends AbstractContainer {
                 // 5.如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
                 long now = System.currentTimeMillis();
                 if (now - lastReportTimeStamp > reportIntervalInMillSec) {
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCommunicator.report(reportCommunication);
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     lastReportTimeStamp = now;
                 }
 
-                lastTaskGroupContainerCommunication = nowTaskGroupContainerCommunication;
                 Thread.sleep(sleepIntervalInMillSec);
             }
 
             //6.最后还要汇报一次
-            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-            nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-            Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-            this.containerCommunicator.report(reportCommunication);
+            reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
         } catch (Throwable e) {
-            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
+            Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
             if (nowTaskGroupContainerCommunication.getThrowable() == null) {
                 nowTaskGroupContainerCommunication.setThrowable(e);
@@ -310,6 +297,20 @@ public class TaskGroupContainer extends AbstractContainer {
     		}
     	}
     	return true;
+    }
+
+    private Communication reportTaskGroupCommunication(Communication lastTaskGroupContainerCommunication, int taskCount){
+        Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
+        nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
+        Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication,
+                lastTaskGroupContainerCommunication, taskCount);
+        this.containerCommunicator.report(reportCommunication);
+        return reportCommunication;
+    }
+
+    private void markCommunicationFailed(Integer taskId){
+        Communication communication = containerCommunicator.getCommunication(taskId);
+        communication.setState(State.FAILED);
     }
 
     /**
@@ -465,15 +466,8 @@ public class TaskGroupContainer extends AbstractContainer {
                 return false;
             }
 
-            /**
-             * 如果reader或writer异常退出了，但channel中的数据并没有消费完，这时还不能算完， 需要抛出异常，等待上面处理
-             */
-            if (!this.channel.isEmpty()) {
-                return false;
-            }
-            
-            if(taskCommunication!=null && taskCommunication.isFinished()){
-        		return true;
+            if(taskCommunication==null || !taskCommunication.isFinished()){
+        		return false;
         	}
 
             return true;

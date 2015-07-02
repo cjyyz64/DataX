@@ -67,7 +67,7 @@ public abstract class AbstractRunner {
 
     public void markFail(final Throwable throwable) {
         mark(State.FAILED);
-
+        this.runnerCommunication.setTimestamp(System.currentTimeMillis());
         this.runnerCommunication.setThrowable(throwable);
     }
 
