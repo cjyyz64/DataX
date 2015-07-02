@@ -98,8 +98,10 @@ public class TaskGroupContainer extends AbstractContainer {
             List<Configuration> taskConfigs = this.configuration
                     .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
 
-            LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
-                    JSON.toJSONString(taskConfigs));
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
+                        JSON.toJSONString(taskConfigs));
+            }
 
             /**
              * 状态check时间间隔，较短，可以把任务及时分发到对应channel中

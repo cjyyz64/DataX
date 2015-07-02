@@ -44,6 +44,10 @@ public class TddlConnectionFactory implements ConnectionFactory {
                     String.format("TDDL数据库getConnection失败. 因为根据您配置的连接信息:%s获取数据库连接失败. 请检查您的配置并作出修改.", appName), e);
         }
     }
+    @Override
+    public Connection getConnecttionWithoutRetry(){
+        return null;
+    }
 
     @Override
     public String getConnectionInfo() {

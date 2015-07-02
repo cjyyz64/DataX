@@ -1,8 +1,5 @@
 package com.alibaba.datax.core.faker;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
@@ -10,6 +7,9 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by jingxing on 14-9-2.
@@ -48,6 +48,14 @@ public class FakeReader extends Reader {
 		public void destroy() {
 			System.out.println("fake reader job destroyed!");
 		}
+
+        public void preHandler(Configuration jobConfiguration){
+            jobConfiguration.set("job.preHandler.test","readPreDone");
+        }
+
+        public void postHandler(Configuration jobConfiguration){
+            jobConfiguration.set("job.postHandler.test","readPostDone");
+        }
 	}
 
 	public static final class Task extends Reader.Task {

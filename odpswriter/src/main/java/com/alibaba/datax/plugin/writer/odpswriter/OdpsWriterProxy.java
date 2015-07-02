@@ -159,6 +159,12 @@ public class OdpsWriterProxy {
                     case DOUBLE:
                         odpsRecord.setDouble(currentIndex, columnValue.asDouble());
                         break;
+                    case DECIMAL:
+                        odpsRecord.setDecimal(currentIndex, columnValue.asBigDecimal());
+                        String columnStr = columnValue.asString();
+                        if(columnStr != null && columnStr.indexOf(".") >= 36) {
+                            throw new Exception("Odps decimal 类型的整数位个数不能超过36");
+                        }
                     default:
                         break;
                 }

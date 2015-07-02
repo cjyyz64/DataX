@@ -8,7 +8,7 @@ import org.junit.rules.ExpectedException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-public class OpdsSplitUtilTest {
+public class OdpsSplitUtilTest {
     private static Method splitRecordCountMethod;
 
     @BeforeClass

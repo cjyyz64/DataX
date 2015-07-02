@@ -3,6 +3,7 @@ package com.alibaba.datax.plugin.reader.odpsreader;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.plugin.reader.odpsreader.util.OdpsUtil;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.data.Record;
 import com.aliyun.odps.data.RecordReader;
@@ -53,18 +54,32 @@ public class ReaderProxy {
     public void doRead() {
         try {
             LOG.info("start={}, count={}",start, count);
-            RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
+            //RecordReader recordReader = downloadSession.openRecordReader(start, count, isCompress);
+            RecordReader recordReader = OdpsUtil.getRecordReader(downloadSession, start, count, isCompress);
 
             Record odpsRecord;
             Map<String, String> partitionMap = this
                     .parseCurrentPartitionValue();
+
+            int retryTimes = 1;
             while (true) {
                 try {
                     odpsRecord = recordReader.read();
                 } catch(Exception e) {
-                    //throw 一个特殊的异常, 外层捕获该异常进行重试
-                    LOG.warn("warn : odps reader exception: {}", e.getMessage());
-                    throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_TIMEOUT, e);
+                    //odps read 异常后重试10次
+                    LOG.warn("warn : odps read exception: {}", e.getMessage());
+                    if(retryTimes < 10) {
+                        try {
+                            Thread.sleep(2000);
+                        } catch (InterruptedException ignored) {
+                        }
+                        recordReader = downloadSession.openRecordReader(start, count, isCompress);
+                        LOG.warn("odps-read-exception, 重试第{}次", retryTimes);
+                        retryTimes++;
+                        continue;
+                    } else {
+                        throw DataXException.asDataXException(OdpsReaderErrorCode.ODPS_READ_EXCEPTION, e);
+                    }
                 }
                 //记录已经读取的点
                 start++;
@@ -105,7 +120,12 @@ public class ReaderProxy {
                     break;
                 }
             }
-            recordReader.close();
+            //fixed, 避免recordReader.close失败，跟鸣天确认过，可以不用关闭RecordReader
+            try {
+                recordReader.close();
+            } catch (Exception e) {
+                LOG.warn("recordReader close exception", e);
+            }
         } catch (DataXException e) {
             throw e;
         } catch (Exception e) {
@@ -232,6 +252,14 @@ public class ReaderProxy {
             }
             break;
         }
+        case DECIMAL: {
+            if(isPartitionColumn) {
+                dataXRecord.addColumn(new DoubleColumn(columnNameValue));
+            } else {
+                dataXRecord.addColumn(new DoubleColumn(odpsRecord.getDecimal(columnNameValue)));
+            }
+            break;
+        }
         case STRING: {
             if (isPartitionColumn) {
                 dataXRecord.addColumn(new StringColumn(columnNameValue));
@@ -246,7 +274,7 @@ public class ReaderProxy {
                     .asDataXException(
                             OdpsReaderErrorCode.ILLEGAL_VALUE,
                             String.format(
-                                    "DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, string. "
+                                    "DataX 抽取 ODPS 数据不支持字段类型为:[%s]. 目前支持抽取的字段类型有：bigint, boolean, datetime, double, decimal, string. "
                                             + "您可以选择不抽取 DataX 不支持的字段或者联系 ODPS 管理员寻求帮助.",
                                     type));
         }

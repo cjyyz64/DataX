@@ -35,6 +35,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY = "core.transport.channel.capacity";
 
+	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE = "core.transport.channel.byteCapacity";
+
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE = "core.transport.channel.speed.byte";
 
     public static final String DATAX_CORE_TRANSPORT_CHANNEL_SPEED_RECORD = "core.transport.channel.speed.record";
@@ -73,6 +75,15 @@ public class CoreConstant {
 
     public static final String DATAX_JOB_SETTING_ERRORLIMIT_PERCENT = "job.setting.errorLimit.percentage";
 
+    public static final String DATAX_JOB_SETTING_DRYRUN = "job.setting.dryRun";
+
+    public static final String DATAX_JOB_PREHANDLER_PLUGINTYPE = "job.preHandler.pluginType";
+
+    public static final String DATAX_JOB_PREHANDLER_PLUGINNAME = "job.preHandler.pluginName";
+
+    public static final String DATAX_JOB_POSTHANDLER_PLUGINTYPE = "job.postHandler.pluginType";
+
+    public static final String DATAX_JOB_POSTHANDLER_PLUGINNAME = "job.postHandler.pluginName";
     // ----------------------------- 局部使用的变量
     public static final String JOB_WRITER = "reader";
 

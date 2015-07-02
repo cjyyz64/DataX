@@ -44,6 +44,70 @@ public class JobContainerTest extends CaseInitializer {
     }
 
     @Test
+    public void testPreHandler() throws Exception {
+        JobContainer jobContainer = new JobContainer(
+                this.configuration);
+
+        Method initMethod = jobContainer.getClass()
+                .getDeclaredMethod("preHandle");
+        initMethod.setAccessible(true);
+        initMethod.invoke(jobContainer, new Object[] {});
+
+        System.out.println(this.configuration.get("job.preHandler.test"));
+        Assert.assertEquals("writePreDone",this.configuration.get("job.preHandler.test"));
+    }
+
+    @Test
+    public void testPostHandler() throws Exception {
+        JobContainer jobContainer = new JobContainer(
+                this.configuration);
+
+        Method initMethod = jobContainer.getClass()
+                .getDeclaredMethod("postHandle");
+        initMethod.setAccessible(true);
+        initMethod.invoke(jobContainer, new Object[] {});
+
+        System.out.println(this.configuration.get("job.postHandler.test"));
+        Assert.assertEquals("writePostDone",this.configuration.get("job.postHandler.test"));
+    }
+
+    @Test
+    public void testPreHandlerByReader() throws Exception {
+
+        Configuration copyConfig = this.configuration.clone();
+        copyConfig.set(CoreConstant.DATAX_JOB_PREHANDLER_PLUGINTYPE,"reader");
+        copyConfig.set(CoreConstant.DATAX_JOB_PREHANDLER_PLUGINNAME,"fakereader");
+        JobContainer jobContainer = new JobContainer(
+                copyConfig);
+
+        Method initMethod = jobContainer.getClass()
+                .getDeclaredMethod("preHandle");
+        initMethod.setAccessible(true);
+        initMethod.invoke(jobContainer, new Object[] {});
+
+        System.out.println(copyConfig.get("job.preHandler.test"));
+        Assert.assertEquals("readPreDone",copyConfig.get("job.preHandler.test"));
+    }
+
+    @Test
+    public void testPostHandlerByReader() throws Exception {
+
+        Configuration copyConfig = this.configuration.clone();
+        copyConfig.set(CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINTYPE,"reader");
+        copyConfig.set(CoreConstant.DATAX_JOB_POSTHANDLER_PLUGINNAME,"fakereader");
+        JobContainer jobContainer = new JobContainer(
+                copyConfig);
+
+        Method initMethod = jobContainer.getClass()
+                .getDeclaredMethod("postHandle");
+        initMethod.setAccessible(true);
+        initMethod.invoke(jobContainer, new Object[] {});
+
+        System.out.println(copyConfig.get("job.postHandler.test"));
+        Assert.assertEquals("readPostDone",copyConfig.get("job.postHandler.test"));
+    }
+
+    @Test
     public void testInitNormal() throws Exception {
         this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, -2);
         this.configuration.set("runMode", ExecuteMode.STANDALONE.getValue());
@@ -287,5 +351,19 @@ public class JobContainerTest extends CaseInitializer {
         initMethod.setAccessible(true);
         initMethod.invoke(jobContainer);
         initMethod.setAccessible(false);
+    }
+
+    @Test
+    public void testStartDryRun() {
+        String path = JobContainerTest.class.getClassLoader()
+                .getResource(".").getFile();
+
+        this.configuration = ConfigParser.parse(path + File.separator
+                + "dryRunAll.json");
+        LoadUtil.bind(this.configuration);
+
+        JobContainer jobContainer = new JobContainer(
+                this.configuration);
+        jobContainer.start();
     }
 }

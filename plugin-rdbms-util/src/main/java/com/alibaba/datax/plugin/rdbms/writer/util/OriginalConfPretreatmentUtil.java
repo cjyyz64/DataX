@@ -58,8 +58,7 @@ public final class OriginalConfPretreatmentUtil {
                 throw DataXException.asDataXException(DBUtilErrorCode.REQUIRED_VALUE, "您未配置的写入数据库表的 jdbcUrl.");
             }
 
-            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
-
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForReader(jdbcUrl);
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.JDBC_URL),
                     jdbcUrl);
 
@@ -83,14 +82,6 @@ public final class OriginalConfPretreatmentUtil {
 
             originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK,
                     i, Key.TABLE), expandedTables);
-            /*mysql 类型，检查insert 权限*/
-//            if(DATABASE_TYPE.equals(DATABASE_TYPE.MySql)){
-//                boolean hasInsertPri = DBUtil.hasInsertPrivilege(DATABASE_TYPE,jdbcUrl,username,password,expandedTables);
-//
-//                if(!hasInsertPri){
-//                    throw DataXException.asDataXException(DBUtilErrorCode.NO_INSERT_PRIVILEGE,originalConfig.getString(Key.USERNAME)+jdbcUrl);
-//                }
-//            }
         }
 
         originalConfig.set(Constant.TABLE_NUMBER_MARK, tableNum);
@@ -102,8 +93,13 @@ public final class OriginalConfPretreatmentUtil {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
                     "您的配置文件中的列配置信息有误. 因为您未配置写入数据库表的列名称，DataX获取不到列信息. 请检查您的配置并作出修改.");
         } else {
-
-            List<String> allColumns = DBUtil.getTableColumnsByConn(connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            boolean isPreCheck = originalConfig.getBool(Key.DRYRUN, false);
+            List<String> allColumns;
+            if (isPreCheck){
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttionWithoutRetry(), oneTable, connectionFactory.getConnectionInfo());
+            }else{
+                allColumns = DBUtil.getTableColumnsByConn(DATABASE_TYPE,connectionFactory.getConnecttion(), oneTable, connectionFactory.getConnectionInfo());
+            }
 
             LOG.info("table:[{}] all columns:[\n{}\n].", oneTable,
                     StringUtils.join(allColumns, ","));

@@ -508,7 +508,7 @@ public class MultiVersionForExceptionFunctiontest extends BaseTest{
                 // value
                 r.addColumn(new LongColumn(j));
                 input.add(r);
-                rm.add(new RecordAndMessage(r, "Code:[Common-01], Describe:[同步数据出现业务脏数据情况，数据类型转换错误 .] - String[hello]不能转为Long ."));
+                rm.add(new RecordAndMessage(r, "Code:[Common-01], Describe:[同步数据出现业务脏数据情况，数据类型转换错误 .] - String[\"hello\"]不能转为Long ."));
             }
         }
         

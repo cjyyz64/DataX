@@ -112,6 +112,14 @@
                 "percentage": null
             }
         },
+        "preHandler":{
+          "pluginType":"writer",
+          "pluginName":"fakewriter"
+        },
+        "postHandler":{
+            "pluginType":"writer",
+            "pluginName":"fakewriter"
+        },
         "content": [
             {
                 "reader": {

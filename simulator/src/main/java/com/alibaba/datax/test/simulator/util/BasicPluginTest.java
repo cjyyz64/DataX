@@ -4,18 +4,19 @@ import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
-import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.core.util.ConfigParser;
-import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
+import com.alibaba.datax.core.util.container.CoreConstant;
+import com.alibaba.datax.core.util.container.LoadUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,22 +28,33 @@ public abstract class BasicPluginTest {
 
     protected static String TESTCLASSES_PATH = null;
 
-    @BeforeClass
+    //@BeforeClass
     public static void mvnCompile() {
         TESTCLASSES_PATH = Thread.currentThread().getClass().getResource("/")
                 .getPath();
 
         ProcessBuilder pb = new ProcessBuilder();
         List<String> commands = new ArrayList<String>();
-        commands.add("mvn");
+        String osName = System.getProperty("os.name");
+        if(osName.contains("Windows")) {
+            commands.add("mvn.bat");
+        } else {
+            commands.add("mvn");
+        }
         commands.add("install");
         commands.add("-Dmaven.test.skip=true");
         pb.command(commands);
-
+        pb.redirectErrorStream(true);
         pb.directory(new File(TESTCLASSES_PATH).getParentFile().getParentFile());
 
         try {
             Process p2 = pb.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p2.getInputStream()));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println("BasicPluginTest mvn => " + line);
+            }
+
             p2.waitFor();
 
             String result = IOUtils.toString(p2.getInputStream(), Charset.forName("utf8"));
@@ -59,7 +71,7 @@ public abstract class BasicPluginTest {
     private ClassLoaderSwapper classLoaderSwapper = ClassLoaderSwapper
             .newCurrentThreadClassLoaderSwapper();
 
-    protected static String getPluginMainJarName(File pluginDir) {
+    protected static String getPluginMainJarName(File pluginDir,final String plugingname) {
         Assert.assertNotNull(pluginDir);
         Assert.assertTrue(pluginDir.isDirectory());
 
@@ -67,7 +79,7 @@ public abstract class BasicPluginTest {
 
             @Override
             public boolean accept(File dir, String name) {
-                return name.contains(".jar");
+                return name.contains(".jar") && name.contains(plugingname);
             }
         });
 

@@ -92,9 +92,20 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
         this.writerPluginName = writerPluginName;
     }
 
+    public void preCheck() {
+    }
+
 	public void prepare() {
 	}
 
 	public void post() {
 	}
+
+    public void preHandler(Configuration jobConfiguration){
+
+    }
+
+    public void postHandler(Configuration jobConfiguration){
+
+    }
 }
