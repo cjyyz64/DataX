@@ -96,9 +96,10 @@ public class JobContainer extends AbstractContainer {
         LOG.info("DataX jobContainer starts job.");
 
         boolean hasException = false;
+        boolean isDryRun = false;
         try {
             this.startTimeStamp = System.currentTimeMillis();
-            boolean isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
+            isDryRun = configuration.getBool(CoreConstant.DATAX_JOB_SETTING_DRYRUN, false);
             if(isDryRun) {
                 LOG.info("jobContainer starts to do preCheck ...");
                 this.preCheck();
@@ -166,10 +167,12 @@ public class JobContainer extends AbstractContainer {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         } finally {
-            this.destroy();
-            this.endTimeStamp = System.currentTimeMillis();
-            if (!hasException) {
-                this.logStatistics();
+            if(!isDryRun) {
+                this.destroy();
+                this.endTimeStamp = System.currentTimeMillis();
+                if (!hasException) {
+                    this.logStatistics();
+                }
             }
         }
     }
