@@ -277,7 +277,7 @@ public class JobContainer extends AbstractContainer {
     private void preCheckWriter() {
         classLoaderSwapper.setCurrentThreadClassLoader(LoadUtil.getJarLoader(
                 PluginType.WRITER, this.writerPluginName));
-        LOG.info(String.format("DataX Writer.Job [%s] do prepare work .",
+        LOG.info(String.format("DataX Writer.Job [%s] do preCheck work .",
                 this.writerPluginName));
         this.jobWriter.preCheck();
         classLoaderSwapper.restoreCurrentThreadClassLoader();
