@@ -75,14 +75,13 @@ public class AdsWriter extends Writer {
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 loadModeInit();
-            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.REPLACEMODE.equalsIgnoreCase(this.writeMode)) {
+            } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(originalConfig);
                 AdsInsertUtil.dealColumnConf(originalConfig, allColumns);
 
                 LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                         originalConfig.toJSON());
-                //this.commonRdbmsWriterJob.init(this.originalConfig);
             } else {
                 throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
             }

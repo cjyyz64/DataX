@@ -122,14 +122,12 @@ public class AdsInsertProxy {
                     sql = generateInsertSql(record);
                     int status = statement.executeUpdate(sql);
                 } catch (SQLException e) {
-                    LOG.error("sql: " + sql);
-                    LOG.error(e.toString());
+                    LOG.error("sql: " + sql, e.getMessage());
                     this.taskPluginCollector.collectDirtyRecord(record, e);
                 }
             }
         } catch (Exception e) {
-            LOG.error("sql: " + sql);
-            LOG.error("插入异常", e);
+            LOG.error("插入异常, sql: " + sql);
             throw DataXException.asDataXException(
                     DBUtilErrorCode.WRITE_DATA_ERROR, e);
         } finally {
@@ -197,16 +195,7 @@ public class AdsInsertProxy {
                 }
                 break;
 
-            // for mysql bug, see http://bugs.mysql.com/bug.php?id=35115
             case Types.DATE:
-//                if (this.resultSetMetaData.getRight().get(columnIndex)
-//                        .equalsIgnoreCase("year")) {
-//                    if (column.asBigInteger() == null) {
-//                        sqlSb.append("null");
-//                    } else {
-//                        sqlSb.append(column.asBigInteger().intValue());
-//                    }
-//                } else {
                 java.sql.Date sqlDate = null;
                 try {
                     utilDate = column.asDate();
@@ -221,8 +210,6 @@ public class AdsInsertProxy {
                 } else {
                     sqlSb.append("null");
                 }
-                //sqlSb.append("'").append(sqlDate).append("'");
-                //}
                 break;
 
             case Types.TIME:
@@ -240,7 +227,6 @@ public class AdsInsertProxy {
                 } else {
                     sqlSb.append("null");
                 }
-                //sqlSb.append("'").append(sqlTime).append("'");
                 break;
 
             case Types.TIMESTAMP:
@@ -259,7 +245,6 @@ public class AdsInsertProxy {
                 } else {
                     sqlSb.append("null");
                 }
-                //sqlSb.append("'").append(sqlTimestamp).append("'");
                 break;
 
             case Types.BOOLEAN:
