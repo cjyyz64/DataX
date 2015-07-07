@@ -17,12 +17,19 @@ public final class Key {
 
     public final static String OVER_WRITE = "overWrite";
 
+    public final static String WRITE_MODE = "writeMode";
+
+
+    public final static String COLUMN = "column";
+
+    public final static String EMPTY_AS_NULL = "emptyAsNull";
+
+    public final static String BATCH_SIZE = "batchSize";
+
     /**
      * 以下是odps writer的key
      */
     public final static String PARTITION = "partition";
-
-    public final static String COLUMN = "column";
 
     public final static String ODPSTABLENAME = "table";
 

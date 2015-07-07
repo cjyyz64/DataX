@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.adswriter;
+package com.alibaba.datax.plugin.writer.adswriter.load;
 
 import com.alibaba.datax.common.util.Configuration;
 

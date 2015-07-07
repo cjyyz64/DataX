@@ -1,6 +1,11 @@
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.*;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.load.TableMetaHelper;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.aliyun.odps.Instance;
@@ -10,6 +15,10 @@ import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
 import org.junit.Test;
+
+import java.sql.*;
+import java.util.List;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 
@@ -155,5 +164,81 @@ public class AdsWriteUnitTest {
         assertNotNull(adsPartition3);
         assertNotNull(adsPartition4);
         assertNotNull(adsPartition5);
+    }
+
+
+    @Test
+    public void testAdsInsertMode() {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            String url = "jdbc:mysql://" + "10.101.90.23:9999" + "/" + "test555" + "?useUnicode=true&characterEncoding=UTF-8";
+
+            Properties connectionProps = new Properties();
+            connectionProps.put("user", "gq5FDS2IgSWqXzTu");
+            connectionProps.put("password", "xNXmuBr4dvn3BNLLzWZEAerpHqREto");
+            Connection connection = DriverManager.getConnection(url, connectionProps);
+            Statement statement = connection.createStatement();
+
+            ResultSet rs = statement.executeQuery("show databases");
+
+            String jobId = null;
+            while (rs.next()) {
+                jobId = rs.getString(1);
+                System.out.println(jobId);
+            }
+
+            if (jobId == null) {
+                throw new AdsException(AdsException.ADS_LOADDATA_JOBID_NOT_AVAIL,
+                        "Job id is not available for the submitted LOAD DATA." + jobId, null);
+            }
+        } catch (Exception e) {
+
+        }
+
+
+
+    }
+
+    @Test
+    public void testConfchange() {
+
+        Configuration configuration = Configuration.from("{\n" +
+                "    \"odps\": {\n" +
+                "        \"accessId\": \"xasdfkladslfjsaifw224ysgsa5\",\n" +
+                "        \"accessKey\": \"asfjkljfp0w4624twfswe56346212341adsfa3\",\n" +
+                "        \"account\": \"xxx@aliyun.com\",\n" +
+                "        \"odpsServer\": \"http://service.odpsstg.aliyun-inc.com/stgnew\",\n" +
+                "        \"tunnelServer\": \"http://tunnel.odpsstg.aliyun-inc.com\",\n" +
+                "        \"accountType\": \"aliyun\",\n" +
+                "        \"project\": \"transfer_project\"\n" +
+                "    },\n" +
+                "    \"writeMode\": \"load\",\n" +
+                "    \"url\": \"127.0.0.1:3306\",\n" +
+                "    \"schema\": \"schema\",\n" +
+                "    \"table\": \"table\",\n" +
+                "    \"username\": \"username\",\n" +
+                "    \"password\": \"password\",\n" +
+                "    \"partition\": \"\",\n" +
+                "    \"lifeCycle\": 2,\n" +
+                "    \"overWrite\": true\n" +
+                "}");
+        //Configuration result = AdsUtil.adsConfToRdbmsConf(configuration);
+        //System.out.println(result);
+    }
+
+    @Test
+    public void test转义字符() {
+//        String temp = "C:\\\\Users\\\\\\hongjiao.hj\\Desktop\\tmp\\项目\\DAYLY-INFO\\";
+//
+//
+//        String abc = temp.replace("\\", "\\\\");
+//        String abc = temp.replaceAll("\\\\", "\\");
+
+        String aaa= "dir\\\\,'C:\\Users\\hongjiao.hj\\Desktop\\tmp\\项目\\DAYLY-INFO\\'";
+
+        String bbb =  aaa.replace("\\","\\\\");
+
+        System.out.println(aaa);
+        System.out.println(bbb);
     }
 }

@@ -2,11 +2,12 @@ package com.alibaba.datax.plugin.writer.adswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.writer.adswriter.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
-import com.alibaba.datax.plugin.writer.adswriter.TransferProjectConf;
+import com.alibaba.datax.plugin.writer.adswriter.load.TransferProjectConf;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
+import com.alibaba.datax.plugin.writer.odpswriter.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +22,7 @@ public class AdsUtil {
 
     /*检查配置文件中必填的配置项是否都已填
     * */
-    public static void checkNecessaryConfig(Configuration originalConfig) {
+    public static void checkNecessaryConfig(Configuration originalConfig, String writeMode) {
         //检查ADS必要参数
         originalConfig.getNecessaryValue(Key.ADS_URL,
                 AdsWriterErrorCode.REQUIRED_VALUE);
@@ -31,17 +32,19 @@ public class AdsUtil {
                 AdsWriterErrorCode.REQUIRED_VALUE);
         originalConfig.getNecessaryValue(Key.SCHEMA,
                 AdsWriterErrorCode.REQUIRED_VALUE);
-        originalConfig.getNecessaryValue(Key.Life_CYCLE,
-                AdsWriterErrorCode.REQUIRED_VALUE);
-        Integer lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
-        if(lifeCycle <= 0) {
-            throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "配置项[lifeCycle]的值必须大于零.");
-        }
-        originalConfig.getNecessaryValue(Key.ADS_TABLE,
-                AdsWriterErrorCode.REQUIRED_VALUE);
-        Boolean overwrite = originalConfig.getBool(Key.OVER_WRITE);
-        if (overwrite == null) {
-            throw DataXException.asDataXException(AdsWriterErrorCode.REQUIRED_VALUE, "配置项[overWrite]是必填项.");
+        if(Constant.LOADMODE.equals(writeMode)) {
+            originalConfig.getNecessaryValue(Key.Life_CYCLE,
+                    AdsWriterErrorCode.REQUIRED_VALUE);
+            Integer lifeCycle = originalConfig.getInt(Key.Life_CYCLE);
+            if (lifeCycle <= 0) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "配置项[lifeCycle]的值必须大于零.");
+            }
+            originalConfig.getNecessaryValue(Key.ADS_TABLE,
+                    AdsWriterErrorCode.REQUIRED_VALUE);
+            Boolean overwrite = originalConfig.getBool(Key.OVER_WRITE);
+            if (overwrite == null) {
+                throw DataXException.asDataXException(AdsWriterErrorCode.REQUIRED_VALUE, "配置项[overWrite]是必填项.");
+            }
         }
     }
 
