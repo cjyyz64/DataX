@@ -52,6 +52,11 @@ public class MemoryChannel extends Channel {
 	}
 
 	@Override
+	public void clear(){
+		this.queue.clear();
+	}
+
+	@Override
 	protected void doPush(Record r) {
 		try {
             //首先判断下队列的空间，如果full，则统计一次waitWriter。因为后面的offer可能统计不到，比如200ms内，writer消费掉了数据。但实际上，还是writer阻塞了整体速度。

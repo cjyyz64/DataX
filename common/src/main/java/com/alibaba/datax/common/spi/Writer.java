@@ -32,6 +32,9 @@ public abstract class Writer extends BaseObject {
 	 * 每个Writer插件必须实现Task内部类
 	 */
 	public abstract static class Task extends AbstractTaskPlugin {
+
 		public abstract void startWrite(RecordReceiver lineReceiver);
+
+		public boolean supportFailOver(){return false;}
 	}
 }

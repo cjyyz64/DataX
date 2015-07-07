@@ -65,4 +65,8 @@ public abstract class AbstractContainerCommunicator {
      */
     public abstract Map<Integer, Communication> getCommunicationMap();
 
+    public void resetCommunication(Integer id){
+        Map<Integer, Communication> map = getCommunicationMap();
+        map.put(id, new Communication());
+    }
 }

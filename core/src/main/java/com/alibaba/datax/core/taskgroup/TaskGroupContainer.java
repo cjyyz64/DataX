@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.taskgroup;
 
 import com.alibaba.datax.common.constant.PluginType;
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
@@ -22,12 +23,18 @@ import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
+
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 public class TaskGroupContainer extends AbstractContainer {
     private static final Logger LOG = LoggerFactory
@@ -92,17 +99,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
     @Override
     public void start() {
-        Communication nowTaskGroupContainerCommunication = null;
-
         try {
-            List<Configuration> taskConfigs = this.configuration
-                    .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
-
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
-                        JSON.toJSONString(taskConfigs));
-            }
-
             /**
              * 状态check时间间隔，较短，可以把任务及时分发到对应channel中
              */
@@ -119,97 +116,139 @@ public class TaskGroupContainer extends AbstractContainer {
             int channelNumber = this.configuration.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_CHANNEL);
 
-            // 根据channelNumber初始化taskExecutors的大小
-            List<TaskExecutor> taskExecutors = new ArrayList<TaskExecutor>();
-            for (int i = 0; i < channelNumber; i++) {
-                taskExecutors.add(null);
-            }
-            this.containerCommunicator.registerCommunication(taskConfigs);
+            int taskMaxRetryTimes = this.configuration.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_MAXRETRYTIMES, 1);
 
+            long taskRetryIntervalInMsec = this.configuration.getLong(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_RETRYINTERVALINMSEC, 10000);
+
+            long taskMaxWaitInMsec = this.configuration.getLong(CoreConstant.DATAX_CORE_CONTAINER_TASK_FAILOVER_MAXWAITINMSEC, 60000);
+            
+            List<Configuration> taskConfigs = this.configuration
+                    .getListConfiguration(CoreConstant.DATAX_JOB_CONTENT);
+
+            if(LOG.isDebugEnabled()) {
+                LOG.debug("taskGroup[{}]'s task configs[{}]", this.taskGroupId,
+                        JSON.toJSONString(taskConfigs));
+            }
+            
             int taskCountInThisTaskGroup = taskConfigs.size();
             LOG.info(String.format(
                     "taskGroupId=[%d] start [%d] channels for [%d] tasks.",
                     this.taskGroupId, channelNumber, taskCountInThisTaskGroup));
+            
+            this.containerCommunicator.registerCommunication(taskConfigs);
+
+            Map<Integer, Configuration> taskConfigMap = buildTaskConfigMap(taskConfigs); //taskId与task配置
+            List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
+            Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次失败实例
+            List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
 
             long lastReportTimeStamp = 0;
-            int taskIndex = 0;
-
             Communication lastTaskGroupContainerCommunication = new Communication();
 
             while (true) {
-                State taskExecutorTotalState = this.containerCommunicator.collectState();
-                // 发现该taskGroup下taskExecutor的总状态失败则汇报错误
-                if (taskExecutorTotalState == State.FAILED) {
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-                    this.containerCommunicator.report(reportCommunication);
+            	//1.判断task状态
+            	boolean failedOrKilled = false;
+            	Map<Integer, Communication> communicationMap = containerCommunicator.getCommunicationMap();
+            	for(Map.Entry<Integer, Communication> entry : communicationMap.entrySet()){
+            		Integer taskId = entry.getKey();
+            		Communication taskCommunication = entry.getValue();
+                    if(!taskCommunication.isFinished()){
+                        continue;
+                    }
+                    TaskExecutor taskExecutor = removeTask(runTasks, taskId);
+                    //失败，看task是否支持failover，重试次数未超过最大限制
+            		if(taskCommunication.getState() == State.FAILED){
+                        taskFailedExecutorMap.put(taskId, taskExecutor);
+            			if(taskExecutor.supportFailOver() && taskExecutor.getAttemptCount() < taskMaxRetryTimes){
+                            taskExecutor.shutdown(); //关闭老的executor
+                            containerCommunicator.resetCommunication(taskId); //将task的状态重置
+            				Configuration taskConfig = taskConfigMap.get(taskId);
+            				taskQueue.add(taskConfig); //重新加入任务列表
+            			}else{
+            				failedOrKilled = true;
+                			break;
+            			}
+            		}else if(taskCommunication.getState() == State.KILLED){
+            			failedOrKilled = true;
+            			break;
+            		}
+            	}
+            	
+                // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
+                if (failedOrKilled) {
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     throw DataXException.asDataXException(
-                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, reportCommunication.getThrowable());
+                            FrameworkErrorCode.PLUGIN_RUNTIME_ERROR, lastTaskGroupContainerCommunication.getThrowable());
                 }
-
-                for (int slotIndex = 0; slotIndex < taskExecutors.size(); slotIndex++) {
-                    TaskExecutor taskExecutor = taskExecutors.get(slotIndex);
-                    // 当taskExecutor为空或上一个任务已完成，且仍有未完成任务时，启动一个新的taskExecutor
-                    if ((taskExecutor == null || taskExecutor.isTaskFinished())
-                            && taskIndex < taskConfigs.size()) {
-                        LOG.debug("start a new taskExecutor[{}]", taskIndex);
-
-                        TaskExecutor newTaskExecutor = new TaskExecutor(
-                                taskConfigs.get(taskIndex++));
-                        // 将新生成的newTaskExecutor放入taskExecutors中，并启动
-                        taskExecutors.set(slotIndex, newTaskExecutor);
-                        newTaskExecutor.doStart();
+                
+                //3.有任务未执行，且正在运行的任务数小于最大通道限制
+                Iterator<Configuration> iterator = taskQueue.iterator();
+                while(iterator.hasNext() && runTasks.size() < channelNumber){
+                    Configuration taskConfig = iterator.next();
+                    Integer taskId = taskConfig.getInt(CoreConstant.TASK_ID);
+                    int attemptCount = 1;
+                    TaskExecutor lastExecutor = taskFailedExecutorMap.get(taskId);
+                    if(lastExecutor!=null){
+                        attemptCount = lastExecutor.getAttemptCount() + 1;
+                        long now = System.currentTimeMillis();
+                        long failedTime = lastExecutor.getTimeStamp();
+                        if(now - failedTime < taskRetryIntervalInMsec){  //未到等待时间，继续留在队列
+                            continue;
+                        }
+                        if(!lastExecutor.isShutdown()){ //上次失败的task仍未结束
+                            if(now - failedTime > taskMaxWaitInMsec){
+                                markCommunicationFailed(taskId);
+                                reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+                                throw DataXException.asDataXException(CommonErrorCode.WAIT_TIME_EXCEED, "task failover等待超时");
+                            }else{
+                                lastExecutor.shutdown(); //再次尝试关闭
+                                continue;
+                            }
+                        }else{
+                            LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] has already shutdown",
+                                    this.taskGroupId, taskId, lastExecutor.getAttemptCount());
+                        }
                     }
+                	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone(), attemptCount);
+                	taskExecutor.doStart();
+
+                    iterator.remove();
+                    runTasks.add(taskExecutor);
+                    taskFailedExecutorMap.remove(taskId);
+                    LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is started",
+                            this.taskGroupId, taskId, attemptCount);
                 }
 
-                boolean isAllTaskDone = true;
-                for (TaskExecutor executor : taskExecutors) {
-                    if (!executor.isTaskFinished()) {
-                        isAllTaskDone = false;
-                        break;
-                    }
-                }
-
-                if (taskIndex >= taskConfigs.size() && isAllTaskDone
-                        && taskExecutorTotalState == State.SUCCEEDED) {
-                    // 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCommunicator.report(reportCommunication);
+                //4.任务列表为空，executor已结束, 搜集状态为success--->成功
+                if (taskQueue.isEmpty() && isAllTaskDone(runTasks) && containerCommunicator.collectState() == State.SUCCEEDED) {
+                	// 成功的情况下，也需要汇报一次。否则在任务结束非常快的情况下，采集的信息将会不准确
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     LOG.info("taskGroup[{}] completed it's tasks.", this.taskGroupId);
                     break;
                 }
 
-                // 如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
+                // 5.如果当前时间已经超出汇报时间的interval，那么我们需要马上汇报
                 long now = System.currentTimeMillis();
                 if (now - lastReportTimeStamp > reportIntervalInMillSec) {
-                    nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-                    nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-                    Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-                    this.containerCommunicator.report(reportCommunication);
+                    lastTaskGroupContainerCommunication = reportTaskGroupCommunication(
+                            lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     lastReportTimeStamp = now;
                 }
 
-                lastTaskGroupContainerCommunication = nowTaskGroupContainerCommunication;
                 Thread.sleep(sleepIntervalInMillSec);
             }
 
-            //最后还要汇报一次
-            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
-            nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
-
-            Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication, lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-            this.containerCommunicator.report(reportCommunication);
+            //6.最后还要汇报一次
+            reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
         } catch (Throwable e) {
-            nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
+            Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
             if (nowTaskGroupContainerCommunication.getThrowable() == null) {
                 nowTaskGroupContainerCommunication.setThrowable(e);
@@ -221,6 +260,58 @@ public class TaskGroupContainer extends AbstractContainer {
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }
     }
+    
+    private Map<Integer, Configuration> buildTaskConfigMap(List<Configuration> configurations){
+    	Map<Integer, Configuration> map = new HashMap<Integer, Configuration>();
+    	for(Configuration taskConfig : configurations){
+        	int taskId = taskConfig.getInt(CoreConstant.TASK_ID);
+        	map.put(taskId, taskConfig);
+    	}
+    	return map;
+    }
+
+    private List<Configuration> buildRemainTasks(List<Configuration> configurations){
+    	List<Configuration> remainTasks = new LinkedList<Configuration>();
+    	for(Configuration taskConfig : configurations){
+    		remainTasks.add(taskConfig);
+    	}
+    	return remainTasks;
+    }
+    
+    private TaskExecutor removeTask(List<TaskExecutor> taskList, int taskId){
+    	Iterator<TaskExecutor> iterator = taskList.iterator();
+    	while(iterator.hasNext()){
+    		TaskExecutor taskExecutor = iterator.next();
+    		if(taskExecutor.getTaskId() == taskId){
+    			iterator.remove();
+    			return taskExecutor;
+    		}
+    	}
+    	return null;
+    }
+    
+    private boolean isAllTaskDone(List<TaskExecutor> taskList){
+    	for(TaskExecutor taskExecutor : taskList){
+    		if(!taskExecutor.isTaskFinished()){
+    			return false;
+    		}
+    	}
+    	return true;
+    }
+
+    private Communication reportTaskGroupCommunication(Communication lastTaskGroupContainerCommunication, int taskCount){
+        Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
+        nowTaskGroupContainerCommunication.setTimestamp(System.currentTimeMillis());
+        Communication reportCommunication = CommunicationTool.getReportCommunication(nowTaskGroupContainerCommunication,
+                lastTaskGroupContainerCommunication, taskCount);
+        this.containerCommunicator.report(reportCommunication);
+        return reportCommunication;
+    }
+
+    private void markCommunicationFailed(Integer taskId){
+        Communication communication = containerCommunicator.getCommunication(taskId);
+        communication.setState(State.FAILED);
+    }
 
     /**
      * TaskExecutor是一个完整task的执行器
@@ -231,11 +322,17 @@ public class TaskGroupContainer extends AbstractContainer {
 
         private int taskId;
 
+        private int attemptCount;
+
         private Channel channel;
 
         private Thread readerThread;
 
         private Thread writerThread;
+        
+        private ReaderRunner readerRunner;
+        
+        private WriterRunner writerRunner;
 
         /**
          * 该处的taskCommunication在多处用到：
@@ -245,7 +342,7 @@ public class TaskGroupContainer extends AbstractContainer {
          */
         private Communication taskCommunication;
 
-        public TaskExecutor(Configuration taskConf) {
+        public TaskExecutor(Configuration taskConf, int attemptCount) {
             // 获取该taskExecutor的配置
             this.taskConfig = taskConf;
             Validate.isTrue(null != this.taskConfig.getConfiguration(CoreConstant.JOB_READER)
@@ -254,6 +351,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
             // 得到taskId
             this.taskId = this.taskConfig.getInt(CoreConstant.TASK_ID);
+            this.attemptCount = attemptCount;
 
             /**
              * 由taskId得到该taskExecutor的Communication
@@ -270,7 +368,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成writerThread
              */
-            WriterRunner writerRunner = (WriterRunner) generateRunner(PluginType.WRITER);
+            writerRunner = (WriterRunner) generateRunner(PluginType.WRITER);
             this.writerThread = new Thread(writerRunner,
                     String.format("%d-%d-%d-writer",
                             jobId, taskGroupId, this.taskId));
@@ -282,7 +380,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成readerThread
              */
-            ReaderRunner readerRunner = (ReaderRunner) generateRunner(PluginType.READER);
+            readerRunner = (ReaderRunner) generateRunner(PluginType.READER);
             this.readerThread = new Thread(readerRunner,
                     String.format("%d-%d-%d-reader",
                             jobId, taskGroupId, this.taskId));
@@ -313,6 +411,7 @@ public class TaskGroupContainer extends AbstractContainer {
                         FrameworkErrorCode.RUNTIME_ERROR,
                         this.taskCommunication.getThrowable());
             }
+
         }
 
         private AbstractRunner generateRunner(PluginType pluginType) {
@@ -360,26 +459,49 @@ public class TaskGroupContainer extends AbstractContainer {
             return newRunner;
         }
 
-        // 检查reader、writer线程是否完成工作
+        // 检查任务是否结束
         private boolean isTaskFinished() {
-            // 如果没有reader/writer 那就是才初始化，可以理解为完成了工作
-            if (null == readerThread || null == writerThread) {
-                return true;
-            }
-
             // 如果reader 或 writer没有完成工作，那么直接返回工作没有完成
             if (readerThread.isAlive() || writerThread.isAlive()) {
                 return false;
             }
 
-            /**
-             * 如果reader或writer异常退出了，但channel中的数据并没有消费完，这时还不能算完， 需要抛出异常，等待上面处理
-             */
-            if (!this.channel.isEmpty()) {
-                return false;
-            }
+            if(taskCommunication==null || !taskCommunication.isFinished()){
+        		return false;
+        	}
 
             return true;
+        }
+        
+        private int getTaskId(){
+        	return taskId;
+        }
+
+        private long getTimeStamp(){
+            return taskCommunication.getTimestamp();
+        }
+
+        private int getAttemptCount(){
+            return attemptCount;
+        }
+        
+        private boolean supportFailOver(){
+        	return writerRunner.supportFailOver();
+        }
+
+        private void shutdown(){
+            writerRunner.shutdown();
+            readerRunner.shutdown();
+            if(writerThread.isAlive()){
+                writerThread.interrupt();
+            }
+            if(readerThread.isAlive()){
+                readerThread.interrupt();
+            }
+        }
+
+        private boolean isShutdown(){
+            return !readerThread.isAlive() && !writerThread.isAlive();
         }
     }
 }

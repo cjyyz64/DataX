@@ -26,7 +26,7 @@ public enum FrameworkErrorCode implements ErrorCode {
     KILL_JOB_TIMEOUT_ERROR("Framework-16", "kill 任务超时，请联系PE解决"),
     START_TASKGROUP_ERROR("Framework-17", "taskGroup启动失败,请联系DataX开发团队解决"),
     CALL_DATAX_SERVICE_FAILED("Framework-18", "请求 DataX Service 出错."),
-    KILLED_EXIT_VALUE("Framework-143", "Job 收到了 Kill 命令."),;
+    KILLED_EXIT_VALUE("Framework-143", "Job 收到了 Kill 命令.");
 
     private final String code;
 

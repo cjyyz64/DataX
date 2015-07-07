@@ -20,4 +20,9 @@ public class RecordReceiverForTest implements RecordReceiver {
         }
 		return null;
 	}
+
+	@Override
+	public void shutdown(){
+
+	}
 }

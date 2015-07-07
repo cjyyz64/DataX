@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.odpswriter;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -245,6 +246,7 @@ public class OdpsWriter extends Writer {
         private List<Long> blocks;
         private int blockSizeInMB;
 
+        private Integer failoverState = 0; //0 未failover 1准备failover 2已提交，不能failover
 
         @Override
         public void init() {
@@ -318,15 +320,32 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
-                    StringUtils.join(blocks, ","));
-            OdpsUtil.masterCompleteBlocks(this.managerUpload, blocks.toArray(new Long[0]));
-            LOG.info("Slave which uploadId=[{}] commit blocks ok.", this.uploadId);
+            synchronized (failoverState){
+                if(failoverState==0){
+                    failoverState = 2;
+                    LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
+                            StringUtils.join(blocks, ","));
+                    OdpsUtil.masterCompleteBlocks(this.managerUpload, blocks.toArray(new Long[0]));
+                    LOG.info("Slave which uploadId=[{}] commit blocks ok.", this.uploadId);
+                }else{
+                    throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+                }
+            }
         }
 
         @Override
         public void destroy() {
         }
 
+        @Override
+        public boolean supportFailOver(){
+            synchronized (failoverState){
+                if(failoverState==0){
+                    failoverState = 1;
+                    return true;
+                }
+                return false;
+            }
+        }
     }
 }

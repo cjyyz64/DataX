@@ -20,5 +20,9 @@ public class TestRecordReceiver implements RecordReceiver {
         }
         return null;
     }
+
+    public void shutdown(){
+
+    }
     
 }

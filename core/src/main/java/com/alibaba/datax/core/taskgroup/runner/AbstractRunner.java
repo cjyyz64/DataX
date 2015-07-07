@@ -25,7 +25,6 @@ public abstract class AbstractRunner {
     public void destroy() {
         if (this.plugin != null) {
             this.plugin.destroy();
-            this.plugin = null;
         }
     }
 
@@ -68,7 +67,7 @@ public abstract class AbstractRunner {
 
     public void markFail(final Throwable throwable) {
         mark(State.FAILED);
-
+        this.runnerCommunication.setTimestamp(System.currentTimeMillis());
         this.runnerCommunication.setThrowable(throwable);
     }
 
@@ -99,4 +98,6 @@ public abstract class AbstractRunner {
                 "插件的Communication不能为空");
         this.runnerCommunication = runnerCommunication;
     }
+
+    public abstract void shutdown();
 }

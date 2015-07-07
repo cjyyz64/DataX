@@ -54,4 +54,9 @@ public class RecordSenderForTest implements RecordSender {
 		this.printWriter.write(TerminateRecord.get().toString() + "\n");
 	}
 
+	@Override
+	public void shutdown(){
+
+	}
+
 }

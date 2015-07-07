@@ -52,4 +52,8 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
             super.destroy();
         }
     }
+
+    public void shutdown(){
+        recordSender.shutdown();
+    }
 }

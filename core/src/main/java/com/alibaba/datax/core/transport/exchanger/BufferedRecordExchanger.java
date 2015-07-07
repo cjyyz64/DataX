@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.transport.exchanger;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -27,6 +28,8 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 	private int bufferIndex = 0;
 
 	private static Class<? extends Record> RECORD_CLASS;
+
+	private volatile boolean shutdown = false;
 
 	@SuppressWarnings("unchecked")
 	public BufferedRecordExchanger(final Channel channel) {
@@ -63,6 +66,10 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void sendToWriter(Record record) {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
+
 		Validate.notNull(record, "record不能为空.");
 
 		boolean isFull = (this.bufferIndex >= this.bufferSize);
@@ -76,6 +83,9 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void flush() {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		this.channel.pushAll(this.buffer);
 		this.buffer.clear();
 		this.bufferIndex = 0;
@@ -83,12 +93,18 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 	@Override
 	public void terminate() {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		flush();
 		this.channel.pushTerminate(TerminateRecord.get());
 	}
 
 	@Override
 	public Record getFromReader() {
+		if(shutdown){
+			throw DataXException.asDataXException(CommonErrorCode.SHUT_DOWN_TASK, "");
+		}
 		boolean isEmpty = (this.bufferIndex >= this.buffer.size());
 		if (isEmpty) {
 			receive();
@@ -99,6 +115,17 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 			record = null;
 		}
 		return record;
+	}
+
+	@Override
+	public void shutdown(){
+		shutdown = true;
+		try{
+			buffer.clear();
+			channel.clear();
+		}catch(Throwable t){
+			t.printStackTrace();
+		}
 	}
 
 	private void receive() {
