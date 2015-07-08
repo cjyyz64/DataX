@@ -120,7 +120,6 @@ public class ResultSetReadProxy {
 											metaData.getColumnClassName(i)));
 				}
 			}
-			recordSender.sendToWriter(record);
 		} catch (Exception e) {
 			if (IS_DEBUG) {
 				LOG.debug("read data " + record.toString()
@@ -133,5 +132,7 @@ public class ResultSetReadProxy {
 				throw (DataXException) e;
 			}
 		}
+
+		recordSender.sendToWriter(record);
 	}
 }
