@@ -70,6 +70,7 @@ public class AdsWriter extends Writer {
             if(null == this.writeMode) {
                 LOG.warn("您未指定[writeMode]参数,  默认采用load模式, load模式只能用于离线表");
                 this.writeMode = Constant.LOADMODE;
+                this.originalConfig.set(Key.WRITE_MODE, "load");
             }
 
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
