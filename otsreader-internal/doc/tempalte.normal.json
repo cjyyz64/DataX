@@ -1,0 +1,70 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        //设置传输速度，单位为byte/s，DataX运行会尽可能达到该速度但是不超过它.
+        "byte": 1048576
+      }
+      //出错限制
+      "errorLimit": {
+        //出错的record条数上限，当大于该值即报错。
+        "record": 0,
+        //出错的record百分比上限 1.0表示100%，0.02表示2%
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "otsreader-internal",
+          "parameter": {
+            "mode": "normal",
+            "endpoint":"",
+            "accessId":"",
+            "accessKey":"",
+            "instanceName":"",
+            "table": "",
+            
+            // 导出的范围
+            // type支持的类型有如下几类：
+            // string、int、binary
+            // binary输入的方式采用二进制的Base64字符串形式传入
+            // INF_MIN 表示无限小
+            // INF_MAX 表示无限大
+            "range":{
+                // 可选，默认表示从无限小开始读取
+                // 样例：
+                "begin":[{"type":"string", "value":"a"},{"type":"INF_MIN", "value":""}],
+                // 可选，默认表示读取到无限大结束
+                "end":[{"type":"string", "value":"a"},{"type":"INF_MAX", "value":""}],
+                
+                // 当前用户数据较多时，需要开启并发导出，Split可以将当前范围的的数据按照切分点切分为多个并发任务
+                // 可选
+                // split中的输入值只能PK的第一列（分片建）
+                "split":[]
+            },
+            // 指定要导出的列
+            // 注意：PK列也是需要用户在下面单独指定
+            "column": [
+                {"name":"pk1"},   // 指定列名
+                {"name":"pk2"},
+                {"name":"attr1"},
+                {"type":"string","value" : ""}  // 指定常量列，当前支持String、Int、Double、Binary，Binary的值传入采用Base64的字符串形式
+                {"type":"int","value" : ""}
+                {"type":"double","value" : ""}
+                {"type":"binary","value" : "base64()"}
+            ],
+          }
+        },
+        "writer": {
+          //writer类型
+          "name": "streamwriter",
+          //是否打印内容
+          "parameter": {
+            "print": true
+          }
+        }
+      }
+    ]
+  }
+}
