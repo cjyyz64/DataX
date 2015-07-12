@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.reader.otsreader.model;
 
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.reader.otsreader.Constant;
+import com.alibaba.datax.plugin.reader.otsreader.utils.ParamChecker;
 import com.aliyun.openservices.ots.internal.model.TimeRange;
 
 public class OTSMultiVersionConf {
@@ -24,10 +26,10 @@ public class OTSMultiVersionConf {
         this.maxVersion = maxVersion;
     }
 
-    public static OTSMultiVersionConf load(Configuration param)  {
+    public static OTSMultiVersionConf load(Configuration param) throws OTSCriticalException  {
         OTSMultiVersionConf conf = new OTSMultiVersionConf();
-        conf.setTimeRange(null);
-        
-        throw new RuntimeException();
+        conf.setTimeRange(ParamChecker.checkTimeRangeAndGet(param));
+        conf.setMaxVersion(param.getInt(Constant.KEY.MAX_VERSION, Constant.VALUE.MAX_VERSION));
+        return conf;
     }
 }

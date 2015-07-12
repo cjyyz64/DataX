@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.reader.otsreader.common;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,7 +17,6 @@ public class ConfigurationHelper {
     public static void setDefaultConfig(Configuration param) {
         param.set(Constant.KEY.RETRY, "20");
         param.set(Constant.KEY.SLEEP_IN_MILLISECOND, "120");
-        param.set(Constant.KEY.CONCURRENCY_READ, "2");
         param.set(Constant.KEY.IO_THREAD_COUNT, "2");
         param.set(Constant.KEY.MAX_CONNECT_COUNT, "2");
         param.set(Constant.KEY.SOCKET_TIMEOUTIN_MILLISECOND, "20000");
@@ -177,6 +177,7 @@ public class ConfigurationHelper {
         param.set(Key.OTS_INSTANCE_NAME, " instancename ");
         param.set(Key.TABLE_NAME, " tablename ");
         param.set(Key.MODE, String.format(" %s ", mode.toString()));
+        param.set(Key.COLUMN, Collections.EMPTY_LIST);
         return param;
     }
 }

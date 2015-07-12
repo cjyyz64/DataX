@@ -21,19 +21,10 @@ public class OTSConf {
     
     private int retry = Constant.VALUE.RETRY;
     private int sleepInMilliSecond = Constant.VALUE.SLEEP_IN_MILLISECOND;
-    private int concurrencyCount = Constant.VALUE.CONCURRENCY_READ;
     private int ioThreadCount = Constant.VALUE.IO_THREAD_COUNT;
     private int maxConnectCount = Constant.VALUE.MAX_CONNECT_COUNT;
     private int socketTimeoutInMilliSecond = Constant.VALUE.SOCKET_TIMEOUTIN_MILLISECOND;
     private int connectTimeoutInMilliSecond = Constant.VALUE.CONNECT_TIMEOUT_IN_MILLISECOND;
-
-    public int getConcurrencyCount() {
-        return concurrencyCount;
-    }
-
-    public void setConcurrencyCount(int concurrencyCount) {
-        this.concurrencyCount = concurrencyCount;
-    }
 
     public int getIoThreadCount() {
         return ioThreadCount;
@@ -167,7 +158,6 @@ public class OTSConf {
         
         c.setRetry(param.getInt(Constant.KEY.RETRY, Constant.VALUE.RETRY));
         c.setSleepInMilliSecond(param.getInt(Constant.KEY.SLEEP_IN_MILLISECOND, Constant.VALUE.SLEEP_IN_MILLISECOND));
-        c.setConcurrencyCount(param.getInt(Constant.KEY.CONCURRENCY_READ, Constant.VALUE.CONCURRENCY_READ));
         c.setIoThreadCount(param.getInt(Constant.KEY.IO_THREAD_COUNT, Constant.VALUE.IO_THREAD_COUNT));
         c.setMaxConnectCount(param.getInt(Constant.KEY.MAX_CONNECT_COUNT, Constant.VALUE.MAX_CONNECT_COUNT));
         c.setSocketTimeoutInMilliSecond(param.getInt(Constant.KEY.SOCKET_TIMEOUTIN_MILLISECOND, Constant.VALUE.SOCKET_TIMEOUTIN_MILLISECOND));
@@ -176,13 +166,11 @@ public class OTSConf {
         // range
         c.setRange(ParamChecker.checkRangeAndGet(param));
         
-        // column
-        c.setColumn(ParamChecker.checkOTSColumnAndGet(param));
-        
         // mode
         c.setMode(ParamChecker.checkModeAndGet(param));
         
-        ParamChecker.checkColumnWithMode(c.getColumn(), c.getMode());
+        // column
+        c.setColumn(ParamChecker.checkOTSColumnAndGet(param, c.getMode()));
         
         if (c.getMode() == OTSMode.MULTI_VERSION) {
             c.setMulti(OTSMultiVersionConf.load(param));

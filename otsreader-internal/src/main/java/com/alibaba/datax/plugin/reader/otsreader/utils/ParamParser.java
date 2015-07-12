@@ -89,18 +89,16 @@ public class ParamParser {
                         Map<String, Object> column = (Map<String, Object>) o;
                         columns.add(parsePrimaryKeyColumn(column));
                     } else {
-                        // TODO throw
-                        throw new RuntimeException();
+                        throw new IllegalArgumentException("input primary key column must be map object, but input type:" + o.getClass());
                     }
                 }
             } else {
-                // TODO throw
-                throw new RuntimeException();
+                throw new IllegalArgumentException("input 'begin','end','split' must be list object, but input type:" + arrayObj.getClass());
             }
             return columns;
         } catch (RuntimeException e) {
             // 因为基础模块本身可能抛出一些错误，为了方便定位具体的出错位置，在此把Range加入到Error Message中
-            throw new OTSCriticalException("Parse 'range' fail. " + e.getMessage(), e);
+            throw new OTSCriticalException("Parse 'range' fail, " + e.getMessage(), e);
         }
     }
     
@@ -169,6 +167,18 @@ public class ParamParser {
         } catch (RuntimeException e) {
             // 因为基础模块本身可能抛出一些错误，为了方便定位具体的出错位置，在此把Column加入到Error Message中
             throw new OTSCriticalException("Parse 'column' fail. " + e.getMessage(), e);
+        }
+    }
+    
+    // ------------------------------------------------------------------------
+    // TimeRange解析相关的逻辑
+    // ------------------------------------------------------------------------
+
+    public static long parseTimeRangeItem(Object obj, String key) {
+        if (obj instanceof Integer || obj instanceof Long) {
+            return (Long)obj;
+        } else {
+            throw new IllegalArgumentException("the '"+ key +"' must be int, but input:" + obj.getClass());
         }
     }
 }

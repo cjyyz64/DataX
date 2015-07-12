@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.otsreader.utils;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
+import com.aliyun.openservices.ots.internal.model.TimeRange;
 
 
 public class ParamChecker {
@@ -97,12 +99,65 @@ public class ParamChecker {
         
     }
     
-    public static List<OTSColumn> checkOTSColumnAndGet(Configuration param) throws OTSCriticalException {
+    public static TimeRange checkTimeRangeAndGet(Configuration param) throws OTSCriticalException {
+        try {
+            Map<String, Object> value = param.getMap(Constant.KEY.TIME_RANGE);
+            // 用户可以不用配置time range，默认表示导出全表
+            if (value == null) {
+                return null;
+            }
+            
+            /**
+             * TimeRange格式：{
+             *  "begin":,
+             *  "end":
+             * }
+             */
+            
+            long begin = Constant.VALUE.TimeRange.MIN;
+            long end = Constant.VALUE.TimeRange.MAX;
+            
+            // begin
+            // 如果不存在，表示从表开始位置读取
+            Object obj = value.get(Constant.KEY.TimeRange.BEGIN);
+            if (obj != null) {
+                begin = ParamParser.parseTimeRangeItem(obj, Constant.KEY.TimeRange.BEGIN);
+            }
+            
+            // end
+            // 如果不存在，表示读取到表的结束位置
+            obj = value.get(Constant.KEY.TimeRange.END);
+            if (obj != null) {
+                end = ParamParser.parseTimeRangeItem(obj, Constant.KEY.TimeRange.END);
+            }
+            
+            TimeRange range = new TimeRange(begin, end);
+            return range;
+        } catch (RuntimeException e) {
+            throw new OTSCriticalException("Parse 'timeRange' fail, " + e.getMessage(), e);
+        }
+    }
+    
+    private static void checkColumnByMode(List<OTSColumn> columns , OTSMode mode) {
+        if (mode == OTSMode.MULTI_VERSION) {
+            for (OTSColumn c : columns) {
+                if (c.getColumnType() != OTSColumn.OTSColumnType.NORMAL) {
+                    throw new IllegalArgumentException("in mode:'multiVersion', the 'column' only support specify column_name not const column.");
+                }
+            }
+        } else {
+            if (columns.isEmpty()) {
+                throw new IllegalArgumentException("in mode:'normal', the 'column' must specify at least one column_name or const column.");
+            }
+        }
+    }
+    
+    public static List<OTSColumn> checkOTSColumnAndGet(Configuration param, OTSMode mode) throws OTSCriticalException {
         try {
             List<Object> value = param.getList(Key.COLUMN);
             // 用户可以不用配置Column
             if (value == null) {
-                return null;
+                value = Collections.emptyList();
             }
             
             /**
@@ -111,7 +166,9 @@ public class ParamChecker {
              *  {"type":"Binary","value" : "base64()"}
              * ]
              */
-            return ParamParser.parseOTSColumnArray(value);
+            List<OTSColumn> columns = ParamParser.parseOTSColumnArray(value);
+            checkColumnByMode(columns, mode);
+            return columns;
         } catch (RuntimeException e) {
             throw new OTSCriticalException("Parse 'column' fail, " + e.getMessage(), e);
         }
@@ -142,13 +199,13 @@ public class ParamChecker {
         if(pk != null) {
             if (pk.size() > pkSchema.size()) {
                 // TODO throw
-                throw new RuntimeException();
+                throw new RuntimeException("Unimplement");
             } else {
                 //类型检查
                 for (int i = 0; i < pk.size(); i++) {
                     if (pk.get(i).getValue().getType() != pkSchema.get(i).getType()) {
                         // TODO throw
-                        throw new RuntimeException();
+                        throw new RuntimeException("Unimplement");
                     }
                     result.add(new PrimaryKeyColumn(pkSchema.get(i).getName(), pk.get(i).getValue()));
                 }
@@ -190,7 +247,7 @@ public class ParamChecker {
             List<PrimaryKeyColumn> after = result.get(i + 1);
             if (CompareHelper.comparePrimaryKeyColumnList(before, after) != -1) { // 升序
                 // TODO throw
-                throw new RuntimeException();
+                throw new RuntimeException("Unimplement");
             }
         }
         
@@ -213,16 +270,16 @@ public class ParamChecker {
             // 分开比较，可以明确区分错误消息
             if (CompareHelper.comparePrimaryKeyColumnList(begin, split.get(0)) != -1) {
                 // TODO throw
-                throw new RuntimeException();
+                throw new RuntimeException("Unimplement");
             }
             if (CompareHelper.comparePrimaryKeyColumnList(split.get(split.size() - 1), end) != -1) {
                 // TODO throw
-                throw new RuntimeException();
+                throw new RuntimeException("Unimplement");
             }
         } else { // 不填Split时
             if (CompareHelper.comparePrimaryKeyColumnList(begin, end) != -1) {
                 // TODO throw
-                throw new RuntimeException();
+                throw new RuntimeException("Unimplement");
             }
         }
     }
@@ -241,23 +298,5 @@ public class ParamChecker {
     
     public static void checkAndSetOTSConf(OTSConf conf, TableMeta meta) {
         checkAndSetOTSRange(conf.getRange(), meta);
-    }
-    
-    public static void checkColumnWithMode(List<OTSColumn> columns, OTSMode mode) {
-        if (mode == OTSMode.MULTI_VERSION) {
-            // 必能有常量列
-            for (OTSColumn c : columns) {
-                if (c.getColumnType() == OTSColumn.OTSColumnType.CONST) {
-                    // TODO throw
-                    throw new RuntimeException();
-                }
-            }
-        } else { 
-            // 不能Column为空
-            if (columns == null || columns.size() == 0) {
-                // TODO throw
-                throw new RuntimeException();
-            }
-        }
     }
 }

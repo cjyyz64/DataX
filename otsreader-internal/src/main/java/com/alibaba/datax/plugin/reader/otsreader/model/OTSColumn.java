@@ -1,11 +1,16 @@
 package com.alibaba.datax.plugin.reader.otsreader.model;
 
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.StringColumn;
 import com.aliyun.openservices.ots.internal.model.ColumnType;
-import com.aliyun.openservices.ots.internal.model.ColumnValue;
 
 public class OTSColumn {
     private String name;
-    private ColumnValue value;
+    private Column value;
     private ColumnType valueType;
     
     private OTSColumnType columnType;
@@ -20,10 +25,9 @@ public class OTSColumn {
         this.columnType = OTSColumnType.NORMAL;
     }
     
-    private OTSColumn(ColumnValue value, ColumnType type) {
+    private OTSColumn(Column value) {
         this.value = value;
         this.columnType = OTSColumnType.CONST;
-        this.valueType = type;
     }
     
     public static OTSColumn fromNormalColumn(String name) {
@@ -35,26 +39,26 @@ public class OTSColumn {
     } 
     
     public static OTSColumn fromConstStringColumn(String value) {
-        return new OTSColumn(ColumnValue.fromString(value), ColumnType.STRING);
+        return new OTSColumn(new StringColumn(value));
     } 
     
     public static OTSColumn fromConstIntegerColumn(long value) {
-        return new OTSColumn(ColumnValue.fromLong(value), ColumnType.INTEGER);
+        return new OTSColumn(new LongColumn(value));
     } 
     
     public static OTSColumn fromConstDoubleColumn(double value) {
-        return new OTSColumn(ColumnValue.fromDouble(value), ColumnType.DOUBLE);
+        return new OTSColumn(new DoubleColumn(value));
     } 
     
     public static OTSColumn fromConstBoolColumn(boolean value) {
-        return new OTSColumn(ColumnValue.fromBoolean(value), ColumnType.BOOLEAN);
+        return new OTSColumn(new BoolColumn(value));
     } 
     
     public static OTSColumn fromConstBytesColumn(byte[] value) {
-        return new OTSColumn(ColumnValue.fromBinary(value), ColumnType.BINARY);
+        return new OTSColumn(new BytesColumn(value));
     } 
     
-    public ColumnValue getValue() {
+    public Column getValue() {
         return value;
     }
     
