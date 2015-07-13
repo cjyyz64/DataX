@@ -1,8 +1,5 @@
 package com.alibaba.datax.plugin.reader.otsreader;
 
-import java.util.List;
-
-import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.plugin.RecordSender;
@@ -51,15 +48,15 @@ public class OtsReaderNormalSlaveProxy implements OtsReaderSlaveProxy {
                 } else {
                     Column c = row.getLatestColumn(column.getName());
                     if (c != null) {
-                        throw new RuntimeException("Unimplement");
+                        line.addColumn(TranformHelper.otsColumnToDataxColumn(c));
                     } else {
-                        throw new RuntimeException("Unimplement");
+                        // TODO 需要和Datax确认，空值用空字符串表示是否合理
+                        line.addColumn(new StringColumn());
                     }
                 }
             } else {
                 line.addColumn(column.getValue());
             }
-            
         }
     }
     

@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.reader.otsreader.utils;
 
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +11,6 @@ import com.alibaba.datax.plugin.reader.otsreader.Key;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSCriticalException;
-import com.alibaba.datax.plugin.reader.otsreader.model.OTSErrorMessage;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSMode;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
@@ -20,7 +18,6 @@ import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 import com.aliyun.openservices.ots.internal.model.TimeRange;
-
 
 public class ParamChecker {
     
@@ -182,7 +179,7 @@ public class ParamChecker {
             } else if (modeValue.equalsIgnoreCase(OTSMode.MULTI_VERSION.toString())) {
                 return OTSMode.MULTI_VERSION;
             } else {
-                throw new IllegalArgumentException(String.format(OTSErrorMessage.MODE_PARSE_ERROR, modeValue));
+                throw new IllegalArgumentException("the 'mode' only support 'normal' and 'multiVersion' not '"+ modeValue +"'.");
             }
         } catch(RuntimeException e) {
             throw new OTSCriticalException("Parse 'mode' fail, " + e.getMessage(), e);
@@ -198,14 +195,18 @@ public class ParamChecker {
         List<PrimaryKeyColumn> result = new ArrayList<PrimaryKeyColumn>(pkSchema.size());
         if(pk != null) {
             if (pk.size() > pkSchema.size()) {
-                // TODO throw
-                throw new RuntimeException("Unimplement");
+                throw new IllegalArgumentException("The '"+ jsonKey +"', input primary key column size more than table meta, input size: "+ pk.size() 
+                        +" ,meta pk size:" + pkSchema.size());
             } else {
                 //类型检查
                 for (int i = 0; i < pk.size(); i++) {
-                    if (pk.get(i).getValue().getType() != pkSchema.get(i).getType()) {
-                        // TODO throw
-                        throw new RuntimeException("Unimplement");
+                    if (pk.get(i).getValue().getType() != null) {
+                        if (pk.get(i).getValue().getType() != pkSchema.get(i).getType()) {
+                            throw new IllegalArgumentException(
+                                    "The '"+ jsonKey +"', input primary key column type mismath table meta, input type:"+ pk.get(i).getValue().getType()  
+                                    +" ,meta pk type:"+ pkSchema.get(i).getType() 
+                                    +", index:" + i);
+                        }
                     }
                     result.add(new PrimaryKeyColumn(pkSchema.get(i).getName(), pk.get(i).getValue()));
                 }
@@ -246,8 +247,7 @@ public class ParamChecker {
             List<PrimaryKeyColumn> before = result.get(i);
             List<PrimaryKeyColumn> after = result.get(i + 1);
             if (CompareHelper.comparePrimaryKeyColumnList(before, after) != -1) { // 升序
-                // TODO throw
-                throw new RuntimeException("Unimplement");
+                throw new IllegalArgumentException("In 'split', the item value is not increasing, index: " + i);
             }
         }
         
@@ -269,34 +269,35 @@ public class ParamChecker {
         if (split.size() > 0) { // 填写Split时
             // 分开比较，可以明确区分错误消息
             if (CompareHelper.comparePrimaryKeyColumnList(begin, split.get(0)) != -1) {
-                // TODO throw
-                throw new RuntimeException("Unimplement");
+                throw new IllegalArgumentException("The 'begin' must be less than head of 'split'.");
             }
             if (CompareHelper.comparePrimaryKeyColumnList(split.get(split.size() - 1), end) != -1) {
-                // TODO throw
-                throw new RuntimeException("Unimplement");
+                throw new IllegalArgumentException("tail of 'split' must be less than 'end'.");
             }
         } else { // 不填Split时
             if (CompareHelper.comparePrimaryKeyColumnList(begin, end) != -1) {
-                // TODO throw
-                throw new RuntimeException("Unimplement");
+                throw new IllegalArgumentException("The 'begin' must be less than 'end'.");
             }
         }
     }
     
-    private static void checkAndSetOTSRange(OTSRange range, TableMeta meta) {
-        List<PrimaryKeySchema> pkSchema = meta.getPrimaryKeyList();
-        
-        // 检查是begin和end否和PK类型一致
-        range.setBegin(checkAndGetPrimaryKey(range.getBegin(), pkSchema, PrimaryKeyValue.INF_MIN, Constant.KEY.Range.BEGIN));
-        range.setEnd(checkAndGetPrimaryKey(range.getEnd(), pkSchema, PrimaryKeyValue.INF_MAX, Constant.KEY.Range.END));        
-        range.setSplit(checkAndGetSplit(range.getSplit(), pkSchema));
-        
-        // 检查begin,end,split顺序是否正确
-        checkBeginAndEndAndSplit(range.getBegin(), range.getEnd(), range.getSplit());
+    public static void checkAndSetOTSRange(OTSRange range, TableMeta meta) throws OTSCriticalException {
+        try {
+            List<PrimaryKeySchema> pkSchema = meta.getPrimaryKeyList();
+            
+            // 检查是begin和end否和PK类型一致
+            range.setBegin(checkAndGetPrimaryKey(range.getBegin(), pkSchema, PrimaryKeyValue.INF_MIN, Constant.KEY.Range.BEGIN));
+            range.setEnd(checkAndGetPrimaryKey(range.getEnd(), pkSchema, PrimaryKeyValue.INF_MAX, Constant.KEY.Range.END));        
+            range.setSplit(checkAndGetSplit(range.getSplit(), pkSchema));
+            
+            // 检查begin,end,split顺序是否正确
+            checkBeginAndEndAndSplit(range.getBegin(), range.getEnd(), range.getSplit());
+        } catch(RuntimeException e) {
+            throw new OTSCriticalException("Parse 'range' fail, " + e.getMessage(), e);
+        }
     }
     
-    public static void checkAndSetOTSConf(OTSConf conf, TableMeta meta) {
+    public static void checkAndSetOTSConf(OTSConf conf, TableMeta meta) throws OTSCriticalException {
         checkAndSetOTSRange(conf.getRange(), meta);
     }
 }

@@ -1,5 +1,8 @@
 package com.alibaba.datax.plugin.reader.otsreader.common;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -180,4 +183,18 @@ public class ConfigurationHelper {
         param.set(Key.COLUMN, Collections.EMPTY_LIST);
         return param;
     }
+    
+    //
+    
+    public static Configuration loadConf() {
+        String path = "src/test/resources/conf.json";
+        InputStream f;
+        try {
+            f = new FileInputStream(path);
+            Configuration p = Configuration.from(f);
+            return p;
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+    } 
 }
