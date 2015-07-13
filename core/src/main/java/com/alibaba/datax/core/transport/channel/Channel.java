@@ -176,6 +176,10 @@ public abstract class Channel {
                 recordSize);
         currentCommunication.increaseCounter(CommunicationTool.READ_SUCCEED_BYTES,
                 byteSize);
+        //在读的时候进行统计waitCounter即可，因为写（pull）的时候可能正在阻塞，但读的时候已经能读到这个阻塞的counter数
+
+        currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, waitReaderCount);
+        currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, waitWriterCount);
 
         boolean isChannelByteSpeedLimit = (this.byteSpeed > 0);
         boolean isChannelRecordSpeedLimit = (this.recordSpeed > 0);
@@ -229,12 +233,6 @@ public abstract class Channel {
             lastCommunication.setLongCounter(CommunicationTool.READ_FAILED_RECORDS,
                     currentCommunication.getLongCounter(CommunicationTool.READ_FAILED_RECORDS));
             lastCommunication.setTimestamp(nowTimestamp);
-
-            //在读的时候进行统计waitCounter即可，因为写（pull）的时候可能正在阻塞，但读的时候已经能读到这个阻塞的counter数
-
-            currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, waitReaderCount);
-            currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, waitWriterCount);
-
         }
     }
 
