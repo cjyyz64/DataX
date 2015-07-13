@@ -2,6 +2,9 @@ package com.alibaba.datax.plugin.reader.otsreader;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
@@ -25,6 +28,8 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
     private OTSRange range = null;
     private OTS ots = null;
     
+    private static final Logger LOG = LoggerFactory.getLogger(OtsReaderMultiVersionSlaveProxy.class);
+    
     @Override
     public void init(OTSConf conf, OTSRange range) {
         this.conf = conf;
@@ -38,29 +43,40 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
         ots.shutdown();
     }
     
+    private void sendToDatax(RecordSender recordSender, PrimaryKey pk, Column c) {
+        Record line = recordSender.createRecord();
+        //-------------------------
+        // 四元组 pk,column name, timetamp, value
+        //-------------------------
+        
+        // pk
+        for( PrimaryKeyColumn pkc : pk.getPrimaryKeyColumns()) {
+            line.addColumn(TranformHelper.otsPrimaryKeyColumnToDataxColumn(pkc));
+        }
+        // column name
+        line.addColumn(new StringColumn(c.getName()));
+        // Timestamp
+        line.addColumn(new LongColumn(c.getTimestamp())); 
+        // Value
+        line.addColumn(TranformHelper.otsColumnToDataxColumn(c));
+        
+        recordSender.sendToWriter(line);
+    }
+    
     private void sendToDatax(RecordSender recordSender, Row row) {
         PrimaryKey pk = row.getPrimaryKey();
-        for (OTSColumn column : conf.getColumn()) {
-            // 获取指定的列
-            List<Column> columns = row.getColumn(column.getName());
-            for (Column c : columns) {
-                Record line = recordSender.createRecord();
-                //-------------------------
-                // 四元组 pk,column name, timetamp, value
-                //-------------------------
-                
-                // pk
-                for( PrimaryKeyColumn pkc : pk.getPrimaryKeyColumns()) {
-                    line.addColumn(TranformHelper.otsPrimaryKeyColumnToDataxColumn(pkc));
+        List<OTSColumn> otsColumns = conf.getColumn();
+        if (otsColumns.isEmpty()) {
+            for (Column c : row.getColumns()){
+                sendToDatax(recordSender, pk, c);
+            }
+        } else {
+            for (OTSColumn column : otsColumns) {
+                // 获取指定的列
+                List<Column> columns = row.getColumn(column.getName());
+                for (Column c : columns) {
+                    sendToDatax(recordSender, pk, c);
                 }
-                // column name
-                line.addColumn(new StringColumn(column.getName()));
-                // Timestamp
-                line.addColumn(new LongColumn(c.getTimestamp())); 
-                // Value
-                line.addColumn(TranformHelper.otsColumnToDataxColumn(c));
-                
-                recordSender.sendToWriter(line);
             }
         }
     }
@@ -71,6 +87,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
      * @param result
      */
     private void sendToDatax(RecordSender recordSender, GetRangeResult result) {
+        LOG.info("Per request get row count : " + result.getRows().size());
         for (Row row : result.getRows()) {
             sendToDatax(recordSender, row);
         }

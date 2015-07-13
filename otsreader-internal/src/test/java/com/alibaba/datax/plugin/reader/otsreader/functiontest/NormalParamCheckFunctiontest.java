@@ -109,4 +109,29 @@ public class NormalParamCheckFunctiontest {
         assertEquals(tableName, conf.getTableName());
         assertEquals(OTSMode.NORMAL, conf.getMode());
     }
+    
+    /**
+     * 测试目的：测试所有配置项配置正确
+     * 测试内容：构造一个合法的配置文件，所有配置项都填好正确的值，期望程序解析正常且值符合预期
+     * @throws Exception 
+     */
+    @Test
+    public void testDefaultConf() throws Exception {
+        OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
+        Map<String, String> lines = this.getNormalLines();
+        lines.remove("range");
+        String json = linesToJson(lines);
+        Configuration configuration = Configuration.from(json);
+        
+        proxy.init(configuration);
+        
+        OTSConf conf = proxy.getConf();
+        
+        assertEquals(p.getString("endpoint"), conf.getEndpoint());
+        assertEquals(p.getString("accessid"), conf.getAccessId());
+        assertEquals(p.getString("accesskey"), conf.getAccessKey());
+        assertEquals(p.getString("instance-name"), conf.getInstanceName());
+        assertEquals(tableName, conf.getTableName());
+        assertEquals(OTSMode.NORMAL, conf.getMode());
+    }
 }

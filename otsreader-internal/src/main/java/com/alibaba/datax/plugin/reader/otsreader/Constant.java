@@ -10,6 +10,7 @@ public class Constant {
         
         public static final String TIME_RANGE = "timeRange";
         public static final String MAX_VERSION = "maxVersion";
+        
         public static final String RETRY = "maxRetryTime";
         public final static String SLEEP_IN_MILLISECOND = "retrySleepInMillisecond";
         public final static String IO_THREAD_COUNT = "ioThreadCount";
@@ -51,9 +52,14 @@ public class Constant {
         public final static int SOCKET_TIMEOUTIN_MILLISECOND = 10000;
         public final static int CONNECT_TIMEOUT_IN_MILLISECOND = 10000;
         
-        public final static int MAX_VERSION = -1;
+        public final static int MAX_VERSION = Integer.MAX_VALUE;
 
         public static final String DEFAULT_NAME = "DEFAULT_NAME";
+        
+        public class Mode {
+            public static final String NORMAL = "normal";
+            public static final String MULTI_VERSION = "multiVersion";
+        }
         
         public class PrimaryKeyColumnType {
             public static final String INF_MIN = "INF_MIN";

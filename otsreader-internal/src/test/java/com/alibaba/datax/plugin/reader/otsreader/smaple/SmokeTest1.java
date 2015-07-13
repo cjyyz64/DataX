@@ -52,7 +52,7 @@ public class SmokeTest1 {
             PrimaryKey pk = new PrimaryKey(primaryKey);
             RowPutChange rowChange = new RowPutChange(tableName, pk);
             
-            long ts = 10000;
+            long ts = System.currentTimeMillis() + 1000000000;
             for (int i = 0; i < 5; i++) {
                 rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
                 rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);

@@ -24,7 +24,6 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 
-
 /**
  * 测试覆盖点
  * 

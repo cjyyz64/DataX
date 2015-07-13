@@ -175,7 +175,9 @@ public class ParamParser {
     // ------------------------------------------------------------------------
 
     public static long parseTimeRangeItem(Object obj, String key) {
-        if (obj instanceof Integer || obj instanceof Long) {
+        if (obj instanceof Integer) {
+            return (Integer)obj;
+        } else if (obj instanceof Long) {
             return (Long)obj;
         } else {
             throw new IllegalArgumentException("the '"+ key +"' must be int, but input:" + obj.getClass());

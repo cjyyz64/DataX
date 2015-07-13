@@ -46,10 +46,11 @@ public class ParamChecker {
     
     public static OTSRange checkRangeAndGet(Configuration param) throws OTSCriticalException {
         try {
+            OTSRange range = new OTSRange();
             Map<String, Object> value = param.getMap(Key.RANGE);
             // 用户可以不用配置range，默认表示导出全表
             if (value == null) {
-                return null;
+                return range;
             }
             
             /**
@@ -58,8 +59,6 @@ public class ParamChecker {
              *  "end":[]
              * }
              */
-            
-            OTSRange range = new OTSRange();
             
             // begin
             // 如果不存在，表示从表开始位置读取
@@ -98,10 +97,14 @@ public class ParamChecker {
     
     public static TimeRange checkTimeRangeAndGet(Configuration param) throws OTSCriticalException {
         try {
+            
+            long begin = Constant.VALUE.TimeRange.MIN;
+            long end = Constant.VALUE.TimeRange.MAX;
+            
             Map<String, Object> value = param.getMap(Constant.KEY.TIME_RANGE);
             // 用户可以不用配置time range，默认表示导出全表
             if (value == null) {
-                return null;
+                return new TimeRange(begin, end);
             }
             
             /**
@@ -111,8 +114,7 @@ public class ParamChecker {
              * }
              */
             
-            long begin = Constant.VALUE.TimeRange.MIN;
-            long end = Constant.VALUE.TimeRange.MAX;
+            
             
             // begin
             // 如果不存在，表示从表开始位置读取
@@ -174,9 +176,9 @@ public class ParamChecker {
     public static OTSMode checkModeAndGet(Configuration param) throws OTSCriticalException {
         try {
             String modeValue = checkStringAndGet(param, Key.MODE);
-            if (modeValue.equalsIgnoreCase(OTSMode.NORMAL.toString())) {
+            if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.NORMAL)) {
                 return OTSMode.NORMAL;
-            } else if (modeValue.equalsIgnoreCase(OTSMode.MULTI_VERSION.toString())) {
+            } else if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.MULTI_VERSION)) {
                 return OTSMode.MULTI_VERSION;
             } else {
                 throw new IllegalArgumentException("the 'mode' only support 'normal' and 'multiVersion' not '"+ modeValue +"'.");
