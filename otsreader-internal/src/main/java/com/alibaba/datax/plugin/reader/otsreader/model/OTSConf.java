@@ -150,11 +150,11 @@ public class OTSConf {
         OTSConf c = new OTSConf();
         
         // account
-        c.setEndpoint(ParamChecker.checkStringAndGet(param, Key.OTS_ENDPOINT));
-        c.setAccessId(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSID));
-        c.setAccessKey(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSKEY));
-        c.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME));
-        c.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME));
+        c.setEndpoint(ParamChecker.checkStringAndGet(param, Key.OTS_ENDPOINT, true));
+        c.setAccessId(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSID, true));
+        c.setAccessKey(ParamChecker.checkStringAndGet(param, Key.OTS_ACCESSKEY, true));
+        c.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME, true));
+        c.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME, true));
         
         c.setRetry(param.getInt(Constant.KEY.RETRY, Constant.VALUE.RETRY));
         c.setSleepInMilliSecond(param.getInt(Constant.KEY.SLEEP_IN_MILLISECOND, Constant.VALUE.SLEEP_IN_MILLISECOND));

@@ -66,9 +66,9 @@ public class MultiVersionParamCheckFunctiontest {
     
     private Map<String, String> getLines() {
         Map<String, String> lines = new LinkedHashMap<String, String>();
-        lines.put("endpoint",     "'endpoint':' "+ p.getString("endpoint") +" '");
-        lines.put("accessId",     "'accessId':' "+ p.getString("accessid") +" '");
-        lines.put("accessKey",    "'accessKey':' "+ p.getString("accesskey") +" '");
+        lines.put("endpoint",     "'endpoint':'        "+ p.getString("endpoint") +" '");
+        lines.put("accessId",     "'accessId':'         "+ p.getString("accessid") +" '");
+        lines.put("accessKey",    "'accessKey':'         "+ p.getString("accesskey") +" '");
         lines.put("instanceName", "'instanceName':' "+ p.getString("instance-name") +" '");
         lines.put("table",        "'table':' "+ tableName +" '");
         lines.put("range",        "'range':{"
@@ -202,6 +202,12 @@ public class MultiVersionParamCheckFunctiontest {
         lines.remove("timeRange");
         lines.remove("maxVersion");
         lines.remove("column");
+        lines.remove("maxRetryTime");
+        lines.remove("retrySleepInMillisecond");
+        lines.remove("ioThreadCount");
+        lines.remove("maxConnectCount");
+        lines.remove("socketTimeoutInMillisecond");
+        lines.remove("connectTimeoutInMillisecond");
         String json = linesToJson(lines);
         Configuration configuration = Configuration.from(json);
         
@@ -308,5 +314,15 @@ public class MultiVersionParamCheckFunctiontest {
         testEmptyParam(Key.OTS_INSTANCE_NAME, "Parse 'instanceName' fail, input the key is empty string.");
         testEmptyParam(Key.TABLE_NAME, "Parse 'table' fail, input the key is empty string.");
         testEmptyParam(Key.MODE, "Parse 'mode' fail, input the key is empty string.");
+    }
+    
+    /**
+     * 测试目的：测试系统对Range在各种解析下输入情况解析是否符合预期
+     * 测试内容：
+     * 1.
+     */
+    @Test
+    public void testRange() {
+        
     }
 }

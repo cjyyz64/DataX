@@ -29,10 +29,12 @@ public class ParamChecker {
         throw new IllegalArgumentException("input the key is empty string.");
     }
     
-    public static String checkStringAndGet(Configuration param, String key) throws OTSCriticalException {
+    public static String checkStringAndGet(Configuration param, String key, boolean isTrim) throws OTSCriticalException {
         try {
             String value = param.getString(key);
-            value = value != null ? value.trim() : null;
+            if (isTrim) {
+                value = value != null ? value.trim() : null;
+            }
             if (null == value) {
                 throwNotExistException();
             } else if (value.length() == 0) {
@@ -113,9 +115,7 @@ public class ParamChecker {
              *  "end":
              * }
              */
-            
-            
-            
+
             // begin
             // 如果不存在，表示从表开始位置读取
             Object obj = value.get(Constant.KEY.TimeRange.BEGIN);
@@ -175,7 +175,7 @@ public class ParamChecker {
     
     public static OTSMode checkModeAndGet(Configuration param) throws OTSCriticalException {
         try {
-            String modeValue = checkStringAndGet(param, Key.MODE);
+            String modeValue = checkStringAndGet(param, Key.MODE, true);
             if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.NORMAL)) {
                 return OTSMode.NORMAL;
             } else if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.MULTI_VERSION)) {

@@ -48,6 +48,8 @@ public class OtsReaderMasterProxy {
         // Init ots
         ots = OtsHelper.getOTSInstance(conf);
         
+        LOG.info(GsonParser.confToJson(conf));
+        
         // 获取TableMeta
         meta = OtsHelper.getTableMeta(
                 ots, 
