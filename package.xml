@@ -117,6 +117,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+         <fileSet>
+            <directory>ftpreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 
 
         <!-- writer -->
