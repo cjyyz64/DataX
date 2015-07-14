@@ -28,7 +28,7 @@ public class OtsReader {
                 this.proxy.init(getPluginJobConf());
             } catch (OTSException e) {
                 LOG.error("OTSException: {}",  e.toString(), e);
-                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), e.toString(), e);
+                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS ERROR"), e.toString(), e);
             } catch (ClientException e) {
                 LOG.error("ClientException: {}",  e.toString(), e);
                 throw DataXException.asDataXException(OtsReaderError.ERROR, e.toString(), e);
@@ -62,8 +62,8 @@ public class OtsReader {
         private static final Logger LOG = LoggerFactory.getLogger(Task.class);
         
         private void initProxy() {
-            OTSConf conf = GsonParser.jsonToConf((String) this.getPluginJobConf().get(Constant.KEY.CONF));
-            OTSRange range = GsonParser.jsonToRange((String) this.getPluginJobConf().get(Constant.KEY.RANGE));
+            OTSConf conf = GsonParser.jsonToConf((String) this.getPluginJobConf().get(Constant.ConfigKey.CONF));
+            OTSRange range = GsonParser.jsonToRange((String) this.getPluginJobConf().get(Constant.ConfigKey.RANGE));
             
             if (conf.getMode() == OTSMode.MULTI_VERSION) {
                 LOG.debug("Instance OtsReaderMultiVersionSlaveProxy");
@@ -81,7 +81,7 @@ public class OtsReader {
                 this.initProxy();
             } catch (OTSException e) {
                 LOG.error("OTSException: {}",  e.toString(), e);
-                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), e.toString(), e);
+                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS ERROR"), e.toString(), e);
             } catch (ClientException e) {
                 LOG.error("ClientException: {}",  e.toString(), e);
                 throw DataXException.asDataXException(OtsReaderError.ERROR, e.toString(), e);
@@ -97,7 +97,7 @@ public class OtsReader {
                 this.proxy.close();
             } catch (OTSException e) {
                 LOG.error("OTSException: {}",  e.toString(), e);
-                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), e.toString(), e);
+                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS ERROR"), e.toString(), e);
             } catch (ClientException e) {
                 LOG.error("ClientException: {}",  e.toString(), e);
                 throw DataXException.asDataXException(OtsReaderError.ERROR, e.toString(), e);
@@ -113,7 +113,7 @@ public class OtsReader {
                 this.proxy.startRead(recordSender);
             } catch (OTSException e) {
                 LOG.error("OTSException: {}",  e.toString(), e);
-                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS端的错误"), e.toString(), e);
+                throw DataXException.asDataXException(new OtsReaderError(e.getErrorCode(), "OTS ERROR"), e.toString(), e);
             } catch (ClientException e) {
                 LOG.error("ClientException: {}",  e.toString(), e);
                 throw DataXException.asDataXException(OtsReaderError.ERROR, e.toString(), e);

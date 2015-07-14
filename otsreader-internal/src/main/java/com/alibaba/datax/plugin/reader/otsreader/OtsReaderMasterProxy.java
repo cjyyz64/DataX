@@ -14,6 +14,7 @@ import com.alibaba.datax.plugin.reader.otsreader.utils.OtsHelper;
 import com.alibaba.datax.plugin.reader.otsreader.utils.ParamChecker;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 public class OtsReaderMasterProxy {
@@ -48,14 +49,12 @@ public class OtsReaderMasterProxy {
         // Init ots
         ots = OtsHelper.getOTSInstance(conf);
         
-        LOG.info(GsonParser.confToJson(conf));
-        
         // 获取TableMeta
         meta = OtsHelper.getTableMeta(
                 ots, 
                 conf.getTableName(), 
                 conf.getRetry(), 
-                conf.getSleepInMilliSecond());
+                conf.getRetryPauseInMillisecond());
         
         // 基于Meta检查Conf是否正确
         ParamChecker.checkAndSetOTSConf(conf, meta);
@@ -78,7 +77,12 @@ public class OtsReaderMasterProxy {
     private List<Configuration> getConfigurationBySplit() {
         List<List<PrimaryKeyColumn>> primaryKeys = new ArrayList<List<PrimaryKeyColumn>>();
         primaryKeys.add(conf.getRange().getBegin());
-        primaryKeys.addAll(conf.getRange().getSplit());
+        for (PrimaryKeyColumn column : conf.getRange().getSplit()) {
+            List<PrimaryKeyColumn> point = new ArrayList<PrimaryKeyColumn>();
+            point.add(column);
+            ParamChecker.fillPrimaryKey(this.meta.getPrimaryKeyList(), point, PrimaryKeyValue.INF_MIN);
+            primaryKeys.add(point);
+        }
         primaryKeys.add(conf.getRange().getEnd());
         
         List<Configuration> configurations = new ArrayList<Configuration>(primaryKeys.size() - 1);
@@ -89,8 +93,8 @@ public class OtsReaderMasterProxy {
             range.setEnd(primaryKeys.get(i + 1));
             
             Configuration configuration = Configuration.newDefault();
-            configuration.set(Constant.KEY.CONF, GsonParser.confToJson(conf));
-            configuration.set(Constant.KEY.RANGE, GsonParser.rangeToJson(range));
+            configuration.set(Constant.ConfigKey.CONF, GsonParser.confToJson(conf));
+            configuration.set(Constant.ConfigKey.RANGE, GsonParser.rangeToJson(range));
             configurations.add(configuration);
         }
         return configurations;

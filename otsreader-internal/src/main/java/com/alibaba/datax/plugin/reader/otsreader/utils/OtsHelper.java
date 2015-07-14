@@ -17,8 +17,8 @@ public class OtsHelper {
         ClientConfiguration clientConfigure = new ClientConfiguration();
         clientConfigure.setIoThreadCount(conf.getIoThreadCount());
         clientConfigure.setMaxConnections(conf.getMaxConnectCount());
-        clientConfigure.setSocketTimeoutInMillisecond(conf.getSocketTimeoutInMilliSecond());
-        clientConfigure.setConnectionTimeoutInMillisecond(conf.getConnectTimeoutInMilliSecond());
+        clientConfigure.setSocketTimeoutInMillisecond(conf.getSocketTimeoutInMillisecond());
+        clientConfigure.setConnectionTimeoutInMillisecond(conf.getConnectTimeoutInMillisecond());
         clientConfigure.setRetryStrategy(new DefaultNoRetry());
 
         OTS ots = new OTSClient(
@@ -30,19 +30,19 @@ public class OtsHelper {
         return ots;
     }
     
-    public static TableMeta getTableMeta(OTS ots, String tableName, int retry, int sleepInMilliSecond) throws Exception {
+    public static TableMeta getTableMeta(OTS ots, String tableName, int retry, int sleepInMillisecond) throws Exception {
         return RetryHelper.executeWithRetry(
                 new GetTableMetaCallable(ots, tableName),
                 retry,
-                sleepInMilliSecond
+                sleepInMillisecond
                 );
     }
     
-    public static GetRangeResult getRange(OTS ots, RangeRowQueryCriteria rangeRowQueryCriteria, int retry, int sleepInMilliSecond) throws Exception {
+    public static GetRangeResult getRange(OTS ots, RangeRowQueryCriteria rangeRowQueryCriteria, int retry, int sleepInMillisecond) throws Exception {
         return RetryHelper.executeWithRetry(
                 new GetRangeCallable(ots, rangeRowQueryCriteria),
                 retry,
-                sleepInMilliSecond
+                sleepInMillisecond
                 );
     }
 }

@@ -18,12 +18,12 @@ import com.aliyun.openservices.ots.internal.utils.Base64;
 public class ConfigurationHelper {
     
     public static void setDefaultConfig(Configuration param) {
-        param.set(Constant.KEY.RETRY, "20");
-        param.set(Constant.KEY.SLEEP_IN_MILLISECOND, "120");
-        param.set(Constant.KEY.IO_THREAD_COUNT, "2");
-        param.set(Constant.KEY.MAX_CONNECT_COUNT, "2");
-        param.set(Constant.KEY.SOCKET_TIMEOUTIN_MILLISECOND, "20000");
-        param.set(Constant.KEY.CONNECT_TIMEOUT_IN_MILLISECOND, "20000");
+        param.set(Constant.ConfigKey.RETRY, "20");
+        param.set(Constant.ConfigKey.RETRY_PAUSE_IN_MILLISECOND, "120");
+        param.set(Constant.ConfigKey.IO_THREAD_COUNT, "2");
+        param.set(Constant.ConfigKey.MAX_CONNECTION_COUNT, "2");
+        param.set(Constant.ConfigKey.SOCKET_TIMEOUTIN_MILLISECOND, "20000");
+        param.set(Constant.ConfigKey.CONNECT_TIMEOUT_IN_MILLISECOND, "20000");
     }
     
     public static void setRange(Configuration param) {
@@ -159,17 +159,17 @@ public class ConfigurationHelper {
         // TimeRange
         Map<String, Object> timeRange = new LinkedHashMap<String, Object>();
         if (begin != null) {
-            timeRange.put(Constant.KEY.TimeRange.BEGIN, begin);
+            timeRange.put(Constant.ConfigKey.TimeRange.BEGIN, begin);
         }
         if (end != null) {
-            timeRange.put(Constant.KEY.TimeRange.END, end);
+            timeRange.put(Constant.ConfigKey.TimeRange.END, end);
         }
-        param.set(Constant.KEY.TIME_RANGE, timeRange);
+        param.set(Constant.ConfigKey.TIME_RANGE, timeRange);
     }
     
     public static void setMaxVersion(Configuration param, Integer maxVersion) {
         // MaxVersion
-        param.set(Constant.KEY.MAX_VERSION, maxVersion);
+        param.set(Constant.ConfigKey.MAX_VERSION, maxVersion);
     }
     
     public static Configuration getDefaultConfiguration(OTSMode mode) {
@@ -179,7 +179,12 @@ public class ConfigurationHelper {
         param.set(Key.OTS_ACCESSKEY, " accesskey ");
         param.set(Key.OTS_INSTANCE_NAME, " instancename ");
         param.set(Key.TABLE_NAME, " tablename ");
-        param.set(Key.MODE, String.format(" %s ", mode.toString()));
+        if (mode == OTSMode.MULTI_VERSION) {
+            param.set(Key.MODE, Constant.ConfigDefaultValue.Mode.MULTI_VERSION);
+        } else {
+            param.set(Key.MODE, Constant.ConfigDefaultValue.Mode.NORMAL);
+        }
+        
         param.set(Key.COLUMN, Collections.EMPTY_LIST);
         return param;
     }

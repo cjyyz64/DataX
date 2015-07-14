@@ -1,0 +1,39 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "byte": 1048576
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "otsreader-internal",
+          "parameter": {
+            "mode": "multiVersion",
+            "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
+            "accessId":" bbc07W6jDi214noU ",
+            "accessKey":" Uov2JPb9KADgAaXKnILJQwnVSd0Lhb ",
+            "instanceName":" wanhong-internal ",
+            "table": "SmokeTest1",
+            "range":{
+                "begin":[{"type":"INF_MAX"}],
+                "end":[{"type":"INF_MIN"}],
+                "split":[{"type":"string", "value":"g"}, {"type":"string", "value":"a"}]
+            }
+          }
+        },
+        "writer": {
+          "name": "streamwriter",
+          "parameter": {
+            "print": true
+          }
+        }
+      }
+    ]
+  }
+}

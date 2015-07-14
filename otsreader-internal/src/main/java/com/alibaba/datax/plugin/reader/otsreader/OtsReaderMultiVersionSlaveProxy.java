@@ -71,12 +71,8 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
                 sendToDatax(recordSender, pk, c);
             }
         } else {
-            for (OTSColumn column : otsColumns) {
-                // 获取指定的列
-                List<Column> columns = row.getColumn(column.getName());
-                for (Column c : columns) {
-                    sendToDatax(recordSender, pk, c);
-                }
+            for (Column c : row.getColumns()) {
+                sendToDatax(recordSender, pk, c);
             }
         }
     }
@@ -87,7 +83,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
      * @param result
      */
     private void sendToDatax(RecordSender recordSender, GetRangeResult result) {
-        LOG.info("Per request get row count : " + result.getRows().size());
+        LOG.debug("Per request get row count : " + result.getRows().size());
         for (Row row : result.getRows()) {
             sendToDatax(recordSender, row);
         }
@@ -102,6 +98,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
         
         RangeRowQueryCriteria rangeRowQueryCriteria = new RangeRowQueryCriteria(conf.getTableName());
         rangeRowQueryCriteria.setExclusiveEndPrimaryKey(exclusiveEndPrimaryKey);
+        rangeRowQueryCriteria.setDirection(Common.getDirection(range.getBegin(), range.getEnd()));
         rangeRowQueryCriteria.setTimeRange(conf.getMulti().getTimeRange());
         rangeRowQueryCriteria.setMaxVersions(conf.getMulti().getMaxVersion());
         rangeRowQueryCriteria.addColumnsToGet(Common.toColumnToGet(conf.getColumn()));
@@ -112,7 +109,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
                     ots, 
                     rangeRowQueryCriteria, 
                     conf.getRetry(), 
-                    conf.getSleepInMilliSecond());
+                    conf.getRetryPauseInMillisecond());
             sendToDatax(recordSender, result);
             next = result.getNextStartPrimaryKey();
         } while(next != null);

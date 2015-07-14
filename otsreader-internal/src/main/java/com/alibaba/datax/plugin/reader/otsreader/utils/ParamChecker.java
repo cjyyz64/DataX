@@ -2,8 +2,10 @@ package com.alibaba.datax.plugin.reader.otsreader.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.Constant;
@@ -15,6 +17,7 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSMode;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeySchema;
+import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 import com.aliyun.openservices.ots.internal.model.TimeRange;
@@ -64,30 +67,23 @@ public class ParamChecker {
             
             // begin
             // 如果不存在，表示从表开始位置读取
-            Object arrayObj = value.get(Constant.KEY.Range.BEGIN);
+            Object arrayObj = value.get(Constant.ConfigKey.Range.BEGIN);
             if (arrayObj != null) {
                 range.setBegin(ParamParser.parsePrimaryKeyColumnArray(arrayObj));
             }
             
             // end
             // 如果不存在，表示读取到表的结束位置
-            arrayObj = value.get(Constant.KEY.Range.END);
+            arrayObj = value.get(Constant.ConfigKey.Range.END);
             if (arrayObj != null) {
                 range.setEnd(ParamParser.parsePrimaryKeyColumnArray(arrayObj));
             }
             
             // split
             // 如果不存在，表示不做切分
-            arrayObj = value.get(Constant.KEY.Range.SPLIT);
+            arrayObj = value.get(Constant.ConfigKey.Range.SPLIT);
             if (arrayObj != null) {
-                List<PrimaryKeyColumn> pksPrefix = ParamParser.parsePrimaryKeyColumnArray(arrayObj);
-                List<List<PrimaryKeyColumn>> pks = new ArrayList<List<PrimaryKeyColumn>>();
-                for (PrimaryKeyColumn p : pksPrefix) {
-                    List<PrimaryKeyColumn> pk = new ArrayList<PrimaryKeyColumn>();
-                    pk.add(p);
-                    pks.add(pk);
-                }
-                range.setSplit(pks);
+                range.setSplit(ParamParser.parsePrimaryKeyColumnArray(arrayObj));
             }
             
             return range;
@@ -100,10 +96,10 @@ public class ParamChecker {
     public static TimeRange checkTimeRangeAndGet(Configuration param) throws OTSCriticalException {
         try {
             
-            long begin = Constant.VALUE.TimeRange.MIN;
-            long end = Constant.VALUE.TimeRange.MAX;
+            long begin = Constant.ConfigDefaultValue.TimeRange.MIN;
+            long end = Constant.ConfigDefaultValue.TimeRange.MAX;
             
-            Map<String, Object> value = param.getMap(Constant.KEY.TIME_RANGE);
+            Map<String, Object> value = param.getMap(Constant.ConfigKey.TIME_RANGE);
             // 用户可以不用配置time range，默认表示导出全表
             if (value == null) {
                 return new TimeRange(begin, end);
@@ -115,19 +111,19 @@ public class ParamChecker {
              *  "end":
              * }
              */
-
+            
             // begin
             // 如果不存在，表示从表开始位置读取
-            Object obj = value.get(Constant.KEY.TimeRange.BEGIN);
+            Object obj = value.get(Constant.ConfigKey.TimeRange.BEGIN);
             if (obj != null) {
-                begin = ParamParser.parseTimeRangeItem(obj, Constant.KEY.TimeRange.BEGIN);
+                begin = ParamParser.parseTimeRangeItem(obj, Constant.ConfigKey.TimeRange.BEGIN);
             }
             
             // end
             // 如果不存在，表示读取到表的结束位置
-            obj = value.get(Constant.KEY.TimeRange.END);
+            obj = value.get(Constant.ConfigKey.TimeRange.END);
             if (obj != null) {
-                end = ParamParser.parseTimeRangeItem(obj, Constant.KEY.TimeRange.END);
+                end = ParamParser.parseTimeRangeItem(obj, Constant.ConfigKey.TimeRange.END);
             }
             
             TimeRange range = new TimeRange(begin, end);
@@ -176,9 +172,9 @@ public class ParamChecker {
     public static OTSMode checkModeAndGet(Configuration param) throws OTSCriticalException {
         try {
             String modeValue = checkStringAndGet(param, Key.MODE, true);
-            if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.NORMAL)) {
+            if (modeValue.equalsIgnoreCase(Constant.ConfigDefaultValue.Mode.NORMAL)) {
                 return OTSMode.NORMAL;
-            } else if (modeValue.equalsIgnoreCase(Constant.VALUE.Mode.MULTI_VERSION)) {
+            } else if (modeValue.equalsIgnoreCase(Constant.ConfigDefaultValue.Mode.MULTI_VERSION)) {
                 return OTSMode.MULTI_VERSION;
             } else {
                 throw new IllegalArgumentException("the 'mode' only support 'normal' and 'multiVersion' not '"+ modeValue +"'.");
@@ -191,96 +187,161 @@ public class ParamChecker {
     private static List<PrimaryKeyColumn> checkAndGetPrimaryKey(
             List<PrimaryKeyColumn> pk, 
             List<PrimaryKeySchema> pkSchema,
-            PrimaryKeyValue fillValue,
             String jsonKey){
-        // 检查是否和PK类型一致
-        List<PrimaryKeyColumn> result = new ArrayList<PrimaryKeyColumn>(pkSchema.size());
+        List<PrimaryKeyColumn> result = new ArrayList<PrimaryKeyColumn>();
         if(pk != null) {
             if (pk.size() > pkSchema.size()) {
                 throw new IllegalArgumentException("The '"+ jsonKey +"', input primary key column size more than table meta, input size: "+ pk.size() 
-                        +" ,meta pk size:" + pkSchema.size());
+                        +", meta pk size:" + pkSchema.size());
             } else {
                 //类型检查
                 for (int i = 0; i < pk.size(); i++) {
-                    if (pk.get(i).getValue().getType() != null) {
-                        if (pk.get(i).getValue().getType() != pkSchema.get(i).getType()) {
+                    PrimaryKeyValue pkc = pk.get(i).getValue();
+                    PrimaryKeySchema pkcs = pkSchema.get(i);
+                    
+                    if (!pkc.isInfMin() && !pkc.isInfMax() ) {
+                        if (pkc.getType() != pkcs.getType()) {
                             throw new IllegalArgumentException(
-                                    "The '"+ jsonKey +"', input primary key column type mismath table meta, input type:"+ pk.get(i).getValue().getType()  
-                                    +" ,meta pk type:"+ pkSchema.get(i).getType() 
+                                    "The '"+ jsonKey +"', input primary key column type mismath table meta, input type:"+ pkc.getType()  
+                                    +", meta pk type:"+ pkcs.getType() 
                                     +", index:" + i);
                         }
                     }
-                    result.add(new PrimaryKeyColumn(pkSchema.get(i).getName(), pk.get(i).getValue()));
-                }
-                //填充
-                for (int i = pk.size(); i < pkSchema.size(); i++) {
-                    result.add(new PrimaryKeyColumn(pkSchema.get(i).getName(), fillValue));
+                    result.add(new PrimaryKeyColumn(pkcs.getName(), pkc));
                 }
             }
+            return result;
         } else {
-            // 用户没有填写，系统将默认将begin置为无限小
-            for (PrimaryKeySchema c : pkSchema) {
-                result.add(new PrimaryKeyColumn(c.getName(), fillValue));
-            }
+            return new ArrayList<PrimaryKeyColumn>();
         }
-        return result;
+    }
+    
+    public static List<PrimaryKeyColumn> checkAndGetPrimaryKey(
+            PrimaryKeyColumn partitionKey, 
+            List<PrimaryKeySchema> pkSchema,
+            String jsonKey){
+        List<PrimaryKeyColumn> pk = new ArrayList<PrimaryKeyColumn>();
+        pk.add(partitionKey);
+        return checkAndGetPrimaryKey(pk, pkSchema, jsonKey);
     }
     
     /**
-     * 检查split的类型是否和PartitionKey一致，是否是递增序列
+     * 检查split的类型是否和PartitionKey一致
      * @param points
      * @param pkSchema
      */
-    private static List<List<PrimaryKeyColumn>> checkAndGetSplit(
-            List<List<PrimaryKeyColumn>> points, 
+    private static List<PrimaryKeyColumn> checkAndGetSplit(
+            List<PrimaryKeyColumn> points, 
             List<PrimaryKeySchema> pkSchema){
-        List<List<PrimaryKeyColumn>> result = new ArrayList<List<PrimaryKeyColumn>>();
+        List<PrimaryKeyColumn> result = new ArrayList<PrimaryKeyColumn>();
         if (points == null) {
             return result;
         }
         
-        // fill
-        for (List<PrimaryKeyColumn> p : points) {
-            result.add(checkAndGetPrimaryKey(p, pkSchema, PrimaryKeyValue.INF_MIN, Constant.KEY.Range.SPLIT));
-        }
-        
-        // 检查是否是升序
-        for (int i = 0 ; i < result.size() - 1; i++) {
-            List<PrimaryKeyColumn> before = result.get(i);
-            List<PrimaryKeyColumn> after = result.get(i + 1);
-            if (CompareHelper.comparePrimaryKeyColumnList(before, after) != -1) { // 升序
-                throw new IllegalArgumentException("In 'split', the item value is not increasing, index: " + i);
+        // check 类型是否和PartitionKey一致即可
+        PrimaryKeySchema partitionKeySchema = pkSchema.get(0);
+        for (int i = 0 ; i < points.size(); i++) {
+            PrimaryKeyColumn p = points.get(i);
+            if (!p.getValue().isInfMin() && !p.getValue().isInfMax()) {
+                if (p.getValue().getType() != partitionKeySchema.getType()) {
+                    throw new IllegalArgumentException("The 'split', input primary key column type is mismatch partition key, input type: "+ p.getValue().getType().toString() 
+                            +", partition key type:" + partitionKeySchema.getType().toString() 
+                            +", index:" + i);
+                }
             }
+            result.add(new PrimaryKeyColumn(partitionKeySchema.getName(), p.getValue()));
         }
         
         return result;
     }
     
+    public static void fillPrimaryKey(List<PrimaryKeySchema> pkSchema, List<PrimaryKeyColumn> pk, PrimaryKeyValue fillValue) {
+        for(int i = pk.size(); i < pkSchema.size(); i++) {
+            pk.add(new PrimaryKeyColumn(pkSchema.get(i).getName(), fillValue));
+        }
+    }
+    
+    private static void fillBeginAndEnd(
+            List<PrimaryKeyColumn> begin, 
+            List<PrimaryKeyColumn> end, 
+            List<PrimaryKeySchema> pkSchema) {
+        int cmp = CompareHelper.comparePrimaryKeyColumnList(begin, end);
+        if (cmp == 0) {
+            // begin.size()和end.size()理论上必然相等，但是考虑到语义的清晰性，显示的给出begin.size() == end.size()
+            if (begin.size() == end.size() && begin.size() < pkSchema.size()) { 
+                fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MIN);
+                fillPrimaryKey(pkSchema, end, PrimaryKeyValue.INF_MAX);
+            } else {
+                throw new IllegalArgumentException("The 'begin' can not equal with 'end'.");
+            }
+        } else if (cmp < 0) { // 升序
+            fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MIN);
+            fillPrimaryKey(pkSchema, end, PrimaryKeyValue.INF_MAX);
+        } else { // 降序
+            fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MAX);
+            fillPrimaryKey(pkSchema, end, PrimaryKeyValue.INF_MIN);
+        }
+    }
+    
+    private static void checkBeginAndEndAndSplit( 
+            List<PrimaryKeyColumn> begin, 
+            List<PrimaryKeyColumn> end, 
+            List<PrimaryKeyColumn> split) {
+        int cmp = CompareHelper.comparePrimaryKeyColumnList(begin, end);
+        
+        if (!split.isEmpty()) {
+            if (cmp < 0) { // 升序
+                // 检查是否是升序
+                for (int i = 0 ; i < split.size() - 1; i++) {
+                    PrimaryKeyColumn before = split.get(i);
+                    PrimaryKeyColumn after = split.get(i + 1);
+                    if (before.compareTo(after) >=0) { // 升序
+                        throw new IllegalArgumentException("In 'split', the item value is not increasing, index: " + i);
+                    }
+                }
+                if (begin.get(0).compareTo(split.get(0)) >= 0) {
+                    throw new IllegalArgumentException("The 'begin' must be less than head of 'split'.");
+                }
+                if (split.get(split.size() - 1).compareTo(end.get(0)) >= 0) {
+                    throw new IllegalArgumentException("tail of 'split' must be less than 'end'.");
+                }
+            } else if (cmp > 0) {// 降序
+                // 检查是否是降序
+                for (int i = 0 ; i < split.size() - 1; i++) {
+                    PrimaryKeyColumn before = split.get(i);
+                    PrimaryKeyColumn after = split.get(i + 1);
+                    if (before.compareTo(after) <= 0) { // 升序
+                        throw new IllegalArgumentException("In 'split', the item value is not descending, index: " + i);
+                    }
+                }
+                if (begin.get(0).compareTo(split.get(0)) <= 0) {
+                    throw new IllegalArgumentException("The 'begin' must be large than head of 'split'.");
+                }
+                if (split.get(split.size() - 1).compareTo(end.get(0)) <= 0) {
+                    throw new IllegalArgumentException("tail of 'split' must be large than 'end'.");
+                }
+            } else {
+                throw new IllegalArgumentException("The 'begin' can not equal with 'end'.");
+            }
+        }
+    }
+    
     /**
+     * 填充不完整的PK
      * 检查Begin、End、Split 3者之间的关系是否符合预期
      * @param begin
      * @param end
      * @param split
      */
-    private static void checkBeginAndEndAndSplit(
+    private static void fillAndcheckBeginAndEndAndSplit(
             List<PrimaryKeyColumn> begin, 
             List<PrimaryKeyColumn> end, 
-            List<List<PrimaryKeyColumn>> split) {
+            List<PrimaryKeyColumn> split,
+            List<PrimaryKeySchema> pkSchema
+            ) {
         
-        // begin < split < end
-        if (split.size() > 0) { // 填写Split时
-            // 分开比较，可以明确区分错误消息
-            if (CompareHelper.comparePrimaryKeyColumnList(begin, split.get(0)) != -1) {
-                throw new IllegalArgumentException("The 'begin' must be less than head of 'split'.");
-            }
-            if (CompareHelper.comparePrimaryKeyColumnList(split.get(split.size() - 1), end) != -1) {
-                throw new IllegalArgumentException("tail of 'split' must be less than 'end'.");
-            }
-        } else { // 不填Split时
-            if (CompareHelper.comparePrimaryKeyColumnList(begin, end) != -1) {
-                throw new IllegalArgumentException("The 'begin' must be less than 'end'.");
-            }
-        }
+        fillBeginAndEnd(begin, end, pkSchema);
+        checkBeginAndEndAndSplit(begin, end, split);
     }
     
     public static void checkAndSetOTSRange(OTSRange range, TableMeta meta) throws OTSCriticalException {
@@ -288,18 +349,44 @@ public class ParamChecker {
             List<PrimaryKeySchema> pkSchema = meta.getPrimaryKeyList();
             
             // 检查是begin和end否和PK类型一致
-            range.setBegin(checkAndGetPrimaryKey(range.getBegin(), pkSchema, PrimaryKeyValue.INF_MIN, Constant.KEY.Range.BEGIN));
-            range.setEnd(checkAndGetPrimaryKey(range.getEnd(), pkSchema, PrimaryKeyValue.INF_MAX, Constant.KEY.Range.END));        
+            range.setBegin(checkAndGetPrimaryKey(range.getBegin(), pkSchema, Constant.ConfigKey.Range.BEGIN));
+            range.setEnd(checkAndGetPrimaryKey(range.getEnd(), pkSchema, Constant.ConfigKey.Range.END));
             range.setSplit(checkAndGetSplit(range.getSplit(), pkSchema));
             
-            // 检查begin,end,split顺序是否正确
-            checkBeginAndEndAndSplit(range.getBegin(), range.getEnd(), range.getSplit());
+            // 1.填充Begin和End
+            // 2.检查begin,end,split顺序是否正确
+            fillAndcheckBeginAndEndAndSplit(range.getBegin(), range.getEnd(), range.getSplit(), pkSchema);
         } catch(RuntimeException e) {
             throw new OTSCriticalException("Parse 'range' fail, " + e.getMessage(), e);
         }
     }
     
+    public static void checkAndSetColumn(List<OTSColumn> columns, TableMeta meta, OTSMode mode) throws OTSCriticalException {
+        try {
+            if (mode == OTSMode.MULTI_VERSION) {
+                Set<String> uniqueColumn = new HashSet<String>(); 
+                Map<String, PrimaryKeyType> pk = meta.getPrimaryKeyMap();
+                for (OTSColumn c : columns) {
+                    // 是否包括PK列
+                    if (pk.get(c.getName()) != null) {
+                        throw new IllegalArgumentException("in mode:'multiVersion', the 'column' can not include primary key column, input:"+ c.getName() +".");
+                    }
+                    // 是否有重复列
+                    if (uniqueColumn.contains(c.getName())) {
+                        throw new IllegalArgumentException("in mode:'multiVersion', the 'column' can not include  same column, input:"+ c.getName() +".");
+                    } else {
+                        uniqueColumn.add(c.getName());
+                    }
+                }
+            }
+            
+        } catch(RuntimeException e) {
+            throw new OTSCriticalException("Parse 'column' fail, " + e.getMessage(), e);
+        }
+    }
+    
     public static void checkAndSetOTSConf(OTSConf conf, TableMeta meta) throws OTSCriticalException {
         checkAndSetOTSRange(conf.getRange(), meta);
+        checkAndSetColumn(conf.getColumn(), meta, conf.getMode());
     }
 }

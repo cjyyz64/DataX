@@ -29,7 +29,7 @@ public class OTSMultiVersionConf {
     public static OTSMultiVersionConf load(Configuration param) throws OTSCriticalException  {
         OTSMultiVersionConf conf = new OTSMultiVersionConf();
         conf.setTimeRange(ParamChecker.checkTimeRangeAndGet(param));
-        conf.setMaxVersion(param.getInt(Constant.KEY.MAX_VERSION, Constant.VALUE.MAX_VERSION));
+        conf.setMaxVersion(param.getInt(Constant.ConfigKey.MAX_VERSION, Constant.ConfigDefaultValue.MAX_VERSION));
         return conf;
     }
 }

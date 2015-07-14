@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.reader.otsreader.utils;
 
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.plugin.reader.otsreader.adaptor.ColumnAdaptor;
 import com.alibaba.datax.plugin.reader.otsreader.adaptor.PrimaryKeyValueAdaptor;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
@@ -12,6 +14,7 @@ public class GsonParser {
     private static Gson gsonBuilder() {
         return new GsonBuilder()
         .registerTypeAdapter(PrimaryKeyValue.class, new PrimaryKeyValueAdaptor())
+        .registerTypeAdapter(Column.class, new ColumnAdaptor())
         .create();
     }
 

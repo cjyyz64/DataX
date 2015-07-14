@@ -50,7 +50,10 @@ public class OtsReaderNormalSlaveProxy implements OtsReaderSlaveProxy {
                     if (c != null) {
                         line.addColumn(TranformHelper.otsColumnToDataxColumn(c));
                     } else {
-                        // TODO 需要和Datax确认，空值用空字符串表示是否合理
+                        // 这里使用StringColumn的无参构造函数构造对象，而不是用null，下
+                        // 游（writer）应该通过获取Column，然后通过Column的数据接口的返回值
+                        // 是否是null来判断改Column是否为null
+                        // Datax其他插件的也是使用这种方式，约定俗成，并没有使用直接向record中注入null方式代表空
                         line.addColumn(new StringColumn());
                     }
                 }
@@ -58,6 +61,7 @@ public class OtsReaderNormalSlaveProxy implements OtsReaderSlaveProxy {
                 line.addColumn(column.getValue());
             }
         }
+        recordSender.sendToWriter(line);
     }
     
     /**
@@ -79,8 +83,8 @@ public class OtsReaderNormalSlaveProxy implements OtsReaderSlaveProxy {
         
         RangeRowQueryCriteria rangeRowQueryCriteria = new RangeRowQueryCriteria(conf.getTableName());
         rangeRowQueryCriteria.setExclusiveEndPrimaryKey(exclusiveEndPrimaryKey);
-        rangeRowQueryCriteria.setTimeRange(conf.getMulti().getTimeRange());
-        rangeRowQueryCriteria.setMaxVersions(conf.getMulti().getMaxVersion());
+        rangeRowQueryCriteria.setDirection(Common.getDirection(range.getBegin(), range.getEnd()));
+        rangeRowQueryCriteria.setMaxVersions(1);
         rangeRowQueryCriteria.addColumnsToGet(Common.toColumnToGet(conf.getColumn()));
 
         do{
@@ -89,7 +93,7 @@ public class OtsReaderNormalSlaveProxy implements OtsReaderSlaveProxy {
                     ots, 
                     rangeRowQueryCriteria, 
                     conf.getRetry(), 
-                    conf.getSleepInMilliSecond());
+                    conf.getRetryPauseInMillisecond());
             sendToDatax(recordSender, result);
             next = result.getNextStartPrimaryKey();
         } while(next != null);

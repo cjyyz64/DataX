@@ -62,29 +62,27 @@ public class OTSConfMultiVersionUnittest {
         assertEquals("tablename", conf.getTableName());
         
         assertEquals(20, conf.getRetry());
-        assertEquals(120, conf.getSleepInMilliSecond());
+        assertEquals(120, conf.getRetryPauseInMillisecond());
         assertEquals(2, conf.getIoThreadCount());
         assertEquals(2, conf.getMaxConnectCount());
-        assertEquals(20000, conf.getSocketTimeoutInMilliSecond());
-        assertEquals(20000, conf.getConnectTimeoutInMilliSecond());
+        assertEquals(20000, conf.getSocketTimeoutInMillisecond());
+        assertEquals(20000, conf.getConnectTimeoutInMillisecond());
         
         assertEquals(OTSMode.MULTI_VERSION, conf.getMode());
         
         // Range
         OTSRange range = new OTSRange();
         List<PrimaryKeyColumn> begin = new ArrayList<PrimaryKeyColumn>();
-        begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
-        begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
+        begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
+        begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
         
         List<PrimaryKeyColumn> end = new ArrayList<PrimaryKeyColumn>();
-        end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromString("c")));
-        end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
+        end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromString("c")));
+        end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
         
-        List<List<PrimaryKeyColumn>> split = new ArrayList<List<PrimaryKeyColumn>>();
+        List<PrimaryKeyColumn> split = new ArrayList<PrimaryKeyColumn>();
         {
-            List<PrimaryKeyColumn> pk = new ArrayList<PrimaryKeyColumn>();
-            pk.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromString("b")));
-            split.add(pk);
+            split.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromString("b")));
         }
         range.setBegin(begin);
         range.setEnd(end);
@@ -122,17 +120,17 @@ public class OTSConfMultiVersionUnittest {
         assertEquals("instancename", conf.getInstanceName());
         assertEquals("tablename", conf.getTableName());
         
-        assertEquals(Constant.VALUE.RETRY, conf.getRetry());
-        assertEquals(Constant.VALUE.SLEEP_IN_MILLISECOND, conf.getSleepInMilliSecond());
-        assertEquals(Constant.VALUE.IO_THREAD_COUNT, conf.getIoThreadCount());
-        assertEquals(Constant.VALUE.MAX_CONNECT_COUNT, conf.getMaxConnectCount());
-        assertEquals(Constant.VALUE.SOCKET_TIMEOUTIN_MILLISECOND, conf.getSocketTimeoutInMilliSecond());
-        assertEquals(Constant.VALUE.CONNECT_TIMEOUT_IN_MILLISECOND, conf.getConnectTimeoutInMilliSecond());
+        assertEquals(Constant.ConfigDefaultValue.RETRY, conf.getRetry());
+        assertEquals(Constant.ConfigDefaultValue.RETRY_PAUSE_IN_MILLISECOND, conf.getRetryPauseInMillisecond());
+        assertEquals(Constant.ConfigDefaultValue.IO_THREAD_COUNT, conf.getIoThreadCount());
+        assertEquals(Constant.ConfigDefaultValue.MAX_CONNECTION_COUNT, conf.getMaxConnectCount());
+        assertEquals(Constant.ConfigDefaultValue.SOCKET_TIMEOUT_IN_MILLISECOND, conf.getSocketTimeoutInMillisecond());
+        assertEquals(Constant.ConfigDefaultValue.CONNECT_TIMEOUT_IN_MILLISECOND, conf.getConnectTimeoutInMillisecond());
         
         assertEquals(OTSMode.MULTI_VERSION, conf.getMode());
         
         // Range
-        AssertHelper.assertOTSRange(null, conf.getRange());
+        AssertHelper.assertOTSRange(new OTSRange(), conf.getRange());
         
         // Column
         List<OTSColumn> columns = new ArrayList<OTSColumn>();
@@ -214,12 +212,12 @@ public class OTSConfMultiVersionUnittest {
     @Test
     public void testErrorFieldAndValue() throws OTSCriticalException {
         
-        testInvalidParam(Constant.KEY.RETRY, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[maxRetryTime] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
-        testInvalidParam(Constant.KEY.SLEEP_IN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[retrySleepInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
-        testInvalidParam(Constant.KEY.MAX_CONNECT_COUNT, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[maxConnectCount] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
-        testInvalidParam(Constant.KEY.IO_THREAD_COUNT, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[ioThreadCount] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
-        testInvalidParam(Constant.KEY.SOCKET_TIMEOUTIN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[socketTimeoutInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
-        testInvalidParam(Constant.KEY.CONNECT_TIMEOUT_IN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[connectTimeoutInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.RETRY, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[maxRetryTime] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.RETRY_PAUSE_IN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[retryPauseInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.MAX_CONNECTION_COUNT, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[maxConnectionCount] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.IO_THREAD_COUNT, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[ioThreadCount] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.SOCKET_TIMEOUTIN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[socketTimeoutInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
+        testInvalidParam(Constant.ConfigKey.CONNECT_TIMEOUT_IN_MILLISECOND, "hell", "Code:[Common-00], Describe:[您提供的配置文件存在错误信息，请检查您的作业配置 .] - 任务读取配置文件出错. 配置文件路径[connectTimeoutInMillisecond] 值非法, 期望是整数类型: For input string: \"hell\". 请检查您的配置并作出修改.");
         
         testInvalidParam(Key.RANGE, "", "Parse 'range' fail, java.lang.String cannot be cast to java.util.Map");
         testInvalidParam(Key.COLUMN, "", "Parse 'column' fail, java.lang.String cannot be cast to java.util.List");
@@ -237,7 +235,7 @@ public class OTSConfMultiVersionUnittest {
                 column.put("value", value);
                 pks.add(column);
             }
-            range.put(Constant.KEY.Range.BEGIN, pks);
+            range.put(Constant.ConfigKey.Range.BEGIN, pks);
             param.set(Key.RANGE, range);
             
             try {
@@ -258,7 +256,7 @@ public class OTSConfMultiVersionUnittest {
                 column.put("value", value);
                 pks.add(column);
             }
-            range.put(Constant.KEY.Range.END, pks);
+            range.put(Constant.ConfigKey.Range.END, pks);
             param.set(Key.RANGE, range);
             
             try {
@@ -364,26 +362,26 @@ public class OTSConfMultiVersionUnittest {
                 column.put("value", Base64.encodeBase64String("hell".getBytes()));
                 pks.add(column);
             }
-            range.put(Constant.KEY.Range.BEGIN, pks);
-            range.put(Constant.KEY.Range.END, pks);
+            range.put(Constant.ConfigKey.Range.BEGIN, pks);
+            range.put(Constant.ConfigKey.Range.END, pks);
             param.set(Key.RANGE, range);
             
             OTSConf conf = OTSConf.load(param);
             OTSRange rangeExpect = new OTSRange();
             List<PrimaryKeyColumn> begin = new ArrayList<PrimaryKeyColumn>();
-            begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
-            begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
-            begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
-            begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromLong(20)));
-            begin.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromBinary("hell".getBytes())));
+            begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
+            begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
+            begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
+            begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromLong(20)));
+            begin.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromBinary("hell".getBytes())));
             
             
             List<PrimaryKeyColumn> end = new ArrayList<PrimaryKeyColumn>();
-            end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
-            end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
-            end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
-            end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromLong(20)));
-            end.add(new PrimaryKeyColumn(Constant.VALUE.DEFAULT_NAME, PrimaryKeyValue.fromBinary("hell".getBytes())));
+            end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MIN));
+            end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.INF_MAX));
+            end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromString("a")));
+            end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromLong(20)));
+            end.add(new PrimaryKeyColumn(Constant.ConfigDefaultValue.DEFAULT_NAME, PrimaryKeyValue.fromBinary("hell".getBytes())));
             
             rangeExpect.setBegin(begin);
             rangeExpect.setEnd(end);
@@ -397,9 +395,9 @@ public class OTSConfMultiVersionUnittest {
         }
         // 2.format，输入{"value":"INF_MIN/INF_MAX}、{}、[]错误
         {
-            testFormatError(Constant.KEY.Range.BEGIN);
-            testFormatError(Constant.KEY.Range.END);
-            testFormatError(Constant.KEY.Range.SPLIT);
+            testFormatError(Constant.ConfigKey.Range.BEGIN);
+            testFormatError(Constant.ConfigKey.Range.END);
+            testFormatError(Constant.ConfigKey.Range.SPLIT);
         }
         
         // 3.值的类型,输入字符串正确，非字符串错误

@@ -19,12 +19,12 @@ public class OTSConf {
 
     private OTSMultiVersionConf multi = null;
     
-    private int retry = Constant.VALUE.RETRY;
-    private int sleepInMilliSecond = Constant.VALUE.SLEEP_IN_MILLISECOND;
-    private int ioThreadCount = Constant.VALUE.IO_THREAD_COUNT;
-    private int maxConnectCount = Constant.VALUE.MAX_CONNECT_COUNT;
-    private int socketTimeoutInMilliSecond = Constant.VALUE.SOCKET_TIMEOUTIN_MILLISECOND;
-    private int connectTimeoutInMilliSecond = Constant.VALUE.CONNECT_TIMEOUT_IN_MILLISECOND;
+    private int retry = Constant.ConfigDefaultValue.RETRY;
+    private int retryPauseInMillisecond = Constant.ConfigDefaultValue.RETRY_PAUSE_IN_MILLISECOND;
+    private int ioThreadCount = Constant.ConfigDefaultValue.IO_THREAD_COUNT;
+    private int maxConnectionCount = Constant.ConfigDefaultValue.MAX_CONNECTION_COUNT;
+    private int socketTimeoutInMillisecond = Constant.ConfigDefaultValue.SOCKET_TIMEOUT_IN_MILLISECOND;
+    private int connectTimeoutInMillisecond = Constant.ConfigDefaultValue.CONNECT_TIMEOUT_IN_MILLISECOND;
 
     public int getIoThreadCount() {
         return ioThreadCount;
@@ -35,27 +35,27 @@ public class OTSConf {
     }
 
     public int getMaxConnectCount() {
-        return maxConnectCount;
+        return maxConnectionCount;
     }
 
     public void setMaxConnectCount(int maxConnectCount) {
-        this.maxConnectCount = maxConnectCount;
+        this.maxConnectionCount = maxConnectCount;
     }
 
-    public int getSocketTimeoutInMilliSecond() {
-        return socketTimeoutInMilliSecond;
+    public int getSocketTimeoutInMillisecond() {
+        return socketTimeoutInMillisecond;
     }
 
-    public void setSocketTimeoutInMilliSecond(int socketTimeoutInMilliSecond) {
-        this.socketTimeoutInMilliSecond = socketTimeoutInMilliSecond;
+    public void setSocketTimeoutInMillisecond(int socketTimeoutInMillisecond) {
+        this.socketTimeoutInMillisecond = socketTimeoutInMillisecond;
     }
 
-    public int getConnectTimeoutInMilliSecond() {
-        return connectTimeoutInMilliSecond;
+    public int getConnectTimeoutInMillisecond() {
+        return connectTimeoutInMillisecond;
     }
 
-    public void setConnectTimeoutInMilliSecond(int connectTimeoutInMilliSecond) {
-        this.connectTimeoutInMilliSecond = connectTimeoutInMilliSecond;
+    public void setConnectTimeoutInMillisecond(int connectTimeoutInMillisecond) {
+        this.connectTimeoutInMillisecond = connectTimeoutInMillisecond;
     }
 
     public int getRetry() {
@@ -66,12 +66,12 @@ public class OTSConf {
         this.retry = retry;
     }
 
-    public int getSleepInMilliSecond() {
-        return sleepInMilliSecond;
+    public int getRetryPauseInMillisecond() {
+        return retryPauseInMillisecond;
     }
 
-    public void setSleepInMilliSecond(int sleepInMilliSecond) {
-        this.sleepInMilliSecond = sleepInMilliSecond;
+    public void setRetryPauseInMillisecond(int sleepInMillisecond) {
+        this.retryPauseInMillisecond = sleepInMillisecond;
     }
 
     public String getEndpoint() {
@@ -156,12 +156,12 @@ public class OTSConf {
         c.setInstanceName(ParamChecker.checkStringAndGet(param, Key.OTS_INSTANCE_NAME, true));
         c.setTableName(ParamChecker.checkStringAndGet(param, Key.TABLE_NAME, true));
         
-        c.setRetry(param.getInt(Constant.KEY.RETRY, Constant.VALUE.RETRY));
-        c.setSleepInMilliSecond(param.getInt(Constant.KEY.SLEEP_IN_MILLISECOND, Constant.VALUE.SLEEP_IN_MILLISECOND));
-        c.setIoThreadCount(param.getInt(Constant.KEY.IO_THREAD_COUNT, Constant.VALUE.IO_THREAD_COUNT));
-        c.setMaxConnectCount(param.getInt(Constant.KEY.MAX_CONNECT_COUNT, Constant.VALUE.MAX_CONNECT_COUNT));
-        c.setSocketTimeoutInMilliSecond(param.getInt(Constant.KEY.SOCKET_TIMEOUTIN_MILLISECOND, Constant.VALUE.SOCKET_TIMEOUTIN_MILLISECOND));
-        c.setConnectTimeoutInMilliSecond(param.getInt(Constant.KEY.CONNECT_TIMEOUT_IN_MILLISECOND, Constant.VALUE.CONNECT_TIMEOUT_IN_MILLISECOND));
+        c.setRetry(param.getInt(Constant.ConfigKey.RETRY, Constant.ConfigDefaultValue.RETRY));
+        c.setRetryPauseInMillisecond(param.getInt(Constant.ConfigKey.RETRY_PAUSE_IN_MILLISECOND, Constant.ConfigDefaultValue.RETRY_PAUSE_IN_MILLISECOND));
+        c.setIoThreadCount(param.getInt(Constant.ConfigKey.IO_THREAD_COUNT, Constant.ConfigDefaultValue.IO_THREAD_COUNT));
+        c.setMaxConnectCount(param.getInt(Constant.ConfigKey.MAX_CONNECTION_COUNT, Constant.ConfigDefaultValue.MAX_CONNECTION_COUNT));
+        c.setSocketTimeoutInMillisecond(param.getInt(Constant.ConfigKey.SOCKET_TIMEOUTIN_MILLISECOND, Constant.ConfigDefaultValue.SOCKET_TIMEOUT_IN_MILLISECOND));
+        c.setConnectTimeoutInMillisecond(param.getInt(Constant.ConfigKey.CONNECT_TIMEOUT_IN_MILLISECOND, Constant.ConfigDefaultValue.CONNECT_TIMEOUT_IN_MILLISECOND));
 
         // range
         c.setRange(ParamChecker.checkRangeAndGet(param));

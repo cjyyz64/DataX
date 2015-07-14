@@ -23,17 +23,17 @@ public class ParamParser {
     }
     
     private static PrimaryKeyValue  parsePrimaryKeyValue(String type, String value) {
-        if (type.equalsIgnoreCase(Constant.VALUE.PrimaryKeyColumnType.INF_MIN)) {
+        if (type.equalsIgnoreCase(Constant.ValueType.INF_MIN)) {
             return PrimaryKeyValue.INF_MIN;
-        } else if (type.equalsIgnoreCase(Constant.VALUE.PrimaryKeyColumnType.INF_MAX)) {
+        } else if (type.equalsIgnoreCase(Constant.ValueType.INF_MAX)) {
             return PrimaryKeyValue.INF_MAX;
         } else {
             if (value != null) {
-                if (type.equalsIgnoreCase(Constant.VALUE.PrimaryKeyColumnType.STRING)) {
+                if (type.equalsIgnoreCase(Constant.ValueType.STRING)) {
                     return PrimaryKeyValue.fromString(value);
-                } else if (type.equalsIgnoreCase(Constant.VALUE.PrimaryKeyColumnType.INTEGER)) {
+                } else if (type.equalsIgnoreCase(Constant.ValueType.INTEGER)) {
                     return PrimaryKeyValue.fromLong(Long.valueOf(value));
-                } else if (type.equalsIgnoreCase(Constant.VALUE.PrimaryKeyColumnType.BINARY)) {
+                } else if (type.equalsIgnoreCase(Constant.ValueType.BINARY)) {
                     return PrimaryKeyValue.fromBinary(Base64.decodeBase64(value));
                 } else {
                     throw new IllegalArgumentException("the column type only support :['INF_MIN', 'INF_MAX', 'string', 'int', 'binary']");
@@ -45,13 +45,13 @@ public class ParamParser {
     }
     
     private static PrimaryKeyColumn parsePrimaryKeyColumn(Map<String, Object> item) {
-        Object typeObj = item.get(Constant.KEY.PrimaryKeyColumn.TYPE);
-        Object valueObj = item.get(Constant.KEY.PrimaryKeyColumn.VALUE);
+        Object typeObj = item.get(Constant.ConfigKey.PrimaryKeyColumn.TYPE);
+        Object valueObj = item.get(Constant.ConfigKey.PrimaryKeyColumn.VALUE);
         
         if (typeObj != null && valueObj != null) {
             if (typeObj instanceof String && valueObj instanceof String) {
                 return new PrimaryKeyColumn(
-                        Constant.VALUE.DEFAULT_NAME, 
+                        Constant.ConfigDefaultValue.DEFAULT_NAME, 
                         parsePrimaryKeyValue((String)typeObj, (String)valueObj)
                         );
             } else {
@@ -64,7 +64,7 @@ public class ParamParser {
         } else if (typeObj != null) {
             if (typeObj instanceof String) {
                 return new PrimaryKeyColumn(
-                        Constant.VALUE.DEFAULT_NAME, 
+                        Constant.ConfigDefaultValue.DEFAULT_NAME, 
                         parsePrimaryKeyValue((String)typeObj)
                         );
             } else {
@@ -119,15 +119,15 @@ public class ParamParser {
             String type = (String)typeObj;
             String value = (String)valueObj;
             
-            if (type.equalsIgnoreCase(Constant.VALUE.ColumnType.STRING)) {
+            if (type.equalsIgnoreCase(Constant.ValueType.STRING)) {
                 return OTSColumn.fromConstStringColumn(value);
-            } else if (type.equalsIgnoreCase(Constant.VALUE.ColumnType.INTEGER)) {
+            } else if (type.equalsIgnoreCase(Constant.ValueType.INTEGER)) {
                 return OTSColumn.fromConstIntegerColumn(Long.valueOf(value));
-            } else if (type.equalsIgnoreCase(Constant.VALUE.ColumnType.DOUBLE)) {
+            } else if (type.equalsIgnoreCase(Constant.ValueType.DOUBLE)) {
                 return OTSColumn.fromConstDoubleColumn(Double.valueOf(value));
-            } else if (type.equalsIgnoreCase(Constant.VALUE.ColumnType.BOOLEAN)) {
+            } else if (type.equalsIgnoreCase(Constant.ValueType.BOOLEAN)) {
                 return OTSColumn.fromConstBoolColumn(Boolean.valueOf(value));
-            } else if (type.equalsIgnoreCase(Constant.VALUE.ColumnType.BINARY)) {
+            } else if (type.equalsIgnoreCase(Constant.ValueType.BINARY)) {
                 return OTSColumn.fromConstBytesColumn(Base64.decodeBase64(value));
             } else {
                 throw new IllegalArgumentException("the const column type only support :['string', 'int', 'double', 'boolean', 'binary']");
@@ -138,9 +138,9 @@ public class ParamParser {
     }
     
     private static OTSColumn parseOTSColumn(Map<String, Object> column) {
-        Object typeObj = column.get(Constant.KEY.Column.TYPE);
-        Object valueObj = column.get(Constant.KEY.Column.VALUE);
-        Object nameObj = column.get(Constant.KEY.Column.NAME);
+        Object typeObj = column.get(Constant.ConfigKey.Column.TYPE);
+        Object valueObj = column.get(Constant.ConfigKey.Column.VALUE);
+        Object nameObj = column.get(Constant.ConfigKey.Column.NAME);
         
         if (nameObj != null) {
             return parseOTSColumn(nameObj);

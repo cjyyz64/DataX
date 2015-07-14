@@ -31,25 +31,9 @@ public class AssertHelper {
             if (((src.getEnd() != null && target.getEnd() != null) && CompareHelper.comparePrimaryKeyColumnList(src.getEnd(), target.getEnd()) != 0) ) {
                 fail();
             }
-            if (((src.getSplit() != null && target.getSplit() != null) && CompareHelper.comparePrimaryKeyColumnListList(src.getSplit(), target.getSplit()) != 0) ) {
+            if (((src.getSplit() != null && target.getSplit() != null) && CompareHelper.comparePrimaryKeyColumnList(src.getSplit(), target.getSplit()) != 0) ) {
                 fail();
             }
-            //            if (
-            //                    (src.getBegin() == null && target.getBegin() != null) || (src.getBegin() != null && target.getBegin() == null) ||
-            //                    (src.getEnd() == null && target.getEnd() != null) || (src.getEnd() != null && target.getEnd() == null) ||
-            //                    (src.getSplit() == null && target.getSplit() != null) || (src.getSplit() != null && target.getSplit() == null)
-            //               ) {
-            //                fail();
-            //            } 
-            //            else {
-            //                if (
-            //                        ((src.getBegin() != null && target.getBegin() != null) && CompareHelper.comparePrimaryKeyColumnList(src.getBegin(), target.getBegin()) != 0) ||
-            //                        ((src.getEnd() != null && target.getEnd() != null) && CompareHelper.comparePrimaryKeyColumnList(src.getEnd(), target.getEnd()) != 0) ||
-            //                        ((src.getSplit() != null && target.getSplit() != null) && CompareHelper.comparePrimaryKeyColumnListList(src.getSplit(), target.getSplit()) != 0) 
-            //                        ){
-            //                    fail();
-            //                }
-            //            }
         }
     }
     

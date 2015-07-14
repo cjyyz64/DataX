@@ -4,7 +4,7 @@ public class Constant {
     /**
      * Json中的Key名字定义
      */
-    public class KEY {
+    public class ConfigKey {
         public static final String CONF = "conf";
         public static final String RANGE = "range";
         
@@ -12,11 +12,11 @@ public class Constant {
         public static final String MAX_VERSION = "maxVersion";
         
         public static final String RETRY = "maxRetryTime";
-        public final static String SLEEP_IN_MILLISECOND = "retrySleepInMillisecond";
-        public final static String IO_THREAD_COUNT = "ioThreadCount";
-        public final static String MAX_CONNECT_COUNT = "maxConnectCount";
-        public final static String SOCKET_TIMEOUTIN_MILLISECOND = "socketTimeoutInMillisecond";
-        public final static String CONNECT_TIMEOUT_IN_MILLISECOND = "connectTimeoutInMillisecond";
+        public static final String RETRY_PAUSE_IN_MILLISECOND = "retryPauseInMillisecond";
+        public static final String IO_THREAD_COUNT = "ioThreadCount";
+        public static final String MAX_CONNECTION_COUNT = "maxConnectionCount";
+        public static final String SOCKET_TIMEOUTIN_MILLISECOND = "socketTimeoutInMillisecond";
+        public static final String CONNECT_TIMEOUT_IN_MILLISECOND = "connectTimeoutInMillisecond";
 
         public class Range {
             public static final String BEGIN = "begin";
@@ -42,39 +42,36 @@ public class Constant {
     };
     
     /**
-     * 全局的常量定义
+     * 定义的配置文件中value type中可取的值
      */
-    public class VALUE {
+    public class ValueType {
+        public static final String INF_MIN = "INF_MIN";
+        public static final String INF_MAX = "INF_MAX";
+        public static final String STRING = "string";
+        public static final String INTEGER = "int";
+        public static final String BINARY = "binary";
+        public static final String DOUBLE = "double";
+        public static final String BOOLEAN = "bool";
+    };
+    
+    /**
+     * 全局默认常量定义
+     */
+    public class ConfigDefaultValue {
         public static final int RETRY = 18;
-        public static final int SLEEP_IN_MILLISECOND = 100;
-        public final static int IO_THREAD_COUNT = 1;
-        public final static int MAX_CONNECT_COUNT = 1;
-        public final static int SOCKET_TIMEOUTIN_MILLISECOND = 10000;
-        public final static int CONNECT_TIMEOUT_IN_MILLISECOND = 10000;
+        public static final int RETRY_PAUSE_IN_MILLISECOND = 100;
+        public static final int IO_THREAD_COUNT = 1;
+        public static final int MAX_CONNECTION_COUNT = 1;
+        public static final int SOCKET_TIMEOUT_IN_MILLISECOND = 10000;
+        public static final int CONNECT_TIMEOUT_IN_MILLISECOND = 10000;
         
-        public final static int MAX_VERSION = Integer.MAX_VALUE;
+        public static final int MAX_VERSION = Integer.MAX_VALUE;
 
         public static final String DEFAULT_NAME = "DEFAULT_NAME";
         
         public class Mode {
             public static final String NORMAL = "normal";
             public static final String MULTI_VERSION = "multiVersion";
-        }
-        
-        public class PrimaryKeyColumnType {
-            public static final String INF_MIN = "INF_MIN";
-            public static final String INF_MAX = "INF_MAX";
-            public static final String STRING = "string";
-            public static final String INTEGER = "int";
-            public static final String BINARY = "binary";
-        }
-        
-        public class ColumnType {
-            public static final String STRING = "string";
-            public static final String INTEGER = "int";
-            public static final String DOUBLE = "double";
-            public static final String BOOLEAN = "bool";
-            public static final String BINARY = "binary";
         }
         
         public class TimeRange {

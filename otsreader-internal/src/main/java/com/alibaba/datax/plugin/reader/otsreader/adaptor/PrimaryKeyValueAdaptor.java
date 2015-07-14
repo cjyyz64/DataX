@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.reader.otsreader.adaptor;
 
 import java.lang.reflect.Type;
 
+import org.apache.commons.codec.binary.Base64;
+
 import com.aliyun.openservices.ots.internal.model.ColumnType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
@@ -31,13 +33,13 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
             JsonSerializationContext c) {
         JsonObject json = new JsonObject();
         
-        if (obj == PrimaryKeyValue.INF_MIN) {
+        if (obj.isInfMin()) {
             json.add(TYPE, new JsonPrimitive(INF_MIN)); 
             json.add(VALUE, new JsonPrimitive(""));
             return json;
         }
         
-        if (obj == PrimaryKeyValue.INF_MAX) {
+        if (obj.isInfMax()) {
             json.add(TYPE, new JsonPrimitive(INF_MAX)); 
             json.add(VALUE, new JsonPrimitive(""));
             return json;
@@ -51,6 +53,10 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
         case INTEGER : 
             json.add(TYPE, new JsonPrimitive(ColumnType.INTEGER.toString())); 
             json.add(VALUE, new JsonPrimitive(obj.asLong()));
+            break;
+        case BINARY : 
+            json.add(TYPE, new JsonPrimitive(ColumnType.BINARY.toString())); 
+            json.add(VALUE, new JsonPrimitive(Base64.encodeBase64String(obj.asBinary())));
             break;
         default:
             throw new IllegalArgumentException("Unsupport serialize the type : " + obj.getType() + "");
@@ -66,11 +72,11 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
         String strType = obj.getAsJsonPrimitive(TYPE).getAsString();
         JsonPrimitive jsonValue =  obj.getAsJsonPrimitive(VALUE);
         
-        if (strType.equals(INF_MIN)) {
+        if (strType.equalsIgnoreCase(INF_MIN)) {
             return PrimaryKeyValue.INF_MIN;
         }
         
-        if (strType.equals(INF_MAX)) {
+        if (strType.equalsIgnoreCase(INF_MAX)) {
             return PrimaryKeyValue.INF_MAX;
         }
         
@@ -82,6 +88,9 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
             break;
         case INTEGER : 
             value = PrimaryKeyValue.fromLong(jsonValue.getAsLong());
+            break;
+        case BINARY : 
+            value = PrimaryKeyValue.fromBinary(Base64.decodeBase64(jsonValue.getAsString()));
             break;
         default:
             throw new IllegalArgumentException("Unsupport deserialize the type : " + type + "");
