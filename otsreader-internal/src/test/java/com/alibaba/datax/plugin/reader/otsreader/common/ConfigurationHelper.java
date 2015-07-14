@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.Constant;
@@ -202,4 +204,21 @@ public class ConfigurationHelper {
             throw new RuntimeException(e.getMessage(), e);
         }
     } 
+    
+    public static String linesToJson(Map<String, String> lines) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        Set<Entry<String, String>> entrys = lines.entrySet();
+        int i = 0;
+        for (Entry<String, String> e : entrys) {
+            if (i == (entrys.size() - 1)) {
+                sb.append(e.getValue());
+            } else {
+                sb.append(e.getValue() + ",");
+            }
+            i++;
+        }
+        sb.append("}");
+        return sb.toString();
+    }
 }

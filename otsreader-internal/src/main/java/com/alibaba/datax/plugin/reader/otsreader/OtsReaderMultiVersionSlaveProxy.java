@@ -1,7 +1,5 @@
 package com.alibaba.datax.plugin.reader.otsreader;
 
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +7,6 @@ import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.alibaba.datax.plugin.reader.otsreader.utils.Common;
@@ -49,7 +46,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
     private void sendToDatax(RecordSender recordSender, PrimaryKey pk, Column c) {
         Record line = recordSender.createRecord();
         //-------------------------
-        // 四元组 pk,column name, timetamp, value
+        // 四元组 pk, column name, timetamp, value
         //-------------------------
         
         // pk
@@ -68,15 +65,8 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
     
     private void sendToDatax(RecordSender recordSender, Row row) {
         PrimaryKey pk = row.getPrimaryKey();
-        List<OTSColumn> otsColumns = conf.getColumn();
-        if (otsColumns.isEmpty()) {
-            for (Column c : row.getColumns()){
-                sendToDatax(recordSender, pk, c);
-            }
-        } else {
-            for (Column c : row.getColumns()) {
-                sendToDatax(recordSender, pk, c);
-            }
+        for (Column c : row.getColumns()) {
+            sendToDatax(recordSender, pk, c);
         }
     }
     

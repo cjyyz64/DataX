@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.Map.Entry;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
@@ -93,23 +91,6 @@ public class NormalParamCheckFunctiontest {
         return lines;
     }
     
-    private String linesToJson(Map<String, String> lines) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        Set<Entry<String, String>> entrys = lines.entrySet();
-        int i = 0;
-        for (Entry<String, String> e : entrys) {
-            if (i == (entrys.size() - 1)) {
-                sb.append(e.getValue());
-            } else {
-                sb.append(e.getValue() + ",");
-            }
-            i++;
-        }
-        sb.append("}");
-        return sb.toString();
-    }
-    
     /**
      * 测试目的：测试所有配置项配置正确
      * 测试内容：构造一个合法的配置文件，所有配置项都填好正确的值，期望程序解析正常且值符合预期
@@ -118,7 +99,7 @@ public class NormalParamCheckFunctiontest {
     @Test
     public void testConf() throws Exception {
         OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
-        String json = linesToJson(this.getLines());
+        String json = ConfigurationHelper.linesToJson(getLines());
         Configuration configuration = Configuration.from(json);
         
         proxy.init(configuration);
@@ -187,7 +168,7 @@ public class NormalParamCheckFunctiontest {
         lines.remove("maxConnectionCount");
         lines.remove("socketTimeoutInMillisecond");
         lines.remove("connectTimeoutInMillisecond");
-        String json = linesToJson(lines);
+        String json = ConfigurationHelper.linesToJson(lines);
         Configuration configuration = Configuration.from(json);
         
         proxy.init(configuration);
@@ -237,7 +218,7 @@ public class NormalParamCheckFunctiontest {
         OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
         Map<String, String> lines = this.getLines();
         lines.remove(key);
-        String json = linesToJson(lines);
+        String json = ConfigurationHelper.linesToJson(lines);
         Configuration configuration = Configuration.from(json);
         
         if (expectMessage != null) {
@@ -256,7 +237,7 @@ public class NormalParamCheckFunctiontest {
         OtsReaderMasterProxy proxy = new OtsReaderMasterProxy();
         Map<String, String> lines = this.getLines();
         lines.put(key, value);
-        String json = linesToJson(lines);
+        String json = ConfigurationHelper.linesToJson(lines);
         Configuration configuration = Configuration.from(json);
         
         if (expectMessage != null) {
