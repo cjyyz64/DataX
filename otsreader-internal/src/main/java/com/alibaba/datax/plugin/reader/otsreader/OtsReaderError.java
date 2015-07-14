@@ -13,11 +13,11 @@ public class OtsReaderError implements ErrorCode {
     // 所以暂定两个基础的Error Code，其他错误统一使用OTS的错误码和错误消息
     
     public final static OtsReaderError ERROR = new OtsReaderError(
-            "OtsWriterError", 
-            "该错误表示插件的内部错误，表示系统没有处理到的异常");
+            "OtsReaderError", 
+            "OTS Reader Error");
     public final static OtsReaderError INVALID_PARAM = new OtsReaderError(
-            "OtsWriterInvalidParameter", 
-            "该错误表示参数错误，表示用户输入了错误的参数格式等");
+            "OtsReaderInvalidParameter", 
+            "OTS Reader invalid parameter error");
     
     public OtsReaderError (String code) {
         this.code = code;

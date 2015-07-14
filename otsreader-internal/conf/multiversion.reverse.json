@@ -23,8 +23,11 @@
             "range":{
                 "begin":[{"type":"INF_MAX"},{"type":"INF_MAX"},{"type":"binary", "value":"aGVsbG8="}],
                 "end":[{"type":"INF_MIN"}],
-                "split":[{"type":"string", "value":"g"}, {"type":"string", "value":"a"}]
-            }
+                "split":[{"type":"string", "value":"c"}, {"type":"string", "value":"b"}]
+            },
+            "column": [
+                {"name":"attr"}, {"name":"null_column"}
+            ]
           }
         },
         "writer": {
