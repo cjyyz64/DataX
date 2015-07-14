@@ -21,7 +21,7 @@
             "instanceName":" wanhong-internal ",
             "table": "SmokeTest1",
             "range":{
-                "begin":[{"type":"INF_MAX"}],
+                "begin":[{"type":"INF_MAX"},{"type":"INF_MAX"},{"type":"binary", "value":"aGVsbG8="}],
                 "end":[{"type":"INF_MIN"}],
                 "split":[{"type":"string", "value":"g"}, {"type":"string", "value":"a"}]
             }

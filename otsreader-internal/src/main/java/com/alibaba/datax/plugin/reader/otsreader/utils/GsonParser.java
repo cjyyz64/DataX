@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.reader.otsreader.adaptor.PrimaryKeyValueAdaptor;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConf;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyValue;
+import com.aliyun.openservices.ots.internal.model.TableMeta;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -36,5 +37,15 @@ public class GsonParser {
     public static OTSConf jsonToConf (String jsonStr) {
         Gson g = gsonBuilder();
         return g.fromJson(jsonStr, OTSConf.class);
+    }
+    
+    public static String metaToJson (TableMeta meta) {
+        Gson g = gsonBuilder();
+        return g.toJson(meta);
+    }
+
+    public static TableMeta jsonToMeta (String jsonStr) {
+        Gson g = gsonBuilder();
+        return g.fromJson(jsonStr, TableMeta.class);
     }
 }

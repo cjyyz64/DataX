@@ -7,6 +7,7 @@ public class Constant {
     public class ConfigKey {
         public static final String CONF = "conf";
         public static final String RANGE = "range";
+        public static final String META = "meta";
         
         public static final String TIME_RANGE = "timeRange";
         public static final String MAX_VERSION = "maxVersion";

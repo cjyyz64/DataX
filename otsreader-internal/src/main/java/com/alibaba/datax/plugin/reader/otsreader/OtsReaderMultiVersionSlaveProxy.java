@@ -22,18 +22,21 @@ import com.aliyun.openservices.ots.internal.model.PrimaryKey;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyColumn;
 import com.aliyun.openservices.ots.internal.model.RangeRowQueryCriteria;
 import com.aliyun.openservices.ots.internal.model.Row;
+import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
     private OTSConf conf = null;
     private OTSRange range = null;
+    private TableMeta meta = null;
     private OTS ots = null;
     
     private static final Logger LOG = LoggerFactory.getLogger(OtsReaderMultiVersionSlaveProxy.class);
     
     @Override
-    public void init(OTSConf conf, OTSRange range) {
+    public void init(OTSConf conf, OTSRange range, TableMeta meta) {
         this.conf = conf;
         this.range = range;
+        this.meta = meta;
         
         this.ots = OtsHelper.getOTSInstance(conf);
     }
@@ -101,7 +104,7 @@ public class OtsReaderMultiVersionSlaveProxy implements OtsReaderSlaveProxy {
         rangeRowQueryCriteria.setDirection(Common.getDirection(range.getBegin(), range.getEnd()));
         rangeRowQueryCriteria.setTimeRange(conf.getMulti().getTimeRange());
         rangeRowQueryCriteria.setMaxVersions(conf.getMulti().getMaxVersion());
-        rangeRowQueryCriteria.addColumnsToGet(Common.toColumnToGet(conf.getColumn()));
+        rangeRowQueryCriteria.addColumnsToGet(Common.toColumnToGet(conf.getColumn(), meta));
 
         do{
             rangeRowQueryCriteria.setInclusiveStartPrimaryKey(next);

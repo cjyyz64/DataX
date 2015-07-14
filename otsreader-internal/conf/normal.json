@@ -22,11 +22,13 @@
             "instanceName":" wanhong-internal ",
             "table": "SmokeTest1",
             "column": [
+                {"name":"Uid"},{"name":"Pid"},{"name":"Gid"},
                 {"name":"attr"}, {"name":"null_column"}, 
                 {"type":"string", "value":"string_const"},
                 {"type":"int", "value":"100"},
                 {"type":"double", "value":"100.01"},
                 {"type":"bool", "value":"false"},
+                {"type":"binary", "value":"aGVsbG8="}
             ]
           }
         },

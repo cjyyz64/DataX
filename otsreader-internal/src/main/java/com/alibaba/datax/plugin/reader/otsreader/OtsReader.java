@@ -15,6 +15,7 @@ import com.alibaba.datax.plugin.reader.otsreader.model.OTSRange;
 import com.alibaba.datax.plugin.reader.otsreader.utils.GsonParser;
 import com.aliyun.openservices.ots.internal.ClientException;
 import com.aliyun.openservices.ots.internal.OTSException;
+import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 public class OtsReader {
     public static class Job extends Reader.Job  {
@@ -64,6 +65,7 @@ public class OtsReader {
         private void initProxy() {
             OTSConf conf = GsonParser.jsonToConf((String) this.getPluginJobConf().get(Constant.ConfigKey.CONF));
             OTSRange range = GsonParser.jsonToRange((String) this.getPluginJobConf().get(Constant.ConfigKey.RANGE));
+            TableMeta meta = GsonParser.jsonToMeta((String) this.getPluginJobConf().get(Constant.ConfigKey.META));
             
             if (conf.getMode() == OTSMode.MULTI_VERSION) {
                 LOG.debug("Instance OtsReaderMultiVersionSlaveProxy");
@@ -72,7 +74,7 @@ public class OtsReader {
                 LOG.debug("Instance OtsReaderNormalSlaveProxy");
                 proxy = new OtsReaderNormalSlaveProxy();
             }
-            proxy.init(conf, range);
+            proxy.init(conf, range, meta);
         }
 
         @Override

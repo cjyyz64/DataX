@@ -26,19 +26,21 @@ public class SmokeTest1 {
         TableMeta tableMeta = new TableMeta(tableName);
         tableMeta.addPrimaryKeyColumn("Uid", PrimaryKeyType.STRING);
         tableMeta.addPrimaryKeyColumn("Pid", PrimaryKeyType.INTEGER);
+        tableMeta.addPrimaryKeyColumn("Gid", PrimaryKeyType.BINARY);
         OtsHelper.createTableSafe(ots, tableMeta);
         
         // prepare data
         {
             List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
-            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("uid_1")));
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("a")));
             primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
             
             PrimaryKey pk = new PrimaryKey(primaryKey);
             RowPutChange rowChange = new RowPutChange(tableName, pk);
             
             long ts = 10000;
-            for (int i = 0; i < 5; i++) {
+            for (int i = 0; i < 2; i++) {
                 rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
                 rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
             }
@@ -46,14 +48,79 @@ public class SmokeTest1 {
         }
         {
             List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
-            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("uid_2")));
-            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(2)));
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("b")));
+            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
             
             PrimaryKey pk = new PrimaryKey(primaryKey);
             RowPutChange rowChange = new RowPutChange(tableName, pk);
             
-            long ts = System.currentTimeMillis() + 1000000000;
-            for (int i = 0; i < 5; i++) {
+            long ts = 10000;
+            for (int i = 0; i < 2; i++) {
+                rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
+                rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
+            }
+            ots.putRow(new PutRowRequest(rowChange));
+        }
+        {
+            List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("c")));
+            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
+            
+            PrimaryKey pk = new PrimaryKey(primaryKey);
+            RowPutChange rowChange = new RowPutChange(tableName, pk);
+            
+            long ts = 10000;
+            for (int i = 0; i < 2; i++) {
+                rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
+                rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
+            }
+            ots.putRow(new PutRowRequest(rowChange));
+        }
+        {
+            List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("d")));
+            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
+            
+            PrimaryKey pk = new PrimaryKey(primaryKey);
+            RowPutChange rowChange = new RowPutChange(tableName, pk);
+            
+            long ts = 10000;
+            for (int i = 0; i < 2; i++) {
+                rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
+                rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
+            }
+            ots.putRow(new PutRowRequest(rowChange));
+        }
+        {
+            List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("e")));
+            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
+            
+            PrimaryKey pk = new PrimaryKey(primaryKey);
+            RowPutChange rowChange = new RowPutChange(tableName, pk);
+            
+            long ts = 10000;
+            for (int i = 0; i < 2; i++) {
+                rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
+                rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
+            }
+            ots.putRow(new PutRowRequest(rowChange));
+        }
+        {
+            List<PrimaryKeyColumn> primaryKey = new ArrayList<PrimaryKeyColumn>();
+            primaryKey.add(new PrimaryKeyColumn("Uid", PrimaryKeyValue.fromString("f")));
+            primaryKey.add(new PrimaryKeyColumn("Pid", PrimaryKeyValue.fromLong(1)));
+            primaryKey.add(new PrimaryKeyColumn("Gid", PrimaryKeyValue.fromBinary("a".getBytes())));
+            
+            PrimaryKey pk = new PrimaryKey(primaryKey);
+            RowPutChange rowChange = new RowPutChange(tableName, pk);
+            
+            long ts = 10000;
+            for (int i = 0; i < 2; i++) {
                 rowChange.addColumn("attr", ColumnValue.fromString("" + i), ts++);
                 rowChange.addColumn("attr", ColumnValue.fromLong(i), ts++);
             }

@@ -95,6 +95,7 @@ public class OtsReaderMasterProxy {
             Configuration configuration = Configuration.newDefault();
             configuration.set(Constant.ConfigKey.CONF, GsonParser.confToJson(conf));
             configuration.set(Constant.ConfigKey.RANGE, GsonParser.rangeToJson(range));
+            configuration.set(Constant.ConfigKey.META, GsonParser.metaToJson(meta));
             configurations.add(configuration);
         }
         return configurations;
