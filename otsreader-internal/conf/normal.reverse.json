@@ -18,7 +18,7 @@
             "mode": "normal",
             "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
             "accessId":" bbc07W6jDi214noU ",
-            "accessKey":" Uov2JPb9KADgAaXKnILJQwnVSd0Lhb ",
+            "accessKey":"",
             "instanceName":" wanhong-internal ",
             "table": "SmokeTest1",
             "range":{
