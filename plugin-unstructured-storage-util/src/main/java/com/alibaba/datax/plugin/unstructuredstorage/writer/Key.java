@@ -26,4 +26,7 @@ public class Key {
     
     // csv or plain text
     public static final String FILE_FORMAT = "fileFormat";
+    
+    // writer headers
+    public static final String HEADER = "header";
 }
