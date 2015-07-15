@@ -268,7 +268,7 @@ public class UnstructuredStorageWriterUtil {
                 Constant.DEFAULT_FIELD_DELIMITER);
 
         List<String> headers = config.getList(Key.HEADER, String.class);
-        if (null != headers) {
+        if (null != headers && !headers.isEmpty()) {
             writer.write(UnstructuredStorageWriterUtil.doTransportOneRecord(
                     headers, fieldDelimiter, fileFormat));
         }
