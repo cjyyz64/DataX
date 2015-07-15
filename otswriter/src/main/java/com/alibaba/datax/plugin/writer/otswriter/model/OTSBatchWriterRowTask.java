@@ -144,11 +144,11 @@ public class OTSBatchWriterRowTask implements Runnable {
             if (!errors.isEmpty()){
                 if(retryTimes < conf.getRetry()) {
                     retryTimes++;
-                    LOG.warn("Retry times : {}", retryTimes);
+                    LOG.debug("Retry times : {}", retryTimes);
                     List<OTSLine> newLines = new ArrayList<OTSLine>();
                     for (LineAndError re : errors) {
                         if (RetryHelper.canRetry(re.getError().getCode())) {
-                            LOG.warn("Retry for '{}'", re.getError().getMessage());
+                            RetryHelper.logManager.addException(re.getError(), result.getRequestID());
                             newLines.add(re.getLine());
                         } else {
                             LOG.error("Can not retry, record row to collector. {}", re.getError().getMessage());
@@ -164,7 +164,7 @@ public class OTSBatchWriterRowTask implements Runnable {
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Send data fail.", e);
+            LOG.debug("Send data fail.", e);
             if (isExceptionForSendOneByOne(e)) {
                 if (lines.size() == 1) {
                     LOG.error("Can not retry for Exception : {}", e.getMessage()); 

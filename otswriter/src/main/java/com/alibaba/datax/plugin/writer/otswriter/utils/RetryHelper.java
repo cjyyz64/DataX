@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.datax.plugin.writer.otswriter.model.LogExceptionManager;
 import com.aliyun.openservices.ots.ClientException;
 import com.aliyun.openservices.ots.OTSErrorCode;
 import com.aliyun.openservices.ots.OTSException;
@@ -16,6 +17,8 @@ public class RetryHelper {
     private static final Logger LOG = LoggerFactory.getLogger(RetryHelper.class);
     private static final Set<String> noRetryErrorCode = prepareNoRetryErrorCode();
     
+    public static LogExceptionManager logManager = new LogExceptionManager();
+
     public static <V> V executeWithRetry(Callable<V> callable, int maxRetryTimes, int sleepInMilliSecond) throws Exception {
         int retryTimes = 0;
         while (true){
@@ -23,7 +26,7 @@ public class RetryHelper {
             try {
                 return callable.call();
             } catch (Exception e) {
-                LOG.warn("Call callable fail, {}", e.getMessage());
+                logManager.addException(e);
                 if (!canRetry(e)){
                     LOG.error("Can not retry for Exception.", e); 
                     throw e;
