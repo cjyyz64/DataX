@@ -66,18 +66,8 @@ public class RetryHelper {
         OTSException e = null;
         if (exception instanceof OTSException) {
             e = (OTSException) exception;
-            LOG.warn(
-                    "OTSException:ErrorCode:{}, ErrorMsg:{}, RequestId:{}", 
-                    new Object[]{e.getErrorCode(), e.getMessage(), e.getRequestId()}
-                    );
             return canRetry(e.getErrorCode());
-
         } else if (exception instanceof ClientException) {
-            ClientException ce = (ClientException) exception;
-            LOG.warn(
-                    "ClientException:{}, ErrorMsg:{}", 
-                    new Object[]{ce.getErrorCode(), ce.getMessage()}
-                    );
             return true;
         } else {
             return false;
