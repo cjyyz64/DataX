@@ -265,6 +265,12 @@ public class ParamChecker {
             List<PrimaryKeyColumn> begin, 
             List<PrimaryKeyColumn> end, 
             List<PrimaryKeySchema> pkSchema) {
+        if (begin.isEmpty()) {
+            fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MIN);
+        }
+        if (end.isEmpty()) {
+            fillPrimaryKey(pkSchema, end, PrimaryKeyValue.INF_MAX);
+        }
         int cmp = CompareHelper.comparePrimaryKeyColumnList(begin, end);
         if (cmp == 0) {
             // begin.size()和end.size()理论上必然相等，但是考虑到语义的清晰性，显示的给出begin.size() == end.size()
@@ -272,7 +278,7 @@ public class ParamChecker {
                 fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MIN);
                 fillPrimaryKey(pkSchema, end, PrimaryKeyValue.INF_MAX);
             } else {
-                throw new IllegalArgumentException("The 'begin' can not equal with 'end'.");
+                throw new IllegalArgumentException("The 'begin' can not be equal with 'end'.");
             }
         } else if (cmp < 0) { // 升序
             fillPrimaryKey(pkSchema, begin, PrimaryKeyValue.INF_MIN);

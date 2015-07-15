@@ -134,40 +134,51 @@ public class AssertHelper {
                 LOG.error("Type 1 not match type 2, {}, {}", c1.getType(), c2.getType());
                 fail();
             }
-            switch (c1.getType()) {
-            case STRING: 
-                if (!(c1.asString().equals(c2.asString()))) {
-                    LOG.error("not equal. {} != {}", c1.asString(), c2.asString());
-                    fail();
-                }
-                break;
-            case LONG:
-                if (!(c1.asLong().longValue() == c2.asLong().longValue())) {
-                    LOG.error("not equal. {} != {}", c1.asLong(), c2.asLong());
-                    fail();
-                }
-                break;
-            case DOUBLE:
-                if (!(c1.asDouble().doubleValue() == c2.asDouble().doubleValue())) {
-                    LOG.error("not equal. {} != {}", c1.asDouble(), c2.asDouble());
-                    fail();
-                }
-                break;
-            case BOOL:
-                if (!(c1.asBoolean().booleanValue() == c2.asBoolean().booleanValue())) {
-                    LOG.error("not equal. {} != {}", c1.asBoolean(), c2.asBoolean());
-                    fail();
-                }
-                break;
-            case BYTES:  
-                if (!(compareBytes(c1.asBytes(), c2.asBytes()) == 0)) {
-                    LOG.error("not equal bytes.");
-                    fail();
-                }
-                break;
-            default:
-                throw new RuntimeException("Unsupport the type.");
+            if (c1.getRawData() == null && c2.getRawData() == null) {
+                continue;
+            } else if (c1.getRawData() == null && c2.getRawData() != null) {
+                LOG.error("column1 is null but column2 is not null.");
+                fail();
+            } else if (c1.getRawData() != null && c2.getRawData() == null) {
+                LOG.error("column2 is null but column1 is not null.");
+                fail();
+            } else {
+                switch (c1.getType()) {
+                    case STRING: 
+                        if (!(c1.asString().equals(c2.asString()))) {
+                            LOG.error("not equal. {} != {}", c1.asString(), c2.asString());
+                            fail();
+                        }
+                        break;
+                    case LONG:
+                        if (!(c1.asLong().longValue() == c2.asLong().longValue())) {
+                            LOG.error("not equal. {} != {}", c1.asLong(), c2.asLong());
+                            fail();
+                        }
+                        break;
+                    case DOUBLE:
+                        if (!(c1.asDouble().doubleValue() == c2.asDouble().doubleValue())) {
+                            LOG.error("not equal. {} != {}", c1.asDouble(), c2.asDouble());
+                            fail();
+                        }
+                        break;
+                    case BOOL:
+                        if (!(c1.asBoolean().booleanValue() == c2.asBoolean().booleanValue())) {
+                            LOG.error("not equal. {} != {}", c1.asBoolean(), c2.asBoolean());
+                            fail();
+                        }
+                        break;
+                    case BYTES:  
+                        if (!(compareBytes(c1.asBytes(), c2.asBytes()) == 0)) {
+                            LOG.error("not equal bytes.");
+                            fail();
+                        }
+                        break;
+                    default:
+                        throw new RuntimeException("Unsupport the type.");
+                    }
             }
+            
         }
     }
     

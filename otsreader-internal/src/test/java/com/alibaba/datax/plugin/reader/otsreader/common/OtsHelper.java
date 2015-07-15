@@ -115,6 +115,36 @@ public class OtsHelper {
         return null;
     }
     
+    public static void prepareData(OTS ots, TableMeta meta, int range_begin, int range_end, int column_begin, int column_end, long start_version) {
+        List<PrimaryKeySchema> pks = meta.getPrimaryKeyList();
+        // update
+        for (int i = range_begin; i < range_end; i++ ) {
+            List<PrimaryKeyColumn> pk = new ArrayList<PrimaryKeyColumn>();
+            for (PrimaryKeySchema c : pks) {
+                pk.add(new PrimaryKeyColumn(c.getName(), getPKV(c.getType(), i)));
+            }
+            RowUpdateChange rowChange = new RowUpdateChange(meta.getTableName(), new PrimaryKey(pk));
+            for (int j = column_begin; j < column_end; j++) {
+                Random r = new Random();
+                int v = r.nextInt(5);
+                if (v == 0) {
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.STRING, i), start_version);
+                } else if (v == 1) {
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.INTEGER, i), start_version);
+                } else if (v == 2) {
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.BINARY, i), start_version);
+                } else if (v == 3) {
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.BOOLEAN, i), start_version);
+                } else if (v == 4) {
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.DOUBLE, i), start_version);
+                }
+            }
+            UpdateRowRequest updateRowRequest = new UpdateRowRequest();
+            updateRowRequest.setRowChange(rowChange);
+            ots.updateRow(updateRowRequest);
+        }
+    }
+    
     public static void prepareData(OTS ots, TableMeta meta, int range_begin, int range_end, int column_begin, int column_end) {
         List<PrimaryKeySchema> pks = meta.getPrimaryKeyList();
         // update
@@ -128,15 +158,15 @@ public class OtsHelper {
                 Random r = new Random();
                 int v = r.nextInt(5);
                 if (v == 0) {
-                    rowChange.put(String.format("col_%05d", j), getCV(ColumnType.STRING, i));
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.STRING, i));
                 } else if (v == 1) {
-                    rowChange.put(String.format("col_%05d", j), getCV(ColumnType.INTEGER, i));
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.INTEGER, i));
                 } else if (v == 2) {
-                    rowChange.put(String.format("col_%05d", j), getCV(ColumnType.BINARY, i));
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.BINARY, i));
                 } else if (v == 3) {
-                    rowChange.put(String.format("col_%05d", j), getCV(ColumnType.BOOLEAN, i));
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.BOOLEAN, i));
                 } else if (v == 4) {
-                    rowChange.put(String.format("col_%05d", j), getCV(ColumnType.DOUBLE, i));
+                    rowChange.put(String.format("col_%06d", j), getCV(ColumnType.DOUBLE, i));
                 }
             }
             UpdateRowRequest updateRowRequest = new UpdateRowRequest();

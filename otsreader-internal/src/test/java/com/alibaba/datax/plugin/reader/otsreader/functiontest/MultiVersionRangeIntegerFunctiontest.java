@@ -20,7 +20,7 @@ import com.aliyun.openservices.ots.internal.model.TableMeta;
 /**
  * 测试在多版本中，各种不同的Range设置，期望导出的数据符合预期
  */
-public class MultiVersionRangeFunctiontest {
+public class MultiVersionRangeIntegerFunctiontest {
     
     private static String tableName = "multiVersion";
     private static Configuration p = ConfigurationHelper.loadConf();
@@ -31,8 +31,8 @@ public class MultiVersionRangeFunctiontest {
         ots = OtsHelper.getOTSInstance();
         
         TableMeta tableMeta = new TableMeta(tableName);
-        tableMeta.addPrimaryKeyColumn("Uid", PrimaryKeyType.STRING);
         tableMeta.addPrimaryKeyColumn("Pid", PrimaryKeyType.INTEGER);
+        tableMeta.addPrimaryKeyColumn("Uid", PrimaryKeyType.STRING);
         tableMeta.addPrimaryKeyColumn("UID", PrimaryKeyType.BINARY);
         
         OtsHelper.createTableSafe(ots, tableMeta);
@@ -91,45 +91,91 @@ public class MultiVersionRangeFunctiontest {
     /**
      * 测试目的：在用户指定参数的情况，观察系统是否符合预期
      * 测试内容：begin和end都配置特定的范围，测试系统是否仅仅导入指定范围的数据，且数据符合预期
+     * @throws Exception 
      */
     @Test
-    public void testCustomRangeBeginAndEnd() {
-        throw new RuntimeException("Unimplement");
+    public void testCustomRangeBeginAndEnd() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'begin':[{'type':'int', 'value':'100'}], "
+                + "'end':  [{'type':'int', 'value':'120'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
     }
     
     /**
      * 测试目的：在用户指定参数的情况，观察系统是否符合预期
      * 测试内容：配置了多个split point，期望程序将导入拆分为多个子任务，测试系统是否能够导出所有数据，且数据符合预期
+     * @throws Exception 
      */
     @Test
-    public void testCustomRangeSplit() {
-        throw new RuntimeException("Unimplement");
+    public void testCustomRangeSplit() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'split':[{'type':'int', 'value':'50'},{'type':'int', 'value':'80'},{'type':'int', 'value':'100'},{'type':'int', 'value':'130'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
     }
     
     /**
      * 测试目的：在用户指定参数的情况，观察系统是否符合预期
      * 测试内容：同时配置begin、end、split，期望程序将导入拆分为多个子任务，测试系统是否能够导出指定范围内的数据，且数据符合预期
+     * @throws Exception 
      */
     @Test
-    public void testCustomRangeBeginAndEndAndSplit() {
-        throw new RuntimeException("Unimplement");
+    public void testCustomRangeBeginAndEndAndSplit() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'begin':[{'type':'int', 'value':'40'}], "
+                + "'end':  [{'type':'int', 'value':'140'}],"
+                + "'split':[{'type':'int', 'value':'50'},{'type':'int', 'value':'80'},{'type':'int', 'value':'100'},{'type':'int', 'value':'130'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
     }
     
     /**
      * 测试目的：在用户指定参数的情况，观察系统是否符合预期
      * 测试内容：同时配置begin、split，期望程序将导入拆分为多个子任务，测试系统是否能够导出指定范围内的数据，且数据符合预期
+     * @throws Exception 
      */
     @Test
-    public void testCustomRangeBeginAndSplit() {
-        throw new RuntimeException("Unimplement");
+    public void testCustomRangeBeginAndSplit() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'begin':[{'type':'int', 'value':'40'}], "
+                + "'split':[{'type':'int', 'value':'50'},{'type':'int', 'value':'80'},{'type':'int', 'value':'100'},{'type':'int', 'value':'130'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
     }
     
     /**
      * 测试目的：在用户指定参数的情况，观察系统是否符合预期
      * 测试内容：同时配置end、split，期望程序将导入拆分为多个子任务，测试系统是否能够导出指定范围内的数据，且数据符合预期
+     * @throws Exception 
      */
     @Test
-    public void testCustomRangeEndAndSplit() {
-        throw new RuntimeException("Unimplement");
+    public void testCustomRangeEndAndSplit() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'end':  [{'type':'int', 'value':'140'}],"
+                + "'split':[{'type':'int', 'value':'50'},{'type':'int', 'value':'80'},{'type':'int', 'value':'100'},{'type':'int', 'value':'130'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
+    }
+    
+    /**
+     * 测试目的：在用户指定参数的情况，观察系统是否符合预期
+     * 测试内容：同时配置begin、end、split，且begin > end，期望程序将导入拆分为多个子任务，测试系统是否能够导出指定范围内的数据，且数据符合预期
+     * @throws Exception 
+     */
+    @Test
+    public void testCustomReverseRangeBeginAndEndAndSplit() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("range", "'range':{"
+                + "'begin':[{'type':'int', 'value':'140'}], "
+                + "'end':  [{'type':'int', 'value':'1'}],"
+                + "'split':[{'type':'int', 'value':'130'},{'type':'int', 'value':'100'},{'type':'int', 'value':'80'},{'type':'int', 'value':'30'}]}");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
     }
 }

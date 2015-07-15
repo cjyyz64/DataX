@@ -3,6 +3,8 @@ package com.alibaba.datax.plugin.reader.otsreader.common;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
+
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.util.Configuration;
@@ -19,6 +21,10 @@ import com.alibaba.datax.test.simulator.util.RecordSenderForTest;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
 
 public class TestHelper {
+    
+    public static String getBase64(String input) {
+        return Base64.encodeBase64String(input.getBytes());
+    }
     
     public static long test(Configuration param) throws Exception {
         // master

@@ -35,13 +35,11 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
         
         if (obj.isInfMin()) {
             json.add(TYPE, new JsonPrimitive(INF_MIN)); 
-            json.add(VALUE, new JsonPrimitive(""));
             return json;
         }
         
         if (obj.isInfMax()) {
             json.add(TYPE, new JsonPrimitive(INF_MAX)); 
-            json.add(VALUE, new JsonPrimitive(""));
             return json;
         }
 
@@ -70,7 +68,6 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
 
         JsonObject obj = ele.getAsJsonObject();
         String strType = obj.getAsJsonPrimitive(TYPE).getAsString();
-        JsonPrimitive jsonValue =  obj.getAsJsonPrimitive(VALUE);
         
         if (strType.equalsIgnoreCase(INF_MIN)) {
             return PrimaryKeyValue.INF_MIN;
@@ -79,6 +76,8 @@ public class PrimaryKeyValueAdaptor implements JsonDeserializer<PrimaryKeyValue>
         if (strType.equalsIgnoreCase(INF_MAX)) {
             return PrimaryKeyValue.INF_MAX;
         }
+        
+        JsonPrimitive jsonValue =  obj.getAsJsonPrimitive(VALUE);
         
         PrimaryKeyValue value = null;
         PrimaryKeyType type = PrimaryKeyType.valueOf(strType);
