@@ -1,0 +1,6 @@
+{
+    "name": "otsreader-internal",
+    "class": "com.alibaba.datax.plugin.reader.otsreader.OtsReader",
+    "description": "",
+    "developer": "wanhong.chenwh@alibaba-inc.com"
+}

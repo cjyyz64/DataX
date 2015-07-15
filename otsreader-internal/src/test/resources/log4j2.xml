@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="OFF">
+    <Appenders>
+	    <Console name="STDOUT" target="SYSTEM_OUT">  
+	      <PatternLayout pattern="%msg%n"/>  
+	    </Console>
+	    <!-- 处理常用的Trace日志，方便后续问题调查 -->
+	    <RollingFile name="RollingTraceFile" fileName="logs/test.log" filePattern="logs/$${date:yyyy-MM}/test-%d{MM-dd-yyyy}-%i.log.gz">
+            <PatternLayout>
+                <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+            </PatternLayout>
+            <Policies>
+                <OnStartupTriggeringPolicy />
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="250 MB" />
+            </Policies>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <AsyncRoot level="WARN">
+            <AppenderRef ref="RollingTraceFile" />
+        </AsyncRoot>
+    </Loggers>
+</configuration>  
