@@ -143,6 +143,7 @@ public class TaskGroupContainer extends AbstractContainer {
             List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
             Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次失败实例
             List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
+            Map<Integer, Long> taskStartTimeMap = new HashMap<Integer, Long>(); //任务开始时间
 
             long lastReportTimeStamp = 0;
             Communication lastTaskGroupContainerCommunication = new Communication();
@@ -173,7 +174,12 @@ public class TaskGroupContainer extends AbstractContainer {
             		}else if(taskCommunication.getState() == State.KILLED){
             			failedOrKilled = true;
             			break;
-            		}
+            		}else if(taskCommunication.getState() == State.SUCCEEDED){
+                        Long taskStartTime = taskStartTimeMap.get(taskId);
+                        Long usedTime = System.currentTimeMillis() - taskStartTime;
+                        LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is successed, used[{}]ms",
+                                this.taskGroupId, taskId, taskExecutor.getAttemptCount(), usedTime);
+                    }
             	}
             	
                 // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
@@ -213,7 +219,9 @@ public class TaskGroupContainer extends AbstractContainer {
                                     this.taskGroupId, taskId, lastExecutor.getAttemptCount());
                         }
                     }
-                	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone(), attemptCount);
+                    Configuration taskConfigForRun = taskMaxRetryTimes > 1 ? taskConfig.clone() : taskConfig;
+                	TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
+                    taskStartTimeMap.put(taskId, System.currentTimeMillis());
                 	taskExecutor.doStart();
 
                     iterator.remove();
