@@ -344,7 +344,9 @@ public class UnstructuredStorageWriterUtil {
 
     public static String doTransportOneRecord(List<String> splitedRows,
             char fieldDelimiter, String fileFormat) {
-
+        if (splitedRows.isEmpty()) {
+            LOG.info("Found one record line which is empty.");
+        }
         // warn: false means plain text(old way), true means strict csv format
         if (Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
             return StringUtils.join(splitedRows, fieldDelimiter)
