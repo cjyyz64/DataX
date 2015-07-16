@@ -153,7 +153,7 @@ public class HBaseColumn {
         public static HBaseDataType parseStr(String typeStr, boolean isPhoenixStyle) {
             HBaseDataType type = null;
             if (!isPhoenixStyle) {
-                if (typeStr.equals("int")) {
+                if (typeStr.equalsIgnoreCase("int")) {
                     type = INT;
                 } else if (typeStr.equalsIgnoreCase("long") || typeStr.equalsIgnoreCase(
                         "bigint")) {
