@@ -311,7 +311,7 @@ public class HBaseBulkWriter2 extends Writer {
         private void runSortScript(List<String> cmdList) throws IOException, InterruptedException {
             ProcessBuilder builder = new ProcessBuilder(cmdList);
 
-            LOG.info("run sort cmd: {} ", cmdList.toString());
+            //LOG.info("run sort cmd: {} ", cmdList.toString());
 
             builder.redirectErrorStream(true);
             Process p = builder.start();
