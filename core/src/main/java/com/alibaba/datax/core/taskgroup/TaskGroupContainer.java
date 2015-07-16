@@ -173,7 +173,10 @@ public class TaskGroupContainer extends AbstractContainer {
             		}else if(taskCommunication.getState() == State.KILLED){
             			failedOrKilled = true;
             			break;
-            		}
+            		}else if(taskCommunication.getState() == State.SUCCEEDED){
+                        LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is successed",
+                                this.taskGroupId, taskId, taskExecutor.getAttemptCount());
+                    }
             	}
             	
                 // 2.发现该taskGroup下taskExecutor的总状态失败则汇报错误
@@ -213,7 +216,8 @@ public class TaskGroupContainer extends AbstractContainer {
                                     this.taskGroupId, taskId, lastExecutor.getAttemptCount());
                         }
                     }
-                	TaskExecutor taskExecutor = new TaskExecutor(taskConfig.clone(), attemptCount);
+                    Configuration taskConfigForRun = taskMaxRetryTimes > 1 ? taskConfig.clone() : taskConfig;
+                	TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
                 	taskExecutor.doStart();
 
                     iterator.remove();
