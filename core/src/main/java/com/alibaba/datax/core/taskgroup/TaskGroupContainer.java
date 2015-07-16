@@ -143,6 +143,7 @@ public class TaskGroupContainer extends AbstractContainer {
             List<Configuration> taskQueue = buildRemainTasks(taskConfigs); //待运行task列表
             Map<Integer, TaskExecutor> taskFailedExecutorMap = new HashMap<Integer, TaskExecutor>(); //taskId与上次失败实例
             List<TaskExecutor> runTasks = new ArrayList<TaskExecutor>(channelNumber); //正在运行task
+            Map<Integer, Long> taskStartTimeMap = new HashMap<Integer, Long>(); //任务开始时间
 
             long lastReportTimeStamp = 0;
             Communication lastTaskGroupContainerCommunication = new Communication();
@@ -174,8 +175,10 @@ public class TaskGroupContainer extends AbstractContainer {
             			failedOrKilled = true;
             			break;
             		}else if(taskCommunication.getState() == State.SUCCEEDED){
-                        LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is successed",
-                                this.taskGroupId, taskId, taskExecutor.getAttemptCount());
+                        Long taskStartTime = taskStartTimeMap.get(taskId);
+                        long usedTime = (System.currentTimeMillis() - taskStartTime)/1000;
+                        LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is successed, used[{}]s",
+                                this.taskGroupId, taskId, taskExecutor.getAttemptCount(), usedTime);
                     }
             	}
             	
@@ -218,6 +221,7 @@ public class TaskGroupContainer extends AbstractContainer {
                     }
                     Configuration taskConfigForRun = taskMaxRetryTimes > 1 ? taskConfig.clone() : taskConfig;
                 	TaskExecutor taskExecutor = new TaskExecutor(taskConfigForRun, attemptCount);
+                    taskStartTimeMap.put(taskId, System.currentTimeMillis());
                 	taskExecutor.doStart();
 
                     iterator.remove();
