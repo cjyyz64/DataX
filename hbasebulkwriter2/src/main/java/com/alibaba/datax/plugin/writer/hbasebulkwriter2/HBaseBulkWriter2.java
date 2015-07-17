@@ -11,16 +11,14 @@ import com.alibaba.datax.plugin.writer.hbasebulkwriter2.conf.HBaseJobParameterCo
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 public class HBaseBulkWriter2 extends Writer {
@@ -222,7 +220,7 @@ public class HBaseBulkWriter2 extends Writer {
             cmdList.add("--sort_column");
             cmdList.add(sort_column);
 
-            String parts = getPartitions(partition);
+            String parts = formatPartitions(partition);
 
             if (!Strings.isNullOrEmpty(parts) && !"*".equals(parts)) {
                 cmdList.add("--partition");
@@ -311,7 +309,7 @@ public class HBaseBulkWriter2 extends Writer {
         private void runSortScript(List<String> cmdList) throws IOException, InterruptedException {
             ProcessBuilder builder = new ProcessBuilder(cmdList);
 
-            LOG.info("run sort cmd: {} ", cmdList.toString());
+            //LOG.info("run sort cmd: {} ", cmdList.toString());
 
             builder.redirectErrorStream(true);
             Process p = builder.start();
@@ -326,6 +324,29 @@ public class HBaseBulkWriter2 extends Writer {
             if (resCode != 0) {
                 LOG.error("{} run failed, rescode={}", ODPS_SORT_SCRIPT, resCode);
                 throw new IOException(ODPS_SORT_SCRIPT + "运行返回值不为0,resCode=" + resCode);
+            }
+        }
+
+        public static String formatPartition(String partition) {
+            if (StringUtils.isBlank(partition)) {
+                return null;
+            } else {
+                return partition.trim().replaceAll(" *= *", "=")
+                        .replaceAll(" */ *", ",").replaceAll(" *, *", ",")
+                        .replaceAll("'", "");
+            }
+        }
+
+        public static String formatPartitions(List<String> partitions) {
+            if (null == partitions || partitions.isEmpty()) {
+                return null;
+            } else if(partitions.size()>1){
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL,
+                        "配置的分区不能支持多个分区(不是多级分区).");
+            }else {
+                  return   formatPartition(partitions.get(0));
+                //return formattedPartitions;
+                //return Joiner.on("/").join(formattedPartitions);
             }
         }
 

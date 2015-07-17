@@ -99,7 +99,7 @@ class Util:
         partitions = []
         if self.is_empty(mutil_partition_str):
             return partitions
-        for part in mutil_partition_str.split(r'/'):
+        for part in mutil_partition_str.split(r','):
             kv = part.split('=')
             partitions.append("%s='%s'" % (kv[0].strip(), kv[1].strip()))
         return partitions
@@ -108,7 +108,7 @@ class Util:
         keys = []
         if self.is_empty(mutil_partition_str):
             return keys
-        for part in mutil_partition_str.split(r'/'):
+        for part in mutil_partition_str.split(r','):
             kv = part.split('=')
             keys.append(kv[0].strip())
         return keys
