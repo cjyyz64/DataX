@@ -68,8 +68,8 @@ def exec_sort_script(project, src_table, odps_column,
           % (datax_hbasebulkwriter_sort_script, project, src_table, rowkey_column, partition,
              dst_table, hbase_config, cluster_id, suffix, bucket_num, dynamic_qualifier, access_id, access_key, datax_home, rowkey_type)
 
-    result = util.execute(cmd)
-    assert result[0] == 0, "Execute %s Failed." % cmd
+    result = util.execute(cmd, False)
+    assert result[0] == 0, "Execute exec_sort_script Failed."
 
     util.log_phase(phase_name, is_end=True)
 
@@ -96,9 +96,8 @@ def exec_datax_job(project, src_table, odps_column, suffix,
     else:
         cmd = "python %s %s" % (datax_run_scrpit, jobConfigPath)
 
-    util.log("datax cmd => "+cmd)
-    result = util.execute(cmd)
-    assert result[0] == 0, "Execute %s Failed." % cmd
+    result = util.execute(cmd, False)
+    assert result[0] == 0, "Execute exec_datax_job Failed."
 
     # urgly, refator later
     tmp_table = "t_datax_odps2hbase_table_%s_%s" % (src_table, suffix)
@@ -206,7 +205,6 @@ def build_datax_job_config(project, src_table, odps_column, suffix,
 
     settingJSON = '"setting" : { "speed" : { "channel" : ' + str(channel) + ' } }, '
     jobJSON = '{ "job" : {' + settingJSON + contentJSON + '}}'
-    print 'job config in JSON : ' + jobJSON
     return jobJSON
 
 def run(project, src_table, odps_column,
