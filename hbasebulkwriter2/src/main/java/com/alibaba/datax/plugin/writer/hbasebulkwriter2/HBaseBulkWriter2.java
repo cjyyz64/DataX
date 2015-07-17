@@ -309,8 +309,6 @@ public class HBaseBulkWriter2 extends Writer {
         private void runSortScript(List<String> cmdList) throws IOException, InterruptedException {
             ProcessBuilder builder = new ProcessBuilder(cmdList);
 
-            //LOG.info("run sort cmd: {} ", cmdList.toString());
-
             builder.redirectErrorStream(true);
             Process p = builder.start();
 
@@ -345,8 +343,6 @@ public class HBaseBulkWriter2 extends Writer {
                         "配置的分区不能支持多个分区(不是多级分区).");
             }else {
                   return   formatPartition(partitions.get(0));
-                //return formattedPartitions;
-                //return Joiner.on("/").join(formattedPartitions);
             }
         }
 
@@ -372,8 +368,6 @@ public class HBaseBulkWriter2 extends Writer {
             cmdList.add(accessId);
             cmdList.add("--access_key");
             cmdList.add(accessKey);
-
-            LOG.info("run clear cmd: {} ", cmdList.toString());
 
             if (Strings.isNullOrEmpty(odpsTable)
                     || Strings.isNullOrEmpty(odpsProject)
