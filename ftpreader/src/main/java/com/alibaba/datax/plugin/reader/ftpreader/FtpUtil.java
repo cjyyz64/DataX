@@ -9,9 +9,14 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.reader.ftpreader.FtpReader.Job;
 
 public class FtpUtil {
-
+	private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 	private static class FtpUtilHolder {
         private static final FtpUtil  INSTANCE = new FtpUtil();
     }
@@ -21,7 +26,7 @@ public class FtpUtil {
     }
     
 	// 建立ftp连接
-	public FTPClient connectServer(String host, String username, String password, int port, int timeout) {
+	public FTPClient connectServer(String host, String username, String password, int port, int timeout, String connectMode) {
 		FTPClient ftpClient = new FTPClient();
 		try {
 			// 连接
@@ -29,16 +34,29 @@ public class FtpUtil {
 			// 登录
 			ftpClient.login(username, password);
 			ftpClient.configure(new FTPClientConfig(FTPClientConfig.SYST_UNIX));
-
-			// ftpClient.enterRemotePassiveMode();
+			ftpClient.setConnectTimeout(timeout);
+			if("PASV".equals(connectMode)){
+				ftpClient.enterRemotePassiveMode();
+				ftpClient.enterLocalPassiveMode();
+			}else if("PORT".equals(connectMode)){
+				ftpClient.enterLocalActiveMode();
+				//ftpClient.enterRemoteActiveMode(host, port);
+			}			
 			int reply = ftpClient.getReplyCode();
 			if (!FTPReply.isPositiveCompletion(reply)) {
-				System.out.println("连接失败");
 				ftpClient.disconnect();
+				String message = String.format("与ftp服务器建立连接失败 : [%s]",
+						"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
+								+ ",password = " + password + ",port =" + port);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);			
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			String message = String.format("与ftp服务器建立连接失败 : [%s]",
+					"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
+							+ ",password = " + password + ",port =" + port);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
 		}
 		return ftpClient;
 	}
@@ -50,36 +68,39 @@ public class FtpUtil {
 				ftpClient.logout();
 				ftpClient.disconnect();
 			} catch (IOException e) {
-				e.printStackTrace();
+				String message = String.format("与ftp服务器断开连接失败 : [%s]",
+						"Disconnect failed to ftp server by ftp");
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_DISCONNECT, message, e);
 			}
 		}
 	}
 	
 	//判断目录是否存在
 	public boolean isDirExist(FTPClient ftpClient, String directory) {
-		boolean isDirExistFlag = false;
 		try {
 			return ftpClient.changeWorkingDirectory(directory);
 		} catch (IOException e1) {
-			isDirExistFlag = false;
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			String message = String.format("改变工作目录失败 : [%s]",
+					"ftpClient.changeWorkingDirectory(directory),	message:"+ directory);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e1);
 		}
-		return isDirExistFlag;
 	}
 
 	//判断文件是否存在
 	public boolean isFileExist(FTPClient ftpClient, String srcSftpFilePath)  {
 		boolean isExitFlag = false;		
 		try {
-			//ftpClient.completePendingCommand();
 			FTPFile[] ftpFiles = ftpClient.listFiles(srcSftpFilePath);
 			if(ftpFiles.length==1){
 				isExitFlag = true;
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			String message = String.format("获取文件列表失败 : [%s]",
+					"ftpClient.listFiles(srcSftpFilePath),	message:"+ srcSftpFilePath);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 		}
 		return isExitFlag;
 	}
@@ -132,8 +153,10 @@ public class FtpUtil {
 					//处理子目录
 					listFiles(ftpClient,childDir,sourceFiles);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+					String message = String.format("获取文件列表失败 : [%s]",
+							"ftpClient.listFiles(eachPath),	message:"+ eachPath);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 				}
 								
 			}//end for eachPath

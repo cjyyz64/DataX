@@ -54,12 +54,13 @@ public class FtpReader extends Reader {
 		private HashSet<String> sourceFiles;
 
 		// ftp链接参数
+		private String protocol;
 		private String host;
 		private int port;
 		private String username;
 		private String password;
-		private String protocol;
 		private int timeout;
+		private String connectPattern;
 
 		SftpUtil sftpUtil = null;
 		private ChannelSftp sftp = null;;
@@ -71,18 +72,17 @@ public class FtpReader extends Reader {
 		public void init() {
 			this.originConfig = this.getPluginJobConf();
 			this.sourceFiles = new HashSet<String>();
+			
 			this.validateParameter();
 
 			// sftp链接参数初始化
 			this.host = originConfig.getString(Key.HOST);
 			this.protocol = originConfig.getString(Key.PROTOCOL);
-			this.port = originConfig.getInt(Key.PORT);
 			this.username = originConfig.getString(Key.USERNAME);
 			this.password = originConfig.getString(Key.PASSWORD);
 			this.timeout = originConfig.getInt(Key.TIMEOUT, 30000);
-
-			// 建立连接
 			if ("sftp".equals(protocol)) {
+				this.port = originConfig.getInt(Key.PORT,22);
 				this.sftpUtil = SftpUtil.getInstance();
 				try {
 					sftp = sftpUtil.getChannel(host, username, password, port, timeout);
@@ -92,23 +92,76 @@ public class FtpReader extends Reader {
 							"Connected failed to ftp server by sftp, message:host =" + host + ",username = " + username
 									+ ",password = " + password + ",port =" + port);
 					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_CONNEECT_FTPSERVER, message, e);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
 				}
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
+				this.port = originConfig.getInt(Key.PORT,21);
+				this.connectPattern = originConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
 				this.ftpUtil = FtpUtil.getInstance();
-				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout);
-
+				ftpClient = ftpUtil.connectServer(host, username, password, port,timeout,connectPattern);
 			}
 
 		}
 
 		private void validateParameter() {
+			String protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
+			boolean ptrotocolTag="ftp".equals(protocol) || "sftp".equals(protocol);
+			if (StringUtils.isBlank(protocol)) {
+				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定传输协议！当前仅支持ftp和sftp");
+			}else if( !ptrotocolTag){
+				throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+						String.format("仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]", protocol));
+			}
+						
 			String host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
 			if (StringUtils.isBlank(host)) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定ftp服务器地址");
 			}
 
+			String port=this.originConfig.getString(Key.PORT);
+			if (StringUtils.isBlank(port)) {
+				this.originConfig.set(Key.PORT, null);
+			} else {
+				try{
+					int connectPort=Integer.valueOf(port);
+					this.originConfig.set(Key.PORT, connectPort);
+				}catch(Exception e){
+					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+							String.format("您需要指定一个整数型的连接ftp服务器端口: [%s]", port));
+				}
+				
+			}
+			
+			String timeout=this.originConfig.getString(Key.TIMEOUT);
+			if (StringUtils.isBlank(timeout)) {
+				this.originConfig.set(Key.TIMEOUT, null);
+			} else {
+				try{
+					int connectTimeout=Integer.valueOf(timeout);
+					this.originConfig.set(Key.TIMEOUT, connectTimeout);
+				}catch(Exception e){
+					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+							String.format("您需要指定一个整数型的连接ftp服务器超时时间: [%s]", timeout));
+				}
+				
+			}
+			
+			// only support connect pattern
+			String connectPattern = this.originConfig
+					.getString(Key.CONNECTPATTERN);
+			if (StringUtils.isBlank(connectPattern)) {
+				this.originConfig.set(Key.CONNECTPATTERN, null);
+			} else {
+				Set<String> supportedConnectPattern = Sets.newHashSet("PORT","PASV");
+				connectPattern = connectPattern.toLowerCase().trim();
+				if (!supportedConnectPattern.contains(connectPattern)) {
+					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
+							String.format("不支持您配置的ftp传输模式: [%s]", connectPattern));
+				}
+				this.originConfig.set(Key.CONNECTPATTERN, connectPattern);
+			}
+			
 			String username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
 			if (StringUtils.isBlank(username)) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定登陆ftp服务器的用户名");
@@ -300,6 +353,7 @@ public class FtpReader extends Reader {
 		private String password;
 		private String protocol;
 		private int timeout;
+		private String connectPattern;
 
 		private Configuration readerSliceConfig;
 		private List<String> sourceFiles;
@@ -321,12 +375,10 @@ public class FtpReader extends Reader {
 			this.password = readerSliceConfig.getString(Key.PASSWORD);
 			this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, 30000);
 
-			// this.readerSliceConfig.getBool("a[0]", true);
-			// this.timeout = readerSliceConfig.getInt(Key.TIMEOUT);
-
 			this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
 
 			if ("sftp".equals(protocol)) {
+				this.port = readerSliceConfig.getInt(Key.PORT,22);
 					this.sftpUtil = SftpUtil.getInstance();
 				try {
 					sftp = sftpUtil.getChannel(host, username, password, port, timeout);
@@ -336,12 +388,14 @@ public class FtpReader extends Reader {
 							"Connected failed to ftp server by sftp, message:host =" + host + ",username = " + username
 									+ ",password = " + password + ",port =" + port);
 					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_CONNEECT_FTPSERVER, message, e);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
 				}
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
+				this.port = readerSliceConfig.getInt(Key.PORT,21);
+				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
 				this.ftpUtil = FtpUtil.getInstance();
-				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout);
+				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout, connectPattern);
 				
 			}
 

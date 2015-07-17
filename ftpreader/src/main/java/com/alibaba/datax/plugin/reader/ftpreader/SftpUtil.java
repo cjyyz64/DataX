@@ -48,7 +48,7 @@ public class SftpUtil {
 		session = jsch.getSession(username, host, port); // 根据用户名，主机ip，端口获取一个Session对象
 		// 如果服务器连接不上，则抛出异常
 		if (session == null) {
-			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_CONNEECT_FTPSERVER,
+			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN,
 					"session is null,无法通过sftp与服务器建立链接，请检查主机名和用户名是否正确.");
 		}
 
@@ -84,13 +84,12 @@ public class SftpUtil {
 			return sftpATTRS.isDir();
 		} catch (SftpException e) {
 			if (e.getMessage().toLowerCase().equals("no such file")) {
-				isDirExistFlag = false;
-				String message = String.format("目录不存在: [%s]", directory);
-				LOG.error(message);
+				isDirExistFlag = false;				
 			}
-			e.printStackTrace();
+			String message = String.format("通过sftp获取目录: [%s] 的属性失败", directory);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 		}
-		return isDirExistFlag;
 	}
 
 	// 判断文件是否存在
@@ -113,10 +112,10 @@ public class SftpUtil {
 			filesize = -1;// 获取文件大小异常
 			if (e.getMessage().toLowerCase().equals("no such file")) {
 				filesize = -2;// 文件不存在
-				String message = String.format("文件不存在: [%s]", srcSftpFilePath);
-				LOG.error(message);
 			}
-			e.printStackTrace();
+			String message = String.format("通过sftp获取文件: [%s] 的属性失败", srcSftpFilePath);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 		}
 		return filesize;
 	}
@@ -175,8 +174,12 @@ public class SftpUtil {
 					if (e.getMessage().toLowerCase().equals("no such file")) {
 						String message = String.format("您设定的路径不存在: [%s]", eachPath);
 						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message, e);
+					}else{
+						String message = String.format("通过sftp获取文件列表失败，sftp.ls([%s])",eachPath);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 					}
-					e.printStackTrace();
 				}
 
 				// 处理子目录
