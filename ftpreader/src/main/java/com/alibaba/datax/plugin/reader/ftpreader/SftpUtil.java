@@ -86,9 +86,9 @@ public class SftpUtil {
 			if (e.getMessage().toLowerCase().equals("no such file")) {
 				isDirExistFlag = false;				
 			}
-			String message = String.format("通过sftp获取目录: [%s] 的属性失败", directory);
+			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常",directory);
 			LOG.error(message);
-			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 		}
 	}
 
@@ -96,7 +96,8 @@ public class SftpUtil {
 	public boolean isFileExist(ChannelSftp sftp, String srcSftpFilePath) {
 		boolean isExitFlag = false;
 		// 文件大于等于0则存在文件
-		if (getFileSize(sftp, srcSftpFilePath) >= 0) {
+		long filesize = getFileSize(sftp, srcSftpFilePath);
+		if ( filesize >= 0) {
 			isExitFlag = true;
 		}
 		return isExitFlag;
@@ -112,10 +113,14 @@ public class SftpUtil {
 			filesize = -1;// 获取文件大小异常
 			if (e.getMessage().toLowerCase().equals("no such file")) {
 				filesize = -2;// 文件不存在
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",srcSftpFilePath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+			}else{
+				String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常",srcSftpFilePath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 			}
-			String message = String.format("通过sftp获取文件: [%s] 的属性失败", srcSftpFilePath);
-			LOG.error(message);
-			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
 		}
 		return filesize;
 	}
@@ -129,7 +134,16 @@ public class SftpUtil {
 				if (eachPath.contains("*") || eachPath.contains("?")) {
 					// 处理正则表达式
 					int mark = eachPath.lastIndexOf('/');
-					parentPath = eachPath.substring(0, mark + 1);
+					String subPath=eachPath.substring(0, mark+1);
+					if(isDirExist(sftp,subPath)){
+						parentPath=subPath;
+					}else{
+						String message = String.format("不能进入目录：[%s],"
+								+ "请确认您的配置项path:[%s]存在，且配置的用户有权限进入",subPath,eachPath);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+					}
+					
 				} else if (isDirExist(sftp, eachPath)) {
 					// path是目录
 					if (eachPath.charAt(pathLen - 1) == '/') {
@@ -137,15 +151,16 @@ public class SftpUtil {
 					} else {
 						parentPath = eachPath + "/";
 					}
-				} else {
+				} else if (isFileExist(sftp, eachPath)) {
 					// path指向具体文件
-					if (isFileExist(sftp, eachPath)) {
-						// 是文件
 						if (!sourceFiles.contains(eachPath)) {
 							sourceFiles.add(eachPath);
 						}
 						continue;
-					}
+				}else{
+					String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",eachPath);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 				}
 
 				Vector vector;
@@ -167,20 +182,18 @@ public class SftpUtil {
 							if (!sourceFiles.contains(filePath)) {
 								sourceFiles.add(filePath);
 							}
+						}else{
+							String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取",filePath);
+							LOG.error(message);
+							throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 						}
 
 					} // end for vector
-				} catch (SftpException e) {
-					if (e.getMessage().toLowerCase().equals("no such file")) {
-						String message = String.format("您设定的路径不存在: [%s]", eachPath);
-						LOG.error(message);
-						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message, e);
-					}else{
-						String message = String.format("通过sftp获取文件列表失败，sftp.ls([%s])",eachPath);
-						LOG.error(message);
-						throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
-					}
-				}
+				} catch (SftpException e) {					
+					String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常",eachPath);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+			}
 
 				// 处理子目录
 				listFiles(sftp, childDir, sourceFiles);

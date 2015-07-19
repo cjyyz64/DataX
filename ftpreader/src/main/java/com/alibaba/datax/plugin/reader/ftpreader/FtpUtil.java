@@ -47,14 +47,14 @@ public class FtpUtil {
 				ftpClient.disconnect();
 				String message = String.format("与ftp服务器建立连接失败 : [%s]",
 						"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
-								+ ",password = " + password + ",port =" + port);
+								+ ",port =" + port);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);			
 			}
 		} catch (Exception e) {
 			String message = String.format("与ftp服务器建立连接失败 : [%s]",
 					"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
-							+ ",password = " + password + ",port =" + port);
+							+ ",port =" + port);
 			LOG.error(message);
 			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
 		}
@@ -68,8 +68,7 @@ public class FtpUtil {
 				ftpClient.logout();
 				ftpClient.disconnect();
 			} catch (IOException e) {
-				String message = String.format("与ftp服务器断开连接失败 : [%s]",
-						"Disconnect failed to ftp server by ftp");
+				String message = String.format("与ftp服务器断开连接失败");
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_DISCONNECT, message, e);
 			}
@@ -80,11 +79,10 @@ public class FtpUtil {
 	public boolean isDirExist(FTPClient ftpClient, String directory) {
 		try {
 			return ftpClient.changeWorkingDirectory(directory);
-		} catch (IOException e1) {
-			String message = String.format("改变工作目录失败 : [%s]",
-					"ftpClient.changeWorkingDirectory(directory),	message:"+ directory);
+		} catch (IOException e) {
+			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常",directory);
 			LOG.error(message);
-			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e1);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 		}
 	}
 
@@ -97,10 +95,9 @@ public class FtpUtil {
 				isExitFlag = true;
 			}
 		} catch (IOException e) {
-			String message = String.format("获取文件列表失败 : [%s]",
-					"ftpClient.listFiles(srcSftpFilePath),	message:"+ srcSftpFilePath);
+			String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常",srcSftpFilePath);
 			LOG.error(message);
-			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
+			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 		}
 		return isExitFlag;
 	}
@@ -114,7 +111,15 @@ public class FtpUtil {
 				if(eachPath.contains("*") || eachPath.contains("?")){
 					//处理正则表达式
 					int mark=eachPath.lastIndexOf('/');
-					parentPath=eachPath.substring(0, mark+1);					
+					String subPath=eachPath.substring(0, mark+1);
+					if(isDirExist(ftpClient,subPath)){
+						parentPath=subPath;
+					}else{
+						String message = String.format("不能进入目录：[%s],"
+								+ "请确认您的配置项path:[%s]存在，且配置的用户有权限进入",subPath,eachPath);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+					}
 				}else if(isDirExist(ftpClient,eachPath)){
 					//path是目录
 					if(eachPath.charAt(pathLen-1) == '/'){
@@ -122,19 +127,20 @@ public class FtpUtil {
 					}else{
 						parentPath=eachPath+"/";
 					}
-				}else{
-					//path指向具体文件
-					if(isFileExist(ftpClient,eachPath)){
-						//是文件						
+				}else if(isFileExist(ftpClient,eachPath)){
+					//path指向具体文件						
 						if(!sourceFiles.contains(eachPath)){
 							sourceFiles.add(eachPath);
 						}
 						continue;
-					}
+				}else{
+					String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",eachPath);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 				}
 				
 				try {
-					FTPFile[] fs = ftpClient.listFiles(eachPath);
+					FTPFile[] fs = ftpClient.listFiles(eachPath);					
 					ArrayList<String> childDir=new ArrayList<String>();//存放子目录
 					for (FTPFile ff : fs) {
 						String strName = ff.getName();					
@@ -148,15 +154,18 @@ public class FtpUtil {
 							if(!sourceFiles.contains(filePath)){
 								sourceFiles.add(filePath);
 							}
+						}else{
+							String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取",filePath);
+							LOG.error(message);
+							throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 						}
 					}// end for FTPFile				
 					//处理子目录
-					listFiles(ftpClient,childDir,sourceFiles);
+					listFiles(ftpClient,childDir,sourceFiles);										
 				} catch (IOException e) {
-					String message = String.format("获取文件列表失败 : [%s]",
-							"ftpClient.listFiles(eachPath),	message:"+ eachPath);
+					String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常",eachPath);
 					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_ERROR, message, e);
+					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 				}
 								
 			}//end for eachPath

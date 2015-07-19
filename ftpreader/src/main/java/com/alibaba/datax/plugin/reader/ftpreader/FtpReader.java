@@ -273,8 +273,6 @@ public class FtpReader extends Reader {
 			LOG.debug("prepare() begin...");
 			// warn:make sure this regex string
 			// warn:no need trim
-
-			// this.sourceFiles = originConfig.getList("path", String.class);
 			if ("sftp".equals(protocol)) {
 				sftpUtil.listFiles(sftp, this.path, this.sourceFiles);
 			}else if("ftp".equals(protocol)){
