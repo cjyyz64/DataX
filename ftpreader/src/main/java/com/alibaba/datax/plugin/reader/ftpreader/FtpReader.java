@@ -73,13 +73,13 @@ public class FtpReader extends Reader {
 			this.timeout = originConfig.getInt(Key.TIMEOUT, 30000);
 			if ("sftp".equals(protocol)) {
 				this.port = originConfig.getInt(Key.PORT,22);
-				this.sftpUtil = SftpUtil.getInstance();
+				this.sftpUtil = new SftpUtil();;
 				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = originConfig.getInt(Key.PORT,21);
 				this.connectPattern = originConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
-				this.ftpUtil = FtpUtil.getInstance();
+				this.ftpUtil = new FtpUtil();
 				ftpClient = ftpUtil.connectServer(host, username, password, port,timeout,connectPattern);
 			}
 
@@ -365,13 +365,13 @@ public class FtpReader extends Reader {
 
 			if ("sftp".equals(protocol)) {
 				this.port = readerSliceConfig.getInt(Key.PORT,22);
-				this.sftpUtil = SftpUtil.getInstance();
+				this.sftpUtil = new SftpUtil();
 				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = readerSliceConfig.getInt(Key.PORT,21);
 				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
-				this.ftpUtil = FtpUtil.getInstance();
+				this.ftpUtil = new FtpUtil();
 				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout, connectPattern);
 				
 			}

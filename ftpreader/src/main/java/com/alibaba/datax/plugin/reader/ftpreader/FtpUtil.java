@@ -18,13 +18,13 @@ import com.alibaba.datax.plugin.reader.ftpreader.FtpReader.Job;
 
 public class FtpUtil {
 	private static final Logger LOG = LoggerFactory.getLogger(Job.class);
-	private static class FtpUtilHolder {
+	/*private static class FtpUtilHolder {
         private static final FtpUtil  INSTANCE = new FtpUtil();
     }
     private FtpUtil(){}
     public static final FtpUtil getInstance() {
         return FtpUtilHolder.INSTANCE;
-    }
+    }*/
     
 	// 建立ftp连接
 	public FTPClient connectServer(String host, String username, String password, int port, int timeout, String connectMode) {

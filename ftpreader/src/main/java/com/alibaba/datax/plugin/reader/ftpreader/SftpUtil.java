@@ -34,13 +34,13 @@ public class SftpUtil {
 	Session session = null;
 	Channel channel = null;
 	
-	private static class SftpUtilHolder {
+	/*private static class SftpUtilHolder {
         private static final SftpUtil  INSTANCE = new SftpUtil();
     }
     private SftpUtil(){}
     public static final SftpUtil getInstance() {
         return SftpUtilHolder.INSTANCE;
-    }
+    }*/
 
 	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout){
 		JSch jsch = new JSch(); // 创建JSch对象
