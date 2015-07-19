@@ -1,5 +1,19 @@
 package com.alibaba.datax.plugin.reader.ftpreader;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.ftp.FTPClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
@@ -8,32 +22,8 @@ import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageRe
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 import com.google.common.collect.Sets;
 import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.SftpException;
-
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.BooleanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.net.ftp.FTPClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.UnsupportedCharsetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * 
@@ -84,16 +74,7 @@ public class FtpReader extends Reader {
 			if ("sftp".equals(protocol)) {
 				this.port = originConfig.getInt(Key.PORT,22);
 				this.sftpUtil = SftpUtil.getInstance();
-				try {
-					sftp = sftpUtil.getChannel(host, username, password, port, timeout);
-				} catch (JSchException e) {
-					// TODO Auto-generated catch block
-					String message = String.format("无法通过sftp与服务器建立链接 : [%s]",
-							"Connected failed to ftp server by sftp, message:host =" + host + ",username = " + username
-									+ ",password = " + password + ",port =" + port);
-					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-				}
+				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = originConfig.getInt(Key.PORT,21);
@@ -154,7 +135,7 @@ public class FtpReader extends Reader {
 				this.originConfig.set(Key.CONNECTPATTERN, null);
 			} else {
 				Set<String> supportedConnectPattern = Sets.newHashSet("PORT","PASV");
-				connectPattern = connectPattern.toLowerCase().trim();
+				connectPattern = connectPattern.trim();
 				if (!supportedConnectPattern.contains(connectPattern)) {
 					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
 							String.format("不支持您配置的ftp传输模式: [%s]", connectPattern));
@@ -376,7 +357,6 @@ public class FtpReader extends Reader {
 			this.readerSliceConfig = this.getPluginJobConf();
 			this.host = readerSliceConfig.getString(Key.HOST);
 			this.protocol = readerSliceConfig.getString(Key.PROTOCOL);
-			this.port = readerSliceConfig.getInt(Key.PORT);
 			this.username = readerSliceConfig.getString(Key.USERNAME);
 			this.password = readerSliceConfig.getString(Key.PASSWORD);
 			this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, 30000);
@@ -385,17 +365,8 @@ public class FtpReader extends Reader {
 
 			if ("sftp".equals(protocol)) {
 				this.port = readerSliceConfig.getInt(Key.PORT,22);
-					this.sftpUtil = SftpUtil.getInstance();
-				try {
-					sftp = sftpUtil.getChannel(host, username, password, port, timeout);
-				} catch (JSchException e) {
-					// TODO Auto-generated catch block
-					String message = String.format("无法通过sftp与服务器建立链接 : [%s]",
-							"Connected failed to ftp server by sftp, message:host =" + host + ",username = " + username
-									+ ",password = " + password + ",port =" + port);
-					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-				}
+				this.sftpUtil = SftpUtil.getInstance();
+				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = readerSliceConfig.getInt(Key.PORT,21);

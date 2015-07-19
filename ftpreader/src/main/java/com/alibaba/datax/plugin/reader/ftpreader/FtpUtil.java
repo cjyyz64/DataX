@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.reader.ftpreader;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -45,15 +46,23 @@ public class FtpUtil {
 			int reply = ftpClient.getReplyCode();
 			if (!FTPReply.isPositiveCompletion(reply)) {
 				ftpClient.disconnect();
-				String message = String.format("与ftp服务器建立连接失败 : [%s]",
-						"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
+				String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
+						"message:host =" + host + ",username = " + username
 								+ ",port =" + port);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);			
 			}
-		} catch (Exception e) {
+		} catch(UnknownHostException e){
+			String message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器",host );
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+		}catch(IllegalArgumentException e){
+			String message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ",port );
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+		}catch (Exception e) {
 			String message = String.format("与ftp服务器建立连接失败 : [%s]",
-					"Connected failed to ftp server by ftp, message:host =" + host + ",username = " + username
+					"message:host =" + host + ",username = " + username
 							+ ",port =" + port);
 			LOG.error(message);
 			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);

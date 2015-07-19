@@ -13,12 +13,12 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.reader.ftpreader.FtpReader.Job;
 import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelSftp;
+import com.jcraft.jsch.ChannelSftp.LsEntry;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpATTRS;
 import com.jcraft.jsch.SftpException;
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 
 /**
  * 
@@ -42,10 +42,11 @@ public class SftpUtil {
         return SftpUtilHolder.INSTANCE;
     }
 
-	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout)
-			throws JSchException {
+	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout){
 		JSch jsch = new JSch(); // 创建JSch对象
-		session = jsch.getSession(username, host, port); // 根据用户名，主机ip，端口获取一个Session对象
+		try {
+			session = jsch.getSession(username, host, port);
+		// 根据用户名，主机ip，端口获取一个Session对象
 		// 如果服务器连接不上，则抛出异常
 		if (session == null) {
 			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN,
@@ -61,6 +62,13 @@ public class SftpUtil {
 
 		channel = session.openChannel("sftp"); // 打开SFTP通道
 		channel.connect(); // 建立SFTP通道的连接
+		}catch (JSchException e) {
+			String message = String.format("与ftp服务器建立连接失败 : [%s]",
+					"message:host =" + host + ",username = " + username
+							+ ",port =" + port);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+		} 
 
 		return (ChannelSftp) channel;
 	}
@@ -84,7 +92,10 @@ public class SftpUtil {
 			return sftpATTRS.isDir();
 		} catch (SftpException e) {
 			if (e.getMessage().toLowerCase().equals("no such file")) {
-				isDirExistFlag = false;				
+				isDirExistFlag = false;	
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",directory);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 			}
 			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常",directory);
 			LOG.error(message);
