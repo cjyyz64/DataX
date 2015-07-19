@@ -209,6 +209,10 @@ public class FtpReader extends Reader {
 			// format
 			List<Configuration> columns = this.originConfig
 					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+			if (null == columns || columns.size() == 0) {
+                throw DataXException.asDataXException(
+                		FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定 columns");
+            }
 			// handle ["*"]
 			if (null != columns && 1 == columns.size()) {
 				String columnsInStr = columns.get(0).toString();
@@ -260,6 +264,10 @@ public class FtpReader extends Reader {
 
 			String delimiterInStr = this.originConfig
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
+			 if (null == delimiterInStr || delimiterInStr.length() == 0) {
+	                throw DataXException.asDataXException(
+	                		FtpReaderErrorCode.REQUIRED_VALUE,"您需要指定 fieldDelimiter");
+	            }
 			// warn: if have, length must be one
 			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
