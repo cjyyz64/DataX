@@ -267,6 +267,12 @@ public class UnstructuredStorageWriterUtil {
         char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER,
                 Constant.DEFAULT_FIELD_DELIMITER);
 
+        List<String> headers = config.getList(Key.HEADER, String.class);
+        if (null != headers && !headers.isEmpty()) {
+            writer.write(UnstructuredStorageWriterUtil.doTransportOneRecord(
+                    headers, fieldDelimiter, fileFormat));
+        }
+
         Record record = null;
         while ((record = lineReceiver.getFromReader()) != null) {
             MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
@@ -331,10 +337,20 @@ public class UnstructuredStorageWriterUtil {
             }
         }
 
+        transportResult.setLeft(UnstructuredStorageWriterUtil
+                .doTransportOneRecord(splitedRows, fieldDelimiter, fileFormat));
+        return transportResult;
+    }
+
+    public static String doTransportOneRecord(List<String> splitedRows,
+            char fieldDelimiter, String fileFormat) {
+        if (splitedRows.isEmpty()) {
+            LOG.info("Found one record line which is empty.");
+        }
         // warn: false means plain text(old way), true means strict csv format
         if (Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
-            transportResult.setLeft(StringUtils.join(splitedRows,
-                    fieldDelimiter) + IOUtils.LINE_SEPARATOR);
+            return StringUtils.join(splitedRows, fieldDelimiter)
+                    + IOUtils.LINE_SEPARATOR;
         } else {
             StringWriter sw = new StringWriter();
             CsvWriter csvWriter = new CsvWriter(sw, fieldDelimiter);
@@ -344,10 +360,9 @@ public class UnstructuredStorageWriterUtil {
             csvWriter.setRecordDelimiter(IOUtils.LINE_SEPARATOR.charAt(0));
             UnstructuredStorageWriterUtil.csvWriteSlience(csvWriter,
                     splitedRows);
-            transportResult.setLeft(sw.toString());
+            return sw.toString();
             // sw.close(); //no need do this
         }
-        return transportResult;
     }
 
     private static void csvWriteSlience(CsvWriter csvWriter,

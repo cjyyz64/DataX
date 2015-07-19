@@ -1,0 +1,45 @@
+
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "byte": 1048576
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "otsreader-internal",
+          "parameter": {
+            "mode": "normal",
+            "endpoint":"http://ay45w-office.ots.aliyun-inc.com",
+            "accessId":" bbc07W6jDi214noU ",
+            "accessKey":"",
+            "instanceName":" wanhong-internal ",
+            "table": "SmokeTest1",
+            "column": [
+                {"name":"Uid"},{"name":"Pid"},{"name":"Gid"},
+                {"name":"attr"}, {"name":"null_column"}, 
+                {"type":"string", "value":"string_const"},
+                {"type":"int", "value":"100"},
+                {"type":"double", "value":"100.01"},
+                {"type":"bool", "value":"false"},
+                {"type":"binary", "value":"aGVsbG8="}
+            ]
+          }
+        },
+        "writer": {
+          "name": "streamwriter",
+          "parameter": {
+            "print": true
+          }
+        }
+      }
+    ]
+  }
+}
+
