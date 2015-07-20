@@ -46,6 +46,11 @@ public class ErrorRecordLimitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testInvalidConstruction2() throws Exception {
+        new ErrorRecordChecker(0L, -0.1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidConstruction3() throws Exception {
         new ErrorRecordChecker(0L, 1.1);
     }
 
