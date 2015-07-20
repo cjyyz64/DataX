@@ -176,9 +176,12 @@ public class TaskGroupContainer extends AbstractContainer {
             			break;
             		}else if(taskCommunication.getState() == State.SUCCEEDED){
                         Long taskStartTime = taskStartTimeMap.get(taskId);
-                        Long usedTime = System.currentTimeMillis() - taskStartTime;
-                        LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
-                                this.taskGroupId, taskId, usedTime);
+                        if(taskStartTime != null){
+                            Long usedTime = System.currentTimeMillis() - taskStartTime;
+                            LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
+                                    this.taskGroupId, taskId, usedTime);
+                            taskStartTimeMap.remove(taskId);
+                        }
                     }
             	}
             	
