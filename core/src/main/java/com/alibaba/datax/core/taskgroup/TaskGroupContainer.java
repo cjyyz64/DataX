@@ -181,6 +181,7 @@ public class TaskGroupContainer extends AbstractContainer {
                             LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
                                     this.taskGroupId, taskId, usedTime);
                             taskStartTimeMap.remove(taskId);
+                            taskConfigMap.remove(taskId);
                         }
                     }
             	}
