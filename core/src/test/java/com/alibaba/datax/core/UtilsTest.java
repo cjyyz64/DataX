@@ -16,7 +16,7 @@ public class UtilsTest {
     @Test
     public void testName() throws Exception {
         Integer b= null;
-        System.out.println(0 == b);
+        System.out.println(null == b);
     }
 
     @Test
