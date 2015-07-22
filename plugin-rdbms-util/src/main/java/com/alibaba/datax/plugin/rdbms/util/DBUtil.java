@@ -6,6 +6,7 @@ import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -13,14 +14,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.*;
+import java.util.concurrent.*;
 
 public final class DBUtil {
     private static final Logger LOG = LoggerFactory.getLogger(DBUtil.class);
+
+    private static final ThreadLocal<ExecutorService> rsExecutors = new ThreadLocal<ExecutorService>() {
+        @Override
+        protected ExecutorService initialValue() {
+            return Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
+                    .setNameFormat("rsExecutors-%d")
+                    .setDaemon(true)
+                    .build());
+        }
+    };
 
     private DBUtil() {
     }
@@ -122,17 +130,17 @@ public final class DBUtil {
     private static boolean isSlaveBehind(Connection conn) {
         try {
             ResultSet rs = query(conn, "SHOW VARIABLES LIKE 'read_only'");
-            if (rs.next()) {
+            if (DBUtil.asyncResultSetNext(rs)) {
                 String readOnly = rs.getString("Value");
                 if ("ON".equalsIgnoreCase(readOnly)) { //备库
                     ResultSet rs1 = query(conn, "SHOW SLAVE STATUS");
-                    if (rs1.next()) {
+                    if (DBUtil.asyncResultSetNext(rs1)) {
                         String ioRunning = rs1.getString("Slave_IO_Running");
                         String sqlRunning = rs1.getString("Slave_SQL_Running");
                         long secondsBehindMaster = rs1.getLong("Seconds_Behind_Master");
                         if ("Yes".equalsIgnoreCase(ioRunning) && "Yes".equalsIgnoreCase(sqlRunning)) {
                             ResultSet rs2 = query(conn, "SELECT TIMESTAMPDIFF(SECOND, CURDATE(), NOW())");
-                            rs2.next();
+                            DBUtil.asyncResultSetNext(rs2);
                             long secondsOfDay = rs2.getLong(1);
                             return secondsBehindMaster > secondsOfDay;
                         } else {
@@ -178,7 +186,7 @@ public final class DBUtil {
         Connection connection = connect(dataBaseType, jdbcURL, userName, password);
         try {
             ResultSet rs = query(connection, "SHOW GRANTS FOR " + userName);
-            while (rs.next()) {
+            while (DBUtil.asyncResultSetNext(rs)) {
                 String grantRecord = rs.getString("Grants for " + userName + "@%");
                 String[] params = grantRecord.split("\\`");
                 if (params != null && params.length >= 3) {
@@ -289,12 +297,27 @@ public final class DBUtil {
     public static Connection getConnection(final DataBaseType dataBaseType,
                                            final String jdbcUrl, final String username, final String password) {
 
+        return getConnection(dataBaseType, jdbcUrl, username, password, String.valueOf(Constant.SOCKET_TIMEOUT_INSECOND * 1000));
+    }
+
+    /**
+     *
+     * @param dataBaseType
+     * @param jdbcUrl
+     * @param username
+     * @param password
+     * @param socketTimeout 设置socketTimeout，单位ms，String类型
+     * @return
+     */
+    public static Connection getConnection(final DataBaseType dataBaseType,
+                                           final String jdbcUrl, final String username, final String password, final String socketTimeout) {
+
         try {
             return RetryUtil.executeWithRetry(new Callable<Connection>() {
                 @Override
                 public Connection call() throws Exception {
                     return DBUtil.connect(dataBaseType, jdbcUrl, username,
-                            password);
+                            password, socketTimeout);
                 }
             }, 9, 1000L, true);
         } catch (Exception e) {
@@ -312,19 +335,45 @@ public final class DBUtil {
      * NOTE: In DataX, we don't need connection pool in fact
      */
     public static Connection getConnectionWithoutRetry(final DataBaseType dataBaseType,
-                                           final String jdbcUrl, final String username, final String password) {
+                                                       final String jdbcUrl, final String username, final String password) {
+        return getConnectionWithoutRetry(dataBaseType, jdbcUrl, username,
+                password, String.valueOf(Constant.SOCKET_TIMEOUT_INSECOND * 1000));
+    }
+
+    public static Connection getConnectionWithoutRetry(final DataBaseType dataBaseType,
+                                                       final String jdbcUrl, final String username, final String password, String socketTimeout) {
         return DBUtil.connect(dataBaseType, jdbcUrl, username,
-                password);
+                password, socketTimeout);
     }
 
     private static synchronized Connection connect(DataBaseType dataBaseType,
                                                    String url, String user, String pass) {
+        return connect(dataBaseType, url, user, pass, String.valueOf(Constant.SOCKET_TIMEOUT_INSECOND * 1000));
+    }
+
+    private static synchronized Connection connect(DataBaseType dataBaseType,
+                                                   String url, String user, String pass, String socketTimeout) {
+        Properties prop = new Properties();
+        prop.put("user", user);
+        prop.put("password", pass);
+
+        if (dataBaseType == DataBaseType.Oracle) {
+            //oracle.net.READ_TIMEOUT for jdbc versions < 10.1.0.5 oracle.jdbc.ReadTimeout for jdbc versions >=10.1.0.5
+            // unit ms
+            prop.put("oracle.jdbc.ReadTimeout", socketTimeout);
+        }
+
+        return connect(dataBaseType, url, prop);
+    }
+
+    private static synchronized Connection connect(DataBaseType dataBaseType,
+                                                   String url, Properties prop) {
         try {
             Class.forName(dataBaseType.getDriverClassName());
             DriverManager.setLoginTimeout(Constant.TIMEOUT_SECONDS);
-            return DriverManager.getConnection(url, user, pass);
+            return DriverManager.getConnection(url, prop);
         } catch (Exception e) {
-            throw RdbmsException.asConnException(dataBaseType, e,user,null);
+            throw RdbmsException.asConnException(dataBaseType, e, prop.getProperty("user"), null);
         }
     }
 
@@ -338,11 +387,28 @@ public final class DBUtil {
      */
     public static ResultSet query(Connection conn, String sql, int fetchSize)
             throws SQLException {
+        // 默认3600 s 的query Timeout
+        return query(conn, sql, fetchSize, Constant.SOCKET_TIMEOUT_INSECOND);
+    }
+
+    /**
+     * a wrapped method to execute select-like sql statement .
+     *
+     * @param conn         Database connection .
+     * @param sql          sql statement to be executed
+     * @param fetchSize
+     * @param queryTimeout unit:second
+     * @return
+     * @throws SQLException
+     */
+    public static ResultSet query(Connection conn, String sql, int fetchSize, int queryTimeout)
+            throws SQLException {
         // make sure autocommit is off
         conn.setAutoCommit(false);
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
         stmt.setFetchSize(fetchSize);
+        stmt.setQueryTimeout(queryTimeout);
         return query(stmt, sql);
     }
 
@@ -548,7 +614,8 @@ public final class DBUtil {
             throws SQLException {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,
                 ResultSet.CONCUR_READ_ONLY);
-
+        //默认3600 seconds
+        stmt.setQueryTimeout(Constant.SOCKET_TIMEOUT_INSECOND);
         return query(stmt, sql);
     }
 
@@ -558,9 +625,9 @@ public final class DBUtil {
             rs = query(conn, pre);
 
             int checkResult = -1;
-            if (rs.next()) {
+            if (DBUtil.asyncResultSetNext(rs)) {
                 checkResult = rs.getInt(1);
-                if (rs.next()) {
+                if (DBUtil.asyncResultSetNext(rs)) {
                     LOG.warn(
                             "pre check failed. It should return one result:0, pre:[{}].",
                             pre);
@@ -645,4 +712,27 @@ public final class DBUtil {
         statementParser.parseStatementList();
     }
 
+    /**
+     * 异步获取resultSet的next(),注意，千万不能应用在数据的读取中。只能用在meta的获取
+     * @param resultSet
+     * @return
+     */
+    public static boolean asyncResultSetNext(final ResultSet resultSet) {
+        return asyncResultSetNext(resultSet, 3600);
+    }
+
+    public static boolean asyncResultSetNext(final ResultSet resultSet, int timeout) {
+        Future<Boolean> future = rsExecutors.get().submit(new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return resultSet.next();
+            }
+        });
+        try {
+            return future.get(timeout, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(
+                    DBUtilErrorCode.RS_ASYNC_ERROR, "异步获取ResultSet失败", e);
+        }
+    }
 }
