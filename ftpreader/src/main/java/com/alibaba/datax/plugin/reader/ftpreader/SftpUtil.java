@@ -65,11 +65,12 @@ public class SftpUtil {
 				String cause = e.getCause().toString();
 				String unknownHostException = "java.net.UnknownHostException: " + host;
 				String illegalArgumentException = "java.lang.IllegalArgumentException: port out of range:" + port;
+				String wrongPort = "java.net.ConnectException: Connection refused";
 				if (unknownHostException.equals(cause)) {
 					String message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
 					LOG.error(message);
 					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-				} else if (illegalArgumentException.equals(cause)) {
+				} else if (illegalArgumentException.equals(cause) || wrongPort.equals(cause) ) {
 					String message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
 					LOG.error(message);
 					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
