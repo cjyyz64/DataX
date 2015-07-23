@@ -62,7 +62,7 @@ public class FtpReader extends Reader {
 		public void init() {
 			this.originConfig = this.getPluginJobConf();
 			this.sourceFiles = new HashSet<String>();
-			
+
 			this.validateParameter();
 
 			// sftp链接参数初始化
@@ -72,69 +72,68 @@ public class FtpReader extends Reader {
 			this.password = originConfig.getString(Key.PASSWORD);
 			this.timeout = originConfig.getInt(Key.TIMEOUT, 30000);
 			if ("sftp".equals(protocol)) {
-				this.port = originConfig.getInt(Key.PORT,22);
-				this.sftpUtil = new SftpUtil();;
+				this.port = originConfig.getInt(Key.PORT, 22);
+				this.sftpUtil = new SftpUtil();
 				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
-				this.port = originConfig.getInt(Key.PORT,21);
-				this.connectPattern = originConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
+				this.port = originConfig.getInt(Key.PORT, 21);
+				this.connectPattern = originConfig.getString(Key.CONNECTPATTERN, "PASV");// 默认为被动模式
 				this.ftpUtil = new FtpUtil();
-				ftpClient = ftpUtil.connectServer(host, username, password, port,timeout,connectPattern);
+				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout, connectPattern);
 			}
 
 		}
 
 		private void validateParameter() {
 			String protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
-			boolean ptrotocolTag="ftp".equals(protocol) || "sftp".equals(protocol);
+			boolean ptrotocolTag = "ftp".equals(protocol) || "sftp".equals(protocol);
 			if (StringUtils.isBlank(protocol)) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定传输协议！当前仅支持ftp和sftp");
-			}else if( !ptrotocolTag){
+			} else if (!ptrotocolTag) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
 						String.format("仅支持 ftp和sftp 传输协议 , 不支持您配置的传输协议: [%s]", protocol));
 			}
-						
+
 			String host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
 			if (StringUtils.isBlank(host)) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定ftp服务器地址");
 			}
 
-			String port=this.originConfig.getString(Key.PORT);
+			String port = this.originConfig.getString(Key.PORT);
 			if (StringUtils.isBlank(port)) {
 				this.originConfig.set(Key.PORT, null);
 			} else {
-				try{
-					int connectPort=Integer.valueOf(port);
+				try {
+					int connectPort = Integer.valueOf(port);
 					this.originConfig.set(Key.PORT, connectPort);
-				}catch(Exception e){
+				} catch (Exception e) {
 					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
 							String.format("您需要指定一个整数型的连接ftp服务器端口: [%s]", port));
 				}
-				
+
 			}
-			
-			String timeout=this.originConfig.getString(Key.TIMEOUT);
+
+			String timeout = this.originConfig.getString(Key.TIMEOUT);
 			if (StringUtils.isBlank(timeout)) {
 				this.originConfig.set(Key.TIMEOUT, null);
 			} else {
-				try{
-					int connectTimeout=Integer.valueOf(timeout);
+				try {
+					int connectTimeout = Integer.valueOf(timeout);
 					this.originConfig.set(Key.TIMEOUT, connectTimeout);
-				}catch(Exception e){
+				} catch (Exception e) {
 					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
 							String.format("您需要指定一个整数型的连接ftp服务器超时时间: [%s]", timeout));
 				}
-				
+
 			}
-			
+
 			// only support connect pattern
-			String connectPattern = this.originConfig
-					.getString(Key.CONNECTPATTERN);
+			String connectPattern = this.originConfig.getString(Key.CONNECTPATTERN);
 			if (StringUtils.isBlank(connectPattern)) {
 				this.originConfig.set(Key.CONNECTPATTERN, null);
 			} else {
-				Set<String> supportedConnectPattern = Sets.newHashSet("PORT","PASV");
+				Set<String> supportedConnectPattern = Sets.newHashSet("PORT", "PASV");
 				connectPattern = connectPattern.trim();
 				if (!supportedConnectPattern.contains(connectPattern)) {
 					throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
@@ -142,7 +141,7 @@ public class FtpReader extends Reader {
 				}
 				this.originConfig.set(Key.CONNECTPATTERN, connectPattern);
 			}
-			
+
 			String username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
 			if (StringUtils.isBlank(username)) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定登陆ftp服务器的用户名");
@@ -191,9 +190,8 @@ public class FtpReader extends Reader {
 			List<Configuration> columns = this.originConfig
 					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
 			if (null == columns || columns.size() == 0) {
-                throw DataXException.asDataXException(
-                		FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定 columns");
-            }
+				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定 columns");
+			}
 			// handle ["*"]
 			if (null != columns && 1 == columns.size()) {
 				String columnsInStr = columns.get(0).toString();
@@ -245,10 +243,9 @@ public class FtpReader extends Reader {
 
 			String delimiterInStr = this.originConfig
 					.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER);
-			 if (null == delimiterInStr || delimiterInStr.length() == 0) {
-	                throw DataXException.asDataXException(
-	                		FtpReaderErrorCode.REQUIRED_VALUE,"您需要指定 fieldDelimiter");
-	            }
+			if (null == delimiterInStr || delimiterInStr.length() == 0) {
+				throw DataXException.asDataXException(FtpReaderErrorCode.REQUIRED_VALUE, "您需要指定 fieldDelimiter");
+			}
 			// warn: if have, length must be one
 			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
@@ -264,9 +261,9 @@ public class FtpReader extends Reader {
 			// warn:no need trim
 			if ("sftp".equals(protocol)) {
 				sftpUtil.listFiles(sftp, this.path, this.sourceFiles);
-			}else if("ftp".equals(protocol)){
+			} else if ("ftp".equals(protocol)) {
 				ftpUtil.listFiles(ftpClient, this.path, this.sourceFiles);
-			}			
+			}
 
 			LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
 		}
@@ -279,13 +276,12 @@ public class FtpReader extends Reader {
 		public void destroy() {
 			if ("sftp".equals(protocol)) {
 				sftpUtil.closeChannel(sftp);
-			}else if("ftp".equals(protocol)){
-				/*try {
-					ftpClient.completePendingCommand();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}*/
+			} else if ("ftp".equals(protocol)) {
+				/*
+				 * try { ftpClient.completePendingCommand(); } catch
+				 * (IOException e) { // TODO Auto-generated catch block
+				 * e.printStackTrace(); }
+				 */
 				ftpUtil.closeServer(ftpClient);
 			}
 		}
@@ -364,16 +360,16 @@ public class FtpReader extends Reader {
 			this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
 
 			if ("sftp".equals(protocol)) {
-				this.port = readerSliceConfig.getInt(Key.PORT,22);
+				this.port = readerSliceConfig.getInt(Key.PORT, 22);
 				this.sftpUtil = new SftpUtil();
 				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
-				this.port = readerSliceConfig.getInt(Key.PORT,21);
-				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN,"PASV");//默认为被动模式
+				this.port = readerSliceConfig.getInt(Key.PORT, 21);
+				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN, "PASV");// 默认为被动模式
 				this.ftpUtil = new FtpUtil();
 				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout, connectPattern);
-				
+
 			}
 
 		}
@@ -389,10 +385,10 @@ public class FtpReader extends Reader {
 		}
 
 		@Override
-		public void destroy() {			
+		public void destroy() {
 			if ("sftp".equals(protocol)) {
 				sftpUtil.closeChannel(sftp);
-			}else if("ftp".equals(protocol)){
+			} else if ("ftp".equals(protocol)) {
 				try {
 					ftpClient.completePendingCommand();
 				} catch (IOException e) {
@@ -409,27 +405,30 @@ public class FtpReader extends Reader {
 			LOG.debug("start read source files...");
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
-				InputStream inputStream=null;
-				try {
-					// inputStream = new FileInputStream(fileName);
-					if ("sftp".equals(protocol)) {
+				InputStream inputStream = null;
+
+				// inputStream = new FileInputStream(fileName);
+				if ("sftp".equals(protocol)) {
+					try {
 						inputStream = sftp.get(fileName);
-					}else if ("ftp".equals(protocol)) {
-						inputStream =ftpClient.retrieveFileStream(fileName);
+					} catch (SftpException e) {
+						String message = String.format("找不到待读取的文件 : [%s],请确认文件：[%s]存在且配置的用户有权限读取", fileName, fileName);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);
 					}
-					
-					UnstructuredStorageReaderUtil.readFromStream(inputStream, fileName, this.readerSliceConfig,
-							recordSender, this.getTaskPluginCollector());
-					recordSender.flush();
-				} catch (SftpException e) {
-					// warn: sock 文件无法read,能影响所有文件的传输,需要用户自己保证
-					String message = String.format("找不到待读取的文件 : [%s]", fileName);
-					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				} else if ("ftp".equals(protocol)) {
+					try {
+						inputStream = ftpClient.retrieveFileStream(fileName);
+					} catch (IOException e) {
+						String message = String.format("找不到待读取的文件 : [%s],请确认文件：[%s]存在且配置的用户有权限读取", fileName, fileName);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);
+					}
 				}
+
+				UnstructuredStorageReaderUtil.readFromStream(inputStream, fileName, this.readerSliceConfig,
+						recordSender, this.getTaskPluginCollector());
+				recordSender.flush();
 			}
 
 			LOG.debug("end read source files...");

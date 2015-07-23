@@ -30,45 +30,64 @@ import com.jcraft.jsch.SftpException;
  */
 public class SftpUtil {
 	private static final Logger LOG = LoggerFactory.getLogger(Job.class);
-	
+
 	Session session = null;
 	Channel channel = null;
-	
-	/*private static class SftpUtilHolder {
-        private static final SftpUtil  INSTANCE = new SftpUtil();
-    }
-    private SftpUtil(){}
-    public static final SftpUtil getInstance() {
-        return SftpUtilHolder.INSTANCE;
-    }*/
 
-	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout){
+	/*
+	 * private static class SftpUtilHolder { private static final SftpUtil
+	 * INSTANCE = new SftpUtil(); } private SftpUtil(){} public static final
+	 * SftpUtil getInstance() { return SftpUtilHolder.INSTANCE; }
+	 */
+
+	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout) {
 		JSch jsch = new JSch(); // 创建JSch对象
 		try {
 			session = jsch.getSession(username, host, port);
-		// 根据用户名，主机ip，端口获取一个Session对象
-		// 如果服务器连接不上，则抛出异常
-		if (session == null) {
-			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN,
-					"session is null,无法通过sftp与服务器建立链接，请检查主机名和用户名是否正确.");
+			// 根据用户名，主机ip，端口获取一个Session对象
+			// 如果服务器连接不上，则抛出异常
+			if (session == null) {
+				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN,
+						"session is null,无法通过sftp与服务器建立链接，请检查主机名和用户名是否正确.");
+			}
+
+			session.setPassword(password); // 设置密码
+			Properties config = new Properties();
+			config.put("StrictHostKeyChecking", "no");
+			session.setConfig(config); // 为Session对象设置properties
+			session.setTimeout(timeout); // 设置timeout时间
+			session.connect(); // 通过Session建立链接
+
+			channel = session.openChannel("sftp"); // 打开SFTP通道
+			channel.connect(); // 建立SFTP通道的连接
+		} catch (JSchException e) {
+			if(null != e.getCause()){
+				String cause = e.getCause().toString();
+				String unknownHostException = "java.net.UnknownHostException: " + host;
+				String illegalArgumentException = "java.lang.IllegalArgumentException: port out of range:" + port;
+				if (unknownHostException.equals(cause)) {
+					String message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+				} else if (illegalArgumentException.equals(cause)) {
+					String message = String.format("请确认连接ftp服务器端口是否正确，错误的端口: [%s] ", port);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+				}
+			}else {
+				if("Auth fail".equals(e.getMessage())){
+					String message = String.format("与ftp服务器建立连接失败,请检查用户名和密码是否正确: [%s]",
+							"message:host =" + host + ",username = " + username + ",port =" + port);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
+				}else{
+					String message = String.format("与ftp服务器建立连接失败 : [%s]",
+							"message:host =" + host + ",username = " + username + ",port =" + port);
+					LOG.error(message);
+					throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
+				}				
+			}
 		}
-
-		session.setPassword(password); // 设置密码
-		Properties config = new Properties();
-		config.put("StrictHostKeyChecking", "no");
-		session.setConfig(config); // 为Session对象设置properties
-		session.setTimeout(timeout); // 设置timeout时间
-		session.connect(); // 通过Session建立链接
-
-		channel = session.openChannel("sftp"); // 打开SFTP通道
-		channel.connect(); // 建立SFTP通道的连接
-		}catch (JSchException e) {
-			String message = String.format("与ftp服务器建立连接失败 : [%s]",
-					"message:host =" + host + ",username = " + username
-							+ ",port =" + port);
-			LOG.error(message);
-			throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message, e);
-		} 
 
 		return (ChannelSftp) channel;
 	}
@@ -92,12 +111,12 @@ public class SftpUtil {
 			return sftpATTRS.isDir();
 		} catch (SftpException e) {
 			if (e.getMessage().toLowerCase().equals("no such file")) {
-				isDirExistFlag = false;	
-				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",directory);
+				isDirExistFlag = false;
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", directory);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 			}
-			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常",directory);
+			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常", directory);
 			LOG.error(message);
 			throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 		}
@@ -108,7 +127,7 @@ public class SftpUtil {
 		boolean isExitFlag = false;
 		// 文件大于等于0则存在文件
 		long filesize = getFileSize(sftp, srcSftpFilePath);
-		if ( filesize >= 0) {
+		if (filesize >= 0) {
 			isExitFlag = true;
 		}
 		return isExitFlag;
@@ -124,11 +143,11 @@ public class SftpUtil {
 			filesize = -1;// 获取文件大小异常
 			if (e.getMessage().toLowerCase().equals("no such file")) {
 				filesize = -2;// 文件不存在
-				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",srcSftpFilePath);
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", srcSftpFilePath);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
-			}else{
-				String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常",srcSftpFilePath);
+			} else {
+				String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", srcSftpFilePath);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
 			}
@@ -145,16 +164,16 @@ public class SftpUtil {
 				if (eachPath.contains("*") || eachPath.contains("?")) {
 					// 处理正则表达式
 					int mark = eachPath.lastIndexOf('/');
-					String subPath=eachPath.substring(0, mark+1);
-					if(isDirExist(sftp,subPath)){
-						parentPath=subPath;
-					}else{
-						String message = String.format("不能进入目录：[%s],"
-								+ "请确认您的配置项path:[%s]存在，且配置的用户有权限进入",subPath,eachPath);
+					String subPath = eachPath.substring(0, mark + 1);
+					if (isDirExist(sftp, subPath)) {
+						parentPath = subPath;
+					} else {
+						String message = String.format("不能进入目录：[%s]," + "请确认您的配置项path:[%s]存在，且配置的用户有权限进入", subPath,
+								eachPath);
 						LOG.error(message);
 						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 					}
-					
+
 				} else if (isDirExist(sftp, eachPath)) {
 					// path是目录
 					if (eachPath.charAt(pathLen - 1) == '/') {
@@ -164,12 +183,12 @@ public class SftpUtil {
 					}
 				} else if (isFileExist(sftp, eachPath)) {
 					// path指向具体文件
-						if (!sourceFiles.contains(eachPath)) {
-							sourceFiles.add(eachPath);
-						}
-						continue;
-				}else{
-					String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取",eachPath);
+					if (!sourceFiles.contains(eachPath)) {
+						sourceFiles.add(eachPath);
+					}
+					continue;
+				} else {
+					String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", eachPath);
 					LOG.error(message);
 					throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 				}
@@ -193,18 +212,18 @@ public class SftpUtil {
 							if (!sourceFiles.contains(filePath)) {
 								sourceFiles.add(filePath);
 							}
-						}else{
-							String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取",filePath);
+						} else {
+							String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取", filePath);
 							LOG.error(message);
 							throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 						}
 
 					} // end for vector
-				} catch (SftpException e) {					
-					String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常",eachPath);
+				} catch (SftpException e) {
+					String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常", eachPath);
 					LOG.error(message);
 					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
-			}
+				}
 
 				// 处理子目录
 				listFiles(sftp, childDir, sourceFiles);

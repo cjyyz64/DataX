@@ -13,7 +13,7 @@ public enum FtpReaderErrorCode implements ErrorCode {
 	
 	FILE_NOT_EXISTS("FtpReader-04", "您配置的目录文件路径不存在或者没有权限读取."),
 	OPEN_FILE_WITH_CHARSET_ERROR("FtpReader-05", "您配置的文件编码和实际文件编码不符合."),
-	OPEN_FILE_ERROR("FtpReader-06", "您配置的文件在打开时异常,建议您检查源目录是否有隐藏文件,管道文件等特殊文件."),
+	OPEN_FILE_ERROR("FtpReader-06", "您配置的文件在打开时异常."),
 	READ_FILE_IO_ERROR("FtpReader-07", "您配置的文件在读取时出现IO异常."),
 	SECURITY_NOT_ENOUGH("FtpReader-08", "您缺少权限执行相应的文件操作."),
 	CONFIG_INVALID_EXCEPTION("FtpReader-09", "您的参数配置错误."),
