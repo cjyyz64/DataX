@@ -52,12 +52,12 @@
         <dependency>
             <groupId>com.alipay.oceanbase</groupId>
             <artifactId>oceanbase</artifactId>
-            <version>1.2.2</version>
+            <version>2.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
-            <version>0.2.26</version>
+            <version>1.0.15</version>
         </dependency>
         <dependency>
             <groupId>jparsec</groupId>
