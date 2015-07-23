@@ -40,6 +40,7 @@ public class DsCollectorTest {
         taskGroupStatus.setJobId(jobId);
         taskGroupStatus.setTaskGroupId(taskGroupId_1);
         taskGroupStatus.setTotalBytes(1024L);
+        taskGroupStatus.setState(State.FAILED);
         taskGroupStatusList.add(taskGroupStatus);
 
         Communication communication = new Communication();

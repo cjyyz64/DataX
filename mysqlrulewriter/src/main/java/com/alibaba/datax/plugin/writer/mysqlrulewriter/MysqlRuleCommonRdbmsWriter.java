@@ -160,7 +160,8 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
         public Map<String, Object> convertRecord2Map(Record record) {
             Map<String, Object> map = new HashMap<String, Object>();
             for (int i = 0; i < this.columnNumber; i++) {
-                String columnName = this.resultSetMetaData.getLeft().get(i);
+                //设置列名统一为小写，规则的#号内部的列名称也都要小写
+                String columnName = this.resultSetMetaData.getLeft().get(i).toLowerCase();
                 map.put(columnName, record.getColumn(i).getRawData());
             }
             return map;
