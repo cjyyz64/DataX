@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.writer.mysqlrulewriter.test;
 
+import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
@@ -8,13 +10,13 @@ import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.writer.mysqlrulewriter.MysqlRuleCommonRdbmsWriter;
 import com.alibaba.datax.plugin.writer.mysqlrulewriter.buffer.RuleWriterDbBuffer;
 import com.alibaba.datax.plugin.writer.mysqlrulewriter.groovy.GroovyRuleExecutor;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -38,6 +40,28 @@ public class MysqlRuleCommonRdbmsWriterTest {
         assertEquals((String) ReflectionTestUtils.getField(task, "dbRule"), "((#i1#).longValue() % 8).intdiv(4)");
         assertEquals((String) ReflectionTestUtils.getField(task, "tableNamePattern"), "mysql_writer_test_case00_{0}");
         assertEquals((String) ReflectionTestUtils.getField(task, "tableRule"), "((#i1#).longValue() % 8)");
+    }
+
+    @Test
+    public void testConvertRecord2Map() {
+        MysqlRuleCommonRdbmsWriter.Task task = new MysqlRuleCommonRdbmsWriter.Task(DataBaseType.MySql);
+
+        Record r = new DefaultRecord();
+        r.addColumn(new StringColumn("aaa"));
+
+        List<String> columnList = new ArrayList<String>();
+        columnList.add("UPPER_CASE");
+
+        Triple<List<String>, List<Integer>, List<String>> resultSetMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
+                columnList, new ArrayList<Integer>(),
+                new ArrayList<String>());
+
+
+        ReflectionTestUtils.setField(task, "resultSetMetaData", resultSetMetaData);
+        ReflectionTestUtils.setField(task, "columnNumber", 1);
+        Map<String,Object> map = task.convertRecord2Map(r);
+
+        assertEquals(map.get("upper_case"), "aaa");
     }
 
     @Test
