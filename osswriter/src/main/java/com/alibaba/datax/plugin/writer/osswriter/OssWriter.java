@@ -225,6 +225,7 @@ public class OssWriter extends Writer {
         private char fieldDelimiter;
         private String dateFormat;
         private String fileFormat;
+        private List<String> header;
 
         @Override
         public void init() {
@@ -250,6 +251,10 @@ public class OssWriter extends Writer {
                     .getString(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.FILE_FORMAT,
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.FILE_FORMAT_TEXT);
+            this.header = this.writerSliceConfig
+                    .getList(
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.HEADER,
+                            null, String.class);
         }
 
         @Override
@@ -270,6 +275,11 @@ public class OssWriter extends Writer {
             Record record = null;
             List<PartETag> partETags = new ArrayList<PartETag>();
             try {
+                if (null != this.header && !this.header.isEmpty()) {
+                    sb.append(UnstructuredStorageWriterUtil
+                            .doTransportOneRecord(this.header,
+                                    this.fieldDelimiter, this.fileFormat));
+                }
                 while ((record = lineReceiver.getFromReader()) != null) {
                     MutablePair<String, Boolean> transportResult = UnstructuredStorageWriterUtil
                             .transportOneRecord(record, nullFormat, dateFormat,
