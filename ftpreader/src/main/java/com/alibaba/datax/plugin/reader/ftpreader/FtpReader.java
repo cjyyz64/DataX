@@ -1,12 +1,10 @@
 package com.alibaba.datax.plugin.reader.ftpreader;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.commons.net.ftp.FTPClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,8 +13,6 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.SftpException;
 
 /**
  * 
@@ -46,11 +42,7 @@ public class FtpReader extends Reader {
 		private String connectPattern;
 		private int maxTraversalLevel;
 
-		SftpUtil sftpUtil = null;
-		private ChannelSftp sftp = null;;
-
-		StandardFtpUtil standardFtpUtil = null;
-		FTPClient ftpClient = null;
+		private FtpHelper ftpHelper = null;
 
 		@Override
 		public void init() {
@@ -63,14 +55,13 @@ public class FtpReader extends Reader {
 			if ("sftp".equals(protocol)) {
 				//sftp协议
 				this.port = originConfig.getInt(Key.PORT, 22);
-				this.sftpUtil = new SftpUtil();
-				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
+				this.ftpHelper = new SftpHelper();
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = originConfig.getInt(Key.PORT, 21);
-				this.standardFtpUtil = new StandardFtpUtil();
-				ftpClient = standardFtpUtil.connectServer(host, username, password, port, timeout, connectPattern);
-			}
+				this.ftpHelper = new StandardFtpHelper();
+			}		
+			ftpHelper.LoginFtpServer(host, username, password, port, timeout, connectPattern);
 
 		}
 
@@ -121,14 +112,9 @@ public class FtpReader extends Reader {
 		@Override
 		public void prepare() {
 			LOG.debug("prepare() begin...");
-			// warn:make sure this regex string
-			// warn:no need trim
-			if ("sftp".equals(protocol)) {
-				this.sourceFiles = sftpUtil.getAllFiles(sftp, path, 0, maxTraversalLevel);
-			} else if ("ftp".equals(protocol)) {
-				this.sourceFiles = standardFtpUtil.getAllFiles(ftpClient, path, 0, maxTraversalLevel);
-			}
-
+			
+			this.sourceFiles = ftpHelper.getAllFiles(path, 0, maxTraversalLevel);
+			
 			LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
 		}
 
@@ -138,11 +124,7 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			if ("sftp".equals(protocol)) {
-				sftpUtil.closeChannel(sftp);
-			} else if ("ftp".equals(protocol)) {
-				standardFtpUtil.closeServer(ftpClient);
-			}
+			ftpHelper.LogoutFtpServer();
 		}
 
 		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定此意图
@@ -200,11 +182,7 @@ public class FtpReader extends Reader {
 		private Configuration readerSliceConfig;
 		private List<String> sourceFiles;
 
-		private SftpUtil sftpUtil = null;
-		private ChannelSftp sftp = null;;
-
-		private StandardFtpUtil ftpUtil = null;
-		private FTPClient ftpClient = null;
+		private FtpHelper ftpHelper = null;
 
 		@Override
 		public void init() {//连接重试
@@ -219,16 +197,16 @@ public class FtpReader extends Reader {
 			this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
 
 			if ("sftp".equals(protocol)) {
+				//sftp协议
 				this.port = readerSliceConfig.getInt(Key.PORT, 22);
-				this.sftpUtil = new SftpUtil();
-				sftp = sftpUtil.getChannel(host, username, password, port, timeout);
+				this.ftpHelper = new SftpHelper();
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
 				this.port = readerSliceConfig.getInt(Key.PORT, 21);
 				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN, "PASV");// 默认为被动模式
-				this.ftpUtil = new StandardFtpUtil();
-				ftpClient = ftpUtil.connectServer(host, username, password, port, timeout, connectPattern);
-			}
+				this.ftpHelper = new StandardFtpHelper();
+			}	
+			ftpHelper.LoginFtpServer(host, username, password, port, timeout, connectPattern);
 
 		}
 
@@ -244,18 +222,7 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			if ("sftp".equals(protocol)) {
-				sftpUtil.closeChannel(sftp);
-			} else if ("ftp".equals(protocol)) {
-				try {
-					ftpClient.completePendingCommand();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				ftpUtil.closeServer(ftpClient);
-			}
-
+			ftpHelper.LogoutFtpServer();
 		}
 
 		@Override
@@ -264,26 +231,9 @@ public class FtpReader extends Reader {
 			for (String fileName : this.sourceFiles) {
 				LOG.info(String.format("reading file : [%s]", fileName));
 				InputStream inputStream = null;
-
-				// inputStream = new FileInputStream(fileName);
-				if ("sftp".equals(protocol)) {
-					try {
-						inputStream = sftp.get(fileName);
-					} catch (SftpException e) {
-						String message = String.format("找不到待读取的文件 : [%s],请确认文件：[%s]存在且配置的用户有权限读取", fileName, fileName);
-						LOG.error(message);
-						throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);
-					}
-				} else if ("ftp".equals(protocol)) {
-					try {
-						inputStream = ftpClient.retrieveFileStream(fileName);
-					} catch (IOException e) {
-						String message = String.format("找不到待读取的文件 : [%s],请确认文件：[%s]存在且配置的用户有权限读取", fileName, fileName);
-						LOG.error(message);
-						throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);
-					}
-				}
-
+				
+				inputStream = ftpHelper.getInputStream(fileName);
+	
 				UnstructuredStorageReaderUtil.readFromStream(inputStream, fileName, this.readerSliceConfig,
 						recordSender, this.getTaskPluginCollector());
 				recordSender.flush();

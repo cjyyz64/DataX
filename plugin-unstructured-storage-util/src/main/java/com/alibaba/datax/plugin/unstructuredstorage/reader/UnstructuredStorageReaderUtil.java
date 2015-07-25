@@ -548,7 +548,29 @@ public class UnstructuredStorageReaderUtil {
 
 	}
 	
-	
+	/**
+	 * 
+	* @Title: getRegexPathParent 
+	* @Description: TODO 获取正则表达式目录的父目录
+	* @param @param regexPath
+	* @param @return     
+	* @return String 
+	* @throws
+	 */
+	public static String getRegexPathParent(String regexPath){
+		int endMark;
+		for (endMark = 0; endMark < regexPath.length(); endMark++) {
+			if ('*' != regexPath.charAt(endMark) && '?' != regexPath.charAt(endMark)) {
+				continue;
+			} else {
+				break;
+			}
+		}
+		int lastDirSeparator = regexPath.substring(0, endMark).lastIndexOf(IOUtils.DIR_SEPARATOR);
+		String parentPath  = regexPath.substring(0,lastDirSeparator + 1);
+		
+		return  parentPath;	
+	}
 	
 	
 	
