@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +24,7 @@ import com.jcraft.jsch.SftpException;
 /**
  * 
  * @ClassName: SftpUtil
- * @Description: TODO
+ * @Description: 通过sftp协议连接ftp服务器的工具类
  * @author hanfa.shf@alibaba-inc.com
  * @date 2015年7月6日 下午4:25:50
  *
@@ -33,13 +34,20 @@ public class SftpUtil {
 
 	Session session = null;
 	Channel channel = null;
-
-	/*
-	 * private static class SftpUtilHolder { private static final SftpUtil
-	 * INSTANCE = new SftpUtil(); } private SftpUtil(){} public static final
-	 * SftpUtil getInstance() { return SftpUtilHolder.INSTANCE; }
+	
+	/**
+	 * 
+	* @Title: getChannel 
+	* @Description: 通过sftp协议与ftp服务器建立连接 
+	* @param @param host
+	* @param @param username
+	* @param @param password
+	* @param @param port
+	* @param @param timeout
+	* @param @return     
+	* @return ChannelSftp 返回连接了ftp服务器的手柄
+	* @throws
 	 */
-
 	public ChannelSftp getChannel(String host, String username, String password, int port, int timeout) {
 		JSch jsch = new JSch(); // 创建JSch对象
 		try {
@@ -93,7 +101,14 @@ public class SftpUtil {
 		return (ChannelSftp) channel;
 	}
 
-	// 关闭sftp连接
+	/**
+	 * 
+	* @Title: closeChannel 
+	* @Description: 与ftp服务器断开连接
+	* @param @param sftp  连接了ftp服务器的手柄
+	* @return void 
+	* @throws
+	 */
 	public void closeChannel(ChannelSftp sftp) {
 		if (sftp != null) {
 			sftp.disconnect();
@@ -102,17 +117,23 @@ public class SftpUtil {
 			session.disconnect();
 		}
 	}
-
-	// 判断目录是否存在
+	
+	/**
+	 * 
+	* @Title: isDirExist 
+	* @Description: 判断指定路径的目录是否存在
+	* @param @param sftp 连接了ftp服务器的手柄
+	* @param @param directory
+	* @param @return     
+	* @return boolean 
+	* @throws
+	 */
 	public boolean isDirExist(ChannelSftp sftp, String directory) {
-		boolean isDirExistFlag = false;
 		try {
 			SftpATTRS sftpATTRS = sftp.lstat(directory);
-			isDirExistFlag = true;
 			return sftpATTRS.isDir();
 		} catch (SftpException e) {
 			if (e.getMessage().toLowerCase().equals("no such file")) {
-				isDirExistFlag = false;
 				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", directory);
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
@@ -123,7 +144,16 @@ public class SftpUtil {
 		}
 	}
 
-	// 判断文件是否存在
+	/**
+	 * 
+	* @Title: isFileExist 
+	* @Description: 判断指定路径的文件是否存在，通过文件大小判断
+	* @param @param sftp 连接了ftp服务器的手柄
+	* @param @param srcSftpFilePath
+	* @param @return     
+	* @return boolean 
+	* @throws
+	 */
 	public boolean isFileExist(ChannelSftp sftp, String srcSftpFilePath) {
 		boolean isExitFlag = false;
 		// 文件大于等于0则存在文件
@@ -133,8 +163,44 @@ public class SftpUtil {
 		}
 		return isExitFlag;
 	}
-
-	// 获取文件大小
+	
+	/**
+	 * 
+	* @Title: isLink 
+	* @Description: 判断指定路径的文件是否是链接
+	* @param @param sftp
+	* @param @param srcSftpFilePath
+	* @param @return     
+	* @return boolean 
+	* @throws
+	 */
+	public boolean isLink(ChannelSftp sftp, String srcSftpFilePath) {
+		try {
+			SftpATTRS sftpATTRS = sftp.lstat(srcSftpFilePath);
+			return sftpATTRS.isLink();
+		} catch (SftpException e) {
+			if (e.getMessage().toLowerCase().equals("no such file")) {
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", srcSftpFilePath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+			} else {
+				String message = String.format("获取文件：[%s] 属性时发生I/O异常,请确认与ftp服务器的连接正常", srcSftpFilePath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+			}
+		}
+	}
+	
+	/**
+	 * 
+	* @Title: getFileSize 
+	* @Description: 获取指定路径文件的大小 
+	* @param @param sftp 连接了ftp服务器的手柄
+	* @param @param srcSftpFilePath
+	* @param @return     
+	* @return long 
+	* @throws
+	 */
 	public long getFileSize(ChannelSftp sftp, String srcSftpFilePath) {
 		long filesize = 0;// 文件大于等于0则存在
 		try {
@@ -156,83 +222,129 @@ public class SftpUtil {
 		return filesize;
 	}
 
-	// 获取路径下所有文件的绝对路径
-	public void listFiles(ChannelSftp sftp, List<String> srcPaths, HashSet<String> sourceFiles) {
-		if (!srcPaths.isEmpty()) {
-			for (String eachPath : srcPaths) {
-				String parentPath = null;// 父级目录,以'/'结尾
-				int pathLen = eachPath.length();
-				if (eachPath.contains("*") || eachPath.contains("?")) {
-					// 处理正则表达式
-					int mark = eachPath.lastIndexOf('/');
-					String subPath = eachPath.substring(0, mark + 1);
-					if (isDirExist(sftp, subPath)) {
-						parentPath = subPath;
+	/**
+	 * 
+	* @Title: getListFiles 
+	* @Description: 获取指定路径下符合条件的所有文件的绝对路径  
+	* @param @param sftp 连接了ftp服务器的手柄
+	* @param @param eachPath 指定路径
+	* @param @param parentLevel 父目录的递归层数（首次为0）
+	* @param @param maxTraversalLevel 允许的最大递归层数
+	* @param @return     
+	* @return HashSet<String> 
+	* @throws
+	 */
+	HashSet<String> sourceFiles = new HashSet<String>();
+	public HashSet<String> getListFiles(ChannelSftp sftp, String eachPath, int parentLevel, int maxTraversalLevel) {
+		if(parentLevel < maxTraversalLevel){
+			String parentPath = null;// 父级目录,以'/'结尾
+			int pathLen = eachPath.length();
+			if (eachPath.contains("*") || eachPath.contains("?")) {//*和？的限制
+				// path是正则表达式
+				int endMark;
+				for (endMark = 0; endMark < pathLen; endMark++) {
+					if ('*' != eachPath.charAt(endMark) && '?' != eachPath.charAt(endMark)) {
+						continue;
 					} else {
-						String message = String.format("不能进入目录：[%s]," + "请确认您的配置项path:[%s]存在，且配置的用户有权限进入", subPath,
-								eachPath);
-						LOG.error(message);
-						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+						break;
 					}
-
-				} else if (isDirExist(sftp, eachPath)) {
-					// path是目录
-					if (eachPath.charAt(pathLen - 1) == '/') {
-						parentPath = eachPath;
-					} else {
-						parentPath = eachPath + "/";
-					}
-				} else if (isFileExist(sftp, eachPath)) {
-					// path指向具体文件
-					if (!sourceFiles.contains(eachPath)) {
-						sourceFiles.add(eachPath);
-					}
-					continue;
+				}
+				int lastDirSeparator = eachPath.substring(0, endMark).lastIndexOf(IOUtils.DIR_SEPARATOR);
+				String subPath  = eachPath.substring(0,lastDirSeparator + 1);
+				if (isDirExist(sftp, subPath)) {
+					parentPath = subPath;
 				} else {
-					String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", eachPath);
+					String message = String.format("不能进入目录：[%s]," + "请确认您的配置项path:[%s]存在，且配置的用户有权限进入", subPath,
+							eachPath);
 					LOG.error(message);
 					throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
 				}
-
-				Vector vector;
-				ArrayList<String> childDir = new ArrayList<String>();// 存放子目录
-				try {
-					vector = sftp.ls(eachPath);
-					for (int i = 0; i < vector.size(); i++) {
-						LsEntry le = (LsEntry) vector.get(i);
-						String strName = le.getFilename();
-						String filePath = parentPath + strName;
-
-						if (isDirExist(sftp, filePath)) {
-							// 是子目录
-							if (!(strName.equals(".") || strName.equals(".."))) {
-								childDir.add(filePath);
-							}
-						} else if (isFileExist(sftp, filePath)) {
-							// 是文件
-							if (!sourceFiles.contains(filePath)) {
-								sourceFiles.add(filePath);
-							}
-						} else {
-							String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取", filePath);
-							LOG.error(message);
-							throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
-						}
-
-					} // end for vector
-				} catch (SftpException e) {
-					String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常", eachPath);
-					LOG.error(message);
-					throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+	
+			} else if (isDirExist(sftp, eachPath)) {
+				// path是目录
+				if (eachPath.charAt(pathLen - 1) == IOUtils.DIR_SEPARATOR) {
+					parentPath = eachPath;
+				} else {
+					parentPath = eachPath + IOUtils.DIR_SEPARATOR;
 				}
-
-				// 处理子目录
-				listFiles(sftp, childDir, sourceFiles);
-
-			} // end for eachPath
-
-		} // end if
+			} else if(isLink(sftp, eachPath)){
+				//path是链接文件
+				String message = String.format("文件:[%s]是链接文件，当前不支持链接文件的读取", eachPath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.LINK_FILE, message);
+			}else if (isFileExist(sftp, eachPath)) {
+				// path指向具体文件
+				sourceFiles.add(eachPath);
+				return sourceFiles;
+			} else {
+				String message = String.format("请确认您的配置项path:[%s]存在，且配置的用户有权限读取", eachPath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+			}
+	
+			try {
+				Vector vector = sftp.ls(eachPath);
+				for (int i = 0; i < vector.size(); i++) {
+					LsEntry le = (LsEntry) vector.get(i);
+					String strName = le.getFilename();
+					String filePath = parentPath + strName;
+	
+					if (isDirExist(sftp, filePath)) {
+						// 是子目录
+						if (!(strName.equals(".") || strName.equals(".."))) {
+							//递归处理
+							getListFiles(sftp, filePath, parentLevel+1, maxTraversalLevel);
+						}
+					} else if(isLink(sftp, filePath)){
+						//是链接文件
+						String message = String.format("文件:[%s]是链接文件，当前不支持链接文件的读取", filePath);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.LINK_FILE, message);
+					}else if (isFileExist(sftp, filePath)) {
+						// 是文件
+						sourceFiles.add(filePath);
+					} else {
+						String message = String.format("请确认path:[%s]存在，且配置的用户有权限读取", filePath);
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.FILE_NOT_EXISTS, message);
+					}
+	
+				} // end for vector
+			} catch (SftpException e) {
+				String message = String.format("获取path：[%s] 下文件列表时发生I/O异常,请确认与ftp服务器的连接正常", eachPath);
+				LOG.error(message);
+				throw DataXException.asDataXException(FtpReaderErrorCode.COMMAND_FTP_IO_EXCEPTION, message, e);
+			}
+			
+			return sourceFiles;
+		}else{
+			//超出最大递归层数
+			String message = String.format("获取path：[%s] 下文件列表时超出最大层数,请确认路径[%s]下不存在软连接文件", eachPath, eachPath);
+			LOG.error(message);
+			throw DataXException.asDataXException(FtpReaderErrorCode.OUT_MAX_DIRECTORY_LEVEL, message);
+		}
 
 	}
-
+	/**
+	 * 
+	* @Title: getAllFiles 
+	* @Description: 获取指定路径列表下符合条件的所有文件的绝对路径
+	* @param @param sftp
+	* @param @param srcPaths
+	* @param @param parentLevel
+	* @param @param maxTraversalLevel
+	* @param @return     
+	* @return HashSet<String> 
+	* @throws
+	 */
+	public HashSet<String> getAllFiles(ChannelSftp sftp, List<String> srcPaths, int parentLevel, int maxTraversalLevel){
+		HashSet<String> sourceAllFiles = new HashSet<String>();
+		if (!srcPaths.isEmpty()) {
+			for (String eachPath : srcPaths) {
+				sourceAllFiles.addAll(getListFiles(sftp, eachPath, parentLevel, maxTraversalLevel));
+			}
+		}
+		return sourceAllFiles;
+	}
+	
 }

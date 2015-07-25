@@ -1,11 +1,17 @@
 package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
-import com.alibaba.datax.common.element.*;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
-import com.alibaba.datax.common.util.Configuration;
-import com.csvreader.CsvReader;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Scanner;
 
 import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
@@ -25,16 +31,24 @@ import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Scanner;
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.util.Configuration;
+import com.csvreader.CsvReader;
 
 public class UnstructuredStorageReaderUtil {
 	private static final Logger LOG = LoggerFactory
@@ -446,6 +460,98 @@ public class UnstructuredStorageReaderUtil {
 	private enum Type {
 		STRING, LONG, BOOLEAN, DOUBLE, DATE, ;
 	}
+	
+	/**
+     * check parameter:encoding, compress, filedDelimiter
+     * */
+	public static void validateParameter(Configuration readerConfiguration) {
+	
+		// encoding check
+		 String encoding = readerConfiguration.getUnnecessaryValue(
+					com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+					com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING,null);
+		 try {
+             encoding = encoding.trim();
+             readerConfiguration.set(Key.ENCODING, encoding);
+             Charsets.toCharset(encoding);
+         } catch (UnsupportedCharsetException uce) {
+				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+						String.format("不支持您配置的编码格式 : [%s]", encoding), uce);
+		} catch (Exception e) {
+				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.CONFIG_INVALID_EXCEPTION,
+						String.format("编码配置异常, 请联系我们: %s", e.getMessage()), e);
+		}
+		 
+		 //only support compress types
+		 String compress =readerConfiguration
+					.getUnnecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,null,null);
+			if(compress != null){
+				compress = compress.toLowerCase().trim();
+				boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress);
+				if (!compressTag) {
+					throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+							String.format("仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]", compress));
+				}
+			}		
+			readerConfiguration.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS, compress);
+			
+			//fieldDelimiter check
+			String delimiterInStr = readerConfiguration.getNecessaryValue(
+					com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER, UnstructuredStorageReaderErrorCode.REQUIRED_VALUE);
+				// warn: if have, length must be one
+			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
+				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+						String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
+			}
+			
+			
+			// column: 1. index type 2.value type 3.when type is Date, may have
+			// format
+			List<Configuration> columns = readerConfiguration
+					.getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+			if (null == columns || columns.size() == 0) {
+				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.REQUIRED_VALUE, "您需要指定 columns");
+			}
+			// handle ["*"]
+			if (null != columns && 1 == columns.size()) {
+				String columnsInStr = columns.get(0).toString();
+				if ("\"*\"".equals(columnsInStr) || "'*'".equals(columnsInStr)) {
+					readerConfiguration.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN, null);
+					columns = null;
+				}
+			}
+	
+			if (null != columns && columns.size() != 0) {
+				for (Configuration eachColumnConf : columns) {
+					eachColumnConf.getNecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE,
+							UnstructuredStorageReaderErrorCode.REQUIRED_VALUE);
+					Integer columnIndex = eachColumnConf
+							.getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.INDEX);
+					String columnValue = eachColumnConf
+							.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.VALUE);
+	
+					if (null == columnIndex && null == columnValue) {
+						throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.NO_INDEX_VALUE,
+								"由于您配置了type, 则至少需要配置 index 或 value");
+					}
+	
+					if (null != columnIndex && null != columnValue) {
+						throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.MIXED_INDEX_VALUE,
+								"您混合配置了index, value, 每一列同时仅能选择其中一种");
+					}
+					if (null != columnIndex && columnIndex < 0) {
+						throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+								String.format("index需要大于等于0, 您配置的index为[%s]", columnIndex));
+					}
+				}
+			}
+
+	}
+	
+	
+	
+	
+	
 
 	public static void main(String args[]) {
 		while (true) {
