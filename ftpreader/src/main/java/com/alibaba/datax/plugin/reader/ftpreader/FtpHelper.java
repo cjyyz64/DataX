@@ -8,7 +8,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: LoginFtpServer 
-	* @Description: TODO 与ftp服务器建立连接
+	* @Description: 与ftp服务器建立连接
 	* @param @param host
 	* @param @param username
 	* @param @param password
@@ -18,20 +18,21 @@ public abstract class FtpHelper {
 	* @return void 
 	* @throws
 	 */
-	public abstract void LoginFtpServer(String host, String username, String password, int port, int timeout,String connectMode) ;
+	public abstract void loginFtpServer(String host, String username, String password, int port, int timeout,String connectMode) ;
 	/**
 	 * 
 	* @Title: LogoutFtpServer 
-	* @Description: TODO 断开与ftp服务器的连接 
+	* todo 方法名首字母
+	* @Description: 断开与ftp服务器的连接 
 	* @param      
 	* @return void 
 	* @throws
 	 */
-	public abstract void LogoutFtpServer();
+	public abstract void logoutFtpServer();
 	/**
 	 * 
 	* @Title: isDirExist 
-	* @Description: TODO 判断指定路径是否是目录
+	* @Description: 判断指定路径是否是目录
 	* @param @param directoryPath
 	* @param @return     
 	* @return boolean 
@@ -41,7 +42,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: isFileExist 
-	* @Description: TODO 判断指定路径是否是文件
+	* @Description: 判断指定路径是否是文件
 	* @param @param filePath
 	* @param @return     
 	* @return boolean 
@@ -51,7 +52,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: isSymbolicLink 
-	* @Description: TODO 判断指定路径是否是软链接
+	* @Description: 判断指定路径是否是软链接
 	* @param @param filePath
 	* @param @return     
 	* @return boolean 
@@ -61,7 +62,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: getListFiles 
-	* @Description: TODO 递归获取指定路径下符合条件的所有文件绝对路径
+	* @Description: 递归获取指定路径下符合条件的所有文件绝对路径
 	* @param @param directoryPath
 	* @param @param parentLevel 父目录的递归层数（首次为0）
 	* @param @param maxTraversalLevel 允许的最大递归层数
@@ -74,7 +75,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: getInputStream 
-	* @Description: TODO 获取指定路径的输入流
+	* @Description: 获取指定路径的输入流
 	* @param @param filePath
 	* @param @return     
 	* @return InputStream 
@@ -85,7 +86,7 @@ public abstract class FtpHelper {
 	/**
 	 * 
 	* @Title: getAllFiles 
-	* @Description: TODO 获取指定路径列表下符合条件的所有文件的绝对路径  
+	* @Description: 获取指定路径列表下符合条件的所有文件的绝对路径  
 	* @param @param srcPaths 路径列表
 	* @param @param parentLevel 父目录的递归层数（首次为0）
 	* @param @param maxTraversalLevel 允许的最大递归层数

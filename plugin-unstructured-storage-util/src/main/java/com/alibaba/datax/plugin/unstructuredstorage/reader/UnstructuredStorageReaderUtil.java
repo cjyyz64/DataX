@@ -551,7 +551,7 @@ public class UnstructuredStorageReaderUtil {
 	/**
 	 * 
 	* @Title: getRegexPathParent 
-	* @Description: TODO 获取正则表达式目录的父目录
+	* @Description: 获取正则表达式目录的父目录
 	* @param @param regexPath
 	* @param @return     
 	* @return String 
@@ -571,7 +571,26 @@ public class UnstructuredStorageReaderUtil {
 		
 		return  parentPath;	
 	}
-	
+	/**
+	 * 
+	* @Title: getRegexPathParentPath 
+	* @Description: 获取含有通配符路径的父目录，目前只支持在最后一级目录使用通配符*或者?.
+	* (API jcraft.jsch.ChannelSftp.ls(String path)函数限制)  http://epaul.github.io/jsch-documentation/javadoc/
+	* @param @param regexPath
+	* @param @return     
+	* @return String 
+	* @throws
+	 */
+	public static String getRegexPathParentPath(String regexPath){
+		int lastDirSeparator = regexPath.lastIndexOf(IOUtils.DIR_SEPARATOR);
+		String parentPath = "";
+		parentPath = regexPath.substring(0,lastDirSeparator + 1);
+		if(parentPath.contains("*") || parentPath.contains("?")){
+			throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
+					String.format("配置项目path中：[%s]不合法，目前只支持在最后一级目录使用通配符*或者?", regexPath));
+		}
+		return  parentPath;	
+	}
 	
 	
 

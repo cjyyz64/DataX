@@ -26,9 +26,8 @@ public class SftpHelper extends FtpHelper {
 	Session session = null;
 	ChannelSftp channelSftp = null;
 	@Override
-	public void LoginFtpServer(String host, String username, String password, int port, int timeout,
+	public void loginFtpServer(String host, String username, String password, int port, int timeout,
 			String connectMode) {
-		// TODO Auto-generated method stub
 		JSch jsch = new JSch(); // 创建JSch对象
 		try {
 			session = jsch.getSession(username, host, port);
@@ -48,6 +47,10 @@ public class SftpHelper extends FtpHelper {
 
 			channelSftp = (ChannelSftp) session.openChannel("sftp"); // 打开SFTP通道
 			channelSftp.connect(); // 建立SFTP通道的连接
+			
+			//设置命令传输编码
+			//String fileEncoding = System.getProperty("file.encoding");
+			//channelSftp.setFilenameEncoding(fileEncoding);		
 		} catch (JSchException e) {
 			if(null != e.getCause()){
 				String cause = e.getCause().toString();
@@ -81,8 +84,7 @@ public class SftpHelper extends FtpHelper {
 	}
 
 	@Override
-	public void LogoutFtpServer() {
-		// TODO Auto-generated method stub
+	public void logoutFtpServer() {
 		if (channelSftp != null) {
 			channelSftp.disconnect();
 		}
@@ -93,7 +95,6 @@ public class SftpHelper extends FtpHelper {
 
 	@Override
 	public boolean isDirExist(String directoryPath) {
-		// TODO Auto-generated method stub
 		try {
 			SftpATTRS sftpATTRS = channelSftp.lstat(directoryPath);
 			return sftpATTRS.isDir();
@@ -111,7 +112,6 @@ public class SftpHelper extends FtpHelper {
 
 	@Override
 	public boolean isFileExist(String filePath) {
-		// TODO Auto-generated method stub
 		boolean isExitFlag = false;	
 		try {
 			SftpATTRS sftpATTRS = channelSftp.lstat(filePath);			
@@ -134,7 +134,6 @@ public class SftpHelper extends FtpHelper {
 
 	@Override
 	public boolean isSymbolicLink(String filePath) {
-		// TODO Auto-generated method stub
 		try {
 			SftpATTRS sftpATTRS = channelSftp.lstat(filePath);
 			return sftpATTRS.isLink();
@@ -154,13 +153,12 @@ public class SftpHelper extends FtpHelper {
 	HashSet<String> sourceFiles = new HashSet<String>();
 	@Override
 	public HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
-		// TODO Auto-generated method stub
 		if(parentLevel < maxTraversalLevel){
 			String parentPath = null;// 父级目录,以'/'结尾
 			int pathLen = directoryPath.length();
 			if (directoryPath.contains("*") || directoryPath.contains("?")) {//*和？的限制
 				// path是正则表达式
-				String subPath  = UnstructuredStorageReaderUtil.getRegexPathParent(directoryPath);
+				String subPath  = UnstructuredStorageReaderUtil.getRegexPathParentPath(directoryPath);
 				if (isDirExist(subPath)) {
 					parentPath = subPath;
 				} else {
@@ -237,11 +235,9 @@ public class SftpHelper extends FtpHelper {
 
 	@Override
 	public InputStream getInputStream(String filePath) {
-		// TODO Auto-generated method stub
 		try {
 			return channelSftp.get(filePath);
 		} catch (SftpException e) {
-			// TODO Auto-generated catch block
 			String message = String.format("读取文件 : [%s] 时出错,请确认文件：[%s]存在且配置的用户有权限读取", filePath, filePath);
 			LOG.error(message);
 			throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);

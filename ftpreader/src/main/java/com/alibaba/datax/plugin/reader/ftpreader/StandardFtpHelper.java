@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.HashSet;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPClientConfig;
 import org.apache.commons.net.ftp.FTPFile;
@@ -22,9 +23,8 @@ public class StandardFtpHelper extends FtpHelper {
 	FTPClient ftpClient = null;
 
 	@Override
-	public void LoginFtpServer(String host, String username, String password, int port, int timeout,
+	public void loginFtpServer(String host, String username, String password, int port, int timeout,
 			String connectMode) {
-		// TODO Auto-generated method stub
 		ftpClient = new FTPClient();
 		try {
 			// 连接
@@ -48,6 +48,9 @@ public class StandardFtpHelper extends FtpHelper {
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_LOGIN, message);
 			}
+			//设置命令传输编码
+			String fileEncoding = System.getProperty("file.encoding");
+			ftpClient.setControlEncoding(fileEncoding);
 		} catch (UnknownHostException e) {
 			String message = String.format("请确认ftp服务器地址是否正确，无法连接到地址为: [%s] 的ftp服务器", host);
 			LOG.error(message);
@@ -66,8 +69,7 @@ public class StandardFtpHelper extends FtpHelper {
 	}
 
 	@Override
-	public void LogoutFtpServer() {
-		// TODO Auto-generated method stub
+	public void logoutFtpServer() {
 		if (ftpClient.isConnected()) {
 			try {
 				//ftpClient.completePendingCommand();//打开流操作之后必须，原因还需要深究
@@ -83,9 +85,8 @@ public class StandardFtpHelper extends FtpHelper {
 
 	@Override
 	public boolean isDirExist(String directoryPath) {
-		// TODO Auto-generated method stub
 		try {
-			return ftpClient.changeWorkingDirectory(directoryPath);
+			return ftpClient.changeWorkingDirectory(new String(directoryPath.getBytes(),FTP.DEFAULT_CONTROL_ENCODING));
 		} catch (IOException e) {
 			String message = String.format("进入目录：[%s]时发生I/O异常,请确认与ftp服务器的连接正常", directoryPath);
 			LOG.error(message);
@@ -95,10 +96,9 @@ public class StandardFtpHelper extends FtpHelper {
 
 	@Override
 	public boolean isFileExist(String filePath) {
-		// TODO Auto-generated method stub
 		boolean isExitFlag = false;
 		try {
-			FTPFile[] ftpFiles = ftpClient.listFiles(filePath);
+			FTPFile[] ftpFiles = ftpClient.listFiles(new String(filePath.getBytes(),FTP.DEFAULT_CONTROL_ENCODING));
 			if (ftpFiles.length == 1 && ftpFiles[0].isFile()) {
 				isExitFlag = true;
 			}
@@ -112,10 +112,9 @@ public class StandardFtpHelper extends FtpHelper {
 
 	@Override
 	public boolean isSymbolicLink(String filePath) {
-		// TODO Auto-generated method stub
 		boolean isExitFlag = false;
 		try {
-			FTPFile[] ftpFiles = ftpClient.listFiles(filePath);
+			FTPFile[] ftpFiles = ftpClient.listFiles(new String(filePath.getBytes(),FTP.DEFAULT_CONTROL_ENCODING));
 			if (ftpFiles.length == 1 && ftpFiles[0].isSymbolicLink()) {
 				isExitFlag = true;
 			}
@@ -130,13 +129,12 @@ public class StandardFtpHelper extends FtpHelper {
 	HashSet<String> sourceFiles = new HashSet<String>();
 	@Override
 	public HashSet<String> getListFiles(String directoryPath, int parentLevel, int maxTraversalLevel) {
-		// TODO Auto-generated method stub
 		if(parentLevel < maxTraversalLevel){
 			String parentPath = null;// 父级目录,以'/'结尾
 			int pathLen = directoryPath.length();
 			if (directoryPath.contains("*") || directoryPath.contains("?")) {
 				// path是正则表达式				
-				String subPath  = UnstructuredStorageReaderUtil.getRegexPathParent(directoryPath);
+				String subPath  = UnstructuredStorageReaderUtil.getRegexPathParentPath(directoryPath);
 				if (isDirExist(subPath)) {
 					parentPath = subPath;
 				} else {
@@ -168,7 +166,7 @@ public class StandardFtpHelper extends FtpHelper {
 			}
 
 			try {
-				FTPFile[] fs = ftpClient.listFiles(directoryPath);
+				FTPFile[] fs = ftpClient.listFiles(new String(directoryPath.getBytes(),FTP.DEFAULT_CONTROL_ENCODING));
 				for (FTPFile ff : fs) {
 					String strName = ff.getName();
 					String filePath = parentPath + strName;
@@ -208,11 +206,9 @@ public class StandardFtpHelper extends FtpHelper {
 
 	@Override
 	public InputStream getInputStream(String filePath) {
-		// TODO Auto-generated method stub
 		try {
-			return ftpClient.retrieveFileStream(filePath);
+			return ftpClient.retrieveFileStream(new String(filePath.getBytes(),FTP.DEFAULT_CONTROL_ENCODING));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			String message = String.format("读取文件 : [%s] 时出错,请确认文件：[%s]存在且配置的用户有权限读取", filePath, filePath);
 			LOG.error(message);
 			throw DataXException.asDataXException(FtpReaderErrorCode.OPEN_FILE_ERROR, message);

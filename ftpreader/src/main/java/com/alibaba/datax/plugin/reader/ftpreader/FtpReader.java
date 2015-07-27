@@ -54,18 +54,19 @@ public class FtpReader extends Reader {
 			
 			if ("sftp".equals(protocol)) {
 				//sftp协议
-				this.port = originConfig.getInt(Key.PORT, 22);
+				this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
 				this.ftpHelper = new SftpHelper();
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
-				this.port = originConfig.getInt(Key.PORT, 21);
+				this.port = originConfig.getInt(Key.PORT, Constant.DEFAULT_FTP_PORT);
 				this.ftpHelper = new StandardFtpHelper();
 			}		
-			ftpHelper.LoginFtpServer(host, username, password, port, timeout, connectPattern);
+			ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
 
 		}
 
 		private void validateParameter() {
+			//todo 常量
 			this.protocol = this.originConfig.getNecessaryValue(Key.PROTOCOL, FtpReaderErrorCode.REQUIRED_VALUE);
 			boolean ptrotocolTag = "ftp".equals(this.protocol) || "sftp".equals(this.protocol);
 			if (!ptrotocolTag) {
@@ -75,11 +76,11 @@ public class FtpReader extends Reader {
 			this.host = this.originConfig.getNecessaryValue(Key.HOST, FtpReaderErrorCode.REQUIRED_VALUE);
 			this.username = this.originConfig.getNecessaryValue(Key.USERNAME, FtpReaderErrorCode.REQUIRED_VALUE);
 			this.password = this.originConfig.getNecessaryValue(Key.PASSWORD, FtpReaderErrorCode.REQUIRED_VALUE);
-			this.timeout = originConfig.getInt(Key.TIMEOUT, 30000);
-			this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, 100);
+			this.timeout = originConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
+			this.maxTraversalLevel = originConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
 			
 			// only support connect pattern
-			this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, "PASV", null);
+			this.connectPattern = this.originConfig.getUnnecessaryValue(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN, null);
 			boolean connectPatternTag = "PORT".equals(connectPattern) || "PASV".equals(connectPattern);
 			if (!connectPatternTag) {
 				throw DataXException.asDataXException(FtpReaderErrorCode.ILLEGAL_VALUE,
@@ -124,7 +125,7 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			ftpHelper.LogoutFtpServer();
+			ftpHelper.logoutFtpServer();
 		}
 
 		// warn: 如果源目录为空会报错，拖空目录意图=>空文件显示指定此意图
@@ -192,21 +193,21 @@ public class FtpReader extends Reader {
 			this.protocol = readerSliceConfig.getString(Key.PROTOCOL);
 			this.username = readerSliceConfig.getString(Key.USERNAME);
 			this.password = readerSliceConfig.getString(Key.PASSWORD);
-			this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, 30000);
+			this.timeout = readerSliceConfig.getInt(Key.TIMEOUT, Constant.DEFAULT_TIMEOUT);
 
 			this.sourceFiles = this.readerSliceConfig.getList(Constant.SOURCE_FILES, String.class);
 
 			if ("sftp".equals(protocol)) {
 				//sftp协议
-				this.port = readerSliceConfig.getInt(Key.PORT, 22);
+				this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_SFTP_PORT);
 				this.ftpHelper = new SftpHelper();
 			} else if ("ftp".equals(protocol)) {
 				// ftp 协议
-				this.port = readerSliceConfig.getInt(Key.PORT, 21);
-				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN, "PASV");// 默认为被动模式
+				this.port = readerSliceConfig.getInt(Key.PORT, Constant.DEFAULT_FTP_PORT);
+				this.connectPattern = readerSliceConfig.getString(Key.CONNECTPATTERN, Constant.DEFAULT_FTP_CONNECT_PATTERN);// 默认为被动模式
 				this.ftpHelper = new StandardFtpHelper();
 			}	
-			ftpHelper.LoginFtpServer(host, username, password, port, timeout, connectPattern);
+			ftpHelper.loginFtpServer(host, username, password, port, timeout, connectPattern);
 
 		}
 
@@ -222,7 +223,7 @@ public class FtpReader extends Reader {
 
 		@Override
 		public void destroy() {
-			ftpHelper.LogoutFtpServer();
+			ftpHelper.logoutFtpServer();
 		}
 
 		@Override
