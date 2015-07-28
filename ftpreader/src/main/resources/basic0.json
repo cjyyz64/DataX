@@ -1,0 +1,41 @@
+{
+    "job": {
+        "setting": {},
+        "content": [
+            {
+                "reader": {
+                    "name": "TxtFileReader",
+                    "parameter": {
+                        "path": ["/tmp/a", "/tmp/b"],
+                        "column": [
+                            {
+                                "type": "int",
+                                "index": 0
+                            },
+                            {
+                                "type": "string",
+                                "value": "alibaba"
+                            },
+                            {
+                                "type": "date",
+                                "index": 1,
+                                "format": "yyyy-mm-dd"
+                            }
+                        ],
+                        "charset": "UTF-8",
+                        "fieldDelimiter": ",",
+                        "compress": "gzip"
+                    }
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/usr/dest/",
+                        "charset": "UTF-8",
+                        "fieldDelimiter": "\t",
+                    }
+                }
+            }
+        ]
+    }
+}

@@ -23,5 +23,6 @@ public class Key {
 	public static final String COMPRESS = "compress";
 
 	public static final String NULL_FORMAT = "nullFormat";
-
+	
+	
 }
