@@ -97,7 +97,7 @@ public class DrdsReaderSplitUtil {
         try {
             conn = DBUtil.getConnection(DataBaseType.DRDS, jdbcURL, username, password);
             rs = DBUtil.query(conn, "SHOW TOPOLOGY " + logicTable);
-            while (rs.next()) {
+            while (DBUtil.asyncResultSetNext(rs)) {
                 String groupName = rs.getString("GROUP_NAME");
                 String tableName = rs.getString("TABLE_NAME");
                 List<String> tables = topology.get(groupName);

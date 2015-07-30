@@ -5,12 +5,6 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.util.*;
-import com.alibaba.druid.sql.parser.ParserException;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
-import com.alibaba.datax.plugin.rdbms.util.RdbmsRangeSplitWrap;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -157,14 +151,14 @@ public class SingleTableSplitUtil {
                 if (isStringType(rsMetaData.getColumnType(1))) {
                     configuration
                             .set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
-                    while (rs.next()) {
+                    while (DBUtil.asyncResultSetNext(rs)) {
                         minMaxPK = new ImmutablePair<Object, Object>(
                                 rs.getString(1), rs.getString(2));
                     }
                 } else if (isLongType(rsMetaData.getColumnType(1))) {
                     configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
 
-                    while (rs.next()) {
+                    while (DBUtil.asyncResultSetNext(rs)) {
                         minMaxPK = new ImmutablePair<Object, Object>(
                                 rs.getString(1), rs.getString(2));
 

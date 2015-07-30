@@ -23,18 +23,11 @@ import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
-
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 
 public class TaskGroupContainer extends AbstractContainer {
     private static final Logger LOG = LoggerFactory
@@ -59,6 +52,8 @@ public class TaskGroupContainer extends AbstractContainer {
      * task收集器使用的类
      */
     private String taskCollectorClass;
+
+    private TaskMonitor taskMonitor = TaskMonitor.getInstance();
 
     public TaskGroupContainer(Configuration configuration) {
         super(configuration);
@@ -159,6 +154,10 @@ public class TaskGroupContainer extends AbstractContainer {
                         continue;
                     }
                     TaskExecutor taskExecutor = removeTask(runTasks, taskId);
+
+                    //上面从runTasks里移除了，因此对应在monitor里移除
+                    taskMonitor.removeTask(taskId);
+
                     //失败，看task是否支持failover，重试次数未超过最大限制
             		if(taskCommunication.getState() == State.FAILED){
                         taskFailedExecutorMap.put(taskId, taskExecutor);
@@ -230,6 +229,10 @@ public class TaskGroupContainer extends AbstractContainer {
 
                     iterator.remove();
                     runTasks.add(taskExecutor);
+
+                    //上面，增加task到runTasks列表，因此在monitor里注册。
+                    taskMonitor.registerTask(taskId, this.containerCommunicator.getCommunication(taskId));
+
                     taskFailedExecutorMap.remove(taskId);
                     LOG.info("taskGroup[{}] taskId[{}] attemptCount[{}] is started",
                             this.taskGroupId, taskId, attemptCount);
@@ -252,6 +255,12 @@ public class TaskGroupContainer extends AbstractContainer {
                             lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
 
                     lastReportTimeStamp = now;
+
+                    //taskMonitor对于正在运行的task，每reportIntervalInMillSec进行检查
+                    for(TaskExecutor taskExecutor:runTasks){
+                        taskMonitor.report(taskExecutor.getTaskId(),this.containerCommunicator.getCommunication(taskExecutor.getTaskId()));
+                    }
+
                 }
 
                 Thread.sleep(sleepIntervalInMillSec);
