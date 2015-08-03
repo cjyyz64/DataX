@@ -88,7 +88,7 @@ public class ReaderSplitUtilTest {
             originalConf = getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 
@@ -100,7 +100,7 @@ public class ReaderSplitUtilTest {
             getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 
@@ -112,7 +112,7 @@ public class ReaderSplitUtilTest {
             getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 
@@ -124,7 +124,7 @@ public class ReaderSplitUtilTest {
             getAndInitConfigFromClasspath("mysqlreader_dbName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库名称为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 
@@ -136,7 +136,7 @@ public class ReaderSplitUtilTest {
             getAndInitConfigFromClasspath("mysqlreader_userName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库用户名为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 
@@ -148,7 +148,7 @@ public class ReaderSplitUtilTest {
             getAndInitConfigFromClasspath("mysqlreader_userName_Err.json",dataBaseType);
         }catch (Exception e){
             System.out.println(e.getMessage());
-            Assert.assertTrue(e.getMessage().toString().contains("该数据库用户名为"));
+            Assert.assertTrue(e.getMessage().toString().contains("连接数据库失败"));
         }
     }
 

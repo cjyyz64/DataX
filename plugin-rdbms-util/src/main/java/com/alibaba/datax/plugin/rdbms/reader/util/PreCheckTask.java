@@ -39,7 +39,7 @@ public class PreCheckTask implements Callable<Boolean>{
     }
 
     @Override
-    public Boolean call() throws DataXException{
+    public Boolean call() throws DataXException {
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
         List<Object> splitPkSqls = this.connection.getList(Key.SPLIT_PK_SQL, Object.class);
@@ -77,7 +77,7 @@ public class PreCheckTask implements Callable<Boolean>{
                     if (splitPkSqls != null && !splitPkSqls.isEmpty()) {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql,dataBaseType);
-                        SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, splitPkId);
+                        SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
                     }
                 } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, splitPkSql);
