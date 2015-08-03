@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -58,6 +59,9 @@ public class PreCheckTask implements Callable<Boolean>{
                 String table = null;
                 if (tables != null && !tables.isEmpty()) {
                     table = tables.get(i).toString();
+                    if(table != null) {
+                        checkSelectPrivilege(conn, fetchSize, table);
+                    }
                 }
 
             /*verify query*/
@@ -87,5 +91,17 @@ public class PreCheckTask implements Callable<Boolean>{
             DBUtil.closeDBResources(null, conn);
         }
         return true;
+    }
+
+    private void checkSelectPrivilege(Connection conn, int fetchSize, String table) {
+        ResultSet rs = null;
+        String checkSql = "select * from " + table + " where 1 = 2";
+        try {
+            rs = DBUtil.query(conn, checkSql, fetchSize);
+        } catch (Exception e) {
+            throw RdbmsException.asQueryException(dataBaseType, e, checkSql, table, userName);
+        } finally {
+            DBUtil.closeDBResources(rs, null, null);
+        }
     }
 }
