@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Connection;
 import java.util.List;
 
 /**
@@ -38,6 +39,33 @@ public class ReaderSplitUtilTest {
         //单表按主键切分，切分数为n*2+1，在加上pk is null 的情况，一共为2*(n+1)份
         System.out.println(configList.size());
         Assert.assertEquals(configList.size(), 8);
+    }
+
+    @Test
+    public void testPrecheckSplitPk() throws Exception {
+
+        Connection conn = DBUtil.getConnectionWithoutRetry(DataBaseType.MySql, "jdbc:mysql://10.101.83.3:3306/datax_3_mysqlreader",
+                "root", "root");
+        String table = "bvt_case";
+        String username = "root";
+        String pkSql = "select MIN(id), MAX(id) from " + table;
+        SingleTableSplitUtil.precheckSplitPk(conn, pkSql, Integer.MIN_VALUE, table, username);
+
+        String pkSql2 = "select MIN(id,col1), MAX(id,col1) from " + table;
+        try {
+            SingleTableSplitUtil.precheckSplitPk(conn, pkSql2, Integer.MIN_VALUE, table, username);
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains("读取数据库数据失败. 请检查您的配置的"));
+        }
+
+        String pkSql3 = "select MIN(col7), MAX(col7) from " + table;
+        try {
+            SingleTableSplitUtil.precheckSplitPk(conn, pkSql3, Integer.MIN_VALUE, table, username);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            Assert.assertTrue(e.getMessage().contains("您填写的主键列不合法, DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型"));
+        }
+
     }
 
     @Test
