@@ -46,42 +46,44 @@ public class PreCheckTask implements Callable<Boolean>{
         Connection conn = DBUtil.getConnectionWithoutRetry(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
+        if(DataBaseType.MySql.equals(dataBaseType) || DataBaseType.DRDS.equals(dataBaseType)) {
+            fetchSize = Integer.MIN_VALUE;
+        }
         try{
-            for (int i=0;i<querySqls.size();i++){
+            for (int i=0;i<querySqls.size();i++) {
 
                 String splitPkSql = null;
                 String querySql = querySqls.get(i).toString();
 
                 String table = null;
-                if (tables != null && !tables.isEmpty()){
+                if (tables != null && !tables.isEmpty()) {
                     table = tables.get(i).toString();
                 }
 
             /*verify query*/
                 try {
-
                     DBUtil.sqlValid(querySql,dataBaseType);
-                    DBUtil.query(conn, querySql, fetchSize);
-                } catch (ParserException e){
+                } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, querySql);
-                }catch (Exception e) {
-                    throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table,userName);
+                } catch (Exception e) {
+                    throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, userName);
                 }
             /*verify splitPK*/
                 try{
-
-                    if (splitPkSqls != null && !splitPkSqls.isEmpty()){
+                    if (splitPkSqls != null && !splitPkSqls.isEmpty()) {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql,dataBaseType);
-                        DBUtil.query(conn, splitPkSql, fetchSize);
+                        SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, splitPkId);
                     }
-                }catch (ParserException e){
-                    throw RdbmsException.asSqlParserException(this.dataBaseType,e,splitPkSql);
-                }catch (Exception e) {
+                } catch (ParserException e) {
+                    throw RdbmsException.asSqlParserException(this.dataBaseType, e, splitPkSql);
+                } catch (DataXException e) {
+                    throw e;
+                } catch (Exception e) {
                     throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId.trim());
                 }
             }
-        }finally {
+        } finally {
             DBUtil.closeDBResources(null, conn);
         }
         return true;
