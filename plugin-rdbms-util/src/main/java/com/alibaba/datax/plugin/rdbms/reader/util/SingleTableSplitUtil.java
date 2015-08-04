@@ -129,18 +129,36 @@ public class SingleTableSplitUtil {
         String pkRangeSQL = genPKRangeSQL(configuration);
 
         int fetchSize = configuration.getInt(Constant.FETCH_SIZE);
-
         String jdbcURL = configuration.getString(Key.JDBC_URL);
         String username = configuration.getString(Key.USERNAME);
         String password = configuration.getString(Key.PASSWORD);
         String table = configuration.getString(Key.TABLE);
 
-        Connection conn = null;
+        Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcURL, username, password);
+        Pair<Object, Object> minMaxPK = checkSplitPk(conn, pkRangeSQL, fetchSize, table, username, configuration);
+        DBUtil.closeDBResources(null, null, conn);
+        return minMaxPK;
+    }
+
+    public static void precheckSplitPk(Connection conn, String pkRangeSQL, int fetchSize,
+                                                       String table, String username) {
+        Pair<Object, Object> minMaxPK = checkSplitPk(conn, pkRangeSQL, fetchSize, table, username, null);
+        if (null == minMaxPK) {
+            throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK,
+                    "根据切分主键切分表失败. DataX 仅支持切分主键为一个,并且类型为整数或者字符串类型. 请尝试使用其他的切分主键或者联系 DBA 进行处理.");
+        }
+    }
+
+    /**
+     * 检测splitPk的配置是否正确。
+     * configuration为null, 是precheck的逻辑，不需要回写PK_TYPE到configuration中
+     *
+     */
+    private static Pair<Object, Object> checkSplitPk(Connection conn, String pkRangeSQL, int fetchSize,  String table,
+                                                     String username, Configuration configuration) {
         ResultSet rs = null;
         Pair<Object, Object> minMaxPK = null;
         try {
-            conn = DBUtil.getConnection(DATABASE_TYPE, jdbcURL, username,
-                    password);
             try {
                 rs = DBUtil.query(conn, pkRangeSQL, fetchSize);
             }catch (Exception e) {
@@ -149,14 +167,18 @@ public class SingleTableSplitUtil {
             ResultSetMetaData rsMetaData = rs.getMetaData();
             if (isPKTypeValid(rsMetaData)) {
                 if (isStringType(rsMetaData.getColumnType(1))) {
-                    configuration
-                            .set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
+                    if(configuration != null) {
+                        configuration
+                                .set(Constant.PK_TYPE, Constant.PK_TYPE_STRING);
+                    }
                     while (DBUtil.asyncResultSetNext(rs)) {
                         minMaxPK = new ImmutablePair<Object, Object>(
                                 rs.getString(1), rs.getString(2));
                     }
                 } else if (isLongType(rsMetaData.getColumnType(1))) {
-                    configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
+                    if(configuration != null) {
+                        configuration.set(Constant.PK_TYPE, Constant.PK_TYPE_LONG);
+                    }
 
                     while (DBUtil.asyncResultSetNext(rs)) {
                         minMaxPK = new ImmutablePair<Object, Object>(
@@ -182,7 +204,7 @@ public class SingleTableSplitUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_SPLIT_PK, "DataX尝试切分表发生错误. 请检查您的配置并作出修改.", e);
         } finally {
-            DBUtil.closeDBResources(rs, null, conn);
+            DBUtil.closeDBResources(rs, null, null);
         }
 
         return minMaxPK;

@@ -178,11 +178,11 @@ public class RdbmsException extends DataXException{
     public static DataXException asSplitPKException(DataBaseType dataBaseType, Exception e,String splitSql,String splitPkID){
         if (dataBaseType.equals(DataBaseType.MySql)){
 
-            return DataXException.asDataXException(DBUtilErrorCode.MYSQL_SPLIT_PK_ERROR,"配置的SplitPK ID为: "+splitPkID+" 执行的SQL为: "+splitSql+" 具体错误信息为："+e);
+            return DataXException.asDataXException(DBUtilErrorCode.MYSQL_SPLIT_PK_ERROR,"配置的SplitPK为: "+splitPkID+", 执行的SQL为: "+splitSql+" 具体错误信息为："+e);
         }
 
         if (dataBaseType.equals(DataBaseType.Oracle)){
-            return DataXException.asDataXException(DBUtilErrorCode.ORACLE_SPLIT_PK_ERROR,"配置的SplitPK ID为: "+splitPkID+" 执行的SQL为: "+splitSql+" 具体错误信息为："+e);
+            return DataXException.asDataXException(DBUtilErrorCode.ORACLE_SPLIT_PK_ERROR,"配置的SplitPK为: "+splitPkID+", 执行的SQL为: "+splitSql+" 具体错误信息为："+e);
         }
 
         return DataXException.asDataXException(DBUtilErrorCode.READ_RECORD_FAIL,splitSql+e);
