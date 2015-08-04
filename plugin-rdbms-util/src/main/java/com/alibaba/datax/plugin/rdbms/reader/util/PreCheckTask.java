@@ -59,25 +59,30 @@ public class PreCheckTask implements Callable<Boolean>{
                 String table = null;
                 if (tables != null && !tables.isEmpty()) {
                     table = tables.get(i).toString();
-                    if(table != null) {
-                        checkSelectPrivilege(conn, fetchSize, table);
-                    }
                 }
 
             /*verify query*/
+                ResultSet rs = null;
                 try {
                     DBUtil.sqlValid(querySql,dataBaseType);
+                    if(i == 0) {
+                        rs = DBUtil.query(conn, querySql, fetchSize);
+                    }
                 } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, querySql);
                 } catch (Exception e) {
                     throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, userName);
+                } finally {
+                    DBUtil.closeDBResources(rs, null, null);
                 }
             /*verify splitPK*/
                 try{
                     if (splitPkSqls != null && !splitPkSqls.isEmpty()) {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql,dataBaseType);
-                        SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
+                        if(i == 0) {
+                            SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
+                        }
                     }
                 } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, splitPkSql);
@@ -91,17 +96,5 @@ public class PreCheckTask implements Callable<Boolean>{
             DBUtil.closeDBResources(null, conn);
         }
         return true;
-    }
-
-    private void checkSelectPrivilege(Connection conn, int fetchSize, String table) {
-        ResultSet rs = null;
-        String checkSql = "select * from " + table + " where 1 = 2";
-        try {
-            rs = DBUtil.query(conn, checkSql, fetchSize);
-        } catch (Exception e) {
-            throw RdbmsException.asQueryException(dataBaseType, e, checkSql, table, userName);
-        } finally {
-            DBUtil.closeDBResources(rs, null, null);
-        }
     }
 }
