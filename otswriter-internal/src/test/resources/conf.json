@@ -1,9 +1,9 @@
 {
-    "endpoint":"http://10.101.168.117:7000",
-    "accessid":"OTSMultiUser177_accessid",
-    "accesskey":"OTSMultiUser177_accesskey",
+    "endpoint":"http://10.101.168.117",
+    "accessid":"OTSMultiUser100_accessid",
+    "accesskey":"OTSMultiUser100_accesskey",
     "instance-name":"datax-internal",
-    "instance-id":"datax_internal",
+    "instance-id":"_mgBrxUsjPGX8XCZPEK",
     "legacy-instance-name":"datax-legacy",
     "public-instance-name":"datax-public",
     "ag-ip":""

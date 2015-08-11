@@ -55,7 +55,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试目的：测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造1不重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造1不重复的行，导入OTS，期望数据符合预期
      * @throws Exception 
      */
     @Test
@@ -97,7 +97,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造10不重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造10不重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -139,7 +139,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造50不重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造50不重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -181,7 +181,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造100不重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造100不重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -223,7 +223,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造500不重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造500不重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -265,7 +265,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造10重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造10重复的行，导入OTS，期望数据符合预期
      */
     @Test
     public void testCase6() throws Exception {
@@ -306,7 +306,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造50重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造50重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -348,7 +348,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造100重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造100重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -390,7 +390,7 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
     
     /**
      * 测试在PutRow模式下，数据是否能正常的导入OTS中。
-     * 测试内容：创建一个拥有4个PK的表，并分别构造500重复的行，导入OTS，期望数据符合预期
+     * 测试内容：创建一个拥有1个PK的表，并分别构造500重复的行，导入OTS，期望数据符合预期
      * @throws Exception
      */
     @Test
@@ -428,5 +428,61 @@ public class NormalPutRow1PKFunctiontest extends BaseTest{
                 OTSMode.NORMAL);
         conf.setTimestamp(ts);
         testWithTS(ots, conf, input, expect.subList(expect.size() - 1, expect.size())); 
+    }
+    
+    /**
+     * 测试在PutRow模式下，数据是否能正常的导入OTS中。
+     * 测试内容：创建一个拥有1个PK的表，并分别构造10行普通数据，10个空Column的行，导入OTS，期望数据符合预期
+     * @throws Exception
+     */
+    @Test
+    public void testCase10() throws Exception {
+        List<Record> input = new ArrayList<Record>();
+        List<Row> expect = new ArrayList<Row>();
+        long ts = System.currentTimeMillis();
+        // 构造数据
+        {
+            for (int c = 0; c < 10; c++) { // row
+                String value = String.format("UID_value_%06d", c);
+                OTSRowBuilder row = OTSRowBuilder.newInstance();
+                row.addPrimaryKeyColumn("UID", PrimaryKeyValue.fromString(value));
+                
+                Record r = new DefaultRecord();
+                // pk
+                r.addColumn(new StringColumn(value));
+                
+                for (int i = 0; i < 1; i++) { // column
+                    String columnName = getColumnName(i);
+                    r.addColumn(new StringColumn(String.valueOf(i)));
+                    row.addAttrColumn(columnName, ColumnValue.fromString(String.valueOf(i)), ts);
+                }
+                input.add(r);
+                expect.add(row.toRow());
+            }
+            for (int c = 10; c < 20; c++) { // row
+                String value = String.format("UID_value_%06d", c);
+                OTSRowBuilder row = OTSRowBuilder.newInstance();
+                row.addPrimaryKeyColumn("UID", PrimaryKeyValue.fromString(value));
+                
+                Record r = new DefaultRecord();
+                // pk
+                r.addColumn(new StringColumn(value));
+                
+                for (int i = 0; i < 1; i++) { // column
+                    r.addColumn(new StringColumn(null));
+                }
+                input.add(r);
+            }
+        }
+        
+        // check
+        OTSConf conf = Conf.getConf(
+                tableName, 
+                tableMeta.getPrimaryKeyMap(), 
+                getColumnMeta(1, ColumnType.STRING), 
+                OTSOpType.PUT_ROW,
+                OTSMode.NORMAL);
+        conf.setTimestamp(ts);
+        testWithTS(ots, conf, input, expect); 
     }
 }
