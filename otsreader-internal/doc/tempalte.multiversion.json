@@ -54,7 +54,7 @@
                 "begin":[{"type":"string", "value":"a"},{"type":"INF_MIN"}],
                 
                 // 默认表示读取到无限大结束
-                // 这个值得输入可以填写空数组，或者PK前缀，亦或者完整的PK，在正序读取数据时，默认填充PK后缀为INF_MIN，反序为INF_MAX
+                // 这个值得输入可以填写空数组，或者PK前缀，亦或者完整的PK，在正序读取数据时，默认填充PK后缀为INF_MAX，反序为INF_MIN
                 // 可选
                 "end":[{"type":"string", "value":"g"},{"type":"INF_MAX"}],
                 
