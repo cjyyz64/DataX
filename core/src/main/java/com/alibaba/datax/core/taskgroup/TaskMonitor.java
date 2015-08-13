@@ -17,7 +17,7 @@ public class TaskMonitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskMonitor.class);
     private static final TaskMonitor instance = new TaskMonitor();
-    private static long EXPIRED_TIME = 7200 * 1000;
+    private static long EXPIRED_TIME = 172800 * 1000;
 
     private ConcurrentHashMap<Integer, TaskCommunication> tasks = new ConcurrentHashMap<Integer, TaskCommunication>();
 
