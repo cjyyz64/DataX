@@ -34,7 +34,7 @@
                 <include>libhdfs.so</include>
                 <include>libhdfs.so.0.0.0</include>
             </includes>
-            <outputDirectory>plugins/reader/hdfsreader/libs</outputDirectory>
+            <outputDirectory>plugin/reader/hdfsreader/libs</outputDirectory>
         </fileSet>
     </fileSets>
 
