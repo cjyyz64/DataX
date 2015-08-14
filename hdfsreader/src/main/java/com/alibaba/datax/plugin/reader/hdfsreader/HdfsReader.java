@@ -71,6 +71,8 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
             }
 
+            dfsUtil.readfile(path,defaultFS);
+
             this.maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
             encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
 

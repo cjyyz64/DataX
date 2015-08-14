@@ -1,7 +1,9 @@
 package com.alibaba.datax.plugin.reader.hdfsreader;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashSet;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.*;
@@ -31,5 +33,23 @@ public class DFSUtil {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void readfile(String filepath,String defaultFS){
+        Path path = new Path(filepath);
+        Configuration conf = new Configuration();
+        conf.set("fs.defaultFS", defaultFS);
+        try{
+            FileSystem fs = FileSystem.get(conf);
+            BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(path)));
+            String line;
+            line=br.readLine();
+            while (line != null){
+                System.out.println(line);
+                line=br.readLine();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
     }
 }
