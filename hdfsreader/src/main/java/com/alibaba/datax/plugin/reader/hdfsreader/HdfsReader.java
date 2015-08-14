@@ -88,18 +88,17 @@ public class HdfsReader extends Reader {
 
             // 检测是column 是否为 ["*"] 若是则填为空
             List<Configuration> column = this.readerOriginConfig
-                    .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+                    .getListConfiguration(Key.COLUMN);
             if (null != column
                     && 1 == column.size()
                     && ("\"*\"".equals(column.get(0).toString()) || "'*'"
                     .equals(column.get(0).toString()))) {
                 readerOriginConfig
-                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN,
-                                new ArrayList<String>());
+                        .set(Key.COLUMN, new ArrayList<String>());
             } else {
                 // column: 1. index type 2.value type 3.when type is Data, may have format
                 List<Configuration> columns = this.readerOriginConfig
-                        .getListConfiguration(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COLUMN);
+                        .getListConfiguration(Key.COLUMN);
 
                 if (null == columns || columns.size() == 0) {
                     throw DataXException.asDataXException(
@@ -110,13 +109,11 @@ public class HdfsReader extends Reader {
                 if (null != columns && columns.size() != 0) {
                     for (Configuration eachColumnConf : columns) {
                         eachColumnConf
-                                .getNecessaryValue(
-                                        com.alibaba.datax.plugin.unstructuredstorage.reader.Key.TYPE,
-                                        HdfsReaderErrorCode.REQUIRED_VALUE);
+                                .getNecessaryValue(Key.TYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
                         Integer columnIndex = eachColumnConf
-                                .getInt(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.INDEX);
+                                .getInt(Key.INDEX);
                         String columnValue = eachColumnConf
-                                .getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.VALUE);
+                                .getString(Key.VALUE);
 
                         if (null == columnIndex && null == columnValue) {
                             throw DataXException.asDataXException(
