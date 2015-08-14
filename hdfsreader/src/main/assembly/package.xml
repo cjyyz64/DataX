@@ -22,6 +22,20 @@
             </includes>
             <outputDirectory>plugin/reader/hdfsreader</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>src/main/cpp</directory>
+            <includes>
+                <include>libhadoop.a</include>
+                <include>libhadoop.so</include>
+                <include>libhadoop.so.1.0.0</include>
+                <include>libhadooppipes.a</include>
+                <include>libhadooputils.a</include>
+                <include>libhdfs.a</include>
+                <include>libhdfs.so</include>
+                <include>libhdfs.so.0.0.0</include>
+            </includes>
+            <outputDirectory>plugins/reader/hdfsreader/libs</outputDirectory>
+        </fileSet>
     </fileSets>
 
     <dependencySets>
