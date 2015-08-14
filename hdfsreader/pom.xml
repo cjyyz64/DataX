@@ -8,9 +8,10 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>hdfsreader</artifactId>
-
+    <name>hdfsreader</name>
     <groupId>com.alibaba.datax</groupId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>

@@ -1,6 +1,0 @@
-{
-    "name": "hdfswriter",
-    "class": "com.alibaba.datax.plugin.writer.hdfswriter.HdfsWriter",
-    "description": "useScene: test. mechanism: use datax framework to transport data to hdfs. warn: The more you know about the data, the less problems you encounter.",
-    "developer": "mingya.wmy, bug reported to : mingya.wmy@alibaba-inc.com"
-}

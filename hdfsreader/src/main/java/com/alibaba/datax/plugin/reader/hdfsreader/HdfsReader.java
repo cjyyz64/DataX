@@ -52,6 +52,7 @@ public class HdfsReader extends Reader {
              */
             LOG.debug("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
+            dfsUtil = new DFSUtil();
             this.validate();
             LOG.debug("init() ok and end...");
 
@@ -228,6 +229,7 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
+            this.dfsUtil = new DFSUtil();
         }
 
         @Override
