@@ -131,7 +131,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
-
+        <fileSet>
+            <directory>hdfsreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 
         <!-- writer -->
         <fileSet>
@@ -262,6 +268,13 @@
         </fileSet>
         <fileSet>
             <directory>tairwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>hdfswriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
