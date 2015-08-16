@@ -171,7 +171,7 @@ public class HdfsReader extends Reader {
                 splitedConfig.set(Constant.SOURCE_FILES, files);
                 readerSplitConfigs.add(splitedConfig);
             }
-            return new ArrayList<Configuration>();
+            return readerSplitConfigs;
         }
 
 
