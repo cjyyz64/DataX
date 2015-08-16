@@ -13,11 +13,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-import org.anarres.lzo.LzoDecompressor1z_safe;
+/*import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
-import org.anarres.lzo.LzopInputStream;
+import org.anarres.lzo.LzopInputStream;*/
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+/*import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
@@ -30,7 +30,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;*/
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -125,7 +125,7 @@ public class UnstructuredStorageReaderUtil {
 						encoding));
 			} else {
 				// TODO compress
-				if ("lzo".equalsIgnoreCase(compress)) {
+				/*if ("lzo".equalsIgnoreCase(compress)) {
 					LzoInputStream lzoInputStream = new LzoInputStream(
 							inputStream, new LzoDecompressor1z_safe());
 					reader = new BufferedReader(new InputStreamReader(
@@ -207,7 +207,7 @@ public class UnstructuredStorageReaderUtil {
 									String.format(
 											"仅支持 lzo, lzop, gzip, bzip2, lzma, pack200, snappy, xz, ar, arj, cpio, dump, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
-				}
+				}*/
 			}
 			UnstructuredStorageReaderUtil.doReadFromStream(reader, context,
 					readerSliceConfig, recordSender, taskPluginCollector);
@@ -220,11 +220,11 @@ public class UnstructuredStorageReaderUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					"运行时错误, 请联系我们", e);
-		} catch (ArchiveException e) {
+		} /*catch (ArchiveException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("压缩文件流读取错误 : [%]", context), e);
-		} catch (IOException e) {
+		}*/ catch (IOException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("流读取错误 : [%]", context), e);
