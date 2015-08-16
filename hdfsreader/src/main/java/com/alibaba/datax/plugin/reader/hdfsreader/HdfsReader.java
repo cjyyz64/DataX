@@ -172,6 +172,7 @@ public class HdfsReader extends Reader {
                 readerSplitConfigs.add(splitedConfig);
             }
             System.out.println(readerSplitConfigs.size());
+            System.out.println("------------------------ readerSplitConfigs ----------------------------");
             return readerSplitConfigs;
         }
 
