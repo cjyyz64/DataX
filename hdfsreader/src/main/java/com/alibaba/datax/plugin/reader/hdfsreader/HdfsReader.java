@@ -59,17 +59,17 @@ public class HdfsReader extends Reader {
         }
 
         private void validate(){
-            path = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.PATH_NOT_FIND_ERROR);
-            if (StringUtils.isBlank(path)) {
-                throw DataXException.asDataXException(
-                        HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
-            }
-
             defaultFS = this.readerOriginConfig.getNecessaryValue(Key.DEFAULT_FS,
                                                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             if (StringUtils.isBlank(defaultFS)) {
                 throw DataXException.asDataXException(
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
+            }
+
+            path = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.PATH_NOT_FIND_ERROR);
+            if (StringUtils.isBlank(path)) {
+                throw DataXException.asDataXException(
+                        HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
             }
 
             this.maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
@@ -131,7 +131,6 @@ public class HdfsReader extends Reader {
                     }
                 }
             }
-
 
         }
 
