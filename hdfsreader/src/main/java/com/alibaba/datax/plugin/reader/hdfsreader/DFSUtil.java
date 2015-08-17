@@ -46,14 +46,13 @@ public class DFSUtil {
             else{
                 getHDFSALLFiles_NO_Regex(hdfsPath, hdfs);
             }
-
+            return sourceHDFSAllFilesList;
         }catch (IOException e){
             String message = String.format("无法读取路径[%s]下的所有文件,请确认您的配置项path是否正确，且配置的用户有权限进入"
                     , hdfsPath);
             LOG.error(message);
             throw DataXException.asDataXException(HdfsReaderErrorCode.PATH_CONFIG_ERROR, message);
         }
-        return null;
     }
 
     private HashSet<String> getHDFSALLFiles_NO_Regex(String path,FileSystem hdfs) throws IOException{
