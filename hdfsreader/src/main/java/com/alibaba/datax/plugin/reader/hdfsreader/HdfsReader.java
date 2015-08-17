@@ -52,8 +52,8 @@ public class HdfsReader extends Reader {
              */
             LOG.debug("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
-            dfsUtil = new DFSUtil();
             this.validate();
+            dfsUtil = new DFSUtil(defaultFS);
             LOG.debug("init() ok and end...");
 
         }
@@ -71,8 +71,6 @@ public class HdfsReader extends Reader {
                 throw DataXException.asDataXException(
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
             }
-
-            dfsUtil.readfile(path,defaultFS);
 
             this.maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
             encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
@@ -144,7 +142,7 @@ public class HdfsReader extends Reader {
              * 最佳实践：如果 Job 中有需要进行数据同步之前的处理，可以在此处完成，如果没有必要则可以直接去掉。
              */
             LOG.debug("prepare()");
-            this.sourceFiles = dfsUtil.getAllFiles(path,0,maxTraversalLevel);
+            this.sourceFiles = dfsUtil.getHDFSAllFiles(path);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
         }
 
@@ -231,7 +229,7 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
-            this.dfsUtil = new DFSUtil();
+            this.dfsUtil = new DFSUtil(defaultFS);
         }
 
         @Override
@@ -253,7 +251,7 @@ public class HdfsReader extends Reader {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
                 InputStream inputStream = null;
 
-                inputStream = dfsUtil.getInputStream(sourceFile,defaultFS);
+                inputStream = dfsUtil.getInputStream(sourceFile);
 
                 UnstructuredStorageReaderUtil.readFromStream(inputStream, sourceFile, this.taskConfig,
                         recordSender, this.getTaskPluginCollector());
