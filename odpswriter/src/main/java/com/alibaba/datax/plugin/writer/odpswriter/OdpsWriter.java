@@ -47,7 +47,6 @@ public class OdpsWriter extends Writer {
         private TableTunnel.UploadSession masterUpload;
         private int blockSizeInMB;
 
-
         public void preCheck() {
             this.init();
             this.doPreCheck();
@@ -247,6 +246,7 @@ public class OdpsWriter extends Writer {
         private int blockSizeInMB;
 
         private Integer failoverState = 0; //0 未failover 1准备failover 2已提交，不能failover
+        private byte[] lock = new byte[0];
 
         @Override
         public void init() {
@@ -320,7 +320,7 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            synchronized (failoverState){
+            synchronized (lock){
                 if(failoverState==0){
                     failoverState = 2;
                     LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
@@ -339,7 +339,7 @@ public class OdpsWriter extends Writer {
 
         @Override
         public boolean supportFailOver(){
-            synchronized (failoverState){
+            synchronized (lock){
                 if(failoverState==0){
                     failoverState = 1;
                     return true;
