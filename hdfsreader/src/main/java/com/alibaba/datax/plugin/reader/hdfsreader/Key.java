@@ -14,4 +14,6 @@ public final class Key {
     public static final String TYPE = "type";
     public static final String INDEX = "index";
     public static final String VALUE = "value";
+    public static final String FORMAT = "format";
+    public static final String FILETYPE = "fileType";
 }

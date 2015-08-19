@@ -12,7 +12,9 @@ public enum HdfsReaderErrorCode implements ErrorCode {
     NO_INDEX_VALUE("HdfsReader-06","没有 Index" ),
     MIXED_INDEX_VALUE("HdfsReader-07","index 和 value 混合" ),
     EMPTY_DIR_EXCEPTION("HdfsReader-08", "您尝试读取的文件目录为空."),
-    PATH_CONFIG_ERROR("HdfsReader-09", "您配置的path格式有误"),;
+    PATH_CONFIG_ERROR("HdfsReader-09", "您配置的path格式有误"),
+    READ_FILE_ERROR("HdfsReader-10", "读取文件出错"),
+    FILETYPE_NOT_FIND_ERROR("HdfsReader-10", "读取文件出错"),;
 
     private final String code;
     private final String description;

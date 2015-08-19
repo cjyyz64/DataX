@@ -41,6 +41,7 @@ public class HdfsReader extends Reader {
         private String encoding = null;
         private HashSet<String> sourceFiles;
         private int maxTraversalLevel;
+        private String fileType = null;
         private DFSUtil dfsUtil = null;
 
         @Override
@@ -72,7 +73,13 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
             }
 
-            this.maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
+            fileType = this.readerOriginConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
+            if (StringUtils.isBlank(fileType)) {
+                throw DataXException.asDataXException(
+                        HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR, "您需要指定 fileType");
+            }
+            maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
+
             encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
 
             try {
@@ -109,12 +116,9 @@ public class HdfsReader extends Reader {
 
                 if (null != columns && columns.size() != 0) {
                     for (Configuration eachColumnConf : columns) {
-                        eachColumnConf
-                                .getNecessaryValue(Key.TYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
-                        Integer columnIndex = eachColumnConf
-                                .getInt(Key.INDEX);
-                        String columnValue = eachColumnConf
-                                .getString(Key.VALUE);
+                        eachColumnConf.getNecessaryValue(Key.TYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
+                        Integer columnIndex = eachColumnConf.getInt(Key.INDEX);
+                        String columnValue = eachColumnConf.getString(Key.VALUE);
 
                         if (null == columnIndex && null == columnValue) {
                             throw DataXException.asDataXException(
@@ -216,6 +220,7 @@ public class HdfsReader extends Reader {
         private Configuration taskConfig;
         private List<String> sourceFiles;
         private String defaultFS;
+        private String fileType;
         private DFSUtil dfsUtil = null;
 
         @Override
@@ -228,6 +233,8 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
+            this.fileType = this.taskConfig.getNecessaryValue(Key.FILETYPE,
+                    HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
             this.dfsUtil = new DFSUtil(defaultFS);
         }
 
@@ -248,12 +255,18 @@ public class HdfsReader extends Reader {
             LOG.debug("read start");
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
-                InputStream inputStream = null;
+                if(fileType.equals("textfile")) {
+                    InputStream inputStream = null;
 
-                inputStream = dfsUtil.getInputStream(sourceFile);
+                    inputStream = dfsUtil.getInputStream(sourceFile);
 
-                UnstructuredStorageReaderUtil.readFromStream(inputStream, sourceFile, this.taskConfig,
-                        recordSender, this.getTaskPluginCollector());
+                    UnstructuredStorageReaderUtil.readFromStream(inputStream, sourceFile, this.taskConfig,
+                            recordSender, this.getTaskPluginCollector());
+                }
+                else if(fileType.equals("orcfile")){
+                    dfsUtil.orcFileRead(sourceFile, this.taskConfig,
+                            recordSender, this.getTaskPluginCollector());
+                }
                 recordSender.flush();
             }
 
