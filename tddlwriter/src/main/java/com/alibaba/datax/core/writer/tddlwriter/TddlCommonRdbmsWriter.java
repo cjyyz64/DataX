@@ -41,6 +41,7 @@ public class TddlCommonRdbmsWriter extends CommonRdbmsWriter {
 
             emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
             this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+            this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 
             writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
             INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);

@@ -23,7 +23,7 @@ public class LogExceptionManager {
         long cur = System.currentTimeMillis();
         long interval = cur - updateTimestamp;
         if (interval >= 10000) {
-            LOG.warn("Call callable fail, OTSNotEnoughCapacityUnit, total times:"+ count +", time range:"+ (interval/1000) +"s, times per second:" + (count / (interval/1000)));
+            LOG.warn("Call callable fail, OTSNotEnoughCapacityUnit, total times:"+ count +", time range:"+ (interval/1000) +"s, times per second:" + ((float)count / (interval/1000)));
             count = 0;
             updateTimestamp = cur;
         }

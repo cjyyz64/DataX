@@ -77,6 +77,9 @@ public class ParseRecord {
                         rowPutChange.addColumn(buildColumn(en.getFirst(), en.getSecond(), timestamp));
                     } 
                 }
+                if (rowPutChange.getColumnsToPut().isEmpty()) {
+                	return null;
+                } 
                 return new OTSLine(pk, record, rowPutChange);
             case UPDATE_ROW:
                 RowUpdateChange rowUpdateChange = new RowUpdateChange(tableName, pk);

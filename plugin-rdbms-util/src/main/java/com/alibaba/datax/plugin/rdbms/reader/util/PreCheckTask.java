@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -38,7 +39,7 @@ public class PreCheckTask implements Callable<Boolean>{
     }
 
     @Override
-    public Boolean call() throws DataXException{
+    public Boolean call() throws DataXException {
         String jdbcUrl = this.connection.getString(Key.JDBC_URL);
         List<Object> querySqls = this.connection.getList(Key.QUERY_SQL, Object.class);
         List<Object> splitPkSqls = this.connection.getList(Key.SPLIT_PK_SQL, Object.class);
@@ -46,42 +47,52 @@ public class PreCheckTask implements Callable<Boolean>{
         Connection conn = DBUtil.getConnectionWithoutRetry(this.dataBaseType, jdbcUrl,
                 this.userName, password);
         int fetchSize = 1;
+        if(DataBaseType.MySql.equals(dataBaseType) || DataBaseType.DRDS.equals(dataBaseType)) {
+            fetchSize = Integer.MIN_VALUE;
+        }
         try{
-            for (int i=0;i<querySqls.size();i++){
+            for (int i=0;i<querySqls.size();i++) {
 
                 String splitPkSql = null;
                 String querySql = querySqls.get(i).toString();
 
                 String table = null;
-                if (tables != null && !tables.isEmpty()){
+                if (tables != null && !tables.isEmpty()) {
                     table = tables.get(i).toString();
                 }
 
             /*verify query*/
+                ResultSet rs = null;
                 try {
-
                     DBUtil.sqlValid(querySql,dataBaseType);
-                    DBUtil.query(conn, querySql, fetchSize);
-                } catch (ParserException e){
+                    if(i == 0) {
+                        rs = DBUtil.query(conn, querySql, fetchSize);
+                    }
+                } catch (ParserException e) {
                     throw RdbmsException.asSqlParserException(this.dataBaseType, e, querySql);
-                }catch (Exception e) {
-                    throw RdbmsException.asQueryException(this.dataBaseType, e, querySql,table,userName);
+                } catch (Exception e) {
+                    throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, userName);
+                } finally {
+                    DBUtil.closeDBResources(rs, null, null);
                 }
             /*verify splitPK*/
                 try{
-
-                    if (splitPkSqls != null && !splitPkSqls.isEmpty()){
+                    if (splitPkSqls != null && !splitPkSqls.isEmpty()) {
                         splitPkSql = splitPkSqls.get(i).toString();
                         DBUtil.sqlValid(splitPkSql,dataBaseType);
-                        DBUtil.query(conn, splitPkSql, fetchSize);
+                        if(i == 0) {
+                            SingleTableSplitUtil.precheckSplitPk(conn, splitPkSql, fetchSize, table, userName);
+                        }
                     }
-                }catch (ParserException e){
-                    throw RdbmsException.asSqlParserException(this.dataBaseType,e,splitPkSql);
-                }catch (Exception e) {
+                } catch (ParserException e) {
+                    throw RdbmsException.asSqlParserException(this.dataBaseType, e, splitPkSql);
+                } catch (DataXException e) {
+                    throw e;
+                } catch (Exception e) {
                     throw RdbmsException.asSplitPKException(this.dataBaseType, e, splitPkSql,this.splitPkId.trim());
                 }
             }
-        }finally {
+        } finally {
             DBUtil.closeDBResources(null, conn);
         }
         return true;

@@ -121,6 +121,7 @@ public class AdsInsertProxy {
                 try {
                     sql = generateInsertSql(record);
                     int status = statement.executeUpdate(sql);
+                    sql = null;
                 } catch (SQLException e) {
                     LOG.error("sql: " + sql, e.getMessage());
                     this.taskPluginCollector.collectDirtyRecord(record, e);
@@ -198,7 +199,11 @@ public class AdsInsertProxy {
             case Types.DATE:
                 java.sql.Date sqlDate = null;
                 try {
-                    utilDate = column.asDate();
+                    if("".equals(column.getRawData())) {
+                        utilDate = null;
+                    } else {
+                        utilDate = column.asDate();
+                    }
                 } catch (DataXException e) {
                     throw new SQLException(String.format(
                             "Date 类型转换错误：[%s]", column));
@@ -215,7 +220,11 @@ public class AdsInsertProxy {
             case Types.TIME:
                 java.sql.Time sqlTime = null;
                 try {
-                    utilDate = column.asDate();
+                    if("".equals(column.getRawData())) {
+                        utilDate = null;
+                    } else {
+                        utilDate = column.asDate();
+                    }
                 } catch (DataXException e) {
                     throw new SQLException(String.format(
                             "TIME 类型转换错误：[%s]", column));
@@ -232,7 +241,11 @@ public class AdsInsertProxy {
             case Types.TIMESTAMP:
                 java.sql.Timestamp sqlTimestamp = null;
                 try {
-                    utilDate = column.asDate();
+                    if("".equals(column.getRawData())) {
+                        utilDate = null;
+                    } else {
+                        utilDate = column.asDate();
+                    }
                 } catch (DataXException e) {
                     throw new SQLException(String.format(
                             "TIMESTAMP 类型转换错误：[%s]", column));

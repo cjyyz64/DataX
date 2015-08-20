@@ -49,6 +49,7 @@ public enum DBUtilErrorCode implements ErrorCode {
     UNSUPPORTED_TYPE("DBUtilErrorCode-12", "不支持的数据库类型. 请注意查看 DataX 已经支持的数据库类型以及数据库版本."),
     COLUMN_SPLIT_ERROR("DBUtilErrorCode-13", "根据主键进行切分失败."),
     SET_SESSION_ERROR("DBUtilErrorCode-14", "设置 session 失败."),
+    RS_ASYNC_ERROR("DBUtilErrorCode-15", "异步获取ResultSet next失败."),
 
     REQUIRED_VALUE("DBUtilErrorCode-03", "您缺失了必须填写的参数值."),
     ILLEGAL_VALUE("DBUtilErrorCode-02", "您填写的参数值不合法."),

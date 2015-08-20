@@ -4,6 +4,7 @@
 package com.alibaba.datax.plugin.writer.adswriter.load;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.writer.adswriter.AdsException;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
@@ -105,7 +106,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
@@ -117,7 +118,7 @@ public class AdsHelper {
 
             TableInfo tableInfo = new TableInfo();
             List<ColumnInfo> columnInfoList = new ArrayList<ColumnInfo>();
-            while (rs.next()) {
+            while (DBUtil.asyncResultSetNext(rs)) {
                 ColumnInfo columnInfo = new ColumnInfo();
                 columnInfo.setOrdinal(rs.getInt(1));
                 columnInfo.setName(rs.getString(2));
@@ -235,7 +236,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
@@ -247,7 +248,7 @@ public class AdsHelper {
             rs = statement.executeQuery(sb.toString());
 
             String jobId = null;
-            while (rs.next()) {
+            while (DBUtil.asyncResultSetNext(rs)) {
                 jobId = rs.getString(1);
             }
 
@@ -323,7 +324,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
@@ -335,7 +336,7 @@ public class AdsHelper {
             rs = statement.executeQuery(sql);
 
             String state = null;
-            while (rs.next()) {
+            while (DBUtil.asyncResultSetNext(rs)) {
                 state = rs.getString(1);
             }
 

@@ -1,5 +1,8 @@
 package com.alibaba.datax.plugin.reader.otsreader.functiontest;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -13,6 +16,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsreader.common.ConfigurationHelper;
 import com.alibaba.datax.plugin.reader.otsreader.common.OtsHelper;
 import com.alibaba.datax.plugin.reader.otsreader.common.TestHelper;
+import com.alibaba.datax.plugin.reader.otsreader.model.OTSCriticalException;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.PrimaryKeyType;
 import com.aliyun.openservices.ots.internal.model.TableMeta;
@@ -167,6 +171,18 @@ public class MultiVersionTimeRangeFunctiontest {
         lines.put("timeRange",         "'timeRange':{"
                 + "'begin':101, "
                 + "'end':104"
+                + "}");
+        lines.put("maxVersion",         "'maxVersion':1");
+        Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
+        TestHelper.test(c);
+    }
+    
+    @Test
+    public void testCustomBeginAndEndMaxValue() throws Exception {
+        Map<String, String> lines = getLines();
+        lines.put("timeRange",         "'timeRange':{"
+                + "'begin':0, "
+                + "'end':" + (Long.MAX_VALUE)
                 + "}");
         lines.put("maxVersion",         "'maxVersion':1");
         Configuration c = Configuration.from(ConfigurationHelper.linesToJson(lines));
