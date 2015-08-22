@@ -1,7 +1,10 @@
 package com.alibaba.datax.plugin.reader.hdfsreader;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -13,10 +16,15 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.*;
+import org.apache.hadoop.hive.ql.io.orc.OrcFile;
 import org.apache.hadoop.hive.ql.io.orc.OrcInputFormat;
 import org.apache.hadoop.hive.ql.io.orc.OrcSerde;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.mapred.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +36,8 @@ public class DFSUtil {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsReader.Job.class);
 
     private org.apache.hadoop.conf.Configuration hadoopConf = null;
+
+    private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
     public DFSUtil(String defaultFS){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
@@ -91,6 +101,38 @@ public class DFSUtil {
             inputStream = fs.open(path);
             return inputStream;
         }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public BufferedReader getBufferedReader(String filepath, HdfsFileType fileType, String encoding){
+        try {
+            FileSystem fs = FileSystem.get(hadoopConf);
+            Path path = new Path(filepath);
+            FSDataInputStream in = null;
+
+            CompressionInputStream cin = null;
+            BufferedReader br = null;
+
+            if (fileType.equals(HdfsFileType.COMPRESSED_TEXTFILE)) {
+                CompressionCodecFactory factory = new CompressionCodecFactory(hadoopConf);
+                CompressionCodec codec = factory.getCodec(path);
+                if (codec == null) {
+                    throw new IOException(
+                            String.format(
+                                    "Can't find any suitable CompressionCodec to this file:%value",
+                                    path.toString()));
+                }
+                in = fs.open(path);
+                cin = codec.createInputStream(in);
+                br = new BufferedReader(new InputStreamReader(cin, encoding));
+            } else {
+                in = fs.open(path);
+                br = new BufferedReader(new InputStreamReader(in, encoding));
+            }
+            return br;
+        }catch (Exception e){
             e.printStackTrace();
         }
         return null;
@@ -175,7 +217,6 @@ public class DFSUtil {
 
                 String columnValue = null;
 
-                //TODO 如果是结构体等其它类型，怎么处理
                 if (null != columnIndex) {
                     if(null!=recordFields.get(columnIndex))
                         columnValue = recordFields.get(columnIndex).toString();
@@ -226,7 +267,6 @@ public class DFSUtil {
                                 columnGenerated = new DateColumn(date);
                             } else {
                                 String formatString = columnConfig.getString(Key.FORMAT);
-                                //if (null != formatString) {
                                 if (StringUtils.isNotBlank(formatString)) {
                                     // 用户自己配置的格式转换
                                     SimpleDateFormat format = new SimpleDateFormat(
@@ -277,26 +317,96 @@ public class DFSUtil {
         return record;
     }
 
-    private enum Type {
-        STRING, LONG, BOOLEAN, DOUBLE, DATE, ;
+    private static enum Type {
+        STRING, LONG, BOOLEAN, DOUBLE, DATE,
     }
 
-    /*public void readfile(String filepath,String defaultFS){
+    public HdfsFileType checkHdfsFileType(String filepath){
 
         Path path = new Path(filepath);
-        Configuration conf = new Configuration();
-        conf.set("fs.defaultFS", defaultFS);
-        try{
-            FileSystem fs = FileSystem.get(conf);
-            BufferedReader br=new BufferedReader(new InputStreamReader(fs.open(path)));
-            String line;
-            line=br.readLine();
-            while (line != null){
-                System.out.println(line);
-                line=br.readLine();
-            }
+
+        try {
+            FileSystem fs = FileSystem.get(hadoopConf);
+
+            // figure out the size of the file using the option or filesystem
+            long size = fs.getFileStatus(path).getLen();
+
+            //read last bytes into buffer to get PostScript
+            int readSize = (int) Math.min(size, DIRECTORY_SIZE_GUESS);
+            FSDataInputStream file = fs.open(path);
+            file.seek(size - readSize);
+            ByteBuffer buffer = ByteBuffer.allocate(readSize);
+            file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
+                    buffer.remaining());
+
+            //read the PostScript
+            //get length of PostScript
+            int psLen = buffer.get(readSize - 1) & 0xff;
+            HdfsFileType type = ensureOrcFooter(file, path, psLen, buffer, hadoopConf);
+            return type;
         }catch (Exception e){
-            e.printStackTrace();
+            String message = String.format("检查文件[%s]类型失败，请检查您的文件是否合法。"
+                    , filepath);
+            throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
         }
-    }*/
+    }
+
+    /**
+     * Ensure this is an ORC file to prevent users from trying to read text
+     * files or RC files as ORC files.
+     * @param in the file being read
+     * @param path the filename for error messages
+     * @param psLen the postscript length
+     * @param buffer the tail of the file
+     * @throws IOException
+     */
+    private HdfsFileType ensureOrcFooter(FSDataInputStream in,
+                                                Path path,
+                                                int psLen,
+                                                ByteBuffer buffer,
+                                                org.apache.hadoop.conf.Configuration hadoopConf) throws IOException {
+        int len = OrcFile.MAGIC.length();
+        if (psLen < len + 1) {
+            throw new IOException("Malformed ORC file " + path +
+                    ". Invalid postscript length " + psLen);
+        }
+        int offset = buffer.arrayOffset() + buffer.position() + buffer.limit() - 1
+                - len;
+        byte[] array = buffer.array();
+        // now look for the magic string at the end of the postscript.
+        if (Text.decode(array, offset, len).equals(OrcFile.MAGIC)) {
+            return HdfsFileType.ORC;
+        }
+        else{
+            // If it isn't there, this may be the 0.11.0 version of ORC.
+            // Read the first 3 bytes of the file to check for the header
+            in.seek(0);
+            byte[] header = new byte[len];
+            in.readFully(header, 0, len);
+            // if it isn't there, this isn't an ORC file
+            if (Text.decode(header, 0 , len).equals(OrcFile.MAGIC)) {
+                return HdfsFileType.ORC;
+            }
+            else{
+                in.seek(0);
+                switch (in.readShort()) {
+                    case 0x5345:
+                        if (in.readByte() == 'Q') {
+                            return HdfsFileType.SEQ;
+                        }
+                    default:
+                        in.seek(0);
+                        CompressionCodecFactory compressionCodecFactory = new CompressionCodecFactory(hadoopConf);
+                        CompressionCodec codec = compressionCodecFactory.getCodec(path);
+                        if (null == codec)
+                            return HdfsFileType.TEXTFILE;
+                        else {
+                            return HdfsFileType.COMPRESSED_TEXTFILE;
+                        }
+                }
+            }
+
+        }
+    }
+
 }

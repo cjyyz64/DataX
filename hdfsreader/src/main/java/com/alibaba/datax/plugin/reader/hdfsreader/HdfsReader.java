@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
@@ -220,7 +221,8 @@ public class HdfsReader extends Reader {
         private Configuration taskConfig;
         private List<String> sourceFiles;
         private String defaultFS;
-        private String fileType;
+        private HdfsFileType fileType;
+        private String encoding;
         private DFSUtil dfsUtil = null;
 
         @Override
@@ -233,8 +235,9 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
-            this.fileType = this.taskConfig.getNecessaryValue(Key.FILETYPE,
-                    HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
+            this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
+//            this.fileType = this.taskConfig.getNecessaryValue(Key.FILETYPE,
+//                    HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
             this.dfsUtil = new DFSUtil(defaultFS);
         }
 
@@ -255,15 +258,17 @@ public class HdfsReader extends Reader {
             LOG.debug("read start");
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
-                if(fileType.equals("textfile")) {
-                    InputStream inputStream = null;
+                fileType = dfsUtil.checkHdfsFileType(sourceFile);
 
-                    inputStream = dfsUtil.getInputStream(sourceFile);
+                if(fileType.equals(HdfsFileType.TEXTFILE)
+                        || fileType.equals(HdfsFileType.COMPRESSED_TEXTFILE)) {
 
-                    UnstructuredStorageReaderUtil.readFromStream(inputStream, sourceFile, this.taskConfig,
-                            recordSender, this.getTaskPluginCollector());
+                    BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
+                    UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
+                            this.taskConfig, recordSender, this.getTaskPluginCollector());
                 }
-                else if(fileType.equals("orcfile")){
+                else if(fileType.equals(HdfsFileType.ORC)){
+
                     dfsUtil.orcFileRead(sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
                 }

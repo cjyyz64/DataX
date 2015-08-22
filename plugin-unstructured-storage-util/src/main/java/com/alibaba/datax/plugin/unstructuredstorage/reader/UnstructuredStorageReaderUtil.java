@@ -13,24 +13,24 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-/*import org.anarres.lzo.LzoDecompressor1z_safe;
+import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
-import org.anarres.lzo.LzopInputStream;*/
-/*import org.apache.commons.compress.archivers.ArchiveException;
+import org.anarres.lzo.LzopInputStream;
+import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;*/
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-/*import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
+import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;*/
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -233,7 +233,7 @@ public class UnstructuredStorageReaderUtil {
 
 	}
 
-	private static void doReadFromStream(BufferedReader reader, String context,
+	public static void doReadFromStream(BufferedReader reader, String context,
 			Configuration readerSliceConfig, RecordSender recordSender,
 			TaskPluginCollector taskPluginCollector) {
 		List<Configuration> column = readerSliceConfig
