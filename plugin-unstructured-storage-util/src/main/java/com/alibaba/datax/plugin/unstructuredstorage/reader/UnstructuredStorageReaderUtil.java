@@ -27,7 +27,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
+//import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
 import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
@@ -144,12 +144,12 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("lzma".equalsIgnoreCase(compress)) {
+				} /*else if ("lzma".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new LZMACompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("pack200".equalsIgnoreCase(compress)) {
+				} */else if ("pack200".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new Pack200CompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
