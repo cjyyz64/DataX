@@ -124,7 +124,7 @@ public class UnstructuredStorageReaderUtil {
 						encoding));
 			} else {
 				// TODO compress
-				/*if ("lzo".equalsIgnoreCase(compress)) {
+				if ("lzo".equalsIgnoreCase(compress)) {
 					LzoInputStream lzoInputStream = new LzoInputStream(
 							inputStream, new LzoDecompressor1z_safe());
 					reader = new BufferedReader(new InputStreamReader(
@@ -134,7 +134,7 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							lzopInputStream, encoding));
-				} else*/ if ("gzip".equalsIgnoreCase(compress)) {
+				} else if ("gzip".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new GzipCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -144,7 +144,7 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} /*else if ("lzma".equalsIgnoreCase(compress)) {
+				} else if ("lzma".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new LZMACompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -199,7 +199,7 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							zipArchiveInputStream, encoding));
-				}*/ else {
+				} else {
 					throw DataXException
 							.asDataXException(
 									UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
@@ -219,11 +219,11 @@ public class UnstructuredStorageReaderUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					"运行时错误, 请联系我们", e);
-		} /*catch (ArchiveException e) {
+		} catch (ArchiveException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("压缩文件流读取错误 : [%]", context), e);
-		}*/ catch (IOException e) {
+		} catch (IOException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("流读取错误 : [%]", context), e);
