@@ -74,11 +74,11 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
             }
 
-            fileType = this.readerOriginConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
+            /*fileType = this.readerOriginConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
             if (StringUtils.isBlank(fileType)) {
                 throw DataXException.asDataXException(
                         HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR, "您需要指定 fileType");
-            }
+            }*/
             maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
 
             encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
