@@ -211,7 +211,9 @@ public class DFSUtil {
             if(isReadAllColumns){
                 // 读取所有列，创建都为String类型的column
                 for(Object recordField :recordFields){
-                    String columnValue = recordField.toString();
+                    String columnValue = null;
+                    if(recordField != null)
+                        columnValue = recordField.toString();
                     columnGenerated = new StringColumn(columnValue);
                     record.addColumn(columnGenerated);
                 }
