@@ -9,12 +9,9 @@ public final class Key {
     public static final String COLUMN = "column";
     public final static String DEFAULT_FS = "defaultFS";
     public final static String ENCODING = "encoding";
-    public final static String FILED_DELIMITER = "fieldDelimiter";
-    public static final String MAXTRAVERSALLEVEL = "maxTraversalLevel";
     public static final String TYPE = "type";
     public static final String INDEX = "index";
     public static final String VALUE = "value";
     public static final String FORMAT = "format";
     public static final String FILETYPE = "fileType";
-    public static final String NULL_FORMAT = "nullFormat";
 }

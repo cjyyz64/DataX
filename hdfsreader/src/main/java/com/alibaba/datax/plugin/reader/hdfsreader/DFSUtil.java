@@ -38,8 +38,6 @@ public class DFSUtil {
 
     private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
-    private final String defaultNullFormat = "\\N";
-
     public DFSUtil(String defaultFS){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
         hadoopConf.set("fs.defaultFS", defaultFS);
@@ -144,7 +142,6 @@ public class DFSUtil {
 
         List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
 
-        String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT, defaultNullFormat);
         String allColumns = "";
         String allColumnTypes = "";
         boolean isReadAllColumns = false;
@@ -179,15 +176,14 @@ public class DFSUtil {
                 InputFormat<?, ?> in = new OrcInputFormat();
                 FileInputFormat.setInputPaths(conf, orcFilePath.toString());
                 InputSplit[] splits = in.getSplits(conf, 1);
-                System.out.println("splits.length==" + splits.length);
 
-                conf.set("hive.io.file.readcolumn.ids", "1");
+                //conf.set("hive.io.file.readcolumn.ids", "1");
                 RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
                 Object key = reader.createKey();
                 Object value = reader.createValue();
                 // 获取列信息
                 List<? extends StructField> fields = inspector.getAllStructFieldRefs();
-                System.out.println("fields.size():" + fields.size());
+
                 List<Object> recordFields = null;
                 while (reader.next(key, value)) {
                     recordFields = new ArrayList<Object>();
@@ -195,8 +191,7 @@ public class DFSUtil {
                         Object field = inspector.getStructFieldData(value, fields.get(i));
                         recordFields.add(field);
                     }
-                    transportOneRecord(columnConfigs, recordFields, recordSender
-                                    , taskPluginCollector, isReadAllColumns, nullFormat);
+                    transportOneRecord(columnConfigs, recordFields, recordSender, taskPluginCollector, isReadAllColumns);
                 }
                 reader.close();
             }catch (Exception e){
@@ -209,8 +204,7 @@ public class DFSUtil {
     }
 
     private Record transportOneRecord(List<Configuration> columnConfigs, List<Object> recordFields
-                    , RecordSender recordSender, TaskPluginCollector taskPluginCollector
-                        , boolean isReadAllColumns, String nullFormat){
+                    , RecordSender recordSender, TaskPluginCollector taskPluginCollector, boolean isReadAllColumns){
         Record record = recordSender.createRecord();
         Column columnGenerated = null;
         try {
@@ -220,9 +214,6 @@ public class DFSUtil {
                     String columnValue = null;
                     if(recordField != null){
                         columnValue = recordField.toString();
-                        if (columnValue.equals(nullFormat)) {
-                            columnValue = null;
-                        }
                     }
                     columnGenerated = new StringColumn(columnValue);
                     record.addColumn(columnGenerated);
@@ -245,9 +236,9 @@ public class DFSUtil {
                     }
                     Type type = Type.valueOf(columnType.toUpperCase());
                     // it's all ok if nullFormat is null
-                    if (columnValue.equals(nullFormat)) {
+                    /*if (columnValue.equals(nullFormat)) {
                         columnValue = null;
-                    }
+                    }*/
                     switch (type) {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
@@ -343,13 +334,7 @@ public class DFSUtil {
         Path path = new Path(filePath);
         try {
             Reader reader = OrcFile.createReader(path, OrcFile.readerOptions(hadoopConf));
-            System.out.println("Rows: " + reader.getNumberOfRows());
-            System.out.println("Compression: " + reader.getCompression());
-            if (reader.getCompression() != CompressionKind.NONE) {
-                System.out.println("Compression size: " + reader.getCompressionSize());
-            }
             String type_struct = reader.getObjectInspector().getTypeName();
-            System.out.println("Type: " + type_struct);
             columnsCount = (type_struct.length() - type_struct.replace(colFinal, "").length())
                     / colFinal.length();
             return columnsCount;
