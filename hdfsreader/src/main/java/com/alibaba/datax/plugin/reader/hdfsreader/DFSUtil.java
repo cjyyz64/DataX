@@ -144,7 +144,7 @@ public class DFSUtil {
 
         List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
 
-        String nullFormat = readerSliceConfig.getString("nullFormat", defaultNullFormat);
+        String nullFormat = readerSliceConfig.getString(Key.NULL_FORMAT, defaultNullFormat);
         String allColumns = "";
         String allColumnTypes = "";
         boolean isReadAllColumns = false;
