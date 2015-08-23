@@ -115,14 +115,14 @@ public class DFSUtil {
             CompressionInputStream cin = null;
             BufferedReader br = null;
 
-            if (fileType.equals(HdfsFileType.COMPRESSED_TEXTFILE)) {
+            if (fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
                 CompressionCodecFactory factory = new CompressionCodecFactory(hadoopConf);
                 CompressionCodec codec = factory.getCodec(path);
                 if (codec == null) {
-                    throw new IOException(
-                            String.format(
-                                    "Can't find any suitable CompressionCodec to this file:%value",
-                                    path.toString()));
+                    String message = String.format(
+                            "Can't find any suitable CompressionCodec to this file:%value",
+                            path.toString());
+                    throw DataXException.asDataXException(HdfsReaderErrorCode.CONFIG_INVALID_EXCEPTION, message);
                 }
                 in = fs.open(path);
                 cin = codec.createInputStream(in);
@@ -138,7 +138,7 @@ public class DFSUtil {
         return null;
     }
 
-    public void orcFileRead(String sourceOrcFilePath, Configuration readerSliceConfig,
+    public void orcFileStartRead(String sourceOrcFilePath, Configuration readerSliceConfig,
                             RecordSender recordSender, TaskPluginCollector taskPluginCollector){
 
         List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
@@ -399,9 +399,9 @@ public class DFSUtil {
                         CompressionCodecFactory compressionCodecFactory = new CompressionCodecFactory(hadoopConf);
                         CompressionCodec codec = compressionCodecFactory.getCodec(path);
                         if (null == codec)
-                            return HdfsFileType.TEXTFILE;
+                            return HdfsFileType.TEXT;
                         else {
-                            return HdfsFileType.COMPRESSED_TEXTFILE;
+                            return HdfsFileType.COMPRESSED_TEXT;
                         }
                 }
             }

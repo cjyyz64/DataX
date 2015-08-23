@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,17 +40,12 @@ public class HdfsReader extends Reader {
         private String defaultFS = null;
         private String encoding = null;
         private HashSet<String> sourceFiles;
-        private int maxTraversalLevel;
-        private String fileType = null;
+        private String specifiedFileType = null;
         private DFSUtil dfsUtil = null;
 
         @Override
         public void init() {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：通常在这里对用户的配置进行校验：是否缺失必填项？有无错误值？有没有无关配置项？...
-             * 并给出清晰的报错/警告提示。校验通常建议采用静态工具类进行，以保证本类结构清晰。
-             */
+
             LOG.debug("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
             this.validate();
@@ -62,7 +56,7 @@ public class HdfsReader extends Reader {
 
         private void validate(){
             defaultFS = this.readerOriginConfig.getNecessaryValue(Key.DEFAULT_FS,
-                                                    HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
+                    HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             if (StringUtils.isBlank(defaultFS)) {
                 throw DataXException.asDataXException(
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
@@ -74,12 +68,15 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
             }
 
-            /*fileType = this.readerOriginConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
-            if (StringUtils.isBlank(fileType)) {
+            specifiedFileType = this.readerOriginConfig.getString(Key.FILETYPE,null);
+            if(!StringUtils.isBlank(specifiedFileType) &&
+                    !specifiedFileType.equalsIgnoreCase("ORC") &&
+                        !specifiedFileType.equalsIgnoreCase("TEXT")){
+                String message = "HdfsReader插件目前只支持ORC和TEXT两种格式的文件," +
+                        "如果您需要指定读取的文件类型，请将filetype选项的值配置为ORC或者TEXT";
                 throw DataXException.asDataXException(
-                        HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR, "您需要指定 fileType");
-            }*/
-            maxTraversalLevel = this.readerOriginConfig.getInt(Key.MAXTRAVERSALLEVEL, Constant.DEFAULT_MAX_TRAVERSAL_LEVEL);
+                        HdfsReaderErrorCode.FILE_TYPE_ERROR, message);
+            }
 
             encoding = this.readerOriginConfig.getString(Key.ENCODING, "UTF-8");
 
@@ -141,10 +138,7 @@ public class HdfsReader extends Reader {
 
         @Override
         public void prepare() {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：如果 Job 中有需要进行数据同步之前的处理，可以在此处完成，如果没有必要则可以直接去掉。
-             */
+
             LOG.debug("prepare()");
             this.sourceFiles = dfsUtil.getHDFSAllFiles(path);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
@@ -152,11 +146,7 @@ public class HdfsReader extends Reader {
 
         @Override
         public List<Configuration> split(int adviceNumber) {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：通常采用工具静态类完成把 Job 配置切分成多个 Task 配置的工作。
-             * 这里的 adviceNumber 是框架根据用户的同步速度的要求建议的切分份数，仅供参考，不是强制必须切分的份数。
-             */
+
             LOG.debug("split() begin...");
             List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
             // warn:每个slice拖且仅拖一个文件,
@@ -173,8 +163,7 @@ public class HdfsReader extends Reader {
                 splitedConfig.set(Constant.SOURCE_FILES, files);
                 readerSplitConfigs.add(splitedConfig);
             }
-            System.out.println(readerSplitConfigs.size());
-            System.out.println("---------------------- test -----------------------------");
+
             return readerSplitConfigs;
         }
 
@@ -197,19 +186,13 @@ public class HdfsReader extends Reader {
 
         @Override
         public void post() {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：如果 Job 中有需要进行数据同步之后的后续处理，可以在此处完成。
-             */
+
             LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：通常配合 Job 中的 post() 方法一起完成 Job 的资源释放。
-             */
+
             LOG.debug("destroy()");
         }
 
@@ -222,57 +205,56 @@ public class HdfsReader extends Reader {
         private List<String> sourceFiles;
         private String defaultFS;
         private HdfsFileType fileType;
+        private String specifiedFileType = null;
         private String encoding;
         private DFSUtil dfsUtil = null;
 
         @Override
         public void init() {
-            /**
-             * 注意：此方法每个 Task 都会执行一次。
-             * 最佳实践：此处通过对 taskConfig 配置的读取，进而初始化一些资源为 startRead()做准备。
-             */
+
             this.taskConfig = super.getPluginJobConf();
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
-//            this.fileType = this.taskConfig.getNecessaryValue(Key.FILETYPE,
-//                    HdfsReaderErrorCode.FILETYPE_NOT_FIND_ERROR);
+            this.specifiedFileType = this.taskConfig.getString(Key.FILETYPE,null);
             this.dfsUtil = new DFSUtil(defaultFS);
         }
 
         @Override
         public void prepare() {
-            /**
-             * 注意：此方法仅执行一次。
-             * 最佳实践：如果 Job 中有需要进行数据同步之后的处理，可以在此处完成，如果没有必要则可以直接去掉。
-             */
+
         }
 
         @Override
         public void startRead(RecordSender recordSender) {
-            /**
-             * 注意：此方法每个 Task 都会执行一次。
-             * 最佳实践：此处适当封装确保简洁清晰完成数据读取工作。
-             */
+
             LOG.debug("read start");
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
                 fileType = dfsUtil.checkHdfsFileType(sourceFile);
 
-                if(fileType.equals(HdfsFileType.TEXTFILE)
-                        || fileType.equals(HdfsFileType.COMPRESSED_TEXTFILE)) {
+                if(fileType.equals(HdfsFileType.TEXT)
+                        || fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
 
-                    BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
-                    UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
-                            this.taskConfig, recordSender, this.getTaskPluginCollector());
+                    if(StringUtils.isBlank(this.specifiedFileType) ||
+                            this.specifiedFileType.equalsIgnoreCase("TEXT")){
+                        BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
+                        UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
+                                this.taskConfig, recordSender, this.getTaskPluginCollector());
+                    }
                 }
                 else if(fileType.equals(HdfsFileType.ORC)){
 
-                    dfsUtil.orcFileRead(sourceFile, this.taskConfig,
-                            recordSender, this.getTaskPluginCollector());
+                    if(StringUtils.isBlank(this.specifiedFileType) ||
+                            this.specifiedFileType.equalsIgnoreCase("ORC")) {
+                        dfsUtil.orcFileStartRead(sourceFile, this.taskConfig,
+                                recordSender, this.getTaskPluginCollector());
+                    }
                 }
-                recordSender.flush();
+
+                if(recordSender != null)
+                    recordSender.flush();
             }
 
             LOG.debug("end read source files...");
@@ -280,18 +262,12 @@ public class HdfsReader extends Reader {
 
         @Override
         public void post() {
-            /**
-             * 注意：此方法每个 Task 都会执行一次。
-             * 最佳实践：如果 Task 中有需要进行数据同步之后的后续处理，可以在此处完成。
-             */
+
         }
 
         @Override
         public void destroy() {
-            /**
-             * 注意：此方法每个 Task 都会执行一次。
-             * 最佳实践：通常配合Task 中的 post() 方法一起完成 Task 的资源释放。.
-             */
+
         }
 
     }

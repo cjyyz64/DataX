@@ -5,6 +5,4 @@ package com.alibaba.datax.plugin.reader.hdfsreader;
  */
 public class Constant {
     public static final String SOURCE_FILES = "sourceFiles";
-
-    public static final int DEFAULT_MAX_TRAVERSAL_LEVEL = 100;
 }
