@@ -38,6 +38,8 @@ public class DFSUtil {
 
     private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
+    private final String defaultNullFormat = "\\N";
+
     public DFSUtil(String defaultFS){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
         hadoopConf.set("fs.defaultFS", defaultFS);
@@ -141,6 +143,8 @@ public class DFSUtil {
                             RecordSender recordSender, TaskPluginCollector taskPluginCollector){
 
         List<Configuration> columnConfigs = readerSliceConfig.getListConfiguration(Key.COLUMN);
+
+        String nullFormat = readerSliceConfig.getString("nullFormat", defaultNullFormat);
         String allColumns = "";
         String allColumnTypes = "";
         boolean isReadAllColumns = false;
@@ -191,7 +195,8 @@ public class DFSUtil {
                         Object field = inspector.getStructFieldData(value, fields.get(i));
                         recordFields.add(field);
                     }
-                    transportOneRecord(columnConfigs, recordFields, recordSender, taskPluginCollector, isReadAllColumns);
+                    transportOneRecord(columnConfigs, recordFields, recordSender
+                                    , taskPluginCollector, isReadAllColumns, nullFormat);
                 }
                 reader.close();
             }catch (Exception e){
@@ -204,7 +209,8 @@ public class DFSUtil {
     }
 
     private Record transportOneRecord(List<Configuration> columnConfigs, List<Object> recordFields
-                , RecordSender recordSender, TaskPluginCollector taskPluginCollector, boolean isReadAllColumns){
+                    , RecordSender recordSender, TaskPluginCollector taskPluginCollector
+                        , boolean isReadAllColumns, String nullFormat){
         Record record = recordSender.createRecord();
         Column columnGenerated = null;
         try {
@@ -212,8 +218,12 @@ public class DFSUtil {
                 // 读取所有列，创建都为String类型的column
                 for(Object recordField :recordFields){
                     String columnValue = null;
-                    if(recordField != null)
+                    if(recordField != null){
                         columnValue = recordField.toString();
+                        if (columnValue.equals(nullFormat)) {
+                            columnValue = null;
+                        }
+                    }
                     columnGenerated = new StringColumn(columnValue);
                     record.addColumn(columnGenerated);
                 }
@@ -235,9 +245,9 @@ public class DFSUtil {
                     }
                     Type type = Type.valueOf(columnType.toUpperCase());
                     // it's all ok if nullFormat is null
-                /*if (columnValue.equals(nullFormat)) {
-                    columnValue = null;
-                }*/
+                    if (columnValue.equals(nullFormat)) {
+                        columnValue = null;
+                    }
                     switch (type) {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
