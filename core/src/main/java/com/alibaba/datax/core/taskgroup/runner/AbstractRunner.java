@@ -76,6 +76,7 @@ public abstract class AbstractRunner {
      */
     public void setTaskGroupId(int taskGroupId) {
         this.taskGroupId = taskGroupId;
+        this.plugin.setTaskGroupId(taskGroupId);
     }
 
     /**
@@ -91,12 +92,17 @@ public abstract class AbstractRunner {
 
     public void setTaskId(int taskId) {
         this.taskId = taskId;
+        this.plugin.setTaskId(taskId);
     }
 
     public void setRunnerCommunication(final Communication runnerCommunication) {
         Validate.notNull(runnerCommunication,
                 "插件的Communication不能为空");
         this.runnerCommunication = runnerCommunication;
+    }
+
+    public Communication getRunnerCommunication() {
+        return runnerCommunication;
     }
 
     public abstract void shutdown();

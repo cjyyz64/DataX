@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.AbstractJobPlugin;
 import com.alibaba.datax.common.plugin.JobPluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
+import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
@@ -168,9 +169,11 @@ public class JobContainer extends AbstractContainer {
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         } finally {
             if(!isDryRun) {
+
                 this.destroy();
                 this.endTimeStamp = System.currentTimeMillis();
                 if (!hasException) {
+                    LOG.info(PerfTrace.getInstance().summarize());
                     this.logStatistics();
                 }
             }

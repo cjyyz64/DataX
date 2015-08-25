@@ -65,31 +65,34 @@ public class OdpsWriterProxy {
 
     }
 
-    public void writeOneRecord(
+    public long writeOneRecord(
             com.alibaba.datax.common.element.Record dataXRecord,
             List<Long> blocks) throws Exception {
 
         Record record = dataxRecordToOdpsRecord(dataXRecord);
 
         if (null == record) {
-            return;
+            return 0;
         }
         protobufRecordPack.append(record);
 
         if (protobufRecordPack.getTotalBytes() >= maxBufferSize) {
+            long startTimeInNs = System.nanoTime();
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
                     protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
-
             blocks.add(blockId.get());
             protobufRecordPack.reset();
             this.blockId.incrementAndGet();
+            return System.nanoTime() - startTimeInNs;
         }
+        return 0;
     }
 
-    public void writeRemainingRecord(List<Long> blocks) throws Exception {
+    public long writeRemainingRecord(List<Long> blocks) throws Exception {
         // complete protobuf stream, then write to http
         if (protobufRecordPack.getTotalBytes() != 0) {
+            long startTimeInNs = System.nanoTime();
             OdpsUtil.slaveWriteOneBlock(this.slaveUpload,
                     protobufRecordPack, blockId.get(), this.isCompress);
             LOG.info("write block {} ok.", blockId.get());
@@ -97,7 +100,9 @@ public class OdpsWriterProxy {
             blocks.add(blockId.get());
             // reset the buffer for next block
             protobufRecordPack.reset();
+            return System.nanoTime() - startTimeInNs;
         }
+        return 0;
     }
 
     public Record dataxRecordToOdpsRecord(
