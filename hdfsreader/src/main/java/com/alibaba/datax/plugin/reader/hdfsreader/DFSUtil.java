@@ -38,14 +38,33 @@ public class DFSUtil {
 
     private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
+    private String specifiedFileType = null;
+
     public DFSUtil(String defaultFS){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
         hadoopConf.set("fs.defaultFS", defaultFS);
     }
 
+    // 如果用户未指定文件类型，则将文件路径全部加入sourceHDFSAllFilesList
+    // 如果用户指定了文件类型，则将指定的文件类型的路径加入sourceHDFSAllFilesList
+    private void addSourceFileByType(String filePath){
+        HdfsFileType type = checkHdfsFileType(filePath);
+        if(!StringUtils.isBlank(specifiedFileType)){
+            if(type.toString().contains(specifiedFileType.toUpperCase())){
+                sourceHDFSAllFilesList.add(filePath);
+            }
+        }else{
+            sourceHDFSAllFilesList.add(filePath);
+        }
+    }
+
+
     private HashSet<String> sourceHDFSAllFilesList = new HashSet<String>();
 
-    public HashSet<String> getHDFSAllFiles(String hdfsPath){
+    public HashSet<String> getHDFSAllFiles(String hdfsPath, String specifiedFileType){
+
+        this.specifiedFileType = specifiedFileType;
+
         try {
             FileSystem hdfs = FileSystem.get(hadoopConf);
             //判断hdfsPath是否包含正则符号
@@ -54,7 +73,7 @@ public class DFSUtil {
                 FileStatus stats[] = hdfs.globStatus(path);
                 for(FileStatus f : stats){
                     if(f.isFile()){
-                        sourceHDFSAllFilesList.add(f.getPath().toString());
+                        addSourceFileByType(f.getPath().toString());
                     }
                     else if(f.isDirectory()){
                         getHDFSALLFiles_NO_Regex(f.getPath().toString(), hdfs);
@@ -85,8 +104,12 @@ public class DFSUtil {
             // 判断是不是目录，如果是目录，递归调用
             if (f.isDirectory()) {
                 getHDFSALLFiles_NO_Regex(f.getPath().toString(),hdfs);
-            } else {
-                sourceHDFSAllFilesList.add(f.getPath().toString());
+            }
+            else if(f.isFile()){
+                addSourceFileByType(f.getPath().toString());
+            }
+            else{
+                LOG.info(String.format("忽略文件[%s]，因为其 既不是目录也不是文件。", f.getPath().toString()));
             }
         }
         return sourceHDFSAllFilesList;
@@ -101,18 +124,25 @@ public class DFSUtil {
             return inputStream;
         }catch (IOException e) {
             e.printStackTrace();
+        }finally {
+            try{
+                inputStream.close();
+            }catch (IOException ioe){
+                ioe.printStackTrace();
+            }
         }
         return null;
     }
 
     public BufferedReader getBufferedReader(String filepath, HdfsFileType fileType, String encoding){
+
+        Path path = new Path(filepath);
+        FSDataInputStream in = null;
+
+        CompressionInputStream cin = null;
+        BufferedReader br = null;
         try {
             FileSystem fs = FileSystem.get(hadoopConf);
-            Path path = new Path(filepath);
-            FSDataInputStream in = null;
-
-            CompressionInputStream cin = null;
-            BufferedReader br = null;
 
             if (fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
                 CompressionCodecFactory factory = new CompressionCodecFactory(hadoopConf);
@@ -121,6 +151,7 @@ public class DFSUtil {
                     String message = String.format(
                             "Can't find any suitable CompressionCodec to this file:%value",
                             path.toString());
+                    LOG.error(message);
                     throw DataXException.asDataXException(HdfsReaderErrorCode.CONFIG_INVALID_EXCEPTION, message);
                 }
                 in = fs.open(path);
@@ -133,6 +164,17 @@ public class DFSUtil {
             return br;
         }catch (Exception e){
             e.printStackTrace();
+        }finally {
+            try{
+                if(in != null)
+                    in.close();
+                if(cin != null)
+                    cin.close();
+            }catch (IOException ioe){
+                String message = String.format("关闭文件[%s]流类型。", filepath);
+                LOG.error(message);
+                throw DataXException.asDataXException(HdfsReaderErrorCode.CLOSE_FILE_ERROR, message);
+            }
         }
         return null;
     }
@@ -177,7 +219,6 @@ public class DFSUtil {
                 FileInputFormat.setInputPaths(conf, orcFilePath.toString());
                 InputSplit[] splits = in.getSplits(conf, 1);
 
-                //conf.set("hive.io.file.readcolumn.ids", "1");
                 RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
                 Object key = reader.createKey();
                 Object value = reader.createValue();
@@ -234,11 +275,9 @@ public class DFSUtil {
                     } else {
                         columnValue = columnConst;
                     }
+
                     Type type = Type.valueOf(columnType.toUpperCase());
-                    // it's all ok if nullFormat is null
-                    /*if (columnValue.equals(nullFormat)) {
-                        columnValue = null;
-                    }*/
+
                     switch (type) {
                         case STRING:
                             columnGenerated = new StringColumn(columnValue);
@@ -366,16 +405,17 @@ public class DFSUtil {
     public HdfsFileType checkHdfsFileType(String filepath){
 
         Path path = new Path(filepath);
-
+        FileSystem fs = null;
+        FSDataInputStream file = null;
         try {
-            FileSystem fs = FileSystem.get(hadoopConf);
+            fs = FileSystem.get(hadoopConf);
 
             // figure out the size of the file using the option or filesystem
             long size = fs.getFileStatus(path).getLen();
 
             //read last bytes into buffer to get PostScript
             int readSize = (int) Math.min(size, DIRECTORY_SIZE_GUESS);
-            FSDataInputStream file = fs.open(path);
+            file = fs.open(path);
             file.seek(size - readSize);
             ByteBuffer buffer = ByteBuffer.allocate(readSize);
             file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
@@ -384,25 +424,39 @@ public class DFSUtil {
             //read the PostScript
             //get length of PostScript
             int psLen = buffer.get(readSize - 1) & 0xff;
-            HdfsFileType type = ensureOrcFooter(file, path, psLen, buffer, hadoopConf);
+            HdfsFileType type = checkFileType(file, path, psLen, buffer, hadoopConf);
+
             return type;
         }catch (Exception e){
             String message = String.format("检查文件[%s]类型失败，请检查您的文件是否合法。"
                     , filepath);
+            LOG.error(message);
             throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
+        }finally {
+            try{
+                if(file != null){
+                    file.close();
+                }
+                if(fs != null){
+                    fs.close();
+                }
+            }catch (IOException ioe){
+                String message = String.format("关闭文件[%s]流类型。", filepath);
+                LOG.error(message);
+                throw DataXException.asDataXException(HdfsReaderErrorCode.CLOSE_FILE_ERROR, message);
+            }
         }
     }
 
     /**
-     * Ensure this is an ORC file to prevent users from trying to read text
-     * files or RC files as ORC files.
      * @param in the file being read
      * @param path the filename for error messages
      * @param psLen the postscript length
      * @param buffer the tail of the file
+     * @param hadoopConf the Configuration of hadoop
      * @throws IOException
      */
-    private HdfsFileType ensureOrcFooter(FSDataInputStream in,
+    private HdfsFileType checkFileType(FSDataInputStream in,
                                                 Path path,
                                                 int psLen,
                                                 ByteBuffer buffer,
