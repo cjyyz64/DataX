@@ -38,32 +38,14 @@ public class DFSUtil {
 
     private static final int DIRECTORY_SIZE_GUESS = 16 * 1024;
 
-    private String specifiedFileType = null;
-
     public DFSUtil(String defaultFS){
         hadoopConf = new org.apache.hadoop.conf.Configuration();
         hadoopConf.set("fs.defaultFS", defaultFS);
     }
 
-    // 如果用户未指定文件类型，则将文件路径全部加入sourceHDFSAllFilesList
-    // 如果用户指定了文件类型，则将指定的文件类型的路径加入sourceHDFSAllFilesList
-    private void addSourceFileByType(String filePath){
-        HdfsFileType type = checkHdfsFileType(filePath);
-        if(!StringUtils.isBlank(specifiedFileType)){
-            if(type.toString().contains(specifiedFileType.toUpperCase())){
-                sourceHDFSAllFilesList.add(filePath);
-            }
-        }else{
-            sourceHDFSAllFilesList.add(filePath);
-        }
-    }
-
     private HashSet<String> sourceHDFSAllFilesList = new HashSet<String>();
 
-    public HashSet<String> getHDFSAllFiles(String hdfsPath, String specifiedFileType){
-
-        this.specifiedFileType = specifiedFileType;
-
+    public HashSet<String> getHDFSAllFiles(String hdfsPath){
         try {
             FileSystem hdfs = FileSystem.get(hadoopConf);
             //判断hdfsPath是否包含正则符号
@@ -72,8 +54,7 @@ public class DFSUtil {
                 FileStatus stats[] = hdfs.globStatus(path);
                 for(FileStatus f : stats){
                     if(f.isFile()){
-//                        sourceHDFSAllFilesList.add(f.getPath().toString());
-                        addSourceFileByType(f.getPath().toString());
+                        sourceHDFSAllFilesList.add(f.getPath().toString());
                     }
                     else if(f.isDirectory()){
                         getHDFSALLFiles_NO_Regex(f.getPath().toString(), hdfs);
@@ -104,15 +85,8 @@ public class DFSUtil {
             // 判断是不是目录，如果是目录，递归调用
             if (f.isDirectory()) {
                 getHDFSALLFiles_NO_Regex(f.getPath().toString(),hdfs);
-            }
-            else if(f.isFile()){
-//                sourceHDFSAllFilesList.add(f.getPath().toString());
-                addSourceFileByType(f.getPath().toString());
-            }
-            else{
-                String message = String.format("该路径[%s]文件类型既不是目录也不是文件，插件自动忽略。"
-                        , f.getPath().toString());
-                LOG.info(message);
+            } else {
+                sourceHDFSAllFilesList.add(f.getPath().toString());
             }
         }
         return sourceHDFSAllFilesList;
