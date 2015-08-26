@@ -71,7 +71,7 @@ public class HdfsReader extends Reader {
             specifiedFileType = this.readerOriginConfig.getString(Key.FILETYPE,null);
             if(!StringUtils.isBlank(specifiedFileType) &&
                     !specifiedFileType.equalsIgnoreCase("ORC") &&
-                        !specifiedFileType.equalsIgnoreCase("TEXT")){
+                    !specifiedFileType.equalsIgnoreCase("TEXT")){
                 String message = "HdfsReader插件目前只支持ORC和TEXT两种格式的文件," +
                         "如果您需要指定读取的文件类型，请将filetype选项的值配置为ORC或者TEXT";
                 throw DataXException.asDataXException(
@@ -140,12 +140,8 @@ public class HdfsReader extends Reader {
         public void prepare() {
 
             LOG.debug("prepare()");
-            this.sourceFiles = dfsUtil.getHDFSAllFiles(path,specifiedFileType);
+            this.sourceFiles = dfsUtil.getHDFSAllFiles(path);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
-            LOG.info("待读取的所有文件路径如下：");
-            for(String filePath :sourceFiles){
-                LOG.info(String.format("[%s]", filePath));
-            }
         }
 
         @Override
@@ -209,6 +205,7 @@ public class HdfsReader extends Reader {
         private List<String> sourceFiles;
         private String defaultFS;
         private HdfsFileType fileType;
+        private String specifiedFileType = null;
         private String encoding;
         private DFSUtil dfsUtil = null;
 
@@ -220,12 +217,13 @@ public class HdfsReader extends Reader {
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
+            this.specifiedFileType = this.taskConfig.getString(Key.FILETYPE,null);
             this.dfsUtil = new DFSUtil(defaultFS);
         }
 
         @Override
         public void prepare() {
-            LOG.debug("task prepare()");
+
         }
 
         @Override
@@ -239,14 +237,20 @@ public class HdfsReader extends Reader {
                 if(fileType.equals(HdfsFileType.TEXT)
                         || fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
 
+                    if(StringUtils.isBlank(this.specifiedFileType) ||
+                            this.specifiedFileType.equalsIgnoreCase("TEXT")){
                         BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
                         UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
                                 this.taskConfig, recordSender, this.getTaskPluginCollector());
+                    }
                 }
                 else if(fileType.equals(HdfsFileType.ORC)){
 
+                    if(StringUtils.isBlank(this.specifiedFileType) ||
+                            this.specifiedFileType.equalsIgnoreCase("ORC")) {
                         dfsUtil.orcFileStartRead(sourceFile, this.taskConfig,
                                 recordSender, this.getTaskPluginCollector());
+                    }
                 }
 
                 if(recordSender != null)
@@ -258,12 +262,12 @@ public class HdfsReader extends Reader {
 
         @Override
         public void post() {
-            LOG.debug("task post()");
+
         }
 
         @Override
         public void destroy() {
-            LOG.debug("task destroy()");
+
         }
 
     }
