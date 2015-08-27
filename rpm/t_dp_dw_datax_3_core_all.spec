@@ -49,10 +49,10 @@ chmod -R 0755 %{_prefix}/conf
 chmod -R 0755 %{_prefix}/job
 chmod -R 0755 %{_prefix}/lib
 chmod -R 0777 %{_prefix}/log
+chmod -R 0777 %{_prefix}/log_perf
 chmod -R 0755 %{_prefix}/plugin
 chmod -R 0755 %{_prefix}/script
 chmod -R 0755 %{_prefix}/hook
-
 
 %files
 %defattr(755,admin,cug-tbdp)

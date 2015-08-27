@@ -41,7 +41,11 @@
             },
             "taskGroup": {
                 "channel": 5
+            },
+            "trace": {
+                "enable": "true"
             }
+
         },
         "statistics": {
             "collector": {

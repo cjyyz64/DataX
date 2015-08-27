@@ -59,7 +59,7 @@ public class PostgresqlReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Task(DATABASE_TYPE);
+            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Task(DATABASE_TYPE,super.getTaskGroupId(), super.getTaskId());
             this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
         }
 
