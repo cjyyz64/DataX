@@ -135,6 +135,10 @@ public class DFSUtil {
             if(type.toString().contains(specifiedFileType.toUpperCase())){
                 sourceHDFSAllFilesList.add(filePath);
             }
+            else{
+                LOG.info(String.format("请注意：由于[%s]文件的格式和用户配置的文件类型格式不一样，" +
+                        "因此该文件被DATAX插件忽略。", filePath));
+            }
         }else{
             sourceHDFSAllFilesList.add(filePath);
         }
