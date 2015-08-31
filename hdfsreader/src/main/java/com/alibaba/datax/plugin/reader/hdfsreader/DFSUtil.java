@@ -239,6 +239,7 @@ public class DFSUtil {
                 List<Object> recordFields = null;
                 while (reader.next(key, value)) {
                     recordFields = new ArrayList<Object>();
+
                     for(int i=0; i<=columnIndexMax; i++){
                         Object field = inspector.getStructFieldData(value, fields.get(i));
                         recordFields.add(field);
