@@ -8,7 +8,7 @@ public enum HdfsReaderErrorCode implements ErrorCode {
     DEFAULT_FS_NOT_FIND_ERROR("HdfsReader-02", "您未配置defaultFS值"),
     ILLEGAL_VALUE("HdfsReader-03", "值错误"),
     CONFIG_INVALID_EXCEPTION("HdfsReader-04", "参数配置错误"),
-    REQUIRED_VALUE("HdfsReader-05", "必选项"),
+    REQUIRED_VALUE("HdfsReader-05", "您缺失了必须填写的参数值."),
     NO_INDEX_VALUE("HdfsReader-06","没有 Index" ),
     MIXED_INDEX_VALUE("HdfsReader-07","index 和 value 混合" ),
     EMPTY_DIR_EXCEPTION("HdfsReader-08", "您尝试读取的文件目录为空."),

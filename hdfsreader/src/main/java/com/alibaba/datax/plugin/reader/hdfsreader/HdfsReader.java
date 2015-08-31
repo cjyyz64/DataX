@@ -36,12 +36,13 @@ public class HdfsReader extends Reader {
                 .getLogger(Job.class);
 
         private Configuration readerOriginConfig = null;
-        private String path = null;
+//        private String path = null;
         private String defaultFS = null;
         private String encoding = null;
         private HashSet<String> sourceFiles;
         private String specifiedFileType = null;
         private DFSUtil dfsUtil = null;
+        private List<String> path = null;
 
         @Override
         public void init() {
@@ -62,11 +63,31 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
             }
 
-            path = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.PATH_NOT_FIND_ERROR);
+            /*path = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.PATH_NOT_FIND_ERROR);
             if (StringUtils.isBlank(path)) {
                 throw DataXException.asDataXException(
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
+            }*/
+
+            //path check
+            String pathInString = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.REQUIRED_VALUE);
+            if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
+                path = new ArrayList<String>();
+                path.add(pathInString);
+            } else {
+                path = this.readerOriginConfig.getList(Key.PATH, String.class);
+                if (null == path || path.size() == 0) {
+                    throw DataXException.asDataXException(HdfsReaderErrorCode.REQUIRED_VALUE, "您需要指定待读取的源目录或文件");
+                }
+                for (String eachPath : path) {
+                    if(!eachPath.startsWith("/")){
+                        String message = String.format("请检查参数path:[%s],需要配置为绝对路径", eachPath);
+                        LOG.error(message);
+                        throw DataXException.asDataXException(HdfsReaderErrorCode.ILLEGAL_VALUE, message);
+                    }
+                }
             }
+
 
             specifiedFileType = this.readerOriginConfig.getString(Key.FILETYPE,null);
             if(!StringUtils.isBlank(specifiedFileType) &&
@@ -140,7 +161,7 @@ public class HdfsReader extends Reader {
         public void prepare() {
 
             LOG.debug("prepare()");
-            this.sourceFiles = dfsUtil.getHDFSAllFiles(path,specifiedFileType);
+            this.sourceFiles = dfsUtil.getAllFiles(path,specifiedFileType);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
             LOG.info("待读取的所有文件路径如下：");
             for(String filePath :sourceFiles){
@@ -209,7 +230,6 @@ public class HdfsReader extends Reader {
         private List<String> sourceFiles;
         private String defaultFS;
         private HdfsFileType fileType;
-        //        private String specifiedFileType = null;
         private String encoding;
         private DFSUtil dfsUtil = null;
 
@@ -221,7 +241,6 @@ public class HdfsReader extends Reader {
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
             this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
-//            this.specifiedFileType = this.taskConfig.getString(Key.FILETYPE,null);
             this.dfsUtil = new DFSUtil(defaultFS);
         }
 
@@ -241,20 +260,14 @@ public class HdfsReader extends Reader {
                 if(fileType.equals(HdfsFileType.TEXT)
                         || fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
 
-                    /*if(StringUtils.isBlank(this.specifiedFileType) ||
-                            this.specifiedFileType.equalsIgnoreCase("TEXT")){*/
                     BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
                     UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
                             this.taskConfig, recordSender, this.getTaskPluginCollector());
-                    /*}*/
                 }
                 else if(fileType.equals(HdfsFileType.ORC)){
 
-                    /*if(StringUtils.isBlank(this.specifiedFileType) ||
-                            this.specifiedFileType.equalsIgnoreCase("ORC")) {*/
                     dfsUtil.orcFileStartRead(sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
-                    /*}*/
                 }
 
                 if(recordSender != null)

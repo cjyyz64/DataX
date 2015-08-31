@@ -45,17 +45,26 @@ public class DFSUtil {
         hadoopConf.set("fs.defaultFS", defaultFS);
     }
 
-    // 如果用户未指定文件类型，则将文件路径全部加入sourceHDFSAllFilesList
-    // 如果用户指定了文件类型，则将指定的文件类型的路径加入sourceHDFSAllFilesList
-    private void addSourceFileByType(String filePath){
-        HdfsFileType type = checkHdfsFileType(filePath);
-        if(!StringUtils.isBlank(specifiedFileType)){
-            if(type.toString().contains(specifiedFileType.toUpperCase())){
-                sourceHDFSAllFilesList.add(filePath);
+
+    /**
+     *
+     * @Title: getAllFiles
+     * @Description: 获取指定路径列表下符合条件的所有文件的绝对路径
+     * @param @param srcPaths 路径列表
+     * @param @param parentLevel 父目录的递归层数（首次为0）
+     * @param @param maxTraversalLevel 允许的最大递归层数
+     * @param @return
+     * @return HashSet<String>
+     * @throws
+     */
+    public HashSet<String> getAllFiles(List<String> srcPaths, String specifiedFileType){
+
+        if (!srcPaths.isEmpty()) {
+            for (String eachPath : srcPaths) {
+                getHDFSAllFiles(eachPath, specifiedFileType);
             }
-        }else{
-            sourceHDFSAllFilesList.add(filePath);
         }
+        return sourceHDFSAllFilesList;
     }
 
     private HashSet<String> sourceHDFSAllFilesList = new HashSet<String>();
@@ -117,6 +126,20 @@ public class DFSUtil {
         }
         return sourceHDFSAllFilesList;
     }
+
+    // 如果用户未指定文件类型，则将文件路径全部加入sourceHDFSAllFilesList
+    // 如果用户指定了文件类型，则将指定的文件类型的路径加入sourceHDFSAllFilesList
+    private void addSourceFileByType(String filePath){
+        HdfsFileType type = checkHdfsFileType(filePath);
+        if(!StringUtils.isBlank(specifiedFileType)){
+            if(type.toString().contains(specifiedFileType.toUpperCase())){
+                sourceHDFSAllFilesList.add(filePath);
+            }
+        }else{
+            sourceHDFSAllFilesList.add(filePath);
+        }
+    }
+
 
     public InputStream getInputStream(String filepath){
         InputStream inputStream = null;
