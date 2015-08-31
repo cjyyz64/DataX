@@ -36,7 +36,6 @@ public class HdfsReader extends Reader {
                 .getLogger(Job.class);
 
         private Configuration readerOriginConfig = null;
-//        private String path = null;
         private String defaultFS = null;
         private String encoding = null;
         private HashSet<String> sourceFiles;
@@ -63,13 +62,7 @@ public class HdfsReader extends Reader {
                         HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 defaultFS");
             }
 
-            /*path = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.PATH_NOT_FIND_ERROR);
-            if (StringUtils.isBlank(path)) {
-                throw DataXException.asDataXException(
-                        HdfsReaderErrorCode.PATH_NOT_FIND_ERROR, "您需要指定 path");
-            }*/
-
-            //path check
+            // path check
             String pathInString = this.readerOriginConfig.getNecessaryValue(Key.PATH, HdfsReaderErrorCode.REQUIRED_VALUE);
             if (!pathInString.startsWith("[") && !pathInString.endsWith("]")) {
                 path = new ArrayList<String>();
@@ -88,10 +81,8 @@ public class HdfsReader extends Reader {
                 }
             }
 
-
-            specifiedFileType = this.readerOriginConfig.getString(Key.FILETYPE,null);
-            if(!StringUtils.isBlank(specifiedFileType) &&
-                    !specifiedFileType.equalsIgnoreCase("ORC") &&
+            specifiedFileType = this.readerOriginConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
+            if( !specifiedFileType.equalsIgnoreCase("ORC") &&
                     !specifiedFileType.equalsIgnoreCase("TEXT")){
                 String message = "HdfsReader插件目前只支持ORC和TEXT两种格式的文件," +
                         "如果您需要指定读取的文件类型，请将filetype选项的值配置为ORC或者TEXT";
@@ -161,7 +152,7 @@ public class HdfsReader extends Reader {
         public void prepare() {
 
             LOG.debug("prepare()");
-            this.sourceFiles = dfsUtil.getAllFiles(path,specifiedFileType);
+            this.sourceFiles = dfsUtil.getAllFiles(path, specifiedFileType);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
             LOG.info("待读取的所有文件路径如下：");
             for(String filePath :sourceFiles){

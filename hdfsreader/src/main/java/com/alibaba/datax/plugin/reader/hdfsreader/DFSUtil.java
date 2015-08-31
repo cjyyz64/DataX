@@ -226,7 +226,6 @@ public class DFSUtil {
                 FileInputFormat.setInputPaths(conf, orcFilePath.toString());
                 InputSplit[] splits = in.getSplits(conf, 1);
 
-                //conf.set("hive.io.file.readcolumn.ids", "1");
                 RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
                 Object key = reader.createKey();
                 Object value = reader.createValue();
@@ -249,6 +248,10 @@ public class DFSUtil {
                 LOG.error(message);
                 throw DataXException.asDataXException(HdfsReaderErrorCode.READ_FILE_ERROR, message);
             }
+        } else {
+            String message = String.format("请确认您所读取的列配置正确！");
+            LOG.error(message);
+            throw DataXException.asDataXException(HdfsReaderErrorCode.BAD_CONFIG_VALUE, message);
         }
     }
 
