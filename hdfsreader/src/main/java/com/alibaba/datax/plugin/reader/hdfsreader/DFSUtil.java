@@ -441,7 +441,7 @@ public class DFSUtil {
             //read the PostScript
             //get length of PostScript
             int psLen = buffer.get(readSize - 1) & 0xff;
-            HdfsFileType type = ensureOrcFooter(file, path, psLen, buffer, hadoopConf);
+            HdfsFileType type = checkType(file, path, psLen, buffer, hadoopConf);
             return type;
         }catch (Exception e){
             String message = String.format("检查文件[%s]类型失败，请检查您的文件是否合法。"
@@ -451,23 +451,25 @@ public class DFSUtil {
     }
 
     /**
-     * Ensure this is an ORC file to prevent users from trying to read text
-     * files or RC files as ORC files.
+     * Check the file type
      * @param in the file being read
      * @param path the filename for error messages
      * @param psLen the postscript length
      * @param buffer the tail of the file
      * @throws IOException
      */
-    private HdfsFileType ensureOrcFooter(FSDataInputStream in,
+    private HdfsFileType checkType(FSDataInputStream in,
                                          Path path,
                                          int psLen,
                                          ByteBuffer buffer,
                                          org.apache.hadoop.conf.Configuration hadoopConf) throws IOException {
         int len = OrcFile.MAGIC.length();
         if (psLen < len + 1) {
-            throw new IOException("Malformed ORC file " + path +
-                    ". Invalid postscript length " + psLen);
+            String message = String.format("Malformed ORC file [%s]. Invalid postscript length [%s]"
+                    , path, psLen);
+            LOG.error(message);
+            throw DataXException.asDataXException(
+                    HdfsReaderErrorCode.MALFORMED_ORC_ERROR, message);
         }
         int offset = buffer.arrayOffset() + buffer.position() + buffer.limit() - 1
                 - len;

@@ -14,7 +14,7 @@ public enum HdfsReaderErrorCode implements ErrorCode {
     EMPTY_DIR_EXCEPTION("HdfsReader-08", "您尝试读取的文件目录为空."),
     PATH_CONFIG_ERROR("HdfsReader-09", "您配置的path格式有误"),
     READ_FILE_ERROR("HdfsReader-10", "读取文件出错"),
-    FILETYPE_NOT_FIND_ERROR("HdfsReader-10", "读取文件出错"),
+    MALFORMED_ORC_ERROR("HdfsReader-10", "ORCFILE格式异常"),
     FILE_TYPE_ERROR("HdfsReader-11", "文件类型配置错误"),
     FILE_TYPE_UNSUPPORT("HdfsReader-12", "文件类型目前不支持"),;
 
