@@ -79,14 +79,15 @@ public class PerfTrace {
 
     public void addTaskDetails(long taskId, String detail) {
         if (enable) {
-
-            String before = taskDetails.get(taskId);
+            String before = "";
+            if (taskDetails.containsKey(taskId)) {
+                before = taskDetails.get(taskId).trim();
+            }
             if (StringUtils.isEmpty(before)) {
                 before = "";
             } else {
                 before += ",";
             }
-
             this.taskDetails.put(taskId, before + detail);
         }
     }
@@ -105,9 +106,9 @@ public class PerfTrace {
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("\n\n === total summarize info === \n");
-        info.append("\n\n used time info =>\n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
+        info.append("\n === total summarize info === \n");
+        info.append("\n   1. all phase average time info and max time task info: \n\n");
+        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
 
         List<PerfRecord.PHASE> keys = new ArrayList<PerfRecord.PHASE>(perfRecordMaps.keySet());
         Collections.sort(keys, new Comparator<PerfRecord.PHASE>() {
@@ -159,8 +160,8 @@ public class PerfTrace {
         }
         //Min min = new Min();
 
-        info.append("\n\n max count info =>\n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE COUNT", "TASK NUM", "MAX COUNT", "MAX TASK ID", "MAX TASK INFO"));
+        info.append("\n\n 2. record average count and max count task info :\n\n");
+        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE COUNT", "ALL TASK NUM", "MAX COUNT", "MAX TASK ID", "MAX TASK INFO"));
         if(maxTaskId4Count>-1) {
             info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n"
                     , PerfRecord.PHASE.READ_TASK_DATA, averageCount, listCount.size(), maxCount, jobId + "-" + maxTGID4Count + "-" + maxTaskId4Count, taskDetails.get(maxTaskId4Count)));
@@ -184,6 +185,13 @@ public class PerfTrace {
         }
     }
 
+    public ConcurrentHashMap<PerfRecord.PHASE, List<PerfRecord>> getPerfRecordMaps() {
+        return perfRecordMaps;
+    }
+
+    public Map<Long, String> getTaskDetails() {
+        return taskDetails;
+    }
 
     public boolean isEnable() {
         return enable;

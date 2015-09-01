@@ -1,6 +1,7 @@
 package com.alibaba.datax.common.statistics;
 
 import com.alibaba.datax.common.util.HostUtils;
+import com.google.common.base.Objects;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,7 +142,42 @@ public class PerfRecord implements Comparable<PerfRecord> {
         return this.elapsedTimeInNs > o.elapsedTimeInNs ? 1 : this.elapsedTimeInNs == o.elapsedTimeInNs ? 0 : -1;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(getJobId(),taskGroupId,taskId,phase,action,startTime,elapsedTimeInNs,count,size);
+    }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if(!(o instanceof PerfRecord)){
+            return false;
+        }
+
+        PerfRecord dst = (PerfRecord)o;
+
+        if(!Objects.equal(this.getJobId(),dst.getJobId())) return false;
+        if(!Objects.equal(this.taskGroupId,dst.taskGroupId)) return false;
+        if(!Objects.equal(this.taskId,dst.taskId)) return false;
+        if(!Objects.equal(this.phase,dst.phase)) return false;
+        if(!Objects.equal(this.action,dst.action)) return false;
+        if(!Objects.equal(this.startTime,dst.startTime)) return false;
+        if(!Objects.equal(this.elapsedTimeInNs,dst.elapsedTimeInNs)) return false;
+        if(!Objects.equal(this.count,dst.count)) return false;
+        if(!Objects.equal(this.size,dst.count)) return false;
+
+        return true;
+    }
+
+    public PerfRecord copy() {
+        PerfRecord copy = new PerfRecord(this.taskGroupId, this.getTaskId(), this.phase);
+        copy.action = this.action;
+        copy.startTime = this.startTime;
+        copy.elapsedTimeInNs = this.elapsedTimeInNs;
+        copy.count = this.count;
+        copy.size = this.size;
+        return copy;
+    }
     public int getTaskGroupId() {
         return taskGroupId;
     }
@@ -183,6 +219,9 @@ public class PerfRecord implements Comparable<PerfRecord> {
     }
 
     public String getDatetime(){
+        if(startTime == null){
+            return "null time";
+        }
         return DateFormatUtils.format(startTime, datetimeFormat);
     }
 }
