@@ -46,7 +46,7 @@ public class MongoUtil {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
-            MongoCredential credential = MongoCredential.createMongoCRCredential(userName, database, password.toCharArray());
+            MongoCredential credential = MongoCredential.createCredential(userName, database, password.toCharArray());
             return new MongoClient(parseServerAddress(addressList), Arrays.asList(credential));
 
         } catch (UnknownHostException e) {
