@@ -46,10 +46,8 @@ public class MongoUtil {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
-        	List<MongoCredential> credentialsList = new ArrayList<MongoCredential>();
             MongoCredential credential = MongoCredential.createCredential(userName, database, password.toCharArray());
-            credentialsList.add(credential);
-            return new MongoClient(parseServerAddress(addressList), credentialsList);
+            return new MongoClient(parseServerAddress(addressList), Arrays.asList(credential));
 
         } catch (UnknownHostException e) {
             throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_ADDRESS,"不合法的地址");
