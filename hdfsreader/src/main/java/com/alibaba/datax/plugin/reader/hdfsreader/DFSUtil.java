@@ -47,21 +47,20 @@ public class DFSUtil {
 
 
     /**
-     *
      * @Title: getAllFiles
      * @Description: 获取指定路径列表下符合条件的所有文件的绝对路径
      * @param @param srcPaths 路径列表
-     * @param @param parentLevel 父目录的递归层数（首次为0）
-     * @param @param maxTraversalLevel 允许的最大递归层数
      * @param @return
      * @return HashSet<String>
      * @throws
      */
     public HashSet<String> getAllFiles(List<String> srcPaths, String specifiedFileType){
 
+        this.specifiedFileType = specifiedFileType;
+
         if (!srcPaths.isEmpty()) {
             for (String eachPath : srcPaths) {
-                getHDFSAllFiles(eachPath, specifiedFileType);
+                getHDFSAllFiles(eachPath);
             }
         }
         return sourceHDFSAllFilesList;
@@ -69,9 +68,7 @@ public class DFSUtil {
 
     private HashSet<String> sourceHDFSAllFilesList = new HashSet<String>();
 
-    public HashSet<String> getHDFSAllFiles(String hdfsPath, String specifiedFileType){
-
-        this.specifiedFileType = specifiedFileType;
+    public HashSet<String> getHDFSAllFiles(String hdfsPath){
 
         try {
             FileSystem hdfs = FileSystem.get(hadoopConf);
@@ -81,7 +78,7 @@ public class DFSUtil {
                 FileStatus stats[] = hdfs.globStatus(path);
                 for(FileStatus f : stats){
                     if(f.isFile()){
-//                        sourceHDFSAllFilesList.add(f.getPath().toString());
+
                         addSourceFileByType(f.getPath().toString());
                     }
                     else if(f.isDirectory()){
@@ -92,7 +89,9 @@ public class DFSUtil {
             else{
                 getHDFSALLFiles_NO_Regex(hdfsPath, hdfs);
             }
+
             return sourceHDFSAllFilesList;
+
         }catch (IOException e){
             String message = String.format("无法读取路径[%s]下的所有文件,请确认您的配置项path是否正确，且配置的用户有权限进入"
                     , hdfsPath);
@@ -115,7 +114,7 @@ public class DFSUtil {
                 getHDFSALLFiles_NO_Regex(f.getPath().toString(),hdfs);
             }
             else if(f.isFile()){
-//                sourceHDFSAllFilesList.add(f.getPath().toString());
+
                 addSourceFileByType(f.getPath().toString());
             }
             else{
@@ -127,20 +126,20 @@ public class DFSUtil {
         return sourceHDFSAllFilesList;
     }
 
-    // 如果用户未指定文件类型，则将文件路径全部加入sourceHDFSAllFilesList
-    // 如果用户指定了文件类型，则将指定的文件类型的路径加入sourceHDFSAllFilesList
+    // 根据用户指定的文件类型，将指定的文件类型的路径加入sourceHDFSAllFilesList
     private void addSourceFileByType(String filePath){
         HdfsFileType type = checkHdfsFileType(filePath);
-        if(!StringUtils.isBlank(specifiedFileType)){
-            if(type.toString().contains(specifiedFileType.toUpperCase())){
-                sourceHDFSAllFilesList.add(filePath);
-            }
-            else{
-                LOG.info(String.format("请注意：由于[%s]文件的格式和用户配置的文件类型格式不一样，" +
-                        "因此该文件被DATAX插件忽略。", filePath));
-            }
-        }else{
+
+        if(type.toString().contains(specifiedFileType.toUpperCase())){
             sourceHDFSAllFilesList.add(filePath);
+        }
+        else{
+            String message = String.format("文件[%s]的类型与用户配置的fileType类型不一致，" +
+                    "请确认您配置的目录下面所有文件的类型均为[%s]"
+                    , filePath, this.specifiedFileType);
+            LOG.error(message);
+            throw DataXException.asDataXException(
+                    HdfsReaderErrorCode.FILE_TYPE_UNSUPPORT, message);
         }
     }
 

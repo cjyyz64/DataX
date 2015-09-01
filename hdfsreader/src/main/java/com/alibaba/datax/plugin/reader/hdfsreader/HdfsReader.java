@@ -154,7 +154,7 @@ public class HdfsReader extends Reader {
             LOG.debug("prepare()");
             this.sourceFiles = dfsUtil.getAllFiles(path, specifiedFileType);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
-            LOG.info("待读取的所有文件路径如下：");
+            LOG.info("待读取的所有文件绝对路径如下：");
             for(String filePath :sourceFiles){
                 LOG.info(String.format("[%s]", filePath));
             }
@@ -221,6 +221,7 @@ public class HdfsReader extends Reader {
         private List<String> sourceFiles;
         private String defaultFS;
         private HdfsFileType fileType;
+        private String specifiedFileType;
         private String encoding;
         private DFSUtil dfsUtil = null;
 
@@ -231,6 +232,7 @@ public class HdfsReader extends Reader {
             this.sourceFiles = this.taskConfig.getList(Constant.SOURCE_FILES, String.class);
             this.defaultFS = this.taskConfig.getNecessaryValue(Key.DEFAULT_FS,
                     HdfsReaderErrorCode.DEFAULT_FS_NOT_FIND_ERROR);
+            this.specifiedFileType = this.taskConfig.getNecessaryValue(Key.FILETYPE, HdfsReaderErrorCode.REQUIRED_VALUE);
             this.encoding = this.taskConfig.getString(Key.ENCODING, "UTF-8");
             this.dfsUtil = new DFSUtil(defaultFS);
         }
@@ -248,17 +250,27 @@ public class HdfsReader extends Reader {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
                 fileType = dfsUtil.checkHdfsFileType(sourceFile);
 
-                if(fileType.equals(HdfsFileType.TEXT)
-                        || fileType.equals(HdfsFileType.COMPRESSED_TEXT)) {
+                if((fileType.equals(HdfsFileType.TEXT) || fileType.equals(HdfsFileType.COMPRESSED_TEXT))
+                        &&(this.specifiedFileType.equalsIgnoreCase("TEXT"))) {
 
                     BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
                     UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
                             this.taskConfig, recordSender, this.getTaskPluginCollector());
                 }
-                else if(fileType.equals(HdfsFileType.ORC)){
+                else if(fileType.equals(HdfsFileType.ORC)
+                        && (this.specifiedFileType.equalsIgnoreCase("ORC"))){
 
                     dfsUtil.orcFileStartRead(sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
+                }
+                else {
+
+                    String message = String.format("文件[%s]的类型与用户配置的fileType类型不一致，" +
+                            "请确认您配置的目录下面所有文件的类型均为[%s]"
+                            , sourceFile, this.specifiedFileType);
+                    LOG.error(message);
+                    throw DataXException.asDataXException(
+                            HdfsReaderErrorCode.FILE_TYPE_UNSUPPORT, message);
                 }
 
                 if(recordSender != null)

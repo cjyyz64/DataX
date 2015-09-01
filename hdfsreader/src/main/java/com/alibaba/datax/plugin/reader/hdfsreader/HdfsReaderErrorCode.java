@@ -16,7 +16,7 @@ public enum HdfsReaderErrorCode implements ErrorCode {
     READ_FILE_ERROR("HdfsReader-10", "读取文件出错"),
     FILETYPE_NOT_FIND_ERROR("HdfsReader-10", "读取文件出错"),
     FILE_TYPE_ERROR("HdfsReader-11", "文件类型配置错误"),
-    CLOSE_FILE_ERROR("HdfsReader-12", "关闭文件流失败"),;
+    FILE_TYPE_UNSUPPORT("HdfsReader-12", "文件类型目前不支持"),;
 
     private final String code;
     private final String description;
