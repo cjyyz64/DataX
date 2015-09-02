@@ -173,7 +173,7 @@ public class JobContainer extends AbstractContainer {
                 this.destroy();
                 this.endTimeStamp = System.currentTimeMillis();
                 if (!hasException) {
-                    LOG.info(PerfTrace.getInstance().summarize());
+                    LOG.info(PerfTrace.getInstance().summarizeNoException());
                     this.logStatistics();
                 }
             }

@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 /**
  * PerfTrace 记录 job（local模式），taskGroup（distribute模式），因为这2种都是jvm，即一个jvm里只需要有1个PerfTrace。
@@ -17,7 +16,7 @@ public class PerfTrace {
 
     private static Logger LOG = LoggerFactory.getLogger(PerfTrace.class);
     private static PerfTrace instance;
-    private static Object lock = new Object();
+    private static final Object lock = new Object();
     private String perfTraceId;
     private volatile boolean enable;
     private volatile boolean isJob;
@@ -26,7 +25,7 @@ public class PerfTrace {
 
 
     //jobid_jobversion,instanceid,taskid, src_mark, dst_mark,
-    private Map<Long, String> taskDetails = new ConcurrentHashMap<Long, String>();
+    private Map<Integer, String> taskDetails = new ConcurrentHashMap<Integer, String>();
     //PHASE => PerfRecord
     private ConcurrentHashMap<PerfRecord.PHASE, List<PerfRecord>> perfRecordMaps = new ConcurrentHashMap<PerfRecord.PHASE, List<PerfRecord>>();
 
@@ -77,16 +76,17 @@ public class PerfTrace {
 
     }
 
-    public void addTaskDetails(long taskId, String detail) {
+    public void addTaskDetails(int taskId, String detail) {
         if (enable) {
-
-            String before = taskDetails.get(taskId);
+            String before = "";
+            if (taskDetails.containsKey(taskId)) {
+                before = taskDetails.get(taskId).trim();
+            }
             if (StringUtils.isEmpty(before)) {
                 before = "";
             } else {
                 before += ",";
             }
-
             this.taskDetails.put(taskId, before + detail);
         }
     }
@@ -98,16 +98,26 @@ public class PerfTrace {
         }
     }
 
+    public String summarizeNoException(){
+        String res;
+        try {
+            res = summarize();
+        } catch (Exception e) {
+            res = "PerfTrace summarize has Exception "+e.getMessage();
+        }
+        return res;
+    }
+
     //任务结束时，对当前的perf总汇总统计
-    public String summarize() {
+    private String summarize() {
         if (!enable) {
             return "PerfTrace not enable!";
         }
 
         StringBuilder info = new StringBuilder();
-        info.append("\n\n === total summarize info === \n");
-        info.append("\n\n used time info =>\n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
+        info.append("\n === total summarize info === \n");
+        info.append("\n   1. all phase average time info and max time task info: \n\n");
+        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
 
         List<PerfRecord.PHASE> keys = new ArrayList<PerfRecord.PHASE>(perfRecordMaps.keySet());
         Collections.sort(keys, new Comparator<PerfRecord.PHASE>() {
@@ -118,12 +128,19 @@ public class PerfTrace {
         });
         for (PerfRecord.PHASE phase : keys) {
             List<PerfRecord> lists = perfRecordMaps.get(phase);
+            if(lists == null){
+                continue;
+            }
             long perfTimeTotal = 0;
             long averageTime = 0;
             long maxTime = 0;
-            long maxTaskId = -1;
+            int maxTaskId = -1;
             int maxTaskGroupId = -1;
             for (PerfRecord perfRecord : lists) {
+                if (perfRecord == null) {
+                    LOG.info("phase(%s) has null PerfRecord", phase);
+                    continue;
+                }
                 perfTimeTotal += perfRecord.getElapsedTimeInNs();
                 if (perfRecord.getElapsedTimeInNs() > maxTime) {
                     maxTime = perfRecord.getElapsedTimeInNs();
@@ -144,7 +161,7 @@ public class PerfTrace {
         long recordsTotal = 0;
         long averageCount = 0;
         long maxCount = 0;
-        long maxTaskId4Count = -1;
+        int maxTaskId4Count = -1;
         int maxTGID4Count = -1;
         for (PerfRecord perfRecord : listCount) {
             recordsTotal += perfRecord.getCount();
@@ -159,8 +176,8 @@ public class PerfTrace {
         }
         //Min min = new Min();
 
-        info.append("\n\n max count info =>\n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE COUNT", "TASK NUM", "MAX COUNT", "MAX TASK ID", "MAX TASK INFO"));
+        info.append("\n\n 2. record average count and max count task info :\n\n");
+        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE COUNT", "ALL TASK NUM", "MAX COUNT", "MAX TASK ID", "MAX TASK INFO"));
         if(maxTaskId4Count>-1) {
             info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n"
                     , PerfRecord.PHASE.READ_TASK_DATA, averageCount, listCount.size(), maxCount, jobId + "-" + maxTGID4Count + "-" + maxTaskId4Count, taskDetails.get(maxTaskId4Count)));
@@ -170,20 +187,26 @@ public class PerfTrace {
     }
 
     public String unitTime(long time) {
-        //100s以上用s
-        if (time > 100000000000L) {
-            return TimeUnit.NANOSECONDS.toSeconds(time) + "s";
-        } else if (time > 100000000L) {
-            //100ms以上用ms
-            return TimeUnit.NANOSECONDS.toMillis(time) + "ms";
-        } else if (time > 100000L) {
-            //100us以上用us
-            return TimeUnit.NANOSECONDS.toMicros(time) + "us";
-        } else {
-            return time + "ns";
-        }
+        //1s以上用s
+        if (time > 1000000000L) {
+            System.out.println("dd"+time/1000000000+":"+(float)time/1000000000);
+            return String.format("%,.2fs",(float)time/1000000000);
+        } else if (time > 1000000L) {
+            //1ms以上
+            return String.format("%,.5fs",(float)time/1000000000);
+        } else
+            //1us
+            return String.format("%,.9fs",(float)time/1000000000);
     }
 
+
+    public ConcurrentHashMap<PerfRecord.PHASE, List<PerfRecord>> getPerfRecordMaps() {
+        return perfRecordMaps;
+    }
+
+    public Map<Integer, String> getTaskDetails() {
+        return taskDetails;
+    }
 
     public boolean isEnable() {
         return enable;
