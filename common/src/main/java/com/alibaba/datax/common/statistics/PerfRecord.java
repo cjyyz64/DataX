@@ -76,12 +76,12 @@ public class PerfRecord implements Comparable<PerfRecord> {
         this.phase = phase;
     }
 
-    public static void addPerfRecord(int taskGroupId, int taskId, PHASE phase, long elapsedTimeInNs) {
+    public static void addPerfRecord(int taskGroupId, int taskId, PHASE phase, long startTime,long elapsedTimeInNs) {
         if(PerfTrace.getInstance().isEnable()) {
             PerfRecord perfRecord = new PerfRecord(taskGroupId, taskId, phase);
             perfRecord.elapsedTimeInNs = elapsedTimeInNs;
             perfRecord.action = "end";
-            perfRecord.startTime = new Date();
+            perfRecord.startTime = new Date(startTime);
             //在PerfTrace里注册
             PerfTrace.getInstance().tracePerfRecord(perfRecord);
             //perf.info(JSON.toJSONString(perfRecord));

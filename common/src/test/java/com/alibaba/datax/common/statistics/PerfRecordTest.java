@@ -1,18 +1,31 @@
 package com.alibaba.datax.common.statistics;
 
 import junit.framework.Assert;
+import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 /**
  * Created by liqiang on 15/8/26.
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PerfRecordTest {
     private static Logger LOG = LoggerFactory.getLogger(PerfRecordTest.class);
     private final int TGID = 1;
+
+
+    @Before
+    public void setUp() throws Exception {
+        Field instance=PerfTrace.class.getDeclaredField("instance");
+        instance.setAccessible(true);
+        instance.set(null,null);
+    }
 
     public boolean hasRecordInList(List<PerfRecord> perfRecordList,PerfRecord perfRecord){
         if(perfRecordList==null || perfRecordList.size()==0){
@@ -29,7 +42,7 @@ public class PerfRecordTest {
     }
 
     @Test
-    public void testPerfRecordEquals() throws Exception {
+    public void test001PerfRecordEquals() throws Exception {
         PerfTrace.getInstance(true, 1001, 1, 0, true);
 
         PerfRecord initPerfRecord = new PerfRecord(TGID, 1, PerfRecord.PHASE.WRITE_TASK_INIT);
@@ -76,7 +89,7 @@ public class PerfRecordTest {
     }
 
     @Test
-    public void testNormal() throws Exception {
+    public void test002Normal() throws Exception {
 
         PerfTrace.getInstance(true, 1001, 1, 0, true);
 
@@ -188,12 +201,12 @@ public class PerfRecordTest {
         PerfTrace.getInstance().addTaskDetails(2,"before char");
         PerfTrace.getInstance().addTaskDetails(2,"task 2 some thing abcdf");
 
-        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(1L).equals("task 1 some thing abcdf"));
-        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(2L).equals("before char,task 2 some thing abcdf"));
-        System.out.println(PerfTrace.getInstance().summarize());
+        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(1).equals("task 1 some thing abcdf"));
+        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(2).equals("before char,task 2 some thing abcdf"));
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
     }
     @Test
-    public void testDisable() throws Exception {
+    public void test003Disable() throws Exception {
 
         PerfTrace.getInstance(true, 1001, 1, 0, false);
 
@@ -270,11 +283,11 @@ public class PerfRecordTest {
         PerfTrace.getInstance().addTaskDetails(2, "task 2 some thing abcdf");
 
         Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().size()==0);
-        System.out.println(PerfTrace.getInstance().summarize());
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
     }
 
     @Test
-    public void testNormal2() throws Exception {
+    public void test004Normal2() throws Exception {
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
@@ -282,7 +295,7 @@ public class PerfRecordTest {
             LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
         }
 
-        System.out.println("priority===="+priority);
+        System.out.println("priority====" + priority);
 
         PerfTrace.getInstance(false, 1001001001001L, 1, 0, true);
 
@@ -372,9 +385,18 @@ public class PerfRecordTest {
         PerfTrace.getInstance().addTaskDetails(10000001, "task 100000011 some thing abcdf");
         PerfTrace.getInstance().addTaskDetails(10000002, "task 100000012 some thing abcdf");
 
-        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(1L).equals("task 100000011 some thing abcdf"));
-        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(2L).equals("task 100000012 some thing abcdf"));
+        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000001).equals("task 100000011 some thing abcdf"));
+        Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000002).equals("task 100000012 some thing abcdf"));
 
-        System.out.println(PerfTrace.getInstance().summarize());
+        PerfRecord.addPerfRecord(TGID, 10000003, PerfRecord.PHASE.TASK, System.currentTimeMillis(), 12300123L * 1000L * 1000L);
+        PerfRecord.addPerfRecord(TGID, 10000004, PerfRecord.PHASE.TASK, System.currentTimeMillis(), 22300123L * 1000L * 1000L);
+        PerfRecord.addPerfRecord(TGID, 10000005, PerfRecord.PHASE.SQL_QUERY, System.currentTimeMillis(), 4L);
+        PerfRecord.addPerfRecord(TGID, 10000006, PerfRecord.PHASE.RESULT_NEXT_ALL, System.currentTimeMillis(), 3000L);
+        PerfRecord.addPerfRecord(TGID, 10000006, PerfRecord.PHASE.ODPS_BLOCK_CLOSE, System.currentTimeMillis(), 2000000L);
+
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
+
+
     }
+
 }
