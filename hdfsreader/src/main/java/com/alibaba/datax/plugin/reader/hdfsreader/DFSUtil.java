@@ -110,6 +110,7 @@ public class DFSUtil {
         JobConf conf = new JobConf(hadoopConf);
         Path orcFilePath = new Path(path);
         Properties p = new Properties();
+        p.setProperty("columns", "col");
         try {
             OrcSerde serde = new OrcSerde();
             serde.initialize(conf, p);
@@ -117,7 +118,18 @@ public class DFSUtil {
             InputFormat<?, ?> in = new OrcInputFormat();
             FileInputFormat.setInputPaths(conf, orcFilePath.toString());
 
-            System.out.println("---------------------------------------------");
+            InputSplit[] splits = in.getSplits(conf, 1);
+
+            RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
+            Object key = reader.createKey();
+            Object value = reader.createValue();
+            // 获取列信息
+            List<? extends StructField> fields = inspector.getAllStructFieldRefs();
+
+            List<Object> recordFields = null;
+            while (reader.next(key, value)) {
+
+            }
 
         }catch (Exception e){
             e.printStackTrace();
