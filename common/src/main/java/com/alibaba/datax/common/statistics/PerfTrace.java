@@ -94,6 +94,7 @@ public class PerfTrace {
     public void tracePerfRecord(PerfRecord perfRecord) {
         if (enable) {
             perfRecordMaps.putIfAbsent(perfRecord.getPhase(), new ArrayList<PerfRecord>());
+            //ArrayList非线程安全
             synchronized (this) {
                 perfRecordMaps.get(perfRecord.getPhase()).add(perfRecord);
             }
