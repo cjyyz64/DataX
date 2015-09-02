@@ -46,11 +46,11 @@ public class HdfsReader extends Reader {
         @Override
         public void init() {
 
-            LOG.debug("init() begin...");
+            LOG.info("init() begin...");
             this.readerOriginConfig = super.getPluginJobConf();
             this.validate();
             dfsUtil = new DFSUtil(defaultFS);
-            LOG.debug("init() ok and end...");
+            LOG.info("init() ok and end...");
 
         }
 
@@ -104,6 +104,13 @@ public class HdfsReader extends Reader {
                         String.format("运行配置异常 : %s", e.getMessage()), e);
             }
 
+            // validate the Columns
+            validateColumns();
+
+        }
+
+        private void validateColumns(){
+
             // 检测是column 是否为 ["*"] 若是则填为空
             List<Configuration> column = this.readerOriginConfig
                     .getListConfiguration(Key.COLUMN);
@@ -145,13 +152,12 @@ public class HdfsReader extends Reader {
                     }
                 }
             }
-
         }
 
         @Override
         public void prepare() {
 
-            LOG.debug("prepare()");
+            LOG.info("prepare()");
             this.sourceFiles = dfsUtil.getAllFiles(path, specifiedFileType);
             LOG.info(String.format("您即将读取的文件数为: [%s]", this.sourceFiles.size()));
             LOG.info("待读取的所有文件绝对路径如下：");
@@ -163,7 +169,7 @@ public class HdfsReader extends Reader {
         @Override
         public List<Configuration> split(int adviceNumber) {
 
-            LOG.debug("split() begin...");
+            LOG.info("split() begin...");
             List<Configuration> readerSplitConfigs = new ArrayList<Configuration>();
             // warn:每个slice拖且仅拖一个文件,
             // int splitNumber = adviceNumber;
@@ -203,13 +209,11 @@ public class HdfsReader extends Reader {
         @Override
         public void post() {
 
-            LOG.debug("post()");
         }
 
         @Override
         public void destroy() {
 
-            LOG.debug("destroy()");
         }
 
     }
@@ -245,25 +249,23 @@ public class HdfsReader extends Reader {
         @Override
         public void startRead(RecordSender recordSender) {
 
-            LOG.debug("read start");
+            LOG.info("read start");
             for (String sourceFile : this.sourceFiles) {
                 LOG.info(String.format("reading file : [%s]", sourceFile));
                 fileType = dfsUtil.checkHdfsFileType(sourceFile);
 
                 if((fileType.equals(HdfsFileType.TEXT) || fileType.equals(HdfsFileType.COMPRESSED_TEXT))
-                        &&(this.specifiedFileType.equalsIgnoreCase("TEXT"))) {
+                        &&(this.specifiedFileType.equalsIgnoreCase(Constant.TEXT))) {
 
                     BufferedReader bufferedReader = dfsUtil.getBufferedReader(sourceFile, fileType, encoding);
                     UnstructuredStorageReaderUtil.doReadFromStream(bufferedReader, sourceFile,
                             this.taskConfig, recordSender, this.getTaskPluginCollector());
-                }
-                else if(fileType.equals(HdfsFileType.ORC)
-                        && (this.specifiedFileType.equalsIgnoreCase("ORC"))){
+                }else if(fileType.equals(HdfsFileType.ORC)
+                        && (this.specifiedFileType.equalsIgnoreCase(Constant.ORC))){
 
                     dfsUtil.orcFileStartRead(sourceFile, this.taskConfig,
                             recordSender, this.getTaskPluginCollector());
-                }
-                else {
+                }else {
 
                     String message = String.format("文件[%s]的类型与用户配置的fileType类型不一致，" +
                             "请确认您配置的目录下面所有文件的类型均为[%s]"
@@ -273,11 +275,12 @@ public class HdfsReader extends Reader {
                             HdfsReaderErrorCode.FILE_TYPE_UNSUPPORT, message);
                 }
 
-                if(recordSender != null)
+                if(recordSender != null){
                     recordSender.flush();
+                }
             }
 
-            LOG.debug("end read source files...");
+            LOG.info("end read source files...");
         }
 
         @Override
