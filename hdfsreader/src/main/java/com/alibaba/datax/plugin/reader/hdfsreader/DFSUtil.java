@@ -105,12 +105,25 @@ public class DFSUtil {
         // 获取要读取的文件的根目录
         Path listFiles = new Path(path);
 
-        /**************************** 断网演习 *******************************************/
-        hdfs.open(listFiles);
 
-        System.out.println("---------------------------------------------------");
+        /**************************** 断网演习 *********************************/
+        JobConf conf = new JobConf(hadoopConf);
+        Path orcFilePath = new Path(path);
+        Properties p = new Properties();
+        try {
+            OrcSerde serde = new OrcSerde();
+            serde.initialize(conf, p);
+            StructObjectInspector inspector = (StructObjectInspector) serde.getObjectInspector();
+            InputFormat<?, ?> in = new OrcInputFormat();
+            FileInputFormat.setInputPaths(conf, orcFilePath.toString());
 
-        /**************************** 断网演习 *******************************************/
+            System.out.println("---------------------------------------------");
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        /**************************** 断网演习 *********************************/
+
 
         // 获取要读取的文件的根目录的所有二级子文件目录
         FileStatus stats[] = hdfs.listStatus(listFiles);
