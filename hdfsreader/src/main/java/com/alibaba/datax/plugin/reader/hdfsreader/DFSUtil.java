@@ -434,8 +434,6 @@ public class DFSUtil {
         Path path = new Path(filepath);
 
         try {
-            HdfsFileType type = HdfsFileType.TEXT;/********************/
-
             FileSystem fs = FileSystem.get(hadoopConf);
 
             // figure out the size of the file using the option or filesystem
@@ -446,13 +444,13 @@ public class DFSUtil {
             FSDataInputStream file = fs.open(path);
             file.seek(size - readSize);
             ByteBuffer buffer = ByteBuffer.allocate(readSize);
-            /*file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
+            file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
                     buffer.remaining());
 
             //read the PostScript
             //get length of PostScript
             int psLen = buffer.get(readSize - 1) & 0xff;
-            HdfsFileType type = checkType(file, path, psLen, buffer, hadoopConf);*/
+            HdfsFileType type = checkType(file, path, psLen, buffer, hadoopConf);
 
             return type;
         }catch (Exception e){
