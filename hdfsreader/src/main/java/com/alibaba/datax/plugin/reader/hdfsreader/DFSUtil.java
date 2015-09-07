@@ -93,8 +93,8 @@ public class DFSUtil {
             return sourceHDFSAllFilesList;
 
         }catch (IOException e){
-            String message = String.format("无法读取路径[%s]下的所有文件,请确认您的配置项path是否正确，且配置的用户有权限进入"
-                    , hdfsPath);
+            String message = String.format("无法读取路径[%s]下的所有文件,请确认您的配置项path是否正确，" +
+                    "是否有读写权限，网络是否已断开！", hdfsPath);
             LOG.error(message);
             throw DataXException.asDataXException(HdfsReaderErrorCode.PATH_CONFIG_ERROR, message);
         }
@@ -105,38 +105,8 @@ public class DFSUtil {
         // 获取要读取的文件的根目录
         Path listFiles = new Path(path);
 
-
-        /**************************** 断网演习 *********************************/
-        JobConf conf = new JobConf(hadoopConf);
-        Path orcFilePath = new Path(path);
-        Properties p = new Properties();
-        p.setProperty("columns", "col");
-        try {
-            OrcSerde serde = new OrcSerde();
-            serde.initialize(conf, p);
-            StructObjectInspector inspector = (StructObjectInspector) serde.getObjectInspector();
-            InputFormat<?, ?> in = new OrcInputFormat();
-            FileInputFormat.setInputPaths(conf, orcFilePath.toString());
-
-            InputSplit[] splits = in.getSplits(conf, 1);
-
-            RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
-            Object key = reader.createKey();
-            Object value = reader.createValue();
-            // 获取列信息
-            List<? extends StructField> fields = inspector.getAllStructFieldRefs();
-
-            List<Object> recordFields = null;
-            while (reader.next(key, value)) {
-
-            }
-
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-        /**************************** 断网演习 *********************************/
-
-
+        // If the network disconnected, this method will retry 45 times
+        // each time the retry interval for 20 seconds
         // 获取要读取的文件的根目录的所有二级子文件目录
         FileStatus stats[] = hdfs.listStatus(listFiles);
 
@@ -207,10 +177,14 @@ public class DFSUtil {
                             path.toString());
                     throw DataXException.asDataXException(HdfsReaderErrorCode.CONFIG_INVALID_EXCEPTION, message);
                 }
+                //If the network disconnected, this method will retry 45 times
+                //each time the retry interval for 20 seconds
                 in = fs.open(path);
                 cin = codec.createInputStream(in);
                 br = new BufferedReader(new InputStreamReader(cin, encoding));
             } else {
+                //If the network disconnected, this method will retry 45 times
+                // each time the retry interval for 20 seconds
                 in = fs.open(path);
                 br = new BufferedReader(new InputStreamReader(in, encoding));
             }
@@ -259,6 +233,9 @@ public class DFSUtil {
                 StructObjectInspector inspector = (StructObjectInspector) serde.getObjectInspector();
                 InputFormat<?, ?> in = new OrcInputFormat();
                 FileInputFormat.setInputPaths(conf, orcFilePath.toString());
+
+                //If the network disconnected, will retry 45 times, each time the retry interval for 20 seconds
+                //Each file as a split
                 InputSplit[] splits = in.getSplits(conf, 1);
 
                 RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
