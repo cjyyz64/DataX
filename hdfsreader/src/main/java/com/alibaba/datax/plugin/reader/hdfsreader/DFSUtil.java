@@ -444,8 +444,8 @@ public class DFSUtil {
             FSDataInputStream file = fs.open(path);
             file.seek(size - readSize);
             ByteBuffer buffer = ByteBuffer.allocate(readSize);
-            /*file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
-                    buffer.remaining());*/
+            file.readFully(buffer.array(), buffer.arrayOffset() + buffer.position(),
+                    buffer.remaining());
 
             //read the PostScript
             //get length of PostScript
