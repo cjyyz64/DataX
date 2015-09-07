@@ -450,7 +450,8 @@ public class DFSUtil {
             //read the PostScript
             //get length of PostScript
             int psLen = buffer.get(readSize - 1) & 0xff;
-            HdfsFileType type = checkType(file, path, psLen, buffer, hadoopConf);
+//            HdfsFileType type = checkType(file, path, psLen, buffer, hadoopConf);
+            HdfsFileType type = HdfsFileType.TEXT;
             return type;
         }catch (Exception e){
             String message = String.format("检查文件[%s]类型失败，请检查您的文件是否合法。"
