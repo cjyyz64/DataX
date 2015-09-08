@@ -8,6 +8,7 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.HostUtils;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.Engine;
@@ -24,11 +25,14 @@ import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJo
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
+import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.LogReportInfo;
+import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -37,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -67,6 +72,8 @@ public class JobContainer extends AbstractContainer {
     private Reader.Job jobReader;
 
     private Writer.Job jobWriter;
+
+    private Configuration userConf;
 
     private long startTimeStamp;
 
@@ -105,6 +112,7 @@ public class JobContainer extends AbstractContainer {
                 LOG.info("jobContainer starts to do preCheck ...");
                 this.preCheck();
             } else {
+                userConf = configuration.clone();
                 LOG.debug("jobContainer starts to do preHandle ...");
                 this.preHandle();
 
@@ -627,6 +635,8 @@ public class JobContainer extends AbstractContainer {
 
         super.getContainerCommunicator().report(reportCommunication);
 
+        reportDataxLog(reportCommunication);
+
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
                         + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n"
@@ -649,6 +659,46 @@ public class JobContainer extends AbstractContainer {
                 "读写失败总数",
                 String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
         ));
+    }
+
+    private void reportDataxLog(Communication communication){
+        try{
+            boolean report = userConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_LOG);
+            if(report){
+                LogReportInfo info = buildReportInfo(communication);
+                Result result = DataxServiceUtil.reportDataxLog(info);
+                LOG.info("report datax log return code : " + result.getReturnCode());
+            }
+        }catch (Exception e){
+            LOG.warn("report datax log fail, message : " + e.getMessage());
+        }
+    }
+
+    private LogReportInfo buildReportInfo(Communication communication){
+        LogReportInfo info = new LogReportInfo();
+        String skynetId = System.getenv("SKYNET_ID");
+        info.setNodeId(skynetId == null ? jobId : Long.parseLong(skynetId));
+        Long instId = jobId;
+        if(jobId==0 && System.getenv("SKYNET_TASKID")!=null){
+            instId = Long.parseLong(System.getenv("SKYNET_TASKID"));
+        }
+        info.setInstId(instId);
+        info.setSrcType(readerPluginName);
+        Configuration srcConfig = userConf.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER).clone();
+        info.setSrcConfig(Engine.filterSensitiveConfiguration(srcConfig).toJSON());
+        info.setDstType(writerPluginName);
+        Configuration dstConfig = userConf.getConfiguration(
+                CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER).clone();
+        info.setDstConfig(Engine.filterSensitiveConfiguration(dstConfig).toJSON());
+        info.setBeginTime(new Date(startTimeStamp));
+        info.setEndTime(new Date(endTimeStamp));
+        info.setTotalRecords(communication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS));
+        info.setTotalBytes(communication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES));
+        info.setSpeedRecords(communication.getLongCounter(CommunicationTool.RECORD_SPEED));
+        info.setSpeedBytes(communication.getLongCounter(CommunicationTool.BYTE_SPEED));
+        info.setHostAddress(HostUtils.IP);
+        return info;
     }
 
     /**

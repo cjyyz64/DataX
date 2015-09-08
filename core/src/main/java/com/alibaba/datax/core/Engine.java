@@ -83,24 +83,28 @@ public class Engine {
 
 
     // 注意屏蔽敏感信息
-    public static String filterJobConfiguration(
-            final Configuration configuration) {
+    public static String filterJobConfiguration(final Configuration configuration) {
         Configuration jobConfWithSetting = configuration.getConfiguration("job").clone();
 
         Configuration jobContent = jobConfWithSetting.getConfiguration("content");
 
-        Set<String> keys = jobContent.getKeys();
-        for (final String key : keys) {
-            boolean isSensitive = StringUtils.endsWithIgnoreCase(key,
-                    "password")
-                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
-            if (isSensitive && jobContent.get(key) instanceof String) {
-                jobContent.set(key, jobContent.getString(key).replaceAll(".", "*"));
-            }
-        }
+        filterSensitiveConfiguration(jobContent);
 
         jobConfWithSetting.set("content",jobContent);
+
         return jobConfWithSetting.beautify();
+    }
+
+    public static Configuration filterSensitiveConfiguration(Configuration configuration){
+        Set<String> keys = configuration.getKeys();
+        for (final String key : keys) {
+            boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
+                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
+            if (isSensitive && configuration.get(key) instanceof String) {
+                configuration.set(key, configuration.getString(key).replaceAll(".", "*"));
+            }
+        }
+        return configuration;
     }
 
     public static void entry(final String[] args) throws Throwable {
