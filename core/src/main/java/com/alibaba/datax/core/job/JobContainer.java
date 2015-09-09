@@ -663,7 +663,7 @@ public class JobContainer extends AbstractContainer {
 
     private void reportDataxLog(Communication communication){
         try{
-            boolean report = userConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_LOG);
+            boolean report = userConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_LOG, false);
             if(report){
                 LogReportInfo info = buildReportInfo(communication);
                 Result result = DataxServiceUtil.reportDataxLog(info);
@@ -698,6 +698,7 @@ public class JobContainer extends AbstractContainer {
         info.setSpeedRecords(communication.getLongCounter(CommunicationTool.RECORD_SPEED));
         info.setSpeedBytes(communication.getLongCounter(CommunicationTool.BYTE_SPEED));
         info.setHostAddress(HostUtils.IP);
+        info.setJobMode(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, "standalone"));
         return info;
     }
 
