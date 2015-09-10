@@ -94,7 +94,8 @@ public class ResultSetReadProxy {
 					record.addColumn(new BytesColumn(rs.getBytes(i)));
 					break;
 
-				// TODO  可能要把 bit 删除
+				// warn: bit(1) -> Types.BIT 可使用BoolColumn
+				// warn: bit(>1) -> Types.VARBINARY 可使用BytesColumn
 				case Types.BOOLEAN:
 				case Types.BIT:
 					record.addColumn(new BoolColumn(rs.getBoolean(i)));
