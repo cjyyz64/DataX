@@ -62,7 +62,6 @@
             <version>2.5.16</version>
         </dependency>
 
-
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-service-face</artifactId>

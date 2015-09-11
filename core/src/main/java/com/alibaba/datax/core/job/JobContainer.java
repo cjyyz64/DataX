@@ -28,6 +28,7 @@ import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.LogReportUtil;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -635,7 +636,7 @@ public class JobContainer extends AbstractContainer {
 
         super.getContainerCommunicator().report(reportCommunication);
 
-        reportDataxLog(reportCommunication);
+        LogReportUtil.reportDataxLog(userConf, reportCommunication, startTimeStamp, endTimeStamp);
 
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"
@@ -659,47 +660,6 @@ public class JobContainer extends AbstractContainer {
                 "读写失败总数",
                 String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
         ));
-    }
-
-    private void reportDataxLog(Communication communication){
-        try{
-            boolean report = userConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_LOG, false);
-            if(report){
-                LogReportInfo info = buildReportInfo(communication);
-                Result result = DataxServiceUtil.reportDataxLog(info);
-                LOG.info("report datax log return code : " + result.getReturnCode());
-            }
-        }catch (Exception e){
-            LOG.warn("report datax log fail, message : " + e.getMessage());
-        }
-    }
-
-    private LogReportInfo buildReportInfo(Communication communication){
-        LogReportInfo info = new LogReportInfo();
-        String skynetId = System.getenv("SKYNET_ID");
-        info.setNodeId(skynetId == null ? jobId : Long.parseLong(skynetId));
-        Long instId = jobId;
-        if(jobId==0 && System.getenv("SKYNET_TASKID")!=null){
-            instId = Long.parseLong(System.getenv("SKYNET_TASKID"));
-        }
-        info.setInstId(instId);
-        info.setSrcType(readerPluginName);
-        Configuration srcConfig = userConf.getConfiguration(
-                CoreConstant.DATAX_JOB_CONTENT_READER_PARAMETER).clone();
-        info.setSrcConfig(Engine.filterSensitiveConfiguration(srcConfig).toJSON());
-        info.setDstType(writerPluginName);
-        Configuration dstConfig = userConf.getConfiguration(
-                CoreConstant.DATAX_JOB_CONTENT_WRITER_PARAMETER).clone();
-        info.setDstConfig(Engine.filterSensitiveConfiguration(dstConfig).toJSON());
-        info.setBeginTime(new Date(startTimeStamp));
-        info.setEndTime(new Date(endTimeStamp));
-        info.setTotalRecords(communication.getLongCounter(CommunicationTool.READ_SUCCEED_RECORDS));
-        info.setTotalBytes(communication.getLongCounter(CommunicationTool.READ_SUCCEED_BYTES));
-        info.setSpeedRecords(communication.getLongCounter(CommunicationTool.RECORD_SPEED));
-        info.setSpeedBytes(communication.getLongCounter(CommunicationTool.BYTE_SPEED));
-        info.setHostAddress(HostUtils.IP);
-        info.setJobMode(configuration.getString(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, "standalone"));
-        return info;
     }
 
     /**

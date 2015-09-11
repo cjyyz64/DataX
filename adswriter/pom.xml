@@ -25,6 +25,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>datax-core</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.alibaba.datax</groupId>
