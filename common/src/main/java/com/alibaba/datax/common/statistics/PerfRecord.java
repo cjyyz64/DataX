@@ -20,7 +20,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
         /**
          * task total运行的时间，前10为框架统计，后面为部分插件的个性统计
          */
-        TASK(0),
+        TASK_TOTAL(0),
 
         READ_TASK_INIT(1),
         READ_TASK_PREPARE(2),
@@ -46,7 +46,11 @@ public class PerfRecord implements Comparable<PerfRecord> {
         /**
          * only odps block close
          */
-        ODPS_BLOCK_CLOSE(102);
+        ODPS_BLOCK_CLOSE(102),
+
+        WAIT_READ_TIME(103),
+
+        WAIT_WRITE_TIME(104);
 
         private int val;
 
