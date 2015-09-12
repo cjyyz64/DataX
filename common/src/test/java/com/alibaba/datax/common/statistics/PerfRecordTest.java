@@ -86,6 +86,7 @@ public class PerfRecordTest {
         initPerfRecord6.addSize(1001);
 
         Assert.assertTrue(!initPerfRecord.equals(initPerfRecord6));
+
     }
 
     @Test
@@ -144,6 +145,17 @@ public class PerfRecordTest {
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).size() == 1);
         Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY), destoryPerfRecord));
 
+        PerfRecord waitTimePerfRecord = new PerfRecord(TGID, 1, PerfRecord.PHASE.WAIT_READ_TIME);
+        waitTimePerfRecord.start();
+
+        Thread.sleep(250);
+        waitTimePerfRecord.end();
+
+        Assert.assertTrue(waitTimePerfRecord.getAction().equals("end"));
+        Assert.assertTrue(waitTimePerfRecord.getElapsedTimeInNs() >= 250000000);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).size() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME), waitTimePerfRecord));
+
 
 
         PerfRecord initPerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WRITE_TASK_INIT);
@@ -196,6 +208,18 @@ public class PerfRecordTest {
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).size() == 2);
         Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY), destoryPerfRecord2));
 
+        PerfRecord waitPerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WAIT_READ_TIME);
+        waitPerfRecord2.start();
+
+        Thread.sleep(1250);
+        waitPerfRecord2.end();
+
+        Assert.assertTrue(waitPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord2.getElapsedTimeInNs() >= 1250000000);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).size() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME), waitPerfRecord2));
+
+
         PerfTrace.getInstance().addTaskDetails(1, " ");
         PerfTrace.getInstance().addTaskDetails(1, "task 1 some thing abcdf");
         PerfTrace.getInstance().addTaskDetails(2,"before char");
@@ -244,6 +268,16 @@ public class PerfRecordTest {
         Assert.assertTrue(dataPerfRecord.getElapsedTimeInNs() == -1);
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA) == null);
 
+        PerfRecord waitPerfRecor1 = new PerfRecord(TGID, 1, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecor1.start();
+
+        Thread.sleep(2200);
+        waitPerfRecor1.end();
+
+        Assert.assertTrue(waitPerfRecor1.getDatetime().equals("null time"));
+        Assert.assertTrue(waitPerfRecor1.getElapsedTimeInNs() == -1);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME) == null);
+
 
         PerfRecord initPerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WRITE_TASK_INIT);
         initPerfRecord2.start();
@@ -278,6 +312,16 @@ public class PerfRecordTest {
         Assert.assertTrue(dataPerfRecor2.getDatetime().equals("null time"));
         Assert.assertTrue(dataPerfRecor2.getElapsedTimeInNs() == -1);
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA) == null);
+
+        PerfRecord waitPerfRecor2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecor2.start();
+
+        Thread.sleep(2200);
+        waitPerfRecor2.end();
+
+        Assert.assertTrue(waitPerfRecor2.getDatetime().equals("null time"));
+        Assert.assertTrue(waitPerfRecor2.getElapsedTimeInNs() == -1);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME) == null);
 
         PerfTrace.getInstance().addTaskDetails(1, "task 1 some thing abcdf");
         PerfTrace.getInstance().addTaskDetails(2, "task 2 some thing abcdf");
@@ -321,6 +365,17 @@ public class PerfRecordTest {
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).size() == 1);
         Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE), preparePerfRecord));
 
+        LOG.debug("task wait time  ...");
+        PerfRecord waitPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecord.start();
+        Thread.sleep(1030);
+        waitPerfRecord.end();
+
+        Assert.assertTrue(waitPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord.getElapsedTimeInNs() >= 1030000000);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).size() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME), waitPerfRecord));
+
 
 
         LOG.debug("task writer starts to write ...");
@@ -350,6 +405,17 @@ public class PerfRecordTest {
         Assert.assertTrue(initPerfRecord2.getElapsedTimeInNs() >= 50000000);
         Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).size() == 2);
         Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT), initPerfRecord2));
+
+        LOG.debug("task wait time  ...");
+        PerfRecord waitPerfRecord2 = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecord2.start();
+        Thread.sleep(2030);
+        waitPerfRecord2.end();
+
+        Assert.assertTrue(waitPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord2.getElapsedTimeInNs() >= 2030000000);
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).size() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME), waitPerfRecord2));
 
 
         LOG.debug("task writer starts to do prepare ...");
@@ -388,8 +454,8 @@ public class PerfRecordTest {
         Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000001).equals("task 100000011 some thing abcdf"));
         Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000002).equals("task 100000012 some thing abcdf"));
 
-        PerfRecord.addPerfRecord(TGID, 10000003, PerfRecord.PHASE.TASK, System.currentTimeMillis(), 12300123L * 1000L * 1000L);
-        PerfRecord.addPerfRecord(TGID, 10000004, PerfRecord.PHASE.TASK, System.currentTimeMillis(), 22300123L * 1000L * 1000L);
+        PerfRecord.addPerfRecord(TGID, 10000003, PerfRecord.PHASE.TASK_TOTAL, System.currentTimeMillis(), 12300123L * 1000L * 1000L);
+        PerfRecord.addPerfRecord(TGID, 10000004, PerfRecord.PHASE.TASK_TOTAL, System.currentTimeMillis(), 22300123L * 1000L * 1000L);
         PerfRecord.addPerfRecord(TGID, 10000005, PerfRecord.PHASE.SQL_QUERY, System.currentTimeMillis(), 4L);
         PerfRecord.addPerfRecord(TGID, 10000006, PerfRecord.PHASE.RESULT_NEXT_ALL, System.currentTimeMillis(), 3000L);
         PerfRecord.addPerfRecord(TGID, 10000006, PerfRecord.PHASE.ODPS_BLOCK_CLOSE, System.currentTimeMillis(), 2000000L);

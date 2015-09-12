@@ -171,15 +171,20 @@ public class CommonRdbmsReader {
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = metaData.getColumnCount();
 
+                //这个统计干净的result_Next时间
                 PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
                 allResultPerfRecord.start();
 
+                long rsNextUsedTime = 0;
+                long lastTime = System.nanoTime();
                 while (rs.next()) {
+                    rsNextUsedTime += (System.nanoTime() - lastTime);
                     ResultSetReadProxy.transportOneRecord(recordSender, rs,
                             metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                    lastTime = System.nanoTime();
                 }
 
-                allResultPerfRecord.end();
+                allResultPerfRecord.end(rsNextUsedTime);
 
             }catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);

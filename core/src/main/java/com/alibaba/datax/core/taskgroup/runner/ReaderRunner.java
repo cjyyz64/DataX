@@ -34,7 +34,11 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
 
         Reader.Task taskReader = (Reader.Task) this.getPlugin();
 
+        //统计waitWriterTime，并且在finally才end。
+        PerfRecord channelWaitWrite = new PerfRecord(getTaskGroupId(), getTaskId(), PerfRecord.PHASE.WAIT_WRITE_TIME);
         try {
+            channelWaitWrite.start();
+
             LOG.debug("task reader starts to do init ...");
             PerfRecord initPerfRecord = new PerfRecord(getTaskGroupId(), getTaskId(), PerfRecord.PHASE.READ_TASK_INIT);
             initPerfRecord.start();
@@ -73,6 +77,8 @@ public class ReaderRunner extends AbstractRunner implements Runnable {
             desPerfRecord.start();
             super.destroy();
             desPerfRecord.end();
+
+            channelWaitWrite.end(super.getRunnerCommunication().getLongCounter(CommunicationTool.WAIT_WRITER_TIME));
         }
     }
 
