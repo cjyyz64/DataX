@@ -8,6 +8,7 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.HostUtils;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.Engine;
@@ -24,11 +25,15 @@ import com.alibaba.datax.core.statistics.container.communicator.job.DistributeJo
 import com.alibaba.datax.core.statistics.container.communicator.job.LocalJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.container.communicator.job.StandAloneJobContainerCommunicator;
 import com.alibaba.datax.core.statistics.plugin.DefaultJobPluginCollector;
+import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ErrorRecordChecker;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.LogReportUtil;
 import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
+import com.alibaba.datax.dataxservice.face.domain.LogReportInfo;
+import com.alibaba.datax.dataxservice.face.domain.Result;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
@@ -37,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -67,6 +73,8 @@ public class JobContainer extends AbstractContainer {
     private Reader.Job jobReader;
 
     private Writer.Job jobWriter;
+
+    private Configuration userConf;
 
     private long startTimeStamp;
 
@@ -105,6 +113,7 @@ public class JobContainer extends AbstractContainer {
                 LOG.info("jobContainer starts to do preCheck ...");
                 this.preCheck();
             } else {
+                userConf = configuration.clone();
                 LOG.debug("jobContainer starts to do preHandle ...");
                 this.preHandle();
 
@@ -626,6 +635,8 @@ public class JobContainer extends AbstractContainer {
         reportCommunication.setLongCounter(CommunicationTool.RECORD_SPEED, recordSpeedPerSecond);
 
         super.getContainerCommunicator().report(reportCommunication);
+
+        LogReportUtil.reportDataxLog(userConf, reportCommunication, startTimeStamp, endTimeStamp);
 
         LOG.info(String.format(
                 "\n" + "%-26s: %-18s\n" + "%-26s: %-18s\n" + "%-26s: %19s\n"

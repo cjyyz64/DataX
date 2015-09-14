@@ -3,10 +3,7 @@ package com.alibaba.datax.core.util;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
-import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
-import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import com.alibaba.datax.dataxservice.face.domain.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import org.apache.commons.lang3.StringUtils;
@@ -209,6 +206,33 @@ public final class DataxServiceUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
                     String.format("updateTaskGroupInfo error, jobId=[%s], taskGroupId=[%s], TaskGroupStatus=[%s].", jobId, taskGroupId, taskGroupStatus), e);
+        }
+    }
+
+    public static Result reportDataxLog(LogReportInfo info){
+        String url = DATAX_SERVICE_URL + "/inner/job/reportDataxLog";
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+
+            String resJson = httpClientUtil.executeAndGet(httpPut);
+
+            Type type = new TypeReference<Result<Object>>() {}.getType();
+            Result result = JSON.parseObject(resJson,type);
+
+            if (!result.isSuccess()) {
+                throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED,
+                        String.format("logReportInfo fail, http result:[%s].", resJson));
+            }
+
+            return result;
+        } catch (Exception e) {
+            throw DataXException.asDataXException(FrameworkErrorCode.CALL_DATAX_SERVICE_FAILED, e);
         }
     }
 

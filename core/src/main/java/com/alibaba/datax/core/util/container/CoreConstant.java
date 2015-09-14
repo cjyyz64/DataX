@@ -39,6 +39,8 @@ public class CoreConstant {
 
     public static final String DATAX_CORE_DATAXSERVER_TIMEOUT = "core.dataXServer.timeout";
 
+	public static final String DATAX_CORE_REPORT_DATAX_LOG = "core.dataXServer.reportDataxLog";
+
     public static final String DATAX_CORE_TRANSPORT_CHANNEL_CLASS = "core.transport.channel.class";
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY = "core.transport.channel.capacity";
