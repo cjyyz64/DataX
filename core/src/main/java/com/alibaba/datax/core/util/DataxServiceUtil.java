@@ -268,8 +268,8 @@ public final class DataxServiceUtil {
 //            taskGroupStatus.setWaitWriterCount(0L);
 //        }
 //
-//        communication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, taskGroupStatus.getWaitReaderCount());
-//        communication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, taskGroupStatus.getWaitWriterCount());
+//        communication.setLongCounter(CommunicationTool.WAIT_READER_TIME, taskGroupStatus.getWaitReaderCount());
+//        communication.setLongCounter(CommunicationTool.WAIT_WRITER_TIME, taskGroupStatus.getWaitWriterCount());
         //
 
         communication.setLongCounter("stage", taskGroupStatus.getStage());

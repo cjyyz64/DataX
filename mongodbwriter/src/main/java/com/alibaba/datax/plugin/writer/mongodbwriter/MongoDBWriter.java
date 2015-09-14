@@ -173,12 +173,12 @@ public class MongoDBWriter extends Writer{
             this.writerSliceConfig = this.getPluginJobConf();
             this.userName = writerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
             this.password = writerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+            this.database = writerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             if(!Strings.isNullOrEmpty(userName) && !Strings.isNullOrEmpty(password)) {
-                this.mongoClient = MongoUtil.initCredentialMongoClient(this.writerSliceConfig,userName,password);
+                this.mongoClient = MongoUtil.initCredentialMongoClient(this.writerSliceConfig,userName,password,database);
             } else {
                 this.mongoClient = MongoUtil.initMongoClient(this.writerSliceConfig);
             }
-            this.database = writerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             this.collection = writerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
             this.batchSize = BATCH_SIZE;
             this.mongodbColumnMeta = JSON.parseArray(writerSliceConfig.getString(KeyConstant.MONGO_COLUMN));

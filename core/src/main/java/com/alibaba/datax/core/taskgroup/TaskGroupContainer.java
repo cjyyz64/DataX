@@ -182,7 +182,7 @@ public class TaskGroupContainer extends AbstractContainer {
                             LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
                                     this.taskGroupId, taskId, usedTime);
                             //usedTime*1000*1000 转换成PerfRecord记录的ns，这里主要是简单登记，进行最长任务的打印。因此增加特定静态方法
-                            PerfRecord.addPerfRecord(taskGroupId, taskId, PerfRecord.PHASE.TASK,taskStartTime, usedTime * 1000L * 1000L);
+                            PerfRecord.addPerfRecord(taskGroupId, taskId, PerfRecord.PHASE.TASK_TOTAL,taskStartTime, usedTime * 1000L * 1000L);
                             taskStartTimeMap.remove(taskId);
                             taskConfigMap.remove(taskId);
                         }

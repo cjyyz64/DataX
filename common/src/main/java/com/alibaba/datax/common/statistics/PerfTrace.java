@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * PerfTrace 记录 job（local模式），taskGroup（distribute模式），因为这2种都是jvm，即一个jvm里只需要有1个PerfTrace。
@@ -120,7 +121,7 @@ public class PerfTrace {
         StringBuilder info = new StringBuilder();
         info.append("\n === total summarize info === \n");
         info.append("\n   1. all phase average time info and max time task info: \n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
+        info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
 
         List<PerfRecord.PHASE> keys = new ArrayList<PerfRecord.PHASE>(perfRecordMaps.keySet());
         Collections.sort(keys, new Comparator<PerfRecord.PHASE>() {
@@ -131,7 +132,7 @@ public class PerfTrace {
         });
         for (PerfRecord.PHASE phase : keys) {
             List<PerfRecord> lists = perfRecordMaps.get(phase);
-            if(lists == null){
+            if (lists == null) {
                 continue;
             }
             long perfTimeTotal = 0;
@@ -155,51 +156,65 @@ public class PerfTrace {
             if (lists.size() > 0) {
                 averageTime = perfTimeTotal / lists.size();
             }
-            info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n",
-                    phase, unitTime(averageTime), lists.size(), unitTime(maxTime), jobId+"-"+maxTaskGroupId+"-"+maxTaskId, taskDetails.get(maxTaskId)));
+            info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %-100s\n",
+                    phase, unitTime(averageTime), lists.size(), unitTime(maxTime), jobId + "-" + maxTaskGroupId + "-" + maxTaskId, taskDetails.get(maxTaskId)));
         }
 
         List<PerfRecord> listCount = Optional.fromNullable(perfRecordMaps.get(PerfRecord.PHASE.READ_TASK_DATA)).or(new ArrayList<PerfRecord>());
 
         long recordsTotal = 0;
-        long averageCount = 0;
-        long maxCount = 0;
-        int maxTaskId4Count = -1;
-        int maxTGID4Count = -1;
+        long sizesTotal = 0;
+        long averageRecords = 0;
+        long averageBytes = 0;
+        long maxRecord = 0;
+        long maxByte = 0;
+        int maxTaskId4Records = -1;
+        int maxTGID4Records = -1;
         for (PerfRecord perfRecord : listCount) {
             recordsTotal += perfRecord.getCount();
-            if (perfRecord.getCount() > maxCount) {
-                maxCount = perfRecord.getCount();
-                maxTaskId4Count = perfRecord.getTaskId();
-                maxTGID4Count = perfRecord.getTaskGroupId();
+            sizesTotal += perfRecord.getSize();
+            if (perfRecord.getCount() > maxRecord) {
+                maxRecord = perfRecord.getCount();
+                maxByte = perfRecord.getSize();
+                maxTaskId4Records = perfRecord.getTaskId();
+                maxTGID4Records = perfRecord.getTaskGroupId();
             }
         }
         if (listCount.size() > 0) {
-            averageCount = recordsTotal / listCount.size();
+            averageRecords = recordsTotal / listCount.size();
+            averageBytes = recordsTotal / listCount.size();
         }
         //Min min = new Min();
 
         info.append("\n\n 2. record average count and max count task info :\n\n");
-        info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n", "PHASE", "AVERAGE COUNT", "ALL TASK NUM", "MAX COUNT", "MAX TASK ID", "MAX TASK INFO"));
-        if(maxTaskId4Count>-1) {
-            info.append(String.format("%-20s | %18s | %10s | %15s | %18s | %-100s\n"
-                    , PerfRecord.PHASE.READ_TASK_DATA, averageCount, listCount.size(), maxCount, jobId + "-" + maxTGID4Count + "-" + maxTaskId4Count, taskDetails.get(maxTaskId4Count)));
+        info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE RECORDS", "AVERAGE BYTES", "MAX RECORDS", "MAX RECORD`S BYTES", "MAX TASK ID", "MAX TASK INFO"));
+        if (maxTaskId4Records > -1) {
+            info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n"
+                    , PerfRecord.PHASE.READ_TASK_DATA, averageRecords, unitSize(averageBytes), maxRecord, unitSize(maxByte), jobId + "-" + maxTGID4Records + "-" + maxTaskId4Records, taskDetails.get(maxTaskId4Records)));
 
         }
         return info.toString();
     }
 
-    public String unitTime(long time) {
-        //1s以上用s
-        if (time > 1000000000L) {
-            System.out.println("dd"+time/1000000000+":"+(float)time/1000000000);
-            return String.format("%,.2fs",(float)time/1000000000);
-        } else if (time > 1000000L) {
-            //1ms以上
-            return String.format("%,.5fs",(float)time/1000000000);
-        } else
-            //1us
-            return String.format("%,.9fs",(float)time/1000000000);
+    //缺省传入的时间是nano
+    public static String unitTime(long time) {
+        return unitTime(time, TimeUnit.NANOSECONDS);
+    }
+
+    public static String unitTime(long time, TimeUnit timeUnit) {
+        return String.format("%,.3fs", ((float) timeUnit.toNanos(time)) / 1000000000);
+    }
+
+    public static String unitSize(long size) {
+        if (size > 1000000000) {
+            return String.format("%,.2fG", (float) size / 1000000000);
+        } else if (size > 1000000) {
+            return String.format("%,.2fM", (float) size / 1000000);
+        } else if (size > 1000) {
+            return String.format("%,.2fK", (float) size / 1000);
+        } else {
+            return size + "B";
+        }
     }
 
 

@@ -37,9 +37,9 @@ public abstract class Channel {
 
     protected Configuration configuration = null;
 
-    protected volatile long waitReaderCount = 0;
+    protected volatile long waitReaderTime = 0;
 
-    protected volatile long waitWriterCount = 0;
+    protected volatile long waitWriterTime = 0;
 
     private static Boolean isFirstPrint = true;
 
@@ -48,8 +48,9 @@ public abstract class Channel {
     private Communication lastCommunication = new Communication();
 
     public Channel(final Configuration configuration) {
+        //channel的queue里默认record为1万条。原来为512条
         int capacity = configuration.getInt(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 128);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 10000);
         long byteSpeed = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
         long recordSpeed = configuration.getLong(
@@ -77,8 +78,9 @@ public abstract class Channel {
         this.recordSpeed = recordSpeed;
         this.flowControlInterval = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
+        //channel的queue默认大小为32M，原来为64M
         this.byteCapacity = configuration.getInt(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 64 * 1024 * 1024);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 32 * 1024 * 1024);
         this.configuration = configuration;
     }
 
@@ -178,8 +180,8 @@ public abstract class Channel {
                 byteSize);
         //在读的时候进行统计waitCounter即可，因为写（pull）的时候可能正在阻塞，但读的时候已经能读到这个阻塞的counter数
 
-        currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_NUMBERS, waitReaderCount);
-        currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_NUMBERS, waitWriterCount);
+        currentCommunication.setLongCounter(CommunicationTool.WAIT_READER_TIME, waitReaderTime);
+        currentCommunication.setLongCounter(CommunicationTool.WAIT_WRITER_TIME, waitWriterTime);
 
         boolean isChannelByteSpeedLimit = (this.byteSpeed > 0);
         boolean isChannelRecordSpeedLimit = (this.recordSpeed > 0);
