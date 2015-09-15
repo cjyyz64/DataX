@@ -33,6 +33,7 @@ public class StandardFtpHelper extends FtpHelper {
 			ftpClient.login(username, password);
 			ftpClient.configure(new FTPClientConfig(FTPClientConfig.SYST_UNIX));
 			ftpClient.setConnectTimeout(timeout);
+			ftpClient.setDataTimeout(timeout);
 			if ("PASV".equals(connectMode)) {
 				ftpClient.enterRemotePassiveMode();
 				ftpClient.enterLocalPassiveMode();
@@ -72,13 +73,23 @@ public class StandardFtpHelper extends FtpHelper {
 	public void logoutFtpServer() {
 		if (ftpClient.isConnected()) {
 			try {
-				//ftpClient.completePendingCommand();//打开流操作之后必须，原因还需要深究
+				//todo ftpClient.completePendingCommand();//打开流操作之后必须，原因还需要深究
 				ftpClient.logout();
-				ftpClient.disconnect();
 			} catch (IOException e) {
-				String message = String.format("与ftp服务器断开连接失败");
+				String message = "与ftp服务器断开连接失败";
 				LOG.error(message);
 				throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_DISCONNECT, message, e);
+			}finally {
+				if(ftpClient.isConnected()){
+					try {
+						ftpClient.disconnect();
+					} catch (IOException e) {
+						String message = "与ftp服务器断开连接失败";
+						LOG.error(message);
+						throw DataXException.asDataXException(FtpReaderErrorCode.FAIL_DISCONNECT, message, e);
+					}
+				}
+
 			}
 		}
 	}

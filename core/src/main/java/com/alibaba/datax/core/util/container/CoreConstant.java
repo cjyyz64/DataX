@@ -17,6 +17,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_JOB_ID = "core.container.job.id";
 
+	public static final String DATAX_CORE_CONTAINER_TRACE_ENABLE = "core.container.trace.enable";
+
 	public static final String DATAX_CORE_CONTAINER_JOB_MODE = "core.container.job.mode";
 
 	public static final String DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL = "core.container.job.reportInterval";
@@ -36,6 +38,8 @@ public class CoreConstant {
     public static final String DATAX_CORE_DATAXSERVER_ADDRESS = "core.dataXServer.address";
 
     public static final String DATAX_CORE_DATAXSERVER_TIMEOUT = "core.dataXServer.timeout";
+
+	public static final String DATAX_CORE_REPORT_DATAX_LOG = "core.dataXServer.reportDataxLog";
 
     public static final String DATAX_CORE_TRANSPORT_CHANNEL_CLASS = "core.transport.channel.class";
 

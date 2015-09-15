@@ -3,6 +3,7 @@ package com.alibaba.datax.core;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
+import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
@@ -48,36 +49,62 @@ public class Engine {
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
 
         AbstractContainer container;
+        long jobId;
+        int taskGroupId = -1;
         if (isJob) {
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
             container = new JobContainer(allConf);
+            jobId = allConf.getLong(
+                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
+
         } else {
             container = new TaskGroupContainer(allConf);
+            jobId = allConf.getLong(
+                    CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
+            taskGroupId = allConf.getInt(
+                    CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
         }
+
+        //缺省打开perfTrace
+        boolean traceEnable = allConf.getBool(CoreConstant.DATAX_CORE_CONTAINER_TRACE_ENABLE, true);
+
+        int priority = 0;
+        try {
+            priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
+        }catch (NumberFormatException e){
+            LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
+        }
+
+        //初始化PerfTrace
+        PerfTrace.getInstance(isJob, jobId, taskGroupId, priority, traceEnable);
 
         container.start();
     }
 
 
     // 注意屏蔽敏感信息
-    public static String filterJobConfiguration(
-            final Configuration configuration) {
+    public static String filterJobConfiguration(final Configuration configuration) {
         Configuration jobConfWithSetting = configuration.getConfiguration("job").clone();
 
         Configuration jobContent = jobConfWithSetting.getConfiguration("content");
 
-        Set<String> keys = jobContent.getKeys();
-        for (final String key : keys) {
-            boolean isSensitive = StringUtils.endsWithIgnoreCase(key,
-                    "password")
-                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
-            if (isSensitive && jobContent.get(key) instanceof String) {
-                jobContent.set(key, jobContent.getString(key).replaceAll(".", "*"));
-            }
-        }
+        filterSensitiveConfiguration(jobContent);
 
         jobConfWithSetting.set("content",jobContent);
+
         return jobConfWithSetting.beautify();
+    }
+
+    public static Configuration filterSensitiveConfiguration(Configuration configuration){
+        Set<String> keys = configuration.getKeys();
+        for (final String key : keys) {
+            boolean isSensitive = StringUtils.endsWithIgnoreCase(key, "password")
+                    || StringUtils.endsWithIgnoreCase(key, "accessKey");
+            if (isSensitive && configuration.get(key) instanceof String) {
+                configuration.set(key, configuration.getString(key).replaceAll(".", "*"));
+            }
+        }
+        return configuration;
     }
 
     public static void entry(final String[] args) throws Throwable {
@@ -174,7 +201,6 @@ public class Engine {
 
             System.exit(exitCode);
         }
-
         System.exit(exitCode);
     }
 

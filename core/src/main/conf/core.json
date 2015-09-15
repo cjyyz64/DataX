@@ -17,7 +17,8 @@
     "core": {
         "dataXServer": {
             "address": "http://localhost:7001/api",
-            "timeout": 10000
+            "timeout": 10000,
+            "reportDataxLog": false
         },
         "transport": {
             "channel": {
@@ -41,7 +42,11 @@
             },
             "taskGroup": {
                 "channel": 5
+            },
+            "trace": {
+                "enable": "true"
             }
+
         },
         "statistics": {
             "collector": {
