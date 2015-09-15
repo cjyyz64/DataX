@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
+import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.writer.odpswriter.util.IdAndKeyUtil;
@@ -46,7 +47,6 @@ public class OdpsWriter extends Writer {
         private String uploadId;
         private TableTunnel.UploadSession masterUpload;
         private int blockSizeInMB;
-
 
         public void preCheck() {
             this.init();
@@ -247,6 +247,7 @@ public class OdpsWriter extends Writer {
         private int blockSizeInMB;
 
         private Integer failoverState = 0; //0 未failover 1准备failover 2已提交，不能failover
+        private byte[] lock = new byte[0];
 
         @Override
         public void init() {
@@ -308,11 +309,15 @@ public class OdpsWriter extends Writer {
 
                 com.alibaba.datax.common.element.Record dataXRecord = null;
 
+                PerfRecord blockClose = new PerfRecord(super.getTaskGroupId(),super.getTaskId(), PerfRecord.PHASE.ODPS_BLOCK_CLOSE);
+                blockClose.start();
+                long blockCloseUsedTime = 0;
                 while ((dataXRecord = recordReceiver.getFromReader()) != null) {
-                    proxy.writeOneRecord(dataXRecord, blocks);
+                    blockCloseUsedTime += proxy.writeOneRecord(dataXRecord, blocks);
                 }
 
-                proxy.writeRemainingRecord(blocks);
+                blockCloseUsedTime += proxy.writeRemainingRecord(blocks);
+                blockClose.end(blockCloseUsedTime);
             } catch (Exception e) {
                 throw DataXException.asDataXException(OdpsWriterErrorCode.WRITER_RECORD_FAIL, "写入 ODPS 目的表失败. 请联系 ODPS 管理员处理.", e);
             }
@@ -320,7 +325,7 @@ public class OdpsWriter extends Writer {
 
         @Override
         public void post() {
-            synchronized (failoverState){
+            synchronized (lock){
                 if(failoverState==0){
                     failoverState = 2;
                     LOG.info("Slave which uploadId=[{}] begin to commit blocks:[\n{}\n].", this.uploadId,
@@ -339,7 +344,7 @@ public class OdpsWriter extends Writer {
 
         @Override
         public boolean supportFailOver(){
-            synchronized (failoverState){
+            synchronized (lock){
                 if(failoverState==0){
                     failoverState = 1;
                     return true;

@@ -78,6 +78,7 @@ public final class ReaderSplitUtil {
 
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
+                        tempSlice.set(Key.TABLE, table);
                         tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
                                 .buildQuerySql(column, table, where));
                         splittedConfigs.add(tempSlice);

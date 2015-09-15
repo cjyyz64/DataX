@@ -59,15 +59,9 @@ public class MemoryChannel extends Channel {
 	@Override
 	protected void doPush(Record r) {
 		try {
-            //首先判断下队列的空间，如果full，则统计一次waitWriter。因为后面的offer可能统计不到，比如200ms内，writer消费掉了数据。但实际上，还是writer阻塞了整体速度。
-            if (this.queue.remainingCapacity() < 1) {
-                waitWriterCount++;
-            }
-            //对于200ms内，还没有消费掉，再增加counter
-            //非线程模型，因此while无退不出来的风险
-            while (!this.queue.offer(r, 200L, TimeUnit.MILLISECONDS)) {
-                waitWriterCount++;
-            }
+			long startTime = System.nanoTime();
+			this.queue.put(r);
+			waitWriterTime += System.nanoTime() - startTime;
             memoryBytes.addAndGet(r.getByteSize());
 		} catch (InterruptedException ex) {
 			Thread.currentThread().interrupt();
@@ -77,14 +71,14 @@ public class MemoryChannel extends Channel {
 	@Override
 	protected void doPushAll(Collection<Record> rs) {
 		try {
+			long startTime = System.nanoTime();
 			lock.lockInterruptibly();
 			int bytes = getRecordBytes(rs);
 			while (memoryBytes.get() + bytes > this.byteCapacity || rs.size() > this.queue.remainingCapacity()) {
 				notInsufficient.await(200L, TimeUnit.MILLISECONDS);
-                waitWriterCount++;
             }
-
 			this.queue.addAll(rs);
+			waitWriterTime += System.nanoTime() - startTime;
 			memoryBytes.addAndGet(bytes);
 			notEmpty.signalAll();
 		} catch (InterruptedException e) {
@@ -98,18 +92,10 @@ public class MemoryChannel extends Channel {
 	@Override
 	protected Record doPull() {
 		try {
-            //首先判断下队列的空间，如果full，则统计一次waitWriter。因为后面的poll可能统计不到，比如200ms内，Reader来了数据。但实际上，还是reader阻塞了整体速度。
-            if (this.queue.isEmpty()) {
-                waitReaderCount++;
-            }
-            //对于200ms内，还没有数据，再增加counter
-            //非线程模型，因此while无退不出来的风险
-            Record r = this.queue.poll(200L, TimeUnit.MILLISECONDS);
-            while (r == null) {
-                r = this.queue.poll(200L, TimeUnit.MILLISECONDS);
-                waitReaderCount++;
-            }
-            memoryBytes.addAndGet(-r.getByteSize());
+			long startTime = System.nanoTime();
+			Record r = this.queue.take();
+			waitReaderTime += System.nanoTime() - startTime;
+			memoryBytes.addAndGet(-r.getByteSize());
 			return r;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
@@ -122,11 +108,12 @@ public class MemoryChannel extends Channel {
 		assert rs != null;
 		rs.clear();
 		try {
+			long startTime = System.nanoTime();
 			lock.lockInterruptibly();
 			while (this.queue.drainTo(rs, bufferSize) <= 0) {
 				notEmpty.await(200L, TimeUnit.MILLISECONDS);
-                waitReaderCount++;
 			}
+			waitReaderTime += System.nanoTime() - startTime;
 			int bytes = getRecordBytes(rs);
 			memoryBytes.addAndGet(-bytes);
 			notInsufficient.signalAll();

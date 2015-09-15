@@ -5,6 +5,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.util.LogReportUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
@@ -62,9 +63,11 @@ public class AdsWriter extends Writer {
         private String odpsTransTableName;
 
         private String writeMode;
+        private long startTime;
 
         @Override
         public void init() {
+            startTime = System.currentTimeMillis();
             this.originalConfig = super.getPluginJobConf();
             this.writeMode = this.originalConfig.getString(Key.WRITE_MODE);
             if(null == this.writeMode) {
@@ -240,6 +243,8 @@ public class AdsWriter extends Writer {
                     LOG.info("ADS 正在导数据中，整个过程需要20分钟以上，请耐心等待,目前已执行 "+ time+" 分钟");
                 }
                 LOG.info("ADS 导数据已成功");
+                //汇报日志
+                LogReportUtil.reportDataxLog(originalConfig.clone(), null, startTime, System.currentTimeMillis());
             } catch (AdsException e) {
                 if (super.getReaderPluginName().equals(ODPS_READER)) {
                     // TODO 使用云账号

@@ -3,6 +3,8 @@ package com.alibaba.datax.plugin.rdbms.reader;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.common.statistics.PerfRecord;
+import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.reader.util.PreCheckTask;
@@ -105,6 +107,8 @@ public class CommonRdbmsReader {
                 .getLogger(Task.class);
 
         private DataBaseType dataBaseType;
+        private int taskGroupId = -1;
+        private int taskId=-1;
 
         private String username;
         private String password;
@@ -115,7 +119,13 @@ public class CommonRdbmsReader {
         private String basicMsg;
 
         public Task(DataBaseType dataBaseType) {
+            this(dataBaseType, -1, -1);
+        }
+
+        public Task(DataBaseType dataBaseType,int taskGropuId, int taskId) {
             this.dataBaseType = dataBaseType;
+            this.taskGroupId = taskGropuId;
+            this.taskId = taskId;
         }
 
         public void init(Configuration readerSliceConfig) {
@@ -128,6 +138,7 @@ public class CommonRdbmsReader {
             this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 
             basicMsg = String.format("jdbcUrl:[%s]", this.jdbcUrl);
+
         }
 
         public void startRead(Configuration readerSliceConfig,
@@ -136,8 +147,12 @@ public class CommonRdbmsReader {
             String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
             String table = readerSliceConfig.getString(Key.TABLE);
 
+            PerfTrace.getInstance().addTaskDetails(taskId, table + "," + basicMsg);
+
             LOG.info("Begin to read record by Sql: [{}\n] {}.",
                     querySql, basicMsg);
+            PerfRecord queryPerfRecord = new PerfRecord(taskGroupId,taskId, PerfRecord.PHASE.SQL_QUERY);
+            queryPerfRecord.start();
 
             Connection conn = DBUtil.getConnection(this.dataBaseType, jdbcUrl,
                     username, password);
@@ -150,15 +165,27 @@ public class CommonRdbmsReader {
             ResultSet rs = null;
             try {
                 rs = DBUtil.query(conn, querySql, fetchSize);
-                ResultSetMetaData metaData = rs.getMetaData();
-                columnNumber = metaData.getColumnCount();
-                while (rs.next()) {
-                    ResultSetReadProxy.transportOneRecord(recordSender, rs,
-                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
-                }
-
+                queryPerfRecord.end();
                 LOG.info("Finished read record by Sql: [{}\n] {}.",
                         querySql, basicMsg);
+                ResultSetMetaData metaData = rs.getMetaData();
+                columnNumber = metaData.getColumnCount();
+
+                //这个统计干净的result_Next时间
+                PerfRecord allResultPerfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.RESULT_NEXT_ALL);
+                allResultPerfRecord.start();
+
+                long rsNextUsedTime = 0;
+                long lastTime = System.nanoTime();
+                while (rs.next()) {
+                    rsNextUsedTime += (System.nanoTime() - lastTime);
+                    ResultSetReadProxy.transportOneRecord(recordSender, rs,
+                            metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                    lastTime = System.nanoTime();
+                }
+
+                allResultPerfRecord.end(rsNextUsedTime);
+
             }catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);
             } finally {

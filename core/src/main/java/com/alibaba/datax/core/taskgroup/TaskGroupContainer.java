@@ -3,6 +3,8 @@ package com.alibaba.datax.core.taskgroup;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.statistics.PerfRecord;
+import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -179,6 +181,8 @@ public class TaskGroupContainer extends AbstractContainer {
                             Long usedTime = System.currentTimeMillis() - taskStartTime;
                             LOG.info("taskGroup[{}] taskId[{}] is successed, used[{}]ms",
                                     this.taskGroupId, taskId, usedTime);
+                            //usedTime*1000*1000 转换成PerfRecord记录的ns，这里主要是简单登记，进行最长任务的打印。因此增加特定静态方法
+                            PerfRecord.addPerfRecord(taskGroupId, taskId, PerfRecord.PHASE.TASK_TOTAL,taskStartTime, usedTime * 1000L * 1000L);
                             taskStartTimeMap.remove(taskId);
                             taskConfigMap.remove(taskId);
                         }
@@ -268,6 +272,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
             //6.最后还要汇报一次
             reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+
         } catch (Throwable e) {
             Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
 
@@ -279,6 +284,10 @@ public class TaskGroupContainer extends AbstractContainer {
 
             throw DataXException.asDataXException(
                     FrameworkErrorCode.RUNTIME_ERROR, e);
+        }finally {
+            if(!PerfTrace.getInstance().isJob()){
+                LOG.info(PerfTrace.getInstance().summarizeNoException());
+            }
         }
     }
     

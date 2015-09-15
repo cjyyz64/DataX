@@ -498,9 +498,19 @@ public class CommonRdbmsWriter {
                     preparedStatement.setBytes(columnIndex + 1, column
                             .asBytes());
                     break;
+                    
                 case Types.BOOLEAN:
-                case Types.BIT:
                     preparedStatement.setString(columnIndex + 1, column.asString());
+                    break;
+                    
+                // warn: bit(1) -> Types.BIT 可使用setBoolean
+                // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
+                case Types.BIT:
+                    if (this.dataBaseType == DataBaseType.MySql) {
+                        preparedStatement.setBoolean(columnIndex + 1, column.asBoolean());
+                    } else {
+                        preparedStatement.setString(columnIndex + 1, column.asString());
+                    }
                     break;
                 default:
                     throw DataXException

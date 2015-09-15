@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
@@ -56,8 +57,9 @@ public class RowkeyMeta implements Serializable,Iterable<RowkeyMeta.Entry> {
         },
         TIMESTAMP {
             @Override
-            public Timestamp value(ResultSet result, String name) throws SQLException {
-                return result.getTimestamp(name);
+            public String value(ResultSet result, String name) throws SQLException {
+                Timestamp timestamp = result.getTimestamp(name);
+                return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSSSS").format(timestamp);
             }
         },
         NUMERIC {

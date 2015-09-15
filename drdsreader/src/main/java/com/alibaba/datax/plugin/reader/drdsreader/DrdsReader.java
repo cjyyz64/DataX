@@ -122,7 +122,7 @@ public class DrdsReader extends Reader {
 		public void init() {
 			this.readerSliceConfig = super.getPluginJobConf();
 			this.commonRdbmsReaderTask = new CommonRdbmsReader.Task(
-					DATABASE_TYPE);
+					DATABASE_TYPE,super.getTaskGroupId(), super.getTaskId());
 			this.commonRdbmsReaderTask.init(this.readerSliceConfig);
 
 		}

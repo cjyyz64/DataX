@@ -62,11 +62,10 @@
             <version>2.5.16</version>
         </dependency>
 
-
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-service-face</artifactId>
-            <version>1.0.1</version>
+            <version>1.0.3-SNAPSHOT</version>
         </dependency>
 
         <dependency>
@@ -93,6 +92,11 @@
             <artifactId>powermock-module-junit4</artifactId>
             <version>1.4.10</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.3.2</version>
         </dependency>
     </dependencies>
 

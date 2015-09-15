@@ -496,15 +496,17 @@ public class UnstructuredStorageReaderUtil {
 			readerConfiguration.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS, compress);
 			
 			//fieldDelimiter check
-			String delimiterInStr = readerConfiguration.getNecessaryValue(
-					com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER, UnstructuredStorageReaderErrorCode.REQUIRED_VALUE);
+			String delimiterInStr = readerConfiguration.getString(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER,null);
+			if(null == delimiterInStr){
+				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.REQUIRED_VALUE,
+						String.format("您提供配置文件有误，[%s]是必填参数.",
+								com.alibaba.datax.plugin.unstructuredstorage.reader.Key.FIELD_DELIMITER));
+			}else if(1 != delimiterInStr.length()){
 				// warn: if have, length must be one
-			if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 				throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 						String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
 			}
-			
-			
+
 			// column: 1. index type 2.value type 3.when type is Date, may have
 			// format
 			List<Configuration> columns = readerConfiguration

@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.mongodbwriter.KeyConstant;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
@@ -9,20 +12,20 @@ import com.mongodb.*;
 public class MongoAPITest {
     //db.tag_data2.insert({"sid":"123","name":"steven"})
     public static void main(String[] args) {
-
-       /* Configuration conf = Configuration.newDefault();
-        conf.set(KeyConstant.MONGO_HOST,"10.189.225.117");
-        conf.set(KeyConstant.MONGO_PORT,27017);
-        conf.set(KeyConstant.MONGO_IS_AUTH,"true");
-        conf.set(KeyConstant.MONGO_USER_NAME,"trends");
-        conf.set(KeyConstant.MONGO_USER_PASSWORD,"trends_2014");
-
-        MongoClient mc = MongoUtil.initCredentialMongoClient(conf,"trends","trends_2014");
-        String dbName = "tag_per_data";
-        String collectionName = "tag_data1";
+       Configuration conf = Configuration.newDefault();
+        List adds = new ArrayList();
+        adds.add("100.69.195.221:33017");
+        adds.add("100.69.198.134:33017");
+        adds.add("100.69.202.74:33017");
+        conf.set(KeyConstant.MONGO_ADDRESS,adds);
+        conf.set(KeyConstant.MONGO_USER_NAME,"relitu");
+        conf.set(KeyConstant.MONGO_USER_PASSWORD,"relitu&123");
+        MongoClient mc = MongoUtil.initCredentialMongoClient(conf,"relitu","relitu&123","admin");
+        String dbName = "admin";
+        String collectionName = "foo";
         DBCollection dbcol = mc.getDB(dbName).getCollection(collectionName);
         DBObject insertObj = mockObj();
-        System.out.println(dbcol.findOne());*/
+        System.out.println(dbcol.findOne());
         //dbcol.insert(insertObj);
        /* DBObject query = new BasicDBObject("unique_id","7341944476_660018890_20026351228");
         BulkWriteOperation bwo = dbcol.initializeUnorderedBulkOperation();
