@@ -149,4 +149,21 @@ public class HttpClientUtil {
         }
     }
 
+    public String executeAndGetWithFailedRetry(final HttpRequestBase httpRequestBase, final int retryTimes, final long retryInterval){
+        try {
+            return RetryUtil.asyncExecuteWithRetry(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    String result = executeAndGet(httpRequestBase);
+                    if(result!=null && result.startsWith("{\"result\":-1")){
+                        throw DataXException.asDataXException(FrameworkErrorCode.CALL_REMOTE_FAILED, "远程接口返回-1,将重试");
+                    }
+                    return result;
+                }
+            }, retryTimes, retryInterval, true, HTTP_TIMEOUT_INMILLIONSECONDS + 1000, asyncExecutor);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR, e);
+        }
+    }
+
 }
