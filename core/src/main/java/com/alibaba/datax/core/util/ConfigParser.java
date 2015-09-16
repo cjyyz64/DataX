@@ -2,15 +2,18 @@ package com.alibaba.datax.core.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpRequestBase;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.Callable;
 
 public final class ConfigParser {
     /**
@@ -57,7 +60,7 @@ public final class ConfigParser {
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
 
-                jobContent = httpClientUtil.executeAndGetWithRetry(httpGet, 6, 1000l);
+                jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 6, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
