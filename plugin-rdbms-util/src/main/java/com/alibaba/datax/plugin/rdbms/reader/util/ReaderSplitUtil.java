@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
@@ -28,6 +30,19 @@ public final class ReaderSplitUtil {
 
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
+        String hint = originalSliceConfig.getString(Key.HINT);
+        Pattern tablePattern = null;
+        String hintExpression = null;
+        if(StringUtils.isNotBlank(hint)){
+            String[] tablePatternAndHint = hint.split("#");
+            if(tablePatternAndHint.length==1){
+                tablePattern = Pattern.compile(".*");
+                hintExpression = tablePatternAndHint[0];
+            }else{
+                tablePattern = Pattern.compile(tablePatternAndHint[0]);
+                hintExpression = tablePatternAndHint[1];
+            }
+        }
 
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
@@ -75,12 +90,22 @@ public final class ReaderSplitUtil {
                         splittedConfigs.addAll(splittedSlices);
                     }
                 } else {
-
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
+                        String queryColumn = column;
+                        if(tablePattern != null){
+                            Matcher m = tablePattern.matcher(table);
+                            if(m.find()){
+                                String[] tableStr = table.split("\\.");
+                                String tableWithoutSchema = tableStr[tableStr.length-1];
+                                String finalHint = hintExpression.replaceAll(Constant.TABLE_NAME_PLACEHOLDER, tableWithoutSchema);
+                                queryColumn = finalHint + column;
+                                LOG.info("table:{} Use hint:{}.", table, finalHint);
+                            }
+                        }
                         tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
-                                .buildQuerySql(column, table, where));
+                                .buildQuerySql(queryColumn, table, where));
                         splittedConfigs.add(tempSlice);
                     }
                 }
