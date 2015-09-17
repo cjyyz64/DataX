@@ -89,9 +89,11 @@ public final class RetryUtil {
                 try {
                     return call(callable);
                 } catch (Exception e) {
-                    LOG.error("Exception when calling callable, 即将尝试执行第"+(i+1)+"次重试. 异常Msg:" + e.getMessage());
                     saveException = e;
+
                     if (i + 1 < retryTimes && sleepTimeInMilliSecond > 0) {
+                        long startTime = System.currentTimeMillis();
+
                         long timeToSleep;
                         if (exponential) {
                             timeToSleep = sleepTimeInMilliSecond * (long) Math.pow(2, i);
@@ -109,6 +111,12 @@ public final class RetryUtil {
                             Thread.sleep(timeToSleep);
                         } catch (InterruptedException ignored) {
                         }
+
+                        long realTimeSleep = System.currentTimeMillis()-startTime;
+
+                        LOG.error(String.format("Exception when calling callable, 即将尝试执行第%s次重试.本次重试计划等待[%s]s,实际等待[%s]s, 异常Msg:[%s]",
+                                i+1, timeToSleep,realTimeSleep, e.getMessage()));
+
                     }
                 }
             }
@@ -153,8 +161,8 @@ public final class RetryUtil {
                 throw e;
             } finally {
                 if (!future.isDone()) {
-                    LOG.warn("Try once task not done, cancel it, active count: " + executor.getActiveCount());
                     future.cancel(true);
+                    LOG.warn("Try once task not done, cancel it, active count: " + executor.getActiveCount());
                 }
             }
         }

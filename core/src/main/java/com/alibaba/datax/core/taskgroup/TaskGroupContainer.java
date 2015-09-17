@@ -3,6 +3,7 @@ package com.alibaba.datax.core.taskgroup;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.Configuration;
@@ -446,6 +447,7 @@ public class TaskGroupContainer extends AbstractContainer {
 
         private AbstractRunner generateRunner(PluginType pluginType) {
             AbstractRunner newRunner = null;
+            TaskPluginCollector pluginCollector;
 
             switch (pluginType) {
                 case READER:
@@ -453,30 +455,35 @@ public class TaskGroupContainer extends AbstractContainer {
                             this.taskConfig.getString(CoreConstant.JOB_READER_NAME));
                     newRunner.setJobConf(this.taskConfig.getConfiguration(
                             CoreConstant.JOB_READER_PARAMETER));
+
+                    pluginCollector = ClassUtil.instantiate(
+                            taskCollectorClass, AbstractTaskPluginCollector.class,
+                            configuration, this.taskCommunication,
+                            PluginType.READER);
+
                     ((ReaderRunner) newRunner).setRecordSender(
-                            new BufferedRecordExchanger(this.channel));
+                            new BufferedRecordExchanger(this.channel, pluginCollector));
                     /**
                      * 设置taskPlugin的collector，用来处理脏数据和job/task通信
                      */
-                    newRunner.setTaskPluginCollector(ClassUtil.instantiate(
-                            taskCollectorClass, AbstractTaskPluginCollector.class,
-                            configuration, this.taskCommunication,
-                            PluginType.READER));
+                    newRunner.setTaskPluginCollector(pluginCollector);
                     break;
                 case WRITER:
                     newRunner = LoadUtil.loadPluginRunner(pluginType,
                             this.taskConfig.getString(CoreConstant.JOB_WRITER_NAME));
                     newRunner.setJobConf(this.taskConfig
                             .getConfiguration(CoreConstant.JOB_WRITER_PARAMETER));
+
+                    pluginCollector = ClassUtil.instantiate(
+                            taskCollectorClass, AbstractTaskPluginCollector.class,
+                            configuration, this.taskCommunication,
+                            PluginType.WRITER);
                     ((WriterRunner) newRunner).setRecordReceiver(new BufferedRecordExchanger(
-                            this.channel));
+                            this.channel, pluginCollector));
                     /**
                      * 设置taskPlugin的collector，用来处理脏数据和job/task通信
                      */
-                    newRunner.setTaskPluginCollector(ClassUtil.instantiate(
-                            taskCollectorClass, AbstractTaskPluginCollector.class,
-                            configuration, this.taskCommunication,
-                            PluginType.WRITER));
+                    newRunner.setTaskPluginCollector(pluginCollector);
                     break;
                 default:
                     throw DataXException.asDataXException(FrameworkErrorCode.ARGUMENT_ERROR, "Cant generateRunner for:" + pluginType);
