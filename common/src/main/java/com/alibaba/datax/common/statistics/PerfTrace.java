@@ -80,6 +80,11 @@ public class PerfTrace {
     public void addTaskDetails(int taskId, String detail) {
         if (enable) {
             String before = "";
+            int index = detail.indexOf("?");
+            String current = detail.substring(0, index == -1 ? detail.length() : index);
+            if(current.indexOf("[")>=0){
+                current+="]";
+            }
             if (taskDetails.containsKey(taskId)) {
                 before = taskDetails.get(taskId).trim();
             }
@@ -88,7 +93,7 @@ public class PerfTrace {
             } else {
                 before += ",";
             }
-            this.taskDetails.put(taskId, before + detail);
+            this.taskDetails.put(taskId, before + current);
         }
     }
 
@@ -182,7 +187,7 @@ public class PerfTrace {
         }
         if (listCount.size() > 0) {
             averageRecords = recordsTotal / listCount.size();
-            averageBytes = recordsTotal / listCount.size();
+            averageBytes = sizesTotal / listCount.size();
         }
         //Min min = new Min();
 

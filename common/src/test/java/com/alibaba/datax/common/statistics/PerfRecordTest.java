@@ -450,6 +450,9 @@ public class PerfRecordTest {
 
         PerfTrace.getInstance().addTaskDetails(10000001, "task 100000011 some thing abcdf");
         PerfTrace.getInstance().addTaskDetails(10000002, "task 100000012 some thing abcdf");
+        PerfTrace.getInstance().addTaskDetails(10000004, "task 100000012 some thing abcdf?123?345");
+        PerfTrace.getInstance().addTaskDetails(10000005, "task 100000012 some thing abcdf?456");
+        PerfTrace.getInstance().addTaskDetails(10000006, "[task 100000012? some thing abcdf?456");
 
         Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000001).equals("task 100000011 some thing abcdf"));
         Assert.assertTrue(PerfTrace.getInstance().getTaskDetails().get(10000002).equals("task 100000012 some thing abcdf"));

@@ -191,6 +191,7 @@ public class RetryUtilTest {
                     future.cancel(true);
                 }
                 System.out.println("Cancel all");
+                System.out.println("Submit: " + i + ", running tasks: " + executor.getActiveCount());
             }
 
             TimeUnit.SECONDS.sleep(1);
@@ -261,7 +262,7 @@ public class RetryUtilTest {
         }, 3, 1000L, false, 2000L, executor);
     }
 
-    @Test
+    //@Test
     @Ignore
     public void testRetryAsync3() throws Exception {
         final int TIME_OUT = 30000;
