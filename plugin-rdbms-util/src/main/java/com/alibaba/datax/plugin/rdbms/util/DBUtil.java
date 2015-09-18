@@ -610,6 +610,32 @@ public final class DBUtil {
         return false;
     }
 
+    public static boolean isOracleMaster(final String url, final String user, final String pass) {
+        try {
+            return RetryUtil.executeWithRetry(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    Connection conn = null;
+                    try {
+                        conn = connect(DataBaseType.Oracle, url, user, pass);
+                        ResultSet rs = query(conn, "select DATABASE_ROLE from V$DATABASE");
+                        if (DBUtil.asyncResultSetNext(rs, 5)) {
+                            String role = rs.getString("DATABASE_ROLE");
+                            return "PRIMARY".equalsIgnoreCase(role);
+                        }
+                        throw DataXException.asDataXException(DBUtilErrorCode.RS_ASYNC_ERROR,
+                                String.format("select DATABASE_ROLE from V$DATABASE failed,请检查您的jdbcUrl:%s.", url));
+                    } finally {
+                        DBUtil.closeDBResources(null, conn);
+                    }
+                }
+            }, 3, 1000L, true);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,
+                    String.format("无法连接:%s. 请检查您的配置并作出修改.", url), e);
+        }
+    }
+
     public static ResultSet query(Connection conn, String sql)
             throws SQLException {
         Statement stmt = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,

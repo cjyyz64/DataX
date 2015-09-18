@@ -6,6 +6,7 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.reader.util.HintUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,7 @@ public class OracleReader extends Reader {
 				if(!isTableMode){
 					throw DataXException.asDataXException(OracleReaderErrorCode.HINT_ERROR, "当且仅当非 querySql 模式读取 oracle 时才能配置 HINT.");
 				}
+				HintUtil.initHintConf(DATABASE_TYPE, originalConfig);
 			}
 		}
 	}

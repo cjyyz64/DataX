@@ -4,6 +4,7 @@ import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -30,19 +31,6 @@ public final class ReaderSplitUtil {
 
         String column = originalSliceConfig.getString(Key.COLUMN);
         String where = originalSliceConfig.getString(Key.WHERE, null);
-        String hint = originalSliceConfig.getString(Key.HINT);
-        Pattern tablePattern = null;
-        String hintExpression = null;
-        if(StringUtils.isNotBlank(hint)){
-            String[] tablePatternAndHint = hint.split("#");
-            if(tablePatternAndHint.length==1){
-                tablePattern = Pattern.compile(".*");
-                hintExpression = tablePatternAndHint[0];
-            }else{
-                tablePattern = Pattern.compile(tablePatternAndHint[0]);
-                hintExpression = tablePatternAndHint[1];
-            }
-        }
 
         List<Object> conns = originalSliceConfig.getList(Constant.CONN_MARK, Object.class);
 
@@ -93,26 +81,14 @@ public final class ReaderSplitUtil {
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
-                        String queryColumn = column;
-                        if(tablePattern != null){
-                            Matcher m = tablePattern.matcher(table);
-                            if(m.find()){
-                                String[] tableStr = table.split("\\.");
-                                String tableWithoutSchema = tableStr[tableStr.length-1];
-                                String finalHint = hintExpression.replaceAll(Constant.TABLE_NAME_PLACEHOLDER, tableWithoutSchema);
-                                queryColumn = finalHint + column;
-                                LOG.info("table:{} Use hint:{}.", table, finalHint);
-                            }
-                        }
-                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
-                                .buildQuerySql(queryColumn, table, where));
+                        String queryColumn = HintUtil.buildQueryColumn(jdbcUrl, table, column);
+                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil.buildQuerySql(queryColumn, table, where));
                         splittedConfigs.add(tempSlice);
                     }
                 }
             } else {
                 // 说明是配置的 querySql 方式
-                List<String> sqls = connConf.getList(Key.QUERY_SQL,
-                        String.class);
+                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
 
                 // TODO 是否check 配置为多条语句？？
                 for (String querySql : sqls) {
