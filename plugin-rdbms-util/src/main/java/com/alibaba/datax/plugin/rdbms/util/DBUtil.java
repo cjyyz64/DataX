@@ -632,7 +632,7 @@ public final class DBUtil {
             }, 3, 1000L, true);
         } catch (Exception e) {
             throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR,
-                    String.format("无法连接:%s. 请检查您的配置并作出修改.", url), e);
+                    String.format("select DATABASE_ROLE from V$DATABASE failed, url: %s", url), e);
         }
     }
 

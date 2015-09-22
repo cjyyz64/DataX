@@ -42,20 +42,24 @@ public class HintUtil {
     }
 
     public static String buildQueryColumn(String jdbcUrl, String table, String column){
-        if(tablePattern != null && DataBaseType.Oracle.equals(dataBaseType)){
-            Matcher m = tablePattern.matcher(table);
-            if(m.find()){
-                String[] tableStr = table.split("\\.");
-                String tableWithoutSchema = tableStr[tableStr.length-1];
-                String finalHint = hintExpression.replaceAll(Constant.TABLE_NAME_PLACEHOLDER, tableWithoutSchema);
-                if(finalHint.indexOf("parallel") > 0 &&
-                        DBUtil.isOracleMaster(jdbcUrl, username, password)){ //主库不并发读取
-                    LOG.info("master:{} will not use hint:{}", jdbcUrl, finalHint);
-                }else{
-                    LOG.info("table:{} use hint:{}.", table, finalHint);
-                    return finalHint + column;
+        try{
+            if(tablePattern != null && DataBaseType.Oracle.equals(dataBaseType)) {
+                Matcher m = tablePattern.matcher(table);
+                if(m.find()){
+                    String[] tableStr = table.split("\\.");
+                    String tableWithoutSchema = tableStr[tableStr.length-1];
+                    String finalHint = hintExpression.replaceAll(Constant.TABLE_NAME_PLACEHOLDER, tableWithoutSchema);
+                    //主库不并发读取
+                    if(finalHint.indexOf("parallel") > 0 && DBUtil.isOracleMaster(jdbcUrl, username, password)){
+                        LOG.info("master:{} will not use hint:{}", jdbcUrl, finalHint);
+                    }else{
+                        LOG.info("table:{} use hint:{}.", table, finalHint);
+                        return finalHint + column;
+                    }
                 }
             }
+        } catch (Exception e){
+            LOG.warn("match hint exception, will not use hint", e);
         }
         return column;
     }
