@@ -4,6 +4,7 @@ import com.alibaba.datax.common.constant.CommonConstant;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.Constant;
 import com.alibaba.datax.plugin.rdbms.reader.Key;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -12,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ReaderSplitUtil {
     private static final Logger LOG = LoggerFactory
@@ -75,19 +78,17 @@ public final class ReaderSplitUtil {
                         splittedConfigs.addAll(splittedSlices);
                     }
                 } else {
-
                     for (String table : tables) {
                         tempSlice = sliceConfig.clone();
                         tempSlice.set(Key.TABLE, table);
-                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil
-                                .buildQuerySql(column, table, where));
+                        String queryColumn = HintUtil.buildQueryColumn(jdbcUrl, table, column);
+                        tempSlice.set(Key.QUERY_SQL, SingleTableSplitUtil.buildQuerySql(queryColumn, table, where));
                         splittedConfigs.add(tempSlice);
                     }
                 }
             } else {
                 // 说明是配置的 querySql 方式
-                List<String> sqls = connConf.getList(Key.QUERY_SQL,
-                        String.class);
+                List<String> sqls = connConf.getList(Key.QUERY_SQL, String.class);
 
                 // TODO 是否check 配置为多条语句？？
                 for (String querySql : sqls) {

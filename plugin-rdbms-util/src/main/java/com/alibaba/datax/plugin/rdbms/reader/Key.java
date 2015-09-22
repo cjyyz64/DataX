@@ -19,6 +19,8 @@ public final class Key {
 
     public final static String WHERE = "where";
 
+    public final static String HINT = "hint";
+
     public final static String SPLIT_PK = "splitPk";
 
     public final static String QUERY_SQL = "querySql";
