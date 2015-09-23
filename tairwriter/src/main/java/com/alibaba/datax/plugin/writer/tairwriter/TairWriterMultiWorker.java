@@ -33,13 +33,13 @@ class TairWriterMultiWorker extends Thread {
     private List<KeyValuePack> keyValuePacks = new ArrayList<KeyValuePack>();
     private List<KeyCountPack> keyCountPacks = new ArrayList<KeyCountPack>();
     private int expire;
-    private final int threadId;
+    private final String threadId;
     private final ArrayBlockingQueue<Record> workQueue;
     private final AtomicReference<Exception> threadException;
     private volatile boolean isShutdown = false;
     private long records = 0L;
 
-    TairWriterMultiWorker(int threadId, TairManager tm, TairConfig conf, TaskPluginCollector collector
+    TairWriterMultiWorker(String threadId, TairManager tm, TairConfig conf, TaskPluginCollector collector
             , int queueSize, AtomicReference<Exception> threadException) {
         super(String.format("TairWriterMultiWorker[%s]", threadId));
         this.tm = tm;
