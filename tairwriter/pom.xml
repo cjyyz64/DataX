@@ -36,6 +36,27 @@
 			<artifactId>tair-mc-client</artifactId>
 			<version>2.0.0.3</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>1.8.5</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.alibaba.datax</groupId>
+			<artifactId>datax-core</artifactId>
+			<version>${datax-project-version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.alibaba.datax</groupId>
+			<artifactId>datax-service-face</artifactId>
+			<version>1.0.3-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

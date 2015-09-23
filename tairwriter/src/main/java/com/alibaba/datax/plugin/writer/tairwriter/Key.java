@@ -140,4 +140,6 @@ public class Key {
      */
     public final static String FRONT_LEADING_KEY = "frontLeadingKey";
 
+    public final static String TAIR_THREAD_NUM = "threadNum";
+
 }
