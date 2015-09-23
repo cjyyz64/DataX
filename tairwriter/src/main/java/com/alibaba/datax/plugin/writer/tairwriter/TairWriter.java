@@ -66,7 +66,8 @@ public class TairWriter extends Writer {
         private volatile boolean hasInit = false;
         private volatile boolean isShutdown = false;
 
-        private ArrayBlockingQueue<Record> recordQueue ;
+        //初始值，会被计算的重新赋值
+        private ArrayBlockingQueue<Record> recordQueue = new ArrayBlockingQueue<Record>(100);
 
         private TairWriterMultiWorker[] works;
         Thread dispatcher;
@@ -108,7 +109,7 @@ public class TairWriter extends Writer {
                 for (int i = 0; i < threadNum; i++) {
                     MultiClusterTairManager tm = TairClientManager.getInstance(conf.getConfigId(), conf.getLanguage(),
                             conf.getCompressionThreshold(), conf.getTimeout());
-                    works[i] = new TairWriterMultiWorker(i, tm, conf, this.getTaskPluginCollector(), queueSize / threadNum, threadException);
+                    works[i] = new TairWriterMultiWorker(Thread.currentThread().getName()+"_"+i, tm, conf, this.getTaskPluginCollector(), queueSize / threadNum, threadException);
                     works[i].start();
                 }
             } catch (Exception e) {
@@ -215,16 +216,20 @@ public class TairWriter extends Writer {
                 //等待dispatcher结束
                 LOG.info("TairWriter wait dispatcher join start...");
                 isShutdown = true;
-                dispatcher.join();
+                if(dispatcher!=null) {
+                    dispatcher.join();
+                }
                 LOG.info("TairWriter wait dispatcher join finished...");
 
                 stopAllWorers();
 
                 //最后，检查所有线程退出
                 LOG.info("TairWriter wait work join start...");
-                for (TairWriterMultiWorker worker : works) {
-                    worker.join();
-                    checkException();
+                if(works!=null) {
+                    for (TairWriterMultiWorker worker : works) {
+                        worker.join();
+                        checkException();
+                    }
                 }
                 LOG.info("TairWriter wait work join finished.");
             } catch (Exception e) {
@@ -243,6 +248,9 @@ public class TairWriter extends Writer {
         }
 
         private void stopAllWorers() {
+            if(works == null){
+                return;
+            }
             for (TairWriterMultiWorker worker : works) {
                 if (worker != null) {
                     worker.setIsShutdown(true);
