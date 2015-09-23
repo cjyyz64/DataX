@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.writer.tairwriter;
 
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -88,21 +87,20 @@ public class TariWriterTest {
 
 
         log.info(" => " + conf.get(Key.TIMEOUT));
-        TairWriter.Task t=new TairWriter.Task();
+        final TairWriter.Task t=new TairWriter.Task();
         t.setPluginJobConf(conf);
         t.setTaskPluginCollector(pluginCollector);
 
         t.init();
 
-        Field work = t.getClass().getDeclaredField("works");
-        work.setAccessible(true);
-        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
-
-        //所有线程work均启动
-        Assert.assertEquals(40, tmworks.length);
-        for(TairWriterMultiWorker twwork:tmworks){
-            Assert.assertTrue(twwork.isAlive());
-        }
+        //启动写线程
+        Thread tairThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                t.startWrite(recordReceiver);
+            }
+        });
+        tairThread.start();
 
 
         //启动写线程
@@ -125,8 +123,19 @@ public class TariWriterTest {
 
         write.start();
 
-        //启动写
-        t.startWrite(recordReceiver);
+        Thread.sleep(5000);
+
+        Field work = t.getClass().getDeclaredField("works");
+        work.setAccessible(true);
+        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
+
+        Field tnField= t.getClass().getDeclaredField("threadNum");
+        tnField.setAccessible(true);
+        int threadNum = tnField.getInt(t);
+
+        //所有线程work均启动
+        log.info("threadNum=="+threadNum);
+        Assert.assertEquals(threadNum, tmworks.length);
 
         //验证数据一条不差的写出。 通过验证脏数据
         verify(recordReceiver,times(11113)).getFromReader();
@@ -140,21 +149,22 @@ public class TariWriterTest {
 
 
         log.info(" => " + conf.get(Key.TIMEOUT));
-        TairWriter.Task t=new TairWriter.Task();
+        final TairWriter.Task t=new TairWriter.Task();
         t.setPluginJobConf(conf);
         t.setTaskPluginCollector(pluginCollector);
 
         t.init();
 
-        Field work = t.getClass().getDeclaredField("works");
-        work.setAccessible(true);
-        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
+        //启动写线程
+        Thread tairThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                t.startWrite(recordReceiver);
+            }
+        });
+        tairThread.start();
 
-        //所有线程work均启动
-        Assert.assertEquals(40, tmworks.length);
-        for(TairWriterMultiWorker twwork:tmworks){
-            Assert.assertTrue(twwork.isAlive());
-        }
+
 
 
         //启动写线程
@@ -177,8 +187,20 @@ public class TariWriterTest {
 
         write.start();
 
-        //启动写
-        t.startWrite(recordReceiver);
+
+        Thread.sleep(5000);
+
+        Field work = t.getClass().getDeclaredField("works");
+        work.setAccessible(true);
+        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
+
+        Field tnField= t.getClass().getDeclaredField("threadNum");
+        tnField.setAccessible(true);
+        int threadNum = tnField.getInt(t);
+
+        //所有线程work均启动
+        log.info("threadNum=="+threadNum);
+        Assert.assertEquals(threadNum, tmworks.length);
 
         //验证数据一条不差的写出。 通过验证脏数据
         verify(recordReceiver,times(22)).getFromReader();
@@ -187,28 +209,28 @@ public class TariWriterTest {
     }
 
 
-    @Test(expected = DataXException.class)
+    @Test()
     public void testNormal004WorkException() throws Exception {
 
         //构造脏数据收集抛出异常
-        doThrow(new RuntimeException("mock Exception")).when(pluginCollector).collectDirtyRecord(any(Record.class),anyString());
+        doThrow(new RuntimeException("mock Exception")).when(pluginCollector).collectDirtyRecord(any(Record.class), anyString());
 
         log.info(" => " + conf.get(Key.TIMEOUT));
-        TairWriter.Task t=new TairWriter.Task();
+        final TairWriter.Task t=new TairWriter.Task();
         t.setPluginJobConf(conf);
         t.setTaskPluginCollector(pluginCollector);
 
         t.init();
 
-        Field work = t.getClass().getDeclaredField("works");
-        work.setAccessible(true);
-        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
+        //启动写线程
+        Thread tairThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                t.startWrite(recordReceiver);
+            }
+        });
+        tairThread.start();
 
-        //所有线程work均启动
-        Assert.assertEquals(40, tmworks.length);
-        for(TairWriterMultiWorker twwork:tmworks){
-            Assert.assertTrue(twwork.isAlive());
-        }
 
 
         //启动写线程
@@ -231,9 +253,27 @@ public class TariWriterTest {
 
         write.start();
 
-        //启动写
-        t.startWrite(recordReceiver);
+        Thread.sleep(5000);
 
+        Field work = t.getClass().getDeclaredField("works");
+        work.setAccessible(true);
+        TairWriterMultiWorker[] tmworks= (TairWriterMultiWorker[])work.get(t);
+
+        Field tnField= t.getClass().getDeclaredField("threadNum");
+        tnField.setAccessible(true);
+        int threadNum = tnField.getInt(t);
+
+        Field teField= t.getClass().getDeclaredField("threadException");
+        teField.setAccessible(true);
+        AtomicReference<Exception> threadException = (AtomicReference<Exception>)teField.get(t);
+
+        //所有线程work均启动
+        log.info("threadNum=="+threadNum);
+        log.info("threadException==" + threadException.get().getMessage());
+        Assert.assertEquals(threadNum, tmworks.length);
+
+        Assert.assertTrue(threadException.get() != null);
+        Assert.assertEquals(threadException.get().getMessage(), "mock Exception");
 
     }
 
@@ -253,5 +293,14 @@ public class TariWriterTest {
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    @Test
+    public void testName() throws Exception {
+        System.out.println(Math.max(1,2/5));
+        System.out.println(Math.max(1,9/5));
+        System.out.println(Math.max(1,16000987 / 51));
+        System.out.println(Math.min(4096,16000987/51));
+
     }
 }

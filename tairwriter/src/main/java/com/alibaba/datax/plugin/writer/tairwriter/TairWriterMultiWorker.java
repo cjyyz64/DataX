@@ -34,12 +34,13 @@ class TairWriterMultiWorker extends Thread {
     private List<KeyCountPack> keyCountPacks = new ArrayList<KeyCountPack>();
     private int expire;
     private final int threadId;
-    private final ArrayBlockingQueue<Record> recordQueue;
+    private final ArrayBlockingQueue<Record> workQueue;
     private final AtomicReference<Exception> threadException;
     private volatile boolean isShutdown = false;
+    private long records = 0L;
 
     TairWriterMultiWorker(int threadId, TairManager tm, TairConfig conf, TaskPluginCollector collector
-            , ArrayBlockingQueue<Record> recordQueue, AtomicReference<Exception> threadException) {
+            , int queueSize, AtomicReference<Exception> threadException) {
         super(String.format("TairWriterMultiWorker[%s]", threadId));
         this.tm = tm;
         this.conf = conf;
@@ -47,7 +48,7 @@ class TairWriterMultiWorker extends Thread {
         this.expire = conf.getExpire();
         this.value = new StringBuilder();
         this.threadId = threadId;
-        this.recordQueue = recordQueue;
+        this.workQueue = new ArrayBlockingQueue<Record>(queueSize);
         this.threadException = threadException;
     }
 
@@ -56,12 +57,22 @@ class TairWriterMultiWorker extends Thread {
         LOG.info(String.format("TairWriterMultiWorker[%s] write start.", threadId));
 
         Record record = null;
-        while (!isShutdown) {
+
+        long lastTime = System.currentTimeMillis();
+        while (!isShutdown || workQueue.size()>0) {
             try {
-                record = recordQueue.poll(100, TimeUnit.MILLISECONDS);
+                record = workQueue.poll(100, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                LOG.error("recordQueue.poll has Exception: " + e.getMessage(), e);
+                LOG.error("workQueue.poll has Exception: " + e.getMessage(), e);
             }
+
+            long currentTime = System.currentTimeMillis();
+            //每分钟打印一次queue的size，作为调整并发的依据
+            if (currentTime > lastTime + 120000) {
+                LOG.info(String.format("TairWriterMultiWorker[%s] NOW write records=%s ...", threadId,records));
+                lastTime = currentTime;
+            }
+
             if (record == null) {
                 continue;
             }
@@ -75,7 +86,7 @@ class TairWriterMultiWorker extends Thread {
             }
         }
 
-        LOG.info(String.format("TairWriterMultiWorker[%s] write finished.", threadId));
+        LOG.info(String.format("TairWriterMultiWorker[%s] write finished. total records=%s", threadId,records));
     }
 
     public void setIsShutdown(boolean isShutdown) {
@@ -136,18 +147,11 @@ class TairWriterMultiWorker extends Thread {
         return true;
     }
 
-    String getKeyFromColumn(Record record) {
-        String columnKey = "";
-        if (null != conf.getFrontLeadingKey()) {
-            columnKey += conf.getFrontLeadingKey();
-        }
-        columnKey += record.getColumn(0).asString();
-        return columnKey;
-    }
+
 
     private int put(Record record) throws Exception {
 
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         String v = convertColumnToValue(record);
         if (null != v) {
             String errorInfo = retryPut(key, v, expire, record);
@@ -186,7 +190,7 @@ class TairWriterMultiWorker extends Thread {
         }
 
         keyValuePacks.clear();
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         Serializable skey = record.getColumn(1).asString();
         Serializable svalue = record.getColumn(2).asString();
         KeyValuePack pack = new KeyValuePack(skey, svalue, (short) 0, expire);
@@ -209,7 +213,7 @@ class TairWriterMultiWorker extends Thread {
         }
 
         keyValuePacks.clear();
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         // i is index of record data column and column name
         for (int i = 1; i < record.getColumnNumber(); ++i) {
             if (null != record.getColumn(i).getRawData()) {
@@ -238,7 +242,7 @@ class TairWriterMultiWorker extends Thread {
             collector.collectDirtyRecord(record, "counter 必须是2个字段");
             return -1;
         }
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         if (null == record.getColumn(1).getRawData()) {
             collector.collectDirtyRecord(record, "count不能为空");
             return -1;
@@ -273,7 +277,7 @@ class TairWriterMultiWorker extends Thread {
         }
 
         keyValuePacks.clear();
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         Serializable skey = record.getColumn(1).asString();
         Long count = record.getColumn(2).asLong();
         if (count >= 0 && count <= Integer.MAX_VALUE) {
@@ -293,6 +297,15 @@ class TairWriterMultiWorker extends Thread {
         return 0;
     }
 
+    public static String getKeyFromColumn(TairConfig conf, Record record) {
+        String columnKey = "";
+        if (null != conf.getFrontLeadingKey()) {
+            columnKey += conf.getFrontLeadingKey();
+        }
+        columnKey += record.getColumn(0).asString();
+        return columnKey;
+    }
+
     private int multiPrefixSetCounts(Record record) throws Exception {
         int fieldNum = record.getColumnNumber();
         if (fieldNum != 1 + conf.getSkeyList().size()) {
@@ -301,7 +314,7 @@ class TairWriterMultiWorker extends Thread {
         }
 
         keyCountPacks.clear();
-        key = getKeyFromColumn(record);
+        key = getKeyFromColumn(conf,record);
         for (int i = 1; i < record.getColumnNumber(); ++i) {
             if (null != record.getColumn(i).getRawData()) {
                 Long count = record.getColumn(i).asLong();
@@ -467,6 +480,17 @@ class TairWriterMultiWorker extends Thread {
             return record.getColumn(1).asString();
         } else {
             return null;
+        }
+    }
+
+
+    public void send(Record record) {
+        try {
+            workQueue.put(record);
+            records++;
+        } catch (InterruptedException e) {
+            LOG.error("TairWriterMultiWorker.send has Exception: " + e.getMessage(), e);
+            threadException.set(e);
         }
     }
 }
