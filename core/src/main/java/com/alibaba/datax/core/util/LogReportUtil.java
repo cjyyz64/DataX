@@ -39,7 +39,7 @@ public class LogReportUtil {
         long jobId = userConf.getLong(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
         info.setNodeId(skynetId == null ? jobId : Long.parseLong(skynetId));
         Long instId = jobId;
-        if(jobId==0 && System.getenv("SKYNET_TASKID")!=null){
+        if(jobId<=0 && System.getenv("SKYNET_TASKID")!=null){
             instId = Long.parseLong(System.getenv("SKYNET_TASKID"));
         }
         info.setInstId(instId);

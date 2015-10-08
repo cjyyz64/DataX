@@ -142,7 +142,6 @@ public class Engine {
             // 如果不是 standalone 模式，那么 jobId 一定不能为-1
             throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "非 standalone 模式必须在 URL 中提供有效的 jobId.");
         }
-        System.out.print("aaa");
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
 
 

@@ -19,4 +19,6 @@ public final class Constant {
 
     public static String QUERY_SQL_TEMPLATE = "select %s from %s where (%s)";
 
+    public static String TABLE_NAME_PLACEHOLDER = "@table";
+
 }

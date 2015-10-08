@@ -1,0 +1,11 @@
+{
+  "configId": "ldbcommon-daily",
+  "namespace": "1001",
+  "language": "java",
+  "compressionThreshold": "8196",
+  "writerType": "put",
+  "fieldDelimiter": ",",
+  "deleteEmptyRecord": "false",
+  "timeout": "2000",
+  "expire": "0"
+}
