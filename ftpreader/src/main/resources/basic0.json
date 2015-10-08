@@ -1,38 +1,58 @@
 {
+    "setting": {},
     "job": {
-        "setting": {},
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
         "content": [
             {
                 "reader": {
-                    "name": "TxtFileReader",
+                    "name": "ftpreader",
                     "parameter": {
-                        "path": ["/tmp/a", "/tmp/b"],
+                        "host": "xxxxx",
+                        "port": "21",
+                        "username": "testftp",
+                        "password": "111111111111",
+                        "protocol": "ftp",
+                        "path": [
+                            "/home/hanfa.shf/ftproot/xx1.txt"
+                        ],
+                        "encoding": "UTF-8",
                         "column": [
                             {
-                                "type": "int",
-                                "index": 0
+                                "index": 0,
+                                "type": "long"
                             },
                             {
-                                "type": "string",
-                                "value": "alibaba"
-                            },
-                            {
-                                "type": "date",
                                 "index": 1,
-                                "format": "yyyy-mm-dd"
+                                "type": "boolean"
+                            },
+                            {
+                                "index": 2,
+                                "type": "double"
+                            },
+                            {
+                                "index": 3,
+                                "type": "string"
+                            },
+                            {
+                                "index": 4,
+                                "type": "date",
+                                "format": "yyyy.MM.dd"
                             }
                         ],
-                        "charset": "UTF-8",
-                        "fieldDelimiter": ",",
-                        "compress": "gzip"
+                        "fieldDelimiter": ","
                     }
                 },
                 "writer": {
                     "name": "txtfilewriter",
                     "parameter": {
-                        "path": "/home/usr/dest/",
-                        "charset": "UTF-8",
-                        "fieldDelimiter": "\t",
+                        "path": "/home/yuxiong.wangyx/datax-test/readers/ftpreader/case00/result",
+                        "fileName": "shihf",
+                        "writeMode": "truncate",
+                        "format": "yyyy-MM-dd"
                     }
                 }
             }
