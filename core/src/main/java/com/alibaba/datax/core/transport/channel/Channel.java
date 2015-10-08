@@ -50,7 +50,7 @@ public abstract class Channel {
     public Channel(final Configuration configuration) {
         //channel的queue里默认record为1万条。原来为512条
         int capacity = configuration.getInt(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 10000);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY, 2048);
         long byteSpeed = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_SPEED_BYTE, 1024 * 1024);
         long recordSpeed = configuration.getLong(
@@ -78,9 +78,9 @@ public abstract class Channel {
         this.recordSpeed = recordSpeed;
         this.flowControlInterval = configuration.getLong(
                 CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_FLOWCONTROLINTERVAL, 1000);
-        //channel的queue默认大小为32M，原来为64M
+        //channel的queue默认大小为8M，原来为64M
         this.byteCapacity = configuration.getInt(
-                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 32 * 1024 * 1024);
+                CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 8 * 1024 * 1024);
         this.configuration = configuration;
     }
 

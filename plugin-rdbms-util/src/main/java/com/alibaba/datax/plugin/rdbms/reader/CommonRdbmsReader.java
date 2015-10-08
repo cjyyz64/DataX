@@ -166,8 +166,7 @@ public class CommonRdbmsReader {
             try {
                 rs = DBUtil.query(conn, querySql, fetchSize);
                 queryPerfRecord.end();
-                LOG.info("Finished read record by Sql: [{}\n] {}.",
-                        querySql, basicMsg);
+
                 ResultSetMetaData metaData = rs.getMetaData();
                 columnNumber = metaData.getColumnCount();
 
@@ -185,6 +184,9 @@ public class CommonRdbmsReader {
                 }
 
                 allResultPerfRecord.end(rsNextUsedTime);
+                //目前大盘是依赖这个打印，而之前这个Finish read record是包含了sql查询和result next的全部时间
+                LOG.info("Finished read record by Sql: [{}\n] {}.",
+                        querySql, basicMsg);
 
             }catch (Exception e) {
                 throw RdbmsException.asQueryException(this.dataBaseType, e, querySql, table, username);

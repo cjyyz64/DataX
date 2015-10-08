@@ -50,15 +50,15 @@ public final class OBDataSource {
 			Statement statement = null;
 			ResultSet result = null;
 			try {
-                DataSourceHolder holder = datasources.get(url);
-                Preconditions.checkState(holder != null,"can't fetch [%s] datasource",url);
+                		DataSourceHolder holder = datasources.get(url);
+                		Preconditions.checkState(holder != null,"can't fetch [%s] datasource",url);
 				connection = holder.datasource.getConnection();
 				statement = connection.createStatement();
 				log.debug("start execute {}", sql);
 				result = statement.executeQuery(sql);
 				return handler.callback(result);
 			} catch(SQLException e){
-				log.error(String.format("execute sql [%s] exception retry", sql), e);
+				log.warn(String.format("execute sql [%s] exception retry", sql), e);
 			}finally {
 				DBUtil.closeDBResources(result, statement, connection);
 			}
@@ -86,7 +86,7 @@ public final class OBDataSource {
                 result = statement.executeQuery();
                 return resultHandler.callback(result);
             } catch(SQLException e){
-                log.error(String.format("execute sql [%s] exception retry", handler.sql()), e);
+                log.warn(String.format("execute sql [%s] exception retry", handler.sql()), e);
             }finally {
                 DBUtil.closeDBResources(result, statement, connection);
             }
