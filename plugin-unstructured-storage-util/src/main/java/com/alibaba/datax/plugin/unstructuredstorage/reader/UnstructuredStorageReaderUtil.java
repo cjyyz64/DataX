@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 
-import org.anarres.lzo.LzoDecompressor1z_safe;
+/*import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
 import org.anarres.lzo.LzopInputStream;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -23,14 +23,14 @@ import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;*/
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
+/*//import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
-import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+//import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;*/
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -124,7 +124,7 @@ public class UnstructuredStorageReaderUtil {
 						encoding));
 			} else {
 				// TODO compress
-				if ("lzo".equalsIgnoreCase(compress)) {
+				/*if ("lzo".equalsIgnoreCase(compress)) {
 					LzoInputStream lzoInputStream = new LzoInputStream(
 							inputStream, new LzoDecompressor1z_safe());
 					reader = new BufferedReader(new InputStreamReader(
@@ -134,7 +134,7 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							lzopInputStream, encoding));
-				} else if ("gzip".equalsIgnoreCase(compress)) {
+				} else */if ("gzip".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new GzipCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -144,22 +144,22 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("lzma".equalsIgnoreCase(compress)) {
+				} /*else if ("lzma".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new LZMACompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("pack200".equalsIgnoreCase(compress)) {
+				} *//*else if ("pack200".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new Pack200CompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("snappy".equalsIgnoreCase(compress)) {
+				} *//*else if ("snappy".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new SnappyCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							compressorInputStream, encoding));
-				} else if ("xz".equalsIgnoreCase(compress)) {
+				} *//*else if ("xz".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new XZCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
@@ -199,12 +199,12 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							zipArchiveInputStream, encoding));
-				} else {
+				}*/ else {
 					throw DataXException
 							.asDataXException(
 									UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 lzo, lzop, gzip, bzip2, lzma, pack200, snappy, xz, ar, arj, cpio, dump, jar, tar, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
 			}
@@ -219,11 +219,11 @@ public class UnstructuredStorageReaderUtil {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.RUNTIME_EXCEPTION,
 					"运行时错误, 请联系我们", e);
-		} catch (ArchiveException e) {
+		}/* catch (ArchiveException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("压缩文件流读取错误 : [%]", context), e);
-		} catch (IOException e) {
+		} */catch (IOException e) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.READ_FILE_IO_ERROR,
 					String.format("流读取错误 : [%]", context), e);
@@ -233,7 +233,7 @@ public class UnstructuredStorageReaderUtil {
 
 	}
 
-	private static void doReadFromStream(BufferedReader reader, String context,
+	public static void doReadFromStream(BufferedReader reader, String context,
 			Configuration readerSliceConfig, RecordSender recordSender,
 			TaskPluginCollector taskPluginCollector) {
 		List<Configuration> column = readerSliceConfig
@@ -591,7 +591,7 @@ public class UnstructuredStorageReaderUtil {
 			throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 					String.format("配置项目path中：[%s]不合法，目前只支持在最后一级目录使用通配符*或者?", regexPath));
 		}
-		return  parentPath;	
+		return parentPath;
 	}
 	
 	

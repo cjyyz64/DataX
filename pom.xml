@@ -90,6 +90,10 @@
 
         <module>adswriter</module>
         <module>ocswriter</module>
+
+        <!-- developing module -->
+        <module>hdfsreader</module>
+
   </modules>
 
     <dependencyManagement>
