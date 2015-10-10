@@ -122,7 +122,8 @@ public class AdsHelper {
                 ColumnInfo columnInfo = new ColumnInfo();
                 columnInfo.setOrdinal(rs.getInt(1));
                 columnInfo.setName(rs.getString(2));
-                columnInfo.setDataType(ColumnDataType.getDataType(rs.getInt(3)));
+                //columnInfo.setDataType(ColumnDataType.getDataType(rs.getInt(3))); //for ads version < 0.7
+                columnInfo.setDataType(ColumnDataType.getTypeByName(rs.getString(3).toUpperCase())); //for ads version 0.8
                 columnInfo.setComment(rs.getString(5));
                 columnInfoList.add(columnInfo);
             }
