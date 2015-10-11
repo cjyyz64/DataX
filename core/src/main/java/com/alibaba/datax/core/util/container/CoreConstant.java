@@ -116,12 +116,16 @@ public class CoreConstant {
     public static final String LAST_PUBLICKEY = "last.publicKey";
 
     public static final String LAST_PRIVATEKEY = "last.privateKey";
+    
+    public static final String LAST_KEYCONTENT = "last.keyContent";
 
     public static final String CURRENT_KEYVERSION = "current.keyVersion";
 
     public static final String CURRENT_PUBLICKEY = "current.publicKey";
 
     public static final String CURRENT_PRIVATEKEY = "current.privateKey";
+    
+    public static final String CURRENT_KEYCONTENT = "current.keyContent";
 
 	// ----------------------------- 环境变量 ---------------------------------
 
