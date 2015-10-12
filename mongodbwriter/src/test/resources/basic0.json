@@ -1,0 +1,60 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "mongodbwriter",
+                    "parameter": {
+                        "address": [
+                            "100.69.198.134:33017"
+                        ],
+                        "userName": "relitu",
+                        "userPassword": "relitu&123",
+                        "dbName": "relitu",
+                        "collectionName": "ws",
+                        "column": [
+                            {
+                                "name": "pid",
+                                "type": "string"
+                            },
+                            {
+                                "name": "loc",
+                                "type": "Array",
+                                "splitter": ",",
+                                "itemtype": "long"
+                            },
+                            {
+                                "name": "epsg3857",
+                                "type": "Array",
+                                "splitter": ",",
+                                "itemtype": "double"
+                            },
+                            {
+                                "name": "geohid",
+                                "type": "date"
+                            },
+                            {
+                                "name": "pv",
+                                "type": "int"
+                            },
+                            {
+                                "name": "scenicId",
+                                "type": "json"
+                            }
+                        ],
+                        "upsertInfo": {
+                            "isUpsert": "true",
+                            "upsertKey": "pid"
+                        }
+                    }
+                }
+            }
+        ]
+    }
+}
