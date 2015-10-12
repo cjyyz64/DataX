@@ -41,11 +41,11 @@ public class KeyConstant {
      */
     public static final String COLUMN_TYPE = "type";
     /**
-     * 每个列的类型
+     * 数组中每个元素的类型
      */
     public static final String ITEM_TYPE = "itemtype";
     /**
-     * 每个列的类型
+     * json类型式类路径
      */
     public static final String CLASS_TYPE = "classtype";
     /**
