@@ -27,7 +27,7 @@
                                 "name": "loc",
                                 "type": "Array",
                                 "splitter": ",",
-                                "itemtype": "long"
+                                "itemtype": "bytes"
                             },
                             {
                                 "name": "epsg3857",
@@ -45,7 +45,8 @@
                             },
                             {
                                 "name": "scenicId",
-                                "type": "json"
+                                "type": "json",
+                                "classtype" : "com.alibaba.datax.plugin.writer.mongodbwriter.DataMode"
                             }
                         ],
                         "upsertInfo": {
