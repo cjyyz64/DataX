@@ -1,7 +1,6 @@
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
-import com.alibaba.datax.plugin.writer.mongodbwriter.DataMode;
 import com.alibaba.datax.plugin.writer.mongodbwriter.KeyConstant;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
 import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
@@ -135,8 +134,14 @@ public class MongoAPITest extends BasicWriterPluginTest {
         String scenicId = "{\"type\":\"point\",\"coord\":[923.23,546.12]}";
         DataMode mode = new DataMode();
         mode.setType("point");
-        Double[] dd = {13.45,26.3};
+        Double[] dd = {13.45,26.3,112.1};
         mode.setCoord(dd);
+        Long[] ll = {123123l,456456l,789789l};
+        mode.setLongs(ll);
+        Integer[] ii = {123,456,789};
+        mode.setIntegers(ii);
+        String[] ss = {"qwe","asd","zxc"};
+        mode.setStrings(ss);
         r.addColumn(new StringColumn(pid));
         r.addColumn(new StringColumn(loc));
         r.addColumn(new StringColumn(epsg3857));
