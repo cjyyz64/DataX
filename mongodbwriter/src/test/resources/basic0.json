@@ -45,8 +45,7 @@
                             },
                             {
                                 "name": "scenicId",
-                                "type": "json",
-                                "classtype" : "com.alibaba.datax.plugin.writer.mongodbwriter.DataMode"
+                                "type": "json"
                             }
                         ],
                         "upsertInfo": {

@@ -151,16 +151,8 @@ public class MongoDBWriter extends Writer{
                                 }
                             } else if(type.toLowerCase().equalsIgnoreCase("json")) {
                                 //如果是json类型,将其进行转换
-                                String classType = columnMeta.getJSONObject(i).getString(KeyConstant.CLASS_TYPE);
-                                if (Strings.isNullOrEmpty(classType)) {
-                                    logger.error(MongoDBWriterErrorCode.JSONCAST_EXCEPTION.getDescription());
-                                    data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
-//                                    throw DataXException.asDataXException(MongoDBWriterErrorCode.JSONCAST_EXCEPTION,
-//                                            MongoDBWriterErrorCode.JSONCAST_EXCEPTION.getDescription());
-                                } else {
-                                    Object mode = JSON.parseObject(record.getColumn(i).asString(), Class.forName(classType));
-                                    data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),JSON.toJSON(mode));
-                                }
+                                Object mode = com.mongodb.util.JSON.parse(record.getColumn(i).asString());
+                                data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),JSON.toJSON(mode));
                             } else {
                                 data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                             }
