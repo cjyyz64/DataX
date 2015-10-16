@@ -122,7 +122,9 @@ public class MongoDBReader extends Reader {
                             record.addColumn(new BoolColumn((Boolean) tempCol));
                         } else if (tempCol instanceof Date) {
                             record.addColumn(new DateColumn((Date) tempCol));
-                        } else if (tempCol instanceof Integer || tempCol instanceof Long) {
+                        } else if (tempCol instanceof Integer) {
+                            record.addColumn(new LongColumn((Integer) tempCol));
+                        }else if (tempCol instanceof Long) {
                             record.addColumn(new LongColumn((Long) tempCol));
                         } else {
                             if(KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
