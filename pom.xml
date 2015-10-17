@@ -93,6 +93,7 @@
 
         <!-- developing module -->
         <module>hdfsreader</module>
+        <module>hdfswriter</module>
 
   </modules>
 
