@@ -69,7 +69,7 @@ public class HdfsWriter extends Writer {
             }
             //writeMode check
             this.writeMode = this.writerSliceConfig.getNecessaryValue(Key.WRITE_MODE, HdfsWriterErrorCode.REQUIRED_VALUE);
-            writeMode = writeMode.trim();
+            writeMode = writeMode.toLowerCase().trim();
             Set<String> supportedWriteModes = Sets.newHashSet("truncate", "append", "nonConflict");
             if (!supportedWriteModes.contains(writeMode)) {
                 throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
@@ -90,23 +90,30 @@ public class HdfsWriter extends Writer {
             //compress check
             this.compress  = this.writerSliceConfig.getString(Key.COMPRESS,null);
             if(fileType.equalsIgnoreCase("TEXT")){
-                Set<String> textSupportedCompress = Sets.newHashSet("lzo","gzip", "bzip2");
+                Set<String> textSupportedCompress = Sets.newHashSet("LZO","GZIP", "BZIP2");
                 if(null == compress ){
                     this.writerSliceConfig.set(Key.COMPRESS, null);
-                }else if(!textSupportedCompress.contains(compress) ){
-                    throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("目前TEXT FILE仅支持 lzo、 gzip、bzip2 三种压缩, 不支持您配置的 compress 模式 : [%s]",
-                                    compress));
+                }else {
+                    compress = compress.toUpperCase().trim();
+                    if(!textSupportedCompress.contains(compress) ){
+                        throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
+                                String.format("目前TEXT FILE仅支持 LZO、 GZIP、BZIP2 三种压缩, 不支持您配置的 compress 模式 : [%s]",
+                                        compress));
+                    }
                 }
             }else if(fileType.equalsIgnoreCase("ORC")){
                 Set<String> orcSupportedCompress = Sets.newHashSet("NONE","ZLIB", "SNAPPY");
                 if(null == compress){
                     this.writerSliceConfig.set(Key.COMPRESS, "NONE");
-                }else if(!orcSupportedCompress.contains(compress)){
-                    throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
-                            String.format("根据ORC FILE官方文档，仅支持 ZLIB, SNAPPY 两种压缩, 不支持您配置的 compress 模式 : [%s]",
-                                    compress));
+                }else {
+                    compress = compress.toUpperCase().trim();
+                    if(!orcSupportedCompress.contains(compress)){
+                        throw DataXException.asDataXException(HdfsWriterErrorCode.ILLEGAL_VALUE,
+                                String.format("根据ORC FILE官方文档，仅支持 ZLIB, SNAPPY 两种压缩, 不支持您配置的 compress 模式 : [%s]",
+                                        compress));
+                    }
                 }
+
             }
             // encoding check
             this.encoding = this.writerSliceConfig.getString(Key.ENCODING,Constant.DEFAULT_ENCODING);
@@ -237,12 +244,6 @@ public class HdfsWriter extends Writer {
         private String defaultFS;
         private String fileType;
         private String fileName;
-        private List<Configuration> columns;
-        private String writeMode;
-        private String fieldDelimiter;
-        private String compress;
-        private String encoding;
-        private String nullFormat;
 
         private HdfsHelper hdfsHelper = null;
 
@@ -254,12 +255,6 @@ public class HdfsWriter extends Writer {
             this.fileType = this.writerSliceConfig.getString(Key.FILE_TYPE);
             //得当的已经是绝对路径，eg：hdfs://10.101.204.12:9000/user/hive/warehouse/writer.db/text/test.textfile
             this.fileName = this.writerSliceConfig.getString(Key.FILE_NAME);
-            this.columns = this.writerSliceConfig.getListConfiguration(Key.COLUMN);
-            this.writeMode = this.writerSliceConfig.getString(Key.WRITE_MODE);
-            this.fieldDelimiter = this.writerSliceConfig.getString(Key.FIELD_DELIMITER);
-            this.compress = this.writerSliceConfig.getString(Key.COMPRESS);
-            this.encoding = this.writerSliceConfig.getString(Key.ENCODING);
-            this.nullFormat =  this.writerSliceConfig.getString(Key.NULL_FORMAT,Constant.DEFAULT_NULL_FORMAT);
 
             hdfsHelper = new HdfsHelper();
             hdfsHelper.getFileSystem(defaultFS);

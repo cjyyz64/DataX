@@ -1,0 +1,18 @@
+create table orcfull(
+col1  TINYINT,
+col2  SMALLINT,
+col3  INT,
+col4  BIGINT,
+col5  FLOAT,
+col6  DOUBLE,
+col7  STRING,
+col8  VARCHAR(10),
+col9  CHAR(10),
+col10  BOOLEAN,
+col11 date,
+col12 TIMESTAMP
+)
+ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
+STORED AS ORC tblproperties("orc.compress"="SNAPPY");
+
+127	128	32768	2147483648	12.12	13.13	string	varchar	char	true	2015-10-18	2015-10-18 17:44:37.583

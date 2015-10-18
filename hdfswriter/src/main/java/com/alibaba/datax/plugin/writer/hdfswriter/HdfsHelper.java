@@ -26,9 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Properties;
@@ -220,53 +218,36 @@ public  class HdfsHelper {
             ObjectInspector objectInspector = null;
             switch (columnType) {
                 case TINYINT:
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Byte.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    break;
                 case SMALLINT:
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Short.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    break;
                 case INT:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Integer.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Integer.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case BIGINT:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Long.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Long.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case FLOAT:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Float.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Float.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case DOUBLE:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Double.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
-                    break;
-                case DECIMAL:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(BigDecimal.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Double.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case TIMESTAMP:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Timestamp.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(java.sql.Timestamp.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case DATE:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Date.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(java.sql.Date.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case STRING:
                 case VARCHAR:
                 case CHAR:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(String.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(String.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 case BOOLEAN:
-                    objectInspector = ObjectInspectorFactory
-                            .getReflectionObjectInspector(Boolean.class,
-                                    ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
+                    objectInspector = ObjectInspectorFactory.getReflectionObjectInspector(Boolean.class, ObjectInspectorFactory.ObjectInspectorOptions.JAVA);
                     break;
                 default:
                     throw DataXException
@@ -323,7 +304,11 @@ public  class HdfsHelper {
                         try {
                             switch (columnType) {
                                 case TINYINT:
+                                    recordList.add(Byte.valueOf(column.getRawData().toString()));
+                                    break;
                                 case SMALLINT:
+                                    recordList.add(Short.valueOf(column.getRawData().toString()));
+                                    break;
                                 case INT:
                                     recordList.add(Integer.valueOf(column.getRawData().toString()));
                                     break;
@@ -335,9 +320,6 @@ public  class HdfsHelper {
                                     break;
                                 case DOUBLE:
                                     recordList.add(Double.valueOf(column.getRawData().toString()));
-                                    break;
-                                case DECIMAL:
-                                    recordList.add(column.asBigDecimal());
                                     break;
                                 case STRING:
                                 case VARCHAR:
@@ -366,13 +348,28 @@ public  class HdfsHelper {
                             break;
                         }
                     }else{
-                        //日期
+                        //日期，指定format
                         String dateFormat = columnsConfiguration.get(i).getString(Key.DATE_FORMAT,null);
                         if (StringUtils.isNotBlank(dateFormat)) {
                             //格式化
                             try {
                                 SimpleDateFormat dateParse = new SimpleDateFormat(dateFormat);
-                                recordList.add(dateParse.format(column.asDate()));
+                                if(columnType.equals(SupportHiveDataType.DATE)){
+                                    java.sql.Date sqlDate = java.sql.Date.valueOf(dateParse.format(column.asDate()));
+                                    recordList.add(sqlDate);
+                                }else if(columnType.equals(SupportHiveDataType.TIMESTAMP)){
+                                    java.sql.Timestamp timestamp = java.sql.Timestamp.valueOf(dateParse.format(column.asDate()));
+                                    recordList.add(timestamp);
+                                }else{
+                                    throw DataXException
+                                            .asDataXException(
+                                                    HdfsWriterErrorCode.ILLEGAL_VALUE,
+                                                    String.format(
+                                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
+                                                            columnsConfiguration.get(i).getString(Key.NAME),
+                                                            columnsConfiguration.get(i).getString(Key.TYPE)));
+                                }
+
                             } catch (Exception e) {
                                 // warn: 此处认为似乎脏数据
                                 String message = String.format(
@@ -383,7 +380,29 @@ public  class HdfsHelper {
                                 break;
                             }
                         }else{
-                            recordList.add(column.asDate());
+                            //日期，未指定format
+                            try{
+                                if(columnType.equals(SupportHiveDataType.DATE)){
+                                    recordList.add(new java.sql.Date(column.asDate().getTime()));
+                                }else if(columnType.equals(SupportHiveDataType.TIMESTAMP)){
+                                    recordList.add(new java.sql.Timestamp(column.asDate().getTime()));
+                                }else{
+                                    throw DataXException
+                                            .asDataXException(
+                                                    HdfsWriterErrorCode.ILLEGAL_VALUE,
+                                                    String.format(
+                                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
+                                                            columnsConfiguration.get(i).getString(Key.NAME),
+                                                            columnsConfiguration.get(i).getString(Key.TYPE)));
+                                }
+                            }catch (Exception e) {
+                                String message = String.format(
+                                        "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
+                                        columnsConfiguration.get(i).getString(Key.TYPE), column.getRawData().toString());
+                                taskPluginCollector.collectDirtyRecord(record, message);
+                                transportResult.setRight(true);
+                                break;
+                            }
                         }
                     }
                 }else {
