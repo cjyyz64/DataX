@@ -1,0 +1,6 @@
+{
+  "name": "otsstreamreader-internal",
+  "class": "com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReader",
+  "description": "",
+  "developer": "huaiyuan.why@alibaba-inc.com"
+}
