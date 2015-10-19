@@ -41,6 +41,10 @@ public class KeyConstant {
      */
     public static final String COLUMN_TYPE = "type";
     /**
+     * 数组中每个元素的类型
+     */
+    public static final String ITEM_TYPE = "itemtype";
+    /**
      * 列分隔符
      */
     public static final String COLUMN_SPLITTER = "splitter";
