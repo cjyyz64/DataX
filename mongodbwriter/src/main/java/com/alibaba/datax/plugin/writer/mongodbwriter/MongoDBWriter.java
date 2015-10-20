@@ -98,19 +98,28 @@ public class MongoDBWriter extends Writer{
                 for(int i = 0; i < record.getColumnNumber(); i++) {
 
                     String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
-                    if(Strings.isNullOrEmpty(record.getColumn(i).asString())) {
-                        if(KeyConstant.isArrayType(type.toLowerCase())) {
+                    if (Strings.isNullOrEmpty(record.getColumn(i).asString())) {
+                        if (KeyConstant.isArrayType(type.toLowerCase())) {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), new Object[0]);
                         } else {
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                         }
                         continue;
                     }
-                    if(record.getColumn(i) instanceof StringColumn){
+                    if (Column.Type.INT.name().equalsIgnoreCase(type)){
+                    //配置文件中的type是没有用的，除了int，其他均按照保存时Column的类型进行处理
+                        try {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
+                                    Integer.parseInt(String.valueOf(record.getColumn(i).getRawData())));
+                        } catch (Exception e) {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asString());
+                            e.printStackTrace();
+                        }
+                    } else if(record.getColumn(i) instanceof StringColumn){
                         //处理数组类型
-                        String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
                         try {
                             if(KeyConstant.isArrayType(type.toLowerCase())) {
+                                String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
                                 if (Strings.isNullOrEmpty(splitter)) {
                                     throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
                                             MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
@@ -125,6 +134,12 @@ public class MongoDBWriter extends Writer{
                                             list.add(Double.parseDouble(s));
                                         }
                                         data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Double[0]));
+                                    } else if (itemType.equalsIgnoreCase(Column.Type.INT.name())) {
+                                        ArrayList<Integer> list = new ArrayList<Integer>();
+                                        for (String s : item) {
+                                            list.add(Integer.parseInt(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Integer[0]));
                                     } else if (itemType.equalsIgnoreCase(Column.Type.LONG.name())) {
                                         ArrayList<Long> list = new ArrayList<Long>();
                                         for (String s : item) {
