@@ -310,6 +310,7 @@ public class JobContainer extends AbstractContainer {
         }
 
         Thread.currentThread().setName("job-" + this.jobId);
+        LogReportUtil.initJobInfo(userConf);
 
         JobPluginCollector jobPluginCollector = new DefaultJobPluginCollector(
                 this.getContainerCommunicator());
@@ -507,6 +508,7 @@ public class JobContainer extends AbstractContainer {
                 CoreConstant.DATAX_JOB_CONTENT).size();
 
         this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
+        LogReportUtil.initSplitInfo(taskNumber, needChannelNumber);
 
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
