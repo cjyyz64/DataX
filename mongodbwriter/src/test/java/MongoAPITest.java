@@ -146,7 +146,7 @@ public class MongoAPITest extends BasicWriterPluginTest {
         r.addColumn(new StringColumn(loc));
         r.addColumn(new StringColumn(epsg3857));
         r.addColumn(new DateColumn(new Date()));
-        r.addColumn(new LongColumn(pv));
+        r.addColumn(new StringColumn(String.valueOf(pv) ));
         r.addColumn(new StringColumn(JSON.toJSONString(mode)));
         list.add(r);
         return list;

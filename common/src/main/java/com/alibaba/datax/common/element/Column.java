@@ -1,10 +1,10 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.fastjson.JSON;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-
-import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -70,6 +70,6 @@ public abstract class Column {
 	}
 
 	public enum Type {
-		BAD, NULL, LONG, DOUBLE, STRING, BOOL, DATE, BYTES
+		BAD, NULL, INT, LONG, DOUBLE, STRING, BOOL, DATE, BYTES
 	}
 }
