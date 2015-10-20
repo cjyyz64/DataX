@@ -35,14 +35,14 @@ public class MongoUtil {
         }
     }
 
-    public static MongoClient initCredentialMongoClient(Configuration conf,String userName,String password) {
+    public static MongoClient initCredentialMongoClient(Configuration conf,String userName,String password,String database) {
 
         List<Object> addressList = conf.getList(KeyConstant.MONGO_ADDRESS);
         if(!isHostPortPattern(addressList)) {
             throw DataXException.asDataXException(MongoDBReaderErrorCode.ILLEGAL_VALUE,"不合法参数");
         }
         try {
-            MongoCredential credential = MongoCredential.createMongoCRCredential(userName, "admin", password.toCharArray());
+            MongoCredential credential = MongoCredential.createCredential(userName, database, password.toCharArray());
             return new MongoClient(parseServerAddress(addressList), Arrays.asList(credential));
 
         } catch (UnknownHostException e) {
@@ -80,7 +80,7 @@ public class MongoUtil {
             try {
                 ServerAddress sa = new ServerAddress(tempAddress[0],Integer.valueOf(tempAddress[1]));
                 addressList.add(sa);
-            } catch (UnknownHostException e) {
+            } catch (Exception e) {
                 throw new UnknownHostException();
             }
         }
