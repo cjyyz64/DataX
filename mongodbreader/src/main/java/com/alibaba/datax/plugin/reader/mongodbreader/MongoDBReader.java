@@ -42,8 +42,9 @@ public class MongoDBReader extends Reader {
             this.originalConfig = super.getPluginJobConf();
                 this.userName = originalConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = originalConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+                String database =  originalConfig.getString(KeyConstant.MONGO_DB_NAME);
             if(!Strings.isNullOrEmpty(this.userName) && !Strings.isNullOrEmpty(this.password)) {
-                this.mongoClient = MongoUtil.initCredentialMongoClient(originalConfig,userName,password);
+                this.mongoClient = MongoUtil.initCredentialMongoClient(originalConfig,userName,password,database);
             } else {
                 this.mongoClient = MongoUtil.initMongoClient(originalConfig);
             }
@@ -121,7 +122,9 @@ public class MongoDBReader extends Reader {
                             record.addColumn(new BoolColumn((Boolean) tempCol));
                         } else if (tempCol instanceof Date) {
                             record.addColumn(new DateColumn((Date) tempCol));
-                        } else if (tempCol instanceof Integer || tempCol instanceof Long) {
+                        } else if (tempCol instanceof Integer) {
+                            record.addColumn(new LongColumn((Integer) tempCol));
+                        }else if (tempCol instanceof Long) {
                             record.addColumn(new LongColumn((Long) tempCol));
                         } else {
                             if(KeyConstant.isArrayType(column.getString(KeyConstant.COLUMN_TYPE))) {
@@ -149,12 +152,13 @@ public class MongoDBReader extends Reader {
             this.readerSliceConfig = super.getPluginJobConf();
                 this.userName = readerSliceConfig.getString(KeyConstant.MONGO_USER_NAME);
                 this.password = readerSliceConfig.getString(KeyConstant.MONGO_USER_PASSWORD);
+                this.database = readerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
             if(!Strings.isNullOrEmpty(userName) && !Strings.isNullOrEmpty(password)) {
-                mongoClient = MongoUtil.initCredentialMongoClient(readerSliceConfig,userName,password);
+                mongoClient = MongoUtil.initCredentialMongoClient(readerSliceConfig,userName,password,database);
             } else {
                 mongoClient = MongoUtil.initMongoClient(readerSliceConfig);
             }
-            this.database = readerSliceConfig.getString(KeyConstant.MONGO_DB_NAME);
+            
             this.collection = readerSliceConfig.getString(KeyConstant.MONGO_COLLECTION_NAME);
             this.mongodbColumnMeta = JSON.parseArray(readerSliceConfig.getString(KeyConstant.MONGO_COLUMN));
             this.batchSize = readerSliceConfig.getLong(KeyConstant.BATCH_SIZE);

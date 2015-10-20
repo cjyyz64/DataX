@@ -72,6 +72,8 @@ public final class OriginalConfPretreatmentUtil {
 
         List<Object> conns = originalConfig.getList(Constant.CONN_MARK,
                 Object.class);
+        List<String> preSql = originalConfig.getList(Key.PRE_SQL, String.class);
+
         int tableNum = 0;
 
         for (int i = 0, len = conns.size(); i < len; i++) {
@@ -83,8 +85,6 @@ public final class OriginalConfPretreatmentUtil {
 
             List<String> jdbcUrls = connConf
                     .getList(Key.JDBC_URL, String.class);
-            List<String> preSql = connConf.getList(Key.PRE_SQL, String.class);
-
 
             String jdbcUrl;
             if (isPreCheck) {
