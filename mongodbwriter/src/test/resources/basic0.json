@@ -27,7 +27,7 @@
                                 "name": "loc",
                                 "type": "Array",
                                 "splitter": ",",
-                                "itemtype": "bytes"
+                                "itemtype": "int"
                             },
                             {
                                 "name": "epsg3857",
