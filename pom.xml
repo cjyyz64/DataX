@@ -93,6 +93,7 @@
 
         <!-- developing module -->
         <module>hdfsreader</module>
+        <module>otsstreamreader-internal</module>
 
   </modules>
 
