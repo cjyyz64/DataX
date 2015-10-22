@@ -11,7 +11,6 @@ import com.aliyun.openservices.ots.internal.model.*;
 import com.aliyun.openservices.ots.internal.streamclient.Worker;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
 import com.aliyun.openservices.ots.internal.streamclient.model.WorkerStatus;
-import com.sun.tools.javac.comp.Check;
 
 import java.util.Arrays;
 import java.util.List;
