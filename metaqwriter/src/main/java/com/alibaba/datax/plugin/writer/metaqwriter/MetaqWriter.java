@@ -99,7 +99,7 @@ public class MetaqWriter extends Writer{
             if (exitWhenError) {
             	throw  DataXException.asDataXException(MetaqWriterErrorCode.METAQWRITER_ERROR, MetaqWriterErrorCode.METAQWRITER_ERROR.getDescription());
             }
-            if (errorLimit > 0 && failedLineCounter >= errorLimit) {
+            if (errorLimit > =1 && failedLineCounter >= errorLimit) {
                 logger.error(String.format("error count exceeded %d times!", failedLineCounter));
             	throw  DataXException.asDataXException(MetaqWriterErrorCode.METAQWRITER_ERROR, MetaqWriterErrorCode.METAQWRITER_ERROR.getDescription());
             }
