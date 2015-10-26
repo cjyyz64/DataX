@@ -163,15 +163,20 @@ public class MetaqWriter extends Writer{
 
 		private byte[] getMsgBytes(Record line)
 				throws UnsupportedEncodingException {
-
 			int filedNum = line.getColumnNumber();
-			List<Object> rows = Lists.newArrayListWithCapacity(filedNum);
-
+			StringBuffer sb = new StringBuffer();
+			
 			for (int i = 0; i < filedNum; i++) {
-				rows.add(line.getColumn(i).getRawData());
+				Object obj = line.getColumn(i).getRawData();
+				if(obj==null)
+					obj = nullFormat;
+				if(i!=0){
+					sb.append(fieldDelimiter);
+				}
+				sb.append(obj);
 			}
-			return Joiner.on(fieldDelimiter).useForNull(nullFormat).join(rows)
-					.getBytes(encoding);
+			return sb.toString().getBytes(encoding);
+		
 		}
     }
 
