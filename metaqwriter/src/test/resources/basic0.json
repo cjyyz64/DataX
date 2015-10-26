@@ -2,7 +2,7 @@
     "job": {
         "setting": {
             "speed": {
-                 "byte": 1048576
+                 "channel": 5
             }
         },
         "content": [
@@ -11,19 +11,12 @@
                     "name": "metaqwriter",
                     "parameter": {
                         "print": true,
-                        //metaq的topic
-                        "topic":"okokokokok",
-                        //metaq tag可以为null,非必填项
+                        "topic":"metaqwriter",
                         "tag":"this is tag",
-                        //转bytes时候的编码,非必填项,默认是utf-8编码
                         "encoding":"utf-8",
-                        //消息的字段分隔符,非必填项，默认\t
                         "field-delimiter":"\t",
-                        //保证消息的一定到达,默认true
                         "metaq-need-send-ok":true,
-                        //null值的默认值，必填项
                         "null-format":"format",
-                        //允许错误的记录条数，默认1000
                         "error-limit":1000
                     }
                 }
