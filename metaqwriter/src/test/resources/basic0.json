@@ -17,7 +17,9 @@
                         "field-delimiter":"\t",
                         "metaq-need-send-ok":true,
                         "null-format":"format",
-                        "error-limit":1000
+                        "error-limit":1000,
+                        "key-index":-1,
+                        "producer-group","datax_plugin_metaq_writer_group"
                     }
                 }
             }
