@@ -33,5 +33,7 @@ public final class KeyConstant {
      * null值的默认值
      */
     public final static String NULL_FORMAT = "null-format";
+	public static final String PRODUCER_GROUP = "producer-group";
+	public static final String KEY_INDEX = "key-index";
  
 }

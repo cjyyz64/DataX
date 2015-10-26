@@ -56,6 +56,7 @@ public class MetaqWriter extends Writer{
         private void validateParameter() {
         	originalConfig.getNecessaryValue(KeyConstant.TOPIC, MetaqWriterErrorCode.REQUIRED_VALUE);
         	originalConfig.getNecessaryValue(KeyConstant.NULL_FORMAT, MetaqWriterErrorCode.REQUIRED_VALUE);
+        	originalConfig.getNecessaryValue(KeyConstant.PRODUCER_GROUP, MetaqWriterErrorCode.REQUIRED_VALUE);
         }
 
     }
@@ -73,7 +74,8 @@ public class MetaqWriter extends Writer{
         private double errorLimit = 1000;
         private String nullFormat = null;
         private boolean exitWhenError = false;
-
+        private String producerGroup = null;//默认无分组
+        private int keyIndex = -1;//默认为-1,不需要key
         private static double EPSILON = 0.000001;
 
         private static int numOfPrintErrorLine = 10;
@@ -97,7 +99,7 @@ public class MetaqWriter extends Writer{
             if (exitWhenError) {
             	throw  DataXException.asDataXException(MetaqWriterErrorCode.METAQWRITER_ERROR, MetaqWriterErrorCode.METAQWRITER_ERROR.getDescription());
             }
-            if (errorLimit > 1 && failedLineCounter >= errorLimit) {
+            if (errorLimit > 0 && failedLineCounter >= errorLimit) {
                 logger.error(String.format("error count exceeded %d times!", failedLineCounter));
             	throw  DataXException.asDataXException(MetaqWriterErrorCode.METAQWRITER_ERROR, MetaqWriterErrorCode.METAQWRITER_ERROR.getDescription());
             }
@@ -106,14 +108,18 @@ public class MetaqWriter extends Writer{
         @Override
 		public void startWrite(RecordReceiver lineReceiver) {
 
-			logger.info("start write to topic {}, with tag {}", new Object[] {
-					topic, tag });
+			logger.info("start write to procuderGroup {} ,topic {}, with tag {}", new Object[] {
+					producerGroup,topic, tag });
 
 			Record line;
 			while ((line = lineReceiver.getFromReader()) != null) {
 				SendResult sendResult = null;
 				try {
-					Message msg = new Message(topic, tag, null,
+					String key = null;
+					if(keyIndex>=0){
+						key = String.valueOf(line.getColumn(keyIndex).getRawData());
+					}
+					Message msg = new Message(topic, tag, key,
 							getMsgBytes(line));
 					sendResult = producer.send(msg);
 				} catch (Exception ex) {
@@ -138,10 +144,12 @@ public class MetaqWriter extends Writer{
             fieldDelimiter = writerSliceConfig.getChar(KeyConstant.FIELD_DELIMITER, fieldDelimiter);
             metaqNeedSendOk = writerSliceConfig.getBool(KeyConstant.METAQ_NEED_SEND_OK, metaqNeedSendOk);
             nullFormat = writerSliceConfig.getString(KeyConstant.NULL_FORMAT, nullFormat);
+            producerGroup = writerSliceConfig.getString(KeyConstant.PRODUCER_GROUP);
+            keyIndex = writerSliceConfig.getInt(KeyConstant.KEY_INDEX, keyIndex);
             errorLimit = writerSliceConfig.getDouble(KeyConstant.ERROR_LIMIT, errorLimit);
             exitWhenError = Math.abs(errorLimit - 1L) < EPSILON;
-
-            producer = new MetaProducer("DataxMetaProducerGroup-" + UUID.randomUUID().toString());
+            
+			producer = new MetaProducer(producerGroup);
             try {
                 // 如果需要send ok, 则当返回状态不是sendok时，尝试另外一个broker
                 if (metaqNeedSendOk) {
@@ -163,6 +171,7 @@ public class MetaqWriter extends Writer{
 
 		private byte[] getMsgBytes(Record line)
 				throws UnsupportedEncodingException {
+
 			int filedNum = line.getColumnNumber();
 			StringBuffer sb = new StringBuffer();
 			
@@ -176,7 +185,6 @@ public class MetaqWriter extends Writer{
 				sb.append(obj);
 			}
 			return sb.toString().getBytes(encoding);
-		
 		}
     }
 
