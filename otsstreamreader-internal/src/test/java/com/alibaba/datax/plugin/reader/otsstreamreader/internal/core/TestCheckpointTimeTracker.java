@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.reader.otsstreamreader.internal.common.TestHelpe
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConfig;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.OTSHelper;
 import com.aliyun.openservices.ots.internal.OTS;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -18,8 +19,8 @@ import static org.junit.Assert.assertNotSame;
 public class TestCheckpointTimeTracker {
 
     private static OTS ots;
-    private static String statusTableName = "DataxReaderTestStatusTable";
-    private static String dataTableNameStreamId = "DataxReaderTestDataTable_12312321321";
+    private static String statusTableName = "StatusTable_TestCheckpointTimeTracker";
+    private static String dataTableNameStreamId = "DataTableStreamId_TestCheckpointTimeTracker";
     private static OTSStreamReaderChecker otsStreamReaderChecker;
 
     @BeforeClass

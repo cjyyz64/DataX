@@ -21,16 +21,19 @@
         </Console>
     </Appenders>
     <Loggers>
-        <AsyncLogger name="com.alibaba.datax.plugin.reader.otsstreamreader.internal" level="warn" additivity="false">
-            <AppenderRef ref="Async" level="warn" />
+        <AsyncLogger name="com.alibaba.datax.plugin.reader.otsstreamreader.internal" level="debug" additivity="false">
+            <AppenderRef ref="Async" level="debug" />
         </AsyncLogger>
-        <AsyncLogger name="com.aliyun.openservices.ots.internal.streamclient" level="warn" additivity="false">
-            <AppenderRef ref="Async" level="warn" />
+        <AsyncLogger name="com.aliyun.openservices.ots.internal.streamclient" level="debug" additivity="false">
+            <AppenderRef ref="Async" level="debug" />
+        </AsyncLogger>
+        <AsyncLogger name="com.aliyun.openservices.ots.operation" level="debug" additivity="false">
+            <AppenderRef ref="Async" level="debug" />
         </AsyncLogger>
         <AsyncLogger name="com.aliyun.openservices.ots.operation" level="warn" additivity="false">
-            <AppenderRef ref="Async" level="warn" />
+            <AppenderRef ref="Console" level="warn" />
         </AsyncLogger>
-        <AsyncRoot level="info">
+        <AsyncRoot level="debug">
             <AppenderRef ref="Async" />
         </AsyncRoot>
     </Loggers>

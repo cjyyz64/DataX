@@ -5,6 +5,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReaderException;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.common.ConfigurationHelper;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.common.RecordSenderForTest;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.common.TestHelper;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConfig;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.OTSHelper;
 import com.aliyun.openservices.ots.internal.OTS;
@@ -14,6 +15,8 @@ import com.aliyun.openservices.ots.internal.streamclient.DependencyException;
 import com.aliyun.openservices.ots.internal.streamclient.ShutdownException;
 import com.aliyun.openservices.ots.internal.streamclient.StreamClientException;
 import com.aliyun.openservices.ots.internal.streamclient.model.*;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -28,10 +31,9 @@ import static org.junit.Assert.fail;
 
 public class TestRecordProcessor {
 
-
     private static OTS ots;
-    private static String dataTable = "DataxReaderTestDataTable";
-    private static String statusTable = "DataxReaderTestStatusTable";
+    private static String dataTable = "DataTable_TestRecordProcessor";
+    private static String statusTable = "StatusTable_TestRecordProcessor";
     private static OTSStreamReaderConfig config;
 
     @BeforeClass
@@ -39,6 +41,12 @@ public class TestRecordProcessor {
         Configuration configuration = ConfigurationHelper.loadConf(dataTable, statusTable, 1, 2);
         config = OTSStreamReaderConfig.load(configuration);
         ots = OTSHelper.getOTSInstance(config);
+    }
+
+    @Before
+    public void deleteTable() {
+        TestHelper.deleteTable(dataTable);
+        TestHelper.deleteTable(statusTable);
     }
 
     @Test
@@ -222,14 +230,14 @@ public class TestRecordProcessor {
                 List<StreamRecord> recordsToSend;
                 for (int idx = 0; idx < 1000; idx++) {
                     StreamRecord streamRecord = new StreamRecord();
-                    streamRecord.setSequenceInfo(new RecordSequenceInfo(0, startTime - 100 + idx / 2, idx % 2));
+                    streamRecord.setSequenceInfo(new RecordSequenceInfo(0, (startTime - 100 + idx / 2) * 1000, idx % 2));
                     records.add(streamRecord);
                 }
                 processRecordsInput.setRecords(records);
                 recordProcessorEx.processRecords(processRecordsInput);
                 recordsToSend = recordProcessorEx.getRecordsToSend();
                 if (shouldSkip) {
-                    assertEquals(startTime, recordsToSend.get(0).getSequenceInfo().getTimestamp());
+                    assertEquals(startTime, recordsToSend.get(0).getSequenceInfo().getTimestamp() / 1000);
                 } else {
                     assertEquals(records.get(0).getSequenceInfo().getTimestamp(), recordsToSend.get(0).getSequenceInfo().getTimestamp());
                 }
@@ -248,14 +256,14 @@ public class TestRecordProcessor {
             List<StreamRecord> recordsToSend;
             for (int idx = 0; idx < 1000; idx++) {
                 StreamRecord streamRecord = new StreamRecord();
-                streamRecord.setSequenceInfo(new RecordSequenceInfo(0, endTime - 300 + idx / 2, idx % 2));
+                streamRecord.setSequenceInfo(new RecordSequenceInfo(0, (endTime - 300 + idx / 2) * 1000, idx % 2));
                 records.add(streamRecord);
             }
             processRecordsInput.setRecords(records);
             recordProcessorEx.processRecords(processRecordsInput);
             recordsToSend = recordProcessorEx.getRecordsToSend();
             assertEquals(records.get(0).getSequenceInfo().getTimestamp(), recordsToSend.get(0).getSequenceInfo().getTimestamp());
-            assertEquals(endTime - 1, recordsToSend.get(recordsToSend.size() - 1).getSequenceInfo().getTimestamp());
+            assertEquals(endTime - 1, recordsToSend.get(recordsToSend.size() - 1).getSequenceInfo().getTimestamp() / 1000);
             assertEquals("checkpoint", checkpoint[0]);
             assertEquals("iterator" + recordsToSend.size(), checkpointTimeTracker.getCheckpoint(config.getEndTimestampMillis(), "shard"));
             assertTrue(shardToLastProcessTime.get("shard") > System.currentTimeMillis() * 2);

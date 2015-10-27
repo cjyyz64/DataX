@@ -116,7 +116,9 @@ public class OTSStreamRecordSender {
             default:
                 throw new OTSStreamReaderException("Unknown OpType: " + opType + ".");
         }
-        dataxRecordSender.sendToWriter(line);
+        synchronized (dataxRecordSender) {
+            dataxRecordSender.sendToWriter(line);
+        }
     }
 
     private String getSequenceInfo(StreamRecord streamRecord, int colIdx) {

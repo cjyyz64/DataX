@@ -97,7 +97,7 @@ public class RecordProcessor implements IRecordProcessor {
     }
 
     private long getTimestamp(StreamRecord record) {
-        return record.getSequenceInfo().getTimestamp() / 1000 - 86400000;
+        return record.getSequenceInfo().getTimestamp() / 1000 - 86400 * 1000;
     }
 
     String getIterator(List<StreamRecord> records, int idx) {
@@ -129,7 +129,7 @@ public class RecordProcessor implements IRecordProcessor {
         int size = records.size();
         for (int i = 0; i < size; i++) {
             if (getTimestamp(records.get(i)) < endTimestampMillis) {
-                if (shouldSkip && getTimestamp(records.get(i)) < startTimestampMillis) {
+                if (shouldSkip && (getTimestamp(records.get(i)) < startTimestampMillis)) {
                     continue;
                 }
                 shouldSkip = false;
@@ -147,7 +147,7 @@ public class RecordProcessor implements IRecordProcessor {
         try {
             List<StreamRecord> records = processRecordsInput.getRecords();
 
-            LOG.info("ProcessRecords: size: {}.", records.size());
+            LOG.debug("ProcessRecords: size: {}.", records.size());
 
             if (process(records, processRecordsInput.getCheckpointer().getLargestPermittedCheckpointValue())) {
                 /**

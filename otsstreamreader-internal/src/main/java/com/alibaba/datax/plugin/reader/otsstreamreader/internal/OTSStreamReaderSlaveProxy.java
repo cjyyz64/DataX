@@ -17,6 +17,7 @@ import com.aliyun.openservices.ots.internal.streamclient.model.IRecordProcessorF
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +38,7 @@ public class OTSStreamReaderSlaveProxy {
     private int shardCount;
     private boolean shouldSkip;
     private String streamId;
+    private List<StreamShard> shards;
 
     public void init(final OTSStreamReaderConfig otsStreamReaderConfig) {
         this.config = otsStreamReaderConfig;
@@ -45,8 +47,9 @@ public class OTSStreamReaderSlaveProxy {
         this.checkpointInfoTracker = new CheckpointTimeTracker(ots, config.getStatusTable(), streamId);
         this.checker = new OTSStreamReaderChecker(ots, config);
 
-        List<StreamShard> shards = OTSHelper.getOrderedShardList(ots, streamId);
+        shards = OTSHelper.getOrderedShardList(ots, streamId);
         shardCount = shards.size();
+
         for (StreamShard shard : shards) {
             shardToCheckpointMap.put(shard.getShardId(), CheckpointPosition.TRIM_HORIZON);
         }
@@ -54,9 +57,7 @@ public class OTSStreamReaderSlaveProxy {
         shouldSkip = !findCheckpoints;
     }
 
-    private void updateShardToReadyTimeMap() {
-        List<StreamShard> orderedShardList = OTSHelper.getOrderedShardList(ots, streamId);
-        Map<String, String> checkpointMap = checkpointInfoTracker.getAllCheckpoints(config.getEndTimestampMillis());
+    private void updateShardToReadyTimeMap(List<StreamShard> orderedShardList, Map<String, String> checkpointMap) {
         List<String> readyShards = ShardStatusCalculator.getShardsNotBlockOnParents(orderedShardList, checkpointMap);
         LOG.info("ReadyShards: {}.", readyShards);
         for (String shardId : readyShards) {
@@ -66,9 +67,7 @@ public class OTSStreamReaderSlaveProxy {
         }
     }
 
-    private void setCheckpointsOfShardHasParentDone() {
-        List<StreamShard> orderedShardList = OTSHelper.getOrderedShardList(ots, streamId);
-        Map<String, String> checkpointMap = checkpointInfoTracker.getAllCheckpoints(config.getEndTimestampMillis());
+    private void setCheckpointsOfShardHasParentDone(List<StreamShard> orderedShardList, Map<String, String> checkpointMap) {
         List<String> shardsHasParentProcessDone = ShardStatusCalculator.getShardsHasParentProcessDone(orderedShardList, checkpointMap);
         LOG.info("ShardsHasParentProcessDone: {}.", shardsHasParentProcessDone);
         for (String shardId : shardsHasParentProcessDone) {
@@ -90,12 +89,13 @@ public class OTSStreamReaderSlaveProxy {
             thread.start();
             while (true) {
                 TimeUtils.sleepMillis(OTSStreamReaderConstants.MAIN_THREAD_CHECK_INTERVAL_MILLIS);
-                updateShardToReadyTimeMap();
-                setCheckpointsOfShardHasParentDone();
+                Map<String, String> checkpointMap = checkpointInfoTracker.getAllCheckpoints(config.getEndTimestampMillis());
+                updateShardToReadyTimeMap(shards, checkpointMap);
+                setCheckpointsOfShardHasParentDone(shards, checkpointMap);
                 checker.checkWorkerStatus(worker);
                 checker.checkLastProcessTime(shardToReadyTimeMap, shardToLastProcessTimeMap,
                         OTSStreamReaderConstants.MAX_ONCE_PROCESS_TIME_MILLIS);
-                if (checker.checkAllShardsProcessDone(checkpointInfoTracker, shardCount)) {
+                if (checker.checkAllShardsProcessDone(checkpointMap, shardCount)) {
                     checkpointInfoTracker.setShardCountForCheck(config.getEndTimestampMillis(), shardCount);
                     worker.shutdown();
                     StreamClientHelper.clearAllLeaseStatus(ots, config.getStatusTable(), streamId);

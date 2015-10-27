@@ -32,6 +32,16 @@
             <groupId>com.alibaba.datax</groupId>
             <artifactId>simulator</artifactId>
             <version>${datax-project-version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-log4j12</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>logback-classic</artifactId>
+                    <groupId>ch.qos.logback</groupId>
+                </exclusion>
+            </exclusions>
             <scope>test</scope>
         </dependency>
         <!--Other 依赖 -->
@@ -86,7 +96,7 @@
                     <parallel>all</parallel>
                     <forkCount>10</forkCount>
                     <reuseForks>true</reuseForks>
-                    <argLine>-Xmx1024m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=.</argLine>
+                    <argLine>-Xmx4096m -Xmn2048m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=.</argLine>
                     <includes>
                         <include>**/unittest/*.java</include>
                         <include>**/functiontest/*.java</include>

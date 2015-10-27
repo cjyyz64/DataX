@@ -15,8 +15,8 @@ import java.util.Map;
 
 public class ShardChangeTest {
 
-    private static final String dataTable = "StreamReaderTestDataTable";
-    private static final String statusTable = "StreamReaderTestStatusTable";
+    private static final String dataTable = "DataTable_ShardChangeTest";
+    private static final String statusTable = "StatusTable_ShardChangeTest";
 
     /**
      * reader运行过程中删除一个Shard
@@ -40,17 +40,18 @@ public class ShardChangeTest {
         List<StreamRecord> streamRecords = new ArrayList<StreamRecord>();
         PrimaryKey primaryKey = Utils.getPrimaryKey(1);
         List<RecordColumn> columns = Utils.getRecordColumns(1, StreamRecord.RecordType.PUT);
-        StreamRecord record = new StreamRecord();
-        record.setRecordType(StreamRecord.RecordType.PUT);
-        record.setPrimaryKey(primaryKey);
-        record.setColumns(columns);
-        record.setSequenceInfo(new RecordSequenceInfo(0, startTime + 100, 0));
-        for (int i = 0; i < 50000; i++) {
+
+        for (int i = 0; i < 10000; i++) {
+            StreamRecord record = new StreamRecord();
+            record.setRecordType(StreamRecord.RecordType.PUT);
+            record.setPrimaryKey(primaryKey);
+            record.setColumns(columns);
+            record.setSequenceInfo(new RecordSequenceInfo(0, (startTime + 100) * 1000, i));
             streamRecords.add(record);
         }
 
         List<String> shardIds = new ArrayList<String>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 10; i++) {
             String shardId = String.format("shard%05d", i);
             mockOTS.createShard(shardId, null, null);
             mockOTS.appendRecords(shardId, streamRecords);
@@ -99,17 +100,18 @@ public class ShardChangeTest {
         List<StreamRecord> streamRecords = new ArrayList<StreamRecord>();
         PrimaryKey primaryKey = Utils.getPrimaryKey(1);
         List<RecordColumn> columns = Utils.getRecordColumns(1, StreamRecord.RecordType.PUT);
-        StreamRecord record = new StreamRecord();
-        record.setRecordType(StreamRecord.RecordType.PUT);
-        record.setPrimaryKey(primaryKey);
-        record.setColumns(columns);
-        record.setSequenceInfo(new RecordSequenceInfo(0, startTime + 100, 0));
-        for (int i = 0; i < 50000; i++) {
+
+        for (int i = 0; i < 10000; i++) {
+            StreamRecord record = new StreamRecord();
+            record.setRecordType(StreamRecord.RecordType.PUT);
+            record.setPrimaryKey(primaryKey);
+            record.setColumns(columns);
+            record.setSequenceInfo(new RecordSequenceInfo(0, (startTime + 100) * 1000, i));
             streamRecords.add(record);
         }
 
         List<String> shardIds = new ArrayList<String>();
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 10; i++) {
             String shardId = String.format("shard%05d", i);
             mockOTS.createShard(shardId, null, null);
             mockOTS.appendRecords(shardId, streamRecords);
