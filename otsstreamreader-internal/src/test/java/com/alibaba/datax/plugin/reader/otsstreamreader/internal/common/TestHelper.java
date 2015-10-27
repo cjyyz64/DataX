@@ -189,7 +189,7 @@ public class TestHelper {
                     record.setRecordType(Utils.getRandomRecordType());
                     record.setPrimaryKey(Utils.getPrimaryKey(2));
                     record.setColumns(Utils.getRecordColumns(5, record.getRecordType()));
-                    record.setSequenceInfo(new RecordSequenceInfo(0, i, j));
+                    record.setSequenceInfo(new RecordSequenceInfo(0, i * 1000, j));
                     streamRecords.add(record);
                 }
                 mockOTS.appendRecords(shardId, streamRecords);
@@ -208,10 +208,10 @@ public class TestHelper {
         List<StreamRecord> records = new ArrayList<StreamRecord>();
         boolean shouldSkip = true;
         for (StreamRecord streamRecord : mockOTS.getShardRecords(shardId)) {
-            if (streamRecord.getSequenceInfo().getTimestamp() >= endTime) {
+            if (streamRecord.getSequenceInfo().getTimestamp() / 1000 >= endTime) {
                 break;
             }
-            if (shouldSkip && streamRecord.getSequenceInfo().getTimestamp() < startTime) {
+            if (shouldSkip && streamRecord.getSequenceInfo().getTimestamp() / 1000 < startTime) {
                 continue;
             }
             shouldSkip = false;

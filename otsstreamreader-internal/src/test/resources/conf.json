@@ -1,6 +1,6 @@
 {
-  "endpoint":"http://10.101.168.117:7000",
+  "endpoint":"http://10.101.175.30:7000",
   "accessId":"OTSMultiUser176_accessid",
   "accessKey":"OTSMultiUser176_accesskey",
-  "instanceName":"whyInternal"
+  "instanceName":"streamreader-ft"
 }

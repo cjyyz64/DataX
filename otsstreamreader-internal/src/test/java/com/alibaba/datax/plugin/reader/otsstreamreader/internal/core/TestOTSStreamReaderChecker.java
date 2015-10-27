@@ -15,6 +15,7 @@ import com.aliyun.openservices.ots.internal.model.*;
 import com.aliyun.openservices.ots.internal.streamclient.Worker;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
 import com.aliyun.openservices.ots.internal.streamclient.model.IRecordProcessorFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,8 +29,8 @@ import static org.junit.Assert.fail;
 public class TestOTSStreamReaderChecker {
 
     private static OTS ots;
-    private static String dataTable = "DataxReaderTestDataTable";
-    private static String statusTable = "DataxReaderTestStatusTable";
+    private static String dataTable = "DataTable_TestOTSStreamReaderChecker";
+    private static String statusTable = "StatusTable_TestOTSStreamReaderChecker";
     private static OTSStreamReaderConfig config;
 
     @BeforeClass
@@ -289,21 +290,21 @@ public class TestOTSStreamReaderChecker {
 
         CheckpointTimeTracker checkpointTimeTracker = new CheckpointTimeTracker(ots, config.getStatusTable(), "streamId");
         {
-            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker, 10);
+            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker.getAllCheckpoints(config.getEndTimestampMillis()), 10);
             assertEquals(false, done);
         }
         {
             for (int i = 0; i < 8; i++) {
                 checkpointTimeTracker.setCheckpoint(config.getEndTimestampMillis(), "shard" + i, "checkpoint");
             }
-            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker, 10);
+            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker.getAllCheckpoints(config.getEndTimestampMillis()), 10);
             assertEquals(false, done);
         }
         {
             for (int i = 8; i < 10; i++) {
                 checkpointTimeTracker.setCheckpoint(config.getEndTimestampMillis(), "shard" + i, "checkpoint");
             }
-            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker, 10);
+            boolean done = checker.checkAllShardsProcessDone(checkpointTimeTracker.getAllCheckpoints(config.getEndTimestampMillis()), 10);
             assertEquals(true, done);
         }
         {
@@ -311,7 +312,7 @@ public class TestOTSStreamReaderChecker {
                 checkpointTimeTracker.setCheckpoint(config.getEndTimestampMillis(), "shard" + i, "checkpoint");
             }
             try {
-                checker.checkAllShardsProcessDone(checkpointTimeTracker, 10);
+                checker.checkAllShardsProcessDone(checkpointTimeTracker.getAllCheckpoints(config.getEndTimestampMillis()), 10);
                 fail();
             } catch (OTSStreamReaderException ex) {
                 assertEquals("Find more number of checkpoints(12) than shardCount(10).", ex.getMessage());

@@ -6,6 +6,7 @@ import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStream
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.OTSHelper;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.TimeUtils;
 import com.aliyun.openservices.ots.internal.model.StreamRecord;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -19,8 +20,8 @@ public class MockOTSMultiShardTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(MockOTSMultiShardTest.class);
 
-    private String dataTable = "StreamReaderTestDataTable";
-    private String statusTable = "StreamReaderTestStatusTable";
+    private String dataTable = "DataTable_MockOTSMultiShardTest";
+    private String statusTable = "StatusTable_MockOTSMultiShardTest";
 
     @Before
     public void deleteStatusTable() {

@@ -18,7 +18,7 @@ import static org.junit.Assert.assertEquals;
 
 public class TestStreamClientHelper {
 
-    private static String streamId = "StreamReaderTestDataTable_12312321";
+    private static String streamId = "StreamReaderTestDataTable_12312czxcz321";
     private static String statusTable = "StreamReaderTestStatusTable";
 
     @Before

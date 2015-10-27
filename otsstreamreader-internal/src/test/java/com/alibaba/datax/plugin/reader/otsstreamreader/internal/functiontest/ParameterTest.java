@@ -20,8 +20,8 @@ import static org.junit.Assert.fail;
 
 public class ParameterTest {
 
-    private static String dataTable = "ParameterTestDataTable";
-    private static String statusTable = "ParameterTestStatusTable";
+    private static String dataTable = "DataTable_ParameterTest";
+    private static String statusTable = "StatusTable_ParameterTest";
 
     @Before
     public void before() {

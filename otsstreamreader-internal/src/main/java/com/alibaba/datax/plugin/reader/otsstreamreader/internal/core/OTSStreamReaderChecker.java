@@ -12,7 +12,6 @@ import com.aliyun.openservices.ots.internal.streamclient.Worker;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
 import com.aliyun.openservices.ots.internal.streamclient.model.WorkerStatus;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -175,20 +174,18 @@ public class OTSStreamReaderChecker {
      * 检查是否所有shard都处理完成了。
      * shard处理完成后在statusTable中记录checkpoint，以此判断处理完成。
      *
-     * @param checkpointTimeTracker
      * @param shardCount
      * @return
      */
-    public boolean checkAllShardsProcessDone(CheckpointTimeTracker checkpointTimeTracker,
+    public boolean checkAllShardsProcessDone(Map<String, String> checkpointMap,
                                              int shardCount) {
-        Map<String, String> map = checkpointTimeTracker.getAllCheckpoints(config.getEndTimestampMillis());
-        if (map.size() == shardCount) {
+        if (checkpointMap.size() == shardCount) {
             return true;
         }
-        if (map.size() < shardCount) {
+        if (checkpointMap.size() < shardCount) {
             return false;
         }
-        throw new OTSStreamReaderException("Find more number of checkpoints(" + map.size()
+        throw new OTSStreamReaderException("Find more number of checkpoints(" + checkpointMap.size()
                 + ") than shardCount(" + shardCount + ").");
     }
 }

@@ -34,13 +34,13 @@ public class AssertHelper {
                 int tmp = i - primaryKey.getPrimaryKeyColumns().length;
                 switch (tmp) {
                     case 0:
-                        assertEquals("", column.asString());
+                        assertEquals(null, column.asString());
                         break;
                     case 1:
-                        assertEquals(0, (long) column.asLong());
+                        assertEquals(null, column.asLong());
                         break;
                     case 2:
-                        assertEquals("", column.asString());
+                        assertEquals(null, column.asString());
                         break;
                     case 3:
                         assertEquals("DR", column.asString());
@@ -152,7 +152,7 @@ public class AssertHelper {
                         assertEquals(recordColumn.getColumn().getTimestamp(), (long)column.asLong());
                         break;
                     case 2:
-                        assertEquals("", column.asString());
+                        assertEquals(null, column.asString());
                         break;
                     case 3:
                         assertEquals("DO", column.asString());
@@ -196,10 +196,10 @@ public class AssertHelper {
                         assertEquals(recordColumn.getColumn().getName(), column.asString());
                         break;
                     case 1:
-                        assertEquals(0, (long)column.asLong());
+                        assertEquals(null, column.asLong());
                         break;
                     case 2:
-                        assertEquals("", column.asString());
+                        assertEquals(null, column.asString());
                         break;
                     case 3:
                         assertEquals("DA", column.asString());
