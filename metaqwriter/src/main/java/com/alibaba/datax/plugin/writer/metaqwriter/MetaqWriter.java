@@ -74,11 +74,9 @@ public class MetaqWriter extends Writer {
 		private String encoding = "utf-8";
 		private char fieldDelimiter = '\t';
 		private boolean metaqNeedSendOk = false;
-		private double errorLimit = 1000;
 		private String nullFormat = null;
 		private String producerGroup = null;// 默认无分组
 		private int keyIndex = -1;// 默认为-1,不需要key
-		private static double EPSILON = 0.000001;
 		private MetaProducer producer = null;
 
 		@Override
