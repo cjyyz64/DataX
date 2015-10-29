@@ -20,20 +20,23 @@ public final class KeyConstant {
     /**
      * 消息的字段分隔符
      */
-    public final static String FIELD_DELIMITER = "field-delimiter";
+    public final static String FIELD_DELIMITER = "fieldDelimiter";
     /**
      * 是否保证发送ok
      */
-    public final static String METAQ_NEED_SEND_OK = "metaq-need-send-ok";
-    /**
-     * 错误的限制条数
-     */
-    public final static String ERROR_LIMIT = "error-limit";
+    public final static String METAQ_NEED_SEND_OK = "metaqNeedSendOk";
+   
     /**
      * null值的默认值
      */
-    public final static String NULL_FORMAT = "null-format";
-	public static final String PRODUCER_GROUP = "producer-group";
-	public static final String KEY_INDEX = "key-index";
+    public final static String NULL_FORMAT = "nullFormat";
+    /**
+     * metaq组
+     */
+	public static final String PRODUCER_GROUP = "producerGroup";
+	/**
+	 * metaq的key
+	 */
+	public static final String KEY_INDEX = "idIndex";
  
 }

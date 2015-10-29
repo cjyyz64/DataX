@@ -14,12 +14,11 @@
                         "topic":"metaqwriter",
                         "tag":"this is tag",
                         "encoding":"utf-8",
-                        "field-delimiter":"\t",
-                        "metaq-need-send-ok":true,
-                        "null-format":"format",
-                        "error-limit":1000,
-                        "key-index":-1,
-                        "producer-group","datax_plugin_metaq_writer_group"
+                        "fieldDelimiter":"\t",
+                        "metaqNeedSendOk":true,
+                        "nullFormat":"format",
+                        "idIndex":-1,
+                        "producerGroup","datax_plugin_metaq_writer_group"
                     }
                 }
             }
