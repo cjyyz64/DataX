@@ -93,8 +93,11 @@ public class HdfsHelperTest {
     public void testIsPathexists() throws Exception {
         String path1 ="/user/hive/warehouse/writerorc.db/orc/";
         String path2 ="/user/hive/warehouse/writerorc.db/orcxxxxxx/";
+        String path3= "user/hive/warehouse/hdfswriter.db/text_table";
         Boolean  is1 = hdfsHelper.isPathexists(path1);
         Boolean  is2 = hdfsHelper.isPathexists(path2);
+        Boolean  is3 = hdfsHelper.isPathexists(path3);
+        System.out.println(is3);
         Assert.assertEquals(is1,true);
         Assert.assertEquals(is2,false);
     }
@@ -251,16 +254,32 @@ public class HdfsHelperTest {
     public void testTransportOneRecord() throws Exception {
 
         String time ="2015-10-18 17:40:20";
-        System.out.println(new Timestamp(System.currentTimeMillis()));
-        System.out.println(new Date(System.currentTimeMillis()));
-        SimpleDateFormat DateFormate =   new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        java.util.Date utilDate = DateFormate.parse(time);
+//        System.out.println(new Timestamp(System.currentTimeMillis()));
+//        System.out.println(new Date(System.currentTimeMillis()));
+//        SimpleDateFormat DateFormate =   new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+//        java.util.Date utilDate = DateFormate.parse(time);
+//
+//        java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
+//        java.sql.Timestamp tm = new java.sql.Timestamp(utilDate.getTime());
+//        System.out.println(utilDate);
+//        System.out.println(sqlDate.toString());
+//        System.out.println(tm);
+//        System.out.println(java.sql.Date.valueOf(DateFormate.format(sqlDate)));
 
+        SimpleDateFormat DateFormate =   new SimpleDateFormat("yyyy.MM.dd");
+        java.util.Date utilDate = new java.util.Date();
         java.sql.Date sqlDate = new java.sql.Date(utilDate.getTime());
-        java.sql.Timestamp tm = new java.sql.Timestamp(utilDate.getTime());
-        System.out.println(utilDate);
-        System.out.println(sqlDate.toString());
-        System.out.println(tm);
+        System.out.println("utildate:" + utilDate);
+        System.out.println("sqldate" + sqlDate);
+        System.out.println("格式化");
+        String formateUtilDate = DateFormate.format(utilDate);
+        String formateSqlDate = DateFormate.format(utilDate);
+        System.out.println(formateUtilDate);
+        System.out.println(formateSqlDate);
+        //java.util.Date formateutilDate = new java.util.Date(formateUtilDate);
+        java.sql.Date formatesqlDate  = new Date(DateFormate.parse(formateSqlDate).getTime()) ;
+        //System.out.println(formateutilDate);
+        System.out.println(formatesqlDate);
 
 
 //TODO: Test goes here...

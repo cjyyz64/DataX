@@ -50,7 +50,8 @@ public class OrcFileWriter {
         JobConf conf = new JobConf(hadoopConf);
         FileSystem fs = FileSystem.get(conf);
         //Path outputPath = new Path("/user/hive/warehouse/test3.db/hadfswriter/test4.orc");
-        Path outputPath = new Path("/user/hive/warehouse/writerorc.db/orcfull/a");
+        //Path outputPath = new Path("/user/hive/warehouse/writerorc.db/orcfull/a");
+        Path outputPath = new Path("/b");
 //        StructObjectInspector inspector =
 //                (StructObjectInspector) ObjectInspectorFactory
 //                        .getReflectionObjectInspector(MyRow.class,
