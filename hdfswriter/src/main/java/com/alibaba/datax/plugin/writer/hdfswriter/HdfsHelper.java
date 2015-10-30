@@ -248,12 +248,11 @@ public  class HdfsHelper {
     private static void doWriteToStream(RecordReceiver lineReceiver,
                                         BufferedWriter writer, Configuration config,
                                         TaskPluginCollector taskPluginCollector) throws IOException {
-        String nullFormat = config.getString(Key.NULL_FORMAT);
         char fieldDelimiter = config.getChar(Key.FIELD_DELIMITER);
         List<Configuration>  columns = config.getListConfiguration(Key.COLUMN);
         Record record = null;
         while ((record = lineReceiver.getFromReader()) != null) {
-            MutablePair<String, Boolean> transportResult = transportOneRecord(record, nullFormat, fieldDelimiter, columns, taskPluginCollector);
+            MutablePair<String, Boolean> transportResult = transportOneRecord(record, fieldDelimiter, columns, taskPluginCollector);
             if (!transportResult.getRight()) {
                 writer.write(transportResult.getLeft());
             }
@@ -261,11 +260,8 @@ public  class HdfsHelper {
     }
 
     public static MutablePair<String, Boolean> transportOneRecord(
-            Record record, String nullFormat, char fieldDelimiter, List<Configuration> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
-        if (null == nullFormat) {
-            nullFormat = "null";
-        }
-        MutablePair<List<Object>, Boolean> transportResultList =  transportOneRecord(record,nullFormat,columnsConfiguration,taskPluginCollector);
+            Record record, char fieldDelimiter, List<Configuration> columnsConfiguration, TaskPluginCollector taskPluginCollector) {
+        MutablePair<List<Object>, Boolean> transportResultList =  transportOneRecord(record,columnsConfiguration,taskPluginCollector);
 
         MutablePair<String, Boolean> transportResult = new MutablePair<String, Boolean>();
         transportResult.setRight(false);
@@ -287,7 +283,6 @@ public  class HdfsHelper {
     public void orcFileStartWrite(RecordReceiver lineReceiver, Configuration config, String fileName,
                                   TaskPluginCollector taskPluginCollector){
         List<Configuration>  columns = config.getListConfiguration(Key.COLUMN);
-        String nullFormat = config.getString(Key.NULL_FORMAT);
 
         List<String> columnNames = getColumnNames(columns);
         List<ObjectInspector> columnTypeInspectors = getColumnTypeInspectors(columns);
@@ -302,7 +297,7 @@ public  class HdfsHelper {
             RecordWriter writer = outFormat.getRecordWriter(fileSystem, conf, fileName, Reporter.NULL);
             Record record = null;
             while ((record = lineReceiver.getFromReader()) != null) {
-                MutablePair<List<Object>, Boolean> transportResult =  transportOneRecord(record,nullFormat,columns,taskPluginCollector);
+                MutablePair<List<Object>, Boolean> transportResult =  transportOneRecord(record,columns,taskPluginCollector);
                 if (!transportResult.getRight()) {
                     writer.write(NullWritable.get(), orcSerde.serialize(transportResult.getLeft(), inspector));
                 }
@@ -397,12 +392,8 @@ public  class HdfsHelper {
     }
 
     public static MutablePair<List<Object>, Boolean> transportOneRecord(
-            Record record, String nullFormat,List<Configuration> columnsConfiguration,
+            Record record,List<Configuration> columnsConfiguration,
             TaskPluginCollector taskPluginCollector){
-
-        if (null == nullFormat) {
-            nullFormat = "null";
-        }
 
         MutablePair<List<Object>, Boolean> transportResult = new MutablePair<List<Object>, Boolean>();
         transportResult.setRight(false);
@@ -412,66 +403,46 @@ public  class HdfsHelper {
             Column column;
             for (int i = 0; i < recordLength; i++) {
                 column = record.getColumn(i);
-                if (null != column.getRawData()) {
-                    boolean isDateColumn = column instanceof DateColumn;
+                String rowData = column.getRawData().toString();
+                if (null != column.getRawData() && StringUtils.isNotBlank(rowData)) {
                     SupportHiveDataType columnType = SupportHiveDataType.valueOf(
                             columnsConfiguration.get(i).getString(Key.TYPE).toUpperCase());
-                    if (!isDateColumn) {
-                        //根据writer端类型配置做类型转换
-                        try {
-                            switch (columnType) {
-                                case TINYINT:
-                                    recordList.add(Byte.valueOf(column.getRawData().toString()));
-                                    break;
-                                case SMALLINT:
-                                    recordList.add(Short.valueOf(column.getRawData().toString()));
-                                    break;
-                                case INT:
-                                    recordList.add(Integer.valueOf(column.getRawData().toString()));
-                                    break;
-                                case BIGINT:
-                                    recordList.add(Long.valueOf(column.getRawData().toString()));
-                                    break;
-                                case FLOAT:
-                                    recordList.add(Float.valueOf(column.getRawData().toString()));
-                                    break;
-                                case DOUBLE:
-                                    recordList.add(Double.valueOf(column.getRawData().toString()));
-                                    break;
-                                case STRING:
-                                case VARCHAR:
-                                case CHAR:
-                                    recordList.add(String.valueOf(column.getRawData().toString()));
-                                    break;
-                                case BOOLEAN:
-                                    recordList.add(Boolean.valueOf(column.getRawData().toString()));
-                                    break;
-                                default:
-                                    throw DataXException
-                                            .asDataXException(
-                                                    HdfsWriterErrorCode.ILLEGAL_VALUE,
-                                                    String.format(
-                                                            "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
-                                                            columnsConfiguration.get(i).getString(Key.NAME),
-                                                            columnsConfiguration.get(i).getString(Key.TYPE)));
-                            }
-                        } catch (Exception e) {
-                            // warn: 此处认为脏数据
-                            String message = String.format(
-                                    "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
-                                    columnsConfiguration.get(i).getString(Key.TYPE), column.getRawData().toString());
-                            taskPluginCollector.collectDirtyRecord(record, message);
-                            transportResult.setRight(true);
-                            break;
-                        }
-                    }else{
-                        //日期，未指定format
-                        try{
-                            if(columnType.equals(SupportHiveDataType.DATE)){
+                    //根据writer端类型配置做类型转换
+                    try {
+                        switch (columnType) {
+                            case TINYINT:
+                                recordList.add(Byte.valueOf(rowData));
+                                break;
+                            case SMALLINT:
+                                recordList.add(Short.valueOf(rowData));
+                                break;
+                            case INT:
+                                recordList.add(Integer.valueOf(rowData));
+                                break;
+                            case BIGINT:
+                                recordList.add(Long.valueOf(rowData));
+                                break;
+                            case FLOAT:
+                                recordList.add(Float.valueOf(rowData));
+                                break;
+                            case DOUBLE:
+                                recordList.add(Double.valueOf(rowData));
+                                break;
+                            case STRING:
+                            case VARCHAR:
+                            case CHAR:
+                                recordList.add(String.valueOf(rowData));
+                                break;
+                            case BOOLEAN:
+                                recordList.add(Boolean.valueOf(rowData));
+                                break;
+                            case DATE:
                                 recordList.add(new java.sql.Date(column.asDate().getTime()));
-                            }else if(columnType.equals(SupportHiveDataType.TIMESTAMP)){
+                                break;
+                            case TIMESTAMP:
                                 recordList.add(new java.sql.Timestamp(column.asDate().getTime()));
-                            }else{
+                                break;
+                            default:
                                 throw DataXException
                                         .asDataXException(
                                                 HdfsWriterErrorCode.ILLEGAL_VALUE,
@@ -479,19 +450,19 @@ public  class HdfsHelper {
                                                         "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d]. 请修改表中该字段的类型或者不同步该字段.",
                                                         columnsConfiguration.get(i).getString(Key.NAME),
                                                         columnsConfiguration.get(i).getString(Key.TYPE)));
-                            }
-                        }catch (Exception e) {
-                            String message = String.format(
-                                    "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
-                                    columnsConfiguration.get(i).getString(Key.TYPE), column.getRawData().toString());
-                            taskPluginCollector.collectDirtyRecord(record, message);
-                            transportResult.setRight(true);
-                            break;
                         }
+                    } catch (Exception e) {
+                        // warn: 此处认为脏数据
+                        String message = String.format(
+                                "字段类型转换错误：你目标字段为[%s]类型，实际字段值为[%s].",
+                                columnsConfiguration.get(i).getString(Key.TYPE), column.getRawData().toString());
+                        taskPluginCollector.collectDirtyRecord(record, message);
+                        transportResult.setRight(true);
+                        break;
                     }
                 }else {
                     // warn: it's all ok if nullFormat is null
-                    recordList.add(nullFormat);
+                    recordList.add(null);
                 }
             }
         }
