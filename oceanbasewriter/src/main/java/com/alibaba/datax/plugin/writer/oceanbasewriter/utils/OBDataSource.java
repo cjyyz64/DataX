@@ -132,6 +132,7 @@ public final class OBDataSource {
                 {
                     this.setConfigURL(url);
                     this.setConnectionProperties(String.format("socketTimeout=%d;sessionVariables=ob_query_timeout=%d", timeout_ms, timeout_us));
+                    this.setMaxWait(5000);
                     this.init();
                 }
 
