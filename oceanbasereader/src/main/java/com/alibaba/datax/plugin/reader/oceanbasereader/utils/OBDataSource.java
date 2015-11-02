@@ -104,7 +104,7 @@ public final class OBDataSource {
                 {
                     this.setConfigURL(url);
                     this.setConnectionProperties(connectionProperties());
-                    this.setMaxWait(5000);
+                    this.setMaxWait(50000);
                     this.init();
                 }
 
