@@ -56,6 +56,11 @@
             <version>${datax-project-version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.datax</groupId>
+            <artifactId>plugin-rdbms-util</artifactId>
+            <version>${datax-project-version}</version>
+        </dependency>
     </dependencies>
 
     <build>
