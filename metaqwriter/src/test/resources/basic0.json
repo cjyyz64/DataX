@@ -1,0 +1,27 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                 "channel": 5
+            }
+        },
+        "content": [
+            {
+               "writer": {
+                    "name": "metaqwriter",
+                    "parameter": {
+                        "print": true,
+                        "topic":"metaqwriter",
+                        "tag":"this is tag",
+                        "encoding":"utf-8",
+                        "fieldDelimiter":"\t",
+                        "metaqNeedSendOk":true,
+                        "nullFormat":"format",
+                        "idIndex":-1,
+                        "producerGroup","datax_plugin_metaq_writer_group"
+                    }
+                }
+            }
+        ]
+    }
+}

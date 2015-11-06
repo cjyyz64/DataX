@@ -244,7 +244,7 @@ public class AdsWriter extends Writer {
                 }
                 LOG.info("ADS 导数据已成功");
                 //汇报日志
-                LogReportUtil.reportDataxLog(originalConfig.clone(), null, startTime, System.currentTimeMillis());
+                LogReportUtil.reportDataxLog(readerConfig, originalConfig, startTime, System.currentTimeMillis());
             } catch (AdsException e) {
                 if (super.getReaderPluginName().equals(ODPS_READER)) {
                     // TODO 使用云账号

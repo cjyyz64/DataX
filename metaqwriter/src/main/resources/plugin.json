@@ -1,0 +1,6 @@
+{
+    "name": "metaqwriter",
+    "class": "com.alibaba.datax.plugin.writer.metaqwriter.MetaqWriter",
+    "description": "for write data with metaq",
+    "developer": "zeqi.cw, bug reported to : zeqi.cw@alibaba-inc.com"
+}
