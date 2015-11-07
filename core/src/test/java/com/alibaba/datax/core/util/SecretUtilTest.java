@@ -10,7 +10,11 @@ import org.junit.Test;
  */
 public class SecretUtilTest {
 
+    @Test
     public void testRsa() throws Exception {
+        Field field = SecretUtil.class.getDeclaredField("KEY_ALGORITHM");
+        field.setAccessible(true);
+        field.set(SecretUtil.class, "RSA");
         String[] keys = SecretUtil.initKey();
         String publicKey = keys[0];
         String privateKey = keys[1];
@@ -31,7 +35,12 @@ public class SecretUtilTest {
         Assert.assertTrue(plainText.equals(data));
     }
 
+    @Test
     public void testDes() throws Exception {
+        Field field = SecretUtil.class.getDeclaredField("KEY_ALGORITHM");
+        field.setAccessible(true);
+        field.set(SecretUtil.class, "DESede");
+        
         String keyContent = "datax&cdp&dsc";
         System.out.println("keyContent:" + keyContent);
         String data = "阿里巴巴DataX";
@@ -47,6 +56,49 @@ public class SecretUtilTest {
         System.out.println("【解密后】：" + plainText);
 
         Assert.assertTrue(plainText.equals(data));
+    }
+    
+    @Test
+    public void testPythonSwitchJava() {
+        String data = "rootroot";
+        String key = "abcabcabcabcabcabcabcabc";
+        String cipherText = SecretUtil.encrypt3DES(data, key);
+        System.out.println(String.format(
+                "data[%s] : key[%s] -> cipherText[%s]", data, key, cipherText));
+        Assert.assertTrue("svj4x04Oaq6WhrfZVsSRqA==".equals(cipherText));
+        Assert.assertTrue(data.equals(SecretUtil.decrypt3DES(cipherText, key)));
+
+        data = "root";
+        key = "abcabcabcabcabcabcabcabc";
+        cipherText = SecretUtil.encrypt3DES(data, key);
+        System.out.println(String.format(
+                "data[%s] : key[%s] -> cipherText[%s]", data, key, cipherText));
+        Assert.assertTrue("0Y08MKGhNIw=".equals(cipherText));
+        Assert.assertTrue(data.equals(SecretUtil.decrypt3DES(cipherText, key)));
+
+        data = "rootroot";
+        key = "abc";
+        cipherText = SecretUtil.encrypt3DES(data, key);
+        System.out.println(String.format(
+                "data[%s] : key[%s] -> cipherText[%s]", data, key, cipherText));
+        Assert.assertTrue("dUTw4gQQ30qtMDBX0lTpmg==".equals(cipherText));
+        Assert.assertTrue(data.equals(SecretUtil.decrypt3DES(cipherText, key)));
+
+        data = "root";
+        key = "abc";
+        cipherText = SecretUtil.encrypt3DES(data, key);
+        System.out.println(String.format(
+                "data[%s] : key[%s] -> cipherText[%s]", data, key, cipherText));
+        Assert.assertTrue("TRc4s8bf9Yg=".equals(cipherText));
+        Assert.assertTrue(data.equals(SecretUtil.decrypt3DES(cipherText, key)));
+
+        data = "rootrootrootroot";
+        key = "abc";
+        cipherText = SecretUtil.encrypt3DES(data, key);
+        System.out.println(String.format(
+                "data[%s] : key[%s] -> cipherText[%s]", data, key, cipherText));
+        Assert.assertTrue("dUTw4gQQ30p1RPDiBBDfSq0wMFfSVOma".equals(cipherText));
+        Assert.assertTrue(data.equals(SecretUtil.decrypt3DES(cipherText, key)));
     }
 
     @Test

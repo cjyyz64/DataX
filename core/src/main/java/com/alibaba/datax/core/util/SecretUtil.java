@@ -45,6 +45,8 @@ public class SecretUtil {
     
     private static final String KEY_ALGORITHM_3DES = "DESede";
     
+    private static final String CIPHER_ALGORITHM_3DES = "DESede/ECB/PKCS5Padding";
+    
     private static String KEY_ALGORITHM = "RSA";
 
     private static final Base64 base64 = new Base64();
@@ -208,7 +210,7 @@ public class SecretUtil {
             SecretKey desKey = new SecretKeySpec(build3DesKey(key),
                     KEY_ALGORITHM_3DES);
             // 对数据加密
-            Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_3DES);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM_3DES);
             cipher.init(Cipher.ENCRYPT_MODE, desKey);
             return encryptBASE64(cipher.doFinal(data.getBytes(ENCODING)));
         } catch (Exception e) {
@@ -232,7 +234,7 @@ public class SecretUtil {
             SecretKey desKey = new SecretKeySpec(build3DesKey(key),
                     KEY_ALGORITHM_3DES);
             // 对数据解密
-            Cipher cipher = Cipher.getInstance(KEY_ALGORITHM_3DES);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITHM_3DES);
             cipher.init(Cipher.DECRYPT_MODE, desKey);
             return new String(cipher.doFinal(decryptBASE64(data)), ENCODING);
         } catch (Exception e) {
@@ -250,8 +252,8 @@ public class SecretUtil {
      */
     private static byte[] build3DesKey(String keyStr) {
         try {
-            // 声明一个24位的字节数组，默认里面都是0
-            byte[] key = new byte[24];
+            // 声明一个24位的字节数组，默认里面都是0，warn: 字符串0(48)和数组默认值0不一样，统一字符串0(48)
+            byte[] key = "000000000000000000000000".getBytes(ENCODING);
             byte[] temp = keyStr.getBytes(ENCODING);
             if (key.length > temp.length) {
                 // 如果temp不够24位，则拷贝temp数组整个长度的内容到key数组中
