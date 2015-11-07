@@ -305,6 +305,12 @@ public class SecretUtil {
 
         Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
 
+        if (null == versionKeyMap.get(keyVersion)) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.SECRET_ERROR,
+                    String.format("DataX配置的密钥版本为[%s]，但在系统中没有配置，任务密钥配置错误，不存在您配置的密钥版本", keyVersion));
+        }
+        
         String key = versionKeyMap.get(keyVersion).getRight();
         // keyVersion要求的私钥没有配置
         if (StringUtils.isBlank(key)) {
@@ -337,6 +343,11 @@ public class SecretUtil {
         }
 
         Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
+        if (null == versionKeyMap.get(keyVersion)) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.SECRET_ERROR,
+                    String.format("DataX配置的密钥版本为[%s]，但在系统中没有配置，任务密钥配置错误，不存在您配置的密钥版本", keyVersion));
+        }
         String decryptKey = versionKeyMap.get(keyVersion).getLeft();
         // keyVersion要求的私钥没有配置
         if (StringUtils.isBlank(decryptKey)) {
