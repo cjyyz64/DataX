@@ -390,8 +390,8 @@ public final class DataxServiceUtil {
                 httpMessage.addHeader("X-CDP-Contentmd5", "");
             }
 
-            paramsMapToCheck.put("X-CDP-Alisaclusterid", signatureId);
-            httpMessage.addHeader("X-CDP-Alisaclusterid", signatureId);
+            paramsMapToCheck.put("X-CDP-Alisa-Username", signatureId);
+            httpMessage.addHeader("X-CDP-Alisa-Username", signatureId);
 
             try {
                 paramsMapToCheck.put("X-CDP-Uri", new URI(url).getPath());
