@@ -29,4 +29,7 @@ public class Key {
     
     // writer headers
     public static final String HEADER = "header";
+    
+    // writer maxFileSize
+    public static final String MAX_FILE_SIZE = "maxFileSize";
 }
