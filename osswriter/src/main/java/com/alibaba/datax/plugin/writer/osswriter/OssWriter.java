@@ -107,30 +107,17 @@ public class OssWriter extends Writer {
                             .format("由于您配置了writeMode truncate, 开始清理 [%s] 下面以 [%s] 开头的Object",
                                     bucket, object));
                     // warn: 默认情况下，如果Bucket中的Object数量大于100，则只会返回100个Object
-                    String marker = null;
                     while (true) {
                         ObjectListing listing = null;
-                        if (null == marker) {
-                            LOG.info("list objects with listObject(bucket, object)");
-                            listing = this.ossClient
-                                    .listObjects(bucket, object);
-                        } else {
-                            LOG.info(String
-                                    .format("list objects with listObject(ListObjectsRequest) marker [%s]",
-                                            marker));
-                            ListObjectsRequest listObjectsRequest = new ListObjectsRequest(
-                                    bucket);
-                            listObjectsRequest.setMarker(marker);
-                            listing = this.ossClient
-                                    .listObjects(listObjectsRequest);
-                        }
+                        LOG.info("list objects with listObject(bucket, object)");
+                        listing = this.ossClient.listObjects(bucket, object);
                         List<OSSObjectSummary> objectSummarys = listing
                                 .getObjectSummaries();
                         for (OSSObjectSummary objectSummary : objectSummarys) {
-                            marker = objectSummary.getKey();
                             LOG.info(String.format("delete oss object [%s].",
-                                    marker));
-                            this.ossClient.deleteObject(bucket, marker);
+                                    objectSummary.getKey()));
+                            this.ossClient.deleteObject(bucket,
+                                    objectSummary.getKey());
                         }
                         if (objectSummarys.isEmpty()) {
                             break;
