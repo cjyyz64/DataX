@@ -4,11 +4,16 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.ocswriter.Key;
 import com.google.common.annotations.VisibleForTesting;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.ConnectionFactoryBuilder;
+import net.spy.memcached.MemcachedClient;
+import net.spy.memcached.auth.AuthDescriptor;
+import net.spy.memcached.auth.PlainCallbackHandler;
+
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.IOException;
-import java.net.InetAddress;
 
 /**
  * Time:    2015-05-07 16:48
@@ -102,13 +107,29 @@ public class ConfigurationChecker {
      */
     private static void hostReachableCheck(Configuration config) {
         String proxy = config.getString(Key.PROXY);
+        String port = config.getString(Key.PORT);
+        String username = config.getString(Key.USER);
+        String password = config.getString(Key.PASSWORD);
+        AuthDescriptor ad = new AuthDescriptor(new String[] { "PLAIN" },
+                new PlainCallbackHandler(username, password));
         try {
-            boolean status = InetAddress.getByName(proxy).isReachable(10000);
-            if (!status) {
-                throw DataXException.asDataXException(OcsWriterErrorCode.HOST_UNREACHABLE, String.format("主机%s网络不可达", proxy));
+            MemcachedClient client = new MemcachedClient(
+                    new ConnectionFactoryBuilder()
+                            .setProtocol(
+                                    ConnectionFactoryBuilder.Protocol.BINARY)
+                            .setAuthDescriptor(ad).build(),
+                    AddrUtil.getAddresses(proxy + ":" + port));
+            client.get("for_check_connectivity");
+            client.getVersions();
+            if (client.getAvailableServers().isEmpty()) {
+                throw new RuntimeException(
+                        "没有可用的Servers: getAvailableServers() -> is empty");
             }
-        } catch (IOException e) {
-            throw DataXException.asDataXException(OcsWriterErrorCode.HOST_UNREACHABLE, String.format("不存在的host地址:%s", proxy));
+            client.shutdown();
+        } catch (Exception e) {
+            throw DataXException.asDataXException(
+                    OcsWriterErrorCode.HOST_UNREACHABLE,
+                    String.format("OCS[%s]服务不可用", proxy), e);
         }
     }
 
