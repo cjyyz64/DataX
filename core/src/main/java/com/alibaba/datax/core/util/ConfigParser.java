@@ -56,6 +56,7 @@ public final class ConfigParser {
                 URL url = new URL(jobResource);
                 HttpGet httpGet = HttpClientUtil.getGetRequest();
                 httpGet.setURI(url.toURI());
+                DataxServiceUtil.signature(url.getPath(), "GET", httpGet, null);
 
                 jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 6, 1000l);
             } catch (Exception e) {

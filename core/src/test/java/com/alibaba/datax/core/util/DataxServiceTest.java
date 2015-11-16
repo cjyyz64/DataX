@@ -11,6 +11,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.mockito.Matchers.*;
@@ -61,7 +62,7 @@ public class DataxServiceTest extends CaseInitializer {
 
         DataxServiceUtil.init(url, 3000);
         ReflectUtil.setField(new DataxServiceUtil(),"httpClientUtil",httpClientUtil);
-        Result result = DataxServiceUtil.killTaskGroup(148L,1);
+        Result result = DataxServiceUtil.killTaskGroup(148L, 1);
         Assert.assertTrue(result.isSuccess());
     }
 
@@ -97,7 +98,7 @@ public class DataxServiceTest extends CaseInitializer {
         ReflectUtil.setField(new DataxServiceUtil(), "httpClientUtil", httpClientUtil);
         JobStatusDto jobStatus = new JobStatusDto();
         jobStatus.setPercentage(0.80);
-        DataxServiceUtil.updateJobInfo(148L,jobStatus);
+        DataxServiceUtil.updateJobInfo(148L, jobStatus);
     }
 
     @Test
@@ -182,5 +183,18 @@ public class DataxServiceTest extends CaseInitializer {
         Assert.assertTrue(communication.getLongCounter("totalBytes").equals(taskGroupStatus.getTotalBytes()));
         Assert.assertTrue(communication.getLongCounter("errorRecords").equals(taskGroupStatus.getErrorRecords()));
         Assert.assertTrue(communication.getLongCounter("errorBytes").equals(taskGroupStatus.getErrorBytes()));
+    }
+
+    @Test
+    public void testGetJobConfig(){
+        try {
+            Method getJobContent = ConfigParser.class.getDeclaredMethod("getJobContent", String.class);
+            getJobContent.setAccessible(true);
+            Object content = getJobContent.invoke(ConfigParser.class,"http://127.0.0.1:7001/api/inner/job/19933/config");
+            System.out.println(content);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 }
