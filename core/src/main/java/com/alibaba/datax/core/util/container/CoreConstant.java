@@ -23,6 +23,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL = "core.container.job.reportInterval";
 
+	public static final String DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL = "core.container.job.sleepInterval";
+
     public static final String DATAX_CORE_CONTAINER_TASKGROUP_ID = "core.container.taskGroup.id";
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_SLEEPINTERVAL = "core.container.taskGroup.sleepInterval";

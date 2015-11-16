@@ -1,6 +1,7 @@
 package com.alibaba.datax.core.statistics.container.communicator;
 
 
+import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.container.collector.AbstractCollector;
@@ -17,6 +18,8 @@ public abstract class AbstractContainerCommunicator {
     private AbstractReporter reporter;
 
     private Long jobId;
+
+    private VMInfo vmInfo = VMInfo.getVmInfo();
 
 
     public Configuration getConfiguration() {
@@ -68,5 +71,12 @@ public abstract class AbstractContainerCommunicator {
     public void resetCommunication(Integer id){
         Map<Integer, Communication> map = getCommunicationMap();
         map.put(id, new Communication());
+    }
+
+    public void reportVmInfo(){
+        //当前仅打印
+        if(vmInfo!=null){
+            vmInfo.getDelta(true);
+        }
     }
 }
