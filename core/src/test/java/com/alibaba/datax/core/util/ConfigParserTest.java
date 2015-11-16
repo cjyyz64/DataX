@@ -70,10 +70,10 @@ public class ConfigParserTest extends CaseInitializer {
         config.set(CoreConstant.DATAX_JOB_SETTING_KEYVERSION,
                 keyVersion);
         config.set(readerParamPath+".*password",
-                SecretUtil.encrypt(password, secretMap.get(keyVersion)));
+                SecretUtil.encrypt(password, secretMap.get(keyVersion), SecretUtil.KEY_ALGORITHM_RSA));
         config.set(readerParamPath+".*long", 100);
         config.set(writerParamPath+".*accessKey",
-                SecretUtil.encrypt(accessKey, secretMap.get(keyVersion)));
+                SecretUtil.encrypt(accessKey, secretMap.get(keyVersion), SecretUtil.KEY_ALGORITHM_RSA));
         config.set(writerParamPath+".*long", 200);
 
         config = SecretUtil.decryptSecretKey(config);

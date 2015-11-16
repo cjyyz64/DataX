@@ -6,8 +6,8 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -35,20 +35,18 @@ import java.util.Properties;
 public class SecretUtil {
     private static Properties properties;
 
-    //RSA Key：keyVersion   value:left:privateKey, right:publicKey
-    //DESede Key: keyVersion   value:left:keyContent, right:keyContent
-    private static Map<String, Pair<String, String>> versionKeyMap;
+    //RSA Key：keyVersion   value:left:privateKey, right:publicKey, middle: type
+    //DESede Key: keyVersion   value:left:keyContent, right:keyContent, middle: type
+    private static Map<String, Triple<String, String, String>> versionKeyMap;
 
     private static final String ENCODING = "UTF-8";
 
-    private static final String KEY_ALGORITHM_RSA = "RSA";
+    public static final String KEY_ALGORITHM_RSA = "RSA";
     
-    private static final String KEY_ALGORITHM_3DES = "DESede";
+    public static final String KEY_ALGORITHM_3DES = "DESede";
     
     private static final String CIPHER_ALGORITHM_3DES = "DESede/ECB/PKCS5Padding";
     
-    private static String KEY_ALGORITHM = "RSA";
-
     private static final Base64 base64 = new Base64();
 
     /**
@@ -78,16 +76,15 @@ public class SecretUtil {
      * @param data 裸的原始数据
      * @param key  经过base64加密的公钥(RSA)或者裸密钥(3DES)
      * */
-    public static String encrypt(String data, String key) {
-        if (SecretUtil.KEY_ALGORITHM.equals(SecretUtil.KEY_ALGORITHM_RSA)) {
+    public static String encrypt(String data, String key, String method) {
+        if (SecretUtil.KEY_ALGORITHM_RSA.equals(method)) {
             return SecretUtil.encryptRSA(data, key);
-        } else if (SecretUtil.KEY_ALGORITHM
-                .equals(SecretUtil.KEY_ALGORITHM_3DES)) {
+        } else if (SecretUtil.KEY_ALGORITHM_3DES.equals(method)) {
             return SecretUtil.encrypt3DES(data, key);
         } else {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.SECRET_ERROR,
-                    String.format("系统编程错误,不支持的加密类型", SecretUtil.KEY_ALGORITHM));
+                    String.format("系统编程错误,不支持的加密类型", method));
         }
     }
     
@@ -96,16 +93,15 @@ public class SecretUtil {
      * @param data 已经经过base64加密的密文
      * @param key  已经经过base64加密私钥(RSA)或者裸密钥(3DES)
      * */
-    public static String decrypt(String data, String key) {
-        if (SecretUtil.KEY_ALGORITHM.equals(SecretUtil.KEY_ALGORITHM_RSA)) {
+    public static String decrypt(String data, String key, String method) {
+        if (SecretUtil.KEY_ALGORITHM_RSA.equals(method)) {
             return SecretUtil.decryptRSA(data, key);
-        } else if (SecretUtil.KEY_ALGORITHM
-                .equals(SecretUtil.KEY_ALGORITHM_3DES)) {
+        } else if (SecretUtil.KEY_ALGORITHM_3DES.equals(method)) {
             return SecretUtil.decrypt3DES(data, key);
         } else {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.SECRET_ERROR,
-                    String.format("系统编程错误,不支持的加密类型", SecretUtil.KEY_ALGORITHM));
+                    String.format("系统编程错误,不支持的加密类型", method));
         }
     }
 
@@ -303,7 +299,7 @@ public class SecretUtil {
             return configuration;
         }
 
-        Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
+        Map<String, Triple<String, String, String>> versionKeyMap = getPrivateKeyMap();
 
         if (null == versionKeyMap.get(keyVersion)) {
             throw DataXException.asDataXException(
@@ -312,6 +308,7 @@ public class SecretUtil {
         }
         
         String key = versionKeyMap.get(keyVersion).getRight();
+        String method = versionKeyMap.get(keyVersion).getMiddle();
         // keyVersion要求的私钥没有配置
         if (StringUtils.isBlank(key)) {
             throw DataXException.asDataXException(
@@ -321,7 +318,7 @@ public class SecretUtil {
 
         String tempEncrptedData = null;
         for (String path : configuration.getSecretKeyPathSet()) {
-            tempEncrptedData = SecretUtil.encrypt(configuration.getString(path), key);
+            tempEncrptedData = SecretUtil.encrypt(configuration.getString(path), key, method);
             int lastPathIndex = path.lastIndexOf(".") + 1;
             String lastPathKey = path.substring(lastPathIndex);
 
@@ -342,13 +339,14 @@ public class SecretUtil {
             return config;
         }
 
-        Map<String, Pair<String, String>> versionKeyMap = getPrivateKeyMap();
+        Map<String, Triple<String, String, String>> versionKeyMap = getPrivateKeyMap();
         if (null == versionKeyMap.get(keyVersion)) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.SECRET_ERROR,
                     String.format("DataX配置的密钥版本为[%s]，但在系统中没有配置，任务密钥配置错误，不存在您配置的密钥版本", keyVersion));
         }
         String decryptKey = versionKeyMap.get(keyVersion).getLeft();
+        String method = versionKeyMap.get(keyVersion).getMiddle();
         // keyVersion要求的私钥没有配置
         if (StringUtils.isBlank(decryptKey)) {
             throw DataXException.asDataXException(
@@ -367,7 +365,7 @@ public class SecretUtil {
                     String newKey = key.substring(0, lastPathIndex)
                             + lastPathKey.substring(1);
                     config.set(newKey,
-                            SecretUtil.decrypt((String) value, decryptKey));
+                            SecretUtil.decrypt((String) value, decryptKey, method));
                     config.addSecretKeyPath(newKey);
                     config.remove(key);
                 }
@@ -377,84 +375,66 @@ public class SecretUtil {
         return config;
     }
 
-    private static synchronized Map<String, Pair<String, String>> getPrivateKeyMap() {
+    private static synchronized Map<String, Triple<String, String, String>> getPrivateKeyMap() {
         if (versionKeyMap == null) {
-            versionKeyMap = new HashMap<String, Pair<String, String>>();
+            versionKeyMap = new HashMap<String, Triple<String, String, String>>();
             Properties properties = SecretUtil.getSecurityProperties();
-            
-            String lastKeyContent = properties
-                    .getProperty(CoreConstant.LAST_KEYCONTENT);
-            String currentKeyContent = properties
-                    .getProperty(CoreConstant.CURRENT_KEYCONTENT);
 
-            if (StringUtils.isNotBlank(lastKeyContent)
-                    || StringUtils.isNotBlank(currentKeyContent)) {
-                SecretUtil.KEY_ALGORITHM = SecretUtil.KEY_ALGORITHM_3DES;
-                String lastKeyVersion = properties
-                        .getProperty(CoreConstant.LAST_KEYVERSION);
-                if (StringUtils.isNotBlank(lastKeyVersion)) {
-                    if (StringUtils.isBlank(lastKeyContent)) {
-                        throw DataXException.asDataXException(
-                                FrameworkErrorCode.SECRET_ERROR,
-                                "DataX配置要求加解密，但上次配置的密钥存在为空的情况");
-                    }
-                    versionKeyMap.put(lastKeyVersion, ImmutablePair.of(lastKeyContent, lastKeyContent));
-                }
-                String currentKeyVersion = properties
-                        .getProperty(CoreConstant.CURRENT_KEYVERSION);
-                if (StringUtils.isNotBlank(currentKeyVersion)) {
-                    if (StringUtils.isBlank(currentKeyContent)) {
-                        throw DataXException.asDataXException(
-                                FrameworkErrorCode.SECRET_ERROR,
-                                "DataX配置要求加解密，但当前配置的密钥存在为空的情况");
-                    }
-                    versionKeyMap.put(currentKeyVersion, ImmutablePair.of(currentKeyContent, lastKeyContent));
-                }
-            } else {
-                SecretUtil.KEY_ALGORITHM = SecretUtil.KEY_ALGORITHM_RSA;
-                String lastKeyVersion = properties.getProperty(
-                        CoreConstant.LAST_KEYVERSION);
-                String lastPublicKey = properties.getProperty(
-                        CoreConstant.LAST_PUBLICKEY);
-                String lastPrivateKey = properties.getProperty(
-                        CoreConstant.LAST_PRIVATEKEY);
-                if (StringUtils.isNotBlank(lastKeyVersion)) {
-                    if (StringUtils.isBlank(lastPublicKey) ||
-                            StringUtils.isBlank(lastPrivateKey)) {
-                        throw DataXException.asDataXException(
-                                FrameworkErrorCode.SECRET_ERROR,
-                                "DataX配置要求加解密，但上次配置的公私钥对存在为空的情况"
-                        );
-                    }
+            String[] serviceUsernames = new String[] {
+                    CoreConstant.LAST_SERVICE_USERNAME,
+                    CoreConstant.CURRENT_SERVICE_USERNAME };
+            String[] servicePasswords = new String[] {
+                    CoreConstant.LAST_SERVICE_PASSWORD,
+                    CoreConstant.CURRENT_SERVICE_PASSWORD };
 
-                    versionKeyMap.put(lastKeyVersion, ImmutablePair.of(lastPrivateKey, lastPublicKey));
-                }
-
-                String currentKeyVersion = properties.getProperty(
-                        CoreConstant.CURRENT_KEYVERSION);
-                String currentPublicKey = properties.getProperty(
-                        CoreConstant.CURRENT_PUBLICKEY);
-                String currentPrivateKey = properties.getProperty(
-                        CoreConstant.CURRENT_PRIVATEKEY);
-                if (StringUtils.isNotBlank(currentKeyVersion)) {
-                    if (StringUtils.isBlank(currentPublicKey) ||
-                            StringUtils.isBlank(currentPrivateKey)) {
+            for (int i = 0; i < serviceUsernames.length; i++) {
+                String serviceUsername = properties
+                        .getProperty(serviceUsernames[i]);
+                if (StringUtils.isNotBlank(serviceUsername)) {
+                    String servicePassword = properties
+                            .getProperty(servicePasswords[i]);
+                    if (StringUtils.isNotBlank(servicePassword)) {
+                        versionKeyMap.put(serviceUsername, ImmutableTriple.of(
+                                servicePassword, SecretUtil.KEY_ALGORITHM_3DES,
+                                servicePassword));
+                    } else {
                         throw DataXException.asDataXException(
-                                FrameworkErrorCode.SECRET_ERROR,
-                                "DataX配置要求加解密，但当前配置的公私钥对存在为空的情况");
+                                FrameworkErrorCode.SECRET_ERROR, String.format(
+                                        "DataX配置要求加解密，但配置的密钥版本[%s]存在密钥为空的情况",
+                                        serviceUsername));
                     }
-
-                    versionKeyMap.put(currentKeyVersion, ImmutablePair.of(currentPrivateKey, currentPublicKey));
                 }
             }
-            
-            if (versionKeyMap.size() <= 0) {
-                throw DataXException.asDataXException(
-                        FrameworkErrorCode.SECRET_ERROR,
-                        "DataX配置要求加解密，但无法找到加解密配置");
+
+            String[] keyVersions = new String[] { CoreConstant.LAST_KEYVERSION,
+                    CoreConstant.CURRENT_KEYVERSION };
+            String[] privateKeys = new String[] { CoreConstant.LAST_PRIVATEKEY,
+                    CoreConstant.CURRENT_PRIVATEKEY };
+            String[] publicKeys = new String[] { CoreConstant.LAST_PUBLICKEY,
+                    CoreConstant.CURRENT_PUBLICKEY };
+            for (int i = 0; i < keyVersions.length; i++) {
+                String keyVersion = properties.getProperty(keyVersions[i]);
+                if (StringUtils.isNotBlank(keyVersion)) {
+                    String privateKey = properties.getProperty(privateKeys[i]);
+                    String publicKey = properties.getProperty(publicKeys[i]);
+                    if (StringUtils.isNotBlank(privateKey)
+                            && StringUtils.isNotBlank(publicKey)) {
+                        versionKeyMap.put(keyVersion, ImmutableTriple.of(
+                                privateKey, SecretUtil.KEY_ALGORITHM_RSA,
+                                publicKey));
+                    } else {
+                        throw DataXException.asDataXException(
+                                FrameworkErrorCode.SECRET_ERROR, String.format(
+                                        "DataX配置要求加解密，但配置的公私钥对存在为空的情况，版本[%s]",
+                                        keyVersion));
+                    }
+                }
             }
         }
-
+        if (versionKeyMap.size() <= 0) {
+            throw DataXException.asDataXException(
+                    FrameworkErrorCode.SECRET_ERROR, "DataX配置要求加解密，但无法找到加解密配置");
+        }
         return versionKeyMap;
     }
 }

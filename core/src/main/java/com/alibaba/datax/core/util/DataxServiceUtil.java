@@ -350,27 +350,28 @@ public final class DataxServiceUtil {
     public static void signature(String url, String method,
             HttpMessage httpMessage, String body) {
         Properties properties = SecretUtil.getSecurityProperties();
-        String currentKeyVersion = properties
-                .getProperty(CoreConstant.CURRENT_KEYVERSION);
-        String currentKeyContent = properties
-                .getProperty(CoreConstant.CURRENT_KEYCONTENT);
-        String lastKeyVersion = properties
-                .getProperty(CoreConstant.LAST_KEYVERSION);
-        String lastKeyContent = properties
-                .getProperty(CoreConstant.LAST_KEYCONTENT);
+        String currentServiceUsername = properties
+                .getProperty(CoreConstant.CURRENT_SERVICE_USERNAME);
+        String currentServicePassword = properties
+                .getProperty(CoreConstant.CURRENT_SERVICE_PASSWORD);
+
+        String lastServiceUsername = properties
+                .getProperty(CoreConstant.LAST_SERVICE_USERNAME);
+        String lastServicePassword = properties
+                .getProperty(CoreConstant.LAST_SERVICE_PASSWORD);
 
         boolean needSignature = false;
         String signatureId = "";
         String signatureKey = "";
-        if (StringUtils.isNotBlank(currentKeyVersion)
-                && StringUtils.isNotBlank(currentKeyContent)) {
-            signatureId = currentKeyVersion;
-            signatureKey = currentKeyContent;
+        if (StringUtils.isNotBlank(currentServiceUsername)
+                && StringUtils.isNotBlank(currentServicePassword)) {
+            signatureId = currentServiceUsername;
+            signatureKey = currentServicePassword;
             needSignature = true;
-        } else if (StringUtils.isNotBlank(lastKeyVersion)
-                && StringUtils.isNotBlank(lastKeyContent)) {
-            signatureId = lastKeyVersion;
-            signatureKey = lastKeyContent;
+        } else if (StringUtils.isNotBlank(lastServiceUsername)
+                && StringUtils.isNotBlank(lastServicePassword)) {
+            signatureId = lastServiceUsername;
+            signatureKey = lastServicePassword;
             needSignature = true;
         }
 
