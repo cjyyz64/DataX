@@ -81,12 +81,7 @@ public class Engine {
 
         container.start();
 
-        //最后打印cpu的平均消耗，GC的统计
-        VMInfo vmInfo = VMInfo.getVmInfo();
-        if (vmInfo != null) {
-            vmInfo.getDelta(false);
-            LOG.info(vmInfo.totalString());
-        }
+
     }
 
 

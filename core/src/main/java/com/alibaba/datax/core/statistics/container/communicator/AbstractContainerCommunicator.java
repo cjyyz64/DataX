@@ -20,6 +20,7 @@ public abstract class AbstractContainerCommunicator {
     private Long jobId;
 
     private VMInfo vmInfo = VMInfo.getVmInfo();
+    private long lastReportTime = System.currentTimeMillis();
 
 
     public Configuration getConfiguration() {
@@ -74,9 +75,14 @@ public abstract class AbstractContainerCommunicator {
     }
 
     public void reportVmInfo(){
-        //当前仅打印
-        if(vmInfo!=null){
-            vmInfo.getDelta(true);
+        long now = System.currentTimeMillis();
+        //每5分钟打印一次
+        if(now - lastReportTime >= 300000) {
+            //当前仅打印
+            if (vmInfo != null) {
+                vmInfo.getDelta(true);
+            }
+            lastReportTime = now;
         }
     }
 }

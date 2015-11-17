@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.JobPluginCollector;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.statistics.PerfTrace;
+import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.AbstractContainer;
@@ -177,6 +178,13 @@ public class JobContainer extends AbstractContainer {
                 this.destroy();
                 this.endTimeStamp = System.currentTimeMillis();
                 if (!hasException) {
+                    //最后打印cpu的平均消耗，GC的统计
+                    VMInfo vmInfo = VMInfo.getVmInfo();
+                    if (vmInfo != null) {
+                        vmInfo.getDelta(false);
+                        LOG.info(vmInfo.totalString());
+                    }
+
                     LOG.info(PerfTrace.getInstance().summarizeNoException());
                     this.logStatistics();
                 }

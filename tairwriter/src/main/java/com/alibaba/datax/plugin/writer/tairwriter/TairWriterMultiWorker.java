@@ -349,16 +349,16 @@ class TairWriterMultiWorker extends Thread {
         }
 
         if (rc.getCode() == ResultCode.KEYTOLARGE.getCode()) {
-            return new String("Key超过1KB");
+            return "Key超过1KB";
         } else if (rc.getCode() == ResultCode.SERIALIZEERROR.getCode()) {
-            return new String("KV序列化错误");
+            return "KV序列化错误";
         } else if (rc.getCode() == ResultCode.VALUETOLARGE.getCode()) {
-            return new String("Value超过1MB");
+            return "Value超过1MB";
         } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
                 || ResultCode.CONNERROR.getCode() == rc.getCode()) {
-            return new String("tair操作超时");
+            return "tair操作超时";
         } else {
-            return new String("tair集群操作失败， rc: " + rc.getCode());
+            return "tair集群操作失败， rc: " + rc.getCode();
         }
     }
 
@@ -379,7 +379,7 @@ class TairWriterMultiWorker extends Thread {
                 ++cnt;
             } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
                     || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
-                Thread.sleep(1+100*printCnt);
+                Thread.sleep(1000 + 10 * printCnt);
                 if (printCnt == 0) {
                     LOG.error(String.format(
                             "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
@@ -413,7 +413,7 @@ class TairWriterMultiWorker extends Thread {
                 ++cnt;
             } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
                     || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
-                Thread.sleep(1+100*printCnt);
+                Thread.sleep(1000 + 10 * printCnt);
                 if (printCnt == 0) {
                     LOG.error(String.format(
                             "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
