@@ -246,7 +246,7 @@ public class UnstructuredStorageReaderUtil {
 		if (null != delimiterInStr && 1 != delimiterInStr.length()) {
 			throw DataXException.asDataXException(
 					UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-					String.format("仅仅支持单字符切分, 您配置的切分为 : [%]", context));
+					String.format("仅仅支持单字符切分, 您配置的切分为 : [%s]", delimiterInStr));
 		}
 		if (null == delimiterInStr) {
 			LOG.warn(String.format("您没有配置列分隔符, 使用默认值[%s]",
