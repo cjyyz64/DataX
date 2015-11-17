@@ -4,6 +4,7 @@ import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.ErrorCode;
 import com.alibaba.datax.common.statistics.PerfTrace;
+import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.job.JobContainer;
 import com.alibaba.datax.core.taskgroup.TaskGroupContainer;
@@ -79,6 +80,8 @@ public class Engine {
         PerfTrace.getInstance(isJob, jobId, taskGroupId, priority, traceEnable);
 
         container.start();
+
+
     }
 
 
@@ -144,6 +147,11 @@ public class Engine {
         }
         configuration.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, jobId);
 
+        //打印vmInfo
+        VMInfo vmInfo = VMInfo.getVmInfo();
+        if (vmInfo != null) {
+            LOG.info(vmInfo.toString());
+        }
 
         LOG.info("\n" + Engine.filterJobConfiguration(configuration) + "\n");
 
