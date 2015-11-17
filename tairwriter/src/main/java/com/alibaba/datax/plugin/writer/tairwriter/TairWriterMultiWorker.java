@@ -156,7 +156,7 @@ class TairWriterMultiWorker extends Thread {
         if (null != v) {
             String errorInfo = retryPut(key, v, expire, record);
             if (null != errorInfo) {
-                LOG.warn("put fail, record: " + record);
+                //LOG.warn("put fail, record: " + record);
                 collector.collectDirtyRecord(record, errorInfo + ", key:"
                         + key + "value: " + value);
                 return -1;
@@ -165,8 +165,8 @@ class TairWriterMultiWorker extends Thread {
             ResultCode rc = tm.delete(conf.getNamespace(), key);
             if (ResultCode.SUCCESS.getCode() != rc.getCode()
                     && ResultCode.DATANOTEXSITS.getCode() != rc.getCode()) {
-                LOG.warn("delete record:" + record.toString() + " fail, rc: " + rc.getCode());
-                collector.collectDirtyRecord(record, " delete empty record fail");
+                //LOG.warn("delete record:" + record.toString() + " fail, rc: " + rc.getCode());
+                collector.collectDirtyRecord(record, " delete empty record fail, rc: " + rc.getCode());
                 return -1;
             }
         } else {
@@ -255,7 +255,7 @@ class TairWriterMultiWorker extends Thread {
         }
         String errorInfo = retrySetCount(key, count, expire, record);
         if (null != errorInfo) {
-            LOG.warn("counter fail, record: " + record);
+            //LOG.warn("counter fail, record: " + record);
             collector.collectDirtyRecord(record, errorInfo + ", key:"
                     + key + "value: " + count);
             return -1;
@@ -328,8 +328,8 @@ class TairWriterMultiWorker extends Thread {
             }
         }
         if (keyCountPacks.size() == 0) {
-            LOG.warn("pkey:" + key + " skey is empty");
-            collector.collectDirtyRecord(record, "value不能为空");
+            //LOG.warn("pkey:" + key + " skey is empty");
+            collector.collectDirtyRecord(record, "pkey:" + key + " skey is empty");
             return -1;
         }
 
@@ -343,6 +343,10 @@ class TairWriterMultiWorker extends Thread {
     }
 
     private String getTairErrorInfo(ResultCode rc) {
+
+        if(rc == null){
+            return "ResultCode is null";
+        }
 
         if (rc.getCode() == ResultCode.KEYTOLARGE.getCode()) {
             return new String("Key超过1KB");
@@ -360,53 +364,69 @@ class TairWriterMultiWorker extends Thread {
 
     private String retryPut(Serializable key, String value, int expire, Record record) throws Exception {
         int cnt = 0;
+        int printCnt = 0;
+        ResultCode rc = null;
         while (cnt <= MAX_RETRY_TIMES) {
-            ResultCode rc = tm.put(conf.getNamespace(), key, value, 0, expire);
+            rc = tm.put(conf.getNamespace(), key, value, 0, expire);
             if (ResultCode.SUCCESS.getCode() == rc.getCode()) {
                 return null;
             } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
                     || ResultCode.CONNERROR.getCode() == rc.getCode()) {
-                LOG.warn("operator record:" + record + " timeout rc:" + rc.getCode());
+                //LOG.warn("operator record:" + record + " timeout rc:" + rc.getCode());
                 if (doCheck(key, value)) {
                     return null;// success actually
                 }
                 ++cnt;
             } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
                     || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
-                Thread.sleep(1);
-                LOG.error(String.format(
-                        "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+                Thread.sleep(1+100*printCnt);
+                if (printCnt == 0) {
+                    LOG.error(String.format(
+                            "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+                }
+                printCnt++;
+                if (printCnt >= 100) {
+                    printCnt = 0;
+                }
             } else {
                 return getTairErrorInfo(rc);
             }
         }
-        return new String("timeout retry put fail finally");
+        return "timeout retry put fail finally, last ResultCode "+getTairErrorInfo(rc);
     }
 
     // return error info
     private String retrySetCount(Serializable key, Long count, int expire, Record record) throws Exception {
         int cnt = 0;
+        int printCnt = 0;
+        ResultCode rc = null;
         while (cnt <= MAX_RETRY_TIMES) {
-            ResultCode rc = tm.setCount(conf.getNamespace(), key, count.intValue(), 0, expire);
+            rc = tm.setCount(conf.getNamespace(), key, count.intValue(), 0, expire);
             if (ResultCode.SUCCESS.getCode() == rc.getCode()) {
                 return null;
             } else if (ResultCode.TIMEOUT.getCode() == rc.getCode()
                     || ResultCode.CONNERROR.getCode() == rc.getCode()) {
-                LOG.warn("operator key:" + record + " timeout rc:" + rc.getCode());
+                //LOG.warn("operator key:" + record + " timeout rc:" + rc.getCode());
                 if (doCheck(key, count.toString())) {
                     return null;// success actually
                 }
                 ++cnt;
             } else if (ResultCode.OVERFLOW.getCode() == rc.getCode()
                     || ResultCode.SERVERERROR.getCode() == rc.getCode()) {
-                Thread.sleep(1);
-                LOG.error(String.format(
-                        "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+                Thread.sleep(1+100*printCnt);
+                if (printCnt == 0) {
+                    LOG.error(String.format(
+                            "Tair server rejected error(overflow or server exception), return code [%s] .", rc));
+                }
+                printCnt++;
+                if (printCnt >= 100) {
+                    printCnt = 0;
+                }
             } else {
                 return getTairErrorInfo(rc);
             }
         }
-        return new String("timeout retry setCount fail finally");
+        return "timeout retry setCount fail finally, last ResultCode "+getTairErrorInfo(rc);
     }
 
     private boolean doCheck(Serializable key, String value) {
@@ -422,37 +442,6 @@ class TairWriterMultiWorker extends Thread {
         }
         return false;
     }
-
-    /*
-    private Serializable convertColumn(Column column) {
-        try {
-            if ("c++".equalsIgnoreCase(conf.getLanguage())) {
-                return column.asString();
-            } else {
-                switch (column.getType()) {
-                case STRING:
-                    return column.asString();
-                case LONG:
-                    return column.asLong();
-                case DOUBLE:
-                    return column.asDouble();
-                case BOOL:
-                    return column.asBoolean();
-                case DATE:
-                    return column.asDate();
-                case BYTES:
-                    return column.asBytes();
-                case NULL:
-                    return null;
-                default:
-                    throw new IllegalArgumentException("Convert Column to Key/Value failed");
-                }
-            }
-        } catch (DataXException e) {
-             throw new IllegalArgumentException("Convert Column to Key/Value failed");
-        }
-    }*/
-
 
     private String convertColumnToValue(Record record) {
         int fieldNum = record.getColumnNumber();
