@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -41,6 +42,11 @@ public class MongoDBWriter extends Writer{
         }
 
         @Override
+        public void prepare() {
+            super.prepare();
+        }
+
+        @Override
         public void destroy() {
 
         }
@@ -62,6 +68,54 @@ public class MongoDBWriter extends Writer{
         private JSONObject upsertInfoMeta = null;
         private static int BATCH_SIZE = 1000;
 
+        @Override
+        public void prepare() {
+            super.prepare();
+            //获取presql配置，并执行
+            String preSql = writerSliceConfig.getString(Key.PRE_SQL);
+            if(Strings.isNullOrEmpty(preSql)) {
+                return;
+            }
+            Configuration conConf = Configuration.from(preSql);
+            if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)
+                    || mongoClient == null || mongodbColumnMeta == null || batchSize == null) {
+                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                        MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
+            }
+            DB db = mongoClient.getDB(database);
+            DBCollection col = db.getCollection(this.collection);
+            String type = conConf.getString("type");
+            if (Strings.isNullOrEmpty(type)){
+                return;
+            }
+            if (type.equals("drop")){
+                col.drop();
+            } else if (type.equals("remove")){
+                String json = conConf.getString("json");
+                BasicDBObject query;
+                if (Strings.isNullOrEmpty(json)) {
+                    query = new BasicDBObject();
+                    List<Object> items = conConf.getList("item", Object.class);
+                    for (Object con : items) {
+                        Configuration _conf = Configuration.from(con.toString());
+                        if (Strings.isNullOrEmpty(_conf.getString("condition"))) {
+                            query.put(_conf.getString("name"), _conf.get("value"));
+                        } else {
+                            query.put(_conf.getString("name"),
+                                    new BasicDBObject(_conf.getString("condition"), _conf.get("value")));
+                        }
+                    }
+//              and  { "pv" : { "$gt" : 200 , "$lt" : 3000} , "pid" : { "$ne" : "xxx"}}
+//              or  { "$or" : [ { "age" : { "$gt" : 27}} , { "age" : { "$lt" : 15}}]}
+                } else {
+                    query = (BasicDBObject) com.mongodb.util.JSON.parse(json);
+                }
+                col.remove(query);
+            }
+            if(logger.isDebugEnabled()) {
+                logger.debug("After job prepare(), originalConfig now is:[\n{}\n]", writerSliceConfig.toJSON());
+            }
+        }
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {

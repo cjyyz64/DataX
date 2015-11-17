@@ -51,6 +51,21 @@
                         "upsertInfo": {
                             "isUpsert": "true",
                             "upsertKey": "pid"
+                        },
+                        "preSql": {
+                            "type": "remove",
+                            "json": { "$or" : [ { "age" : { "$gt" : 27}} , { "age" : { "$lt" : 15}}]},
+                            "item": [
+                                {
+                                    "name": "pv",
+                                    "condition": "$in",
+                                    "value": [2000,100]
+                                },
+                                {
+                                    "name": "pid",
+                                    "value": "xxx"
+                                }
+                            ]
                         }
                     }
                 }

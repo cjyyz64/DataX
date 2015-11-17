@@ -99,9 +99,9 @@ public class MongoAPITest extends BasicWriterPluginTest {
     @Test
     public void build(){
         Record r = new DefaultRecord();
-        String pid = "xxx";
+        String pid = "xxx1";
         double[]  loc = {116.401884,39.877865};
-        String[] epsg3857 = {"12957798.454257699","4848209.794819011"};
+        String[] epsg3857 = {"12957798.454257699","4848209","794819011"};
         String geohid ="xxx";
         int    pv = 2000;
         String scenicId = "xxx";
@@ -126,11 +126,11 @@ public class MongoAPITest extends BasicWriterPluginTest {
     protected List<Record> buildDataForWriter() {
         List<Record> list = new ArrayList<Record>();
         Record r = new DefaultRecord();
-        String pid = "xxx";
+        String pid = "xxx2";
         String loc = "116,41,84,39,87,85";
-        String epsg3857 = "12957798.454257699,4848209.794819011";
+        String epsg3857 = "1295798.454699,4848209.7948011";
         String geohid ="wss";
-        int    pv = 2000;
+        int    pv = 2020;
         String scenicId = "{\"type\":\"point\",\"coord\":[923.23,546.12]}";
         DataMode mode = new DataMode();
         mode.setType("point");
