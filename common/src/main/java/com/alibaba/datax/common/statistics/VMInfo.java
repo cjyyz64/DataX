@@ -304,7 +304,9 @@ public class VMInfo {
                 sb.append("\t\t ");
                 sb.append(String.format("%-20s | %-18s | %-18s | %-18s | %-18s | %-18s | %-18s \n",
                         gc.name, gc.totalGCCount, gc.maxDeltaGCCount, gc.minDeltaGCCount,
-                        gc.totalGCTime, gc.maxDeltaGCTime, gc.minDeltaGCTime));
+                        String.format("%,.3fs",(float)gc.totalGCTime/1000),
+                        String.format("%,.3fs",(float)gc.maxDeltaGCTime/1000),
+                        String.format("%,.3fs",(float)gc.minDeltaGCTime/1000)));
 
             }
             return sb.toString();
