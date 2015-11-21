@@ -14,7 +14,8 @@ public enum HdfsWriterErrorCode implements ErrorCode {
     Write_FILE_IO_ERROR("HdfsWriter-04", "您配置的文件在写入时出现IO异常."),
     WRITER_RUNTIME_EXCEPTION("HdfsWriter-05", "出现运行时异常, 请联系我们."),
     CONNECT_HDFS_IO_ERROR("HdfsWriter-06", "与HDFS建立连接时出现IO异常."),
-    COLUMN_REQUIRED_VALUE("HdfsWriter-07", "您column配置中缺失了必须填写的参数值.");
+    COLUMN_REQUIRED_VALUE("HdfsWriter-07", "您column配置中缺失了必须填写的参数值."),
+    HDFS_RENAME_FILE_ERROR("HdfsWriter-08", "将文件移动到配置路径失败.");
 
     private final String code;
     private final String description;

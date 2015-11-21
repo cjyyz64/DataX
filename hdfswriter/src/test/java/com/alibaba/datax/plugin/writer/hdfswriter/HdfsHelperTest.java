@@ -279,7 +279,7 @@ public class HdfsHelperTest {
         //java.util.Date formateutilDate = new java.util.Date(formateUtilDate);
         java.sql.Date formatesqlDate  = new Date(DateFormate.parse(formateSqlDate).getTime()) ;
         //System.out.println(formateutilDate);
-        System.out.println(formatesqlDate);
+        System.out.println(new java.util.Date(0));
 
 
 //TODO: Test goes here...
