@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.writer.tairwriter;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.exception.ExceptionTracker;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -132,20 +133,25 @@ public class TairWriter extends Writer {
             LOG.info("TairWriter Dispatcher start.");
 
             Record record = null;
-            while (!isShutdown || recordQueue.size()>0) {
+            while (!isShutdown || recordQueue.size() > 0) {
                 try {
-                    record = recordQueue.poll(100, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    LOG.error("recordQueue.poll has Exception: " + e.getMessage(), e);
-                }
-                if (record == null) {
-                    continue;
-                }
+                    try {
+                        record = recordQueue.poll(100, TimeUnit.MILLISECONDS);
+                    } catch (InterruptedException e) {
+                        LOG.error("recordQueue.poll has Exception: " + e.getMessage(), e);
+                    }
+                    if (record == null) {
+                        continue;
+                    }
 
-                String key = TairWriterMultiWorker.getKeyFromColumn(conf,record);
+                    String key = TairWriterMultiWorker.getKeyFromColumn(conf, record);
 
-                int workid = Math.abs(key.hashCode()) % threadNum;
-                works[workid].send(record);
+                    int workid = Math.abs(key.hashCode()) % threadNum;
+                    works[workid].send(record);
+                } catch (Exception e) {
+                    this.getTaskPluginCollector().collectDirtyRecord(record, "doDispatcher this record has Exception: " + e.getMessage()
+                            + " => " + ExceptionTracker.trace(e));
+                }
             }
 
             LOG.info("TairWriter Dispatcher end.");
