@@ -99,7 +99,9 @@ public class WritePolicer {
                 KeyValue[] curKvs = FixedHBaseColumn.toKVs(line, rowkey,
                         columnList, encoding, timestamp, nullMode);
                 for (KeyValue kv : curKvs) {
-                    kvsQueue.add(kv);
+                    if(kv != null) {
+                        kvsQueue.add(kv);
+                    }
                 }
                 preRow = rowkey;
             } catch (SQLException e) {
