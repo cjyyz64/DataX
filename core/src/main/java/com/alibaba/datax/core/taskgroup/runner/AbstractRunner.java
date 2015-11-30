@@ -4,6 +4,7 @@ import com.alibaba.datax.common.plugin.AbstractTaskPlugin;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.statistics.communication.Communication;
+import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.apache.commons.lang.Validate;
 
@@ -55,6 +56,9 @@ public abstract class AbstractRunner {
 
     private void mark(State state) {
         this.runnerCommunication.setState(state);
+        // 对 stage + 1
+        this.runnerCommunication.setLongCounter(CommunicationTool.STAGE,
+                this.runnerCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
     }
 
     public void markRun() {
