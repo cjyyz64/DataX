@@ -96,6 +96,7 @@ public class HbaseReader extends Reader {
                 } catch (Exception e) {
                     LOG.info("Exception", e);
                     super.getTaskPluginCollector().collectDirtyRecord(record, e);
+                    record = recordSender.createRecord();
                     continue;
                 }
                 if (fetchOK) {
