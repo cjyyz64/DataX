@@ -6,6 +6,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
+import com.alibaba.datax.common.statistics.VMInfo;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.AbstractContainer;
 import com.alibaba.datax.core.statistics.communication.Communication;
@@ -287,6 +288,13 @@ public class TaskGroupContainer extends AbstractContainer {
                     FrameworkErrorCode.RUNTIME_ERROR, e);
         }finally {
             if(!PerfTrace.getInstance().isJob()){
+                //最后打印cpu的平均消耗，GC的统计
+                VMInfo vmInfo = VMInfo.getVmInfo();
+                if (vmInfo != null) {
+                    vmInfo.getDelta(false);
+                    LOG.info(vmInfo.totalString());
+                }
+
                 LOG.info(PerfTrace.getInstance().summarizeNoException());
             }
         }

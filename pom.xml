@@ -78,6 +78,7 @@
         <module>hbasebulkwriter</module>
         <module>hbasebulkwriter2</module>
         <module>tairwriter</module>
+		 <module>metaqwriter</module>
         <!--hook-->
         <module>dqchook</module>
 

@@ -37,7 +37,9 @@ public abstract class AbstractScheduler {
         Validate.notNull(configurations,
                 "scheduler配置不能为空");
         int jobReportIntervalInMillSec = configurations.get(0).getInt(
-                CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 10000);
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL, 30000);
+        int jobSleepIntervalInMillSec = configurations.get(0).getInt(
+                CoreConstant.DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL, 10000);
 
         this.jobId = configurations.get(0).getLong(
                 CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
@@ -53,6 +55,8 @@ public abstract class AbstractScheduler {
         startAllTaskGroup(configurations);
 
         Communication lastJobContainerCommunication = new Communication();
+
+        long lastReportTimeStamp = System.currentTimeMillis();
         try {
             while (true) {
                 /**
@@ -71,25 +75,31 @@ public abstract class AbstractScheduler {
                 nowJobContainerCommunication.setTimestamp(System.currentTimeMillis());
                 LOG.debug(nowJobContainerCommunication.toString());
 
-                Communication reportCommunication = CommunicationTool
-                        .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
-                this.containerCommunicator.report(reportCommunication);
-                errorLimit.checkRecordLimit(reportCommunication);
+                //汇报周期
+                long now = System.currentTimeMillis();
+                if (now - lastReportTimeStamp > jobReportIntervalInMillSec) {
+                    Communication reportCommunication = CommunicationTool
+                            .getReportCommunication(nowJobContainerCommunication, lastJobContainerCommunication, totalTasks);
 
+                    this.containerCommunicator.report(reportCommunication);
+                    lastReportTimeStamp = now;
+                    lastJobContainerCommunication = nowJobContainerCommunication;
+                }
 
-                if (reportCommunication.getState() == State.SUCCEEDED) {
+                errorLimit.checkRecordLimit(nowJobContainerCommunication);
+
+                if (nowJobContainerCommunication.getState() == State.SUCCEEDED) {
                     LOG.info("Scheduler accomplished all tasks.");
                     break;
                 }
 
                 if (isJobKilling(this.getJobId())) {
                     dealKillingStat(this.containerCommunicator, totalTasks);
-                } else if (reportCommunication.getState() == State.FAILED) {
+                } else if (nowJobContainerCommunication.getState() == State.FAILED) {
                     dealFailedStat(this.containerCommunicator, nowJobContainerCommunication.getThrowable());
                 }
 
-                lastJobContainerCommunication = nowJobContainerCommunication;
-                Thread.sleep(jobReportIntervalInMillSec);
+                Thread.sleep(jobSleepIntervalInMillSec);
             }
         } catch (InterruptedException e) {
             // 以 failed 状态退出

@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.writer.mongodbwriter.util.MongoUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -41,6 +42,11 @@ public class MongoDBWriter extends Writer{
         }
 
         @Override
+        public void prepare() {
+            super.prepare();
+        }
+
+        @Override
         public void destroy() {
 
         }
@@ -62,6 +68,54 @@ public class MongoDBWriter extends Writer{
         private JSONObject upsertInfoMeta = null;
         private static int BATCH_SIZE = 1000;
 
+        @Override
+        public void prepare() {
+            super.prepare();
+            //获取presql配置，并执行
+            String preSql = writerSliceConfig.getString(Key.PRE_SQL);
+            if(Strings.isNullOrEmpty(preSql)) {
+                return;
+            }
+            Configuration conConf = Configuration.from(preSql);
+            if(Strings.isNullOrEmpty(database) || Strings.isNullOrEmpty(collection)
+                    || mongoClient == null || mongodbColumnMeta == null || batchSize == null) {
+                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                        MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
+            }
+            DB db = mongoClient.getDB(database);
+            DBCollection col = db.getCollection(this.collection);
+            String type = conConf.getString("type");
+            if (Strings.isNullOrEmpty(type)){
+                return;
+            }
+            if (type.equals("drop")){
+                col.drop();
+            } else if (type.equals("remove")){
+                String json = conConf.getString("json");
+                BasicDBObject query;
+                if (Strings.isNullOrEmpty(json)) {
+                    query = new BasicDBObject();
+                    List<Object> items = conConf.getList("item", Object.class);
+                    for (Object con : items) {
+                        Configuration _conf = Configuration.from(con.toString());
+                        if (Strings.isNullOrEmpty(_conf.getString("condition"))) {
+                            query.put(_conf.getString("name"), _conf.get("value"));
+                        } else {
+                            query.put(_conf.getString("name"),
+                                    new BasicDBObject(_conf.getString("condition"), _conf.get("value")));
+                        }
+                    }
+//              and  { "pv" : { "$gt" : 200 , "$lt" : 3000} , "pid" : { "$ne" : "xxx"}}
+//              or  { "$or" : [ { "age" : { "$gt" : 27}} , { "age" : { "$lt" : 15}}]}
+                } else {
+                    query = (BasicDBObject) com.mongodb.util.JSON.parse(json);
+                }
+                col.remove(query);
+            }
+            if(logger.isDebugEnabled()) {
+                logger.debug("After job prepare(), originalConfig now is:[\n{}\n]", writerSliceConfig.toJSON());
+            }
+        }
 
         @Override
         public void startWrite(RecordReceiver lineReceiver) {
@@ -97,22 +151,83 @@ public class MongoDBWriter extends Writer{
 
                 for(int i = 0; i < record.getColumnNumber(); i++) {
 
-                    if(Strings.isNullOrEmpty(record.getColumn(i).asString())) {
-
-                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
+                    String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
+                    if (Strings.isNullOrEmpty(record.getColumn(i).asString())) {
+                        if (KeyConstant.isArrayType(type.toLowerCase())) {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), new Object[0]);
+                        } else {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
+                        }
                         continue;
                     }
-                    if(record.getColumn(i) instanceof StringColumn){
+                    if (Column.Type.INT.name().equalsIgnoreCase(type)){
+                    //配置文件中的type是没有用的，除了int，其他均按照保存时Column的类型进行处理
+                        try {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),
+                                    Integer.parseInt(String.valueOf(record.getColumn(i).getRawData())));
+                        } catch (Exception e) {
+                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),record.getColumn(i).asString());
+                            e.printStackTrace();
+                        }
+                    } else if(record.getColumn(i) instanceof StringColumn){
                         //处理数组类型
-                        String type = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_TYPE);
-                        String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
-                        if(KeyConstant.isArrayType(type.toLowerCase())) {
-                            if(Strings.isNullOrEmpty(splitter)) {
-                                throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
-                                        MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
+                        try {
+                            if(KeyConstant.isArrayType(type.toLowerCase())) {
+                                String splitter = columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_SPLITTER);
+                                if (Strings.isNullOrEmpty(splitter)) {
+                                    throw DataXException.asDataXException(MongoDBWriterErrorCode.ILLEGAL_VALUE,
+                                            MongoDBWriterErrorCode.ILLEGAL_VALUE.getDescription());
+                                }
+                                String itemType = columnMeta.getJSONObject(i).getString(KeyConstant.ITEM_TYPE);
+                                if (itemType != null && !itemType.isEmpty()) {
+                                    //如果数组指定类型不为空，将其转换为指定类型
+                                    String[] item = record.getColumn(i).asString().split(splitter);
+                                    if (itemType.equalsIgnoreCase(Column.Type.DOUBLE.name())) {
+                                        ArrayList<Double> list = new ArrayList<Double>();
+                                        for (String s : item) {
+                                            list.add(Double.parseDouble(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Double[0]));
+                                    } else if (itemType.equalsIgnoreCase(Column.Type.INT.name())) {
+                                        ArrayList<Integer> list = new ArrayList<Integer>();
+                                        for (String s : item) {
+                                            list.add(Integer.parseInt(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Integer[0]));
+                                    } else if (itemType.equalsIgnoreCase(Column.Type.LONG.name())) {
+                                        ArrayList<Long> list = new ArrayList<Long>();
+                                        for (String s : item) {
+                                            list.add(Long.parseLong(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Long[0]));
+                                    } else if (itemType.equalsIgnoreCase(Column.Type.BOOL.name())) {
+                                        ArrayList<Boolean> list = new ArrayList<Boolean>();
+                                        for (String s : item) {
+                                            list.add(Boolean.parseBoolean(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Boolean[0]));
+                                    } else if (itemType.equalsIgnoreCase(Column.Type.BYTES.name())) {
+                                        ArrayList<Byte> list = new ArrayList<Byte>();
+                                        for (String s : item) {
+                                            list.add(Byte.parseByte(s));
+                                        }
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), list.toArray(new Byte[0]));
+                                    } else {
+                                        data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
+                                    }
+                                } else {
+                                    data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
+                                }
+                            } else if(type.toLowerCase().equalsIgnoreCase("json")) {
+                                //如果是json类型,将其进行转换
+                                Object mode = com.mongodb.util.JSON.parse(record.getColumn(i).asString());
+                                data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME),JSON.toJSON(mode));
+                            } else {
+                                data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                             }
-                            data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString().split(splitter));
-                        } else {
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            //发生异常就按照默认类型存数
                             data.put(columnMeta.getJSONObject(i).getString(KeyConstant.COLUMN_NAME), record.getColumn(i).asString());
                         }
                     } else if(record.getColumn(i) instanceof LongColumn) {

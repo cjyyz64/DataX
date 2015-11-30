@@ -23,6 +23,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_CONTAINER_JOB_REPORTINTERVAL = "core.container.job.reportInterval";
 
+	public static final String DATAX_CORE_CONTAINER_JOB_SLEEPINTERVAL = "core.container.job.sleepInterval";
+
     public static final String DATAX_CORE_CONTAINER_TASKGROUP_ID = "core.container.taskGroup.id";
 
 	public static final String DATAX_CORE_CONTAINER_TASKGROUP_SLEEPINTERVAL = "core.container.taskGroup.sleepInterval";
@@ -117,11 +119,19 @@ public class CoreConstant {
 
     public static final String LAST_PRIVATEKEY = "last.privateKey";
 
+	public static final String LAST_SERVICE_USERNAME = "last.service.username";
+    
+	public static final String LAST_SERVICE_PASSWORD = "last.service.password";
+
     public static final String CURRENT_KEYVERSION = "current.keyVersion";
 
     public static final String CURRENT_PUBLICKEY = "current.publicKey";
 
     public static final String CURRENT_PRIVATEKEY = "current.privateKey";
+
+	public static final String CURRENT_SERVICE_USERNAME = "current.service.username";
+    
+	public static final String CURRENT_SERVICE_PASSWORD = "current.service.password";
 
 	// ----------------------------- 环境变量 ---------------------------------
 

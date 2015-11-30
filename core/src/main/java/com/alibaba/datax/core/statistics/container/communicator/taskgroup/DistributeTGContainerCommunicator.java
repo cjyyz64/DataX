@@ -25,5 +25,6 @@ public class DistributeTGContainerCommunicator extends AbstractTGContainerCommun
         super.getReporter().reportTGCommunication(super.taskGroupId, communication);
 
         LOG.info("TaskGroup => "+CommunicationTool.Stringify.getSnapshot(communication));
+        reportVmInfo();
     }
 }

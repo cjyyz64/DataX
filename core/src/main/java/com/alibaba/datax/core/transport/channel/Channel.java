@@ -127,9 +127,9 @@ public abstract class Channel {
         Validate.notNull(r, "record不能为空.");
         this.doPush(r);
 
-        // 对 stage + 1
-        currentCommunication.setLongCounter(CommunicationTool.STAGE,
-                currentCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
+//        // 对 stage + 1
+//        currentCommunication.setLongCounter(CommunicationTool.STAGE,
+//                currentCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
     }
 
     public void pushAll(final Collection<Record> rs) {
