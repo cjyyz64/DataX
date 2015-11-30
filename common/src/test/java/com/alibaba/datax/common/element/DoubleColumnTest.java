@@ -2,6 +2,7 @@ package com.alibaba.datax.common.element;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.text.DecimalFormat;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -244,6 +245,36 @@ public class DoubleColumnTest {
 
 		Assert.assertTrue(!new DoubleColumn(Double.MAX_VALUE).asString()
 				.contains("E"));
+		Assert.assertTrue(!new DoubleColumn(Float.MAX_VALUE).asString()
+				.contains("E"));
+	}
+
+	@Test
+	public void test_doubleColumn(){
+		DoubleColumn column = new DoubleColumn(Double.NaN);
+		DoubleColumn column1 = new DoubleColumn(Double.NEGATIVE_INFINITY);
+		DoubleColumn column2 = new DoubleColumn(Double.POSITIVE_INFINITY);
+		DoubleColumn column3 = new DoubleColumn(new Double(1.79E+308));
+
+		Assert.assertTrue("NaN".equals(column.asString()));
+		Assert.assertTrue("-Infinity".equals(column1.asString()));
+		Assert.assertTrue("Infinity".equals(column2.asString()));
+		Assert.assertTrue(!column3.asString().contains("E"));
+		Assert.assertTrue(!new DoubleColumn(Double.MAX_VALUE).asString()
+				.contains("E"));
+	}
+
+	@Test
+	public void test_doubleColumnFloat(){
+		DoubleColumn column = new DoubleColumn(Float.NaN);
+		DoubleColumn column1 = new DoubleColumn(Float.NEGATIVE_INFINITY);
+		DoubleColumn column2 = new DoubleColumn(Float.POSITIVE_INFINITY);
+		DoubleColumn column3 = new DoubleColumn(new Float(1.79E+30));
+
+		Assert.assertTrue("NaN".equals(column.asString()));
+		Assert.assertTrue("-Infinity".equals(column1.asString()));
+		Assert.assertTrue("Infinity".equals(column2.asString()));
+		Assert.assertTrue(!column3.asString().contains("E"));
 		Assert.assertTrue(!new DoubleColumn(Float.MAX_VALUE).asString()
 				.contains("E"));
 	}
