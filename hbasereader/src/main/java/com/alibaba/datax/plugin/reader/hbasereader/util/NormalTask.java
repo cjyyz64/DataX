@@ -92,35 +92,35 @@ public class NormalTask extends HbaseAbstractTask {
     protected void doFillRecord(byte[] byteArray, ColumnType columnType, String encoding, String dateformat, Record record) throws Exception {
         switch (columnType) {
             case BOOLEAN:
-                record.addColumn(new BoolColumn(Bytes.toBoolean(byteArray)));
+                record.addColumn(new BoolColumn(byteArray == null ? null : Bytes.toBoolean(byteArray)));
                 break;
             case SHORT:
-                record.addColumn(new LongColumn(String.valueOf(Bytes.toShort(byteArray))));
+                record.addColumn(new LongColumn(byteArray == null ? null : String.valueOf(Bytes.toShort(byteArray))));
                 break;
             case INT:
-                record.addColumn(new LongColumn(Bytes.toInt(byteArray)));
+                record.addColumn(new LongColumn(byteArray == null ? null : Bytes.toInt(byteArray)));
                 break;
             case LONG:
-                record.addColumn(new LongColumn(Bytes.toLong(byteArray)));
+                record.addColumn(new LongColumn(byteArray == null ? null : Bytes.toLong(byteArray)));
                 break;
             case BYTES:
-                record.addColumn(new BytesColumn(byteArray));
+                record.addColumn(new BytesColumn(byteArray == null ? null : byteArray));
                 break;
             case FLOAT:
-                record.addColumn(new DoubleColumn(Bytes.toFloat(byteArray)));
+                record.addColumn(new DoubleColumn(byteArray == null ? null : Bytes.toFloat(byteArray)));
                 break;
             case DOUBLE:
-                record.addColumn(new DoubleColumn(Bytes.toDouble(byteArray)));
+                record.addColumn(new DoubleColumn(byteArray == null ? null : Bytes.toDouble(byteArray)));
                 break;
             case STRING:
                 record.addColumn(new StringColumn(byteArray == null ? null : new String(byteArray, encoding)));
                 break;
             case BINARY_STRING:
-                record.addColumn(new StringColumn(Bytes.toStringBinary(byteArray)));
+                record.addColumn(new StringColumn(byteArray == null ? null : Bytes.toStringBinary(byteArray)));
                 break;
             case DATE:
                 String dateValue = Bytes.toStringBinary(byteArray);
-                record.addColumn(new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
+                record.addColumn(byteArray == null ? null : new DateColumn(DateUtils.parseDate(dateValue, new String[]{dateformat})));
                 break;
             default:
                 throw DataXException.asDataXException(HbaseReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
