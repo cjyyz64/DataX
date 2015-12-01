@@ -67,31 +67,31 @@ public abstract class MultiVersionTask extends HbaseAbstractTask {
         Column column;
         switch (columnType) {
             case BOOLEAN:
-                column = new BoolColumn(Bytes.toBoolean(byteArray));
+                column = new BoolColumn(byteArray == null ? null : Bytes.toBoolean(byteArray));
                 break;
             case SHORT:
-                column = new LongColumn(String.valueOf(Bytes.toShort(byteArray)));
+                column = new LongColumn(byteArray == null ? null : String.valueOf(Bytes.toShort(byteArray)));
                 break;
             case INT:
-                column = new LongColumn(Bytes.toInt(byteArray));
+                column = new LongColumn(byteArray == null ? null : Bytes.toInt(byteArray));
                 break;
             case LONG:
-                column = new LongColumn(Bytes.toLong(byteArray));
+                column = new LongColumn(byteArray == null ? null : Bytes.toLong(byteArray));
                 break;
             case BYTES:
                 column = new BytesColumn(byteArray);
                 break;
             case FLOAT:
-                column = new DoubleColumn(Bytes.toFloat(byteArray));
+                column = new DoubleColumn(byteArray == null ? null : Bytes.toFloat(byteArray));
                 break;
             case DOUBLE:
-                column = new DoubleColumn(Bytes.toDouble(byteArray));
+                column = new DoubleColumn(byteArray == null ? null : Bytes.toDouble(byteArray));
                 break;
             case STRING:
                 column = new StringColumn(byteArray == null ? null : new String(byteArray, super.encoding));
                 break;
             case BINARY_STRING:
-                column = new StringColumn(Bytes.toStringBinary(byteArray));
+                column = new StringColumn(byteArray == null ? null : Bytes.toStringBinary(byteArray));
                 break;
 
             default:
