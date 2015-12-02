@@ -27,7 +27,9 @@ public class OTSHelper {
         }
 
         ClientConfiguration clientConfig = new ClientConfiguration();
-        clientConfig.setRetryStrategy(new OTSRetryStrategyForStreamReader());
+        OTSRetryStrategyForStreamReader retryStrategy = new OTSRetryStrategyForStreamReader();
+        retryStrategy.setMaxRetries(config.getMaxRetries());
+        clientConfig.setRetryStrategy(retryStrategy);
         OTS ots = new OTSClient(config.getEndpoint(), config.getAccessId(),
                 config.getAccessKey(), config.getInstanceName(), clientConfig);
         return ots;

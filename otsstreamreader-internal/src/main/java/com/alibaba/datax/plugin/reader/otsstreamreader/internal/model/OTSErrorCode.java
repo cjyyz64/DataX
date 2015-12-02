@@ -105,4 +105,10 @@ public class OTSErrorCode {
      */
     public static final String SERVER_BUSY = "OTSServerBusy";
 
+
+    /**
+     * 流数据已经过期
+     */
+    public static final String TRIMMED_DATA_ACCESS = "OTSTrimmedDataAccess";
+
 }

@@ -24,6 +24,8 @@ public class OTSStreamReaderConfig {
     private static final String KEY_END_TIMESTAMP_MILLIS = "endTimestampMillis";
     private static final String KEY_IS_EXPORT_SEQUENCE_INFO = "isExportSequenceInfo";
     private static final String KEY_DATE = "date";
+    private static final String KEY_MAX_RETRIES = "maxRetries";
+    private static final int DEFAULT_MAX_RETRIES = 30;
 
     private String endpoint;
     private String accessId;
@@ -34,6 +36,7 @@ public class OTSStreamReaderConfig {
     private long startTimestampMillis;
     private long endTimestampMillis;
     private boolean isExportSequenceInfo;
+    private int maxRetries = DEFAULT_MAX_RETRIES;
 
     private transient OTS otsForTest;
 
@@ -147,11 +150,13 @@ public class OTSStreamReaderConfig {
             throw new OTSStreamReaderException("EndTimestamp must be larger than startTimestamp.");
         }
 
+        config.setMaxRetries(param.getInt(KEY_MAX_RETRIES, DEFAULT_MAX_RETRIES));
+
         LOG.info("endpoint: {}, accessId: {}, accessKey: {}, instanceName: {}, dataTableName: {}, statusTableName: {}," +
-                " isExportSequenceInfo: {}, startTimestampMillis: {}, endTimestampMillis:{}.", config.getEndpoint(),
+                " isExportSequenceInfo: {}, startTimestampMillis: {}, endTimestampMillis:{}, maxRetries:{}.", config.getEndpoint(),
                 config.getAccessId(), config.getAccessKey(), config.getInstanceName(), config.getDataTable(),
                 config.getStatusTable(), config.isExportSequenceInfo(), config.getStartTimestampMillis(),
-                config.getEndTimestampMillis());
+                config.getEndTimestampMillis(), config.getMaxRetries());
 
         return config;
     }
@@ -170,5 +175,13 @@ public class OTSStreamReaderConfig {
      */
     public void setOtsForTest(OTS otsForTest) {
         this.otsForTest = otsForTest;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
     }
 }

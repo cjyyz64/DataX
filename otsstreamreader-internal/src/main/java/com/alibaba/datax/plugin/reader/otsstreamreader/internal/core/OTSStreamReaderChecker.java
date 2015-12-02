@@ -45,7 +45,7 @@ public class OTSStreamReaderChecker {
         long endTime = config.getEndTimestampMillis();
         long beforeOffset = OTSStreamReaderConstants.BEFORE_OFFSET_TIME_MILLIS;
         long afterOffset = OTSStreamReaderConstants.AFTER_OFFSET_TIME_MILLIS;
-        long expirationTime = streamDetails.getExpirationTime() * TimeUtils.SECOND_IN_MILLIS;   //todo:expirationTime in hour now.
+        long expirationTime = streamDetails.getExpirationTime() * TimeUtils.HOUR_IN_MILLIS;
 
         if (startTime < now - expirationTime + beforeOffset) {
             throw new OTSStreamReaderException("Start timestamp(" + startTime + ") is too small with StreamExpirationTime:"
