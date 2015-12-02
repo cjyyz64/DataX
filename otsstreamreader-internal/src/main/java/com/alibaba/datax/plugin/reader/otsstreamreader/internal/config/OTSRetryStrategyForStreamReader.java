@@ -10,7 +10,7 @@ import java.util.List;
 
 public class OTSRetryStrategyForStreamReader implements OTSRetryStrategy {
 
-    private static int maxRetries = 10;
+    private int maxRetries = 30;
     private static long retryPauseScaleTimeMillis = 100;
     private static long maxPauseTimeMillis = 10 * 1000;
 
@@ -23,7 +23,8 @@ public class OTSRetryStrategyForStreamReader implements OTSRetryStrategy {
             OTSErrorCode.OBJECT_NOT_EXIST,
             OTSErrorCode.OUT_OF_COLUMN_COUNT_LIMIT,
             OTSErrorCode.OUT_OF_ROW_SIZE_LIMIT,
-            OTSErrorCode.REQUEST_TOO_LARGE
+            OTSErrorCode.REQUEST_TOO_LARGE,
+            OTSErrorCode.TRIMMED_DATA_ACCESS
     );
 
     private boolean canRetry(Exception ex) {
@@ -51,5 +52,13 @@ public class OTSRetryStrategyForStreamReader implements OTSRetryStrategy {
 
     public long getPauseDelay(String action, Exception ex, int retries) {
         return Math.min((int)Math.pow(2, retries) * retryPauseScaleTimeMillis, maxPauseTimeMillis);
+    }
+
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
+    public int getMaxRetries() {
+        return this.maxRetries;
     }
 }

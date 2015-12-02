@@ -97,7 +97,7 @@ public class RecordProcessor implements IRecordProcessor {
     }
 
     private long getTimestamp(StreamRecord record) {
-        return record.getSequenceInfo().getTimestamp() / 1000 - 86400 * 1000;
+        return record.getSequenceInfo().getTimestamp() / 1000;
     }
 
     String getIterator(List<StreamRecord> records, int idx) {
