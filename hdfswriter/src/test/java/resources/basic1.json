@@ -1,0 +1,99 @@
+{
+    "setting": {},
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "txtfilereader",
+                    "parameter": {
+                        "path": ["/Users/shf/workplace/txtWorkplace/job/dataorcfull.txt"],
+                        "encoding": "UTF-8",
+                        "column": [
+                            {
+                                "index": 0,
+                                "type": "string"
+                            },
+                            {
+                                "index": 1,
+                                "type": "long"
+                            }
+                        ],
+                        "fieldDelimiter": "\t"
+                    }
+                },
+                "writer": {
+                    "name": "hdfswriter",
+                    "parameter": {
+                        "defaultFS": "hdfs://10.101.204.12:9000",
+                        "fileType": "orc",
+                        "path": "/user/hive/warehouse/writerorc.db/orc/",
+                        "fileName": "qiran",
+                        "column": [
+                            {
+                                "name": "col1",
+                                "type": "TINYINT"
+                            },
+                            {
+                                "name": "col2",
+                                "type": "SMALLINT"
+                            },
+                            {
+                                "name": "col3",
+                                "type": "INT"
+                            },
+                            {
+                                "name": "col4",
+                                "type": "BIGINT"
+                            },
+                            {
+                                "name": "col5",
+                                "type": "FLOAT"
+                            },
+                            {
+                                "name": "col6",
+                                "type": "DOUBLE"
+                            },
+                            {
+                                "name": "col7",
+                                "type": "DECIMAL"
+                            },
+                            {
+                                "name": "col8",
+                                "type": "TIMESTAMP"
+                            },
+                            {
+                                "name": "col9",
+                                "type": "DATE"
+                            },
+                            {
+                                "name": "col10",
+                                "type": "STRING"
+                            },
+                            {
+                                "name": "col11",
+                                "type": "VARCHAR"
+                            },
+                            {
+                                "name": "col12",
+                                "type": "CHAR"
+                            },
+                            {
+                                "name": "col13",
+                                "type": "BOOLEAN"
+                            }
+                        ],
+                        "writeMode": "truncate",
+                        "fieldDelimiter": "\t",
+                        "compress":"NONE",
+                        "encoding":"UTF-8"
+                    }
+                }
+            }
+        ]
+    }
+}
