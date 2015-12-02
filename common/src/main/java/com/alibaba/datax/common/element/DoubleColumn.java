@@ -2,7 +2,6 @@ package com.alibaba.datax.common.element;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.text.DecimalFormat;
 import java.util.Date;
 
 import com.alibaba.datax.common.exception.CommonErrorCode;
@@ -28,7 +27,7 @@ public class DoubleColumn extends Column {
 	 * 
 	 * */
 	public DoubleColumn(final Double data) {
-		this(isSpecialValues(data) ? String.valueOf(data)
+		this(data == null ? (String) null
 				: new BigDecimal(String.valueOf(data)).toPlainString(), 8);
 	}
 
@@ -37,7 +36,7 @@ public class DoubleColumn extends Column {
 	 * 
 	 * */
 	public DoubleColumn(final Float data) {
-		this(isSpecialValues(data) ? String.valueOf(data)
+		this(data == null ? (String) null
 				: new BigDecimal(String.valueOf(data)).toPlainString(), 4);
 	}
 
@@ -160,13 +159,4 @@ public class DoubleColumn extends Column {
 		}
 	}
 
-	private static <T> boolean  isSpecialValues(T data){
-		String dataStr = String.valueOf(data);
-		if( dataStr.equalsIgnoreCase("null") || dataStr.equalsIgnoreCase("NaN") || dataStr.equalsIgnoreCase("-Infinity")
-				|| dataStr.equalsIgnoreCase("Infinity")){
-			return  true;
-		}else {
-			return false;
-		}
-	}
 }
