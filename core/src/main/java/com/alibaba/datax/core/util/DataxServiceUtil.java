@@ -252,7 +252,7 @@ public final class DataxServiceUtil {
     }
 
     public static Result reportDataxLog(LogReportInfo info){
-        String url = DATAX_SERVICE_URL + "/inner/job/reportDataxLog";
+        String url = DATAX_SERVICE_URL + "inner/job/reportDataxLog";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
