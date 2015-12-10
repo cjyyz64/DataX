@@ -46,21 +46,21 @@
             <outputDirectory>/lib</outputDirectory>
         </fileSet>
 
-        <fileSet>
-            <directory>src/main/log/</directory>
-            <includes>
-                <include>*.log</include>
-            </includes>
-            <outputDirectory>/log</outputDirectory>
-        </fileSet>
+        <!--<fileSet>-->
+            <!--<directory>src/main/log/</directory>-->
+            <!--<includes>-->
+                <!--<include>*.log</include>-->
+            <!--</includes>-->
+            <!--<outputDirectory>/log</outputDirectory>-->
+        <!--</fileSet>-->
 
-        <fileSet>
-            <directory>src/main/log/</directory>
-            <includes>
-                <include>*.log</include>
-            </includes>
-            <outputDirectory>/log_perf</outputDirectory>
-        </fileSet>
+        <!--<fileSet>-->
+            <!--<directory>src/main/log/</directory>-->
+            <!--<includes>-->
+                <!--<include>*.log</include>-->
+            <!--</includes>-->
+            <!--<outputDirectory>/log_perf</outputDirectory>-->
+        <!--</fileSet>-->
 
         <fileSet>
             <directory>src/main/job/</directory>
