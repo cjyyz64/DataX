@@ -43,6 +43,8 @@ public class CoreConstant {
 
 	public static final String DATAX_CORE_REPORT_DATAX_LOG = "core.dataXServer.reportDataxLog";
 
+	public static final String DATAX_CORE_REPORT_DATAX_PERFLOG = "core.dataXServer.reportPerfLog";
+
     public static final String DATAX_CORE_TRANSPORT_CHANNEL_CLASS = "core.transport.channel.class";
 
 	public static final String DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY = "core.transport.channel.capacity";
@@ -70,6 +72,8 @@ public class CoreConstant {
 	public static final String DATAX_JOB_CONTENT_WRITER_NAME = "job.content[0].writer.name";
 
 	public static final String DATAX_JOB_CONTENT_WRITER_PARAMETER = "job.content[0].writer.parameter";
+
+	public static final String DATAX_JOB_JOBINFO = "job.jobInfo";
 
 	public static final String DATAX_JOB_CONTENT = "job.content";
 

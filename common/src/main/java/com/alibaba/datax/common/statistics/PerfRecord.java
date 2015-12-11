@@ -63,16 +63,22 @@ public class PerfRecord implements Comparable<PerfRecord> {
         }
     }
 
+    public enum ACTION{
+        start,
+        end
+    }
+
     private final int taskGroupId;
     private final int taskId;
     private final PHASE phase;
-    private volatile String action;
+    private volatile ACTION action;
     private volatile Date startTime;
     private volatile long elapsedTimeInNs = -1;
     private volatile long count = 0;
     private volatile long size = 0;
 
     private volatile long startTimeInNs;
+    private volatile boolean isReport = false;
 
     public PerfRecord(int taskGroupId, int taskId, PHASE phase) {
         this.taskGroupId = taskGroupId;
@@ -84,11 +90,10 @@ public class PerfRecord implements Comparable<PerfRecord> {
         if(PerfTrace.getInstance().isEnable()) {
             PerfRecord perfRecord = new PerfRecord(taskGroupId, taskId, phase);
             perfRecord.elapsedTimeInNs = elapsedTimeInNs;
-            perfRecord.action = "end";
+            perfRecord.action = ACTION.end;
             perfRecord.startTime = new Date(startTime);
             //在PerfTrace里注册
             PerfTrace.getInstance().tracePerfRecord(perfRecord);
-            //perf.info(JSON.toJSONString(perfRecord));
             perf.info(perfRecord.toString());
         }
     }
@@ -97,10 +102,9 @@ public class PerfRecord implements Comparable<PerfRecord> {
         if(PerfTrace.getInstance().isEnable()) {
             this.startTime = new Date();
             this.startTimeInNs = System.nanoTime();
-            this.action = "start";
+            this.action = ACTION.start;
             //在PerfTrace里注册
             PerfTrace.getInstance().tracePerfRecord(this);
-            //perf.info(JSON.toJSONString(this));
             perf.info(toString());
         }
     }
@@ -116,8 +120,8 @@ public class PerfRecord implements Comparable<PerfRecord> {
     public void end() {
         if(PerfTrace.getInstance().isEnable()) {
             this.elapsedTimeInNs = System.nanoTime() - startTimeInNs;
-            this.action = "end";
-            //perf.info(JSON.toJSONString(this));
+            this.action = ACTION.end;
+            PerfTrace.getInstance().tracePerfRecord(this);
             perf.info(toString());
         }
     }
@@ -125,8 +129,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
     public void end(long elapsedTimeInNs) {
         if(PerfTrace.getInstance().isEnable()) {
             this.elapsedTimeInNs = elapsedTimeInNs;
-            this.action = "end";
-            //perf.info(JSON.toJSONString(this));
+            this.action = ACTION.end;
             perf.info(toString());
         }
     }
@@ -148,7 +151,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getJobId(),taskGroupId,taskId,phase,action,startTime,elapsedTimeInNs,count,size);
+        return Objects.hashCode(getJobId(),taskGroupId,taskId,phase,startTime);
     }
 
     @Override
@@ -164,11 +167,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
         if(!Objects.equal(this.taskGroupId,dst.taskGroupId)) return false;
         if(!Objects.equal(this.taskId,dst.taskId)) return false;
         if(!Objects.equal(this.phase,dst.phase)) return false;
-        if(!Objects.equal(this.action,dst.action)) return false;
         if(!Objects.equal(this.startTime,dst.startTime)) return false;
-        if(!Objects.equal(this.elapsedTimeInNs,dst.elapsedTimeInNs)) return false;
-        if(!Objects.equal(this.count,dst.count)) return false;
-        if(!Objects.equal(this.size,dst.count)) return false;
 
         return true;
     }
@@ -194,7 +193,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
         return phase;
     }
 
-    public String getAction() {
+    public ACTION getAction() {
         return action;
     }
 
@@ -222,10 +221,26 @@ public class PerfRecord implements Comparable<PerfRecord> {
         return HostUtils.HOSTNAME;
     }
 
+    public Date getStartTime() {
+        return startTime;
+    }
+
+    public long getStartTimeInNs() {
+        return startTimeInNs;
+    }
+
     public String getDatetime(){
         if(startTime == null){
             return "null time";
         }
         return DateFormatUtils.format(startTime, datetimeFormat);
+    }
+
+    public boolean isReport() {
+        return isReport;
+    }
+
+    public void setIsReport(boolean isReport) {
+        this.isReport = isReport;
     }
 }

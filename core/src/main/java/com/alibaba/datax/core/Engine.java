@@ -50,17 +50,17 @@ public class Engine {
                 .getString(CoreConstant.DATAX_CORE_CONTAINER_MODEL)));
 
         AbstractContainer container;
-        long jobId;
+        long instanceId;
         int taskGroupId = -1;
         if (isJob) {
             allConf.set(CoreConstant.DATAX_CORE_CONTAINER_JOB_MODE, RUNTIME_MODE);
             container = new JobContainer(allConf);
-            jobId = allConf.getLong(
+            instanceId = allConf.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID, 0);
 
         } else {
             container = new TaskGroupContainer(allConf);
-            jobId = allConf.getLong(
+            instanceId = allConf.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_JOB_ID);
             taskGroupId = allConf.getInt(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID);
@@ -68,6 +68,7 @@ public class Engine {
 
         //缺省打开perfTrace
         boolean traceEnable = allConf.getBool(CoreConstant.DATAX_CORE_CONTAINER_TRACE_ENABLE, true);
+        boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
 
         int priority = 0;
         try {
@@ -76,9 +77,11 @@ public class Engine {
             LOG.warn("prioriy set to 0, because NumberFormatException, the value is: "+System.getProperty("PROIORY"));
         }
 
+        Configuration jobInfoConfig = allConf.getConfiguration(CoreConstant.DATAX_JOB_JOBINFO);
         //初始化PerfTrace
-        PerfTrace.getInstance(isJob, jobId, taskGroupId, priority, traceEnable);
-
+        PerfTrace perfTrace = PerfTrace.getInstance(isJob, instanceId, taskGroupId, priority, traceEnable);
+        perfTrace.setJobInfo(jobInfoConfig);
+        perfTrace.setPerfReportEnalbe(perfReportEnable);
         container.start();
 
 
