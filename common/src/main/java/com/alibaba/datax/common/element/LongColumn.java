@@ -39,15 +39,15 @@ public class LongColumn extends Column {
 	}
 
 	public LongColumn(Long data) {
-		this(null == data ? (BigInteger) null : BigInteger.valueOf(data), 8);
+		this(null == data ? (BigInteger) null : BigInteger.valueOf(data));
 	}
 
 	public LongColumn(Integer data) {
-		this(null == data ? (BigInteger) null : BigInteger.valueOf(data), 4);
+		this(null == data ? (BigInteger) null : BigInteger.valueOf(data));
 	}
 
 	public LongColumn(BigInteger data) {
-		this(data, null == data ? 0 : data.bitLength() / 8);
+		this(data, null == data ? 0 : 8);
 	}
 
 	private LongColumn(BigInteger data, int byteSize) {

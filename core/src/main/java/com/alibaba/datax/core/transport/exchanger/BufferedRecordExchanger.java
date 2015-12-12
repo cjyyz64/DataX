@@ -85,19 +85,19 @@ public class BufferedRecordExchanger implements RecordSender, RecordReceiver {
 
 		Validate.notNull(record, "record不能为空.");
 
-		if (record.getByteSize() > this.byteCapacity) {
+		if (record.getMemorySize() > this.byteCapacity) {
 			this.pluginCollector.collectDirtyRecord(record, new Exception(String.format("单条记录超过大小限制，当前限制为:%s", this.byteCapacity)));
 			return;
 		}
 
-		boolean isFull = (this.bufferIndex >= this.bufferSize || this.memoryBytes.get() + record.getByteSize() > this.byteCapacity);
+		boolean isFull = (this.bufferIndex >= this.bufferSize || this.memoryBytes.get() + record.getMemorySize() > this.byteCapacity);
 		if (isFull) {
 			flush();
 		}
 
 		this.buffer.add(record);
 		this.bufferIndex++;
-		memoryBytes.addAndGet(record.getByteSize());
+		memoryBytes.addAndGet(record.getMemorySize());
 	}
 
 	@Override

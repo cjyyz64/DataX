@@ -1,24 +1,25 @@
 package com.alibaba.datax.core.transport.exchanger;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.scaffold.ColumnProducer;
 import com.alibaba.datax.core.scaffold.ConfigurationProducer;
 import com.alibaba.datax.core.scaffold.RecordProducer;
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.channel.memory.MemoryChannel;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.powermock.api.mockito.PowerMockito.mock;
 
 public class RecordExchangerTest extends CaseInitializer {
@@ -30,6 +31,37 @@ public class RecordExchangerTest extends CaseInitializer {
 		this.configuration = ConfigurationProducer.produce();
 		this.configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
 		return;
+	}
+
+
+	@Test
+	public void testMemeroySize() throws Exception {
+		Column longColumn = ColumnProducer.produceLongColumn(1);
+		Column longColumn2 = new LongColumn("234567891");
+		Column stringColumn= ColumnProducer.produceStringColumn("sringtest");
+		Column boolColumn=ColumnProducer.produceBoolColumn(true);
+		Column dateColumn = ColumnProducer.produceDateColumn(System.currentTimeMillis());
+		Column bytesColumn = ColumnProducer.produceBytesColumn("test".getBytes("utf-8"));
+		Assert.assertEquals(longColumn.getByteSize(),8);
+		Assert.assertEquals(longColumn2.getByteSize(),9);
+		Assert.assertEquals(stringColumn.getByteSize(),9);
+		Assert.assertEquals(boolColumn.getByteSize(),1);
+		Assert.assertEquals(dateColumn.getByteSize(),8);
+		Assert.assertEquals(bytesColumn.getByteSize(),4);
+
+		Record record = new DefaultRecord();
+		record.addColumn(longColumn);
+		record.addColumn(longColumn2);
+		record.addColumn(stringColumn);
+		record.addColumn(boolColumn);
+		record.addColumn(dateColumn);
+		record.addColumn(bytesColumn);
+
+		Assert.assertEquals(record.getByteSize(),39);
+		// record classSize =  80
+		// column classSize = 6*24
+		Assert.assertEquals(record.getMemorySize(),263);
+
 	}
 
 	@Test
@@ -46,6 +78,9 @@ public class RecordExchangerTest extends CaseInitializer {
 			record.setColumn(0, new LongColumn(i));
 			recordExchanger.sendToWriter(record);
 		}
+
+		System.out.println("byteSize=" + record.getByteSize());
+		System.out.println("meorySize=" + record.getMemorySize());
 
 		channel.close();
 
@@ -147,7 +182,7 @@ public class RecordExchangerTest extends CaseInitializer {
 
 		Configuration configuration = ConfigurationProducer.produce();
 		configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
-		configuration.set(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 50);
+		configuration.set(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 500);
 
 		TaskPluginCollector pluginCollector = mock(TaskPluginCollector.class);
 		final int capacity = 10;
@@ -204,7 +239,7 @@ public class RecordExchangerTest extends CaseInitializer {
 
 		Configuration configuration = ConfigurationProducer.produce();
 		configuration.set(CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_ID, 1);
-		configuration.set(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 21);
+		configuration.set(CoreConstant.DATAX_CORE_TRANSPORT_CHANNEL_CAPACITY_BYTE, 229);
 
 		TaskPluginCollector pluginCollector = mock(TaskPluginCollector.class);
 		final int capacity = 10;

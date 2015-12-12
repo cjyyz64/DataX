@@ -37,6 +37,11 @@ public class TerminateRecord implements Record {
 	}
 
 	@Override
+	public int getMemorySize() {
+		return 0;
+	}
+
+	@Override
 	public void setColumn(int i, Column column) {
 		return;
 	}

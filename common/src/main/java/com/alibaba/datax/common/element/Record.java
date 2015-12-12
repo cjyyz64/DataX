@@ -18,4 +18,6 @@ public interface Record {
 
 	public int getByteSize();
 
+	public int getMemorySize();
+
 }

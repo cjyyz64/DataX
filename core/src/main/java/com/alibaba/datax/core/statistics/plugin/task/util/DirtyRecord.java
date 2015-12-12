@@ -1,16 +1,16 @@
 package com.alibaba.datax.core.statistics.plugin.task.util;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.fastjson.JSON;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 public class DirtyRecord implements Record {
 	private List<Column> columns = new ArrayList<Column>();
@@ -55,6 +55,12 @@ public class DirtyRecord implements Record {
 
 	@Override
 	public int getByteSize() {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
+
+	@Override
+	public int getMemorySize() {
 		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 				"该方法不支持!");
 	}
