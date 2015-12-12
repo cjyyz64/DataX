@@ -3,36 +3,28 @@ package com.alibaba.datax.common.plugin;
 import com.alibaba.datax.common.util.Configuration;
 
 public interface Pluginable {
-	String getName();
-
 	String getDeveloper();
 
     String getDescription();
+
+    void setPluginConf(Configuration pluginConf);
 
 	void init();
 
 	void destroy();
 
+    String getPluginName();
+
     Configuration getPluginJobConf();
 
-    Configuration getWriterConf();
+    Configuration getPeerPluginJobConf();
 
-    Configuration getReaderConf();
+    public String getPeerPluginName();
 
-    void setPluginConf(Configuration pluginConf);
+    void setPluginJobConf(Configuration jobConf);
 
-	void setPluginJobConf(Configuration jobConf);
+    void setPeerPluginJobConf(Configuration peerPluginJobConf);
 
-    void setReaderConf(Configuration readerConf);
-
-    void setWriterConf(Configuration writerConf);
-
-    public String getReaderPluginName();
-
-    public void setReaderPluginName(String readerPluginName);
-
-    public String getWriterPluginName();
-
-    public void setWriterPluginName(String writerPluginName);
+    public void setPeerPluginName(String peerPluginName);
 
 }

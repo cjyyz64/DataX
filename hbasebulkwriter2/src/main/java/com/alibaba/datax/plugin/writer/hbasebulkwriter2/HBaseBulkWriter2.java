@@ -347,7 +347,7 @@ public class HBaseBulkWriter2 extends Writer {
         }
 
         private void clearOdpsTmpTable() {
-            Configuration readerConf = getReaderConf();
+            Configuration readerConf = getPeerPluginJobConf();
             if (readerConf == null) {
                 return;
             }

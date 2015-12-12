@@ -32,13 +32,13 @@ public class ConfigParserTest extends CaseInitializer {
 		System.out.println(configuration.toJSON());
 
 		Assert.assertTrue(configuration.getList("job.content").size() == 2);
-		Assert.assertTrue(configuration.getString("job.content[0].reader.type")
+		Assert.assertTrue(configuration.getString("job.content[0].reader.name")
 				.equals("fakereader"));
-		Assert.assertTrue(configuration.getString("job.content[1].reader.type")
+		Assert.assertTrue(configuration.getString("job.content[1].reader.name")
 				.equals("fakereader"));
-		Assert.assertTrue(configuration.getString("job.content[0].writer.type")
+		Assert.assertTrue(configuration.getString("job.content[0].writer.name")
 				.equals("fakewriter"));
-		Assert.assertTrue(configuration.getString("job.content[1].writer.type")
+		Assert.assertTrue(configuration.getString("job.content[1].writer.name")
 				.equals("fakewriter"));
 
 		System.out.println(configuration.getConfiguration("plugin").toJSON());

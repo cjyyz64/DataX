@@ -61,7 +61,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
 
             Set<String> pluginSet = new HashSet<String>();
             PLUGIN_CONF = ConfigParser.parseOnePluginConfig(PLUGIN_PATH,
-                    "writer", pluginSet);
+                    "writer", pluginSet, null);
             Assert.assertTrue("plugin.json file should be a json file.",
                     pluginJsonFile.exists() && pluginJsonFile.isFile()
                             && null != PLUGIN_CONF);

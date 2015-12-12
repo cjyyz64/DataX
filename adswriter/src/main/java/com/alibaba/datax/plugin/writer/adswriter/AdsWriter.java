@@ -99,7 +99,7 @@ public class AdsWriter extends Writer {
             /**
              * 如果是从odps导入到ads，直接load data然后System.exit()
              */
-            if (super.getReaderPluginName().equals(ODPS_READER)) {
+            if (super.getPeerPluginName().equals(ODPS_READER)) {
                 transferFromOdpsAndExit();
             }
 
@@ -153,7 +153,7 @@ public class AdsWriter extends Writer {
          * 其中accessId、accessKey是忽略掉iao的。
          */
         private void transferFromOdpsAndExit() {
-            this.readerConfig = super.getReaderConf();
+            this.readerConfig = super.getPeerPluginJobConf();
             String odpsTableName = this.readerConfig.getString(Key.ODPSTABLENAME);
             List<String> userConfiguredPartitions = this.readerConfig.getList(Key.PARTITION, String.class);
 
@@ -220,7 +220,7 @@ public class AdsWriter extends Writer {
 
             String table = this.originalConfig.getString(Key.ADS_TABLE);
             String project;
-            if (super.getReaderPluginName().equals(ODPS_READER)) {
+            if (super.getPeerPluginName().equals(ODPS_READER)) {
                 project = this.readerConfig.getString(Key.PROJECT);
             } else {
                 project = this.transProjConf.getProject();
@@ -246,7 +246,7 @@ public class AdsWriter extends Writer {
                 //汇报日志
                 LogReportUtil.reportDataxLog(readerConfig, originalConfig, startTime, System.currentTimeMillis());
             } catch (AdsException e) {
-                if (super.getReaderPluginName().equals(ODPS_READER)) {
+                if (super.getPeerPluginName().equals(ODPS_READER)) {
                     // TODO 使用云账号
                     AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED.setAdsAccount(helper.getUserName());
                     throw DataXException.asDataXException(AdsWriterErrorCode.ADS_LOAD_ODPS_FAILED,e);

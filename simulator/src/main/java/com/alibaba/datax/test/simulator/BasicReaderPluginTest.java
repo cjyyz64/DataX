@@ -60,7 +60,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
 
             Set<String> pluginSet = new HashSet<String>();
             PLUGIN_CONF = ConfigParser.parseOnePluginConfig(PLUGIN_PATH,
-                    "reader", pluginSet);
+                    "reader", pluginSet, null);
             Assert.assertTrue("plugin.json file should be a json file.",
                     pluginJsonFile.exists() && pluginJsonFile.isFile()
                             && null != PLUGIN_CONF
