@@ -203,17 +203,17 @@ public class HdfsWriter extends Writer {
             }
 
             String fileSuffix;
+            //临时存放路径
+            String storePath =  buildTmpFilePath(this.path);
+            //最终存放路径
+            String endStorePath = buildFilePath();
+            this.path = endStorePath;
             for (int i = 0; i < mandatoryNumber; i++) {
                 // handle same file name
 
                 Configuration splitedTaskConfig = this.writerSliceConfig.clone();
                 String fullFileName = null;
                 String endFullFileName = null;
-                //临时存放路径
-                String storePath =  buildTmpFilePath(this.path);
-                //最终存放路径
-                String endStorePath = buildFilePath();
-                this.path = endStorePath;
 
                 fileSuffix = UUID.randomUUID().toString().replace('-', '_');
 
