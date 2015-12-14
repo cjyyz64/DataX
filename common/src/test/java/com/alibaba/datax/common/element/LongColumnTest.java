@@ -1,11 +1,11 @@
 package com.alibaba.datax.common.element;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 public class LongColumnTest {
 
@@ -36,8 +36,8 @@ public class LongColumnTest {
 		System.out.println(column.asString());
 		Assert.assertTrue(column.asString().equals("1"));
 		System.out.println(column.toString());
-		Assert.assertTrue(column.toString().equals(
-				"{\"byteSize\":4,\"rawData\":1,\"type\":\"LONG\"}"));
+		Assert.assertEquals(column.toString(),
+				"{\"byteSize\":8,\"rawData\":1,\"type\":\"LONG\"}");
 		Assert.assertTrue(column.asBoolean().equals(true));
 
 		System.out.println(column.asDouble());
@@ -157,11 +157,9 @@ public class LongColumnTest {
 		Assert.assertTrue(column.asString().equals(
 				String.valueOf(Long.MIN_VALUE)));
 		System.out.println(column.toString());
-		Assert.assertTrue(column
-				.toString()
-				.equals(String
-						.format("{\"byteSize\":7,\"rawData\":-9223372036854775808,\"type\":\"LONG\"}",
-								Long.MIN_VALUE)));
+		Assert.assertEquals(column.toString()
+				,String.format("{\"byteSize\":8,\"rawData\":-9223372036854775808,\"type\":\"LONG\"}",
+								Long.MIN_VALUE));
 		Assert.assertTrue(column.asBoolean().equals(true));
 
 		System.out.println(column.asDouble());
@@ -214,5 +212,6 @@ public class LongColumnTest {
 			e.printStackTrace();
 			Assert.assertTrue(true);
 		}
+
 	}
 }

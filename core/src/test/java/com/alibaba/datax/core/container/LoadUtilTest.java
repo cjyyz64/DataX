@@ -19,12 +19,12 @@ public class LoadUtilTest extends CaseInitializer {
 		AbstractJobPlugin jobPlugin = LoadUtil.loadJobPlugin(
                 PluginType.READER, "fakereader");
 		System.out.println(JSON.toJSONString(jobPlugin));
-		Assert.assertTrue(jobPlugin.getName().equals("fakereader"));
+		Assert.assertTrue(jobPlugin.getPluginName().equals("fakereader"));
 
 		AbstractTaskPlugin taskPlugin = LoadUtil.loadTaskPlugin(
                 PluginType.READER, "fakereader");
 		System.out.println(JSON.toJSONString(taskPlugin));
-		Assert.assertTrue(taskPlugin.getName().equals("fakereader"));
+		Assert.assertTrue(taskPlugin.getPluginName().equals("fakereader"));
 
 	}
 

@@ -1,15 +1,16 @@
 package com.alibaba.datax.core.transport.record;
 
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.core.util.ClassSize;
+import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.fastjson.JSON;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.element.Record;
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.core.util.FrameworkErrorCode;
-import com.alibaba.fastjson.JSON;
 
 /**
  * Created by jingxing on 14-8-24.
@@ -22,6 +23,9 @@ public class DefaultRecord implements Record {
 	private List<Column> columns;
 
 	private int byteSize;
+
+	// 首先是Record本身需要的内存
+	private int memorySize = ClassSize.DefaultRecordHead;
 
 	public DefaultRecord() {
 		this.columns = new ArrayList<Column>(RECORD_AVERGAE_COLUMN_NUMBER);
@@ -75,12 +79,19 @@ public class DefaultRecord implements Record {
 		return byteSize;
 	}
 
+	public int getMemorySize(){
+		return memorySize;
+	}
+
 	private void decrByteSize(final Column column) {
 		if (null == column) {
 			return;
 		}
 
 		byteSize -= column.getByteSize();
+
+		//内存的占用是column对象的头 再加实际大小
+		memorySize = memorySize -  ClassSize.ColumnHead - column.getByteSize();
 	}
 
 	private void incrByteSize(final Column column) {
@@ -89,6 +100,9 @@ public class DefaultRecord implements Record {
 		}
 
 		byteSize += column.getByteSize();
+
+		//内存的占用是column对象的头 再加实际大小
+		memorySize = memorySize + ClassSize.ColumnHead + column.getByteSize();
 	}
 
 	private void expandCapacity(int totalSize) {

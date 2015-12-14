@@ -4,14 +4,9 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
-import com.alibaba.datax.dataxservice.face.domain.LogReportInfo;
-import com.alibaba.datax.dataxservice.face.domain.Result;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupDto;
-import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
+import com.alibaba.datax.dataxservice.face.domain.*;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpMessage;
@@ -23,6 +18,9 @@ import org.apache.http.entity.StringEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -33,17 +31,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import java.util.*;
 
 
 public final class DataxServiceUtil {
@@ -279,6 +267,46 @@ public final class DataxServiceUtil {
         }
     }
 
+    public static void reportDataxPerfLogs(List<JobStatisticsListWapper> lists) {
+        if (lists == null) {
+            return;
+        }
+        for (JobStatisticsListWapper jobStatisticsListWapper : lists) {
+            reportDataxPerfLog(jobStatisticsListWapper);
+        }
+    }
+
+    public static void reportDataxPerfLog(JobStatisticsListWapper jobStatisticsListWapper) {
+        if (jobStatisticsListWapper == null) {
+            return;
+        }
+        String url = DATAX_SERVICE_URL + "inner/job/reportPerfLog";
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(jobStatisticsListWapper), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+            DataxServiceUtil.signature(url, "PUT", httpPut, JSON.toJSONString(jobStatisticsListWapper));
+
+            String resJson = httpClientUtil.executeAndGet(httpPut);
+
+            Type type = new TypeReference<Result<Object>>() {
+            }.getType();
+            Result result = JSON.parseObject(resJson, type);
+
+            if (!result.isSuccess()) {
+                logger.info("report perf log failed: " + resJson);
+            }
+
+        } catch (Exception e) {
+            //吃掉异常，以免log中不好看
+            logger.info("ignore!!!  report perf log has Exception: " + e.getMessage());
+        }
+    }
+
 
     public static Communication convertTaskGroupToCommunication(TaskGroupStatusDto taskGroupStatus) {
         Communication communication = new Communication();
@@ -302,18 +330,6 @@ public final class DataxServiceUtil {
         if (taskGroupStatus.getErrorBytes() == null) {
             taskGroupStatus.setErrorBytes(0L);
         }
-
-        //todo 等待datax-service-face 1.0.4的mvn
-//        if(taskGroupStatus.getWaitReaderCount() == null){
-//            taskGroupStatus.setWaitReaderCount(0L);
-//        }
-//        if(taskGroupStatus.getWaitWriterCount() == null){
-//            taskGroupStatus.setWaitWriterCount(0L);
-//        }
-//
-//        communication.setLongCounter(CommunicationTool.WAIT_READER_TIME, taskGroupStatus.getWaitReaderCount());
-//        communication.setLongCounter(CommunicationTool.WAIT_WRITER_TIME, taskGroupStatus.getWaitWriterCount());
-        //
 
         communication.setLongCounter("stage", taskGroupStatus.getStage());
 

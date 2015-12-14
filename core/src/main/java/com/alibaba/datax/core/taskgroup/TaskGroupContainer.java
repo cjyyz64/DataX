@@ -21,6 +21,7 @@ import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.util.ClassUtil;
+import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -109,7 +110,11 @@ public class TaskGroupContainer extends AbstractContainer {
              */
             long reportIntervalInMillSec = this.configuration.getLong(
                     CoreConstant.DATAX_CORE_CONTAINER_TASKGROUP_REPORTINTERVAL,
-                    5000);
+                    10000);
+            /**
+             * 2分钟汇报一次性能统计
+             */
+            long perfReportIntervalMultiple = 12;
 
             // 获取channel数目
             int channelNumber = this.configuration.getInt(
@@ -145,6 +150,7 @@ public class TaskGroupContainer extends AbstractContainer {
             Map<Integer, Long> taskStartTimeMap = new HashMap<Integer, Long>(); //任务开始时间
 
             long lastReportTimeStamp = 0;
+            long lastPerfReportTimeStamp = 0;
             Communication lastTaskGroupContainerCommunication = new Communication();
 
             while (true) {
@@ -268,12 +274,18 @@ public class TaskGroupContainer extends AbstractContainer {
                     }
 
                 }
+                //暂时先2分钟汇报一次性能数据。
+                if (now - lastPerfReportTimeStamp > reportIntervalInMillSec * perfReportIntervalMultiple) {
+                    DataxServiceUtil.reportDataxPerfLogs(PerfTrace.getInstance().getReports(false));
+                    lastPerfReportTimeStamp = now;
+                }
 
                 Thread.sleep(sleepIntervalInMillSec);
             }
 
             //6.最后还要汇报一次
             reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
+            DataxServiceUtil.reportDataxPerfLogs(PerfTrace.getInstance().getReports(true));
 
         } catch (Throwable e) {
             Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();

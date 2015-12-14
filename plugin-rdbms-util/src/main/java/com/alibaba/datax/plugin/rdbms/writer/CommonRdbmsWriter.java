@@ -271,7 +271,7 @@ public class CommonRdbmsWriter {
                     }
 
                     writeBuffer.add(record);
-                    bufferBytes += record.getByteSize();
+                    bufferBytes += record.getMemorySize();
 
                     if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
                         doBatchInsert(connection, writeBuffer);

@@ -4,21 +4,21 @@
         "content": [
             {
                 "reader": {
-                    "type": "fakereader",
+                    "name": "fakereader",
                     "parameter": {}
                 },
                 "writer": {
-                    "type": "fakewriter",
+                    "name": "fakewriter",
                     "parameter": {}
                 }
             },
             {
                 "reader": {
-                    "type": "fakereader",
+                    "name": "fakereader",
                     "parameter": {}
                 },
                 "writer": {
-                    "type": "fakewriter",
+                    "name": "fakewriter",
                     "parameter": {}
                 }
             }

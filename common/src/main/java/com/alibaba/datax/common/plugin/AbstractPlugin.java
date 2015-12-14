@@ -4,23 +4,19 @@ import com.alibaba.datax.common.base.BaseObject;
 import com.alibaba.datax.common.util.Configuration;
 
 public abstract class AbstractPlugin extends BaseObject implements Pluginable {
-	private Configuration pluginJobConf;
+	//作业的config
+    private Configuration pluginJobConf;
 
+    //插件本身的plugin
 	private Configuration pluginConf;
 
+    // by qiangsi.lq。 修改为对端的作业configuration
+    private Configuration peerPluginJobConf;
 
-    private Configuration readerConf;
-
-    private Configuration writerConf;
-
-
-
-    private String readerPluginName;
-
-    private String writerPluginName;
+    private String peerPluginName;
 
     @Override
-	public String getName() {
+	public String getPluginName() {
 		assert null != this.pluginConf;
 		return this.pluginConf.getString("name");
 	}
@@ -53,43 +49,23 @@ public abstract class AbstractPlugin extends BaseObject implements Pluginable {
 	}
 
     @Override
-    public Configuration getReaderConf() {
-        return readerConf;
+    public Configuration getPeerPluginJobConf() {
+        return peerPluginJobConf;
     }
 
     @Override
-    public void setReaderConf(Configuration readerConf) {
-        this.readerConf = readerConf;
+    public void setPeerPluginJobConf(Configuration peerPluginJobConf) {
+        this.peerPluginJobConf = peerPluginJobConf;
     }
 
     @Override
-    public Configuration getWriterConf() {
-        return writerConf;
+    public String getPeerPluginName() {
+        return peerPluginName;
     }
 
     @Override
-    public void setWriterConf(Configuration writerConf) {
-        this.writerConf = writerConf;
-    }
-
-    @Override
-    public String getReaderPluginName() {
-        return readerPluginName;
-    }
-
-    @Override
-    public void setReaderPluginName(String readerPluginName) {
-        this.readerPluginName = readerPluginName;
-    }
-
-    @Override
-    public String getWriterPluginName() {
-        return writerPluginName;
-    }
-
-    @Override
-    public void setWriterPluginName(String writerPluginName) {
-        this.writerPluginName = writerPluginName;
+    public void setPeerPluginName(String peerPluginName) {
+        this.peerPluginName = peerPluginName;
     }
 
     public void preCheck() {

@@ -173,7 +173,7 @@ public class TairWriter extends Writer {
                 while ((record = recordReceiver.getFromReader()) != null) {
 
                     if (!hasInit) {
-                        tmpSizeForInit += record.getByteSize();
+                        tmpSizeForInit += record.getMemorySize();
                         tmpListForInit.add(record);
                         if(tmpListForInit.size() >=100 || tmpSizeForInit>= 1000000) {
                             //取前100个record的平均大小，作为初始化queue和work线程的依据。保护内存！

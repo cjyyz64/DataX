@@ -1,11 +1,11 @@
 package com.alibaba.datax.common.element;
 
+import com.alibaba.datax.common.exception.CommonErrorCode;
+import com.alibaba.datax.common.exception.DataXException;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Date;
-
-import com.alibaba.datax.common.exception.CommonErrorCode;
-import com.alibaba.datax.common.exception.DataXException;
 
 public class DoubleColumn extends Column {
 
@@ -15,11 +15,11 @@ public class DoubleColumn extends Column {
 	}
 
 	public DoubleColumn(Long data) {
-		this(data == null ? (String) null : String.valueOf(data), 8);
+		this(data == null ? (String) null : String.valueOf(data));
 	}
 
 	public DoubleColumn(Integer data) {
-		this(data == null ? (String) null : String.valueOf(data), 4);
+		this(data == null ? (String) null : String.valueOf(data));
 	}
 
 	/**
@@ -28,7 +28,7 @@ public class DoubleColumn extends Column {
 	 * */
 	public DoubleColumn(final Double data) {
 		this(data == null ? (String) null
-				: new BigDecimal(String.valueOf(data)).toPlainString(), 8);
+				: new BigDecimal(String.valueOf(data)).toPlainString());
 	}
 
 	/**
@@ -37,12 +37,11 @@ public class DoubleColumn extends Column {
 	 * */
 	public DoubleColumn(final Float data) {
 		this(data == null ? (String) null
-				: new BigDecimal(String.valueOf(data)).toPlainString(), 4);
+				: new BigDecimal(String.valueOf(data)).toPlainString());
 	}
 
 	public DoubleColumn(final BigDecimal data) {
-		this(null == data ? (String) null : data.toPlainString(),
-				null == data ? 0 : data.toPlainString().length());
+		this(null == data ? (String) null : data.toPlainString());
 	}
 
 	public DoubleColumn(final BigInteger data) {
@@ -50,7 +49,7 @@ public class DoubleColumn extends Column {
 	}
 
 	public DoubleColumn() {
-		this((String) null, 0);
+		this((String) null);
 	}
 
 	private DoubleColumn(final String data, int byteSize) {

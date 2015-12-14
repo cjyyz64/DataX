@@ -1,6 +1,7 @@
 package com.alibaba.datax.common.statistics;
 
-import junit.framework.Assert;
+import com.alibaba.datax.dataxservice.face.domain.JobStatisticsListWapper;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -85,7 +86,7 @@ public class PerfRecordTest {
         initPerfRecord6.addCount(1001);
         initPerfRecord6.addSize(1001);
 
-        Assert.assertTrue(!initPerfRecord.equals(initPerfRecord6));
+        Assert.assertTrue(initPerfRecord.equals(initPerfRecord6));
 
     }
 
@@ -99,10 +100,10 @@ public class PerfRecordTest {
         Thread.sleep(1050);
         initPerfRecord.end();
 
-        Assert.assertTrue(initPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(initPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(initPerfRecord.getElapsedTimeInNs() >= 1050000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT), initPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), initPerfRecord));
 
 
         LOG.debug("task writer starts to do prepare ...");
@@ -111,10 +112,10 @@ public class PerfRecordTest {
         Thread.sleep(1020);
         preparePerfRecord.end();
 
-        Assert.assertTrue(preparePerfRecord.getAction().equals("end"));
+        Assert.assertTrue(preparePerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(preparePerfRecord.getElapsedTimeInNs() >= 1020000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE), preparePerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), preparePerfRecord));
 
 
         LOG.debug("task writer starts to write ...");
@@ -126,12 +127,12 @@ public class PerfRecordTest {
         dataPerfRecord.addSize(1002);
         dataPerfRecord.end();
 
-        Assert.assertTrue(dataPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(dataPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(dataPerfRecord.getElapsedTimeInNs() >= 1020000000);
         Assert.assertTrue(dataPerfRecord.getCount() == 1001);
         Assert.assertTrue(dataPerfRecord.getSize() == 1002);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA), dataPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), dataPerfRecord));
 
 
         PerfRecord destoryPerfRecord = new PerfRecord(TGID, 1, PerfRecord.PHASE.READ_TASK_DESTROY);
@@ -140,10 +141,10 @@ public class PerfRecordTest {
         Thread.sleep(250);
         destoryPerfRecord.end();
 
-        Assert.assertTrue(destoryPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(destoryPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(destoryPerfRecord.getElapsedTimeInNs() >= 250000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY), destoryPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), destoryPerfRecord));
 
         PerfRecord waitTimePerfRecord = new PerfRecord(TGID, 1, PerfRecord.PHASE.WAIT_READ_TIME);
         waitTimePerfRecord.start();
@@ -151,10 +152,10 @@ public class PerfRecordTest {
         Thread.sleep(250);
         waitTimePerfRecord.end();
 
-        Assert.assertTrue(waitTimePerfRecord.getAction().equals("end"));
+        Assert.assertTrue(waitTimePerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(waitTimePerfRecord.getElapsedTimeInNs() >= 250000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME), waitTimePerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), waitTimePerfRecord));
 
 
 
@@ -163,10 +164,10 @@ public class PerfRecordTest {
         Thread.sleep(50);
         initPerfRecord2.end();
 
-        Assert.assertTrue(initPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(initPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(initPerfRecord2.getElapsedTimeInNs() >= 50000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT), initPerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), initPerfRecord2));
 
         LOG.debug("task writer starts to do prepare ...");
         PerfRecord preparePerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WRITE_TASK_PREPARE);
@@ -175,10 +176,10 @@ public class PerfRecordTest {
         preparePerfRecord2.end();
         LOG.debug("task writer starts to write ...");
 
-        Assert.assertTrue(preparePerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(preparePerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(preparePerfRecord2.getElapsedTimeInNs() >= 20000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE), preparePerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), preparePerfRecord2));
 
 
         PerfRecord dataPerfRecor2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.READ_TASK_DATA);
@@ -189,12 +190,12 @@ public class PerfRecordTest {
         dataPerfRecor2.addSize(2002);
         dataPerfRecor2.end();
 
-        Assert.assertTrue(dataPerfRecor2.getAction().equals("end"));
+        Assert.assertTrue(dataPerfRecor2.getAction().name().equals("end"));
         Assert.assertTrue(dataPerfRecor2.getElapsedTimeInNs() >= 2200000000L);
         Assert.assertTrue(dataPerfRecor2.getCount() == 2001);
         Assert.assertTrue(dataPerfRecor2.getSize() == 2002);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA), dataPerfRecor2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), dataPerfRecor2));
 
 
         PerfRecord destoryPerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.READ_TASK_DESTROY);
@@ -203,10 +204,10 @@ public class PerfRecordTest {
         Thread.sleep(1250);
         destoryPerfRecord2.end();
 
-        Assert.assertTrue(destoryPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(destoryPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(destoryPerfRecord2.getElapsedTimeInNs() >= 1250000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY), destoryPerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DESTROY).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), destoryPerfRecord2));
 
         PerfRecord waitPerfRecord2 = new PerfRecord(TGID, 2, PerfRecord.PHASE.WAIT_READ_TIME);
         waitPerfRecord2.start();
@@ -214,10 +215,10 @@ public class PerfRecordTest {
         Thread.sleep(1250);
         waitPerfRecord2.end();
 
-        Assert.assertTrue(waitPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(waitPerfRecord2.getElapsedTimeInNs() >= 1250000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME), waitPerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_READ_TIME).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), waitPerfRecord2));
 
 
         PerfTrace.getInstance().addTaskDetails(1, " ");
@@ -348,10 +349,10 @@ public class PerfRecordTest {
         Thread.sleep(1050);
         initPerfRecord.end();
 
-        Assert.assertTrue(initPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(initPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(initPerfRecord.getElapsedTimeInNs() >= 1050000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT), initPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), initPerfRecord));
 
 
         LOG.debug("task writer starts to do prepare ...");
@@ -360,10 +361,10 @@ public class PerfRecordTest {
         Thread.sleep(1020);
         preparePerfRecord.end();
 
-        Assert.assertTrue(preparePerfRecord.getAction().equals("end"));
+        Assert.assertTrue(preparePerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(preparePerfRecord.getElapsedTimeInNs() >= 1020000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE), preparePerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), preparePerfRecord));
 
         LOG.debug("task wait time  ...");
         PerfRecord waitPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WAIT_WRITE_TIME);
@@ -371,10 +372,10 @@ public class PerfRecordTest {
         Thread.sleep(1030);
         waitPerfRecord.end();
 
-        Assert.assertTrue(waitPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(waitPerfRecord.getElapsedTimeInNs() >= 1030000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME), waitPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), waitPerfRecord));
 
 
 
@@ -388,12 +389,12 @@ public class PerfRecordTest {
         dataPerfRecord.addSize(1002);
         dataPerfRecord.end();
 
-        Assert.assertTrue(dataPerfRecord.getAction().equals("end"));
+        Assert.assertTrue(dataPerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(dataPerfRecord.getElapsedTimeInNs() >= 1020000000);
         Assert.assertTrue(dataPerfRecord.getCount() == 1001);
         Assert.assertTrue(dataPerfRecord.getSize() == 1002);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).size() == 1);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA), dataPerfRecord));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).getTotalCount() == 1);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), dataPerfRecord));
 
 
         PerfRecord initPerfRecord2 = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.WRITE_TASK_INIT);
@@ -401,10 +402,10 @@ public class PerfRecordTest {
         Thread.sleep(50);
         initPerfRecord2.end();
 
-        Assert.assertTrue(initPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(initPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(initPerfRecord2.getElapsedTimeInNs() >= 50000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT), initPerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_INIT).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), initPerfRecord2));
 
         LOG.debug("task wait time  ...");
         PerfRecord waitPerfRecord2 = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.WAIT_WRITE_TIME);
@@ -412,10 +413,10 @@ public class PerfRecordTest {
         Thread.sleep(2030);
         waitPerfRecord2.end();
 
-        Assert.assertTrue(waitPerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(waitPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(waitPerfRecord2.getElapsedTimeInNs() >= 2030000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME), waitPerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WAIT_WRITE_TIME).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), waitPerfRecord2));
 
 
         LOG.debug("task writer starts to do prepare ...");
@@ -424,10 +425,10 @@ public class PerfRecordTest {
         Thread.sleep(20);
         preparePerfRecord2.end();
 
-        Assert.assertTrue(preparePerfRecord2.getAction().equals("end"));
+        Assert.assertTrue(preparePerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(preparePerfRecord2.getElapsedTimeInNs() >= 20000000);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE), preparePerfRecord2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.WRITE_TASK_PREPARE).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), preparePerfRecord2));
 
 
         LOG.debug("task writer starts to write ...");
@@ -440,12 +441,12 @@ public class PerfRecordTest {
         dataPerfRecor2.addSize(2002);
         dataPerfRecor2.end();
 
-        Assert.assertTrue(dataPerfRecor2.getAction().equals("end"));
+        Assert.assertTrue(dataPerfRecor2.getAction().name().equals("end"));
         Assert.assertTrue(dataPerfRecor2.getElapsedTimeInNs() >= 2200000000L);
         Assert.assertTrue(dataPerfRecor2.getCount() == 2001);
         Assert.assertTrue(dataPerfRecor2.getSize() == 2002);
-        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).size() == 2);
-        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA), dataPerfRecor2));
+        Assert.assertTrue(PerfTrace.getInstance().getPerfRecordMaps().get(PerfRecord.PHASE.READ_TASK_DATA).getTotalCount() == 2);
+        Assert.assertTrue(hasRecordInList(PerfTrace.getInstance().getWaitingReportList(), dataPerfRecor2));
 
 
         PerfTrace.getInstance().addTaskDetails(10000001, "task 100000011 some thing abcdf");
@@ -468,4 +469,229 @@ public class PerfRecordTest {
 
     }
 
+    @Test
+    public void test005ReportNotEnd() throws Exception {
+        PerfTrace.getInstance(true, 1001, 1, 0, true);
+        PerfTrace.getInstance().setBatchSize(2);
+
+        PerfRecord initPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_INIT);
+        initPerfRecord.start();
+        Thread.sleep(1050);
+
+        PerfRecord preparePerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_PREPARE);
+        preparePerfRecord.start();
+        Thread.sleep(1020);
+
+        PerfRecord waitPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecord.start();
+        Thread.sleep(1030);
+
+        PerfRecord dataPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.READ_TASK_DATA);
+        dataPerfRecord.start();
+
+        Thread.sleep(1200);
+        dataPerfRecord.addCount(1001);
+        dataPerfRecord.addSize(12000);
+        dataPerfRecord.end();
+
+        PerfRecord waitReadPerfRecord = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.READ_TASK_DATA);
+        waitReadPerfRecord.start();
+        Thread.sleep(1030);
+        waitReadPerfRecord.addCount(1003);
+        waitReadPerfRecord.addSize(24000);
+        waitReadPerfRecord.end();
+
+        List<PerfRecord> startPool = PerfTrace.getInstance().getStartReportPool();
+        List<PerfRecord> endPool = PerfTrace.getInstance().getEndReportPool();
+        List<PerfRecord> tootalEndPool = PerfTrace.getInstance().getTotalEndReport();
+        List<PerfRecord> waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+
+        Assert.assertEquals(startPool.size(), 5);
+        Assert.assertEquals(endPool.size(), 2);
+        Assert.assertEquals(tootalEndPool.size(), 0);
+        Assert.assertEquals(waitingReportList.size(), 0);
+
+        //第一次汇报，非结束态
+        List<JobStatisticsListWapper> resut1 = PerfTrace.getInstance().getReports(false);
+
+        Assert.assertEquals(resut1.size(),1);
+        Assert.assertEquals(resut1.get(0).getJobStatisticsDtoList().size(),2);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+        waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+        Assert.assertEquals(waitingReportList.size(), 3);
+
+        //第二次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+
+        Assert.assertEquals(resut1.size(),1);
+        Assert.assertEquals(resut1.get(0).getJobStatisticsDtoList().size(),2);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+        waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+        Assert.assertEquals(waitingReportList.size(), 1);
+
+        //第三次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+
+        Assert.assertEquals(resut1.size(),1);
+        Assert.assertEquals(resut1.get(0).getJobStatisticsDtoList().size(),1);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+        waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+        Assert.assertEquals(waitingReportList.size(), 0);
+
+        //第四次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+        Assert.assertEquals(resut1.size(),0);
+
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
+
+    }
+
+    @Test
+    public void test005ReportInEnd() throws Exception {
+        PerfTrace.getInstance(true, 1001, 1, 0, true);
+        PerfTrace.getInstance().setBatchSize(2);
+
+        PerfRecord initPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_INIT);
+        initPerfRecord.start();
+        Thread.sleep(1050);
+
+        PerfRecord preparePerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_PREPARE);
+        preparePerfRecord.start();
+        Thread.sleep(1020);
+
+        PerfRecord waitPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecord.start();
+        Thread.sleep(1030);
+
+        PerfRecord dataPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.READ_TASK_DATA);
+        dataPerfRecord.start();
+
+        Thread.sleep(1200);
+        dataPerfRecord.addCount(1001);
+        dataPerfRecord.addSize(12000);
+        dataPerfRecord.end();
+
+        PerfRecord waitReadPerfRecord = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.READ_TASK_DATA);
+        waitReadPerfRecord.start();
+        Thread.sleep(1030);
+        waitReadPerfRecord.addCount(1003);
+        waitReadPerfRecord.addSize(24000);
+        waitReadPerfRecord.end();
+
+        List<PerfRecord> startPool = PerfTrace.getInstance().getStartReportPool();
+        List<PerfRecord> endPool = PerfTrace.getInstance().getEndReportPool();
+        List<PerfRecord> tootalEndPool = PerfTrace.getInstance().getTotalEndReport();
+        List<PerfRecord> waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+
+        Assert.assertEquals(startPool.size(), 5);
+        Assert.assertEquals(endPool.size(), 2);
+        Assert.assertEquals(tootalEndPool.size(), 0);
+        Assert.assertEquals(waitingReportList.size(), 0);
+
+        //第一次汇报，非结束态
+        List<JobStatisticsListWapper> resut1 = PerfTrace.getInstance().getReports(true);
+
+        Assert.assertEquals(resut1.size(),3);
+        Assert.assertEquals(resut1.get(0).getJobStatisticsDtoList().size(),2);
+        Assert.assertEquals(resut1.get(1).getJobStatisticsDtoList().size(),2);
+        Assert.assertEquals(resut1.get(2).getJobStatisticsDtoList().size(),1);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+        waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+        Assert.assertEquals(waitingReportList.size(), 0);
+
+        //再一次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+        Assert.assertEquals(resut1.size(),0);
+
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
+    }
+
+
+    @Test
+    public void test006ReportNotEndNotPerfReport() throws Exception {
+        PerfTrace.getInstance(true, 1001, 1, 0, true);
+        PerfTrace.getInstance().setBatchSize(2);
+        PerfTrace.getInstance().setPerfReportEnalbe(false);
+
+        PerfRecord initPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_INIT);
+        initPerfRecord.start();
+        Thread.sleep(1050);
+
+        PerfRecord preparePerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WRITE_TASK_PREPARE);
+        preparePerfRecord.start();
+        Thread.sleep(1020);
+
+        PerfRecord waitPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.WAIT_WRITE_TIME);
+        waitPerfRecord.start();
+        Thread.sleep(1030);
+
+        PerfRecord dataPerfRecord = new PerfRecord(TGID, 10000001, PerfRecord.PHASE.READ_TASK_DATA);
+        dataPerfRecord.start();
+
+        Thread.sleep(1200);
+        dataPerfRecord.addCount(1001);
+        dataPerfRecord.addSize(12000);
+        dataPerfRecord.end();
+
+        PerfRecord waitReadPerfRecord = new PerfRecord(TGID, 10000002, PerfRecord.PHASE.READ_TASK_DATA);
+        waitReadPerfRecord.start();
+        Thread.sleep(1030);
+        waitReadPerfRecord.addCount(1003);
+        waitReadPerfRecord.addSize(24000);
+        waitReadPerfRecord.end();
+
+        List<PerfRecord> startPool = PerfTrace.getInstance().getStartReportPool();
+        List<PerfRecord> endPool = PerfTrace.getInstance().getEndReportPool();
+        List<PerfRecord> tootalEndPool = PerfTrace.getInstance().getTotalEndReport();
+        List<PerfRecord> waitingReportList = PerfTrace.getInstance().getWaitingReportList();
+
+        Assert.assertEquals(startPool.size(), 5);
+        Assert.assertEquals(endPool.size(), 2);
+        Assert.assertEquals(tootalEndPool.size(), 0);
+        Assert.assertEquals(waitingReportList.size(), 0);
+
+        //第一次汇报，非结束态
+        List<JobStatisticsListWapper> resut1 = PerfTrace.getInstance().getReports(false);
+
+        Assert.assertEquals(resut1 ,  null);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+
+        //第二次report
+        Assert.assertEquals(resut1 ,  null);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+
+        //第三次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+
+        Assert.assertEquals(resut1 ,  null);
+
+        Assert.assertEquals(startPool.size(), 0);
+        Assert.assertEquals(endPool.size(), 0);
+        Assert.assertEquals(tootalEndPool.size(), 2);
+
+        //第四次report
+        resut1 = PerfTrace.getInstance().getReports(false);
+        Assert.assertEquals(resut1, null);
+
+        System.out.println(PerfTrace.getInstance().summarizeNoException());
+        Assert.assertEquals(tootalEndPool.size(), 0);
+    }
 }

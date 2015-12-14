@@ -1,11 +1,10 @@
 package com.alibaba.datax.common.element;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.DecimalFormat;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class DoubleColumnTest {
 	@Test
@@ -50,7 +49,7 @@ public class DoubleColumnTest {
 		Assert.assertTrue(column.asString().equals("1.0"));
 		System.out.println(column.toString());
 		Assert.assertTrue(column.toString().equals(
-				"{\"byteSize\":8,\"rawData\":\"1.0\",\"type\":\"DOUBLE\"}"));
+				"{\"byteSize\":3,\"rawData\":\"1.0\",\"type\":\"DOUBLE\"}"));
 
 		System.out.println(column.asDouble());
 		Assert.assertTrue(column.asDouble().equals(1.0d));
@@ -78,7 +77,7 @@ public class DoubleColumnTest {
 		Assert.assertTrue(column.asString().equals("1.0"));
 		System.out.println(column.toString());
 		Assert.assertTrue(column.toString().equals(
-				"{\"byteSize\":4,\"rawData\":\"1.0\",\"type\":\"DOUBLE\"}"));
+				"{\"byteSize\":3,\"rawData\":\"1.0\",\"type\":\"DOUBLE\"}"));
 
 		System.out.println(column.asDouble());
 		Assert.assertTrue(column.asDouble().equals(1.0d));
