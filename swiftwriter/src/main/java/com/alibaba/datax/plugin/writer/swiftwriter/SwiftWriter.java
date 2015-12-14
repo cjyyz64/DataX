@@ -165,14 +165,20 @@ public class SwiftWriter extends Writer {
 
             int ok = 0;
             int error = 0;
-            Record record;
-            while ((record = lineReceiver.getFromReader()) != null) {
+            Record record = null;
+            while (true) {
+                record = record != null ? record : lineReceiver.getFromReader();
+                if (record == null) {
+                    break;
+                }
+
                 SwiftMessage.WriteMessageInfo.Builder builder = SwiftMessage.WriteMessageInfo.newBuilder();
                 builder.setHashStr(ByteString.copyFrom(SwiftUtils.parseHashStr(record).getBytes()));
                 builder.setData(ByteString.copyFrom(SwiftUtils.record2Doc(record, indexNames).getBytes()));
 
                 try {
                     innerWriter.write(builder.build());
+                    record = null;
                     ok++;
                 } catch (SwiftException e) {
                     if (e.getEc() != ErrCode.ErrorCode.ERROR_CLIENT_SEND_BUFFER_FULL) {  //buffer满地异常需要重试
