@@ -5,21 +5,31 @@ import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by liqiang on 15/7/26.
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class TaskMonitorTest {
 
-    TaskMonitor taskMonitor = TaskMonitor.getInstance();
+
+
+    TaskMonitor taskMonitor;// = TaskMonitor.getInstance();
     private ConcurrentHashMap<Integer, TaskMonitor.TaskCommunication> tasks;
 
     @Before
     public void setUp() throws Exception {
+        Class clazz = Class.forName("com.alibaba.datax.core.taskgroup.TaskMonitor");
+        Constructor c =clazz.getDeclaredConstructor();
+        c.setAccessible(true);
+        taskMonitor = (TaskMonitor)c.newInstance();
         Field tasks = taskMonitor.getClass().getDeclaredField("tasks");
         tasks.setAccessible(true);
         this.tasks = (ConcurrentHashMap<Integer, TaskMonitor.TaskCommunication>) tasks.get(taskMonitor);

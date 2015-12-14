@@ -44,21 +44,23 @@ public class DataxServiceUtilTest {
             }
         }
 
+        for(int i=0;i<31;i++) {
+            try {
+                HttpPut httpPut = HttpClientUtil.getPutRequest();
+                httpPut.setURI(new URI(url_right));
 
-        try {
-            HttpPut httpPut = HttpClientUtil.getPutRequest();
-            httpPut.setURI(new URI(url_right));
+                StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+                jsonEntity.setContentEncoding("UTF-8");
+                jsonEntity.setContentType("application/json");
+                httpPut.setEntity(jsonEntity);
+                DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
 
-            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
-            jsonEntity.setContentEncoding("UTF-8");
-            jsonEntity.setContentType("application/json");
-            httpPut.setEntity(jsonEntity);
-            DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
-
-            String resJson = httpClientUtil.executeAndGet(httpPut);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println(e.getMessage());
+                String resJson = httpClientUtil.executeAndGet(httpPut);
+                System.out.println(resJson);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println(e.getMessage());
+            }
         }
 
     }
