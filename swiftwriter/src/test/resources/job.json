@@ -1,0 +1,38 @@
+{
+  "job": {
+    "setting": {
+      "speed": {
+        "byte": 10485760
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {},
+        "writer": {
+          "name": "swiftwriter",
+          "parameter": {
+            "client_config": "zkPath=zfs://10.218.144.48:2181/swift/swift_service;",
+            "writer_config": "topicName=datax_test;functionChain=HASH,hashId2partId",
+            "index_names": [
+              "uuid",
+              "host",
+              "uri",
+              "src_ip",
+              "src_port",
+              "dst_ip",
+              "method",
+              "referer",
+              "user_agent",
+              "post_data",
+              "attack_type"
+            ]
+          }
+        }
+      }
+    ]
+  }
+}

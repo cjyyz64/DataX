@@ -1,0 +1,10 @@
+{
+  "name": "swiftwriter",
+  "class": "com.alibaba.datax.plugin.writer.swiftwriter.SwiftWriter",
+  "description": {
+    "useScene": "prod.",
+    "mechanism": "TODO",
+    "warn": "TODO"
+  },
+  "developer": "十阳, bug reported to : zw86077@alibaba-inc.com"
+}
