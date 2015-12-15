@@ -97,8 +97,9 @@
         <module>hdfsreader</module>
         <module>hdfswriter</module>
         <module>swiftwriter</module>
+        <module>hbasewriter</module>
 
-  </modules>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
