@@ -101,7 +101,6 @@ public final class OBDataSource {
             connection = holder.datasource.getConnection();
 			statement = handler.callback(connection);
 		} finally {
-			if(connection != null) connection.rollback();
 			DBUtil.closeDBResources(statement, connection);
 		}
 	}
