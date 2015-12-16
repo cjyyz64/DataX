@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
-Version:201512141602
+Version:201512161401
 Release: %(echo $RELEASE)%{?dist}
 
 Summary: datax 3 core
@@ -34,6 +34,7 @@ if [ -d %{_prefix}/log ]; then
     find %{_prefix}/log_perf -type f -mtime +7 -exec rm -rf {} \;
     find %{_prefix}/log_perf -type d -empty -mtime +7 -exec rm -rf {} \;
 fi
+
 mkdir -p %{_plugin6}
 mkdir -p %{_lib6}
 
@@ -44,6 +45,7 @@ export MAVEN_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=128m"
 /home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
 
 %install
+
 mkdir -p .%{_plugin6}
 mkdir -p .%{_lib6}
 cp -rf $OLDPWD/../target/datax/datax/bin .%{_prefix}/.
@@ -71,10 +73,11 @@ chmod -R 0755 %{_prefix}/log_perf
 chmod -R 0700 %{_prefix}/conf/.secret.properties
 
 
+
 # 指定新目录
 # 如果datax3 plugin是软连接，直接删除，并创建新的软链接
 if [ -L %{_prefix}/plugin ]; then
-    oldplugin=`readlink %{_prefix}/plugin`
+    oldplugin=$(readlink %{_prefix}/plugin)
     rm -rf %{_prefix}/plugin
     ln -s %{_plugin6} %{_prefix}/plugin
 
@@ -82,8 +85,11 @@ if [ -L %{_prefix}/plugin ]; then
     rm -rf %{_prefix}/lib
     ln -s %{_lib6} %{_prefix}/lib
 
-    rm -rf ${oldplugin}
-    rm -rf ${oldlib}
+    ## 解决--force
+    if [ "${oldplugin}" != "%{_plugin6}" ];then
+        rm -rf ${oldplugin}
+        rm -rf ${oldlib}
+    fi
 
 elif [ -d %{_prefix}/plugin ]; then
     mv %{_prefix}/plugin %{_prefix}/plugin_bak_rpm
@@ -99,8 +105,11 @@ else
     ln -s %{_plugin6} %{_prefix}/plugin
 fi
 
-chmod -R 0755 %{_prefix}/plugin
-chmod -R 0755 %{_prefix}/lib
+chown -h admin %{_prefix}/plugin
+chown -h admin %{_prefix}/lib
+
+chgrp -h cug-tbdp %{_prefix}/plugin
+chgrp -h cug-tbdp %{_prefix}/lib
 
 %files
 %defattr(755,admin,cug-tbdp)
