@@ -2,13 +2,10 @@ package com.alibaba.datax.plugin.writer.swiftwriter;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.search.swift.SwiftAdminAdaptor;
 import com.alibaba.search.swift.SwiftClient;
 import com.alibaba.search.swift.exception.SwiftException;
 import com.alibaba.search.swift.protocol.AdminRequestResponse;
-import com.alibaba.search.swift.protocol.ErrCode;
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +27,7 @@ public class SwiftUtils {
 
 
     /**
-     * 创建swift topic
+     * 检查topic 是否在在，不存在则抛出异常
      *
      * @param swiftClient
      * @param topicName
@@ -38,7 +35,7 @@ public class SwiftUtils {
      * @throws SwiftException
      */
 
-    public static int createTopicIfNotExists(SwiftClient swiftClient, String topicName, int partitionNum) throws SwiftException {
+    public static int checkTopicExists(SwiftClient swiftClient, String topicName, int partitionNum) throws SwiftException {
         AdminRequestResponse.TopicCreationRequest.Builder request = AdminRequestResponse.TopicCreationRequest
                 .newBuilder();
 
@@ -47,29 +44,24 @@ public class SwiftUtils {
         SwiftAdminAdaptor adminAdapter = swiftClient.getAdminAdapter();
 
 
-        ErrCode.ErrorCode code = null;
-
         try {
             AdminRequestResponse.TopicInfoResponse topicInfo = adminAdapter.getTopicInfo(topicName);
             LOG.info("check topic OK|topic=" + topicName + ",partition=" + topicInfo.getTopicInfo().getPartitionCount());
             return topicInfo.getTopicInfo().getPartitionCount();
         } catch (SwiftException e) {
-            code = e.getEc();
 
-            if (code != ErrCode.ErrorCode.ERROR_ADMIN_TOPIC_NOT_EXISTED) {
-                throw e;
-            }
+            LOG.error("check topic error |topic=" + topicName, e);
+            throw e;
         }
 
-        if (code == ErrCode.ErrorCode.ERROR_ADMIN_TOPIC_NOT_EXISTED) {
-            LOG.info("create new topic success|topic=" + topicName + ",partition=" + partitionNum);
-            adminAdapter.createTopic(request.build());
-            return partitionNum;
-        }
+//        if (code == ErrCode.ErrorCode.ERROR_ADMIN_TOPIC_NOT_EXISTED) {
+//            LOG.info("create new topic success|topic=" + topicName + ",partition=" + partitionNum);
+//            adminAdapter.createTopic(request.build());
+//            return partitionNum;
+//        }
 
 
         //not reach here
-        return 0;
 
 
     }
@@ -103,8 +95,17 @@ public class SwiftUtils {
     }
 
 
-    public static String parseHashStr(Record record) {
-        return record.getColumn(0).asString();
+    public static String parseHashStr(Record record, List<Integer> hashFields) {
+
+        if (hashFields == null || hashFields.size() == 0) {
+            return "";
+        }
+        StringBuilder buf = new StringBuilder();
+        for (Integer i : hashFields) {
+            buf.append(record.getColumn(i).asString());
+        }
+
+        return buf.toString();
     }
 
 
