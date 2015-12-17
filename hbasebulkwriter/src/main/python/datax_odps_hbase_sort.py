@@ -33,16 +33,22 @@ def get_hbase_regions_json(dst_table, hbase_config, cluster_id, datax_home):
 
 def register_udf(regions, fun_name, res_file, datax_home):
     res_path = "/tmp/%s" % res_file
-    with open(res_path, "w") as fp:
-        fp.write(json.dumps(regions))
-
-    odpsutil.add_res_path(res_path)
     tmp_udf_file = "datax-odps-hbase-udf.%s.jar" % res_file
     tmp_udf_path = r"%s/tmp/%s" % (datax_home, tmp_udf_file)
-    shutil.copy("%s/plugin/writer/hbasebulkwriter/datax-odps-hbase-udf.jar" % datax_home, tmp_udf_path)
-    odpsutil.add_udf_jar(tmp_udf_path)
-    odpsutil.create_udf_fun(fun_name, 'com.alibaba.datax.plugin.writer.hbasebulkwriter.tools.HBaseRegionRouter',
+    try:
+        with open(res_path, "w") as fp:
+            fp.write(json.dumps(regions))
+        odpsutil.add_res_path(res_path)
+        shutil.copy("%s/plugin/writer/hbasebulkwriter/datax-odps-hbase-udf.jar" % datax_home, tmp_udf_path)
+        odpsutil.add_udf_jar(tmp_udf_path)
+        odpsutil.create_udf_fun(fun_name, 'com.alibaba.datax.plugin.writer.hbasebulkwriter.tools.HBaseRegionRouter',
                             tmp_udf_file, res_files=[res_file])
+    finally:
+        try:
+            os.remove(res_path)
+            os.remove(tmp_udf_path)
+        except Exception, ex:
+            odpsutil.log(r"remove tmp file[%s,%s] has Exception %s." % (res_path, tmp_udf_path, str(ex)))
 
 
 def create_tmp_table(src_table, tmp_table):
