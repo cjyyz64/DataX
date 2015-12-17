@@ -1,14 +1,12 @@
 package com.alibaba.datax.plugin.writer.hbasewriter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
@@ -18,22 +16,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HBaseClient {
-	
 	private final Logger log = LoggerFactory.getLogger(this.getClass());
 	
 	private Configuration configuration;
 	private Connection connection;
-	private Admin admin;
 	
-	public void init(String zips, String zport, String tableName) throws Exception {
+	public void init(Map<String, String> confs) throws Exception {
 		configuration = HBaseConfiguration.create();
-		configuration.set("hbase.zookeeper.quorum",zips);
-		configuration.set("hbase.zookeeper.property.clientPort",zport);
-		configuration.set("zookeeper.znode.parent","/hbase");
+		if(confs != null && confs.size() > 0) {
+			for(String key : confs.keySet()) {
+				configuration.set(key, confs.get(key));
+			}
+		}
 		
 		try {
 			this.connection = ConnectionFactory.createConnection(configuration);
-			this.admin = connection.getAdmin();
 		} catch (Exception e) {
 			log.error("hbase init exception occured.", e);
 			throw e;
@@ -42,9 +39,6 @@ public class HBaseClient {
 	
 	public void close() throws Exception {
 		try {
-			if(admin != null) {
-				admin.close();
-			}
 			if(connection != null) {
 				connection.close();
 			}
@@ -67,21 +61,9 @@ public class HBaseClient {
 		}
 		return table;
 	}
-	
-	public boolean checkSchema(String tableName, String rowKey, String colf) {
-		if(StringUtils.isNotBlank(tableName) && 
-			StringUtils.isNotBlank(rowKey) && 
-			StringUtils.isNotBlank(colf)) {
-			return true;
-		}
-		return false;
-	}
+
 	
 	public void put(String tableName, HBaseCell cell) throws Exception {
-		
-		if(!checkSchema(tableName, cell.getRowKey(), cell.getColf())) {
-			log.error("checkSchema failed."+tableName+" "+cell.getRowKey());
-		}
 		
 		Table table = getTable(tableName);
 		
@@ -113,13 +95,10 @@ public class HBaseClient {
 			Table table = getTable(tableName);
 			
 			for(HBaseCell cell : cells) {
-				if(!checkSchema(tableName, cell.getRowKey(), cell.getColf())) {
-					log.error("checkSchema failed."+tableName+" "+cell.getRowKey());
-				}
 				
 				Put p = new Put(Bytes.toBytes(cell.getRowKey()));
 				p.addColumn(Bytes.toBytes(cell.getColf()), 
-							Bytes.toBytes(cell.getCol()==null?"unknown":cell.getCol()),
+							Bytes.toBytes(cell.getCol()==null?Const.DEFAULT_QUALIFIER:cell.getCol()),
 					        Bytes.toBytes(cell.getValue()==null?"":cell.getValue()));
 				puts.add(p);
 			}
