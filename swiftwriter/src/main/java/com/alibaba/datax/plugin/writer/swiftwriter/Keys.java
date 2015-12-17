@@ -16,14 +16,10 @@ public class Keys {
 
 
 
-    public static final String TOPIC_NAME = "topic_name";
-
-
     public static final String PARTITION_COUNT = "partition_count";
 
 
-    public static final int DEFAULT_PARTITION_COUNT = 1;
-
+    public static final String HASH_FIELDS = "hash_fields";
 
 
 

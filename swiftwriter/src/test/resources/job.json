@@ -17,6 +17,7 @@
           "parameter": {
             "client_config": "zkPath=zfs://10.218.144.48:2181/swift/swift_service;",
             "writer_config": "topicName=datax_test;functionChain=HASH,hashId2partId",
+            "hash_fields": [0],
             "index_names": [
               "uuid",
               "host",

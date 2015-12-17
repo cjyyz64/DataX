@@ -50,8 +50,8 @@ public class SwiftWriter extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-            this.clientConfig = originalConfig.getNecessaryValue(Keys.CLIENT_CONFIG, CLIENT_CONFIG_ERROR);
-            this.writerConfig = originalConfig.getNecessaryValue(Keys.WRITER_CONFIG, WRITE_CONFIG_ERROR);
+            this.clientConfig = parseClientConfig(originalConfig);
+            this.writerConfig = parseWriterConfig(originalConfig);
             this.partitionCount = originalConfig.getInt(Keys.PARTITION_COUNT, 1);
             this.topicName = SwiftUtils.extractTopicNameFromWriterConfig(writerConfig);
 
@@ -63,16 +63,16 @@ public class SwiftWriter extends Writer {
             try {
                 swiftClient.init(clientConfig);
             } catch (SwiftException e) {
-                throw DataXException.asDataXException(CLIENT_INIT_ERROR, e.toString());
+                throw DataXException.asDataXException(CLIENT_INIT_ERROR, CLIENT_INIT_ERROR.getDescription(), e);
             }
 
 
             //如果 topic 配置，则进行 topic 存在 检查,不存在则创建
             if (StringUtils.isNoneBlank(topicName)) {
                 try {
-                    SwiftUtils.createTopicIfNotExists(swiftClient, topicName, partitionCount);
+                    SwiftUtils.checkTopicExists(swiftClient, topicName, partitionCount);
                 } catch (SwiftException e) {
-                    throw DataXException.asDataXException(TOPIC_CREATE_ERROR, e.toString());
+                    throw DataXException.asDataXException(TOPIC_CONFIG_ERROR, TOPIC_CONFIG_ERROR.getDescription(), e);
                 }
             }
 
@@ -119,6 +119,8 @@ public class SwiftWriter extends Writer {
         private com.alibaba.search.swift.SwiftWriter innerWriter;
 
 
+        private List<Integer> hashFields = new ArrayList<Integer>();
+
         //filed->index 数据源到字段映射
         private List<String> indexNames = new ArrayList<String>();
 
@@ -126,32 +128,23 @@ public class SwiftWriter extends Writer {
         @Override
         public void init() {
             this.sliceConfig = super.getPluginJobConf();
-            this.clientConfig = this.sliceConfig.getNecessaryValue(Keys.CLIENT_CONFIG, SwiftWriterErrorCode.CLIENT_CONFIG_ERROR);
-            this.writeConfig = this.sliceConfig.getNecessaryValue(Keys.WRITER_CONFIG, SwiftWriterErrorCode.WRITE_CONFIG_ERROR);
-            List<Object> indexList = this.sliceConfig.getList(Keys.INDEX_NAMES);
-            if (indexList == null || indexList.size() == 0) {
-                throw DataXException.asDataXException(INDEX_CONFIG_ERROR, INDEX_CONFIG_ERROR.getDescription());
-            }
-
-            if (indexList != null && indexList.size() > 0) {
-                for (Object index : indexList) {
-                    this.indexNames.add(index.toString());
-
-                }
-            }
+            this.clientConfig = parseClientConfig(this.sliceConfig);
+            this.writeConfig = parseWriterConfig(this.sliceConfig);
+            this.hashFields = parseHashField(this.sliceConfig);
+            this.indexNames = parseIndexNames(this.sliceConfig);
 
             swiftClient = new SwiftClient();
 
             try {
                 swiftClient.init(clientConfig);
             } catch (SwiftException e) {
-                throw DataXException.asDataXException(CLIENT_INIT_ERROR, e.toString());
+                throw DataXException.asDataXException(CLIENT_INIT_ERROR, CLIENT_INIT_ERROR.getDescription(), e);
             }
 
             try {
                 this.innerWriter = swiftClient.createWriter(writeConfig);
             } catch (SwiftException e) {
-                throw DataXException.asDataXException(WRITER_CREATE_ERROR, e.toString());
+                throw DataXException.asDataXException(WRITER_CREATE_ERROR, WRITER_CREATE_ERROR.getDescription(), e);
             }
 
 
@@ -173,7 +166,11 @@ public class SwiftWriter extends Writer {
                 }
 
                 SwiftMessage.WriteMessageInfo.Builder builder = SwiftMessage.WriteMessageInfo.newBuilder();
-                builder.setHashStr(ByteString.copyFrom(SwiftUtils.parseHashStr(record).getBytes()));
+                String hashStr = SwiftUtils.parseHashStr(record, hashFields);
+                if (StringUtils.isNoneBlank(hashStr)) {
+                    builder.setHashStr(ByteString.copyFrom(hashStr.getBytes()));
+                }
+
                 builder.setData(ByteString.copyFrom(SwiftUtils.record2Doc(record, indexNames).getBytes()));
 
                 try {
@@ -182,15 +179,16 @@ public class SwiftWriter extends Writer {
                     ok++;
                 } catch (SwiftException e) {
                     if (e.getEc() != ErrCode.ErrorCode.ERROR_CLIENT_SEND_BUFFER_FULL) {  //buffer满地异常需要重试
+                        super.getTaskPluginCollector().collectDirtyRecord(record, e);
                         error++;
+                        record = null;
+                        LOG.error("write record error", e);
                     } else {
                         try {
                             Thread.sleep(500);
                         } catch (InterruptedException ee) {
                         }
                     }
-
-                    LOG.error("write record error", e);
                 }
 
             }
@@ -198,7 +196,7 @@ public class SwiftWriter extends Writer {
             try {
                 innerWriter.waitFinished();
             } catch (SwiftException e) {
-                LOG.error(e.getMessage(), e);
+                throw DataXException.asDataXException(WRITER_WAIT_FINISHED, e);
             }
 
             LOG.info(this.getName() + " write record completely|success=" + ok + ",error=" + error);
@@ -216,7 +214,48 @@ public class SwiftWriter extends Writer {
                 this.swiftClient.close();
             }
         }
+
     }
 
+
+    public static final List<Integer> parseHashField(Configuration configuration) {
+        List<Object> list = configuration.getList(Keys.HASH_FIELDS);
+        List<Integer> hashFields = new ArrayList<Integer>();
+        if (list != null && list.size() > 0) {
+            for (Object it : list) {
+                hashFields.add(Integer.valueOf(it.toString()));
+            }
+        }
+
+        return hashFields;
+
+    }
+
+
+    public static final String parseClientConfig(Configuration configuration) {
+        return configuration.getNecessaryValue(Keys.CLIENT_CONFIG, SwiftWriterErrorCode.CLIENT_CONFIG_ERROR);
+    }
+
+    public static final String parseWriterConfig(Configuration configuration) {
+        return configuration.getNecessaryValue(Keys.WRITER_CONFIG, SwiftWriterErrorCode.WRITE_CONFIG_ERROR);
+
+    }
+
+
+    public static final List<String> parseIndexNames(Configuration configuration) {
+        List<String> indexNames = new ArrayList<String>();
+        List<Object> indexList = configuration.getList(Keys.INDEX_NAMES);
+        if (indexList == null || indexList.size() == 0) {
+            throw DataXException.asDataXException(INDEX_CONFIG_ERROR, INDEX_CONFIG_ERROR.getDescription());
+        }
+
+        if (indexList != null && indexList.size() > 0) {
+            for (Object index : indexList) {
+                indexNames.add(index.toString());
+            }
+        }
+
+        return indexNames;
+    }
 
 }

@@ -3,18 +3,12 @@ package com.alibaba.datax.plugin.writer.swiftwriter;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
-import com.alibaba.druid.util.StringUtils;
 import com.alibaba.search.swift.SwiftClient;
 import com.alibaba.search.swift.exception.SwiftException;
 import com.google.common.collect.Lists;
 import junit.framework.TestCase;
-import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.Arrays;
 
 import static com.alibaba.datax.plugin.writer.swiftwriter.SwiftUtils.CMD_SEPARATOR;
 import static com.alibaba.datax.plugin.writer.swiftwriter.SwiftUtils.FIELD_SEPARATOR;
@@ -60,7 +54,7 @@ public class SwiftUtilsTest extends TestCase {
         swiftClient.init("zkPath=zfs://10.218.144.48:2181/swift"
                 + ";logConfigFile=swift_alog.conf");
 
-        SwiftUtils.createTopicIfNotExists(swiftClient, "datax_test", 2);
+        SwiftUtils.checkTopicExists(swiftClient, "datax_test", 2);
     }
 
 
