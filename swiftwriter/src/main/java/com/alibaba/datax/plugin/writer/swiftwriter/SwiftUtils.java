@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by zw86077 on 2015/12/9.
@@ -24,6 +25,8 @@ public class SwiftUtils {
     public static final String CMD_SEPARATOR = (char) 0x1E + "\n";
 
     public static final String FIELD_SEPARATOR = (char) 0x1F + "\n";
+
+    public static final String DOC_TIME_TO_LIVE_IN_SECONDS = "doc_time_to_live_in_seconds";
 
 
     /**
@@ -74,7 +77,7 @@ public class SwiftUtils {
      * @param indexes
      * @return
      */
-    public static String record2Doc(Record record, List<String> indexes) {
+    public static String record2Doc(Record record, List<String> indexes,long docLiveSeconds) {
         if (indexes.size() != record.getColumnNumber()) {
             throw DataXException.asDataXException(SwiftWriterErrorCode.ILLEGAL_VALUE, "数据记录字段数与索引个数不匹配,字段数：" +
                     record.getColumnNumber() + "" +
@@ -85,6 +88,10 @@ public class SwiftUtils {
         StringBuilder buf = new StringBuilder("CMD=add").append(FIELD_SEPARATOR);
         for (int i = 0; i < indexes.size(); i++) {
             buf.append(indexes.get(i)).append("=").append(record.getColumn(i).asString()).append(FIELD_SEPARATOR);
+        }
+        if (docLiveSeconds > 0) {
+            long sec = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+            buf.append(DOC_TIME_TO_LIVE_IN_SECONDS).append("=").append(sec + docLiveSeconds).append(FIELD_SEPARATOR);
         }
 
 
