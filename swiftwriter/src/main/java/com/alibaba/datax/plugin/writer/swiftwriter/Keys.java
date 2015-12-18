@@ -22,5 +22,8 @@ public class Keys {
     public static final String HASH_FIELDS = "hash_fields";
 
 
+    public static final String DOC_LIVE_SECONDS = "doc_live_seconds";
+
+
 
 }

@@ -34,13 +34,14 @@ public class SwiftUtilsTest extends TestCase {
         r.addColumn(new StringColumn(host));
         r.addColumn(new StringColumn(uri));
         r.addColumn(new StringColumn(method));
-        String s = SwiftUtils.record2Doc(r, Lists.newArrayList("uuid", "request_time", "host", "uri", "method"));
+        String s = SwiftUtils.record2Doc(r, Lists.newArrayList("uuid", "request_time", "host", "uri", "method"), 100);
         String expect = "CMD=add" + FIELD_SEPARATOR +
                 "uuid=" + uuid + FIELD_SEPARATOR +
                 "request_time=" + request_time + FIELD_SEPARATOR +
                 "host=" + host + FIELD_SEPARATOR +
                 "uri=" + uri + FIELD_SEPARATOR +
                 "method=" + method + FIELD_SEPARATOR +
+                "doc_time_to_live_in_seconds=" + (System.currentTimeMillis() / 1000 + 100) + FIELD_SEPARATOR +
                 CMD_SEPARATOR;
         assertEquals(expect, s);
 
