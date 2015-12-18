@@ -32,7 +32,7 @@
         <mysql-connector-java-version>5.1.34</mysql-connector-java-version>
         <junit-version>4.11</junit-version>
         <tddl.version>5.1.17</tddl.version>
-
+        <swift-version>1.0.0</swift-version>
 
         <project-sourceEncoding>UTF-8</project-sourceEncoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -96,8 +96,10 @@
         <!-- developing module -->
         <module>hdfsreader</module>
         <module>hdfswriter</module>
+        <module>swiftwriter</module>
+        <module>hbasewriter</module>
 
-  </modules>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
@@ -163,6 +165,12 @@
                 <groupId>com.taobao.diamond</groupId>
                 <artifactId>diamond-client</artifactId>
                 <version>${diamond.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba.search.swift</groupId>
+                <artifactId>swift_client</artifactId>
+                <version>${swift-version}</version>
             </dependency>
 
             <dependency>
