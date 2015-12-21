@@ -123,7 +123,7 @@ public class SwiftWriter extends Writer {
 
         //filed->index 数据源到字段映射
         private List<String> indexNames = new ArrayList<String>();
-
+        private long docLiveSeconds;
 
         @Override
         public void init() {
@@ -132,7 +132,7 @@ public class SwiftWriter extends Writer {
             this.writeConfig = parseWriterConfig(this.sliceConfig);
             this.hashFields = parseHashField(this.sliceConfig);
             this.indexNames = parseIndexNames(this.sliceConfig);
-
+            this.docLiveSeconds = parseDocLiveSeconds(this.sliceConfig);
             swiftClient = new SwiftClient();
 
             try {
@@ -171,7 +171,7 @@ public class SwiftWriter extends Writer {
                     builder.setHashStr(ByteString.copyFrom(hashStr.getBytes()));
                 }
 
-                builder.setData(ByteString.copyFrom(SwiftUtils.record2Doc(record, indexNames).getBytes()));
+                builder.setData(ByteString.copyFrom(SwiftUtils.record2Doc(record, indexNames, docLiveSeconds).getBytes()));
 
                 try {
                     innerWriter.write(builder.build());
@@ -256,6 +256,12 @@ public class SwiftWriter extends Writer {
         }
 
         return indexNames;
+    }
+
+
+
+    public static final Long parseDocLiveSeconds(Configuration configuration) {
+        return configuration.getLong(Keys.DOC_LIVE_SECONDS, 0);
     }
 
 }
