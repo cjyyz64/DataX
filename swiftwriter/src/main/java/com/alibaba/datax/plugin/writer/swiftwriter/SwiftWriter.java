@@ -123,7 +123,7 @@ public class SwiftWriter extends Writer {
 
         //filed->index 数据源到字段映射
         private List<String> indexNames = new ArrayList<String>();
-
+        private long docLiveSeconds;
 
         @Override
         public void init() {
