@@ -112,7 +112,6 @@ public class SwiftWriter extends Writer {
         //swift writer config
         private String writeConfig;
 
-        private long docLiveSeconds;
 
         private SwiftClient swiftClient;
 
