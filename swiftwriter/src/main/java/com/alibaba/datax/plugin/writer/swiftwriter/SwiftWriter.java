@@ -199,7 +199,7 @@ public class SwiftWriter extends Writer {
                 throw DataXException.asDataXException(WRITER_WAIT_FINISHED, e);
             }
 
-            LOG.info(this.getName() + " write record completely|success=" + ok + ",error=" + error);
+            LOG.info(this.getPluginName() + " write record completely|success=" + ok + ",error=" + error);
 
         }
 

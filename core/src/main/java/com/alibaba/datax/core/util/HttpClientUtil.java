@@ -131,6 +131,10 @@ public class HttpClientUtil {
             }
         } catch (Exception e) {
             throw e;
+        }finally {
+            if(httpRequestBase!=null) {
+                httpRequestBase.abort();
+            }
         }
 
         return entiStr;
