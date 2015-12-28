@@ -150,7 +150,7 @@ public class PerfRecordTest {
         waitTimePerfRecord.start();
 
         Thread.sleep(250);
-        waitTimePerfRecord.end();
+        waitTimePerfRecord.end(250000000);
 
         Assert.assertTrue(waitTimePerfRecord.getAction().name().equals("end"));
         Assert.assertTrue(waitTimePerfRecord.getElapsedTimeInNs() >= 250000000);
@@ -213,7 +213,7 @@ public class PerfRecordTest {
         waitPerfRecord2.start();
 
         Thread.sleep(1250);
-        waitPerfRecord2.end();
+        waitPerfRecord2.end(1250000000);
 
         Assert.assertTrue(waitPerfRecord2.getAction().name().equals("end"));
         Assert.assertTrue(waitPerfRecord2.getElapsedTimeInNs() >= 1250000000);
