@@ -130,6 +130,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
         if(PerfTrace.getInstance().isEnable()) {
             this.elapsedTimeInNs = elapsedTimeInNs;
             this.action = ACTION.end;
+            PerfTrace.getInstance().tracePerfRecord(this);
             perf.info(toString());
         }
     }
