@@ -63,5 +63,74 @@ public class DataxServiceUtilTest {
             }
         }
 
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url_error));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+            DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
+
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut, 10, 1);
+            System.out.println(resJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url_right));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+            DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
+
+            String resJson = httpClientUtil.executeAndGetWithRetry(httpPut,10,1);
+            System.out.println(resJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+
+
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url_error));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+            DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
+
+            String resJson = httpClientUtil.executeAndGetWithFailedRetry(httpPut, 10, 1);
+            System.out.println(resJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+
+        try {
+            HttpPut httpPut = HttpClientUtil.getPutRequest();
+            httpPut.setURI(new URI(url_right));
+
+            StringEntity jsonEntity = new StringEntity(JSON.toJSONString(info), "UTF-8");
+            jsonEntity.setContentEncoding("UTF-8");
+            jsonEntity.setContentType("application/json");
+            httpPut.setEntity(jsonEntity);
+            DataxServiceUtil.signature(url_right, "PUT", httpPut, JSON.toJSONString(info));
+
+            String resJson = httpClientUtil.executeAndGetWithFailedRetry(httpPut,10,1);
+            System.out.println(resJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println(e.getMessage());
+        }
+
     }
 }
