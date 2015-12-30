@@ -1,5 +1,6 @@
 package com.alibaba.datax.common.statistics;
 
+import com.alibaba.datax.common.statistics.PerfRecord.PHASE;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto;
 import com.alibaba.datax.dataxservice.face.domain.JobStatisticsListWapper;
@@ -33,12 +34,11 @@ public class PerfTrace {
     //jobid_jobversion,instanceid,taskid, src_mark, dst_mark,
     private Map<Integer, String> taskDetails = new ConcurrentHashMap<Integer, String>();
     //PHASE => PerfRecord
-    private ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord> perfRecordMaps = new ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord>();
+    private ConcurrentHashMap<PHASE, SumPerfRecord> perfRecordMaps = new ConcurrentHashMap<PHASE, SumPerfRecord>();
     private Configuration jobInfo;
-    private final List<PerfRecord> startReportPool = new ArrayList<PerfRecord>();
-    private final List<PerfRecord> endReportPool = new ArrayList<PerfRecord>();
+    private final List<PerfRecord> needReportPool = new ArrayList<PerfRecord>();
     private final List<PerfRecord> totalEndReport = new ArrayList<PerfRecord>();
-    private final Set<PerfRecord> waitingReportSet = new HashSet<PerfRecord>();
+    private final List<PerfRecord> waitingReportSet = new ArrayList<PerfRecord>();
 
 
     /**
@@ -112,18 +112,38 @@ public class PerfTrace {
         if (enable) {
             //ArrayList非线程安全
             switch (perfRecord.getAction()) {
-                case start:
-                    synchronized (startReportPool) {
-                        startReportPool.add(perfRecord);
-                    }
-                    break;
                 case end:
-                    synchronized (endReportPool) {
-                        endReportPool.add(perfRecord);
+                    synchronized (totalEndReport) {
+                        totalEndReport.add(perfRecord);
+
+                        if (totalEndReport.size() > batchSize * 10) {
+                            sumEndPerfRecords(totalEndReport);
+                        }
                     }
                     break;
             }
+
+            if(perfReportEnalbe && needReport(perfRecord)) {
+                synchronized (needReportPool) {
+                    needReportPool.add(perfRecord);
+                }
+            }
         }
+    }
+
+    private boolean needReport(PerfRecord perfRecord) {
+        switch (perfRecord.getPhase()) {
+            case TASK_TOTAL:
+            case READ_TASK_DATA:
+            case WRITE_TASK_DATA:
+            case SQL_QUERY:
+            case RESULT_NEXT_ALL:
+            case ODPS_BLOCK_CLOSE:
+            case WAIT_READ_TIME:
+            case WAIT_WRITE_TIME:
+                return true;
+        }
+        return false;
     }
 
     public String summarizeNoException(){
@@ -151,14 +171,14 @@ public class PerfTrace {
         info.append("\n   1. all phase average time info and max time task info: \n\n");
         info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE USED TIME", "ALL TASK NUM", "MAX USED TIME", "MAX TASK ID", "MAX TASK INFO"));
 
-        List<PerfRecord.PHASE> keys = new ArrayList<PerfRecord.PHASE>(perfRecordMaps.keySet());
-        Collections.sort(keys, new Comparator<PerfRecord.PHASE>() {
+        List<PHASE> keys = new ArrayList<PHASE>(perfRecordMaps.keySet());
+        Collections.sort(keys, new Comparator<PHASE>() {
             @Override
-            public int compare(PerfRecord.PHASE o1, PerfRecord.PHASE o2) {
+            public int compare(PHASE o1, PHASE o2) {
                 return o1.toInt() - o2.toInt();
             }
         });
-        for (PerfRecord.PHASE phase : keys) {
+        for (PHASE phase : keys) {
             SumPerfRecord sumPerfRecord = perfRecordMaps.get(phase);
             if (sumPerfRecord == null) {
                 continue;
@@ -171,7 +191,7 @@ public class PerfTrace {
                     phase, unitTime(averageTime), sumPerfRecord.totalCount, unitTime(maxTime), jobId + "-" + maxTaskGroupId + "-" + maxTaskId, taskDetails.get(maxTaskId)));
         }
 
-        SumPerfRecord countSumPerf = Optional.fromNullable(perfRecordMaps.get(PerfRecord.PHASE.READ_TASK_DATA)).or(new SumPerfRecord());
+        SumPerfRecord countSumPerf = Optional.fromNullable(perfRecordMaps.get(PHASE.READ_TASK_DATA)).or(new SumPerfRecord());
 
         long averageRecords = countSumPerf.getAverageRecords();
         long averageBytes = countSumPerf.getAverageBytes();
@@ -184,7 +204,7 @@ public class PerfTrace {
         info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n", "PHASE", "AVERAGE RECORDS", "AVERAGE BYTES", "MAX RECORDS", "MAX RECORD`S BYTES", "MAX TASK ID", "MAX TASK INFO"));
         if (maxTaskId4Records > -1) {
             info.append(String.format("%-20s | %18s | %18s | %18s | %18s | %18s | %-100s\n"
-                    , PerfRecord.PHASE.READ_TASK_DATA, averageRecords, unitSize(averageBytes), maxRecord, unitSize(maxByte), jobId + "-" + maxTGID4Records + "-" + maxTaskId4Records, taskDetails.get(maxTaskId4Records)));
+                    , PHASE.READ_TASK_DATA, averageRecords, unitSize(averageBytes), maxRecord, unitSize(maxByte), jobId + "-" + maxTGID4Records + "-" + maxTaskId4Records, taskDetails.get(maxTaskId4Records)));
 
         }
         return info.toString();
@@ -212,13 +232,7 @@ public class PerfTrace {
     }
 
 
-    public synchronized ConcurrentHashMap<PerfRecord.PHASE, SumPerfRecord> getPerfRecordMaps() {
-        synchronized (endReportPool) {
-            // perfRecordMaps.get(perfRecord.getPhase()).add(perfRecord);
-            waitingReportSet.addAll(endReportPool);
-            totalEndReport.addAll(endReportPool);
-            endReportPool.clear();
-        }
+    public synchronized ConcurrentHashMap<PHASE, SumPerfRecord> getPerfRecordMaps() {
         if(totalEndReport.size() > 0 ){
             sumEndPerfRecords(totalEndReport);
         }
@@ -226,15 +240,17 @@ public class PerfTrace {
     }
 
     public List<PerfRecord> getWaitingReportList() {
+        if (perfReportEnalbe) {
+            synchronized (needReportPool) {
+                waitingReportSet.addAll(needReportPool);
+                needReportPool.clear();
+            }
+        }
         return new ArrayList<PerfRecord>(waitingReportSet);
     }
 
-    public List<PerfRecord> getStartReportPool() {
-        return startReportPool;
-    }
-
-    public List<PerfRecord> getEndReportPool() {
-        return endReportPool;
+    public List<PerfRecord> getNeedReportPool() {
+        return needReportPool;
     }
 
     public List<PerfRecord> getTotalEndReport() {
@@ -303,43 +319,24 @@ public class PerfTrace {
 
     public synchronized List<JobStatisticsListWapper> getReports(boolean isEnd) {
 
-        if (!enable) {
+        if (!enable || !perfReportEnalbe) {
             return null;
         }
 
-        synchronized (startReportPool) {
-            if(perfReportEnalbe) {
-                waitingReportSet.addAll(startReportPool);
-            }
-            startReportPool.clear();
-        }
-        synchronized (endReportPool) {
-            if(perfReportEnalbe) {
-                waitingReportSet.addAll(endReportPool);
-            }
-            totalEndReport.addAll(endReportPool);
-            endReportPool.clear();
-        }
-
-        if (totalEndReport.size() > batchSize * 10) {
-            sumEndPerfRecords(totalEndReport);
-        }
-
-        if(!perfReportEnalbe){
-            return null;
+        synchronized (needReportPool) {
+            waitingReportSet.addAll(needReportPool);
+            needReportPool.clear();
         }
 
         List<JobStatisticsListWapper> jobStatisticsListWapperList = Lists.newArrayList();
         do {
 
-            List<PerfRecord> curWaitPoolList = new ArrayList<PerfRecord>(waitingReportSet);
-
             List<PerfRecord> result;
             final List<JobStatisticsDto> jobStatisticsDtoList = Lists.newArrayList();
-            if (curWaitPoolList.size() <= batchSize) {
-                result = curWaitPoolList;
+            if (waitingReportSet.size() <= batchSize) {
+                result = waitingReportSet;
             } else {
-                result = curWaitPoolList.subList(0, batchSize);
+                result = waitingReportSet.subList(0, batchSize);
             }
             for (PerfRecord perfRecord : result) {
                 JobStatisticsDto jdo = new JobStatisticsDto();
@@ -357,8 +354,8 @@ public class PerfTrace {
                 jdo.setDstGuid(this.dstGuid);
                 jdo.setJobPhase(perfRecord.getPhase().name());
                 jdo.setJobAction(perfRecord.getAction().name());
-                jdo.setBeginTimeInMs(perfRecord.getStartTimeInNs() / 1000000);
-                jdo.setEndTimeInMs(perfRecord.getElapsedTimeInNs() == -1 ? null : (perfRecord.getStartTimeInNs() + perfRecord.getElapsedTimeInNs()) / 1000000);
+                jdo.setBeginTimeInMs(perfRecord.getStartTimeInMs());
+                jdo.setEndTimeInMs(perfRecord.getElapsedTimeInNs() == -1 ? null : (perfRecord.getStartTimeInMs() + perfRecord.getElapsedTimeInNs() / 1000000));
                 jdo.setRecords(perfRecord.getCount());
                 jdo.setBytes(perfRecord.getSize());
                 jdo.setHostAddress(perfRecord.getHostIP());
@@ -372,8 +369,6 @@ public class PerfTrace {
                     }
                 });
                 result.clear();
-                waitingReportSet.clear();
-                waitingReportSet.addAll(curWaitPoolList);
             }
         } while (isEnd && waitingReportSet.size() > 0);
 
@@ -418,7 +413,7 @@ public class PerfTrace {
                 return;
             }
             perfTimeTotal += perfRecord.getElapsedTimeInNs();
-            if (perfRecord.getElapsedTimeInNs() > maxTime) {
+            if (perfRecord.getElapsedTimeInNs() >= maxTime) {
                 maxTime = perfRecord.getElapsedTimeInNs();
                 maxTaskId = perfRecord.getTaskId();
                 maxTaskGroupId = perfRecord.getTaskGroupId();
@@ -426,7 +421,7 @@ public class PerfTrace {
 
             recordsTotal += perfRecord.getCount();
             sizesTotal += perfRecord.getSize();
-            if (perfRecord.getCount() > maxRecord) {
+            if (perfRecord.getCount() >= maxRecord) {
                 maxRecord = perfRecord.getCount();
                 maxByte = perfRecord.getSize();
                 maxTaskId4Records = perfRecord.getTaskId();

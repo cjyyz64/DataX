@@ -70,6 +70,11 @@ public class Engine {
         boolean traceEnable = allConf.getBool(CoreConstant.DATAX_CORE_CONTAINER_TRACE_ENABLE, true);
         boolean perfReportEnable = allConf.getBool(CoreConstant.DATAX_CORE_REPORT_DATAX_PERFLOG, true);
 
+        //standlone模式的datax shell任务不进行汇报
+        if(instanceId == -1){
+            perfReportEnable = false;
+        }
+
         int priority = 0;
         try {
             priority = Integer.parseInt(System.getenv("SKYNET_PRIORITY"));
