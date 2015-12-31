@@ -116,7 +116,7 @@ public final class JDBCDataSource {
                    return result.getString("cluster_vip") + ":" + result.getString("cluster_port");
                 }
             }catch (Exception e){
-                log.error("fetch master lms error", e);
+                log.warn("fetch master lms error", e);
             }finally {
                 if(result != null) result.close();
                 if(statement != null) statement.close();
