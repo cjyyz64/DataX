@@ -226,8 +226,8 @@ public class PerfRecord implements Comparable<PerfRecord> {
         return startTime;
     }
 
-    public long getStartTimeInNs() {
-        return startTimeInNs;
+    public long getStartTimeInMs() {
+        return startTime.getTime();
     }
 
     public String getDatetime(){
