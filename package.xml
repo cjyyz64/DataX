@@ -67,6 +67,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>rdbmsreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 
         <fileSet>
             <directory>odpsreader/target/datax/</directory>
@@ -233,6 +240,13 @@
         </fileSet>
 		<fileSet>
             <directory>postgresqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>rdbmswriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

@@ -7,12 +7,14 @@ import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.druid.sql.parser.SQLParserUtils;
 import com.alibaba.druid.sql.parser.SQLStatementParser;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -759,6 +761,27 @@ public final class DBUtil {
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.RS_ASYNC_ERROR, "异步获取ResultSet失败", e);
+        }
+    }
+    
+    public static void loadDriverClass(String pluginType, String pluginName) {
+        try {
+            String pluginJsonPath = StringUtils.join(
+                    new String[] { System.getProperty("datax.home"), "plugin",
+                            pluginType,
+                            String.format("%s%s", pluginName, pluginType),
+                            "plugin.json" }, File.separator);
+            Configuration configuration = Configuration.from(new File(
+                    pluginJsonPath));
+            List<String> drivers = configuration.getList("drivers",
+                    String.class);
+            for (String driver : drivers) {
+                Class.forName(driver);
+            }
+        } catch (ClassNotFoundException e) {
+            throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
+                    "数据库驱动加载错误, 请确认libs目录有驱动jar包且plugin.json中drivers配置驱动类正确!",
+                    e);
         }
     }
 }
