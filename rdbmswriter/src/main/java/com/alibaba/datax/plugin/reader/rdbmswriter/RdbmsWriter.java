@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
@@ -14,9 +13,6 @@ import java.util.List;
 
 public class RdbmsWriter extends Writer {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.RDBMS;
-    static {
-        DBUtil.loadDriverClass("writer", "rdbms");
-    }
 
     public static class Job extends Writer.Job {
         private Configuration originalConfig = null;
@@ -37,7 +33,7 @@ public class RdbmsWriter extends Writer {
                                         writeMode));
             }
 
-            this.commonRdbmsWriterMaster = new CommonRdbmsWriter.Job(
+            this.commonRdbmsWriterMaster = new SubCommonRdbmsWriter.Job(
                     DATABASE_TYPE);
             this.commonRdbmsWriterMaster.init(this.originalConfig);
         }
@@ -72,7 +68,7 @@ public class RdbmsWriter extends Writer {
         @Override
         public void init() {
             this.writerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsWriterSlave = new CommonRdbmsWriter.Task(
+            this.commonRdbmsWriterSlave = new SubCommonRdbmsWriter.Task(
                     DATABASE_TYPE);
             this.commonRdbmsWriterSlave.init(this.writerSliceConfig);
         }

@@ -14,6 +14,8 @@ import com.aliyun.odps.OdpsException;
 import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.task.SQLTask;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.sql.*;
@@ -30,11 +32,11 @@ public class AdsWriteUnitTest {
     @Test
     public void ads(){
 //        String adsUrl="10.101.90.23:9999";
-        String adsUrl="10.101.92.40:9999";
+        String adsUrl="10.101.95.118:9999";
         String userName="gq5FDS2IgSWqXzTu";
         String password="xNXmuBr4dvn3BNLLzWZEAerpHqREto";
-        String schema="btest";
-        String adsTable="builder_test_table2";
+        String schema="base2";
+        String adsTable="yixiao_auto_test_ads_export";
         String endPoint = "http://service.odpsstg.aliyun-inc.com/stgnew";
         String accessId = "vw6mmLVuAAa0cHcV";
         String accessKey = "pG4s6hPmEhglCy9szEEdpBUPTvg0JS";
@@ -80,7 +82,7 @@ public class AdsWriteUnitTest {
     }
     @Test
     public void adsHelpCheckTest() {
-        String adsUrl = "10.101.92.40:9999";
+        String adsUrl = "10.101.95.118:9999";
         String userName = "gq5FDS2IgSWqXzTu";
         String password = "xNXmuBr4dvn3BNLLzWZEAerpHqREto";
         String schema = "btest";
@@ -96,7 +98,7 @@ public class AdsWriteUnitTest {
     @Test
     public void odpsReaderTest(){
         String readerPluginName = "odpsreader";
-        String odpsTableName ="test555__table_2up01_14236492863111508";
+        String odpsTableName ="test555__datax_ads_writer_table_bvt_14271310597741521";
         boolean isSucess = false;
         if (readerPluginName.equals(AdsWriter.Job.ODPS_READER)){
             isSucess = loadAdsData(odpsTableName);
@@ -106,9 +108,9 @@ public class AdsWriteUnitTest {
     }
 
     private boolean loadAdsData(String odpsTableName){
-        String table = "table_2up01";
+        String table = "datax_ads_writer_table_bvt";
         String project = "autotest_dev";
-        String partition = "('id','ds=20150108')";
+        String partition = "";
         String sourcePath = AdsUtil.generateSourcePath(project,odpsTableName,null);
         boolean overwrite = true;
         String adsUrl = "10.101.90.23:9999";
@@ -158,12 +160,15 @@ public class AdsWriteUnitTest {
         String adsPartition2 = AdsUtil.transferOdpsPartitionToAds(partition2);
         String adsPartition3 = AdsUtil.transferOdpsPartitionToAds(partition3);
         String adsPartition4 = AdsUtil.transferOdpsPartitionToAds(partition4);
-        String adsPartition5 = AdsUtil.transferOdpsPartitionToAds(partition5);
+        try {
+            AdsUtil.transferOdpsPartitionToAds(partition5);
+            Assert.fail();
+        } catch (Exception e) {
+        }
         assertEquals(adsPartition1,"");
         assertNotNull(adsPartition2);
         assertNotNull(adsPartition3);
         assertNotNull(adsPartition4);
-        assertNotNull(adsPartition5);
     }
 
 

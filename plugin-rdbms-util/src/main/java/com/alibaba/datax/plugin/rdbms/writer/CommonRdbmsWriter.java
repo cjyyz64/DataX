@@ -395,11 +395,6 @@ public class CommonRdbmsWriter {
         }
 
         protected PreparedStatement fillPreparedStatementColumnType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
-            if (this.dataBaseType == DataBaseType.RDBMS) {
-                preparedStatement.setObject(columnIndex + 1,
-                        column.getRawData());
-                return preparedStatement;
-            }
             java.util.Date utilDate;
             switch (columnSqltype) {
                 case Types.CHAR:
