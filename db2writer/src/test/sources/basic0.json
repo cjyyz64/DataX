@@ -1,0 +1,54 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "db2reader",
+                    "parameter": {
+                        "username": "db2inst1",
+                        "password": "db2inst1",
+                        "column": [
+                            "*"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "BVT_CASE"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:db2://10.101.169.107:50000/jctest2"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "db2writer",
+                    "parameter": {
+                        "username": "db2inst1",
+                        "password": "db2inst1",
+                        "preSql": [
+                            "delete from BVT_CASE_writer"
+                        ],
+                        "column": [
+                            "*"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "BVT_CASE_writer"
+                                ],
+                                "jdbcUrl": "jdbc:db2://10.101.169.107:50000/jctest2"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
