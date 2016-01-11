@@ -92,6 +92,7 @@ public class RecordProcessor implements IRecordProcessor {
              */
             shardToLastProcessTimeMap.put(shardId, System.currentTimeMillis());
         } catch (Exception ex) {
+            LOG.error("{}", ex);
             throw new OTSStreamReaderException(ex.getMessage(), ex);
         }
     }
@@ -147,7 +148,7 @@ public class RecordProcessor implements IRecordProcessor {
         try {
             List<StreamRecord> records = processRecordsInput.getRecords();
 
-            LOG.debug("ProcessRecords: size: {}.", records.size());
+            LOG.info("StartProcessRecords: size: {}.", records.size());
 
             if (process(records, processRecordsInput.getCheckpointer().getLargestPermittedCheckpointValue())) {
                 /**
@@ -162,7 +163,11 @@ public class RecordProcessor implements IRecordProcessor {
             IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
             lastCheckpoint = checkpointer.getLargestPermittedCheckpointValue();
             checkpointer.checkpoint();
+
+            LOG.info("ProcessRecords, Size:{}, ProcessTime:{}, LastCheckpoint:{}",
+                    records.size(), shardToLastProcessTimeMap.get(shardId), lastCheckpoint);
         } catch (Exception ex) {
+            LOG.error("{}", ex);
             throw new OTSStreamReaderException(ex.getMessage(), ex);
         }
     }
@@ -185,6 +190,7 @@ public class RecordProcessor implements IRecordProcessor {
                 throw new OTSStreamReaderException("Internal state error: unexpected shutdown, reason: " + reason + ".", null);
             }
         } catch (Exception ex) {
+            LOG.debug("{}", ex);
             throw new OTSStreamReaderException(ex.getMessage(), ex);
         }
     }

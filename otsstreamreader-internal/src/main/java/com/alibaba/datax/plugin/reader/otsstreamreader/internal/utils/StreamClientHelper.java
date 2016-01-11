@@ -42,6 +42,7 @@ public class StreamClientHelper {
     public static Worker getWorkerInstance(OTS ots, OTSStreamReaderConfig config, IRecordProcessorFactory factory, ExecutorService executorService) {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setLeaseDurationMillis(OTSStreamReaderConstants.LEASE_DURATION_TIME_MILLIS);
+        clientConfig.setMaxDurationBeforeLastSuccessfulRenewOrTakeLease(OTSStreamReaderConstants.MAX_DURATION_BEFORE_LAST_SUCCESSFUL_RENEW_OR_TAKE_LEASE);
 
         StreamConfig streamConfig = new StreamConfig();
         streamConfig.setOTSClient(ots);
