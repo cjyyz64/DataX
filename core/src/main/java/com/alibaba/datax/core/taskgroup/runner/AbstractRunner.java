@@ -56,7 +56,7 @@ public abstract class AbstractRunner {
 
     private void mark(State state) {
         this.runnerCommunication.setState(state);
-        if(state==State.SUCCEEDED) {
+        if (state == State.SUCCEEDED) {
             // 对 stage + 1
             this.runnerCommunication.setLongCounter(CommunicationTool.STAGE,
                     this.runnerCommunication.getLongCounter(CommunicationTool.STAGE) + 1);
