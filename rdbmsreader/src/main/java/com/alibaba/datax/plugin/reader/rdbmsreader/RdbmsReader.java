@@ -5,7 +5,6 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.CommonRdbmsReader;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
@@ -13,9 +12,6 @@ import java.util.List;
 
 public class RdbmsReader extends Reader {
     private static final DataBaseType DATABASE_TYPE = DataBaseType.RDBMS;
-    static {
-        DBUtil.loadDriverClass("reader", "rdbms");
-    }
 
     public static class Job extends Reader.Job {
 
@@ -40,7 +36,7 @@ public class RdbmsReader extends Reader {
                     com.alibaba.datax.plugin.rdbms.reader.Constant.FETCH_SIZE,
                     fetchSize);
 
-            this.commonRdbmsReaderMaster = new CommonRdbmsReader.Job(
+            this.commonRdbmsReaderMaster = new SubCommonRdbmsReader.Job(
                     DATABASE_TYPE);
             this.commonRdbmsReaderMaster.init(this.originalConfig);
         }
@@ -71,8 +67,8 @@ public class RdbmsReader extends Reader {
         @Override
         public void init() {
             this.readerSliceConfig = super.getPluginJobConf();
-            this.commonRdbmsReaderSlave = new CommonRdbmsReader.Task(
-                    DATABASE_TYPE, super.getTaskGroupId(), super.getTaskId());
+            this.commonRdbmsReaderSlave = new SubCommonRdbmsReader.Task(
+                    DATABASE_TYPE);
             this.commonRdbmsReaderSlave.init(this.readerSliceConfig);
         }
 
@@ -94,7 +90,5 @@ public class RdbmsReader extends Reader {
         public void destroy() {
             this.commonRdbmsReaderSlave.destroy(this.readerSliceConfig);
         }
-
     }
-
 }
