@@ -281,6 +281,7 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+<<<<<<< HEAD
             <directory>hdfswriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
