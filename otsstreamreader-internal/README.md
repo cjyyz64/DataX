@@ -1,5 +1,34 @@
 ## OTS Internal模型增量数据导出通道：OTSStreamReader－Internal
 
+### 快速介绍
+
+OTSStreamReader-Internal插件主要用于OTS Internal模型的增量数据导出，增量数据可以看作操作日志，除了数据本身外还附有操作信息。
+
+与全量导出插件不同，增量导出插件只有多版本模式，同时不支持指定列。这是与增量导出的原理有关的，导出的格式下面有详细介绍。
+
+使用插件前必须确保表上已经开启Stream功能，可以在建表的时候指定开启，或者使用SDK的UpdateTable接口开启，SDK版本需要使用3.1.1。
+
+使用上遇到问题可以联系@亦征。
+
+### 实现原理
+
+首先用户使用SDK的UpdateTable功能，指定开启Stream并设置过期时间，即开启了增量功能。
+
+开启后，OTS服务端就会将用户的操作日志额外保存起来，
+每个分区有一个有序的操作日志队列，每条操作日志会在一定时间后被垃圾回收，这个时间即用户指定的过期时间。
+
+OTS的SDK提供了几个Stream相关的API用于将这部分操作日志读取出来，增量插件也是通过OTS SDK的接口获取到增量数据的，并将
+增量数据转化为多个6元组的形式(pk, colName, version, colValue, opType, sequenceInfo)导入到ODPS中。
+
+### 数据的后续处理
+
+增量数据导入到ODPS后，可以通过UDF再进行同一行的增量数据合并、打横。
+
+    http://gitlab.alibaba-inc.com/huaiyuan.why/stream_merge_udf/tree/master
+    
+    用于处理OTS导入到ODPS中的、以“一列的一个版本”为单位组织的增量数据(操作日志)， 将同一个主键下的增量数据合并起来，并组织为行的形式（打横）。
+
+
 ### Reader的配置模版：
 
     "reader": {
