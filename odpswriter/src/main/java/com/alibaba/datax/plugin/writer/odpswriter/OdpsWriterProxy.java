@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.odpswriter.util.OdpsUtil;
 
+import com.alibaba.fastjson.JSON;
 import com.aliyun.odps.OdpsType;
 import com.aliyun.odps.TableSchema;
 
@@ -179,7 +180,7 @@ public class OdpsWriterProxy {
         } catch (Exception e) {
             String message = String.format(
                     "写入 ODPS 目的表时遇到了脏数据, 因为源端第[%s]个字段, 具体值[%s] 的数据不符合 ODPS 对应字段的格式要求，请检查该数据并作出修改 或者您可以增大阀值，忽略这条记录.", sourceIndex,
-                    dataXRecord.getColumn(sourceIndex));
+                    JSON.toJSONString(dataXRecord));
             this.taskPluginCollector.collectDirtyRecord(dataXRecord, e,
                     message);
 
