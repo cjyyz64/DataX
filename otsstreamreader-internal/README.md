@@ -20,8 +20,8 @@
             "endTimestampMillis" : "",
             //采云间调度只支持天级别，所以提供该配置，作用与startTimestampMillis和endTimestampMillis类似。
             "date": "",
-            //是否导出时序信息，默认为false。
-            "isExportSequenceInfo": false,
+            //是否导出时序信息。
+            "isExportSequenceInfo": true,
             //从OTS中读增量数据时，每次请求的最大重试次数，默认为30。
             "maxRetries" : 30
         }
