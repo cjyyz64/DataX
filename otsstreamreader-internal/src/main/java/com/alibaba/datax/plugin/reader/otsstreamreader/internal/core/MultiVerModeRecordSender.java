@@ -8,7 +8,7 @@ import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.ColumnValu
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReaderException;
 import com.aliyun.openservices.ots.internal.model.*;
 
-public class OTSStreamRecordSender {
+public class MultiVerModeRecordSender implements IStreamRecordSender {
 
     enum OpType {
         U,  // update
@@ -21,12 +21,13 @@ public class OTSStreamRecordSender {
     private String shardId;
     private final boolean isExportSequenceInfo;
 
-    public OTSStreamRecordSender(RecordSender dataxRecordSender, String shardId, boolean isExportSequenceInfo) {
+    public MultiVerModeRecordSender(RecordSender dataxRecordSender, String shardId, boolean isExportSequenceInfo) {
         this.dataxRecordSender = dataxRecordSender;
         this.shardId = shardId;
         this.isExportSequenceInfo = isExportSequenceInfo;
     }
 
+    @Override
     public void sendToDatax(StreamRecord streamRecord) {
         int colIdx = 0;
         switch (streamRecord.getRecordType()) {

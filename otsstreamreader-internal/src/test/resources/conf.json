@@ -1,6 +1,6 @@
 {
-  "endpoint":"http://10.101.175.30:7000",
-  "accessId":"OTSMultiUser176_accessid",
-  "accessKey":"OTSMultiUser176_accesskey",
-  "instanceName":"streamreader-ft"
+  "endpoint":"http://10.101.168.117:7000",
+  "accessId":"accessid_for_zzf_test",
+  "accessKey":"accesskey_for_zzf_test",
+  "instanceName":"whyinternal"
 }

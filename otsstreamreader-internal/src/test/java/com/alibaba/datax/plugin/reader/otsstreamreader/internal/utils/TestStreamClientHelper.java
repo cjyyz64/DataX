@@ -36,7 +36,7 @@ public class TestStreamClientHelper {
         leaseManager.createLeaseTableIfNotExists(1, 1, -1);
         leaseManager.waitUntilTableReady(100000);
 
-        int leaseNum = 12345;
+        int leaseNum = 145;
         for (int i = 0; i < leaseNum; i++) {
             ShardLease shardLease = new ShardLease("shard" + i);
             shardLease.setStreamId(streamId);

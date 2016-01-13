@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.reader.otsstreamreader.internal.core;
 
 import com.alibaba.datax.common.plugin.RecordSender;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.Mode;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConfig;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReaderException;
 import com.aliyun.openservices.ots.internal.OTS;
@@ -23,13 +24,14 @@ public class RecordProcessor implements IRecordProcessor {
     private final OTS ots;
     private final long startTimestampMillis;
     private final long endTimestampMillis;
+    private final OTSStreamReaderConfig readerConfig;
     private boolean shouldSkip;
     private final Map<String, String> shardToCheckpointMap;
     private final Map<String, Long> shardToLastProcessTimeMap;
     private final CheckpointTimeTracker checkpointTimeTracker;
     private final RecordSender recordSender;
     private final boolean isExportSequenceInfo;
-    private OTSStreamRecordSender otsStreamRecordSender;
+    private IStreamRecordSender otsStreamRecordSender;
 
     private String lastCheckpoint;
     protected String shardId; // "protected" for unit test
@@ -42,6 +44,7 @@ public class RecordProcessor implements IRecordProcessor {
                            CheckpointTimeTracker checkpointTimeTracker,
                            RecordSender recordSender) {
         this.ots = ots;
+        this.readerConfig = config;
         this.startTimestampMillis = config.getStartTimestampMillis();
         this.endTimestampMillis = config.getEndTimestampMillis();
         this.shouldSkip = shouldSkip;
@@ -57,7 +60,13 @@ public class RecordProcessor implements IRecordProcessor {
             this.shardId = initializationInput.getShardInfo().getShardId();
             LOG.info("Initialize: shardId: {}.", shardId);
 
-            this.otsStreamRecordSender = new OTSStreamRecordSender(recordSender, shardId, isExportSequenceInfo);
+            if (readerConfig.getMode().equals(Mode.MULTI_VERSION)) {
+                this.otsStreamRecordSender = new MultiVerModeRecordSender(recordSender, shardId, isExportSequenceInfo);
+            } else if (readerConfig.getMode().equals(Mode.SINGLE_VERSION_AND_UPDATE_ONLY)) {
+                this.otsStreamRecordSender = new SingleVerAndUpOnlyModeRecordSender(recordSender, shardId, isExportSequenceInfo, readerConfig.getColumns());
+            } else {
+                throw new OTSStreamReaderException("Internal Error. Unhandled Mode: " + readerConfig.getMode());
+            }
 
             String checkpoint = shardToCheckpointMap.get(shardId);
             if (checkpoint == null) {

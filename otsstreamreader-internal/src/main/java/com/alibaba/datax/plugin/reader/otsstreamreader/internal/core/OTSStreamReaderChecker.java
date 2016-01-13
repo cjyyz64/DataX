@@ -12,6 +12,7 @@ import com.aliyun.openservices.ots.internal.streamclient.Worker;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
 import com.aliyun.openservices.ots.internal.streamclient.model.WorkerStatus;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -48,13 +49,13 @@ public class OTSStreamReaderChecker {
         long expirationTime = streamDetails.getExpirationTime() * TimeUtils.HOUR_IN_MILLIS;
 
         if (startTime < now - expirationTime + beforeOffset) {
-            throw new OTSStreamReaderException("Start timestamp(" + startTime + ") is too small with StreamExpirationTime:"
-                    + expirationTime + ", BeforeOffsetTime:" + beforeOffset + ", Now:" + now + ".");
+            throw new OTSStreamReaderException("As expiration time is " + expirationTime + ", so the start timestamp must greater than "
+                    + TimeUtils.getTimeInISO8601(new Date(now - expirationTime + beforeOffset)) + "(" + (now - expirationTime + beforeOffset )+ ")");
         }
 
         if (endTime > now - afterOffset) {
-            throw new OTSStreamReaderException("End timestamp(" + endTime + ") is too large with AfterOffsetTime:"
-                + afterOffset + ", Now:" + now + ".");
+            throw new OTSStreamReaderException("To avoid timing error between different machines, the end timestamp must smaller" +
+                    " than " + TimeUtils.getTimeInISO8601(new Date(now - afterOffset)) + "(" + (now - afterOffset) + ")");
         }
     }
 

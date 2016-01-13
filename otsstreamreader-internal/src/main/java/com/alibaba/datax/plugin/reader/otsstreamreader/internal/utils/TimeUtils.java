@@ -3,9 +3,11 @@ package com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class TimeUtils {
 
@@ -42,5 +44,13 @@ public class TimeUtils {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         Date date = format.parse(dateStr);
         return date.getTime();
+    }
+
+    public static String getTimeInISO8601(Date date) {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+        String nowAsISO = df.format(date);
+        return nowAsISO;
     }
 }

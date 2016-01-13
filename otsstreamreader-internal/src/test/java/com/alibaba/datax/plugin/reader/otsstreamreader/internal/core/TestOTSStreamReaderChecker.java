@@ -84,7 +84,7 @@ public class TestOTSStreamReaderChecker {
                 checker.checkStreamEnabledAndTimeRangeOK();
                 fail();
             } catch (OTSStreamReaderException ex) {
-                assertTrue(ex.getMessage().startsWith("Start timestamp(1) is too small"));
+                assertTrue(ex.getMessage().startsWith("As expiration time is"));
             }
         }
 
@@ -95,7 +95,7 @@ public class TestOTSStreamReaderChecker {
                 checker.checkStreamEnabledAndTimeRangeOK();
                 fail();
             } catch (OTSStreamReaderException ex) {
-                assertTrue(ex.getMessage().startsWith("End timestamp(" + config.getEndTimestampMillis() + ") is too large"));
+                assertTrue(ex.getMessage().startsWith("To avoid timing error between different machines"));
             }
         }
 
@@ -107,7 +107,7 @@ public class TestOTSStreamReaderChecker {
                 checker.checkStreamEnabledAndTimeRangeOK();
                 fail();
             } catch (OTSStreamReaderException ex) {
-                assertTrue(ex.getMessage().startsWith("Start timestamp(" + config.getStartTimestampMillis() + ") is too small"));
+                assertTrue(ex.getMessage().startsWith("As expiration time is"));
             }
         }
 

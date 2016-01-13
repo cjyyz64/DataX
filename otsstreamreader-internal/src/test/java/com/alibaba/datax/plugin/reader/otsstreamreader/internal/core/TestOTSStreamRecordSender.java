@@ -12,7 +12,7 @@ public class TestOTSStreamRecordSender {
     public void testSendToDatax() {
         RecordSenderForTest recordSenderForTest = new RecordSenderForTest();
         for (int isExportSeq = 0; isExportSeq < 2; isExportSeq++) {
-            OTSStreamRecordSender recordSender = new OTSStreamRecordSender(recordSenderForTest, "shardId", isExportSeq == 1);
+            MultiVerModeRecordSender recordSender = new MultiVerModeRecordSender(recordSenderForTest, "shardId", isExportSeq == 1);
             for (int pkNum = 1; pkNum < 5; pkNum++) {
                 for (int colNum = 0; colNum < 1000; colNum++) {
                     StreamRecord streamRecord = new StreamRecord();

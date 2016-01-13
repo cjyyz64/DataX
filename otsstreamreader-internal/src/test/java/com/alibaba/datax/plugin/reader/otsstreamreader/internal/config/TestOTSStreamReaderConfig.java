@@ -4,6 +4,8 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReaderException;
 import org.junit.Test;
 
+import java.util.ArrayList;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -81,7 +83,7 @@ public class TestOTSStreamReaderConfig {
                     config = OTSStreamReaderConfig.load(configuration);
                     fail();
                 } catch (OTSStreamReaderException ex) {
-                    assertEquals("Must set date or time range.", ex.getMessage());
+                    assertEquals("Must set date or time range, please check your config.", ex.getMessage());
                 }
             }
         }
@@ -110,7 +112,7 @@ public class TestOTSStreamReaderConfig {
                     config = OTSStreamReaderConfig.load(configuration);
                     fail();
                 } catch (OTSStreamReaderException ex) {
-                    assertEquals("Can't set date and time range both.", ex.getMessage());
+                    assertEquals("Can't set date and time range both, please check your config.", ex.getMessage());
                 }
             }
         }

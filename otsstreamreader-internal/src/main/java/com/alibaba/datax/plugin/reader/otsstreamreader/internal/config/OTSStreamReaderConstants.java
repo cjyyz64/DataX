@@ -22,7 +22,6 @@ public class OTSStreamReaderConstants {
 
     public static final String CONF = "conf";
 
-
     /**
      * StreamClient Config:
      */

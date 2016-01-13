@@ -9,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class OTSStreamReaderConfig {
 
@@ -25,6 +28,9 @@ public class OTSStreamReaderConfig {
     private static final String KEY_IS_EXPORT_SEQUENCE_INFO = "isExportSequenceInfo";
     private static final String KEY_DATE = "date";
     private static final String KEY_MAX_RETRIES = "maxRetries";
+    private static final String KEY_MODE = "mode";
+    private static final String KEY_COLUMN = "column";
+
     private static final int DEFAULT_MAX_RETRIES = 30;
 
     private String endpoint;
@@ -37,6 +43,9 @@ public class OTSStreamReaderConfig {
     private long endTimestampMillis;
     private boolean isExportSequenceInfo;
     private int maxRetries = DEFAULT_MAX_RETRIES;
+
+    private Mode mode;
+    private List<String> columns;
 
     private transient OTS otsForTest;
 
@@ -112,6 +121,45 @@ public class OTSStreamReaderConfig {
         this.isExportSequenceInfo = isExportSequenceInfo;
     }
 
+    public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    public List<String> getColumns() {
+        return columns;
+    }
+
+    public void setColumns(List<String> columns) {
+        this.columns = columns;
+    }
+
+    private static void parseConfigForSingleVersionAndUpdateOnlyMode(OTSStreamReaderConfig config, Configuration param) {
+        try {
+            List<Object> values = param.getList(KEY_COLUMN);
+            if (values == null) {
+                config.setColumns(new ArrayList<String>());
+                return;
+            }
+
+            List<String> columns = new ArrayList<String>();
+            for (Object item : values) {
+                if (item instanceof Map) {
+                    String columnName = (String) ((Map) item).get("name");
+                    columns.add(columnName);
+                } else {
+                    throw new IllegalArgumentException("The item of column must be map object, please check your input.");
+                }
+            }
+            config.setColumns(columns);
+        } catch (RuntimeException ex) {
+            throw new OTSStreamReaderException("Parse column fail, please check your config.", ex);
+        }
+    }
+
     public static OTSStreamReaderConfig load(Configuration param) {
         OTSStreamReaderConfig config = new OTSStreamReaderConfig();
 
@@ -125,11 +173,11 @@ public class OTSStreamReaderConfig {
 
         if (param.getString(KEY_DATE) == null &&
                 (param.getLong(KEY_START_TIMESTAMP_MILLIS) == null || param.getLong(KEY_END_TIMESTAMP_MILLIS) == null)) {
-            throw new OTSStreamReaderException("Must set date or time range.");
+            throw new OTSStreamReaderException("Must set date or time range, please check your config.");
         }
         if (param.get(KEY_DATE) != null &&
                 (param.getLong(KEY_START_TIMESTAMP_MILLIS) != null || param.getLong(KEY_END_TIMESTAMP_MILLIS) != null)) {
-            throw new OTSStreamReaderException("Can't set date and time range both.");
+            throw new OTSStreamReaderException("Can't set date and time range both, please check your config.");
         }
 
         if (param.getString(KEY_DATE) == null) {
@@ -151,6 +199,22 @@ public class OTSStreamReaderConfig {
         }
 
         config.setMaxRetries(param.getInt(KEY_MAX_RETRIES, DEFAULT_MAX_RETRIES));
+
+        String mode = param.getString(KEY_MODE);
+        if (mode != null) {
+            if (mode.equalsIgnoreCase(Mode.SINGLE_VERSION_AND_UPDATE_ONLY.name())) {
+                config.setMode(Mode.SINGLE_VERSION_AND_UPDATE_ONLY);
+                parseConfigForSingleVersionAndUpdateOnlyMode(config, param);
+            } else {
+                throw new OTSStreamReaderException("Unsupported Mode: " + mode + ", please check your config.");
+            }
+        } else {
+            config.setMode(Mode.MULTI_VERSION);
+            List<Object> values = param.getList(KEY_COLUMN);
+            if (values != null) {
+                throw new OTSStreamReaderException("The multi version mode doesn't support setting columns.");
+            }
+        }
 
         LOG.info("endpoint: {}, accessId: {}, accessKey: {}, instanceName: {}, dataTableName: {}, statusTableName: {}," +
                 " isExportSequenceInfo: {}, startTimestampMillis: {}, endTimestampMillis:{}, maxRetries:{}.", config.getEndpoint(),
