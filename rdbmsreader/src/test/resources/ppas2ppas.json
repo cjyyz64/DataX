@@ -12,14 +12,16 @@
                     "parameter": {
                         "username": "yixiao",
                         "password": "yixiao_cdp",
-                        "column": ["*"],
+                        "column": [
+                            "*"
+                        ],
                         "connection": [
                             {
                                 "table": [
                                     "l"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:dm://10.101.84.197:5236/yixiao"
+                                    "jdbc:edb://10.101.84.197:5444/edb"
                                 ]
                             }
                         ]
@@ -30,14 +32,18 @@
                     "parameter": {
                         "username": "yixiao",
                         "password": "yixiao_cdp",
-                        "preSql": ["truncate table w"],
-                        "column": ["*"],
+                        "preSql": [
+                            "delete from r"
+                        ],
+                        "column": [
+                            "*"
+                        ],
                         "connection": [
                             {
                                 "table": [
-                                    "d"
+                                    "r"
                                 ],
-                                "jdbcUrl": "jdbc:dm://10.101.84.197:5236/yixiao"
+                                "jdbcUrl": "jdbc:edb://10.101.84.197:5444/edb"
                             }
                         ]
                     }
