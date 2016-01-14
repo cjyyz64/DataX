@@ -134,10 +134,10 @@ public class SubCommonRdbmsReader extends CommonRdbmsReader {
                         }
                         record.addColumn(new StringColumn(stringData));
                         break;
-                    case Types.TIME_WITH_TIMEZONE:
-                    case Types.TIMESTAMP_WITH_TIMEZONE:
-                        record.addColumn(new StringColumn(rs.getString(i)));
-                        break;
+                    //case Types.TIME_WITH_TIMEZONE:
+                    //case Types.TIMESTAMP_WITH_TIMEZONE:
+                    //    record.addColumn(new StringColumn(rs.getString(i)));
+                    //    break;
 
                     default:
                         // warn:not support INTERVAL etc: Types.JAVA_OBJECT
