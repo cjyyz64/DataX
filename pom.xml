@@ -99,6 +99,7 @@
         <!-- developing module -->
         <module>swiftwriter</module>
         <module>hbasewriter</module>
+        <module>otsstreamreader-internal</module>
     </modules>
 
     <dependencyManagement>
