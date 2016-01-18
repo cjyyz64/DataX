@@ -10,6 +10,7 @@ import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
