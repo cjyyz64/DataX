@@ -506,6 +506,7 @@ public class JobContainer extends AbstractContainer {
 
         this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
         LogReportUtil.initSplitInfo(taskNumber, needChannelNumber);
+        PerfTrace.getInstance().setChannelNumber(needChannelNumber);
 
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务

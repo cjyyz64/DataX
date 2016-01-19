@@ -267,20 +267,11 @@ public final class DataxServiceUtil {
         }
     }
 
-    public static void reportDataxPerfLogs(List<JobStatisticsListWapper> lists) {
-        if (lists == null) {
-            return;
-        }
-        for (JobStatisticsListWapper jobStatisticsListWapper : lists) {
-            reportDataxPerfLog(jobStatisticsListWapper);
-        }
-    }
-
-    public static void reportDataxPerfLog(JobStatisticsListWapper jobStatisticsListWapper) {
+    public static void reportDataxPerfLog(JobStatisticsListWapper2 jobStatisticsListWapper) {
         if (jobStatisticsListWapper == null) {
             return;
         }
-        String url = DATAX_SERVICE_URL + "inner/job/reportPerfLog";
+        String url = DATAX_SERVICE_URL + "inner/job/reportInstancePerfLog";
         try {
             HttpPut httpPut = HttpClientUtil.getPutRequest();
             httpPut.setURI(new URI(url));
@@ -303,7 +294,7 @@ public final class DataxServiceUtil {
 
         } catch (Exception e) {
             //吃掉异常，以免log中不好看
-            logger.info("ignore!!!  report perf log has Exception: " + e.getMessage());
+            logger.debug("ignore!!!  report perf log has Exception: " + e.getMessage());
         }
     }
 

@@ -1,22 +1,28 @@
 package com.alibaba.datax.core.statistics.container.report;
 
+import com.alibaba.datax.common.statistics.PerfTrace;
 import com.alibaba.datax.common.util.StrUtil;
 import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.statistics.communication.CommunicationTool;
 import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.ExceptionTracker;
+import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto2;
+import com.alibaba.datax.dataxservice.face.domain.JobStatisticsListWapper2;
 import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import com.alibaba.fastjson.JSON;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.text.DecimalFormat;
 
 public class DsReporter extends AbstractReporter {
 
     private static final Logger LOG = LoggerFactory.getLogger(DsReporter.class);
 
     public static final int MSG_SIZE = 4096;
-
+    private final static DecimalFormat df = new DecimalFormat("0.00");
 
     private Long jobId;
 
@@ -47,11 +53,29 @@ public class DsReporter extends AbstractReporter {
         }
         try {
             DataxServiceUtil.updateJobInfo(jobId, jobStatus);
+
+            JobStatisticsDto2 jobStatistics = PerfTrace.getInstance().getReports("job");
+
+            if(jobStatistics!=null){
+                jobStatistics.setRecords(communication.getLongCounter("totalReadRecords"));
+                jobStatistics.setBytes(communication.getLongCounter("totalReadBytes"));
+                jobStatistics.setSpeedRecord(communication.getLongCounter("recordSpeed"));
+                jobStatistics.setSpeedByte(communication.getLongCounter("byteSpeed"));
+                jobStatistics.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
+                jobStatistics.setErrorRecord(communication.getLongCounter("totalErrorRecords"));
+                jobStatistics.setStagePercent(df.format(communication.getDoubleCounter("percentage") * 100) + "%");
+                jobStatistics.setWaitReadTimeMs(communication.getLongCounter("waitWriterTime")/1000000);
+                jobStatistics.setWaitWriteTimeMs(communication.getLongCounter("waitReaderTime")/1000000);
+                DataxServiceUtil.reportDataxPerfLog(getWapper(jobStatistics));
+            }
+
         } catch (Exception e) {
             LOG.error("Exception when report job communication, jobId: " + jobId +
                             ", status: " + JSON.toJSONString(jobStatus),
                     e);
         }
+
+
     }
 
     @Override
@@ -79,12 +103,36 @@ public class DsReporter extends AbstractReporter {
 
         try {
             DataxServiceUtil.updateTaskGroupInfo(this.jobId, taskGroupId, taskGroupStatus);
+
+            JobStatisticsDto2 jobStatistics = PerfTrace.getInstance().getReports("tg");
+
+            if(jobStatistics!=null){
+                jobStatistics.setRecords(communication.getLongCounter("totalReadRecords"));
+                jobStatistics.setBytes(communication.getLongCounter("totalReadBytes"));
+                jobStatistics.setSpeedRecord(communication.getLongCounter("recordSpeed"));
+                jobStatistics.setSpeedByte(communication.getLongCounter("byteSpeed"));
+                jobStatistics.setErrorBytes(communication.getLongCounter("totalErrorBytes"));
+                jobStatistics.setErrorRecord(communication.getLongCounter("totalErrorRecords"));
+                jobStatistics.setStagePercent(df.format(communication.getDoubleCounter("percentage") * 100) + "%");
+                jobStatistics.setWaitReadTimeMs(communication.getLongCounter("waitWriterTime")/1000000);
+                jobStatistics.setWaitWriteTimeMs(communication.getLongCounter("waitReaderTime")/1000000);
+                DataxServiceUtil.reportDataxPerfLog(getWapper(jobStatistics));
+            }
+
         } catch (Exception e) {
             LOG.error("Exception when report task group communication, job: " + jobId +
                             ", task group: " + taskGroupId +
                             ", status: " + JSON.toJSONString(taskGroupStatus),
                     e);
         }
+    }
+
+    private JobStatisticsListWapper2 getWapper(final JobStatisticsDto2 dto){
+        return new JobStatisticsListWapper2(){
+            {
+                this.setJobStatisticsDtoList(Lists.newArrayList(dto));
+            }
+        };
     }
 
 }

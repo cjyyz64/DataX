@@ -21,7 +21,6 @@ import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.util.ClassUtil;
-import com.alibaba.datax.core.util.DataxServiceUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
@@ -274,18 +273,13 @@ public class TaskGroupContainer extends AbstractContainer {
                     }
 
                 }
-                //暂时先2分钟汇报一次性能数据。
-                if (now - lastPerfReportTimeStamp > reportIntervalInMillSec * perfReportIntervalMultiple) {
-                    DataxServiceUtil.reportDataxPerfLogs(PerfTrace.getInstance().getReports(false));
-                    lastPerfReportTimeStamp = now;
-                }
 
                 Thread.sleep(sleepIntervalInMillSec);
             }
 
             //6.最后还要汇报一次
             reportTaskGroupCommunication(lastTaskGroupContainerCommunication, taskCountInThisTaskGroup);
-            DataxServiceUtil.reportDataxPerfLogs(PerfTrace.getInstance().getReports(true));
+
 
         } catch (Throwable e) {
             Communication nowTaskGroupContainerCommunication = this.containerCommunicator.collect();
