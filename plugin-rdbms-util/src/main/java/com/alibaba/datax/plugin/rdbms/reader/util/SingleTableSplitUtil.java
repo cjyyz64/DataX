@@ -156,6 +156,7 @@ public class SingleTableSplitUtil {
      */
     private static Pair<Object, Object> checkSplitPk(Connection conn, String pkRangeSQL, int fetchSize,  String table,
                                                      String username, Configuration configuration) {
+        LOG.info("split pk [sql={}] is running... ", pkRangeSQL);
         ResultSet rs = null;
         Pair<Object, Object> minMaxPK = null;
         try {
