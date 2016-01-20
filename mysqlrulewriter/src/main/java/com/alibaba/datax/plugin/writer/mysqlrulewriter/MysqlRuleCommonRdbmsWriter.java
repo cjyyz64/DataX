@@ -312,7 +312,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                         recordList.clear();
                     }
                 } catch (SQLException e) {
-                    LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
+                    LOG.warn("回滚此次写入, 采用每次写入一行方式提交. jdbc=" + dbBuffer.getJdbcUrl() + ", 因为:" + e.getMessage());
                     connection.rollback();
                     doRuleOneInsert(connection, dbBuffer);
                 } catch (Exception e) {
@@ -337,7 +337,7 @@ public class MysqlRuleCommonRdbmsWriter extends CommonRdbmsWriter {
                             preparedStatement = fillPreparedStatement(preparedStatement, record);
                             preparedStatement.execute();
                         } catch (SQLException e) {
-                            LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:" + e.toString());
+                            LOG.error("写入表[" + tableName + "]存在脏数据, jdbc=" + dbBuffer.getJdbcUrl() + ", 写入异常为:" + e.toString());
                             this.taskPluginCollector.collectDirtyRecord(record, e);
                         } finally {
                             // 最后不要忘了关闭 preparedStatement

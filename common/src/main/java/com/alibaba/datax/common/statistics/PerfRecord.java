@@ -11,6 +11,7 @@ import java.util.Date;
 /**
  * Created by liqiang on 15/8/23.
  */
+@SuppressWarnings("NullableProblems")
 public class PerfRecord implements Comparable<PerfRecord> {
     private static Logger perf = LoggerFactory.getLogger(PerfRecord.class);
     private static String datetimeFormat = "yyyy-MM-dd HH:mm:ss";
@@ -137,7 +138,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
     public String toString() {
         return String.format("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s"
-                , getJobId(), taskGroupId, taskId, phase, action,
+                , getInstId(), taskGroupId, taskId, phase, action,
                 DateFormatUtils.format(startTime, datetimeFormat), elapsedTimeInNs, count, size,getHostIP());
     }
 
@@ -152,7 +153,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getJobId(),taskGroupId,taskId,phase,startTime);
+        return Objects.hashCode(getInstId(),taskGroupId,taskId,phase,startTime);
     }
 
     @Override
@@ -164,7 +165,7 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
         PerfRecord dst = (PerfRecord)o;
 
-        if(!Objects.equal(this.getJobId(),dst.getJobId())) return false;
+        if(!Objects.equal(this.getInstId(),dst.getInstId())) return false;
         if(!Objects.equal(this.taskGroupId,dst.taskGroupId)) return false;
         if(!Objects.equal(this.taskId,dst.taskId)) return false;
         if(!Objects.equal(this.phase,dst.phase)) return false;
@@ -210,8 +211,8 @@ public class PerfRecord implements Comparable<PerfRecord> {
         return size;
     }
 
-    public long getJobId(){
-        return PerfTrace.getInstance().getJobId();
+    public long getInstId(){
+        return PerfTrace.getInstance().getInstId();
     }
 
     public String getHostIP(){
@@ -228,6 +229,10 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
     public long getStartTimeInMs() {
         return startTime.getTime();
+    }
+
+    public long getStartTimeInNs() {
+        return startTimeInNs;
     }
 
     public String getDatetime(){

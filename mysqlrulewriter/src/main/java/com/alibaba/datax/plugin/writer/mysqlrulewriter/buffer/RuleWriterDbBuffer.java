@@ -65,4 +65,8 @@ public class RuleWriterDbBuffer {
     public String getDbName() {
         return dbName;
     }
+
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
 }

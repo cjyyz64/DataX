@@ -65,7 +65,7 @@
         <dependency>
             <groupId>com.alibaba.datax</groupId>
             <artifactId>datax-service-face</artifactId>
-            <version>1.0.17-SNAPSHOT</version>
+            <version>1.0.23-SNAPSHOT</version>
         </dependency>
 
         <dependency>

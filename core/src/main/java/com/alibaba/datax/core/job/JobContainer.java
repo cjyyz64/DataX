@@ -115,11 +115,11 @@ public class JobContainer extends AbstractContainer {
 
                 LOG.debug("jobContainer starts to do init ...");
                 this.init();
-                LOG.debug("jobContainer starts to do prepare ...");
+                LOG.info("jobContainer starts to do prepare ...");
                 this.prepare();
-                LOG.debug("jobContainer starts to do split ...");
+                LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
-                LOG.debug("jobContainer starts to do schedule ...");
+                LOG.info("jobContainer starts to do schedule ...");
                 this.schedule();
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
@@ -506,6 +506,7 @@ public class JobContainer extends AbstractContainer {
 
         this.needChannelNumber = Math.min(this.needChannelNumber, taskNumber);
         LogReportUtil.initSplitInfo(taskNumber, needChannelNumber);
+        PerfTrace.getInstance().setChannelNumber(needChannelNumber);
 
         /**
          * 通过获取配置信息得到每个taskGroup需要运行哪些tasks任务
