@@ -4,12 +4,14 @@
 package com.alibaba.datax.plugin.writer.adswriter.load;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.writer.adswriter.AdsException;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +19,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
 
 public class AdsHelper {
     private static final Logger LOG = LoggerFactory
@@ -321,31 +324,11 @@ public class AdsHelper {
                     null);
         }
 
-        Connection connection = null;
-        Statement statement = null;
-        ResultSet rs = null;
         try {
-            Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
-
-            Properties connectionProps = new Properties();
-            connectionProps.put("user", userName);
-            connectionProps.put("password", password);
-            connection = DriverManager.getConnection(url, connectionProps);
-            statement = connection.createStatement();
-
-            String sql = "select state from information_schema.job_instances where job_id like '" + jobId + "'";
-            rs = statement.executeQuery(sql);
-
-            String state = null;
-            while (DBUtil.asyncResultSetNext(rs)) {
-                state = rs.getString(1);
-            }
-
+            String state = this.checkLoadDataJobStatusWithRetry(jobId);
             if (state == null) {
                 throw new AdsException(AdsException.JOB_NOT_EXIST, "Target job does not exist for id: " + jobId, null);
             }
-
             if (state.equals("SUCCEEDED")) {
                 return true;
             } else if (state.equals("FAILED")) {
@@ -353,36 +336,69 @@ public class AdsHelper {
             } else {
                 return false;
             }
-
-        } catch (ClassNotFoundException e) {
-            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
-        } catch (SQLException e) {
-            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
         } catch (Exception e) {
             throw new AdsException(AdsException.OTHER, e.getMessage(), e);
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                    // Ignore exception
-                }
-            }
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (SQLException e) {
-                    // Ignore exception
-                }
-            }
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    // Ignore exception
-                }
-            }
-        }
+        } 
+    }
+    
+    private String checkLoadDataJobStatusWithRetry(final String jobId)
+            throws AdsException {
+        try {
+            Class.forName("com.mysql.jdbc.Driver");
+            return RetryUtil.executeWithRetry(new Callable<String>() {
+                @Override
+                public String call() throws Exception {
+                    Connection connection = null;
+                    Statement statement = null;
+                    ResultSet rs = null;
+                    try {
+                        String url = "jdbc:mysql://"
+                                + adsURL
+                                + "/"
+                                + schema
+                                + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
+                        Properties connectionProps = new Properties();
+                        connectionProps.put("user", userName);
+                        connectionProps.put("password", password);
+                        connection = DriverManager.getConnection(url,
+                                connectionProps);
+                        statement = connection.createStatement();
 
+                        String sql = "select state from information_schema.job_instances where job_id like '"
+                                + jobId + "'";
+                        rs = statement.executeQuery(sql);
+                        String state = null;
+                        while (DBUtil.asyncResultSetNext(rs)) {
+                            state = rs.getString(1);
+                        }
+                        return state;
+                    } finally {
+                        if (rs != null) {
+                            try {
+                                rs.close();
+                            } catch (SQLException e) {
+                                // Ignore exception
+                            }
+                        }
+                        if (statement != null) {
+                            try {
+                                statement.close();
+                            } catch (SQLException e) {
+                                // Ignore exception
+                            }
+                        }
+                        if (connection != null) {
+                            try {
+                                connection.close();
+                            } catch (SQLException e) {
+                                // Ignore exception
+                            }
+                        }
+                    }
+                }
+            }, 3, 1000L, true);
+        } catch (Exception e) {
+            throw new AdsException(AdsException.OTHER, e.getMessage(), e);
+        }
     }
 }

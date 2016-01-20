@@ -49,17 +49,20 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
-	    <module>postgresqlreader</module>
-	    <module>oraclereader</module>
+	<module>postgresqlreader</module>
+	<module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
         <module>otsreader-internal</module>
         <module>txtfilereader</module>
+        <module>hdfsreader</module>
         <module>streamreader</module>
         <module>oceanbasereader</module>
         <module>hbasereader</module>
         <module>ossreader</module>
         <module>ftpreader</module>
+        <module>mongodbreader</module>
+        <module>rdbmsreader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -67,11 +70,13 @@
         <module>drdswriter</module>
         <module>odpswriter</module>
         <module>txtfilewriter</module>
+        <module>hdfswriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>
         <module>otswriter-internal</module>
         <module>oraclewriter</module>
         <module>sqlserverwriter</module>
+        <module>db2writer</module>
         <module>oceanbasewriter</module>
         <module>postgresqlwriter</module>
         <module>osswriter</module>
@@ -79,7 +84,11 @@
         <module>hbasebulkwriter</module>
         <module>hbasebulkwriter2</module>
         <module>tairwriter</module>
-		 <module>metaqwriter</module>
+        <module>metaqwriter</module>
+        <module>mongodbwriter</module>
+	<module>adswriter</module>
+	<module>ocswriter</module>
+	<module>rdbmswriter</module>
         <!--hook-->
         <module>dqchook</module>
 
@@ -87,18 +96,10 @@
         <module>plugin-rdbms-util</module>
         <module>simulator</module>
         <module>plugin-unstructured-storage-util</module>
-        <module>mongodbreader</module>
-        <module>mongodbwriter</module>
-
-        <module>adswriter</module>
-        <module>ocswriter</module>
-
         <!-- developing module -->
-        <module>hdfsreader</module>
-        <module>hdfswriter</module>
         <module>swiftwriter</module>
         <module>hbasewriter</module>
-
+        <module>otsstreamreader-internal</module>
     </modules>
 
     <dependencyManagement>

@@ -20,8 +20,6 @@ public final class OriginalConfPretreatmentUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(OriginalConfPretreatmentUtil.class);
 
-    private static boolean IS_DEBUG = LOG.isDebugEnabled();
-
     public static DataBaseType DATABASE_TYPE;
 
     public static void doPretreatment(Configuration originalConfig) {

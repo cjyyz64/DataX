@@ -67,6 +67,13 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>rdbmsreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 
         <fileSet>
             <directory>odpsreader/target/datax/</directory>
@@ -231,8 +238,22 @@
             </includes>
             <outputDirectory>datax</outputDirectory>
         </fileSet>
+        <fileSet>
+            <directory>db2writer/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
 		<fileSet>
             <directory>postgresqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>rdbmswriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -303,6 +324,13 @@
         </fileSet>
         <fileSet>
             <directory>swiftwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>otsstreamreader-internal/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>

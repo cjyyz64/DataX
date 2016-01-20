@@ -1,0 +1,54 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "rdbmsreader",
+                    "parameter": {
+                        "username": "yixiao",
+                        "password": "yixiao_cdp",
+                        "column": [
+                            "*"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "l"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:edb://10.101.84.197:5444/edb"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "rdbmswriter",
+                    "parameter": {
+                        "username": "yixiao",
+                        "password": "yixiao_cdp",
+                        "preSql": [
+                            "delete from r"
+                        ],
+                        "column": [
+                            "*"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "r"
+                                ],
+                                "jdbcUrl": "jdbc:edb://10.101.84.197:5444/edb"
+                            }
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
