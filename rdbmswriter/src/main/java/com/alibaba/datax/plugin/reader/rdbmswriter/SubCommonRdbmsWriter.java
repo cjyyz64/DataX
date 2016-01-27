@@ -41,17 +41,28 @@ public class SubCommonRdbmsWriter extends CommonRdbmsWriter {
                 case Types.LONGVARCHAR:
                 case Types.NVARCHAR:
                 case Types.LONGNVARCHAR:
-                    preparedStatement.setString(columnIndex + 1,
-                            column.asString());
+                    if (null == column.getRawData()) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else {
+                        preparedStatement.setString(columnIndex + 1,
+                                column.asString());
+                    }
                     break;
 
                 case Types.SMALLINT:
                 case Types.INTEGER:
                 case Types.BIGINT:
                 case Types.TINYINT:
-                    preparedStatement.setLong(columnIndex + 1, column.asLong());
+                    String strLongValue = column.asString();
+                    if (emptyAsNull && "".equals(strLongValue)) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else if (null == column.getRawData()) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else {
+                        preparedStatement.setLong(columnIndex + 1,
+                                column.asLong());
+                    }
                     break;
-
                 case Types.NUMERIC:
                 case Types.DECIMAL:
                 case Types.FLOAT:
@@ -59,6 +70,8 @@ public class SubCommonRdbmsWriter extends CommonRdbmsWriter {
                 case Types.DOUBLE:
                     String strValue = column.asString();
                     if (emptyAsNull && "".equals(strValue)) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else if (null == column.getRawData()) {
                         preparedStatement.setObject(columnIndex + 1, null);
                     } else {
                         preparedStatement.setDouble(columnIndex + 1,
@@ -71,8 +84,10 @@ public class SubCommonRdbmsWriter extends CommonRdbmsWriter {
                     utilDate = column.asDate();
                     if (null != utilDate) {
                         sqlDate = new java.sql.Date(utilDate.getTime());
+                        preparedStatement.setDate(columnIndex + 1, sqlDate);
+                    } else {
+                        preparedStatement.setNull(columnIndex + 1, Types.DATE);
                     }
-                    preparedStatement.setDate(columnIndex + 1, sqlDate);
                     break;
 
                 case Types.TIME:
@@ -80,8 +95,10 @@ public class SubCommonRdbmsWriter extends CommonRdbmsWriter {
                     utilDate = column.asDate();
                     if (null != utilDate) {
                         sqlTime = new java.sql.Time(utilDate.getTime());
+                        preparedStatement.setTime(columnIndex + 1, sqlTime);
+                    } else {
+                        preparedStatement.setNull(columnIndex + 1, Types.TIME);
                     }
-                    preparedStatement.setTime(columnIndex + 1, sqlTime);
                     break;
 
                 case Types.TIMESTAMP:
@@ -90,28 +107,42 @@ public class SubCommonRdbmsWriter extends CommonRdbmsWriter {
                     if (null != utilDate) {
                         sqlTimestamp = new java.sql.Timestamp(
                                 utilDate.getTime());
+                        preparedStatement.setTimestamp(columnIndex + 1,
+                                sqlTimestamp);
+                    } else {
+                        preparedStatement.setNull(columnIndex + 1,
+                                Types.TIMESTAMP);
                     }
-                    preparedStatement.setTimestamp(columnIndex + 1,
-                            sqlTimestamp);
                     break;
 
                 case Types.BINARY:
                 case Types.VARBINARY:
                 case Types.BLOB:
                 case Types.LONGVARBINARY:
-                    preparedStatement.setBytes(columnIndex + 1,
-                            column.asBytes());
+                    if (null == column.getRawData()) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else {
+                        preparedStatement.setBytes(columnIndex + 1,
+                                column.asBytes());
+                    }
                     break;
 
                 case Types.BOOLEAN:
-                    preparedStatement.setString(columnIndex + 1,
-                            column.asString());
+                    if (null == column.getRawData()) {
+                        preparedStatement.setNull(columnIndex + 1,
+                                Types.BOOLEAN);
+                    } else {
+                        preparedStatement.setBoolean(columnIndex + 1,
+                                column.asBoolean());
+                    }
                     break;
 
                 // warn: bit(1) -> Types.BIT 可使用setBoolean
                 // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
                 case Types.BIT:
-                    if (this.dataBaseType == DataBaseType.MySql) {
+                    if (null == column.getRawData()) {
+                        preparedStatement.setObject(columnIndex + 1, null);
+                    } else if (this.dataBaseType == DataBaseType.MySql) {
                         preparedStatement.setBoolean(columnIndex + 1,
                                 column.asBoolean());
                     } else {
