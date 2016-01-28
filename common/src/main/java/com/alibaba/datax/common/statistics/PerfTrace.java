@@ -125,6 +125,7 @@ public class PerfTrace {
     public void tracePerfRecord(PerfRecord perfRecord) {
         try {
             if (enable) {
+                long curNanoTime = System.nanoTime();
                 //ArrayList非线程安全
                 switch (perfRecord.getAction()) {
                     case end:
@@ -138,7 +139,7 @@ public class PerfTrace {
 
                         if (perfReportEnable && needReport(perfRecord)) {
                             synchronized (needReportPool4NotEnd) {
-                                sumPerf4Report.add(perfRecord);
+                                sumPerf4Report.add(curNanoTime,perfRecord);
                                 needReportPool4NotEnd.remove(perfRecord);
                             }
                         }
@@ -146,7 +147,9 @@ public class PerfTrace {
                         break;
                     case start:
                         if (perfReportEnable && needReport(perfRecord)) {
-                            needReportPool4NotEnd.add(perfRecord);
+                            synchronized (needReportPool4NotEnd) {
+                                needReportPool4NotEnd.add(perfRecord);
+                            }
                         }
                         break;
                 }
@@ -370,10 +373,14 @@ public class PerfTrace {
 
             //每次将未完成的task的统计清空
             sumPerf4Report4NotEnd = new SumPerf4Report();
+            Set<PerfRecord> needReportPool4NotEndTmp = null;
             synchronized (needReportPool4NotEnd) {
-                for (PerfRecord perfRecord : needReportPool4NotEnd) {
-                    sumPerf4Report4NotEnd.add(perfRecord);
-                }
+                needReportPool4NotEndTmp = new HashSet<PerfRecord>(needReportPool4NotEnd);
+            }
+
+            long curNanoTime = System.nanoTime();
+            for (PerfRecord perfRecord : needReportPool4NotEndTmp) {
+                sumPerf4Report4NotEnd.add(curNanoTime, perfRecord);
             }
 
             JobStatisticsDto2 jdo = new JobStatisticsDto2();
@@ -437,26 +444,30 @@ public class PerfTrace {
         long sqlQueryTimeInMs = 0L;
         long resultNextTimeInMs = 0L;
 
-        public void add(PerfRecord perfRecord) {
-            long runTimeEndInMs;
-            if (perfRecord.getElapsedTimeInNs() == -1) {
-                runTimeEndInMs = (System.nanoTime() - perfRecord.getStartTimeInNs()) / 1000000;
-            } else {
-                runTimeEndInMs = perfRecord.getElapsedTimeInNs() / 1000000;
-            }
-            switch (perfRecord.getPhase()) {
-                case TASK_TOTAL:
-                    totalTaskRunTimeInMs += runTimeEndInMs;
-                    break;
-                case SQL_QUERY:
-                    sqlQueryTimeInMs += runTimeEndInMs;
-                    break;
-                case RESULT_NEXT_ALL:
-                    resultNextTimeInMs += runTimeEndInMs;
-                    break;
-                case ODPS_BLOCK_CLOSE:
-                    odpsCloseTimeInMs += runTimeEndInMs;
-                    break;
+        public void add(long curNanoTime,PerfRecord perfRecord) {
+            try {
+                long runTimeEndInMs;
+                if (perfRecord.getElapsedTimeInNs() == -1) {
+                    runTimeEndInMs = (curNanoTime - perfRecord.getStartTimeInNs()) / 1000000;
+                } else {
+                    runTimeEndInMs = perfRecord.getElapsedTimeInNs() / 1000000;
+                }
+                switch (perfRecord.getPhase()) {
+                    case TASK_TOTAL:
+                        totalTaskRunTimeInMs += runTimeEndInMs;
+                        break;
+                    case SQL_QUERY:
+                        sqlQueryTimeInMs += runTimeEndInMs;
+                        break;
+                    case RESULT_NEXT_ALL:
+                        resultNextTimeInMs += runTimeEndInMs;
+                        break;
+                    case ODPS_BLOCK_CLOSE:
+                        odpsCloseTimeInMs += runTimeEndInMs;
+                        break;
+                }
+            }catch (Exception e){
+                //do nothing
             }
         }
 
@@ -494,7 +505,7 @@ public class PerfTrace {
         private int maxTaskId4Records = -1;
         private int maxTGID4Records = -1;
 
-        synchronized void add(PerfRecord perfRecord) {
+        public void add(PerfRecord perfRecord) {
             if (perfRecord == null) {
                 return;
             }
