@@ -355,6 +355,21 @@ public final class DBUtil {
 
     private static synchronized Connection connect(DataBaseType dataBaseType,
                                                    String url, String user, String pass, String socketTimeout) {
+
+        //ob10的处理
+        if (url.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING) && dataBaseType == DataBaseType.MySql) {
+            String[] ss = url.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+            if (ss.length != 3) {
+                throw DataXException
+                        .asDataXException(
+                                DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
+            }
+            LOG.info("this is ob1_0 jdbc url.");
+            user = ss[1].trim() +":"+user;
+            url = ss[2];
+            LOG.info("this is ob1_0 jdbc url. user="+user+" :url="+url);
+        }
+
         Properties prop = new Properties();
         prop.put("user", user);
         prop.put("password", pass);

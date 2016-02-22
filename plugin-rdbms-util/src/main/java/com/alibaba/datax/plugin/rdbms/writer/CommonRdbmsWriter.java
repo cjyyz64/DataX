@@ -1,7 +1,7 @@
 package com.alibaba.datax.plugin.rdbms.writer;
 
-import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -12,7 +12,6 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.rdbms.writer.util.OriginalConfPretreatmentUtil;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -39,7 +38,11 @@ public class CommonRdbmsWriter {
         }
 
         public void init(Configuration originalConfig) {
-            OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
+            if(this.dataBaseType == DataBaseType.MySql){
+                OriginalConfPretreatmentUtil.doPretreatment(originalConfig,this.dataBaseType);
+            }else {
+                OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
+            }
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                     originalConfig.toJSON());
@@ -208,6 +211,21 @@ public class CommonRdbmsWriter {
             this.username = writerSliceConfig.getString(Key.USERNAME);
             this.password = writerSliceConfig.getString(Key.PASSWORD);
             this.jdbcUrl = writerSliceConfig.getString(Key.JDBC_URL);
+
+            //ob10的处理
+            if (this.jdbcUrl.startsWith(Constant.OB10_SPLIT_STRING) && this.dataBaseType == DataBaseType.MySql) {
+                String[] ss = this.jdbcUrl.split(Constant.OB10_SPLIT_STRING_PATTERN);
+                if (ss.length != 3) {
+                    throw DataXException
+                            .asDataXException(
+                                    DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
+                }
+                LOG.info("this is ob1_0 jdbc url.");
+                this.username = ss[1].trim() +":"+this.username;
+                this.jdbcUrl = ss[2];
+                LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
+            }
+
             this.table = writerSliceConfig.getString(Key.TABLE);
 
             this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
