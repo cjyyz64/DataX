@@ -1,3 +1,4 @@
 t_dp_dw_datax_3_core_all:
   pkgpara:
+    DOCKER: 1
     mvn_version: maven3
