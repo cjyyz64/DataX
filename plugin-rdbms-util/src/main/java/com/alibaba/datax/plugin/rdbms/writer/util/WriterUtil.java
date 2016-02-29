@@ -109,10 +109,10 @@ public final class WriterUtil {
     }
 
     public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode) {
-        return getWriteTemplate(columnHolders, valueHolders, writeMode, null);
+        return getWriteTemplate(columnHolders, valueHolders, writeMode, null, false);
     }
 
-    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType) {
+    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode,DataBaseType dataBaseType, boolean useUpdate) {
         boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
                 || writeMode.trim().toLowerCase().startsWith("replace");
 
@@ -122,7 +122,7 @@ public final class WriterUtil {
         }
 
         String writeDataSqlTemplate;
-        if (dataBaseType != null && dataBaseType == DataBaseType.MySql && writeMode.trim().toLowerCase().startsWith("replace")) {
+        if (dataBaseType != null && dataBaseType == DataBaseType.MySql && useUpdate && writeMode.trim().toLowerCase().startsWith("replace")) {
 
             writeDataSqlTemplate = new StringBuilder()
                     .append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ","))

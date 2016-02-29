@@ -186,14 +186,14 @@ public class HBaseBulkWriter2 extends Writer {
 
             String real_odps_table = String.format("%s_%s_%s", Key.ODPS_TMP_TBL_PREFIX, odpsTable, suffix);
 
-            if (real_odps_table.length() > 128) {
+            if (real_odps_table.length() > 123) {
                 suffix = uuid.substring(0, uuid.indexOf("-", 0));
                 real_odps_table = String.format("%s_%s_%s", Key.ODPS_TMP_TBL_PREFIX, odpsTable, suffix);
             }
 
-            if (real_odps_table.length() > 128) {
-                LOG.error(String.format("odps 表名(%s)太长了，导致中间表名(%s)超过了128个字节，请缩短odps的table名", odpsTable, real_odps_table));
-                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, String.format("odps 表名(%s)太长了，导致中间表名(%s)超过了128个字节，请缩短odps的table名", odpsTable, real_odps_table));
+            if (real_odps_table.length() > 123) {
+                LOG.error(String.format("odps 表名(%s)太长，导致中间表名(%s)可能会超过ODPS的限制128个字节，请缩短odps的table名(减少%s)", odpsTable, real_odps_table, real_odps_table.length() - 123));
+                throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, String.format("odps 表名(%s)太长，导致中间表名(%s)可能会超过ODPS的限制128个字节，请缩短odps的table名(减少%s)", odpsTable, real_odps_table, real_odps_table.length() - 123));
             }
 
             String bucketNum = writerOriginPluginConf.getString(Key.KEY_OPTIONAL_BUCKETNUM);

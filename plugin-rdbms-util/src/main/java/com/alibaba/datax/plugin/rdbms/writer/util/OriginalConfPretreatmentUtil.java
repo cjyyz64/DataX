@@ -162,11 +162,31 @@ public final class OriginalConfPretreatmentUtil {
             valueHolders.add("?");
         }
 
-        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode, dataBaseType);
+        boolean useUpdate = false;
+        //ob10的处理
+        if (dataBaseType != null && dataBaseType == DataBaseType.MySql && isOB10(jdbcUrl)) {
+            useUpdate = true;
+        }
+
+        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode,dataBaseType, useUpdate);
 
         LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]", writeDataSqlTemplate, jdbcUrl);
 
         originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK, writeDataSqlTemplate);
+    }
+
+    private static boolean isOB10(String jdbcUrl) {
+        //ob10的处理
+        if (jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
+            String[] ss = jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+            if (ss.length != 3) {
+                throw DataXException
+                        .asDataXException(
+                                DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
+            }
+            return true;
+        }
+        return false;
     }
 
 }
