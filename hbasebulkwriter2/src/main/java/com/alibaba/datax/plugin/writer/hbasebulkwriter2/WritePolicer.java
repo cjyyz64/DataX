@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.writer.hbasebulkwriter2;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.DynamicHBaseColumn;
 import com.alibaba.datax.plugin.writer.hbasebulkwriter2.column.FixedHBaseColumn;
@@ -84,7 +86,8 @@ public class WritePolicer {
         byte[] preRow = null;
         PriorityQueue<KeyValue> kvsQueue = new PriorityQueue<KeyValue>(200,
                 KEY_VALUE_COMPARATOR);
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat df_senconds = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat df_ms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
         while ((hBaseRecord = receiver.read()) != null) {
             try {
                 line = hBaseRecord.getLine();
@@ -95,7 +98,19 @@ public class WritePolicer {
                     kvsQueue = new PriorityQueue<KeyValue>(200,
                             KEY_VALUE_COMPARATOR);
                 }
-                long timestamp = df.parse(line.get(timeCol).asString()).getTime();
+                long timestamp;
+                if(line.get(timeCol) instanceof LongColumn || line.get(timeCol) instanceof DoubleColumn){
+                    timestamp = line.get(timeCol).asLong();
+                }else {
+                    Date date;
+
+                    try{
+                        date = df_ms.parse(line.get(timeCol).asString());
+                    }catch (ParseException e){
+                        date = df_senconds.parse(line.get(timeCol).asString());
+                    }
+                    timestamp = date.getTime();
+                }
                 KeyValue[] curKvs = FixedHBaseColumn.toKVs(line, rowkey,
                         columnList, encoding, timestamp, nullMode);
                 for (KeyValue kv : curKvs) {
