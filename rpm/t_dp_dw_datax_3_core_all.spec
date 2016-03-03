@@ -1,6 +1,6 @@
 Name: t_dp_dw_datax_3_core_all
 Packager:xiafei.qiuxf
-Version:201603031554
+Version:2016022913.2
 Release: %(echo $RELEASE)%{?dist}
 
 Summary: datax 3 core
@@ -42,7 +42,8 @@ mkdir -p %{_lib6}
 cd ${OLDPWD}/../
 
 export MAVEN_OPTS="-Xms256m -Xmx1024m -XX:MaxPermSize=128m"
-/home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
+#/home/ads/tools/apache-maven-3.0.3/bin/
+mvn clean package -DskipTests assembly:assembly
 
 %install
 

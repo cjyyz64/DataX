@@ -33,10 +33,13 @@ BASE_DIR="${OLDPWD}/../"
 
 cd ${BASE_DIR}/
 
-/home/ads/tools/apache-maven-3.0.3/bin/mvn install -N
-/home/ads/tools/apache-maven-3.0.3/bin/mvn install -pl common -DskipTests
+#/home/ads/tools/apache-maven-3.0.3/bin/
+mvn install -N
+#/home/ads/tools/apache-maven-3.0.3/bin/
+mvn install -pl common -DskipTests
 cd ${BASE_DIR}/dqchook
-/home/ads/tools/apache-maven-3.0.3/bin/mvn clean package -DskipTests assembly:assembly
+#/home/ads/tools/apache-maven-3.0.3/bin/
+mvn clean package -DskipTests assembly:assembly
 cd ${BASE_DIR}
 
 %install
