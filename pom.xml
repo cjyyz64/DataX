@@ -43,6 +43,7 @@
     <modules>
         <module>common</module>
         <module>core</module>
+        <module>transformer</module>
 
         <!-- reader -->
         <module>mysqlreader</module>
@@ -100,6 +101,7 @@
         <module>swiftwriter</module>
         <module>hbasewriter</module>
         <module>otsstreamreader-internal</module>
+
     </modules>
 
     <dependencyManagement>
@@ -138,12 +140,6 @@
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
                 <version>${logback-classic-version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.taobao.tddl</groupId>
-                <artifactId>tddl-client</artifactId>
-                <version>${tddl.version}</version>
             </dependency>
 
             <dependency>
@@ -209,6 +205,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>

@@ -51,7 +51,9 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
         WAIT_READ_TIME(103),
 
-        WAIT_WRITE_TIME(104);
+        WAIT_WRITE_TIME(104),
+
+        TRANSFORMER_TIME(201);
 
         private int val;
 
