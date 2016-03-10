@@ -25,6 +25,8 @@ public class OTSStreamReaderConfig {
     private static final String KEY_STATUS_TABLE_NAME = "statusTable";
     private static final String KEY_START_TIMESTAMP_MILLIS = "startTimestampMillis";
     private static final String KEY_END_TIMESTAMP_MILLIS = "endTimestampMillis";
+    private static final String KEY_START_TIME_STRING = "startTimeString";
+    private static final String KEY_END_TIME_STRING = "endTimeString";
     private static final String KEY_IS_EXPORT_SEQUENCE_INFO = "isExportSequenceInfo";
     private static final String KEY_DATE = "date";
     private static final String KEY_MAX_RETRIES = "maxRetries";
@@ -172,15 +174,50 @@ public class OTSStreamReaderConfig {
         config.setIsExportSequenceInfo(param.getBool(KEY_IS_EXPORT_SEQUENCE_INFO, false));
 
         if (param.getString(KEY_DATE) == null &&
-                (param.getLong(KEY_START_TIMESTAMP_MILLIS) == null || param.getLong(KEY_END_TIMESTAMP_MILLIS) == null)) {
-            throw new OTSStreamReaderException("Must set date or time range, please check your config.");
+                (param.getLong(KEY_START_TIMESTAMP_MILLIS) == null || param.getLong(KEY_END_TIMESTAMP_MILLIS) == null) && 
+                (param.getLong(KEY_START_TIME_STRING) == null || param.getLong(KEY_END_TIME_STRING) == null)) {
+            throw new OTSStreamReaderException("Must set date or time range millis or time range string, please check your config.");
         }
+        
+        if (param.get(KEY_DATE) != null &&
+                (param.getLong(KEY_START_TIMESTAMP_MILLIS) != null || param.getLong(KEY_END_TIMESTAMP_MILLIS) != null) &&
+                (param.getLong(KEY_START_TIME_STRING) != null || param.getLong(KEY_END_TIME_STRING) != null)) {
+            throw new OTSStreamReaderException("Can't set date and time range millis and time range string, please check your config.");
+        }
+        
         if (param.get(KEY_DATE) != null &&
                 (param.getLong(KEY_START_TIMESTAMP_MILLIS) != null || param.getLong(KEY_END_TIMESTAMP_MILLIS) != null)) {
             throw new OTSStreamReaderException("Can't set date and time range both, please check your config.");
         }
+        
+        if (param.get(KEY_DATE) != null &&
+                (param.getLong(KEY_START_TIME_STRING) != null || param.getLong(KEY_END_TIME_STRING) != null)) {
+            throw new OTSStreamReaderException("Can't set date and time range string both, please check your config.");
+        }
+        
+        if ((param.getLong(KEY_START_TIMESTAMP_MILLIS) != null || param.getLong(KEY_END_TIMESTAMP_MILLIS) != null)&&
+                (param.getLong(KEY_START_TIME_STRING) != null || param.getLong(KEY_END_TIME_STRING) != null)) {
+            throw new OTSStreamReaderException("Can't set time range millis and time range string both, please check your config.");
+        }
 
-        if (param.getString(KEY_DATE) == null) {
+        if (param.getString(KEY_START_TIME_STRING) != null &&
+                param.getString(KEY_END_TIME_STRING) != null) {
+            String startTime=ParamChecker.checkStringAndGet(param, KEY_START_TIME_STRING, true);
+            String endTime=ParamChecker.checkStringAndGet(param, KEY_END_TIME_STRING, true);
+            try {
+                long startTimestampMillis = TimeUtils.parseTimeStringToTimestampMillis(startTime);
+                config.setStartTimestampMillis(startTimestampMillis);
+            } catch (Exception ex) {
+                throw new OTSStreamReaderException("Can't parse startTimeString: " + startTime);
+            }
+            try {
+                long endTimestampMillis = TimeUtils.parseTimeStringToTimestampMillis(endTime);
+                config.setEndTimestampMillis(endTimestampMillis);
+            } catch (Exception ex) {
+                throw new OTSStreamReaderException("Can't parse startTimeString: " + startTime);
+            }  
+            
+        }else if (param.getString(KEY_DATE) == null) {
             config.setStartTimestampMillis(param.getLong(KEY_START_TIMESTAMP_MILLIS));
             config.setEndTimestampMillis(param.getLong(KEY_END_TIMESTAMP_MILLIS));
         } else {
@@ -193,6 +230,9 @@ public class OTSStreamReaderConfig {
                 throw new OTSStreamReaderException("Can't parse date: " + date);
             }
         }
+
+        
+
 
         if (config.getStartTimestampMillis() >= config.getEndTimestampMillis()) {
             throw new OTSStreamReaderException("EndTimestamp must be larger than startTimestamp.");
