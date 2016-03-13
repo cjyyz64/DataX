@@ -7,7 +7,6 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.load.TransferProjectConf;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
-import com.alibaba.datax.plugin.writer.odpswriter.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

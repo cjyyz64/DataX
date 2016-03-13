@@ -25,6 +25,10 @@ public final class Key {
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 
     public final static String BATCH_SIZE = "batchSize";
+    
+    public final static String PRE_SQL = "preSql";
+
+    public final static String POST_SQL = "postSql";
 
     /**
      * 以下是odps writer的key
