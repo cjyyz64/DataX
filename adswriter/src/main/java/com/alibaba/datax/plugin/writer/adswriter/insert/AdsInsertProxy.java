@@ -69,7 +69,8 @@ public class AdsInsertProxy {
                 writeBuffer.add(record);
 
                 if (writeBuffer.size() >= batchSize) {
-                    doOneInsert(connection, writeBuffer);
+                    //doOneInsert(connection, writeBuffer);
+                    doBatchInsertWithOneStatement(connection, writeBuffer);
                     writeBuffer.clear();
                 }
             }
@@ -86,6 +87,7 @@ public class AdsInsertProxy {
         }
     }
 
+    //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧
     protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
         Statement statement = null;
         try {
@@ -93,7 +95,7 @@ public class AdsInsertProxy {
             statement = connection.createStatement();
 
             for (Record record : buffer) {
-                String sql = generateInsertSql(record);
+                String sql = generateInsertSql(record).toString();
                 statement.addBatch(sql);
             }
             statement.executeBatch();
@@ -109,6 +111,42 @@ public class AdsInsertProxy {
             DBUtil.closeDBResources(statement, null);
         }
     }
+    
+    private void doBatchInsertWithOneStatement(Connection connection,
+            List<Record> buffer) throws SQLException {
+        Statement statement = null;
+        String sql = null;
+        try {
+            connection.setAutoCommit(true);
+            statement = connection.createStatement();
+            int bufferSize = buffer.size();
+            if (buffer.isEmpty()) {
+                return;
+            }
+            StringBuilder sqlSb = this.generateInsertSql(buffer.get(0));
+            for (int i = 1; i < bufferSize; i++) {
+                Record record = buffer.get(i);
+                this.appendInsertSqlValues(record, sqlSb);
+            }
+            try {
+                sql = sqlSb.toString();
+                int status = statement.executeUpdate(sql);
+                sql = null;
+            } catch (SQLException e) {
+                LOG.error("sql: " + sql, e.getMessage());
+                //warn: 无法明确得知具体那一条是脏数据了
+                for (Record eachRecord : buffer) {
+                    this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("插入异常, sql: " + sql);
+            throw DataXException.asDataXException(
+                    DBUtilErrorCode.WRITE_DATA_ERROR, e);
+        } finally {
+            DBUtil.closeDBResources(statement, null);
+        }
+    }
 
     protected void doOneInsert(Connection connection, List<Record> buffer) {
         Statement statement = null;
@@ -116,10 +154,10 @@ public class AdsInsertProxy {
         try {
             connection.setAutoCommit(true);
             statement = connection.createStatement();
-
+            
             for (Record record : buffer) {
                 try {
-                    sql = generateInsertSql(record);
+                    sql = generateInsertSql(record).toString();
                     int status = statement.executeUpdate(sql);
                     sql = null;
                 } catch (SQLException e) {
@@ -136,7 +174,7 @@ public class AdsInsertProxy {
         }
     }
 
-    private String generateInsertSql(Record record) throws SQLException {
+    private StringBuilder generateInsertSql(Record record) throws SQLException {
         StringBuilder sqlSb = new StringBuilder("insert into " + this.table + "(" +
                 StringUtils.join(columns, ",") + ") values(");
         for (int i = 0; i < columns.size(); i++) {
@@ -147,7 +185,19 @@ public class AdsInsertProxy {
             }
         }
         sqlSb.append(")");
-        return sqlSb.toString();
+        return sqlSb;
+    }
+    
+    private void appendInsertSqlValues(Record record, StringBuilder sqlSb) throws SQLException { 
+        sqlSb.append(", (");
+        for (int i = 0; i < columns.size(); i++) {
+            int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
+            checkColumnType(columnSqltype, sqlSb, record.getColumn(i), i);
+            if((i+1) != columns.size()) {
+                sqlSb.append(",");
+            }
+        }
+        sqlSb.append(")");
     }
 
     private void checkColumnType(int columnSqltype, StringBuilder sqlSb, Column column, int columnIndex) throws SQLException {
