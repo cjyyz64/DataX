@@ -36,7 +36,7 @@ public class AdsInsertUtil {
         String schema = conf.getString(Key.SCHEMA);
         String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
 
-        Connection connection = DBUtil.getConnection(DataBaseType.ADS, userName, passWord, jdbcUrl);
+        Connection connection = DBUtil.getConnection(DataBaseType.ADS, jdbcUrl, userName, passWord);
         return connection;
     }
 
