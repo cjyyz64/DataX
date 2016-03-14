@@ -195,9 +195,10 @@ public class AdsWriter extends Writer {
                             .getAdsConnect(this.originalConfig);
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"),
-                            this.adsHelper.getAdsURL());
+                            this.originalConfig.getString(Key.ADS_URL));
                     WriterUtil.executeSqls(preConn, renderedPreSqls,
-                            this.adsHelper.getAdsURL(), DataBaseType.ADS);
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
                     DBUtil.closeDBResources(null, null, preConn);
                 }
             }
@@ -237,9 +238,10 @@ public class AdsWriter extends Writer {
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPostSqls, ";"),
-                            this.adsHelper.getAdsURL());
+                            this.originalConfig.getString(Key.ADS_URL));
                     WriterUtil.executeSqls(postConn, renderedPostSqls,
-                            this.adsHelper.getAdsURL(), DataBaseType.ADS);
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
                     DBUtil.closeDBResources(null, null, postConn);
                 }
             }

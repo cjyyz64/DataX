@@ -1,0 +1,56 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "mysqlreader",
+                    "parameter": {
+                        "username": "root",
+                        "password": "root",
+                        "where": "id < 100",
+                        "column": [
+                            "id",
+                            "id"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "t_job"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:mysql://10.101.83.3:3306/cdp_base"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "adswriter",
+                    "parameter": {
+                        "username": "uMbv1SoSUFqQ4DfR",
+                        "password": "",
+                        "preSql": [
+                            "delete from pre_post_sql_batch_bvt where ID < 50"
+                        ],
+                        "postSql": [
+                            "SELECT 1 from pre_post_sql_batch_bvt;"
+                        ],
+                        "column": [
+                            "*"
+                        ],
+                        "url": "ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029",
+                        "schema": "ads_demo",
+                        "table": "pre_post_sql_batch_bvt",
+                        "writeMode": "insert",
+                        "batchSise": "32"
+                    }
+                }
+            }
+        ]
+    }
+}
