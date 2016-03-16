@@ -49,8 +49,8 @@
         <module>drdsreader</module>
         <module>sqlserverreader</module>
         <module>db2reader</module>
-	<module>postgresqlreader</module>
-	<module>oraclereader</module>
+        <module>postgresqlreader</module>
+        <module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
         <module>otsreader-internal</module>
@@ -63,6 +63,8 @@
         <module>ftpreader</module>
         <module>mongodbreader</module>
         <module>rdbmsreader</module>
+        <module>hbase11xreader</module>
+        <module>hbase094xreader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -86,9 +88,11 @@
         <module>tairwriter</module>
         <module>metaqwriter</module>
         <module>mongodbwriter</module>
-	<module>adswriter</module>
-	<module>ocswriter</module>
-	<module>rdbmswriter</module>
+        <module>adswriter</module>
+        <module>ocswriter</module>
+        <module>rdbmswriter</module>
+        <module>hbase11xwriter</module>
+        <module>hbase094xwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
