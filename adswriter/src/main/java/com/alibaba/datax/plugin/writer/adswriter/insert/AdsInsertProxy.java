@@ -10,6 +10,8 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
+import com.mysql.jdbc.JDBC4PreparedStatement;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
@@ -93,7 +95,7 @@ public class AdsInsertProxy {
             statement = connection.createStatement();
 
             for (Record record : buffer) {
-                String sql = generateInsertSql(record);
+                String sql = generateInsertSql(connection, record);
                 statement.addBatch(sql);
             }
             statement.executeBatch();
@@ -119,7 +121,7 @@ public class AdsInsertProxy {
 
             for (Record record : buffer) {
                 try {
-                    sql = generateInsertSql(record);
+                    sql = generateInsertSql(connection, record);
                     int status = statement.executeUpdate(sql);
                     sql = null;
                 } catch (SQLException e) {
@@ -136,21 +138,28 @@ public class AdsInsertProxy {
         }
     }
 
-    private String generateInsertSql(Record record) throws SQLException {
+    private String generateInsertSql(Connection connection, Record record) throws SQLException {
         StringBuilder sqlSb = new StringBuilder("insert into " + this.table + "(" +
                 StringUtils.join(columns, ",") + ") values(");
         for (int i = 0; i < columns.size(); i++) {
-            int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
-            checkColumnType(columnSqltype, sqlSb, record.getColumn(i), i);
             if((i+1) != columns.size()) {
-                sqlSb.append(",");
+                sqlSb.append("?,");
+            } else {
+                sqlSb.append("?");
             }
         }
         sqlSb.append(")");
-        return sqlSb.toString();
+        PreparedStatement statement = connection.prepareStatement(sqlSb.toString());
+        for (int i = 0; i < columns.size(); i++) {
+            int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
+            checkColumnType(statement, columnSqltype, record.getColumn(i), i);
+        }
+        String sql = ((JDBC4PreparedStatement) statement).asSql();
+        DBUtil.closeDBResources(statement, null);
+        return sql;
     }
 
-    private void checkColumnType(int columnSqltype, StringBuilder sqlSb, Column column, int columnIndex) throws SQLException {
+    private void checkColumnType(PreparedStatement statement, int columnSqltype, Column column, int columnIndex) throws SQLException {
         java.util.Date utilDate;
         switch (columnSqltype) {
             case Types.CHAR:
@@ -162,12 +171,7 @@ public class AdsInsertProxy {
             case Types.NVARCHAR:
             case Types.LONGNVARCHAR:
                 String strValue = column.asString();
-                if(null == strValue) {
-                    sqlSb.append("null");
-                } else {
-                    String optStr = column.asString().replace("\\","\\\\");
-                    sqlSb.append("'").append(optStr).append("'");
-                }
+                statement.setString(columnIndex + 1, strValue);
                 break;
 
             case Types.SMALLINT:
@@ -175,25 +179,29 @@ public class AdsInsertProxy {
             case Types.BIGINT:
             case Types.NUMERIC:
             case Types.DECIMAL:
-            case Types.FLOAT:
             case Types.REAL:
-            case Types.DOUBLE:
                 String numValue = column.asString();
                 if(emptyAsNull && "".equals(numValue) || numValue == null){
-                    sqlSb.append("null");
+                    statement.setLong(columnIndex + 1, (Long) null);
                 } else{
-                    sqlSb.append(numValue);
+                    statement.setLong(columnIndex + 1, column.asLong());
+                }
+                break;
+                
+            case Types.FLOAT:
+            case Types.DOUBLE:
+                String floatValue = column.asString();
+                if(emptyAsNull && "".equals(floatValue) || floatValue == null){
+                    statement.setDouble(columnIndex + 1, (Double) null);
+                } else{
+                    statement.setDouble(columnIndex + 1, column.asDouble());
                 }
                 break;
 
             //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
             case Types.TINYINT:
                 Long longValue = column.asLong();
-                if (null == longValue) {
-                    sqlSb.append("null");
-                } else {
-                    sqlSb.append(longValue);
-                }
+                statement.setLong(columnIndex + 1, longValue);
                 break;
 
             case Types.DATE:
@@ -208,13 +216,11 @@ public class AdsInsertProxy {
                     throw new SQLException(String.format(
                             "Date 类型转换错误：[%s]", column));
                 }
-
+                
                 if (null != utilDate) {
                     sqlDate = new java.sql.Date(utilDate.getTime());
-                    sqlSb.append("'").append(sqlDate).append("'");
-                } else {
-                    sqlSb.append("null");
-                }
+                } 
+                statement.setDate(columnIndex + 1, sqlDate);
                 break;
 
             case Types.TIME:
@@ -232,10 +238,8 @@ public class AdsInsertProxy {
 
                 if (null != utilDate) {
                     sqlTime = new java.sql.Time(utilDate.getTime());
-                    sqlSb.append("'").append(sqlTime).append("'");
-                } else {
-                    sqlSb.append("null");
                 }
+                statement.setTime(columnIndex + 1, sqlTime);
                 break;
 
             case Types.TIMESTAMP:
@@ -254,20 +258,13 @@ public class AdsInsertProxy {
                 if (null != utilDate) {
                     sqlTimestamp = new java.sql.Timestamp(
                             utilDate.getTime());
-                    sqlSb.append("'").append(sqlTimestamp).append("'");
-                } else {
-                    sqlSb.append("null");
                 }
+                statement.setTimestamp(columnIndex + 1, sqlTimestamp);
                 break;
 
             case Types.BOOLEAN:
             case Types.BIT:
-                String bitValue = column.asString();
-                if(bitValue == null) {
-                    sqlSb.append("null");
-                } else {
-                    sqlSb.append(bitValue);
-                }
+                statement.setBoolean(columnIndex + 1, column.asBoolean());
                 break;
             default:
                 throw DataXException
