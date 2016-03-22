@@ -141,11 +141,11 @@ public class AdsInsertProxy {
                 sql = null;
             } catch (SQLException e) {
                 LOG.error("sql: " + sql, e.getMessage());
-                //warn: 无法明确得知具体那一条是脏数据了
+                // warn: 无法明确得知具体那一条是脏数据了
                 doOneInsert(connection, buffer);
-                //for (Record eachRecord : buffer) {
-                //    this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
-                //}
+                // for (Record eachRecord : buffer) {
+                // this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
+                // }
             }
         } catch (Exception e) {
             LOG.error("插入异常, sql: " + sql);
