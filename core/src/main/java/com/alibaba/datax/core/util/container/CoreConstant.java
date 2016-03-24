@@ -113,6 +113,12 @@ public class CoreConstant {
 
 	public static final String JOB_WRITER_PARAMETER = "writer.parameter";
 
+	public static final String TRANSFORMER_PARAMETER_COLUMNINDEX = "parameter.columnIndex";
+	public static final String TRANSFORMER_PARAMETER_PARAS = "parameter.paras";
+	public static final String TRANSFORMER_PARAMETER_CONTEXT = "parameter.context";
+	public static final String TRANSFORMER_PARAMETER_CODE = "parameter.code";
+	public static final String TRANSFORMER_PARAMETER_EXTRAPACKAGE = "parameter.extraPackage";
+
     public static final String TASK_ID = "taskId";
 
     // ----------------------------- 安全模块变量 ------------------
@@ -164,5 +170,14 @@ public class CoreConstant {
 
 	public static String DATAX_JOB_HOME = StringUtils.join(new String[] {
 			DATAX_HOME, "job" }, File.separator);
+
+	public static String DATAX_STORAGE_TRANSFORMER_HOME = StringUtils.join(
+			new String[] { DATAX_HOME, "local_storage", "transformer" }, File.separator);
+
+	public static String DATAX_STORAGE_PLUGIN_READ_HOME = StringUtils.join(
+			new String[] { DATAX_HOME, "local_storage", "plugin","reader" }, File.separator);
+
+	public static String DATAX_STORAGE_PLUGIN_WRITER_HOME = StringUtils.join(
+			new String[] { DATAX_HOME, "local_storage", "plugin","writer" }, File.separator);
 
 }

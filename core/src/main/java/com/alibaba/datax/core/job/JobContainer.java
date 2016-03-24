@@ -661,6 +661,22 @@ public class JobContainer extends AbstractContainer {
                 String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
         ));
 
+        if (communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS) > 0) {
+            LOG.info(String.format(
+                    "\n" + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n",
+                    "Transformer成功记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS),
+
+                    "Transformer失败记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS),
+
+                    "Transformer过滤记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS)
+            ));
+        }
+
 
     }
 

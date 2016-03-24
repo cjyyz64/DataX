@@ -61,6 +61,7 @@ mkdir -p .%{_prefix}/hook
 mkdir -p .%{_prefix}/tmp
 mkdir -p .%{_prefix}/log
 mkdir -p .%{_prefix}/log_perf
+mkdir -p .%{_prefix}/local_storage
 
 %post
 chmod -R 0755 %{_prefix}/bin
@@ -71,6 +72,7 @@ chmod -R 0755 %{_prefix}/hook
 chmod -R 0777 %{_prefix}/tmp
 chmod -R 0755 %{_prefix}/log
 chmod -R 0755 %{_prefix}/log_perf
+chmod -R 0755 %{_prefix}/local_storage
 chmod -R 0700 %{_prefix}/conf/.secret.properties
 
 
