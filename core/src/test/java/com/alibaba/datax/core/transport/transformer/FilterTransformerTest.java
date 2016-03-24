@@ -16,7 +16,7 @@ public class FilterTransformerTest {
 
     @Test
     public void testLikeNotLike() throws Exception {
-        Record record = RecordProducer.produceRecord();
+        Record record = RecordProducer.produceRecordHasNull();
         FilterTransformer filterTransformer = new FilterTransformer();
 
         /**
@@ -42,6 +42,14 @@ public class FilterTransformerTest {
         Record result4 = filterTransformer.evaluate(record, 1, "not like", ".*azhe.*");
         Assert.assertEquals(result4, record);
 
+        //空字段, 不过滤
+        Record result15 = filterTransformer.evaluate(record, 6, "like", "something");
+        Assert.assertEquals(result15, record);
+
+        //空字段, 过滤
+        Record result16 = filterTransformer.evaluate(record, 6, "not like", "something");
+        Assert.assertEquals(result16, null);
+
 
         /**
          * long
@@ -63,6 +71,14 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result24 = filterTransformer.evaluate(record, 0, "not like", ".*");
         Assert.assertEquals(result24, record);
+
+        //空字段, 不过滤
+        Record result25 = filterTransformer.evaluate(record, 5, "like", "something");
+        Assert.assertEquals(result25, record);
+
+        //空字段, 过滤
+        Record result26 = filterTransformer.evaluate(record, 5, "not like", "something");
+        Assert.assertEquals(result26, null);
 
 
         /**
@@ -86,6 +102,14 @@ public class FilterTransformerTest {
         Record result34 = filterTransformer.evaluate(record, 2, "not like", ".*");
         Assert.assertEquals(result34, record);
 
+
+        //空字段, 不过滤
+        Record result35 = filterTransformer.evaluate(record, 7, "like", "something");
+        Assert.assertEquals(result35, record);
+
+        //空字段, 过滤
+        Record result36 = filterTransformer.evaluate(record, 7, "not like", "something");
+        Assert.assertEquals(result36, null);
 
         /**
          * date
@@ -114,6 +138,14 @@ public class FilterTransformerTest {
         Assert.assertEquals(result44, record);
 
 
+        //空字段, 不过滤
+        Record result45 = filterTransformer.evaluate(record, 8, "like", "something");
+        Assert.assertEquals(result45, record);
+
+        //空字段, 过滤
+        Record result46 = filterTransformer.evaluate(record, 8, "not like", "something");
+        Assert.assertEquals(result46, null);
+
         /**
          * bytes
          */
@@ -136,11 +168,20 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result54 = filterTransformer.evaluate(record, 4, "not like", ".*azhe.*");
         Assert.assertEquals(result54, record);
+
+
+        //空字段, 不过滤
+        Record result55 = filterTransformer.evaluate(record, 9, "like", "something");
+        Assert.assertEquals(result55, record);
+
+        //空字段, 过滤
+        Record result56 = filterTransformer.evaluate(record, 9, "not like", "something");
+        Assert.assertEquals(result56, null);
     }
 
     @Test
     public void testEquals() throws Exception {
-        Record record = RecordProducer.produceRecord();
+        Record record = RecordProducer.produceRecordHasNull();
         FilterTransformer filterTransformer = new FilterTransformer();
 
         /**
@@ -167,6 +208,22 @@ public class FilterTransformerTest {
         Assert.assertEquals(result4, record);
 
 
+        //空字段, 不过滤
+        Record result15 = filterTransformer.evaluate(record, 6, "=", "something");
+        Assert.assertEquals(result15, record);
+
+        //空字段, 过滤
+        Record result16 = filterTransformer.evaluate(record, 6, "=", "null");
+        Assert.assertEquals(result16, null);
+
+        //空字段, 过滤
+        Record result17 = filterTransformer.evaluate(record, 6, "!=", "something");
+        Assert.assertEquals(result17, null);
+
+        //空字段, 不过滤
+        Record result18 = filterTransformer.evaluate(record, 6, "!=", "null");
+        Assert.assertEquals(result18, record);
+
         /**
          * long
          */
@@ -189,6 +246,22 @@ public class FilterTransformerTest {
         Assert.assertEquals(result24, record);
 
 
+        //空字段, 不过滤
+        Record result25 = filterTransformer.evaluate(record, 5, "=", "something");
+        Assert.assertEquals(result25, record);
+
+        //空字段, 过滤
+        Record result26 = filterTransformer.evaluate(record, 5, "=", "null");
+        Assert.assertEquals(result26, null);
+
+        //空字段, 过滤
+        Record result27 = filterTransformer.evaluate(record, 5, "!=", "something");
+        Assert.assertEquals(result27, null);
+
+        //空字段, 不过滤
+        Record result28 = filterTransformer.evaluate(record, 5, "!=", "null");
+        Assert.assertEquals(result28, record);
+
         /**
          * boolean
          */
@@ -210,6 +283,22 @@ public class FilterTransformerTest {
         Record result34 = filterTransformer.evaluate(record, 2, "!=", "true");
         Assert.assertEquals(result34, record);
 
+
+        //空字段, 不过滤
+        Record result35 = filterTransformer.evaluate(record, 7, "=", "something");
+        Assert.assertEquals(result35, record);
+
+        //空字段, 过滤
+        Record result36 = filterTransformer.evaluate(record, 7, "=", "null");
+        Assert.assertEquals(result36, null);
+
+        //空字段, 过滤
+        Record result37 = filterTransformer.evaluate(record, 7, "!=", "something");
+        Assert.assertEquals(result37, null);
+
+        //空字段, 不过滤
+        Record result38 = filterTransformer.evaluate(record, 7, "!=", "null");
+        Assert.assertEquals(result38, record);
 
         /**
          * date
@@ -236,6 +325,22 @@ public class FilterTransformerTest {
         Record result44 = filterTransformer.evaluate(record, 3, "!=", value + "");
         Assert.assertEquals(result44, record);
 
+        //空字段, 不过滤
+        Record result45 = filterTransformer.evaluate(record, 8, "=", "something");
+        Assert.assertEquals(result45, record);
+
+        //空字段, 过滤
+        Record result46 = filterTransformer.evaluate(record, 8, "=", "null");
+        Assert.assertEquals(result46, null);
+
+        //空字段, 过滤
+        Record result47 = filterTransformer.evaluate(record, 8, "!=", "something");
+        Assert.assertEquals(result47, null);
+
+        //空字段, 不过滤
+        Record result48 = filterTransformer.evaluate(record, 8, "!=", "null");
+        Assert.assertEquals(result48, record);
+
 
         /**
          * bytes
@@ -260,11 +365,27 @@ public class FilterTransformerTest {
         Record result54 = filterTransformer.evaluate(record, 4, "!=", "bazhen");
         Assert.assertEquals(result54, record);
 
+        //空字段, 不过滤
+        Record result55 = filterTransformer.evaluate(record, 9, "=", "something");
+        Assert.assertEquals(result55, record);
+
+        //空字段, 过滤
+        Record result56 = filterTransformer.evaluate(record, 9, "=", "null");
+        Assert.assertEquals(result56, null);
+
+        //空字段, 过滤
+        Record result57 = filterTransformer.evaluate(record, 9, "!=", "something");
+        Assert.assertEquals(result57, null);
+
+        //空字段, 不过滤
+        Record result58 = filterTransformer.evaluate(record, 9, "!=", "null");
+        Assert.assertEquals(result58, record);
+
     }
 
     @Test
     public void testGreate() throws Exception {
-        Record record = RecordProducer.produceRecord();
+        Record record = RecordProducer.produceRecordHasNull();
         FilterTransformer filterTransformer = new FilterTransformer();
 
         /**
@@ -291,6 +412,23 @@ public class FilterTransformerTest {
         Assert.assertEquals(result4, record);
 
 
+        //空字段, 不过滤
+        Record result15 = filterTransformer.evaluate(record, 6, ">", "something");
+        Assert.assertEquals(result15, record);
+
+        //空字段, 不过滤
+        Record result16 = filterTransformer.evaluate(record, 6, ">", "null");
+        Assert.assertEquals(result16, record);
+
+        //空字段, 不过滤
+        Record result17 = filterTransformer.evaluate(record, 6, ">=", "something");
+        Assert.assertEquals(result17, record);
+
+        //空字段, 不过滤
+        Record result18 = filterTransformer.evaluate(record, 6, ">=", "null");
+        Assert.assertEquals(result18, record);
+
+
         /**
          * long
          */
@@ -311,6 +449,22 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result24 = filterTransformer.evaluate(record, 0, ">=", "2");
         Assert.assertEquals(result24, record);
+
+        //空字段, 不过滤
+        Record result25 = filterTransformer.evaluate(record, 5, ">", "something");
+        Assert.assertEquals(result25, record);
+
+        //空字段, 不过滤
+        Record result26 = filterTransformer.evaluate(record, 5, ">", "null");
+        Assert.assertEquals(result26, record);
+
+        //空字段, 不过滤
+        Record result27 = filterTransformer.evaluate(record, 5, ">=", "something");
+        Assert.assertEquals(result27, record);
+
+        //空字段, 不过滤
+        Record result28 = filterTransformer.evaluate(record, 5, ">=", "null");
+        Assert.assertEquals(result28, record);
 
 
         /**
@@ -333,6 +487,23 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result34 = filterTransformer.evaluate(record, 2, ">=", "true1");
         Assert.assertEquals(result34, record);
+
+
+        //空字段, 不过滤
+        Record result35 = filterTransformer.evaluate(record, 7, ">", "something");
+        Assert.assertEquals(result35, record);
+
+        //空字段, 不过滤
+        Record result36 = filterTransformer.evaluate(record, 7, ">", "null");
+        Assert.assertEquals(result36, record);
+
+        //空字段, 不过滤
+        Record result37 = filterTransformer.evaluate(record, 7, ">=", "something");
+        Assert.assertEquals(result37, record);
+
+        //空字段, 不过滤
+        Record result38 = filterTransformer.evaluate(record, 7, ">=", "null");
+        Assert.assertEquals(result38, record);
 
 
         /**
@@ -360,6 +531,23 @@ public class FilterTransformerTest {
         Record result44 = filterTransformer.evaluate(record, 3, ">=", (value+1) + "");
         Assert.assertEquals(result44, record);
 
+        //空字段, 不过滤
+        Record result45 = filterTransformer.evaluate(record, 8, ">", "something");
+        Assert.assertEquals(result45, record);
+
+        //空字段, 不过滤
+        Record result46 = filterTransformer.evaluate(record, 8, ">", "null");
+        Assert.assertEquals(result46, record);
+
+        //空字段, 不过滤
+        Record result47 = filterTransformer.evaluate(record, 8, ">=", "something");
+        Assert.assertEquals(result47, record);
+
+        //空字段, 不过滤
+        Record result48 = filterTransformer.evaluate(record, 8, ">=", "null");
+        Assert.assertEquals(result48, record);
+
+
 
         /**
          * bytes
@@ -384,12 +572,29 @@ public class FilterTransformerTest {
         Record result54 = filterTransformer.evaluate(record, 4, ">=", "bazhen1");
         Assert.assertEquals(result4, record);
 
+
+        //空字段, 不过滤
+        Record result55 = filterTransformer.evaluate(record, 9, ">", "something");
+        Assert.assertEquals(result55, record);
+
+        //空字段, 不过滤
+        Record result56 = filterTransformer.evaluate(record, 9, ">", "null");
+        Assert.assertEquals(result56, record);
+
+        //空字段, 不过滤
+        Record result57 = filterTransformer.evaluate(record, 9, ">=", "something");
+        Assert.assertEquals(result57, record);
+
+        //空字段, 不过滤
+        Record result58 = filterTransformer.evaluate(record, 9, ">=", "null");
+        Assert.assertEquals(result58, record);
+
     }
 
 
     @Test
     public void testLess() throws Exception {
-        Record record = RecordProducer.produceRecord();
+        Record record = RecordProducer.produceRecordHasNull();
         FilterTransformer filterTransformer = new FilterTransformer();
 
         /**
@@ -416,6 +621,22 @@ public class FilterTransformerTest {
         Assert.assertEquals(result4, record);
 
 
+        //空字段, 不过滤
+        Record result15 = filterTransformer.evaluate(record, 6, "<", "something");
+        Assert.assertEquals(result15, record);
+
+        //空字段, 不过滤
+        Record result16 = filterTransformer.evaluate(record, 6, "<", "null");
+        Assert.assertEquals(result16, record);
+
+        //空字段, 不过滤
+        Record result17 = filterTransformer.evaluate(record, 6, "<=", "something");
+        Assert.assertEquals(result17, record);
+
+        //空字段, 不过滤
+        Record result18 = filterTransformer.evaluate(record, 6, "<=", "null");
+        Assert.assertEquals(result18, record);
+
         /**
          * long
          */
@@ -438,6 +659,23 @@ public class FilterTransformerTest {
         Assert.assertEquals(result24, record);
 
 
+        //空字段, 不过滤
+        Record result25 = filterTransformer.evaluate(record, 5, "<", "something");
+        Assert.assertEquals(result25, record);
+
+        //空字段, 不过滤
+        Record result26 = filterTransformer.evaluate(record, 5, "<", "null");
+        Assert.assertEquals(result26, record);
+
+        //空字段, 不过滤
+        Record result27 = filterTransformer.evaluate(record, 5, "<=", "something");
+        Assert.assertEquals(result27, record);
+
+        //空字段, 不过滤
+        Record result28 = filterTransformer.evaluate(record, 5, "<=", "null");
+        Assert.assertEquals(result28, record);
+
+
         /**
          * boolean
          */
@@ -458,6 +696,22 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result34 = filterTransformer.evaluate(record, 2, "<=", "false");
         Assert.assertEquals(result34, record);
+
+        //空字段, 不过滤
+        Record result35 = filterTransformer.evaluate(record, 7, "<", "something");
+        Assert.assertEquals(result35, record);
+
+        //空字段, 不过滤
+        Record result36 = filterTransformer.evaluate(record, 7, "<", "null");
+        Assert.assertEquals(result36, record);
+
+        //空字段, 不过滤
+        Record result37 = filterTransformer.evaluate(record, 7, "<=", "something");
+        Assert.assertEquals(result37, record);
+
+        //空字段, 不过滤
+        Record result38 = filterTransformer.evaluate(record, 7, "<=", "null");
+        Assert.assertEquals(result38, record);
 
 
         /**
@@ -485,6 +739,22 @@ public class FilterTransformerTest {
         Record result44 = filterTransformer.evaluate(record, 3, "<=", errorValue + "");
         Assert.assertEquals(result44, record);
 
+        //空字段, 不过滤
+        Record result45 = filterTransformer.evaluate(record, 8, "<", "something");
+        Assert.assertEquals(result45, record);
+
+        //空字段, 不过滤
+        Record result46 = filterTransformer.evaluate(record, 8, "<", "null");
+        Assert.assertEquals(result46, record);
+
+        //空字段, 不过滤
+        Record result47 = filterTransformer.evaluate(record, 8, "<=", "something");
+        Assert.assertEquals(result47, record);
+
+        //空字段, 不过滤
+        Record result48 = filterTransformer.evaluate(record, 8, "<=", "null");
+        Assert.assertEquals(result48, record);
+
 
         /**
          * bytes
@@ -508,6 +778,23 @@ public class FilterTransformerTest {
         //条件不匹配，不过滤
         Record result54 = filterTransformer.evaluate(record, 4, "<=", "bazhe");
         Assert.assertEquals(result4, record);
+
+
+        //空字段, 不过滤
+        Record result55 = filterTransformer.evaluate(record, 9, "<", "something");
+        Assert.assertEquals(result55, record);
+
+        //空字段, 不过滤
+        Record result56 = filterTransformer.evaluate(record, 9, "<", "null");
+        Assert.assertEquals(result56, record);
+
+        //空字段, 不过滤
+        Record result57 = filterTransformer.evaluate(record, 9, "<=", "something");
+        Assert.assertEquals(result57, record);
+
+        //空字段, 不过滤
+        Record result58 = filterTransformer.evaluate(record, 9, "<=", "null");
+        Assert.assertEquals(result58, record);
 
     }
 }

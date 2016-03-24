@@ -98,7 +98,13 @@ public class SubstrTransformerTest {
 
         Assert.assertEquals(record8.getColumn(0).asString(),"1");
 
+        Record record10 = RecordProducer.produceRecordHasNull();
 
+        SubstrTransformer substrTransformer10 = new SubstrTransformer();
+
+        substrTransformer10.evaluate(record10,6,"6","7");
+
+        Assert.assertEquals(record10.getColumn(6).asString(), null);
 
         Exception exp2 = null;
 

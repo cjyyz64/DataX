@@ -41,6 +41,10 @@ public class SubstrTransformer extends Transformer {
 
         try {
             String oriValue = column.asString();
+            //如果字段为空，跳过subStr处理
+            if(oriValue == null){
+                return record;
+            }
             String newValue;
             if (startIndex > oriValue.length()) {
                 throw new RuntimeException(String.format("dx_substr startIndex(%s) out of range(%s)", startIndex, oriValue.length()));

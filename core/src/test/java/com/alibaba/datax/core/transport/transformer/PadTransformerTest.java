@@ -97,6 +97,15 @@ public class PadTransformerTest {
         Assert.assertEquals(record9.getColumn(1).asString(), "bazhen********");
 
 
+        Record record10 = RecordProducer.produceRecordHasNull();
+
+        PadTransformer padTransformer10 = new PadTransformer();
+
+        padTransformer10.evaluate(record10,6,"r","14","*");
+
+        Assert.assertEquals(record10.getColumn(6).asString(), "**************");
+
+
         Exception exp2 = null;
 
         try {

@@ -58,6 +58,8 @@ public abstract class TransformerExchanger {
         Record result = record;
 
         long diffExaustedTime = 0;
+        String errorMsg = null;
+        boolean failed = false;
         for (TransformerExecution transformerInfoExec : transformerExecs) {
             long startTs = System.nanoTime();
 
@@ -83,15 +85,13 @@ public abstract class TransformerExchanger {
             try {
                 result = transformerInfoExec.getTransformer().evaluate(result, transformerInfoExec.gettContext(), transformerInfoExec.getFinalParas());
             } catch (Exception e) {
-                String errorMsg = String.format("transformer(%s) has Exception(%s)", transformerInfoExec.getTransformerName(),
+                errorMsg = String.format("transformer(%s) has Exception(%s)", transformerInfoExec.getTransformerName(),
                         e.getMessage());
-                LOG.error(errorMsg, e);
+                failed = true;
+                //LOG.error(errorMsg, e);
                 // transformerInfoExec.addFailedRecords(1);
-                totalFailedRecords++;
-                this.pluginCollector.collectDirtyRecord(record, errorMsg);
-
-                //脏数据是否需要继续进行后续transformer处理
-                continue;
+                //脏数据不再进行后续transformer处理，按脏数据处理，并过滤该record。
+                break;
 
             } finally {
                 if (transformerInfoExec.getClassLoader() != null) {
@@ -105,7 +105,7 @@ public abstract class TransformerExchanger {
                  */
                 totalFilterRecords++;
                 //transformerInfoExec.addFilterRecords(1);
-                return null;
+                break;
             }
 
             long diff = System.nanoTime() - startTs;
@@ -115,9 +115,15 @@ public abstract class TransformerExchanger {
         }
 
         totalExaustedTime += diffExaustedTime;
-        totalSuccessRecords++;
 
-        return result;
+        if (failed) {
+            totalFailedRecords++;
+            this.pluginCollector.collectDirtyRecord(record, errorMsg);
+            return null;
+        } else {
+            totalSuccessRecords++;
+            return result;
+        }
     }
 
     public void doStat() {

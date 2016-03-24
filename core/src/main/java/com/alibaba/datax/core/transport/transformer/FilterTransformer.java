@@ -71,6 +71,10 @@ public class FilterTransformer extends Transformer {
 
     private Record doGreat(Record record, String value, Column column, boolean hasEqual) {
 
+        //如果字段为空，直接不参与比较。即空也属于无穷小
+        if(column.getRawData() == null){
+            return record;
+        }
         if (column instanceof DoubleColumn) {
             Double ori = column.asDouble();
             double val = Double.parseDouble(value);
@@ -126,6 +130,12 @@ public class FilterTransformer extends Transformer {
     }
 
     private Record doLess(Record record, String value, Column column, boolean hasEqual) {
+
+        //如果字段为空，直接不参与比较。即空也属于无穷大
+        if(column.getRawData() == null){
+            return record;
+        }
+
         if (column instanceof DoubleColumn) {
             Double ori = column.asDouble();
             double val = Double.parseDouble(value);
@@ -191,6 +201,16 @@ public class FilterTransformer extends Transformer {
      */
 
     private Record doEqual(Record record, String value, Column column) {
+
+        //如果字段为空，只比较目标字段为"null"，否则null字段均不过滤
+        if(column.getRawData() == null){
+            if(value.equalsIgnoreCase("null")){
+                return null;
+            }else {
+                return record;
+            }
+        }
+
         if (column instanceof DoubleColumn) {
             Double ori = column.asDouble();
             double val = Double.parseDouble(value);
@@ -228,9 +248,19 @@ public class FilterTransformer extends Transformer {
      * @param record
      * @param value
      * @param column
-     * @return 如果相等，则过滤。
+     * @return 如果不相等，则过滤。
      */
     private Record doNotEqual(Record record, String value, Column column) {
+
+        //如果字段为空，只比较目标字段为"null", 否则null字段均过滤。
+        if(column.getRawData() == null){
+            if(value.equalsIgnoreCase("null")){
+                return record;
+            }else {
+                return null;
+            }
+        }
+
         if (column instanceof DoubleColumn) {
             Double ori = column.asDouble();
             double val = Double.parseDouble(value);
@@ -263,7 +293,7 @@ public class FilterTransformer extends Transformer {
 
     private Record doLike(Record record, String value, Column column) {
         String orivalue = column.asString();
-        if (orivalue.matches(value)) {
+        if (orivalue !=null && orivalue.matches(value)) {
             return null;
         } else {
             return record;
@@ -272,7 +302,7 @@ public class FilterTransformer extends Transformer {
 
     private Record doNotLike(Record record, String value, Column column) {
         String orivalue = column.asString();
-        if (orivalue.matches(value)) {
+        if (orivalue !=null &&  orivalue.matches(value)) {
             return record;
         } else {
             return null;

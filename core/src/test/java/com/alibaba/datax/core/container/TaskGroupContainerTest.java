@@ -199,10 +199,9 @@ public class TaskGroupContainerTest extends CaseInitializer {
 
         Assert.assertTrue(res != null);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TOTAL_READ_RECORDS).longValue(), 30);
-        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS).longValue(), 0);
+        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS).longValue(), 10);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS).longValue(), 0);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS).longValue(), 10);
-        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_USED_TIME).longValue(), 0);
     }
 
     @Test
@@ -238,10 +237,10 @@ public class TaskGroupContainerTest extends CaseInitializer {
 
         Assert.assertTrue(res != null);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TOTAL_READ_RECORDS).longValue(), 30);
-        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS).longValue(), 0);
+        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS).longValue(), 10);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS).longValue(), 0);
         Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS).longValue(), 10);
-        Assert.assertEquals(res.getLongCounter(CommunicationTool.TRANSFORMER_USED_TIME).longValue(), 0);
+        Assert.assertTrue(res.getLongCounter(CommunicationTool.TRANSFORMER_USED_TIME).longValue() > 0);
 
     }
 

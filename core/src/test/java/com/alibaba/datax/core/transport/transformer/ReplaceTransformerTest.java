@@ -60,6 +60,15 @@ public class ReplaceTransformerTest {
         Assert.assertEquals(record5.getColumn(1).asString(), "bazhen****");
 
 
+        Record record10 = RecordProducer.produceRecordHasNull();
+
+        ReplaceTransformer replaceTransformer10 = new ReplaceTransformer();
+
+        replaceTransformer10.evaluate(record10,6,"6","7","****");
+
+        Assert.assertEquals(record10.getColumn(6).asString(), null);
+
+
         Record record6 = RecordProducer.produceRecord();
 
         ReplaceTransformer replaceTransformer6 = new ReplaceTransformer();

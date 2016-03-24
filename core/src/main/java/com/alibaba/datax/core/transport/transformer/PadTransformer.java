@@ -42,6 +42,11 @@ public class PadTransformer extends Transformer {
 
         try {
             String oriValue = column.asString();
+
+            //如果字段为空，作为空字符串处理
+            if(oriValue==null){
+                oriValue = "";
+            }
             String newValue;
             if (!padType.equalsIgnoreCase("r") && !padType.equalsIgnoreCase("l")) {
                 throw new RuntimeException(String.format("dx_pad first para(%s) support l or r", padType));
