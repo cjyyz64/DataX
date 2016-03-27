@@ -93,6 +93,7 @@ public class AdsInsertProxy {
     }
 
     //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧
+    @Deprecated
     protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
         Statement statement = null;
         try {
@@ -106,7 +107,7 @@ public class AdsInsertProxy {
             statement.executeBatch();
             connection.commit();
         } catch (SQLException e) {
-            LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage());
+            LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage(), e);
             connection.rollback();
             doOneInsert(connection, buffer);
         } catch (Exception e) {
@@ -140,7 +141,8 @@ public class AdsInsertProxy {
                 int status = statement.executeUpdate(sql);
                 sql = null;
             } catch (SQLException e) {
-                LOG.error("sql: " + sql, e.getMessage());
+                LOG.warn("doBatchInsertWithOneStatement meet a exception: " + sql, e);
+                LOG.info("try to re insert each record...");
                 // warn: 无法明确得知具体那一条是脏数据了
                 doOneInsert(connection, buffer);
                 // for (Record eachRecord : buffer) {
@@ -170,7 +172,7 @@ public class AdsInsertProxy {
                     int status = statement.executeUpdate(sql);
                     sql = null;
                 } catch (SQLException e) {
-                    LOG.error("sql: " + sql, e.getMessage());
+                    LOG.error("doOneInsert meet a exception: " + sql, e);
                     this.taskPluginCollector.collectDirtyRecord(record, e);
                 }
             }
