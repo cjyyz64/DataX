@@ -77,6 +77,8 @@ public class CoreConstant {
 
 	public static final String DATAX_JOB_CONTENT = "job.content";
 
+	public static final String DATAX_JOB_CONTENT_TRANSFORMER = "job.content[0].transformer";
+
     public static final String DATAX_JOB_SETTING_KEYVERSION = "job.setting.keyVersion";
 
 	public static final String DATAX_JOB_SETTING_SPEED_BYTE = "job.setting.speed.byte";
@@ -104,6 +106,8 @@ public class CoreConstant {
     public static final String JOB_WRITER = "reader";
 
 	public static final String JOB_READER = "reader";
+
+	public static final String JOB_TRANSFORMER = "transformer";
 
 	public static final String JOB_READER_NAME = "reader.name";
 

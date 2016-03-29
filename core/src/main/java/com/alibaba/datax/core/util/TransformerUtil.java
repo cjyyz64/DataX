@@ -20,7 +20,7 @@ public class TransformerUtil {
     private static final Logger LOG = LoggerFactory.getLogger(TransformerUtil.class);
 
     public static List<TransformerExecution> buildTransformerInfo(Configuration taskConfig) {
-        List<Configuration> tfConfigs = taskConfig.getListConfiguration("transformer");
+        List<Configuration> tfConfigs = taskConfig.getListConfiguration(CoreConstant.JOB_TRANSFORMER);
         if (tfConfigs == null || tfConfigs.size() == 0) {
             return null;
         }
