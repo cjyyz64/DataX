@@ -349,7 +349,9 @@ public class SingleTableSplitUtil {
         LOG.debug(JSON.toJSONString(splitedRange));
         List<String> rangeSql = new ArrayList<String>();
         int splitedRangeSize = splitedRange.size();
-        if (!splitedRange.isEmpty()) {
+        // warn: splitedRangeSize may be 0 or 1，切分规则为IS NULL以及 IS NOT NULL
+        // demo: Parameter rangeResult can not be null and its length can not <2. detail:rangeResult=[24999930].
+        if (splitedRangeSize >= 2) {
             // warn: oracle Number is long type here
             if (isLongType(splitedRange.get(0).getRight())) {
                 BigInteger[] integerPoints = new BigInteger[splitedRange.size()];

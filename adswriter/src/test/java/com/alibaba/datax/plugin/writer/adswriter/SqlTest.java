@@ -24,7 +24,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertProxy;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertUtil;
-import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.mysql.jdbc.JDBC4PreparedStatement;
 
@@ -200,5 +200,22 @@ public class SqlTest {
         System.out.println(sqlSb);
         Assert.assertTrue("insert into datax_bvt_all_types(col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13) values(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]')"
                 .equals(sqlSb.toString()));
+    }
+
+    @Test
+    public void testPrepareJdbcUrl() {
+        String jdbcUrl = AdsUtil.prepareJdbcUrl("127.0.0.1", "database",
+                3600000L);
+        System.out.println(jdbcUrl);
+        Assert.assertTrue("jdbc:mysql://127.0.0.1/database?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000"
+                .equals(jdbcUrl));
+    }
+
+    @Test
+    public void testPrepareJdbcUrl2() {
+        String jdbcUrl = AdsUtil.prepareJdbcUrl(this.conf);
+        System.out.println(jdbcUrl);
+        Assert.assertTrue("jdbc:mysql://ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029/ads_demo?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000"
+                .equals(jdbcUrl));
     }
 }

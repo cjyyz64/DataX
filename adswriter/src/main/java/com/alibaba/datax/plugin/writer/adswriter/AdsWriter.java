@@ -348,7 +348,7 @@ public class AdsWriter extends Writer {
                 String schema = writerSliceConfig.getString(Key.SCHEMA);
                 String table =  writerSliceConfig.getString(Key.ADS_TABLE);
                 List<String> columns = writerSliceConfig.getList(Key.COLUMN, String.class);
-                String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
+                String jdbcUrl = AdsUtil.prepareJdbcUrl(writerSliceConfig);
                 Connection connection = DBUtil.getConnection(DataBaseType.ADS,
                         jdbcUrl, username, password);
                 TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();

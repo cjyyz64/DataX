@@ -54,16 +54,16 @@ public final class RdbmsRangeSplitWrap {
 
         //TODO  change to  stringbuilder.append(..)
         if (2 == rangeResult.length) {
-            result.add(String.format(" %s%s%s <= %s AND %s <= %s%s%s ", quote, quoteConstantValue(rangeResult[0], dataBaseType),
+            result.add(String.format(" (%s%s%s <= %s AND %s <= %s%s%s) ", quote, quoteConstantValue(rangeResult[0], dataBaseType),
                     quote, columnName, columnName, quote, quoteConstantValue(rangeResult[1], dataBaseType), quote));
             return result;
         } else {
             for (int i = 0, len = rangeResult.length - 2; i < len; i++) {
-                result.add(String.format(" %s%s%s <= %s AND %s < %s%s%s ", quote, quoteConstantValue(rangeResult[i], dataBaseType),
+                result.add(String.format(" (%s%s%s <= %s AND %s < %s%s%s) ", quote, quoteConstantValue(rangeResult[i], dataBaseType),
                         quote, columnName, columnName, quote, quoteConstantValue(rangeResult[i + 1], dataBaseType), quote));
             }
 
-            result.add(String.format(" %s%s%s <= %s AND %s <= %s%s%s ", quote, quoteConstantValue(rangeResult[rangeResult.length - 2], dataBaseType),
+            result.add(String.format(" (%s%s%s <= %s AND %s <= %s%s%s) ", quote, quoteConstantValue(rangeResult[rangeResult.length - 2], dataBaseType),
                     quote, columnName, columnName, quote, quoteConstantValue(rangeResult[rangeResult.length - 1], dataBaseType), quote));
             return result;
         }

@@ -29,6 +29,8 @@ public final class Key {
     public final static String PRE_SQL = "preSql";
 
     public final static String POST_SQL = "postSql";
+    
+    public final static String SOCKET_TIMEOUT = "socketTimeout";
 
     /**
      * 以下是odps writer的key

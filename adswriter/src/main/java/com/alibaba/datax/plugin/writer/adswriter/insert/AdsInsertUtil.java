@@ -11,6 +11,8 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
+import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 
 import org.apache.commons.lang3.StringUtils;
@@ -32,10 +34,7 @@ public class AdsInsertUtil {
     public static Connection getAdsConnect(Configuration conf) {
         String userName = conf.getString(Key.USERNAME);
         String passWord = conf.getString(Key.PASSWORD);
-        String adsURL = conf.getString(Key.ADS_URL);
-        String schema = conf.getString(Key.SCHEMA);
-        String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
-
+        String jdbcUrl = AdsUtil.prepareJdbcUrl(conf);
         Connection connection = DBUtil.getConnection(DataBaseType.ADS, jdbcUrl, userName, passWord);
         return connection;
     }
@@ -47,7 +46,8 @@ public class AdsInsertUtil {
         String adsUrl = conf.getString(Key.ADS_URL);
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema);
+        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);
@@ -91,7 +91,8 @@ public class AdsInsertUtil {
         String adsUrl = conf.getString(Key.ADS_URL);
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema);
+        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);
