@@ -11,6 +11,7 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnDataType;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,12 +30,14 @@ public class AdsHelper {
     private String userName;
     private String password;
     private String schema;
+    private Long socketTimeout;
 
-    public AdsHelper(String adsUrl, String userName, String password, String schema) {
+    public AdsHelper(String adsUrl, String userName, String password, String schema, Long socketTimeout) {
         this.adsURL = adsUrl;
         this.userName = userName;
         this.password = password;
         this.schema = schema;
+        this.socketTimeout = socketTimeout;
     }
 
     public String getAdsURL() {
@@ -109,7 +112,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
@@ -241,8 +244,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
-
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
             connectionProps.put("password", password);
@@ -345,6 +347,9 @@ public class AdsHelper {
             throws AdsException {
         try {
             Class.forName("com.mysql.jdbc.Driver");
+            final String finalAdsUrl = this.adsURL;
+            final String finalSchema = this.schema;
+            final Long finalSocketTimeout = this.socketTimeout;
             return RetryUtil.executeWithRetry(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
@@ -352,11 +357,8 @@ public class AdsHelper {
                     Statement statement = null;
                     ResultSet rs = null;
                     try {
-                        String url = "jdbc:mysql://"
-                                + adsURL
-                                + "/"
-                                + schema
-                                + "?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000";
+                        
+                        String url = AdsUtil.prepareJdbcUrl(finalAdsUrl, finalSchema, finalSocketTimeout);
                         Properties connectionProps = new Properties();
                         connectionProps.put("user", userName);
                         connectionProps.put("password", password);

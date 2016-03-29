@@ -1,0 +1,44 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 20
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "oraclereader",
+                    "parameter": {
+                        "username": "yixiao",
+                        "password": "yixiao_cdp",
+                        "where": "id < 25000000 and id >= 0",
+                        "samplePercentage": "0.05",
+                        "splitPk": "id",
+                        "splitMode": "randomSampling",
+                        "column": [
+                            "id",
+                            "name"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "reader"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:oracle:thin:@10.101.84.197:1521:uprr"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "streamwriter",
+                    "parameter": {
+                        "print": false
+                    }
+                }
+            }
+        ]
+    }
+}
