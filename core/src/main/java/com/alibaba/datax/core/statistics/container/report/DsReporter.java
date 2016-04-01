@@ -11,11 +11,11 @@ import com.alibaba.datax.dataxservice.face.domain.JobStatisticsListWapper2;
 import com.alibaba.datax.dataxservice.face.domain.JobStatusDto;
 import com.alibaba.datax.dataxservice.face.domain.TaskGroupStatusDto;
 import com.alibaba.fastjson.JSON;
-import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class DsReporter extends AbstractReporter {
 
@@ -128,9 +128,12 @@ public class DsReporter extends AbstractReporter {
     }
 
     private JobStatisticsListWapper2 getWapper(final JobStatisticsDto2 dto){
+        final ArrayList<JobStatisticsDto2> list = new ArrayList<JobStatisticsDto2>();
+        list.add(dto);
+
         return new JobStatisticsListWapper2(){
             {
-                this.setJobStatisticsDtoList(Lists.newArrayList(dto));
+                this.setJobStatisticsDtoList(list);
             }
         };
     }

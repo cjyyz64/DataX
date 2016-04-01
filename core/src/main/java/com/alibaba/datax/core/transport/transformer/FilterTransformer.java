@@ -3,7 +3,7 @@ package com.alibaba.datax.core.transport.transformer;
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.transformer.Transformer;
-import com.google.common.base.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 
@@ -32,7 +32,7 @@ public class FilterTransformer extends Transformer {
             code = (String) paras[1];
             value = (String) paras[2];
 
-            if (Strings.isNullOrEmpty(value)) {
+            if (StringUtils.isEmpty(value)) {
                 throw new RuntimeException("dx_filter para 2 can't be null");
             }
         } catch (Exception e) {

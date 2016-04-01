@@ -3,8 +3,8 @@ package com.alibaba.datax.core.transport.transformer;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.transformer.Transformer;
-import com.google.common.base.Strings;
 import groovy.lang.GroovyClassLoader;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 
 import java.util.Arrays;
@@ -69,7 +69,7 @@ public class GroovyTransformer extends Transformer {
         StringBuffer sb = new StringBuffer();
         if(extraPackagesStrList!=null) {
             for (String extraPackagesStr : extraPackagesStrList) {
-                if (!Strings.isNullOrEmpty(extraPackagesStr)) {
+                if (StringUtils.isNotEmpty(extraPackagesStr)) {
                     sb.append(extraPackagesStr);
                 }
             }

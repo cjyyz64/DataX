@@ -100,8 +100,8 @@
         <module>swiftwriter</module>
         <module>hbasewriter</module>
         <module>otsstreamreader-internal</module>
-
-    </modules>
+    <module>hbasebulkwriter2_11x</module>
+  </modules>
 
     <dependencyManagement>
         <dependencies>

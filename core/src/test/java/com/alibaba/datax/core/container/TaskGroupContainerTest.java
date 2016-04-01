@@ -34,7 +34,7 @@ public class TaskGroupContainerTest extends CaseInitializer {
                 .getResource(".").getFile();
 
         this.configuration = ConfigParser.parse(path + File.separator
-                + "all.json");
+                + "all0.json");
 
         LoadUtil.bind(configuration);
 
