@@ -199,11 +199,12 @@ public class OssWriter extends Writer {
                         .clone();
 
                 String fullObjectName = null;
-                objectSuffix = UUID.randomUUID().toString().replace('-', '_');
+                objectSuffix = StringUtils.replace(
+                        UUID.randomUUID().toString(), "-", "");
                 fullObjectName = String.format("%s__%s", object, objectSuffix);
                 while (allObjects.contains(fullObjectName)) {
-                    objectSuffix = UUID.randomUUID().toString()
-                            .replace('-', '_');
+                    objectSuffix = StringUtils.replace(UUID.randomUUID()
+                            .toString(), "-", "");
                     fullObjectName = String.format("%s__%s", object,
                             objectSuffix);
                 }
@@ -235,6 +236,7 @@ public class OssWriter extends Writer {
         private String fileFormat;
         private List<String> header;
         private Long maxFileSize;// MB
+        private String suffix;
 
         @Override
         public void init() {
@@ -268,6 +270,11 @@ public class OssWriter extends Writer {
                     .getLong(
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Key.MAX_FILE_SIZE,
                             com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.MAX_FILE_SIZE);
+            this.suffix = this.writerSliceConfig
+                    .getString(
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Key.SUFFIX,
+                            com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.DEFAULT_SUFFIX);
+            this.suffix = this.suffix.trim();// warn: need trim
         }
 
         @Override
@@ -276,7 +283,7 @@ public class OssWriter extends Writer {
             final long partSize = 1024 * 1024 * 10L;
             long numberCacul = (this.maxFileSize * 1024 * 1024L) / partSize;
             final long maxPartNumber = numberCacul >= 1 ? numberCacul : 1;
-            int objectSufix = 0;
+            int objectRollingNumber = 0;
             StringBuilder sb = new StringBuilder();
             Record record = null;
 
@@ -298,13 +305,28 @@ public class OssWriter extends Writer {
                     gotData = true;
                     // init:begin new multipart upload
                     if (needInitMultipartTransform) {
-                        if (objectSufix == 0) {
-                            currentObject = this.object;
+                        if (objectRollingNumber == 0) {
+                            if (StringUtils.isBlank(this.suffix)) {
+                                currentObject = this.object;
+                            } else {
+                                currentObject = String.format("%s%s",
+                                        this.object, this.suffix);
+                            }
                         } else {
-                            currentObject = String.format("%s_%s", this.object,
-                                    objectSufix);
+                            // currentObject is like(no suffix)
+                            // myfile__9b886b70fbef11e59a3600163e00068c_1
+                            if (StringUtils.isBlank(this.suffix)) {
+                                currentObject = String.format("%s_%s",
+                                        this.object, objectRollingNumber);
+                            } else {
+                                // or with suffix
+                                // myfile__9b886b70fbef11e59a3600163e00068c_1.csv
+                                currentObject = String.format("%s_%s%s",
+                                        this.object, objectRollingNumber,
+                                        this.suffix);
+                            }
                         }
-                        objectSufix++;
+                        objectRollingNumber++;
                         currentInitiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
                                 this.bucket, currentObject);
                         currentInitiateMultipartUploadResult = this.ossClient
@@ -373,17 +395,22 @@ public class OssWriter extends Writer {
                                 currentInitiateMultipartUploadResult,
                                 currentPartETags, currentObject);
                     }
-                    CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(
-                            this.bucket, currentObject,
-                            currentInitiateMultipartUploadResult.getUploadId(),
-                            currentPartETags);
-                    CompleteMultipartUploadResult completeMultipartUploadResult = this.ossClient
-                            .completeMultipartUpload(completeMultipartUploadRequest);
-                    LOG.info(String.format("final object etag is:[%s]",
-                            completeMultipartUploadResult.getETag()));
                 } else {
                     LOG.info("Receive no data from the source.");
+                    currentInitiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
+                            this.bucket, currentObject);
+                    currentInitiateMultipartUploadResult = this.ossClient
+                            .initiateMultipartUpload(currentInitiateMultipartUploadRequest);
+                    currentPartETags = new ArrayList<PartETag>();
                 }
+                CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(
+                        this.bucket, currentObject,
+                        currentInitiateMultipartUploadResult.getUploadId(),
+                        currentPartETags);
+                CompleteMultipartUploadResult completeMultipartUploadResult = this.ossClient
+                        .completeMultipartUpload(completeMultipartUploadRequest);
+                LOG.info(String.format("final object etag is:[%s]",
+                        completeMultipartUploadResult.getETag()));
             } catch (UnsupportedEncodingException e) {
                 throw DataXException.asDataXException(
                         OssWriterErrorCode.ILLEGAL_VALUE,
