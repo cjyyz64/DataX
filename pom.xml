@@ -101,6 +101,8 @@
         <module>hbasewriter</module>
         <module>otsstreamreader-internal</module>
     <module>hbasebulkwriter2_11x</module>
+    <module>oceanbasev10reader</module>
+    <module>oceanbasev10writer</module>
   </modules>
 
     <dependencyManagement>
