@@ -33,6 +33,38 @@ public class NormalTaskTest {
     }
 
     @Test
+    public void testGetNextHbaseRow() throws Exception {
+        RecordSender recordSender = mock(RecordSender.class);
+        when(recordSender.createRecord()).thenReturn( new DefaultRecord());
+        Record record = recordSender.createRecord();
+        com.alibaba.datax.common.util.Configuration configuration = Configuration.newDefault();
+        String hbaseConfig= "{\"hbase.rootdir\":\"hdfs://10.101.85.161:9000/hbase\"," +
+                "\"hbase.cluster.distributed\":\"true\"," +
+                "\"hbase.zookeeper.quorum\":\"v101085161.sqa.zmf\"}";
+        configuration.set("hbaseConfig",hbaseConfig);
+        configuration.set("table","users");
+        String column = "[{\"name\":\"rowkey\",\"type\":\"string\"}]";
+        List columnjson = JSON.parseObject(column, new TypeReference<List>() {});
+        configuration.set(Key.COLUMN,columnjson);
+        configuration.set(Key.MODE,"normal");
+
+        NormalTask normalTask = new NormalTask(configuration);
+        normalTask.prepare();
+        Result result = normalTask.getNextHbaseRow();
+        int i = 0;
+        while (result!= null){
+            System.out.println(new String(result.getRow()));
+            System.out.println(new Date());
+            Thread.sleep(120000);
+            System.out.println(new Date());
+            result = normalTask.getNextHbaseRow();
+            i++;
+        }
+        System.out.println(i);
+        assertEquals(i,2);
+    }
+
+    @Test
     public void testFetchLine() throws Exception {
         RecordSender recordSender = mock(RecordSender.class);
         when(recordSender.createRecord()).thenReturn( new DefaultRecord());

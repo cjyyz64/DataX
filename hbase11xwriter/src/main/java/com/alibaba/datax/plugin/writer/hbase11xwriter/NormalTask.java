@@ -1,5 +1,7 @@
 package com.alibaba.datax.plugin.writer.hbase11xwriter;
 
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
@@ -10,13 +12,17 @@ import org.apache.commons.net.ntp.TimeStamp;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 
 public class NormalTask extends HbaseAbstractTask {
+    private static final Logger LOG = LoggerFactory.getLogger(NormalTask.class);
     public NormalTask(Configuration configuration) {
         super(configuration);
     }
@@ -84,27 +90,40 @@ public class NormalTask extends HbaseAbstractTask {
 
     public long getVersion(Record record){
         int index = versionColumn.getInt(Key.INDEX);
-        String format = versionColumn.getString(Key.FORMAT,Constant.DEFAULT_DATA_FORMAT);
+        long timestamp;
         if(index == -1){
-            String value = versionColumn.getString(Key.VALUE);
-            if(StringUtils.isBlank(value)){
-                throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, "您指定的版本为空!");
+            //指定时间作为版本
+            timestamp = versionColumn.getLong(Key.VALUE);
+            if(timestamp < 0){
+                throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, "您指定的版本非法!");
             }
-            long timestamp = 0;
-            try {
-                timestamp = DateUtils.parseDate(value, new String[]{format}).getTime();
-            } catch (Exception e) {
-                throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, e);
-            }
-            return timestamp ;
         }else{
+            //指定列作为版本,long/doubleColumn直接record.aslong, 其它类型尝试用yyyy-MM-dd HH:mm:ss,yyyy-MM-dd HH:mm:ss SSS去format
             if(index >= record.getColumnNumber()){
                 throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, String.format("您的versionColumn配置项中中index值超出范围,根据reader端配置,index的值小于%s,而您配置的值为%s，请检查并修改.",record.getColumnNumber(),index));
             }
             if(record.getColumn(index).getRawData()  == null){
                 throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, "您指定的版本为空!");
             }
-            return record.getColumn(index).asLong();
+            SimpleDateFormat df_senconds = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat df_ms = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+            if(record.getColumn(index) instanceof LongColumn || record.getColumn(index) instanceof DoubleColumn){
+                timestamp = record.getColumn(index).asLong();
+            }else {
+                Date date;
+                try{
+                    date = df_ms.parse(record.getColumn(index).asString());
+                }catch (ParseException e){
+                    try {
+                        date = df_senconds.parse(record.getColumn(index).asString());
+                    } catch (ParseException e1) {
+                        LOG.info(String.format("您指定第[%s]列作为hbase写入版本,但在尝试用yyyy-MM-dd HH:mm:ss 和 yyyy-MM-dd HH:mm:ss SSS 去解析为Date时均出错,请检查并修改",index));
+                        throw DataXException.asDataXException(Hbase11xWriterErrorCode.CONSTRUCT_VERSION_ERROR, e1);
+                    }
+                }
+                timestamp = date.getTime();
+            }
         }
+        return timestamp;
     }
 }

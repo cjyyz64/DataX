@@ -544,7 +544,7 @@ public class Hbase11xHelperTest {
         List columnjson = JSON.parseObject(column, new TypeReference<List>() {});
         configuration.set(Key.COLUMN,columnjson);
         try {
-           Hbase11xHelper.validateParameter(configuration);
+            Hbase11xHelper.validateParameter(configuration);
         } catch (Exception e) {
             assertTrue(e.getMessage().contains("您配置的column为空,Hbase必须配置 column"));
         }
@@ -650,6 +650,7 @@ public class Hbase11xHelperTest {
         configuration.set(Constant.RANGE + "." + Key.START_ROWKEY,"aaa");
         Hbase11xHelper.validateParameter(configuration);
         assertTrue(configuration.getString(Key.START_ROWKEY).equals("aaa"));
+        configuration.remove(Key.START_ROWKEY);
 
         //startRowkey为""
         hbaseConfig= "{\"hbase.rootdir\":\"hdfs://10.101.85.161:9000/hbase\"," +
@@ -664,7 +665,6 @@ public class Hbase11xHelperTest {
                 "{\"value\":\"qiran\",\"type\":\"string\"}]";
         columnjson = JSON.parseObject(column, new TypeReference<List>() {});
         configuration.set(Key.COLUMN,columnjson);
-        configuration.remove(Key.START_ROWKEY);
         configuration.set(Constant.RANGE + "." + Key.START_ROWKEY,"");
         Hbase11xHelper.validateParameter(configuration);
         assertNull(configuration.getString(Key.START_ROWKEY));
@@ -681,7 +681,6 @@ public class Hbase11xHelperTest {
                 "{\"value\":\"qiran\",\"type\":\"string\"}]";
         columnjson = JSON.parseObject(column, new TypeReference<List>() {});
         configuration.set(Key.COLUMN,columnjson);
-        configuration.remove(Key.START_ROWKEY);
         configuration.set(Constant.RANGE + "." + Key.START_ROWKEY,null);
         Hbase11xHelper.validateParameter(configuration);
         assertNull(configuration.getString(Key.START_ROWKEY));
@@ -699,10 +698,10 @@ public class Hbase11xHelperTest {
                 "{\"value\":\"qiran\",\"type\":\"string\"}]";
         columnjson = JSON.parseObject(column, new TypeReference<List>() {});
         configuration.set(Key.COLUMN,columnjson);
-        configuration.remove(Key.END_ROWKEY);
         configuration.set(Constant.RANGE + "." + Key.END_ROWKEY,null);
         Hbase11xHelper.validateParameter(configuration);
         assertNull(configuration.getString(Key.END_ROWKEY));
+
         //endRowkey为""
         hbaseConfig= "{\"hbase.rootdir\":\"hdfs://10.101.85.161:9000/hbase\"," +
                 "\"hbase.cluster.distributed\":\"true\"," +
@@ -716,7 +715,6 @@ public class Hbase11xHelperTest {
                 "{\"value\":\"qiran\",\"type\":\"string\"}]";
         columnjson = JSON.parseObject(column, new TypeReference<List>() {});
         configuration.set(Key.COLUMN,columnjson);
-        configuration.remove(Key.END_ROWKEY);
         configuration.set(Constant.RANGE + "." + Key.END_ROWKEY,"");
         Hbase11xHelper.validateParameter(configuration);
         assertNull(configuration.getString(Key.END_ROWKEY));
@@ -737,6 +735,7 @@ public class Hbase11xHelperTest {
         configuration.set(Constant.RANGE + "." + Key.END_ROWKEY,"bbb");
         Hbase11xHelper.validateParameter(configuration);
         assertEquals(configuration.getString(Key.END_ROWKEY),"bbb");
+        configuration.remove(Key.END_ROWKEY);
     }
 
     public  boolean compare2byte(byte[] data1, byte[] data2) {
