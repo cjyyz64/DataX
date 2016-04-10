@@ -388,20 +388,25 @@ public class OssWriter extends Writer {
                     }
                 }
 
-                if (gotData) {
-                    // warn: may be some data stall in sb
-                    if (0 < sb.length()) {
-                        this.uploadOnePart(sb, currentPartNumber,
-                                currentInitiateMultipartUploadResult,
-                                currentPartETags, currentObject);
-                    }
-                } else {
+                if (!gotData) {
                     LOG.info("Receive no data from the source.");
                     currentInitiateMultipartUploadRequest = new InitiateMultipartUploadRequest(
                             this.bucket, currentObject);
                     currentInitiateMultipartUploadResult = this.ossClient
                             .initiateMultipartUpload(currentInitiateMultipartUploadRequest);
                     currentPartETags = new ArrayList<PartETag>();
+                    // each object's header
+                    if (null != this.header && !this.header.isEmpty()) {
+                        sb.append(UnstructuredStorageWriterUtil
+                                .doTransportOneRecord(this.header,
+                                        this.fieldDelimiter, this.fileFormat));
+                    }
+                }
+                // warn: may be some data stall in sb
+                if (0 < sb.length()) {
+                    this.uploadOnePart(sb, currentPartNumber,
+                            currentInitiateMultipartUploadResult,
+                            currentPartETags, currentObject);
                 }
                 CompleteMultipartUploadRequest completeMultipartUploadRequest = new CompleteMultipartUploadRequest(
                         this.bucket, currentObject,
