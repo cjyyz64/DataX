@@ -31,6 +31,10 @@ public final class Key {
     public final static String POST_SQL = "postSql";
     
     public final static String SOCKET_TIMEOUT = "socketTimeout";
+    
+    public final static String RETRY_CONNECTION_TIME = "retryTimes";
+    
+    public final static String JDBC_URL_SUFFIX = "urlSuffix";
 
     /**
      * 以下是odps writer的key

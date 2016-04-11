@@ -205,9 +205,15 @@ public class SqlTest {
     @Test
     public void testPrepareJdbcUrl() {
         String jdbcUrl = AdsUtil.prepareJdbcUrl("127.0.0.1", "database",
-                3600000L);
+                3600000L, "");
         System.out.println(jdbcUrl);
         Assert.assertTrue("jdbc:mysql://127.0.0.1/database?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000"
+                .equals(jdbcUrl));
+
+        jdbcUrl = AdsUtil.prepareJdbcUrl("127.0.0.1", "database", 3600000L,
+                "autoReconnect=true&failOverReadOnly=false&maxReconnects=10");
+        System.out.println(jdbcUrl);
+        Assert.assertTrue("jdbc:mysql://127.0.0.1/database?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10"
                 .equals(jdbcUrl));
     }
 

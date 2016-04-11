@@ -8,6 +8,7 @@ import com.alibaba.datax.plugin.writer.adswriter.load.TransferProjectConf;
 import com.alibaba.datax.plugin.writer.adswriter.odps.FieldSchema;
 import com.alibaba.datax.plugin.writer.adswriter.odps.TableMeta;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,8 @@ public class AdsUtil {
         String password = originalConfig.getString(Key.PASSWORD);
         String schema = originalConfig.getString(Key.SCHEMA);
         Long socketTimeout = originalConfig.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        return new AdsHelper(adsUrl,userName,password,schema,socketTimeout);
+        String suffix = originalConfig.getString(Key.JDBC_URL_SUFFIX, "");
+        return new AdsHelper(adsUrl,userName,password,schema,socketTimeout,suffix);
     }
 
     public static AdsHelper createAdsHelperWithOdpsAccount(Configuration originalConfig) {
@@ -66,7 +68,8 @@ public class AdsUtil {
         String password = originalConfig.getString(TransferProjectConf.KEY_ACCESS_KEY);
         String schema = originalConfig.getString(Key.SCHEMA);
         Long socketTimeout = originalConfig.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        return new AdsHelper(adsUrl, userName, password, schema,socketTimeout);
+        String suffix = originalConfig.getString(Key.JDBC_URL_SUFFIX, "");
+        return new AdsHelper(adsUrl, userName, password, schema,socketTimeout,suffix);
     }
 
     /*生成ODPSWriter Plugin所需要的配置文件
@@ -139,14 +142,22 @@ public class AdsUtil {
         String schema = conf.getString(Key.SCHEMA);
         Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT,
                 Constant.DEFAULT_SOCKET_TIMEOUT);
-        return AdsUtil.prepareJdbcUrl(adsURL, schema, socketTimeout);
+        String suffix = conf.getString(Key.JDBC_URL_SUFFIX, "");
+        return AdsUtil.prepareJdbcUrl(adsURL, schema, socketTimeout, suffix);
     }
 
     public static String prepareJdbcUrl(String adsURL, String schema,
-            Long socketTimeout) {
-        String jdbcUrl = String
-                .format("jdbc:mysql://%s/%s?useUnicode=true&characterEncoding=UTF-8&socketTimeout=%s",
-                        adsURL, schema, socketTimeout);
+            Long socketTimeout, String suffix) {
+        String jdbcUrl = null;
+        if (StringUtils.isNotBlank(suffix)) {
+            jdbcUrl = String
+                    .format("jdbc:mysql://%s/%s?useUnicode=true&characterEncoding=UTF-8&socketTimeout=%s&%s",
+                            adsURL, schema, socketTimeout, suffix);
+        } else {
+            jdbcUrl = String
+                    .format("jdbc:mysql://%s/%s?useUnicode=true&characterEncoding=UTF-8&socketTimeout=%s",
+                            adsURL, schema, socketTimeout);
+        }
         return jdbcUrl;
     }
 }

@@ -6,6 +6,7 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 
 public class AdsInsertProxy {
@@ -33,6 +35,8 @@ public class AdsInsertProxy {
     private Configuration configuration;
     private Boolean emptyAsNull;
     private String sqlPrefix;
+    private int retryTimeUpperLimit;
+    private Connection currentConnection;
 
     private Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
 
@@ -44,6 +48,8 @@ public class AdsInsertProxy {
         this.emptyAsNull = configuration.getBool(Key.EMPTY_AS_NULL, false);
         this.sqlPrefix = "insert into " + this.table + "("
                 + StringUtils.join(columns, ",") + ") values";
+        this.retryTimeUpperLimit = configuration.getInt(
+                Key.RETRY_CONNECTION_TIME, Constant.DEFAULT_RETRY_TIMES);
     }
 
     public void startWriteWithConnection(RecordReceiver recordReceiver,
@@ -52,7 +58,8 @@ public class AdsInsertProxy {
         //目前 ads 新建的表 如果未插入数据  不能通过select colums from table where 1=2，获取列信息。
 //        this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
 //                this.table, StringUtils.join(this.columns, ","));
-
+        this.currentConnection = connection;
+        //no retry here(fetch meta data)
         this.resultSetMetaData = AdsInsertUtil.getColumnMetaData(configuration, columns);
 
         int batchSize = this.configuration.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
@@ -80,7 +87,7 @@ public class AdsInsertProxy {
                 }
             }
             if (!writeBuffer.isEmpty()) {
-                doOneInsert(connection, writeBuffer);
+                doOneInsert(writeBuffer);
                 writeBuffer.clear();
             }
         } catch (Exception e) {
@@ -92,7 +99,7 @@ public class AdsInsertProxy {
         }
     }
 
-    //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧
+    //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧, not used
     @Deprecated
     protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
         Statement statement = null;
@@ -109,7 +116,7 @@ public class AdsInsertProxy {
         } catch (SQLException e) {
             LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage(), e);
             connection.rollback();
-            doOneInsert(connection, buffer);
+            doOneInsert(buffer);
         } catch (Exception e) {
             throw DataXException.asDataXException(
                     DBUtilErrorCode.WRITE_DATA_ERROR, e);
@@ -123,32 +130,32 @@ public class AdsInsertProxy {
         Statement statement = null;
         String sql = null;
         try {
-            connection.setAutoCommit(true);
-            statement = connection.createStatement();
             int bufferSize = buffer.size();
             if (buffer.isEmpty()) {
                 return;
             }
             StringBuilder sqlSb = new StringBuilder();
+            // connection.setAutoCommit(true);
+            //mysql impl warn: if a database access error occurs or this method is called on a closed connection throw SQLException
+            statement = connection.createStatement();
             sqlSb.append(this.generateInsertSql(connection, buffer.get(0)));
             for (int i = 1; i < bufferSize; i++) {
                 Record record = buffer.get(i);
                 this.appendInsertSqlValues(connection, record, sqlSb);
             }
-            try {
-                sql = sqlSb.toString();
-                LOG.debug(sql);
-                int status = statement.executeUpdate(sql);
-                sql = null;
-            } catch (SQLException e) {
-                LOG.warn("doBatchInsertWithOneStatement meet a exception: " + sql, e);
-                LOG.info("try to re insert each record...");
-                // warn: 无法明确得知具体那一条是脏数据了
-                doOneInsert(connection, buffer);
-                // for (Record eachRecord : buffer) {
-                // this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
-                // }
-            }
+            sql = sqlSb.toString();
+            LOG.debug(sql);
+            @SuppressWarnings("unused")
+            int status = statement.executeUpdate(sql);
+            sql = null;
+        } catch (SQLException e) {
+            LOG.warn("doBatchInsertWithOneStatement meet a exception: " + sql, e);
+            LOG.info("try to re insert each record...");
+            doOneInsert(buffer);
+            // below is the old way
+            // for (Record eachRecord : buffer) {
+            // this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
+            // }
         } catch (Exception e) {
             LOG.error("插入异常, sql: " + sql);
             throw DataXException.asDataXException(
@@ -157,25 +164,48 @@ public class AdsInsertProxy {
             DBUtil.closeDBResources(statement, null);
         }
     }
-
-    protected void doOneInsert(Connection connection, List<Record> buffer) {
+    
+    protected void doOneInsert(List<Record> buffer) {
+        List<Class<?>> retryExceptionClasss = new ArrayList<Class<?>>();
+        retryExceptionClasss.add(com.mysql.jdbc.exceptions.jdbc4.CommunicationsException.class);
+        retryExceptionClasss.add(java.net.SocketException.class);
+        for (final Record record : buffer) {
+            try {
+                RetryUtil.executeWithRetry(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        doOneRecordInsert(record);
+                        return true;
+                    }
+                }, this.retryTimeUpperLimit, 2000L, true, retryExceptionClasss);
+            } catch (Exception e) {
+                // 不能重试的一行，记录脏数据
+                this.taskPluginCollector.collectDirtyRecord(record, e);
+            }
+        }
+    }
+    
+    protected void doOneRecordInsert(Record record) throws SQLException {
         Statement statement = null;
         String sql = null;
         try {
-            connection.setAutoCommit(true);
-            statement = connection.createStatement();
-            
-            for (Record record : buffer) {
-                try {
-                    sql = generateInsertSql(connection, record);
-                    LOG.debug(sql);
-                    int status = statement.executeUpdate(sql);
-                    sql = null;
-                } catch (SQLException e) {
-                    LOG.error("doOneInsert meet a exception: " + sql, e);
-                    this.taskPluginCollector.collectDirtyRecord(record, e);
-                }
+            // connection.setAutoCommit(true);
+            statement = this.currentConnection.createStatement();
+            sql = generateInsertSql(this.currentConnection, record);
+            LOG.debug(sql);
+            @SuppressWarnings("unused")
+            int status = statement.executeUpdate(sql);
+            sql = null;
+        } catch (SQLException e) {
+            LOG.error("doOneInsert meet a exception: " + sql, e);
+            //need retry before record dirty data
+            //this.taskPluginCollector.collectDirtyRecord(record, e);
+            // 更新当前可用连接
+            if (this.isRetryable(e)) {
+                this.currentConnection = AdsInsertUtil
+                        .getAdsConnect(this.configuration);
             }
+            throw e;
         } catch (Exception e) {
             LOG.error("插入异常, sql: " + sql);
             throw DataXException.asDataXException(
@@ -184,7 +214,18 @@ public class AdsInsertProxy {
             DBUtil.closeDBResources(statement, null);
         }
     }
-
+    
+    private boolean isRetryable(Exception e) {
+        Class<?> meetExceptionClass = e.getClass();
+        if (meetExceptionClass == com.mysql.jdbc.exceptions.jdbc4.CommunicationsException.class) {
+            return true;
+        }
+        if (meetExceptionClass == java.net.SocketException.class) {
+            return true;
+        }
+        return false;
+    }
+    
     private String generateInsertSql(Connection connection, Record record) throws SQLException {
         StringBuilder sqlSb = new StringBuilder(this.sqlPrefix + "(");
         for (int i = 0; i < columns.size(); i++) {
@@ -195,6 +236,7 @@ public class AdsInsertProxy {
             }
         }
         sqlSb.append(")");
+        //mysql impl warn: if a database access error occurs or this method is called on a closed connection
         PreparedStatement statement = connection.prepareStatement(sqlSb.toString());
         for (int i = 0; i < columns.size(); i++) {
             int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
@@ -211,6 +253,7 @@ public class AdsInsertProxy {
         sqlSb.append(sqlResult.substring(this.sqlPrefix.length()));
     }
 
+    @SuppressWarnings({ "null" })
     private void checkColumnType(PreparedStatement statement, int columnSqltype, Column column, int columnIndex) throws SQLException {
         java.util.Date utilDate;
         switch (columnSqltype) {

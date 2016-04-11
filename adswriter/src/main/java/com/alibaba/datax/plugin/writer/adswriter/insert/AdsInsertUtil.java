@@ -47,7 +47,8 @@ public class AdsInsertUtil {
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
         Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
+        String suffix = conf.getString(Key.JDBC_URL_SUFFIX, "");
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema, socketTimeout, suffix);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);
@@ -92,7 +93,9 @@ public class AdsInsertUtil {
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
         Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
+        // like autoReconnect=true&failOverReadOnly=false&maxReconnects=10
+        String suffix = conf.getString(Key.JDBC_URL_SUFFIX, "");
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema, socketTimeout, suffix);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);
