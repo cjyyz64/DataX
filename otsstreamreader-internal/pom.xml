@@ -55,6 +55,12 @@
             <artifactId>gson</artifactId>
             <version>2.2.4</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>18.0</version>
+            <scope>test</scope>
+        </dependency>
 
     </dependencies>
     <build>
@@ -94,8 +100,8 @@
                 <version>2.5</version>
                 <configuration>
                     <parallel>all</parallel>
-                    <forkCount>10</forkCount>
-                    <reuseForks>true</reuseForks>
+                    <!--<forkCount>10</forkCount>-->
+                    <!--<reuseForks>true</reuseForks>-->
                     <argLine>-Xmx4096m -Xmn2048m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=.</argLine>
                     <includes>
                         <include>**/unittest/*.java</include>
