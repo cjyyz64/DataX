@@ -528,10 +528,15 @@ public class HBaseBulkWriter2 extends Writer {
                             throw DataXException.asDataXException(BulkWriterError.CONFIG_ILLEGAL, "hbase rowkey的index为-1,则格式必须为-1|type|fixed");
                         }
                         String fixed = elem[2];
+
+                        //for bug: when constant is String, '' is added for odps,but for odps this just is meta. for hbase '' is the real chart.
+                        // so remove.
+                        String afterFixed = fixed;
                         if (typ.equals("string")) {
-                            fixed = "'" + fixed + "'";
+                            afterFixed = "'" + fixed + "'";
                         }
-                        sort_column.add(typ + ":" + fixed);
+                        sort_column.add(typ + ":" + afterFixed);
+
 
                         //for fixColumnConf
                         FixColumnConf.RowkeyColumn hbaseRowkey = new FixColumnConf.RowkeyColumn();

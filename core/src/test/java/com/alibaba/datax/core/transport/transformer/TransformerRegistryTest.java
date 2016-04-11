@@ -1,9 +1,11 @@
 package com.alibaba.datax.core.transport.transformer;
 
 import com.alibaba.datax.core.scaffold.base.CaseInitializer;
-import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * no comments.
@@ -51,7 +53,11 @@ public class TransformerRegistryTest extends CaseInitializer {
         Assert.assertEquals(result.isNative(),true);
 
 
-        TransformerRegistry.loadTransformerFromLocalStorage(Lists.newArrayList("userTransformerTest","userComplexTransformerTest"));
+        List<String> lists = new ArrayList<String>();
+        lists.add("userTransformerTest");
+        lists.add("userComplexTransformerTest");
+
+        TransformerRegistry.loadTransformerFromLocalStorage(lists);
 
         result = TransformerRegistry.getTransformer("userTransformerTest");
         Assert.assertEquals(result.getTransformer().getTransformerName(), "userTransformerTest");

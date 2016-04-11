@@ -6,7 +6,6 @@ import com.alibaba.datax.common.exception.ExceptionTracker;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
-import com.google.common.collect.Lists;
 import com.taobao.tair.impl.mc.MultiClusterTairManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,7 +166,7 @@ public class TairWriter extends Writer {
             long lastTime = System.currentTimeMillis();
 
             try {
-                List<Record> tmpListForInit = Lists.newArrayList();
+                List<Record> tmpListForInit = new ArrayList<Record>();
                 int tmpSizeForInit = 0;
                 //recordReceiver.getFromReader()返回null，表示reader结束
                 while ((record = recordReceiver.getFromReader()) != null) {

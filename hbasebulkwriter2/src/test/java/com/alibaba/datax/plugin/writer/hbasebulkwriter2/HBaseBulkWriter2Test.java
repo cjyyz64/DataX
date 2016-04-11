@@ -34,6 +34,13 @@ public class HBaseBulkWriter2Test{// extends BasicWriterPluginTest {
 //        super.doWriterTest("fixcolumn_job0.json", readerSliceNumber);
 //    }
 
+
+    @Test
+    public void testNormal() throws Exception {
+        Class<?> cla2 = Class.forName("com.alibaba.datax.plugin.writer.hbasebulkwriter2.HBaseBulkWriter2$Job");
+        Assert.assertEquals(cla2.getName(),"");
+    }
+
     @Test
     public void testGetPartitions() throws Exception {
         ArrayList<String> lists = Lists.newArrayList("dt=123", "dt=234", "dt=345", "");

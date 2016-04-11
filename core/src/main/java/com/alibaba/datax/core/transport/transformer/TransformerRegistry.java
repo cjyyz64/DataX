@@ -6,12 +6,12 @@ import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.JarLoader;
 import com.alibaba.datax.transformer.ComplexTransformer;
 import com.alibaba.datax.transformer.Transformer;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +74,7 @@ public class TransformerRegistry {
         }
 
         String className = transformerConfiguration.getString("class");
-        if (Strings.isNullOrEmpty(className)) {
+        if (StringUtils.isEmpty(className)) {
             LOG.error(String.format("skip transformer(%s),class not config, path = %s, config = %s", each, transformerPath, transformerConfiguration.beautify()));
             return;
         }
@@ -172,6 +172,6 @@ public class TransformerRegistry {
     }
 
     public static List<String> getAllSuportTransformer() {
-        return Lists.newArrayList(registedTransformer.keySet());
+        return new ArrayList<String>(registedTransformer.keySet());
     }
 }

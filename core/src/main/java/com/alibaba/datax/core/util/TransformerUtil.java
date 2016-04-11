@@ -4,11 +4,11 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.transformer.*;
 import com.alibaba.datax.core.util.container.CoreConstant;
-import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,15 +25,15 @@ public class TransformerUtil {
             return null;
         }
 
-        List<TransformerExecution> result = Lists.newArrayList();
+        List<TransformerExecution> result = new ArrayList<TransformerExecution>();
 
 
-        List<String> functionNames = Lists.newArrayList();
+        List<String> functionNames = new ArrayList<String>();
 
 
         for (Configuration configuration : tfConfigs) {
             String functionName = configuration.getString("name");
-            if (Strings.isNullOrEmpty(functionName)) {
+            if (StringUtils.isEmpty(functionName)) {
                 throw DataXException.asDataXException(TransformerErrorCode.TRANSFORMER_CONFIGURATION_ERROR, "config=" + configuration.toJSON());
             }
 
@@ -79,7 +79,7 @@ public class TransformerUtil {
                 }
             } else {
                 String code = configuration.getString(CoreConstant.TRANSFORMER_PARAMETER_CODE);
-                if (Strings.isNullOrEmpty(code)) {
+                if (StringUtils.isEmpty(code)) {
                     throw DataXException.asDataXException(TransformerErrorCode.TRANSFORMER_ILLEGAL_PARAMETER, "groovy code must be set by UDF:name=" + functionName);
                 }
                 transformerExecutionParas.setCode(code);

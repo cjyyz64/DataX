@@ -2,10 +2,10 @@ package com.alibaba.datax.core.transport.transformer;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.core.scaffold.RecordProducer;
-import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -114,7 +114,8 @@ public class GroovyTransformerTest {
                 "        } else {\n" +
                 "            return record;\n" +
                 "        };";
-       List<String> extraPackages = Lists.newArrayList("import java.text.SimpleDateFormat;");
+       List<String> extraPackages = new ArrayList<String>();
+        extraPackages.add("import java.text.SimpleDateFormat;");
 
         Record record51= groovyTransformer5.evaluate(record5,code5,extraPackages);
 
