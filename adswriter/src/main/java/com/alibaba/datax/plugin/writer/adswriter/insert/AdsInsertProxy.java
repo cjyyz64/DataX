@@ -82,7 +82,7 @@ public class AdsInsertProxy {
 
                 if (writeBuffer.size() >= batchSize) {
                     //doOneInsert(connection, writeBuffer);
-                    doBatchInsertWithOneStatement(connection, writeBuffer);
+                    doBatchInsertWithOneStatement(writeBuffer);
                     writeBuffer.clear();
                 }
             }
@@ -125,8 +125,7 @@ public class AdsInsertProxy {
         }
     }
     
-    private void doBatchInsertWithOneStatement(Connection connection,
-            List<Record> buffer) throws SQLException {
+    private void doBatchInsertWithOneStatement(List<Record> buffer) throws SQLException {
         Statement statement = null;
         String sql = null;
         try {
@@ -137,11 +136,11 @@ public class AdsInsertProxy {
             StringBuilder sqlSb = new StringBuilder();
             // connection.setAutoCommit(true);
             //mysql impl warn: if a database access error occurs or this method is called on a closed connection throw SQLException
-            statement = connection.createStatement();
-            sqlSb.append(this.generateInsertSql(connection, buffer.get(0)));
+            statement = this.currentConnection.createStatement();
+            sqlSb.append(this.generateInsertSql(this.currentConnection, buffer.get(0)));
             for (int i = 1; i < bufferSize; i++) {
                 Record record = buffer.get(i);
-                this.appendInsertSqlValues(connection, record, sqlSb);
+                this.appendInsertSqlValues(this.currentConnection, record, sqlSb);
             }
             sql = sqlSb.toString();
             LOG.debug(sql);
@@ -185,7 +184,8 @@ public class AdsInsertProxy {
         }
     }
     
-    protected void doOneRecordInsert(Record record) throws SQLException {
+    @SuppressWarnings("resource")
+    protected void doOneRecordInsert(Record record) throws Exception {
         Statement statement = null;
         String sql = null;
         try {
@@ -201,9 +201,23 @@ public class AdsInsertProxy {
             //need retry before record dirty data
             //this.taskPluginCollector.collectDirtyRecord(record, e);
             // 更新当前可用连接
-            if (this.isRetryable(e)) {
-                this.currentConnection = AdsInsertUtil
-                        .getAdsConnect(this.configuration);
+            Exception eachException = e;
+            int maxIter = 0;// 避免死循环
+            while (null != eachException && maxIter < 100) {
+                if (this.isRetryable(eachException)) {
+                    LOG.warn("doOneInsert meet a retry exception: " + e.getMessage());
+                    this.currentConnection = AdsInsertUtil
+                            .getAdsConnect(this.configuration);
+                    throw eachException;
+                } else {
+                    try {
+                        eachException = (Exception) eachException.getCause();
+                    } catch (Exception castException) {
+                        LOG.warn("doOneInsert meet a no! retry exception: " + e.getMessage());
+                        throw e;
+                    }
+                }
+                maxIter++;
             }
             throw e;
         } catch (Exception e) {
@@ -215,7 +229,7 @@ public class AdsInsertProxy {
         }
     }
     
-    private boolean isRetryable(Exception e) {
+    private boolean isRetryable(Throwable e) {
         Class<?> meetExceptionClass = e.getClass();
         if (meetExceptionClass == com.mysql.jdbc.exceptions.jdbc4.CommunicationsException.class) {
             return true;
