@@ -3,6 +3,7 @@ package com.alibaba.datax.core.taskgroup;
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.exception.CommonErrorCode;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
 import com.alibaba.datax.common.statistics.PerfTrace;
@@ -20,8 +21,12 @@ import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.taskgroup.runner.WriterRunner;
 import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
+import com.alibaba.datax.core.transport.exchanger.BufferedRecordTransformerExchanger;
+import com.alibaba.datax.core.transport.transformer.TransformerExecution;
+import com.alibaba.datax.core.transport.transformer.TransformerInfo;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
+import com.alibaba.datax.core.util.TransformerUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
@@ -411,6 +416,12 @@ public class TaskGroupContainer extends AbstractContainer {
             this.channel.setCommunication(this.taskCommunication);
 
             /**
+             * 获取transformer的参数
+             */
+
+            List<TransformerExecution> transformerInfoExecs = TransformerUtil.buildTransformerInfo(taskConfig);
+
+            /**
              * 生成writerThread
              */
             writerRunner = (WriterRunner) generateRunner(PluginType.WRITER);
@@ -425,7 +436,7 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 生成readerThread
              */
-            readerRunner = (ReaderRunner) generateRunner(PluginType.READER);
+            readerRunner = (ReaderRunner) generateRunner(PluginType.READER,transformerInfoExecs);
             this.readerThread = new Thread(readerRunner,
                     String.format("%d-%d-%d-reader",
                             jobId, taskGroupId, this.taskId));
@@ -459,7 +470,12 @@ public class TaskGroupContainer extends AbstractContainer {
 
         }
 
+
         private AbstractRunner generateRunner(PluginType pluginType) {
+            return generateRunner(pluginType, null);
+        }
+
+        private AbstractRunner generateRunner(PluginType pluginType, List<TransformerExecution> transformerInfoExecs) {
             AbstractRunner newRunner = null;
             TaskPluginCollector pluginCollector;
 
@@ -475,8 +491,15 @@ public class TaskGroupContainer extends AbstractContainer {
                             configuration, this.taskCommunication,
                             PluginType.READER);
 
-                    ((ReaderRunner) newRunner).setRecordSender(
-                            new BufferedRecordExchanger(this.channel, pluginCollector));
+                    RecordSender recordSender;
+                    if (transformerInfoExecs != null && transformerInfoExecs.size() > 0) {
+                        recordSender = new BufferedRecordTransformerExchanger(taskGroupId, this.taskId, this.channel,this.taskCommunication ,pluginCollector, transformerInfoExecs);
+                    } else {
+                        recordSender = new BufferedRecordExchanger(this.channel, pluginCollector);
+                    }
+
+                    ((ReaderRunner) newRunner).setRecordSender(recordSender);
+
                     /**
                      * 设置taskPlugin的collector，用来处理脏数据和job/task通信
                      */

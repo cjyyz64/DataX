@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.writer.adswriter.insert;
 
 import com.alibaba.datax.common.exception.DataXException;
-
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
@@ -12,7 +11,10 @@ import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
+import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Triple;
@@ -29,17 +31,13 @@ public class AdsInsertUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(AdsInsertUtil.class);
 
-    public Connection getAdsConnect(Configuration conf) {
+    public static Connection getAdsConnect(Configuration conf) {
         String userName = conf.getString(Key.USERNAME);
         String passWord = conf.getString(Key.PASSWORD);
-        String adsURL = conf.getString(Key.ADS_URL);
-        String schema = conf.getString(Key.SCHEMA);
-        String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
-
-        Connection connection = DBUtil.getConnection(DataBaseType.ADS, userName, passWord, jdbcUrl);
+        String jdbcUrl = AdsUtil.prepareJdbcUrl(conf);
+        Connection connection = DBUtil.getConnection(DataBaseType.ADS, jdbcUrl, userName, passWord);
         return connection;
     }
-
 
     public static List<String> getAdsTableColumnNames(Configuration conf) {
         List<String> tableColumns = new ArrayList<String>();
@@ -48,7 +46,8 @@ public class AdsInsertUtil {
         String adsUrl = conf.getString(Key.ADS_URL);
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema);
+        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);
@@ -92,7 +91,8 @@ public class AdsInsertUtil {
         String adsUrl = conf.getString(Key.ADS_URL);
         String schema = conf.getString(Key.SCHEMA);
         String tableName = conf.getString(Key.ADS_TABLE);
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema);
+        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema,socketTimeout);
         TableInfo tableInfo= null;
         try {
             tableInfo = adsHelper.getTableInfo(tableName);

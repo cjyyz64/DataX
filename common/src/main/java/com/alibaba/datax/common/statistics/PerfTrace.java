@@ -4,8 +4,6 @@ import com.alibaba.datax.common.statistics.PerfRecord.PHASE;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.HostUtils;
 import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto2;
-import com.google.common.base.Optional;
-import com.google.common.base.Strings;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -215,7 +213,12 @@ public class PerfTrace {
                     phase, unitTime(averageTime), sumPerfRecord.totalCount, unitTime(maxTime), jobId + "-" + maxTaskGroupId + "-" + maxTaskId, taskDetails.get(maxTaskId)));
         }
 
-        SumPerfRecord4Print countSumPerf = Optional.fromNullable(perfRecordMaps4print.get(PHASE.READ_TASK_DATA)).or(new SumPerfRecord4Print());
+        //SumPerfRecord4Print countSumPerf = Optional.fromNullable(perfRecordMaps4print.get(PHASE.READ_TASK_DATA)).or(new SumPerfRecord4Print());
+
+        SumPerfRecord4Print countSumPerf = perfRecordMaps4print.get(PHASE.READ_TASK_DATA);
+        if(countSumPerf == null){
+            countSumPerf = new SumPerfRecord4Print();
+        }
 
         long averageRecords = countSumPerf.getAverageRecords();
         long averageBytes = countSumPerf.getAverageBytes();
@@ -314,9 +317,9 @@ public class PerfTrace {
                 windowStart = getWindow(jobInfo.getString("windowStart"), true);
                 windowEnd = getWindow(jobInfo.getString("windowEnd"), false);
                 String jobIdStr = jobInfo.getString("jobId");
-                jobId = Strings.isNullOrEmpty(jobIdStr) ? (long) -5 : Long.parseLong(jobIdStr);
+                jobId = StringUtils.isEmpty(jobIdStr) ? (long) -5 : Long.parseLong(jobIdStr);
                 String jobVersionStr = jobInfo.getString("jobVersion");
-                jobVersion = Strings.isNullOrEmpty(jobVersionStr) ? (long) -4 : Long.parseLong(jobVersionStr);
+                jobVersion = StringUtils.isEmpty(jobVersionStr) ? (long) -4 : Long.parseLong(jobVersionStr);
                 jobStartTime = new Date();
             }
             this.perfReportEnable = perfReportEnable;
@@ -329,7 +332,7 @@ public class PerfTrace {
     private Date getWindow(String windowStr, boolean startWindow) {
         SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
-        if (!Strings.isNullOrEmpty(windowStr)) {
+        if (StringUtils.isNotEmpty(windowStr)) {
             try {
                 return sdf1.parse(windowStr);
             } catch (ParseException e) {

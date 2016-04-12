@@ -1,7 +1,6 @@
 package com.alibaba.datax.common.statistics;
 
 import com.alibaba.datax.common.util.HostUtils;
-import com.google.common.base.Objects;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +50,9 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
         WAIT_READ_TIME(103),
 
-        WAIT_WRITE_TIME(104);
+        WAIT_WRITE_TIME(104),
+
+        TRANSFORMER_TIME(201);
 
         private int val;
 
@@ -153,7 +154,13 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(getInstId(),taskGroupId,taskId,phase,startTime);
+        long jobId = getInstId();
+        int result = (int) (jobId ^ (jobId >>> 32));
+        result = 31 * result + taskGroupId;
+        result = 31 * result + taskId;
+        result = 31 * result + phase.toInt();
+        result = 31 * result + (startTime != null ? startTime.hashCode() : 0);
+        return result;
     }
 
     @Override
@@ -165,12 +172,11 @@ public class PerfRecord implements Comparable<PerfRecord> {
 
         PerfRecord dst = (PerfRecord)o;
 
-        if(!Objects.equal(this.getInstId(),dst.getInstId())) return false;
-        if(!Objects.equal(this.taskGroupId,dst.taskGroupId)) return false;
-        if(!Objects.equal(this.taskId,dst.taskId)) return false;
-        if(!Objects.equal(this.phase,dst.phase)) return false;
-        if(!Objects.equal(this.startTime,dst.startTime)) return false;
-
+        if (this.getInstId() != dst.getInstId()) return false;
+        if (this.taskGroupId != dst.taskGroupId) return false;
+        if (this.taskId != dst.taskId) return false;
+        if (phase != null ? !phase.equals(dst.phase) : dst.phase != null) return false;
+        if (startTime != null ? !startTime.equals(dst.startTime) : dst.startTime != null) return false;
         return true;
     }
 

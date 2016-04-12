@@ -8,6 +8,7 @@ import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.util.LogReportUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertProxy;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertUtil;
@@ -26,6 +27,8 @@ import com.aliyun.odps.account.Account;
 import com.aliyun.odps.account.AliyunAccount;
 import com.aliyun.odps.account.TaobaoAccount;
 import com.aliyun.odps.task.SQLTask;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,7 +182,25 @@ public class AdsWriter extends Writer {
                 //导数据到odps表中
                 this.odpsWriterJobProxy.prepare();
             } else {
-                //todo 目前insert模式不支持presql
+                // 实时表模式非分库分表
+                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                List<String> preSqls = this.originalConfig.getList(Key.PRE_SQL,
+                        String.class);
+                List<String> renderedPreSqls = WriterUtil.renderPreOrPostSqls(
+                        preSqls, adsTable);
+                if (null != renderedPreSqls && !renderedPreSqls.isEmpty()) {
+                    // 说明有 preSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.PRE_SQL);
+                    Connection preConn = AdsInsertUtil
+                            .getAdsConnect(this.originalConfig);
+                    LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
+                            StringUtils.join(renderedPreSqls, ";"),
+                            this.originalConfig.getString(Key.ADS_URL));
+                    WriterUtil.executeSqls(preConn, renderedPreSqls,
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
+                    DBUtil.closeDBResources(null, null, preConn);
+                }
             }
         }
 
@@ -203,7 +224,26 @@ public class AdsWriter extends Writer {
                 loadAdsData(odpsAdsHelper, this.odpsTransTableName, null);
                 this.odpsWriterJobProxy.post();
             } else {
-                //insert mode do noting
+                // 实时表模式非分库分表
+                String adsTable = this.originalConfig.getString(Key.ADS_TABLE);
+                List<String> postSqls = this.originalConfig.getList(
+                        Key.POST_SQL, String.class);
+                List<String> renderedPostSqls = WriterUtil.renderPreOrPostSqls(
+                        postSqls, adsTable);
+                if (null != renderedPostSqls && !renderedPostSqls.isEmpty()) {
+                    // 说明有 preSql 配置，则此处删除掉
+                    this.originalConfig.remove(Key.POST_SQL);
+                    Connection postConn = AdsInsertUtil
+                            .getAdsConnect(this.originalConfig);
+                    LOG.info(
+                            "Begin to execute postSqls:[{}]. context info:{}.",
+                            StringUtils.join(renderedPostSqls, ";"),
+                            this.originalConfig.getString(Key.ADS_URL));
+                    WriterUtil.executeSqls(postConn, renderedPostSqls,
+                            this.originalConfig.getString(Key.ADS_URL),
+                            DataBaseType.ADS);
+                    DBUtil.closeDBResources(null, null, postConn);
+                }
             }
         }
 
@@ -308,7 +348,7 @@ public class AdsWriter extends Writer {
                 String schema = writerSliceConfig.getString(Key.SCHEMA);
                 String table =  writerSliceConfig.getString(Key.ADS_TABLE);
                 List<String> columns = writerSliceConfig.getList(Key.COLUMN, String.class);
-                String jdbcUrl = "jdbc:mysql://" + adsURL + "/" + schema + "?useUnicode=true&characterEncoding=UTF-8";
+                String jdbcUrl = AdsUtil.prepareJdbcUrl(writerSliceConfig);
                 Connection connection = DBUtil.getConnection(DataBaseType.ADS,
                         jdbcUrl, username, password);
                 TaskPluginCollector taskPluginCollector = super.getTaskPluginCollector();

@@ -42,7 +42,7 @@ public class TddlWriter extends Writer {
             //deal config
             String table = originalConfig.getString(Key.TABLE);
             OriginalConfPretreatmentUtil.dealColumnConf(originalConfig, tddlConnectionFactory, table);
-            OriginalConfPretreatmentUtil.dealWriteMode(originalConfig);
+            OriginalConfPretreatmentUtil.dealWriteMode(originalConfig, DATABASE_TYPE);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]", originalConfig.toJSON());
         }

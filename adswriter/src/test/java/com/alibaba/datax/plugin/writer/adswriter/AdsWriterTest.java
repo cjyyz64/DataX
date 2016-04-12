@@ -1,3 +1,4 @@
+package com.alibaba.datax.plugin.writer.adswriter;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
 import com.alibaba.datax.test.simulator.junit.extend.log.LoggedRunner;

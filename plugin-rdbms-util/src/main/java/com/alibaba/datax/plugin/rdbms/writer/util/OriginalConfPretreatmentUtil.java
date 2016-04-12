@@ -19,9 +19,9 @@ public final class OriginalConfPretreatmentUtil {
 
     public static DataBaseType DATABASE_TYPE;
 
-    public static void doPretreatment(Configuration originalConfig) {
-        doPretreatment(originalConfig,null);
-    }
+//    public static void doPretreatment(Configuration originalConfig) {
+//        doPretreatment(originalConfig,null);
+//    }
 
     public static void doPretreatment(Configuration originalConfig, DataBaseType dataBaseType) {
         // 检查 username/password 配置（必填）
@@ -33,11 +33,7 @@ public final class OriginalConfPretreatmentUtil {
         simplifyConf(originalConfig);
 
         dealColumnConf(originalConfig);
-        if (dataBaseType != null) {
-            dealWriteMode(originalConfig, dataBaseType);
-        } else {
-            dealWriteMode(originalConfig);
-        }
+        dealWriteMode(originalConfig, dataBaseType);
     }
 
     public static void doCheckBatchSize(Configuration originalConfig) {
@@ -144,10 +140,6 @@ public final class OriginalConfPretreatmentUtil {
         dealColumnConf(originalConfig, jdbcConnectionFactory, oneTable);
     }
 
-    public static void dealWriteMode(Configuration originalConfig) {
-        dealWriteMode(originalConfig, null);
-    }
-
     public static void dealWriteMode(Configuration originalConfig, DataBaseType dataBaseType) {
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
 
@@ -162,20 +154,20 @@ public final class OriginalConfPretreatmentUtil {
             valueHolders.add("?");
         }
 
-        boolean useUpdate = false;
+        boolean forceUseUpdate = false;
         //ob10的处理
-        if (dataBaseType != null && dataBaseType == DataBaseType.MySql && isOB10(jdbcUrl)) {
-            useUpdate = true;
+        if (dataBaseType == DataBaseType.MySql && isOB10(jdbcUrl)) {
+            forceUseUpdate = true;
         }
 
-        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode,dataBaseType, useUpdate);
+        String writeDataSqlTemplate = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode,dataBaseType, forceUseUpdate);
 
         LOG.info("Write data [\n{}\n], which jdbcUrl like:[{}]", writeDataSqlTemplate, jdbcUrl);
 
         originalConfig.set(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK, writeDataSqlTemplate);
     }
 
-    private static boolean isOB10(String jdbcUrl) {
+    public static boolean isOB10(String jdbcUrl) {
         //ob10的处理
         if (jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
             String[] ss = jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);

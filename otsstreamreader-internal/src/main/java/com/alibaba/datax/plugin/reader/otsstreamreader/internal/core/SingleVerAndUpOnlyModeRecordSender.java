@@ -41,29 +41,30 @@ public class SingleVerAndUpOnlyModeRecordSender implements IStreamRecordSender {
     }
 
     private void sendToDatax(PrimaryKey primaryKey, List<RecordColumn> columns, String sequenceInfo) {
-        Map<String, ColumnValue> map = new HashMap<String, ColumnValue>();
+        Record line = dataxRecordSender.createRecord();
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        for (PrimaryKeyColumn pkCol : primaryKey.getPrimaryKeyColumns()) {
+            map.put(pkCol.getName(), pkCol.getValue());
+        }
+
         for (RecordColumn recordColumn : columns) {
             if (recordColumn.getColumnType().equals(RecordColumn.ColumnType.PUT)) {
                 map.put(recordColumn.getColumn().getName(), recordColumn.getColumn().getValue());
             }
         }
 
-        if (map.isEmpty()) {
-            return;
-        }
-
-        Record line = dataxRecordSender.createRecord();
-
-        for (PrimaryKeyColumn pkCol : primaryKey.getPrimaryKeyColumns()) {
-            line.addColumn(ColumnValueTransformHelper.otsPrimaryKeyValueToDataxColumn(pkCol.getValue()));
-        }
-
         boolean findColumn  = false;
+
         for (String colName : columnNames) {
-            ColumnValue value = map.get(colName);
+            Object value = map.get(colName);
             if (value != null) {
                 findColumn = true;
-                line.addColumn(ColumnValueTransformHelper.otsColumnValueToDataxColumn(value));
+                if (value instanceof ColumnValue) {
+                    line.addColumn(ColumnValueTransformHelper.otsColumnValueToDataxColumn((ColumnValue) value));
+                } else {
+                    line.addColumn(ColumnValueTransformHelper.otsPrimaryKeyValueToDataxColumn((PrimaryKeyValue) value));
+                }
             } else {
                 line.addColumn(null);
             }

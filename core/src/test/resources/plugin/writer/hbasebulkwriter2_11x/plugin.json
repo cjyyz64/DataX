@@ -1,0 +1,6 @@
+{
+    "name": "hbasebulkwriter2_11x",
+    "class": "com.alibaba.datax.plugin.writer.hbasebulkwriter2_11x.HBaseBulkWriter2_11x",
+    "description": "适用于: 生产环境. hbaseBulkLoad For hbase1.1.x",
+    "developer": "hbase"
+}

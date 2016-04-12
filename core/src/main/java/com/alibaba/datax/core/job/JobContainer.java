@@ -32,6 +32,7 @@ import com.alibaba.datax.core.util.container.ClassLoaderSwapper;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
+import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.slf4j.Logger;
@@ -408,11 +409,17 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> writerTaskConfigs = this
                 .doWriterSplit(taskNumber);
 
+        List<Configuration> transformerList = this.configuration.getListConfiguration(CoreConstant.DATAX_JOB_CONTENT_TRANSFORMER);
+
+        LOG.debug("transformer configuration: "+ JSON.toJSONString(transformerList));
         /**
          * 输入是reader和writer的parameter list，输出是content下面元素的list
          */
         List<Configuration> contentConfig = mergeReaderAndWriterTaskConfigs(
-                readerTaskConfigs, writerTaskConfigs);
+                readerTaskConfigs, writerTaskConfigs, transformerList);
+
+
+        LOG.debug("contentConfig configuration: "+ JSON.toJSONString(contentConfig));
 
         this.configuration.set(CoreConstant.DATAX_JOB_CONTENT, contentConfig);
 
@@ -661,6 +668,22 @@ public class JobContainer extends AbstractContainer {
                 String.valueOf(CommunicationTool.getTotalErrorRecords(communication))
         ));
 
+        if (communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS) > 0
+                || communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS) > 0) {
+            LOG.info(String.format(
+                    "\n" + "%-26s: %19s\n" + "%-26s: %19s\n" + "%-26s: %19s\n",
+                    "Transformer成功记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_SUCCEED_RECORDS),
+
+                    "Transformer失败记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FAILED_RECORDS),
+
+                    "Transformer过滤记录总数",
+                    communication.getLongCounter(CommunicationTool.TRANSFORMER_FILTER_RECORDS)
+            ));
+        }
+
 
     }
 
@@ -788,6 +811,13 @@ public class JobContainer extends AbstractContainer {
     private List<Configuration> mergeReaderAndWriterTaskConfigs(
             List<Configuration> readerTasksConfigs,
             List<Configuration> writerTasksConfigs) {
+        return mergeReaderAndWriterTaskConfigs(readerTasksConfigs, writerTasksConfigs, null);
+    }
+
+    private List<Configuration> mergeReaderAndWriterTaskConfigs(
+            List<Configuration> readerTasksConfigs,
+            List<Configuration> writerTasksConfigs,
+            List<Configuration> transformerConfigs) {
         if (readerTasksConfigs.size() != writerTasksConfigs.size()) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
@@ -807,6 +837,11 @@ public class JobContainer extends AbstractContainer {
                     this.writerPluginName);
             taskConfig.set(CoreConstant.JOB_WRITER_PARAMETER,
                     writerTasksConfigs.get(i));
+
+            if(transformerConfigs!=null && transformerConfigs.size()>0){
+                taskConfig.set(CoreConstant.JOB_TRANSFORMER, transformerConfigs);
+            }
+
             taskConfig.set(CoreConstant.TASK_ID, i);
             contentConfigs.add(taskConfig);
         }

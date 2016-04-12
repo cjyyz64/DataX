@@ -38,11 +38,7 @@ public class CommonRdbmsWriter {
         }
 
         public void init(Configuration originalConfig) {
-            if(this.dataBaseType == DataBaseType.MySql){
-                OriginalConfPretreatmentUtil.doPretreatment(originalConfig,this.dataBaseType);
-            }else {
-                OriginalConfPretreatmentUtil.doPretreatment(originalConfig);
-            }
+            OriginalConfPretreatmentUtil.doPretreatment(originalConfig, this.dataBaseType);
 
             LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                     originalConfig.toJSON());
@@ -553,7 +549,14 @@ public class CommonRdbmsWriter {
                     String type = resultSetMetaData.getRight().get(i);
                     valueHolders.add(calcValueHolder(type));
                 }
-                INSERT_OR_REPLACE_TEMPLATE = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode);
+
+                boolean forceUseUpdate = false;
+                //ob10的处理
+                if (dataBaseType != null && dataBaseType == DataBaseType.MySql && OriginalConfPretreatmentUtil.isOB10(jdbcUrl)) {
+                    forceUseUpdate = true;
+                }
+
+                INSERT_OR_REPLACE_TEMPLATE = WriterUtil.getWriteTemplate(columns, valueHolders, writeMode, dataBaseType, forceUseUpdate);
                 writeRecordSql = String.format(INSERT_OR_REPLACE_TEMPLATE, this.table);
             }
         }
