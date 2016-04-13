@@ -47,6 +47,7 @@ public abstract class HbaseAbstractTask {
 
     public void prepare() throws Exception {
         this.scan = new Scan();
+        this.scan.setSmall(false);
         this.scan.setStartRow(startKey);
         this.scan.setStopRow(endKey);
         LOG.info("The task set startRowkey=[{}], endRowkey=[{}].", Bytes.toStringBinary(this.startKey), Bytes.toStringBinary(this.endKey));
