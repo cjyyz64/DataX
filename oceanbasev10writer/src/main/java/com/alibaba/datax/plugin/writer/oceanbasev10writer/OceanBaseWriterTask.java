@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +27,7 @@ import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer.RuleWriterDbBuffer;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.groovy.GroovyRuleExecutor;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.OBUtils;
 
 /**
  * 2016-04-07
@@ -55,21 +57,34 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 
 	private Map<String, String> tableWriteSqlMap = new HashMap<String, String>();
 
+	// memstore_total 与 memstore_limit 比例的阈值,一旦超过这个值,则暂停写入
+	private double memstoreThreshold = Config.DEFAULT_MEMSTORE_THRESHOLD;
+
+	// memstore检查的间隔
+	private long memstoreCheckIntervalSecond = Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND;
+
+	// 失败重试次数
+	private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
+
 	public OceanBaseWriterTask(DataBaseType dataBaseType) {
 		super(dataBaseType);
 	}
 
 	@Override
-	public void init(Configuration writerSliceConfig) {
-		this.username = writerSliceConfig.getString(Key.USERNAME);
-		this.password = writerSliceConfig.getString(Key.PASSWORD);
+	public void init(Configuration config) {
+		this.username = config.getString(Key.USERNAME);
+		this.password = config.getString(Key.PASSWORD);
 		// 获取规则
-		this.dbNamePattern = writerSliceConfig.getString(Key.DB_NAME_PATTERN);
-		this.dbRule = writerSliceConfig.getString(Key.DB_RULE);
+		this.dbNamePattern = config.getString(Key.DB_NAME_PATTERN);
+		this.dbRule = config.getString(Key.DB_RULE);
 		this.dbRule = (dbRule == null) ? "" : dbRule;
-		this.tableNamePattern = writerSliceConfig.getString(Key.TABLE_NAME_PATTERN);
-		this.tableRule = writerSliceConfig.getString(Key.TABLE_RULE);
+		this.tableNamePattern = config.getString(Key.TABLE_NAME_PATTERN);
+		this.tableRule = config.getString(Key.TABLE_RULE);
 		this.tableRule = (tableRule == null) ? "" : tableRule;
+		this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
+		this.memstoreCheckIntervalSecond = config.getLong(Config.MEMSTORE_CHECK_INTERVAL_SECOND,
+				Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND);
+		this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
 
 		if (StringUtils.isNotBlank(this.dbRule)) {
 			dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
@@ -78,16 +93,17 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 			tableRuleExecutor = new GroovyRuleExecutor(tableRule, tableNamePattern);
 		}
 
-		this.columns = writerSliceConfig.getList(Key.COLUMN, String.class);
+		this.columns = config.getList(Key.COLUMN, String.class);
 		this.columnNumber = this.columns.size();
-		this.batchSize = writerSliceConfig.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
-		this.batchByteSize = writerSliceConfig.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
-		writeMode = writerSliceConfig.getString(Key.WRITE_MODE, "INSERT");
-		emptyAsNull = writerSliceConfig.getBool(Key.EMPTY_AS_NULL, true);
-		INSERT_OR_REPLACE_TEMPLATE = writerSliceConfig.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
+		//
+		this.batchSize = config.getInt(Key.BATCH_SIZE, 100);
+		this.batchByteSize = config.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
+		writeMode = config.getString(Key.WRITE_MODE, "INSERT");
+		emptyAsNull = config.getBool(Key.EMPTY_AS_NULL, true);
+		INSERT_OR_REPLACE_TEMPLATE = config.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
 
 		// init writerbuffer map,每一个db对应一个buffer
-		List<Object> conns = writerSliceConfig.getList(Constant.CONN_MARK, Object.class);
+		List<Object> conns = config.getList(Constant.CONN_MARK, Object.class);
 
 		for (int i = 0; i < conns.size(); i++) {
 			Configuration connConf = Configuration.from(conns.get(i).toString());
@@ -106,7 +122,13 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 			}
 			// init每一个table的insert语句
 			for (String tableName : tableList) {
-				tableWriteSqlMap.put(tableName, String.format(INSERT_OR_REPLACE_TEMPLATE, tableName));
+				Connection conn  = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+				try{
+					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName,columns,
+							conn,writeMode));
+				}finally{
+					DBUtil.closeDBResources(null, null, conn);
+				}
 			}
 		}
 
@@ -114,7 +136,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		checkRule(dbBufferList);
 	}
 
-	public void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
+	private void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
 		// 如果配置的分表名完全不同， 则必须要填写tableRule规则
 		List<String> allTableList = new ArrayList<String>();
 		List<String> allDbList = new ArrayList<String>();
@@ -154,7 +176,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		}
 	}
 
-	public String getDbNameFromJdbcUrl(String jdbcUrl) {
+	private String getDbNameFromJdbcUrl(String jdbcUrl) {
 		if (jdbcUrl.contains("?")) {
 			return jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1, jdbcUrl.indexOf("?"));
 		} else {
@@ -162,7 +184,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		}
 	}
 
-	public Map<String, Object> convertRecord2Map(Record record) {
+	private Map<String, Object> convertRecord2Map(Record record) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		for (int i = 0; i < this.columnNumber; i++) {
 			// 设置列名统一为小写，规则的#号内部的列名称也都要小写
@@ -203,15 +225,13 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 				bufferBytes += record.getMemorySize();
 
 				if (writeBuffer.size() >= batchSize || bufferBytes >= batchByteSize) {
-					calcRuleAndDoBatchInsert(writeBuffer);
+					calcRuleAndDoBatchInsert(writeBuffer, false);
 					writeBuffer.clear();
 					bufferBytes = 0;
 				}
 			}
-			if (!writeBuffer.isEmpty()) {
-				calcRuleAndDoBatchInsert(writeBuffer);
-				writeBuffer.clear();
-			}
+			// flush buffer
+			calcRuleAndDoBatchInsert(writeBuffer, true);
 		} catch (Exception e) {
 			throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
 		} finally {
@@ -281,7 +301,14 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		}
 	}
 
-	public void calcRuleAndDoBatchInsert(List<Record> recordBuffer) throws SQLException {
+	/**
+	 * 
+	 * @param recordBuffer
+	 * @param isFlush
+	 *            if true then flush buffer
+	 * @throws SQLException
+	 */
+	public void calcRuleAndDoBatchInsert(List<Record> recordBuffer, boolean isFlush) throws SQLException {
 		// calcRule add all record
 		for (Record record : recordBuffer) {
 			calcRuleAndAddBuffer(record);
@@ -289,73 +316,109 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 
 		// do batchInsert
 		for (RuleWriterDbBuffer dbBuffer : dbBufferList) {
-			Connection connection = dbBuffer.getConnection();
-			PreparedStatement preparedStatement = null;
-			try {
-				for (Map.Entry<String, List<Record>> tableBufferEntry : dbBuffer.getTableBuffer().entrySet()) {
-					connection.setAutoCommit(false);
-					String tableName = tableBufferEntry.getKey();
-					List<Record> recordList = tableBufferEntry.getValue();
-					String writeRecordSql = tableWriteSqlMap.get(tableName);
-					try {
-						preparedStatement = connection.prepareStatement(writeRecordSql);
-						for (Record record : recordList) {
-							preparedStatement = fillPreparedStatement(preparedStatement, record);
-							preparedStatement.addBatch();
-						}
-						preparedStatement.executeBatch();
-					} finally {
-						DBUtil.closeDBResources(preparedStatement, null);
+			Connection conn = dbBuffer.getConnection();
+			checkMemstore(dbBuffer);
+			for (Map.Entry<String, LinkedList<Record>> entry : dbBuffer.getTableBuffer().entrySet()) {
+				String tableName = entry.getKey();
+				LinkedList<Record> recordList = entry.getValue();
+				// if size < batchSize then skip
+				if (!isFlush && recordList.size() < batchSize) {
+					continue;
+				}
+				List<Record> list = new ArrayList<Record>();
+				for (int i = 0; i < batchSize; i++) {
+					Record r = recordList.poll();
+					if (r != null) {
+						list.add(r);
+					} else {
+						break;
 					}
-					connection.commit();
 				}
-
-				// 在commit之后清空数据
-				for (Map.Entry<String, List<Record>> tableBufferEntry : dbBuffer.getTableBuffer().entrySet()) {
-					List<Record> recordList = tableBufferEntry.getValue();
-					recordList.clear();
+				int tryCount = write(conn, tableName, list);
+				if (tryCount >= failTryCount) {
+					String msg = "OB无法写入 重试超过10次,jdbc=" + dbBuffer.getJdbcUrl();
+					LOG.error(msg);
+					throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, msg);
 				}
-			} catch (SQLException e) {
-				LOG.warn("回滚此次写入, 采用每次写入一行方式提交. jdbc=" + dbBuffer.getJdbcUrl() + ", 因为:" + e.getMessage());
-				connection.rollback();
-				doRuleOneInsert(connection, dbBuffer);
-			} catch (Exception e) {
-				throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
-			} finally {
-				DBUtil.closeDBResources(preparedStatement, null);
 			}
 		}
 	}
 
-	protected void doRuleOneInsert(Connection connection, RuleWriterDbBuffer dbBuffer) {
-		PreparedStatement preparedStatement = null;
-		try {
-			connection.setAutoCommit(true);
-			for (Map.Entry<String, List<Record>> entry : dbBuffer.getTableBuffer().entrySet()) {
-				String tableName = entry.getKey();
-				preparedStatement = connection.prepareStatement(this.tableWriteSqlMap.get(tableName));
-				List<Record> recordList = entry.getValue();
-				for (Record record : recordList) {
-					try {
-						preparedStatement = fillPreparedStatement(preparedStatement, record);
-						preparedStatement.execute();
-					} catch (SQLException e) {
-						LOG.error("写入表[" + tableName + "]存在脏数据, jdbc=" + dbBuffer.getJdbcUrl() + ", 写入异常为:"
-								+ e.toString());
-						this.taskPluginCollector.collectDirtyRecord(record, e);
-					} finally {
-						// 最后不要忘了关闭 preparedStatement
-						preparedStatement.clearParameters();
+	private int write(Connection conn, String tableName, List<Record> list) throws SQLException {
+		String writeSql = tableWriteSqlMap.get(tableName);
+		int tryCount = 0;
+		while (tryCount < failTryCount) {
+			try {
+				conn.setAutoCommit(false);
+				PreparedStatement ps = null;
+				try {
+					ps = conn.prepareStatement(writeSql);
+					for (Record record : list) {
+						ps = fillPreparedStatement(ps, record);
+						ps.addBatch();
 					}
+					ps.executeBatch();
+					conn.commit();
+				} catch (SQLException e) {
+					LOG.warn("回滚此次写入, 休眠 30 秒,采用每次写入一行方式提交. 因为:" + e.getMessage());
+					conn.rollback();
+					OBUtils.sleep(30);
+					doRuleOneInsert(conn, tableName, list);
+				} finally {
+					DBUtil.closeDBResources(ps, null);
+					list.clear();
 				}
-				// 在commit之后完成清理
-				recordList.clear();
+				return tryCount;
+			} catch (Throwable t) {
+				LOG.warn("write OB fail,try 30 second later", t);
+				OBUtils.sleep(30);
+			}
+			tryCount++;
+		}
+		return tryCount;
+	}
+
+	private void doRuleOneInsert(Connection conn, String tableName, List<Record> list) {
+		PreparedStatement ps = null;
+		try {
+			conn.setAutoCommit(true);
+			for (Record record : list) {
+				try {
+					ps = fillPreparedStatement(ps, record);
+					ps.execute();
+				} catch (SQLException e) {
+					LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:" + e.toString());
+					this.taskPluginCollector.collectDirtyRecord(record, e);
+				} finally {
+					// 最后不要忘了关闭 preparedStatement
+					ps.clearParameters();
+				}
 			}
 		} catch (Exception e) {
 			throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
 		} finally {
-			DBUtil.closeDBResources(preparedStatement, null);
+			DBUtil.closeDBResources(ps, null);
 		}
 	}
 
+	/**
+	 * 检查当前DB的memstore使用状态
+	 * <p>
+	 * 若超过阈值,则休眠
+	 * 
+	 * @param conn
+	 */
+	private void checkMemstore(RuleWriterDbBuffer dbBuffer) {
+		long now = System.currentTimeMillis();
+		if (now - dbBuffer.getLastCheckMemstoreTime() > 1000 * memstoreCheckIntervalSecond) {
+			return;
+		}
+		Connection conn = dbBuffer.getConnection();
+		while (OBUtils.isMemstoreFull(conn, memstoreThreshold)) {
+			LOG.warn("OB memstore is full,sleep 1 second, jdbc=" + dbBuffer.getJdbcUrl() + ",threshold="
+					+ memstoreThreshold);
+			OBUtils.sleep(1);
+		}
+		dbBuffer.setLastCheckMemstoreTime(now);
+	}
 }
