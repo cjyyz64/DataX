@@ -121,14 +121,13 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 				metaDbTablePair.setRight(tableList.get(0));
 			}
 			// init每一个table的insert语句
-			for (String tableName : tableList) {
-				Connection conn  = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-				try{
-					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName,columns,
-							conn,writeMode));
-				}finally{
-					DBUtil.closeDBResources(null, null, conn);
+			Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
+			try {
+				for (String tableName : tableList) {
+					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn, writeMode));
 				}
+			} finally {
+				DBUtil.closeDBResources(null, null, conn);
 			}
 		}
 
