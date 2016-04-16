@@ -39,7 +39,7 @@ public class AdsWriteUnitTest {
         String accessKey = "pG4s6hPmEhglCy9szEEdpBUPTvg0JS";
         String project = "autotest_dev";
         int lifeCycle = 2;
-        AdsHelper adsHelper = new AdsHelper(adsUrl,userName,password,schema,360000L);
+        AdsHelper adsHelper = new AdsHelper(adsUrl,userName,password,schema,360000L,"");
         Account odpsAccount = new AliyunAccount(accessId,accessKey);
         Odps odps = new Odps(odpsAccount);
         odps.setEndpoint(endPoint);
@@ -83,7 +83,7 @@ public class AdsWriteUnitTest {
         String userName = "gq5FDS2IgSWqXzTu";
         String password = "xNXmuBr4dvn3BNLLzWZEAerpHqREto";
         String schema = "btest";
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema,36000L);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema,36000L,"");
         String id = "LDDT-dailybuild-btest__builder_test_table2-20150205165450462";
         try {
             adsHelper.checkLoadDataJobStatus(id);
@@ -114,7 +114,7 @@ public class AdsWriteUnitTest {
         String userName = "gq5FDS2IgSWqXzTu";
         String password = "xNXmuBr4dvn3BNLLzWZEAerpHqREto";
         String schema = "test555";
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema,36000L);
+        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, password, schema,36000L,"");
         try {
             String id = adsHelper.loadData(table,partition,sourcePath,overwrite);
             boolean terminated = false;

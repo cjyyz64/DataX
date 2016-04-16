@@ -31,13 +31,15 @@ public class AdsHelper {
     private String password;
     private String schema;
     private Long socketTimeout;
+    private String suffix;
 
-    public AdsHelper(String adsUrl, String userName, String password, String schema, Long socketTimeout) {
+    public AdsHelper(String adsUrl, String userName, String password, String schema, Long socketTimeout, String suffix) {
         this.adsURL = adsUrl;
         this.userName = userName;
         this.password = password;
         this.schema = schema;
         this.socketTimeout = socketTimeout;
+        this.suffix = suffix;
     }
 
     public String getAdsURL() {
@@ -112,7 +114,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout, this.suffix);
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
@@ -244,7 +246,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout, this.suffix);
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
             connectionProps.put("password", password);
@@ -350,6 +352,7 @@ public class AdsHelper {
             final String finalAdsUrl = this.adsURL;
             final String finalSchema = this.schema;
             final Long finalSocketTimeout = this.socketTimeout;
+            final String suffix = this.suffix;
             return RetryUtil.executeWithRetry(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
@@ -358,7 +361,7 @@ public class AdsHelper {
                     ResultSet rs = null;
                     try {
                         
-                        String url = AdsUtil.prepareJdbcUrl(finalAdsUrl, finalSchema, finalSocketTimeout);
+                        String url = AdsUtil.prepareJdbcUrl(finalAdsUrl, finalSchema, finalSocketTimeout, suffix);
                         Properties connectionProps = new Properties();
                         connectionProps.put("user", userName);
                         connectionProps.put("password", password);
