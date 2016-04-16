@@ -111,6 +111,9 @@ public final class RetryUtil {
                     return call(callable);
                 } catch (Exception e) {
                     saveException = e;
+                    if (i == 0) {
+                        LOG.error(String.format("Exception when calling callable, 异常Msg:%s", saveException.getMessage()), saveException);
+                    }
                     
                     if (null != retryExceptionClasss && !retryExceptionClasss.isEmpty()) {
                         boolean needRetry = false;
