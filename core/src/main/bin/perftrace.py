@@ -6,19 +6,22 @@
    Life's short, Python more.
 """
 
-import sys
+import re
 import os
+import sys
 import json
 import uuid
 import signal
 import time
 import subprocess
 from optparse import OptionParser
-
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 ##begin cli & help logic
 def getOptionParser():
-    parser = OptionParser(usage = getUsage())
+    usage = getUsage()
+    parser = OptionParser(usage = usage)
     #rdbms reader and writer
     parser.add_option('-r', '--reader', action='store', dest='reader', help='trace datasource read performance with specified !json! string')
     parser.add_option('-w', '--writer', action='store', dest='writer', help='trace datasource write performance with specified !json! string')
@@ -27,11 +30,11 @@ def getOptionParser():
     parser.add_option('-f', '--file',   action='store', help='existing datax configuration file, include reader and writer params')
     parser.add_option('-t', '--type',   action='store', default='reader', help='trace which side\'s performance, cooperate with -f --file params, need to be reader or writer')
     parser.add_option('-d', '--delete',   action='store', default='true', help='delete temporary files, the default value is true')
+    #parser.add_option('-h', '--help',   action='store', default='true', help='print usage information')
     return parser
 
 def getUsage():
     return '''
-
 The following params are available for -r --reader:
     [these params is for rdbms reader, used to trace rdbms read performance, it's like datax's key]
     *datasourceType: datasource type, may be mysql|drds|oracle|ads|sqlserver|postgresql|db2 etc...
@@ -45,8 +48,8 @@ The following params are available for -r --reader:
     fetchSize:       how many rows to be fetched at each communicate
 
     [these params is for stream reader, used to trace rdbms write performance]
-    reader-sliceRecordCount:how man test data to mock(each channel), the default value is 10000
-    reader-column          :stream reader while generate test data(type supports: string|long|date|double|bool|bytes; support constant value and random mixup function)，demo: [{"type":"string","value":"abc"},{"type":"string","mixup":"random(10,20)"}]
+    reader-sliceRecordCount:  how man test data to mock(each channel), the default value is 10000
+    reader-column          :  stream reader while generate test data(type supports: string|long|date|double|bool|bytes; support constant value and random function)，demo: [{"type":"string","value":"abc"},{"type":"string","random":"10,20"}]
 
 The following params are available for -w --writer:
     [these params is for rdbms writer, used to trace rdbms write performance, it's like datax's key]
@@ -66,14 +69,16 @@ The following params are available for -w --writer:
     writer-print:           true means print data read from source datasource, the default value is false
 
 The following params are available global control:
-    -c --channel:        the number of concurrent tasks, the default value is 1
-    -f --file:           existing completely dataX configuration file path
-    -t --readerOrWriter: test read or write performance for a datasource, couble be reader or writer, in collaboration with -f --file
+    -c --channel:    the number of concurrent tasks, the default value is 1
+    -f --file:       existing completely dataX configuration file path
+    -t --type:       test read or write performance for a datasource, couble be reader or writer, in collaboration with -f --file
+    -h --help:       print help message
 
 some demo:
-dtrace.py --channel=10 --reader='{"jdbcUrl":"jdbc:mysql://127.0.0.1:3306/database", "username":"", "password":"", "table": "", "where":"", "splitPk":"", "writer-print":"false"}'
-dtrace.py --channel=10 --writer='{"jdbcUrl":"jdbc:mysql://127.0.0.1:3306/database", "username":"", "password":"", "table": "", "reader-column": [{"type":"string","value":"abc"},{"type":"string","mixup":"random(10,20)"}]}'
-dtrace.py --file=/tmp/datax.job.json --type=reader
+perftrace.py --channel=10 --reader='{"jdbcUrl":"jdbc:mysql://127.0.0.1:3306/database", "username":"", "password":"", "table": "", "where":"", "splitPk":"", "writer-print":"false"}'
+perftrace.py --channel=10 --writer='{"jdbcUrl":"jdbc:mysql://127.0.0.1:3306/database", "username":"", "password":"", "table": "", "reader-sliceRecordCount": "10000", "reader-column": [{"type":"string","value":"abc"},{"type":"string","random":"10,20"}]}'
+perftrace.py --file=/tmp/datax.job.json --type=reader --reader='{"writer-print": "false"}'
+perftrace.py --file=/tmp/datax.job.json --type=writer --writer='{"reader-sliceRecordCount": "10000", "reader-column": [{"type":"string","value":"abc"},{"type":"string","random":"10,20"}]}'
 
 some example jdbc url pattern, may help:
 jdbc:oracle:thin:@ip:port:database
@@ -86,9 +91,8 @@ warn: ads is ip:port
 def printCopyright():
     DATAX_VERSION = 'UNKNOWN_DATAX_VERSION'
     print '''
-DataX (%s), From Alibaba !
-Copyright (C) 2010-2015, Alibaba Group. All Rights Reserved.
-''' % DATAX_VERSION
+DataX Util Tools (%s), From Alibaba !
+Copyright (C) 2010-2016, Alibaba Group. All Rights Reserved.''' % DATAX_VERSION
     sys.stdout.flush()
 
 
@@ -186,6 +190,7 @@ def renderDataXJson(paramsDict, readerOrWriter = 'reader', channel = 1):
                         "parameter": {
                             "username": "",
                             "password": "",
+                            "sliceRecordCount": "10000",
                             "column": [
                                 "*"
                             ],
@@ -260,6 +265,36 @@ def renderDataXJson(paramsDict, readerOrWriter = 'reader', channel = 1):
     traceJobJson = json.dumps(dataxTemplate, indent = 4)
     return traceJobJson
 
+def isUrl(path):
+    if not path:
+        return False
+    if not isinstance(path, str):
+        raise Exception('Configuration file path required for the string, you configure is:%s' % path)
+    m = re.match(r"^http[s]?://\S+\w*", path.lower())
+    if m:
+        return True
+    else:
+        return False
+
+
+def readJobJsonFromLocal(jobConfigPath):
+    jobConfigContent = None
+    jobConfigPath = os.path.abspath(jobConfigPath)
+    file = open(jobConfigPath)
+    try:
+        jobConfigContent = file.read()
+    finally:
+        file.close()
+    if not jobConfigContent:
+        raise Exception("Your job configuration file read the result is empty, please check the configuration is legal, path: [%s]\nconfiguration:\n%s" % (jobConfigPath, str(jobConfigContent)))
+    return jobConfigContent
+
+
+def readJobJsonFromRemote(jobConfigPath):
+    import urllib
+    conn = urllib.urlopen(jobConfigPath)
+    jobJson = conn.read()
+    return jobJson
 
 def parseJson(strConfig, context):
     try:
@@ -274,24 +309,53 @@ def parseJson(strConfig, context):
 def convert(options, args):
     traceJobJson = ''
     if options.file:
-        fileopen = open(options.file, 'r')
-        traceJobJson = fileopen.read()
+        if isUrl(options.file):
+            traceJobJson = readJobJsonFromRemote(options.file)
+        else:
+            traceJobJson = readJobJsonFromLocal(options.file)
         traceJobDict = parseJson(traceJobJson, '%s content' % options.file)
+        attributeNotNone(traceJobDict, ['job'])
+        attributeNotNone(traceJobDict['job'], ['content'])
+        attributeNotNone(traceJobDict['job']['content'][0], ['reader', 'writer'])
+        attributeNotNone(traceJobDict['job']['content'][0]['reader'], ['name', 'parameter'])
+        attributeNotNone(traceJobDict['job']['content'][0]['writer'], ['name', 'parameter'])
         if options.type == 'reader':
             traceJobDict['job']['content'][0]['writer']['name'] = 'streamwriter'
-            traceJobDict['job']['content'][0]['writer']['parameter']['print'] = 'false'
+            if options.reader:
+                traceReaderDict = parseJson(options.reader, 'reader config')
+                if traceReaderDict.get('writer-print') is not None:
+                    traceJobDict['job']['content'][0]['writer']['parameter']['print'] = traceReaderDict.get('writer-print')
+                else:
+                    traceJobDict['job']['content'][0]['writer']['parameter']['print'] = 'false'
+            else:
+                traceJobDict['job']['content'][0]['writer']['parameter']['print'] = 'false'
+        elif options.type == 'writer':
+            traceJobDict['job']['content'][0]['reader']['name'] = 'streamreader'
+            if options.writer:
+                traceWriterDict = parseJson(options.writer, 'writer config')
+                if traceWriterDict.get('reader-column'):
+                    traceJobDict['job']['content'][0]['reader']['parameter']['column'] = traceWriterDict['reader-column']
+                if traceWriterDict.get('reader-sliceRecordCount'):
+                    traceJobDict['job']['content'][0]['reader']['parameter']['sliceRecordCount'] = traceWriterDict['reader-sliceRecordCount']
+            else:
+                columnSize = len(traceJobDict['job']['content'][0]['writer']['column'])
+                streamReaderColumn = []
+                for i in range(columnSize):
+                    streamReaderColumn.append({"type": "long", "random": "2,10"})
+                traceJobDict['job']['content'][0]['reader']['parameter']['column'] = streamReaderColumn
+                traceJobDict['job']['content'][0]['reader']['parameter']['sliceRecordCount'] = 10000
         else:
-            #do nothing
-            pass
+            pass#do nothing
         return json.dumps(traceJobDict, indent = 4)
     elif options.reader:
         traceReaderDict = parseJson(options.reader, 'reader config')
         return renderDataXJson(traceReaderDict, 'reader', options.channel)
     elif options.writer:
-        traceReaderDict = parseJson(options.writer, 'writer config')
-        return renderDataXJson(traceReaderDict, 'writer', options.channel)
+        traceWriterDict = parseJson(options.writer, 'writer config')
+        return renderDataXJson(traceWriterDict, 'writer', options.channel)
     else:
-        raise Exception('type params should be reader or writer')
+        print getUsage()
+        sys.exit(-1)
     #dataxParams = {}
     #for opt, value in options.__dict__.items():
     #    dataxParams[opt] = value

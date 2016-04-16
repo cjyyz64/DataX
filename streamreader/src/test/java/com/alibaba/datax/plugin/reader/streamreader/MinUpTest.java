@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.alibaba.datax.common.element.Column;
@@ -50,23 +49,23 @@ public class MinUpTest {
         }
 
         eachColumnConfig = Configuration
-                .from("{'type':'string','mixup':'random(10,20)','value':'string'}");
+                .from("{'type':'string','random':'10,20','value':'string'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'string','value':'random(20,10)'}");
+                .from("{'type':'string','value':'20,10)'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'string','mixup':'random(10,20)'}");
+                .from("{'type':'string','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         try {
             eachColumnConfig = Configuration
-                    .from("{'type':'string','mixup':'random(20,10)'}");
+                    .from("{'type':'string','random':'20,10'}");
             parseMixupFunctions.invoke(job, eachColumnConfig);
             Assert.assertTrue(false);
         } catch (Exception e) {
@@ -75,12 +74,12 @@ public class MinUpTest {
                     .getCause()
                     .getMessage()
                     .contains(
-                            "mixup混淆函数不合法[random(20,10)], 混淆函数random(param1, param2)的参数需要第一个小于等于第二个:(20, 10)"));
+                            "random混淆函数不合法[20,10], 混淆函数random的参数需要第一个小于等于第二个:20, 10"));
         }
 
         try {
             eachColumnConfig = Configuration
-                    .from("{'type':'long','mixup':'RanDom(-10,10)'}");
+                    .from("{'type':'long','random':'-10,10'}");
             parseMixupFunctions.invoke(job, eachColumnConfig);
             Assert.assertTrue(false);
         } catch (Exception e) {
@@ -89,22 +88,22 @@ public class MinUpTest {
                     .getCause()
                     .getMessage()
                     .contains(
-                            "mixup混淆函数不合法[RanDom(-10,10)], 混淆函数random(param1, param2)的参数不能为负数:(-10, 10)"));
+                            "random混淆函数不合法[-10,10], 混淆函数random的参数不能为负数:-10, 10"));
         }
 
         eachColumnConfig = Configuration
-                .from("{'type':'date','mixup':'random(2014-07-07 00:00:00,2016-07-07 00:00:00)'}");
+                .from("{'type':'date','random':'2014-07-07 00:00:00,2016-07-07 00:00:00'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'date','mixup':'random(2014-07-07 00:00:00,2016-07-07 00:00:00)','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
+                .from("{'type':'date','random':'2014-07-07 00:00:00,2016-07-07 00:00:00','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         try {
             eachColumnConfig = Configuration
-                    .from("{'type':'date','mixup':'random(2016-07-07 00:00:00,2014-07-07 00:00:00)','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
+                    .from("{'type':'date','random':'2016-07-07 00:00:00,2014-07-07 00:00:00','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
             parseMixupFunctions.invoke(job, eachColumnConfig);
             Assert.assertTrue(false);
         } catch (Exception e) {
@@ -113,12 +112,12 @@ public class MinUpTest {
                     .getCause()
                     .getMessage()
                     .contains(
-                            "mixup混淆函数不合法[random(2016-07-07 00:00:00,2014-07-07 00:00:00)], 混淆函数random(param1, param2)的参数需要第一个小于等于第二个:(2016-07-07 00:00:00, 2014-07-07 00:00:00)"));
+                            "random混淆函数不合法[2016-07-07 00:00:00,2014-07-07 00:00:00], 混淆函数random的参数需要第一个小于等于第二个:2016-07-07 00:00:00, 2014-07-07 00:00:00"));
         }
 
         try {
             eachColumnConfig = Configuration
-                    .from("{'type':'date','mixup':'random(2014-07-07 00:00:00,2016-07-0700:00:00)','dateFormat':'yy-yy-mM-ddHH:mm:ss'}");
+                    .from("{'type':'date','random':'2014-07-07 00:00:00,2016-07-0700:00:00','dateFormat':'yy-yy-mM-ddHH:mm:ss'}");
             parseMixupFunctions.invoke(job, eachColumnConfig);
             Assert.assertTrue(false);
         } catch (Exception e) {
@@ -127,31 +126,30 @@ public class MinUpTest {
                     .getCause()
                     .getMessage()
                     .contains(
-                            "dateFormat参数[yy-yy-mM-ddHH:mm:ss]和混淆函数random(param1, param2)的参数不匹配，解析错误:(2014-07-07 00:00:00, 2016-07-0700:00:00) - Unparseable date: \"2014-07-07 00:00:00\""));
+                            "dateFormat参数[yy-yy-mM-ddHH:mm:ss]和混淆函数random的参数不匹配，解析错误:2014-07-07 00:00:00, 2016-07-0700:00:00 - Unparseable date: \"2014-07-07 00:00:00\""));
         }
 
         eachColumnConfig = Configuration
-                .from("{'type':'bytes','mixup':'RanDom(10,20)'}");
+                .from("{'type':'bytes','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'double','mixup':'RanDom(10,20)'}");
+                .from("{'type':'double','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(10,10)'}");
+                .from("{'type':'bool','random':'10,10'}");
+        parseMixupFunctions.invoke(job, eachColumnConfig);
+        Assert.assertTrue(true);
+
+        eachColumnConfig = Configuration.from("{'type':'bool','random':'0,0'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(0,0)'}");
-        parseMixupFunctions.invoke(job, eachColumnConfig);
-        Assert.assertTrue(true);
-
-        eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(10,20)'}");
+                .from("{'type':'bool','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         Assert.assertTrue(true);
 
@@ -184,14 +182,14 @@ public class MinUpTest {
 
         buildOneColumn.setAccessible(true);
         Configuration eachColumnConfig = Configuration
-                .from("{'type':'string','mixup':'random(10,20)','value':'string'}");
+                .from("{'type':'string','random':'10,20','value':'string'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
         Assert.assertTrue(column.asString().equals("string"));
 
         eachColumnConfig = Configuration
-                .from("{'type':'string','mixup':'random(10,20)'}");
+                .from("{'type':'string','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -199,7 +197,7 @@ public class MinUpTest {
                 && column.asString().length() <= 20);
 
         eachColumnConfig = Configuration
-                .from("{'type':'date','mixup':'random(2014-07-07 00:00:00,2016-07-07 00:00:00)'}");
+                .from("{'type':'date','random':'2014-07-07 00:00:00,2016-07-07 00:00:00'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -210,7 +208,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'date','mixup':'random(2014-07-07 00:00:00,2016-07-07 00:00:00)','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
+                .from("{'type':'date','random':'2014-07-07 00:00:00,2016-07-07 00:00:00','dateFormat':\'yyyy-MM-ddHH:mm:ss\'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -218,7 +216,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bytes','mixup':'RanDom(10,20)'}");
+                .from("{'type':'bytes','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -227,7 +225,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'double','mixup':'RanDom(10,20)'}");
+                .from("{'type':'double','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -235,7 +233,15 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(10,10)'}");
+                .from("{'type':'bool','random':'10,10'}");
+        parseMixupFunctions.invoke(job, eachColumnConfig);
+        column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
+        System.out.println(column.asString());
+        Assert.assertTrue(column.asString().equals("false")
+                || column.asString().equals("true"));
+        Assert.assertTrue(true);
+
+        eachColumnConfig = Configuration.from("{'type':'bool','random':'0,0'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -244,7 +250,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(0,0)'}");
+                .from("{'type':'bool','random':'10,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -253,16 +259,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(10,20)'}");
-        parseMixupFunctions.invoke(job, eachColumnConfig);
-        column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
-        System.out.println(column.asString());
-        Assert.assertTrue(column.asString().equals("false")
-                || column.asString().equals("true"));
-        Assert.assertTrue(true);
-
-        eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(0,20)'}");
+                .from("{'type':'bool','random':'0,20'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -270,7 +267,7 @@ public class MinUpTest {
         Assert.assertTrue(true);
 
         eachColumnConfig = Configuration
-                .from("{'type':'bool','mixup':'RanDom(20,0)'}");
+                .from("{'type':'bool','random':'20,0'}");
         parseMixupFunctions.invoke(job, eachColumnConfig);
         column = (Column) buildOneColumn.invoke(task, eachColumnConfig);
         System.out.println(column.asString());
@@ -279,7 +276,7 @@ public class MinUpTest {
     }
 
     @Test
-    public void testRandom() throws InterruptedException {
+    public void testMyRandom() throws InterruptedException {
         MyRandom ran1 = new MyRandom();
         MyRandom ran2 = new MyRandom();
         // ran1.start();
