@@ -85,7 +85,8 @@ jdbc:oracle:thin:@ip:port:database
 jdbc:mysql://ip:port/database
 jdbc:sqlserver://ip:port;DatabaseName=database
 jdbc:postgresql://ip:port/database
-warn: ads is ip:port
+warn: ads url pattern is ip:port
+warn: test write performance will write data into your table, you can use a temporary table just for test.
 '''
 
 def printCopyright():
@@ -338,7 +339,7 @@ def convert(options, args):
                 if traceWriterDict.get('reader-sliceRecordCount'):
                     traceJobDict['job']['content'][0]['reader']['parameter']['sliceRecordCount'] = traceWriterDict['reader-sliceRecordCount']
             else:
-                columnSize = len(traceJobDict['job']['content'][0]['writer']['column'])
+                columnSize = len(traceJobDict['job']['content'][0]['writer']['parameter']['column'])
                 streamReaderColumn = []
                 for i in range(columnSize):
                     streamReaderColumn.append({"type": "long", "random": "2,10"})
