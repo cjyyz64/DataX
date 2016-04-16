@@ -46,6 +46,13 @@ public class TimeUtils {
         return date.getTime();
     }
 
+    public static long parseTimeStringToTimestampMillis(String dateStr) throws ParseException {
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss");
+        Date date = format.parse(dateStr);
+        return date.getTime();
+    }
+
+
     public static String getTimeInISO8601(Date date) {
         TimeZone tz = TimeZone.getTimeZone("UTC");
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
