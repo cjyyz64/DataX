@@ -135,7 +135,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		checkRule(dbBufferList);
 	}
 
-	private void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
+	public void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
 		// 如果配置的分表名完全不同， 则必须要填写tableRule规则
 		List<String> allTableList = new ArrayList<String>();
 		List<String> allDbList = new ArrayList<String>();
@@ -175,7 +175,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		}
 	}
 
-	private String getDbNameFromJdbcUrl(String jdbcUrl) {
+	public String getDbNameFromJdbcUrl(String jdbcUrl) {
 		if (jdbcUrl.contains("?")) {
 			return jdbcUrl.substring(jdbcUrl.lastIndexOf("/") + 1, jdbcUrl.indexOf("?"));
 		} else {
@@ -183,7 +183,7 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		}
 	}
 
-	private Map<String, Object> convertRecord2Map(Record record) {
+	public Map<String, Object> convertRecord2Map(Record record) {
 		Map<String, Object> map = new HashMap<String, Object>();
 		for (int i = 0; i < this.columnNumber; i++) {
 			// 设置列名统一为小写，规则的#号内部的列名称也都要小写
@@ -409,14 +409,14 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 	 */
 	private void checkMemstore(RuleWriterDbBuffer dbBuffer) {
 		long now = System.currentTimeMillis();
-		if (now - dbBuffer.getLastCheckMemstoreTime() > 1000 * memstoreCheckIntervalSecond) {
+		if (now - dbBuffer.getLastCheckMemstoreTime() < 1000 * memstoreCheckIntervalSecond) {
 			return;
 		}
 		Connection conn = dbBuffer.getConnection();
 		while (OBUtils.isMemstoreFull(conn, memstoreThreshold)) {
-			LOG.warn("OB memstore is full,sleep 1 second, jdbc=" + dbBuffer.getJdbcUrl() + ",threshold="
+			LOG.warn("OB memstore is full,sleep 60 seconds, jdbc=" + dbBuffer.getJdbcUrl() + ",threshold="
 					+ memstoreThreshold);
-			OBUtils.sleep(1);
+			OBUtils.sleep(60);
 		}
 		dbBuffer.setLastCheckMemstoreTime(now);
 	}

@@ -1,10 +1,8 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer.util;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,31 +16,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.writer.oceanbasev10writer.OceanBaseV10Writer;
-import com.mysql.jdbc.Driver;
+import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter.Task;
 
 public class OBUtils {
-	protected static final Logger LOG = LoggerFactory.getLogger(OceanBaseV10Writer.class);
+	protected static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
-	private static String CHECK_MEMSTORE = "select 1 from oceanbase.gv$memstore t where t.total>t.`limit` * ? limit 1";
+	private static String CHECK_MEMSTORE = "select 1 from oceanbase.gv$memstore t where t.total>t.mem_limit * ? limit 1";
 
 	public static boolean isMemstoreFull(Connection conn, double memstoreThreshold) {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
+		boolean result = false;
 		try {
 			ps = conn.prepareStatement(CHECK_MEMSTORE);
 			ps.setDouble(1, memstoreThreshold);
 			rs = ps.executeQuery();
-			// 只要有满足条件的,则表示当前租户存在即将满的机器
-			return rs.next();
+			// 只要有满足条件的,则表示当前租户 有个机器的memstore即将满
+			result = rs.next();
 		} catch (Throwable e) {
 			LOG.error("check memstore fail", e);
-			return false;
+			result = false;
 		} finally {
 			DBUtil.closeDBResources(rs, ps, null);
 		}
+		return result;
 	}
 
 	/**
@@ -147,18 +147,15 @@ public class OBUtils {
 		} catch (InterruptedException e) {
 		}
 	}
-	
-	public static void main(String[] args) throws SQLException {
-		String url="jdbc:mysql://100.81.140.77:2881/snow";
-		String user="root@sys";
-		DriverManager.registerDriver(new Driver());
-		Connection conn = DriverManager.getConnection(url, user, "");
-		System.out.println(conn);
-		String tableName="t";
-		List<String> columnHolders = new ArrayList<String>();
-		columnHolders.add("aaa");
-		columnHolders.add("b");
-		String sql = buildWriteSql(tableName, columnHolders, conn, "replace");
-		System.out.println(sql);
+
+	/**
+	 * 判断是不是 OB10
+	 * 
+	 * @param writerSliceConfig
+	 * @return
+	 */
+	public static boolean isOb10(Configuration writerSliceConfig) {
+		// OriginalConfPretreatmentUtil.isOB10(jdbcUrl);
+		return false;
 	}
 }

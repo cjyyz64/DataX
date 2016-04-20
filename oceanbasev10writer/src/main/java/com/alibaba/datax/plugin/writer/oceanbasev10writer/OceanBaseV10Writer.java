@@ -8,10 +8,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
@@ -55,7 +57,6 @@ public class OceanBaseV10Writer extends Writer {
 		@Override
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();
-
 			this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
 			this.commonRdbmsWriterJob.init(this.originalConfig);
 		}
@@ -67,14 +68,11 @@ public class OceanBaseV10Writer extends Writer {
 		@Override
 		public void prepare() {
 			this.commonRdbmsWriterJob.prepare(this.originalConfig);
-
-			// TODO 单表也可以支持
-			// int tableNumber =
-			// originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
-			// if (tableNumber == 1) {
-			// throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-			// "tableNumber=1, mysqlrulewriter只能支持分库分表任务");
-			// }
+			int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
+			if (tableNumber == 1) {
+				throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
+						"tableNumber=1, OceanBaseV10Writer只能支持分库分表任务");
+			}
 			String username = originalConfig.getString(Key.USERNAME);
 			String password = originalConfig.getString(Key.PASSWORD);
 
@@ -97,7 +95,6 @@ public class OceanBaseV10Writer extends Writer {
 						Connection conn = DBUtil.getConnection(DATABASE_TYPE, jdbcUrl, username, password);
 						LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
 								StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
-
 						WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, DATABASE_TYPE);
 						DBUtil.closeDBResources(null, null, conn);
 					}
@@ -168,7 +165,7 @@ public class OceanBaseV10Writer extends Writer {
 
 	public static class Task extends Writer.Task {
 		private Configuration writerSliceConfig;
-		private OceanBaseWriterTask commonRdbmsWriterTask;
+		private CommonRdbmsWriter.Task commonRdbmsWriterTask;
 
 		/**
 		 * 注意：此方法每个 Task 都会执行一次。 最佳实践：此处通过对 taskConfig 配置的读取，进而初始化一些资源为
@@ -177,6 +174,8 @@ public class OceanBaseV10Writer extends Writer {
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
+			// int tableNumber =
+			// writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
 			this.commonRdbmsWriterTask = new OceanBaseWriterTask(DATABASE_TYPE);
 			this.commonRdbmsWriterTask.init(this.writerSliceConfig);
 		}

@@ -8,7 +8,7 @@ public interface Config {
 
 	String MEMSTORE_CHECK_INTERVAL_SECOND = "memstoreCheckIntervalSecond";
 
-	long DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND = 5;
+	long DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND = 30;
 	
 	String FAIL_TRY_COUNT  = "failTryCount ";
 	
