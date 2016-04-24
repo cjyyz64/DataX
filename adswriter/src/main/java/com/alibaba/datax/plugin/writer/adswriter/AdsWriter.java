@@ -113,7 +113,7 @@ public class AdsWriter extends Writer {
                                     this.transProjConf.getProject(),
                                     this.transProjConf.getAccount()),
                             "[1] ads官方账号至少需要有待同步表(这里是odps临时表)的describe和select权限, 因为ads系统需要获取odps待同步表的结构和数据信息，此部分部署时已经完成授权",
-                            "[2] 中转odps对应的账号%s, 需要有向指定的ads数据库发起load data的权限, 您可以在ads系统中添加授权"));
+                            String.format("[2] 中转odps对应的账号%s, 需要有向指定的ads数据库发起load data的权限, 您可以在ads系统中添加授权", this.transProjConf.getAccount())));
 
             /**
              * 如果是从odps导入到ads，直接load data然后System.exit()
