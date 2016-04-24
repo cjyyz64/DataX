@@ -3,9 +3,7 @@ package com.alibaba.datax.plugin.writer.adswriter.insert;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.ListUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.AdsException;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
@@ -16,14 +14,15 @@ import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class AdsInsertUtil {
@@ -31,27 +30,27 @@ public class AdsInsertUtil {
     private static final Logger LOG = LoggerFactory
             .getLogger(AdsInsertUtil.class);
 
-    public static Connection getAdsConnect(Configuration conf) {
-        String userName = conf.getString(Key.USERNAME);
-        String passWord = conf.getString(Key.PASSWORD);
-        String jdbcUrl = AdsUtil.prepareJdbcUrl(conf);
-        Connection connection = DBUtil.getConnection(DataBaseType.ADS, jdbcUrl, userName, passWord);
-        return connection;
-    }
-
-    public static List<String> getAdsTableColumnNames(Configuration conf) {
-        List<String> tableColumns = new ArrayList<String>();
-        String userName = conf.getString(Key.USERNAME);
-        String passWord = conf.getString(Key.PASSWORD);
-        String adsUrl = conf.getString(Key.ADS_URL);
-        String schema = conf.getString(Key.SCHEMA);
-        String tableName = conf.getString(Key.ADS_TABLE);
-        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        String suffix = conf.getString(Key.JDBC_URL_SUFFIX, "");
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema, socketTimeout, suffix);
+    public static TableInfo getAdsTableInfo(Configuration conf) {
+        AdsHelper adsHelper = AdsUtil.createAdsHelper(conf);
         TableInfo tableInfo= null;
         try {
-            tableInfo = adsHelper.getTableInfo(tableName);
+            tableInfo = adsHelper.getTableInfo(conf.getString(Key.ADS_TABLE));
+        } catch (AdsException e) {
+            throw DataXException.asDataXException(AdsWriterErrorCode.GET_ADS_TABLE_MEATA_FAILED, e);
+        }
+        return tableInfo;
+    }
+
+    /*
+     * 返回列顺序为ads建表列顺序
+     * */
+    public static List<String> getAdsTableColumnNames(Configuration conf) {
+        List<String> tableColumns = new ArrayList<String>();
+        AdsHelper adsHelper = AdsUtil.createAdsHelper(conf);
+        TableInfo tableInfo= null;
+        String adsTable = conf.getString(Key.ADS_TABLE);
+        try {
+            tableInfo = adsHelper.getTableInfo(adsTable);
         } catch (AdsException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.GET_ADS_TABLE_MEATA_FAILED, e);
         }
@@ -61,44 +60,54 @@ public class AdsInsertUtil {
             tableColumns.add(columnInfo.getName());
         }
 
-        LOG.info("table:[{}] all columns:[\n{}\n].", tableName,
-                StringUtils.join(tableColumns, ","));
+        LOG.info("table:[{}] all columns:[\n{}\n].", adsTable, StringUtils.join(tableColumns, ","));
         return tableColumns;
     }
 
-    public static Triple<List<String>, List<Integer>, List<String>> getColumnMetaData
+    public static Map<String, Pair<Integer,String>> getColumnMetaData
             (Configuration configuration, List<String> userColumns) {
-        Triple<List<String>, List<Integer>, List<String>> columnMetaData = new ImmutableTriple<List<String>, List<Integer>, List<String>>(
-                new ArrayList<String>(), new ArrayList<Integer>(),
-                new ArrayList<String>());
-
+        Map<String, Pair<Integer,String>> columnMetaData = new HashMap<String, Pair<Integer,String>>();
         List<ColumnInfo> columnInfoList = getAdsTableColumns(configuration);
         for(String column : userColumns) {
+            if (column.startsWith(Constant.ADS_QUOTE_CHARACTER) && column.endsWith(Constant.ADS_QUOTE_CHARACTER)) {
+                column = column.substring(1, column.length() - 1);
+            }
             for (ColumnInfo columnInfo : columnInfoList) {
-                if(column.equals(columnInfo.getName())) {
-                    columnMetaData.getLeft().add(columnInfo.getName());
-                    columnMetaData.getMiddle().add(columnInfo.getDataType().sqlType);
-                    columnMetaData.getRight().add(
-                            columnInfo.getDataType().name);
+                if(column.equalsIgnoreCase(columnInfo.getName())) {
+                    Pair<Integer,String> eachPair = new ImmutablePair<Integer, String>(columnInfo.getDataType().sqlType, columnInfo.getDataType().name);
+                    columnMetaData.put(columnInfo.getName(), eachPair);
+                }
+            }
+        }
+        return columnMetaData;
+    }
+    
+    public static Map<String, Pair<Integer,String>> getColumnMetaData(TableInfo tableInfo, List<String> userColumns){
+        Map<String, Pair<Integer,String>> columnMetaData = new HashMap<String, Pair<Integer,String>>();
+        List<ColumnInfo> columnInfoList = tableInfo.getColumns();
+        for(String column : userColumns) {
+            if (column.startsWith(Constant.ADS_QUOTE_CHARACTER) && column.endsWith(Constant.ADS_QUOTE_CHARACTER)) {
+                column = column.substring(1, column.length() - 1);
+            }
+            for (ColumnInfo columnInfo : columnInfoList) {
+                if(column.equalsIgnoreCase(columnInfo.getName())) {
+                    Pair<Integer,String> eachPair = new ImmutablePair<Integer, String>(columnInfo.getDataType().sqlType, columnInfo.getDataType().name);
+                    columnMetaData.put(columnInfo.getName(), eachPair);
                 }
             }
         }
         return columnMetaData;
     }
 
+    /*
+     * 返回列顺序为ads建表列顺序
+     * */
     public static List<ColumnInfo> getAdsTableColumns(Configuration conf) {
-        String userName = conf.getString(Key.USERNAME);
-        String passWord = conf.getString(Key.PASSWORD);
-        String adsUrl = conf.getString(Key.ADS_URL);
-        String schema = conf.getString(Key.SCHEMA);
-        String tableName = conf.getString(Key.ADS_TABLE);
-        Long socketTimeout = conf.getLong(Key.SOCKET_TIMEOUT, Constant.DEFAULT_SOCKET_TIMEOUT);
-        // like autoReconnect=true&failOverReadOnly=false&maxReconnects=10
-        String suffix = conf.getString(Key.JDBC_URL_SUFFIX, "");
-        AdsHelper adsHelper = new AdsHelper(adsUrl, userName, passWord, schema, socketTimeout, suffix);
+        AdsHelper adsHelper = AdsUtil.createAdsHelper(conf);
         TableInfo tableInfo= null;
+        String adsTable = conf.getString(Key.ADS_TABLE);
         try {
-            tableInfo = adsHelper.getTableInfo(tableName);
+            tableInfo = adsHelper.getTableInfo(adsTable);
         } catch (AdsException e) {
             throw DataXException.asDataXException(AdsWriterErrorCode.GET_ADS_TABLE_MEATA_FAILED, e);
         }
@@ -126,12 +135,19 @@ public class AdsInsertUtil {
             } else {
                 // 确保用户配置的 column 不重复
                 ListUtil.makeSureNoValueDuplicate(userConfiguredColumns, false);
-
                 // 检查列是否都为数据库表中正确的列（通过执行一次 select column from table 进行判断）
-                ListUtil.makeSureBInA(tableColumns, userConfiguredColumns, true);
+                // ListUtil.makeSureBInA(tableColumns, userConfiguredColumns, true);
+                // 支持关键字和保留字, ads列是不区分大小写的
+                List<String> removeQuotedColumns = new ArrayList<String>();
+                for (String each : userConfiguredColumns) {
+                    if (each.startsWith(Constant.ADS_QUOTE_CHARACTER) && each.endsWith(Constant.ADS_QUOTE_CHARACTER)) {
+                        removeQuotedColumns.add(each.substring(1, each.length() - 1));
+                    } else {
+                        removeQuotedColumns.add(each);
+                    }
+                }
+                ListUtil.makeSureBInA(tableColumns, removeQuotedColumns, false);
             }
         }
     }
-
-
 }

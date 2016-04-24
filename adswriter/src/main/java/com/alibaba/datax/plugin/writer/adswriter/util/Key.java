@@ -21,6 +21,8 @@ public final class Key {
 
 
     public final static String COLUMN = "column";
+    
+    public final static String OPIndex = "opIndex";
 
     public final static String EMPTY_AS_NULL = "emptyAsNull";
 

@@ -59,6 +59,7 @@
                             "col12",
                             "col13"
                         ],
+                        "op": "col1",
                         "url": "ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029",
                         "schema": "ads_demo",
                         "table": "datax_bvt_all_types",

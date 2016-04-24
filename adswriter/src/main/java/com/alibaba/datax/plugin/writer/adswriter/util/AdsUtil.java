@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.writer.adswriter.util;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.adswriter.load.AdsHelper;
 import com.alibaba.datax.plugin.writer.adswriter.AdsWriterErrorCode;
 import com.alibaba.datax.plugin.writer.adswriter.load.TransferProjectConf;
@@ -12,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +49,9 @@ public class AdsUtil {
             if (overwrite == null) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.REQUIRED_VALUE, "配置项[overWrite]是必填项.");
             }
+        }
+        if (Constant.STREAMMODE.equalsIgnoreCase(writeMode)) {
+            originalConfig.getNecessaryValue(Key.OPIndex, AdsWriterErrorCode.REQUIRED_VALUE);
         }
     }
 
@@ -149,6 +155,7 @@ public class AdsUtil {
     public static String prepareJdbcUrl(String adsURL, String schema,
             Long socketTimeout, String suffix) {
         String jdbcUrl = null;
+        // like autoReconnect=true&failOverReadOnly=false&maxReconnects=10
         if (StringUtils.isNotBlank(suffix)) {
             jdbcUrl = String
                     .format("jdbc:mysql://%s/%s?useUnicode=true&characterEncoding=UTF-8&socketTimeout=%s&%s",
@@ -159,5 +166,13 @@ public class AdsUtil {
                             adsURL, schema, socketTimeout);
         }
         return jdbcUrl;
+    }
+    
+    public static Connection getAdsConnect(Configuration conf) {
+        String userName = conf.getString(Key.USERNAME);
+        String passWord = conf.getString(Key.PASSWORD);
+        String jdbcUrl = AdsUtil.prepareJdbcUrl(conf);
+        Connection connection = DBUtil.getConnection(DataBaseType.ADS, jdbcUrl, userName, passWord);
+        return connection;
     }
 }

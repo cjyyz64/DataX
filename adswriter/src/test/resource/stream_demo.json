@@ -1,0 +1,52 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "oraclereader",
+                    "parameter": {
+                        "username": "cdc_syn_sub",
+                        "password": "cdc_syn_sub",
+                        "column": [
+                            "trim(OPERATION$)",
+                            "id",
+                            "name"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "stream_source_ads_syn_view"
+                                ],
+                                "jdbcUrl": [
+                                    "jdbc:oracle:thin:@10.101.221.97:1521:uprr"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {
+                    "name": "adswriter",
+                    "parameter": {
+                        "username": "uMbv1SoSUFqQ4DfR",
+                        "password": "",
+                        "column": [
+                            "`id`",
+                            "`name`"
+                        ],
+                        "url": "ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029",
+                        "schema": "ads_demo",
+                        "table": "datax_bvt_stream_demo",
+                        "writeMode": "stream",
+                        "opIndex": "0",
+                        "batchSize": "2"
+                    }
+                }
+            }
+        ]
+    }
+}

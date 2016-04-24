@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.adswriter;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -22,20 +23,22 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
+import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertProxy;
 import com.alibaba.datax.plugin.writer.adswriter.insert.AdsInsertUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
+import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.mysql.jdbc.JDBC4PreparedStatement;
 
 public class SqlTest {
     private Configuration conf = Configuration
-            .from("{'table':'datax_bvt_all_types','url':'ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029','username':'uMbv1SoSUFqQ4DfR','password':'aikZ9GSzipW6KFT8RvSbak42fpymlI','schema':'ads_demo'}");
+            .from("{'op':'0','table':'datax_bvt_all_types','url':'ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029','username':'uMbv1SoSUFqQ4DfR','password':'aikZ9GSzipW6KFT8RvSbak42fpymlI','schema':'ads_demo'}");
 
     @Test
-    public void testAdsInsert() {
+    public void testAdsInsertSqlGene() {
         try {
-            Connection conn = AdsInsertUtil.getAdsConnect(conf);
+            Connection conn = AdsUtil.getAdsConnect(conf);
             PreparedStatement stat = conn
                     .prepareStatement("insert into pre_post_sql_batch_bvt (ID, NAME) values (?,?)");
             stat.setString(1, "11112");
@@ -115,7 +118,7 @@ public class SqlTest {
     }
 
     @Test
-    public void testAdsInsertProxy() throws Exception {
+    public void testAdsInsertProxyInsert() throws Exception {
         TaskPluginCollector collector = new TaskPluginCollector() {
             @Override
             public void collectDirtyRecord(Record dirtyRecord, Throwable t,
@@ -133,8 +136,9 @@ public class SqlTest {
                 "col5", "col6", "col7", "col8", "col9", "col10", "col11",
                 "col12", "col13");
         AdsInsertProxy proxy = new AdsInsertProxy("datax_bvt_all_types",
-                columns, conf, collector);
-        Connection conn = AdsInsertUtil.getAdsConnect(conf);
+                columns, conf, collector, AdsUtil.createAdsHelper(conf)
+                        .getTableInfo(conf.getString(Key.ADS_TABLE)));
+        Connection conn = AdsUtil.getAdsConnect(conf);
         Record record = new Record() {
             private String[] columns = new String[] { "1", "true", "3", "4",
                     "5", "6", "7.2", "8.2", null, null, null, "cdp",
@@ -170,36 +174,81 @@ public class SqlTest {
         };
 
         Field resultSetMetaData = proxy.getClass().getDeclaredField(
-                "resultSetMetaData");
+                "adsTableColumnsMetaData");
         resultSetMetaData.setAccessible(true);
         resultSetMetaData.set(proxy,
                 AdsInsertUtil.getColumnMetaData(conf, columns));
 
         Method generateInsertSql = proxy.getClass().getDeclaredMethod(
-                "generateInsertSql", Connection.class, Record.class);
+                "generateDmlSql", Connection.class, Record.class, String.class);
         generateInsertSql.setAccessible(true);
-        Object resultSql = generateInsertSql.invoke(proxy, conn, record);
+        Object resultSql = generateInsertSql.invoke(proxy, conn, record,
+                "insert");
         System.out.println(resultSql);
-        Assert.assertTrue("insert into datax_bvt_all_types(col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13) values(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]')"
+        Assert.assertTrue("insert into datax_bvt_all_types ( col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13 ) values (1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]')"
                 .equals(resultSql));
 
         List<Record> buffer = Arrays.asList(record, record, record, record,
                 record);
         Method appendInsertSqlValues = proxy.getClass().getDeclaredMethod(
-                "appendInsertSqlValues", Connection.class, Record.class,
-                StringBuilder.class);
+                "appendDmlSqlValues", Connection.class, Record.class,
+                StringBuilder.class, String.class);
         appendInsertSqlValues.setAccessible(true);
         int bufferSize = buffer.size();
         StringBuilder sqlSb = new StringBuilder();
-        sqlSb.append(generateInsertSql.invoke(proxy, conn, record));
+        sqlSb.append(generateInsertSql.invoke(proxy, conn, record, "insert"));
         conf.set(Key.BATCH_SIZE, 2);
         for (int i = 1; i < bufferSize; i++) {
             Record each = buffer.get(i);
-            appendInsertSqlValues.invoke(proxy, conn, each, sqlSb);
+            appendInsertSqlValues.invoke(proxy, conn, each, sqlSb, "insert");
         }
         System.out.println(sqlSb);
-        Assert.assertTrue("insert into datax_bvt_all_types(col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13) values(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]')"
+        Assert.assertTrue("insert into datax_bvt_all_types ( col1,col2,col3,col4,col5,col6,col7,col8,col9,col10,col11,col12,col13 ) values (1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]'),(1,1,3,4,5,6,7.2,8.2,null,null,null,'cdp','datax\\'\\'\\'\\'`[]')"
                 .equals(sqlSb.toString()));
+    }
+
+    @Test
+    public void testAdsInsertProxyStream() throws AdsException,
+            NoSuchMethodException, SecurityException, IllegalAccessException,
+            IllegalArgumentException, InvocationTargetException,
+            NoSuchFieldException {
+        Record record = new TestRecord();
+
+        Connection conn = AdsUtil.getAdsConnect(conf);
+        TableInfo tableInfo = AdsUtil.createAdsHelper(conf).getTableInfo(
+                "datax_bvt_stream_demo");
+        AdsInsertProxy proxy = new AdsInsertProxy("datax_bvt_stream_demo",
+                Arrays.asList("Id", "`name`"), conf, null, tableInfo);
+
+        Method generateInsertSql = proxy.getClass().getDeclaredMethod(
+                "generateDmlSql", Connection.class, Record.class, String.class);
+        generateInsertSql.setAccessible(true);
+        Object resultSql = generateInsertSql.invoke(proxy, conn, record,
+                Constant.STREAMMODE);
+        System.out.println(resultSql);
+        Assert.assertTrue("delete from datax_bvt_stream_demo where ( (`name` = 'true') and  (Id = 1) )"
+                .equals(resultSql.toString()));
+        ((TestRecord) record).setColumns(new String[] { "1", "D", "true" });
+        Field opIndex = proxy.getClass().getDeclaredField("opColumnIndex");
+        opIndex.setAccessible(true);
+        opIndex.set(proxy, 1);
+        resultSql = generateInsertSql.invoke(proxy, conn, record,
+                Constant.STREAMMODE);
+        System.out.println(resultSql);
+        Assert.assertTrue("delete from datax_bvt_stream_demo where ( (`name` = 'true') and  (Id = 1) )"
+                .equals(resultSql.toString()));
+
+        Method appendInsertSqlValues = proxy.getClass().getDeclaredMethod(
+                "appendDmlSqlValues", Connection.class, Record.class,
+                StringBuilder.class, String.class);
+        appendInsertSqlValues.setAccessible(true);
+
+        StringBuilder sqlSb = new StringBuilder();
+        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
+        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
+        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
+        System.out.print(sqlSb);
+
     }
 
     @Test
@@ -215,13 +264,50 @@ public class SqlTest {
         System.out.println(jdbcUrl);
         Assert.assertTrue("jdbc:mysql://127.0.0.1/database?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000&autoReconnect=true&failOverReadOnly=false&maxReconnects=10"
                 .equals(jdbcUrl));
-    }
 
-    @Test
-    public void testPrepareJdbcUrl2() {
-        String jdbcUrl = AdsUtil.prepareJdbcUrl(this.conf);
+        jdbcUrl = AdsUtil.prepareJdbcUrl(this.conf);
         System.out.println(jdbcUrl);
         Assert.assertTrue("jdbc:mysql://ads-demo-3d3dd9de.cn-hangzhou-1.ads.aliyuncs.com:3029/ads_demo?useUnicode=true&characterEncoding=UTF-8&socketTimeout=3600000"
                 .equals(jdbcUrl));
+    }
+
+    class TestRecord implements Record {
+        private String[] columns = new String[] { "D", "1", "true" };
+
+        public void setColumns(String[] strs) {
+            this.columns = strs;
+        }
+
+        public String[] getColumns() {
+            return this.columns;
+        }
+
+        @Override
+        public void setColumn(int i, Column column) {
+        }
+
+        @Override
+        public int getMemorySize() {
+            return 0;
+        }
+
+        @Override
+        public int getColumnNumber() {
+            return 0;
+        }
+
+        @Override
+        public Column getColumn(int i) {
+            return new StringColumn(this.columns[i]);
+        }
+
+        @Override
+        public int getByteSize() {
+            return 0;
+        }
+
+        @Override
+        public void addColumn(Column column) {
+        }
     }
 }
