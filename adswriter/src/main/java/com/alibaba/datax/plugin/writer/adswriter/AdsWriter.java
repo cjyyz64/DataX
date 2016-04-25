@@ -86,13 +86,12 @@ public class AdsWriter extends Writer {
             } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
                 AdsUtil.checkNecessaryConfig(this.originalConfig, this.writeMode);
                 List<String> allColumns = AdsInsertUtil.getAdsTableColumnNames(originalConfig);
-                TableInfo tableInfo = AdsInsertUtil.getAdsTableInfo(originalConfig);
                 AdsInsertUtil.dealColumnConf(originalConfig, allColumns);
 
                 LOG.debug("After job init(), originalConfig now is:[\n{}\n]",
                         originalConfig.toJSON());
             } else {
-                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert' 或者 'stream'");
             }
         }
 
@@ -322,6 +321,7 @@ public class AdsWriter extends Writer {
         private String schema;
         private String table;
         private int columnNumber;
+        // warn: 只有在insert, stream模式才有, 对于load模式表明为odps临时表了
         private TableInfo tableInfo;
 
         @Override
@@ -330,15 +330,16 @@ public class AdsWriter extends Writer {
             this.writeMode = this.writerSliceConfig.getString(Key.WRITE_MODE);
             this.schema = writerSliceConfig.getString(Key.SCHEMA);
             this.table =  writerSliceConfig.getString(Key.ADS_TABLE);
-            try {
-                this.tableInfo = AdsUtil.createAdsHelper(this.writerSliceConfig).getTableInfo(this.table);
-            } catch (AdsException e) {
-                throw DataXException.asDataXException(AdsWriterErrorCode.CREATE_ADS_HELPER_FAILED, e);
-            }
+            
             if(Constant.LOADMODE.equalsIgnoreCase(this.writeMode)) {
                 odpsWriterTaskProxy.setPluginJobConf(writerSliceConfig);
                 odpsWriterTaskProxy.init();
             } else if(Constant.INSERTMODE.equalsIgnoreCase(this.writeMode) || Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
+                try {
+                    this.tableInfo = AdsUtil.createAdsHelper(this.writerSliceConfig).getTableInfo(this.table);
+                } catch (AdsException e) {
+                    throw DataXException.asDataXException(AdsWriterErrorCode.CREATE_ADS_HELPER_FAILED, e);
+                }
                 List<String> allColumns = new ArrayList<String>();
                 List<ColumnInfo> columnInfo =  this.tableInfo.getColumns();
                 for (ColumnInfo eachColumn : columnInfo) {
@@ -349,7 +350,7 @@ public class AdsWriter extends Writer {
                 List<String> userColumns = writerSliceConfig.getList(Key.COLUMN, String.class);
                 this.columnNumber = userColumns.size();
             } else {
-                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert'");
+                throw DataXException.asDataXException(AdsWriterErrorCode.INVALID_CONFIG_VALUE, "writeMode 必须为 'load' 或者 'insert' 或者 'stream'");
             }
         }
 

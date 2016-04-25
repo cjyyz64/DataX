@@ -417,7 +417,8 @@ public class AdsInsertProxy {
             case Types.REAL:
                 String numValue = column.asString();
                 if(emptyAsNull && "".equals(numValue) || numValue == null){
-                    statement.setLong(preparedPatamIndex + 1, (Long) null);
+                    //statement.setObject(preparedPatamIndex + 1,  null);
+                    statement.setNull(preparedPatamIndex + 1, Types.BIGINT);
                 } else{
                     statement.setLong(preparedPatamIndex + 1, column.asLong());
                 }
@@ -427,7 +428,8 @@ public class AdsInsertProxy {
             case Types.DOUBLE:
                 String floatValue = column.asString();
                 if(emptyAsNull && "".equals(floatValue) || floatValue == null){
-                    statement.setDouble(preparedPatamIndex + 1, (Double) null);
+                    //statement.setObject(preparedPatamIndex + 1,  null);
+                    statement.setNull(preparedPatamIndex + 1, Types.DOUBLE);
                 } else{
                     statement.setDouble(preparedPatamIndex + 1, column.asDouble());
                 }
@@ -436,7 +438,12 @@ public class AdsInsertProxy {
             //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
             case Types.TINYINT:
                 Long longValue = column.asLong();
-                statement.setLong(preparedPatamIndex + 1, longValue);
+                if (null == longValue) {
+                    statement.setNull(preparedPatamIndex + 1, Types.BIGINT);
+                } else {
+                    statement.setLong(preparedPatamIndex + 1, longValue);
+                }
+                
                 break;
 
             case Types.DATE:
@@ -498,8 +505,14 @@ public class AdsInsertProxy {
                 break;
 
             case Types.BOOLEAN:
-            case Types.BIT:
-                statement.setBoolean(preparedPatamIndex + 1, column.asBoolean());
+            //case Types.BIT: ads 没有bit
+                Boolean booleanValue = column.asBoolean();
+                if (null == booleanValue) {
+                    statement.setNull(preparedPatamIndex + 1, Types.BOOLEAN);
+                } else {
+                    statement.setBoolean(preparedPatamIndex + 1, booleanValue);
+                }
+                
                 break;
             default:
                 Pair<Integer, String> columnMetaPair = this.userConfigColumnsMetaData.get(columnName);
