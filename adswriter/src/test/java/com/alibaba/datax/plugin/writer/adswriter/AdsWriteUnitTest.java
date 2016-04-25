@@ -92,7 +92,6 @@ public class AdsWriteUnitTest {
         }
     }
 
-    @Test
     public void odpsReaderTest(){
         String readerPluginName = "odpsreader";
         String odpsTableName ="test555__datax_ads_writer_table_bvt_14271310597741521";
