@@ -1,14 +1,8 @@
 package com.alibaba.datax.plugin.writer.tairwriter;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.taobao.tair.impl.mc.MultiClusterTairManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.commons.lang.StringUtils;
-
-import com.taobao.tair.impl.DefaultTairManager;
-import com.taobao.tair.impl.mc.MultiClusterTairManager;
 
 public final class TairClientManager {
     private static MultiClusterTairManager MC_TAIR_MANAGER;
@@ -27,6 +21,13 @@ public final class TairClientManager {
 
         MultiClusterTairManager mcTairManager = new MultiClusterTairManager();
         mcTairManager.setConfigID(configId);
+        /**
+         * for k3:https://k3.alibaba-inc.com/issue/8147814?versionId=1114264
+         * 取消tair的client并发控制.对于datax来说40Channel*40个并发,最大是1600.因此设置2048.相当于取消了限制.会造成一定的上下文切换.
+         * 将来对于需要配置40channel的tairWriter,采用分布式. 因为task无法获取到channel,因此选择简单处理
+         */
+        mcTairManager.setMaxWaitThread(2048);
+
         mcTairManager.setDynamicConfig(true);
         mcTairManager.setTimeout(timeout);
         mcTairManager.setHeader("c++".equalsIgnoreCase(lang) ? false : true);
