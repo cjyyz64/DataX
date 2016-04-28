@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,12 +28,12 @@ import com.alibaba.datax.test.simulator.junit.extend.log.TestLogger;
 @RunWith(LoggedRunner.class)
 public class OceanBaseV10WriterTest extends BasicWriterPluginTest {
 
-	private boolean hasDirData = false;
+	private boolean hasDirtyData = false;
 
 	@TestLogger(log = "测试basic11.json. 配置多个jdbcUrl,多个table,运行时，通过程序自动生成 queryS1ql 进行数据读取.")
 	@Test
 	public void testBasic1() {
-		hasDirData = false;
+		hasDirtyData = false;
 		int readerSliceNumber = 8;
 		super.doWriterTest("basic11.json", readerSliceNumber);
 	}
@@ -40,7 +41,7 @@ public class OceanBaseV10WriterTest extends BasicWriterPluginTest {
 	@TestLogger(log = "测试basic12.json. 配置多个jdbcUrl,多库多表，表名都不同，分库名相同.")
 	@Test
 	public void testBasic2() {
-		hasDirData = false;
+		hasDirtyData = false;
 		int readerSliceNumber = 8;
 		super.doWriterTest("basic12.json", readerSliceNumber);
 	}
@@ -48,11 +49,11 @@ public class OceanBaseV10WriterTest extends BasicWriterPluginTest {
 	@TestLogger(log = "测试basic11.json. 配置多个jdbcUrl,多个table,运行时，有一条脏数据")
 	@Test
 	public void testDirDataBasic1() {
-		hasDirData = true;
+		hasDirtyData = true;
 		int readerSliceNumber = 8;
 		super.doWriterTest("basic11.json", readerSliceNumber);
 		System.out.println("dirRecordList.size:" + super.dirRecordList.size());
-		// Assert.assertEquals(dirRecordList.size(), readerSliceNumber);
+		Assert.assertEquals(dirRecordList.size(), readerSliceNumber);
 	}
 
 	@Override
@@ -72,7 +73,7 @@ public class OceanBaseV10WriterTest extends BasicWriterPluginTest {
 			list.add(r);
 		}
 
-		if (hasDirData) {
+		if (hasDirtyData) {
 			Record r = new DefaultRecord();
 			r.addColumn(new LongColumn(101));
 			r.addColumn(new StringColumn("abc"));

@@ -1,5 +1,18 @@
 package com.alibaba.datax.test.simulator;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+
 import com.alibaba.datax.common.constant.PluginType;
 import com.alibaba.datax.common.element.ColumnCast;
 import com.alibaba.datax.common.element.Record;
@@ -13,22 +26,8 @@ import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public abstract class BasicWriterPluginTest extends BasicPluginTest {
-
-    protected Writer.Job writerMaster = null;
 
     public List<Record> dirRecordList = new ArrayList<Record>();
 
@@ -89,7 +88,7 @@ public abstract class BasicWriterPluginTest extends BasicPluginTest {
     	ColumnCast.bind(jobConf);
     	
         String pluginName = getTestPluginName();
-        writerMaster = (Writer.Job) getPluginMaster(jobConf, pluginName,
+        Writer.Job writerMaster = (Writer.Job) getPluginMaster(jobConf, pluginName,
                 PluginType.WRITER);
 
         writerMaster.init();

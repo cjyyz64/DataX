@@ -123,22 +123,6 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 				metaDbTablePair.setLeft(dbName);
 				metaDbTablePair.setRight(tableList.get(0));
 			}
-
-			// init每一个table的insert语句
-			Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
-			try {
-				for (String tableName : tableList) {
-					//TODO
-					if (tableName.contains("[")) {
-						LOG.error(config.toJSON());
-						LOG.error(connConf.toJSON());
-						System.exit(0);
-					}
-					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn));
-				}
-			} finally {
-				DBUtil.closeDBResources(null, null, conn);
-			}
 		}
 
 		// 检查规则配置
@@ -208,6 +192,11 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 			TaskPluginCollector taskPluginCollector) {
 		for (RuleWriterDbBuffer dbBuffer : dbBufferList) {
 			dbBuffer.initConnection(writerSliceConfig, username, password);
+			// init每一个table的insert语句
+			Connection conn = dbBuffer.getConnection() ;
+			for (String tableName : dbBuffer.getTableList()) {
+				tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn));
+			}
 		}
 
 		this.taskPluginCollector = taskPluginCollector;
@@ -388,6 +377,8 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		long tryInterval = 10;// 每次间隔10毫秒
 		try {
 			conn.setAutoCommit(true);
+			String writeSql = tableWriteSqlMap.get(tableName);
+			ps = conn.prepareStatement(writeSql);
 			for (Record record : list) {
 				int i = 0;
 				Throwable ex = null;

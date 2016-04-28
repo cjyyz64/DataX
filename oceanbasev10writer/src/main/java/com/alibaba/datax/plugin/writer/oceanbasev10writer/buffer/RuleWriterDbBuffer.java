@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer;
 
 import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -36,6 +37,10 @@ public class RuleWriterDbBuffer {
 		for (String table : tableList) {
 			tableBuffer.put(table, new LinkedList<Record>());
 		}
+	}
+	
+	public List<String> getTableList(){
+		return new ArrayList<String>(tableBuffer.keySet());
 	}
 
 	public void addRecord(Record record, String tableName) {
