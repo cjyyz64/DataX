@@ -1,0 +1,53 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "oceanbasev10writer",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "failTryCount":"1",
+                        "username": "datax",
+                        "password": "datax",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port",
+                            "db_role",
+                            "db_name",
+                            "db_username",
+                            "db_password",
+                            "db_modify_time",
+                            "db_modify_user",
+                            "db_description",
+                            "db_tddl_info"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info_for_writer"
+                                ],
+                                "jdbcUrl": "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax?useUnicode=true&characterEncoding=utf-8"
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where db_id = -1;"
+                        ],
+                        "postSql": [
+                            "update @table set db_modify_time = now() where db_id = 1;"
+                        ],
+                        "session": [
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}

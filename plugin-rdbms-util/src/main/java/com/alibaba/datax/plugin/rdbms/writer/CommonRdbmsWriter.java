@@ -45,20 +45,20 @@ public class CommonRdbmsWriter {
         }
 
         /*目前只支持MySQL Writer跟Oracle Writer;检查PreSQL跟PostSQL语法以及insert，delete权限*/
-        public void writerPreCheck(Configuration originalConfig,DataBaseType dataBaseType){
+        public void writerPreCheck(Configuration originalConfig, DataBaseType dataBaseType) {
             /*检查PreSql跟PostSql语句*/
-            prePostSqlValid(originalConfig,dataBaseType);
+            prePostSqlValid(originalConfig, dataBaseType);
             /*检查insert 跟delete权限*/
-            privilegeValid(originalConfig,dataBaseType);
+            privilegeValid(originalConfig, dataBaseType);
         }
 
-        public void prePostSqlValid(Configuration originalConfig,DataBaseType dataBaseType){
+        public void prePostSqlValid(Configuration originalConfig, DataBaseType dataBaseType) {
             /*检查PreSql跟PostSql语句*/
             WriterUtil.preCheckPrePareSQL(originalConfig, dataBaseType);
             WriterUtil.preCheckPostSQL(originalConfig, dataBaseType);
         }
 
-        public void privilegeValid(Configuration originalConfig,DataBaseType dataBaseType){
+        public void privilegeValid(Configuration originalConfig, DataBaseType dataBaseType) {
             /*检查insert 跟delete权限*/
             String username = originalConfig.getString(Key.USERNAME);
             String password = originalConfig.getString(Key.PASSWORD);
@@ -69,15 +69,15 @@ public class CommonRdbmsWriter {
                 Configuration connConf = Configuration.from(connections.get(i).toString());
                 String jdbcUrl = connConf.getString(Key.JDBC_URL);
                 List<String> expandedTables = connConf.getList(Key.TABLE, String.class);
-                boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType,jdbcUrl,username,password,expandedTables);
+                boolean hasInsertPri = DBUtil.checkInsertPrivilege(dataBaseType, jdbcUrl, username, password, expandedTables);
 
-                if(!hasInsertPri) {
+                if (!hasInsertPri) {
                     throw RdbmsException.asInsertPriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                 }
 
-                if(DBUtil.needCheckDeletePrivilege(originalConfig)) {
-                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType,jdbcUrl, username, password, expandedTables);
-                    if(!hasDeletePri) {
+                if (DBUtil.needCheckDeletePrivilege(originalConfig)) {
+                    boolean hasDeletePri = DBUtil.checkDeletePrivilege(dataBaseType, jdbcUrl, username, password, expandedTables);
+                    if (!hasDeletePri) {
                         throw RdbmsException.asDeletePriException(dataBaseType, originalConfig.getString(Key.USERNAME), jdbcUrl);
                     }
                 }
@@ -118,7 +118,7 @@ public class CommonRdbmsWriter {
                     LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPreSqls, ";"), jdbcUrl);
 
-                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl,dataBaseType);
+                    WriterUtil.executeSqls(conn, renderedPreSqls, jdbcUrl, dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -159,7 +159,7 @@ public class CommonRdbmsWriter {
                     LOG.info(
                             "Begin to execute postSqls:[{}]. context info:{}.",
                             StringUtils.join(renderedPostSqls, ";"), jdbcUrl);
-                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl,dataBaseType);
+                    WriterUtil.executeSqls(conn, renderedPostSqls, jdbcUrl, dataBaseType);
                     DBUtil.closeDBResources(null, null, conn);
                 }
             }
@@ -217,7 +217,7 @@ public class CommonRdbmsWriter {
                                     DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
                 }
                 LOG.info("this is ob1_0 jdbc url.");
-                this.username = ss[1].trim() +":"+this.username;
+                this.username = ss[1].trim() + ":" + this.username;
                 this.jdbcUrl = ss[2];
                 LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
             }
@@ -253,7 +253,7 @@ public class CommonRdbmsWriter {
             if (tableNumber != 1) {
                 LOG.info("Begin to execute preSqls:[{}]. context info:{}.",
                         StringUtils.join(this.preSqls, ";"), BASIC_MESSAGE);
-                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE,dataBaseType);
+                WriterUtil.executeSqls(connection, this.preSqls, BASIC_MESSAGE, dataBaseType);
             }
 
             DBUtil.closeDBResources(null, null, connection);
@@ -334,7 +334,7 @@ public class CommonRdbmsWriter {
 
             LOG.info("Begin to execute postSqls:[{}]. context info:{}.",
                     StringUtils.join(this.postSqls, ";"), BASIC_MESSAGE);
-            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE,dataBaseType);
+            WriterUtil.executeSqls(connection, this.postSqls, BASIC_MESSAGE, dataBaseType);
             DBUtil.closeDBResources(null, null, connection);
         }
 
@@ -432,9 +432,9 @@ public class CommonRdbmsWriter {
                 case Types.REAL:
                 case Types.DOUBLE:
                     String strValue = column.asString();
-                    if(emptyAsNull && "".equals(strValue)){
+                    if (emptyAsNull && "".equals(strValue)) {
                         preparedStatement.setString(columnIndex + 1, null);
-                    }else{
+                    } else {
                         preparedStatement.setString(columnIndex + 1, strValue);
                     }
                     break;
@@ -512,11 +512,11 @@ public class CommonRdbmsWriter {
                     preparedStatement.setBytes(columnIndex + 1, column
                             .asBytes());
                     break;
-                    
+
                 case Types.BOOLEAN:
                     preparedStatement.setString(columnIndex + 1, column.asString());
                     break;
-                    
+
                 // warn: bit(1) -> Types.BIT 可使用setBoolean
                 // warn: bit(>1) -> Types.VARBINARY 可使用setBytes
                 case Types.BIT:

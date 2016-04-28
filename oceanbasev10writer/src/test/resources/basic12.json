@@ -1,0 +1,55 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 1
+            }
+        },
+        "content": [
+            {
+                "reader": {},
+                "writer": {
+                    "name": "oceanbasev10writer",
+                    "parameter": {
+                        "writeMode": "replace",
+                        "username": "datax",
+                        "password": "datax",
+                        "tableNamePattern" : "writer_test_case00_{0}",
+                        "tableRule" : "((#i1#).longValue() % 4)",
+                        "column": [
+                            "i1",
+                            "i2",
+                            "i3",
+                            "v1",
+                            "v2",
+                            "d1",
+                            "d2",
+                            "b1",
+                            "t1"
+                        ],
+                        "connection": [
+                            {
+                                "table": [
+                                    "writer_test_case00_[0-1]"
+                                ],
+                                "jdbcUrl": "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax00?useUnicode=true&characterEncoding=utf-8"
+                            },
+                            {
+                                "table": [
+                                    "writer_test_case00_[2-3]"
+                                ],
+                                "jdbcUrl": "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax00?useUnicode=true&characterEncoding=utf-8"
+                            }
+                        ],
+                        "preSql": [
+                            "delete from @table where i1 < 1001;"
+                        ],
+                        "postSql": [
+                            "update @table set t1 = now() where i1 = 1;"
+                        ]
+                    }
+                }
+            }
+        ]
+    }
+}
