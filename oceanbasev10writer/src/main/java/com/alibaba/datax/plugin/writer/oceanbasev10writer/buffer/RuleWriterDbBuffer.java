@@ -14,9 +14,9 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 /**
- * Date: 15/5/6 下午7:57
+ * 
+ * @author biliang.wbl
  *
- * @author liupeng <a href="mailto:liupengjava@gmail.com">Ricoul</a>
  */
 public class RuleWriterDbBuffer {
 

@@ -4,13 +4,13 @@ public interface Config {
 
 	String MEMSTORE_THRESHOLD = "memstoreThreshold";
 
-	double DEFAULT_MEMSTORE_THRESHOLD = 0.75d;
+	double DEFAULT_MEMSTORE_THRESHOLD = 0.9d;
 
 	String MEMSTORE_CHECK_INTERVAL_SECOND = "memstoreCheckIntervalSecond";
 
 	long DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND = 30;
 	
-	String FAIL_TRY_COUNT  = "failTryCount ";
+	String FAIL_TRY_COUNT  = "failTryCount";
 	
 	int DEFAULT_FAIL_TRY_COUNT = 100;
 }

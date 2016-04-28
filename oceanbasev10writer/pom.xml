@@ -57,6 +57,12 @@
                     <groupId>com.google.guava</groupId>
                     <artifactId>guava</artifactId>
                 </exclusion>
+                <!-- 
+                <exclusion>
+                    <groupId>mysql</groupId>
+                    <artifactId>mysql-connector-java</artifactId>
+                </exclusion>
+                 -->
                 <exclusion>
                     <groupId>com.taobao.diamond</groupId>
                     <artifactId>diamond-client</artifactId>

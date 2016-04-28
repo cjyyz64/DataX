@@ -1,4 +1,4 @@
-package com.alibaba.datax.plugin.writer.oceanbasev10writer;
+package com.alibaba.datax.plugin.writer.oceanbasev10writer.task;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -25,6 +25,7 @@ import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer.RuleWriterDbBuffer;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.groovy.GroovyRuleExecutor;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.OBUtils;
@@ -37,7 +38,7 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.OBUtils;
  * @author biliang.wbl
  *
  */
-public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
+public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 
 	private List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
 
@@ -63,10 +64,11 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 	// memstore检查的间隔
 	private long memstoreCheckIntervalSecond = Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND;
 
-	// 失败重试次数
-	private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
+	// 失败重试次数 经与强思讨论 暂时不做
+	// 未来需明确哪些OceanBase异常 可重试的再做
+	// private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
 
-	public OceanBaseWriterTask(DataBaseType dataBaseType) {
+	public MultiTableWriterTask(DataBaseType dataBaseType) {
 		super(dataBaseType);
 	}
 
@@ -84,8 +86,8 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
 		this.memstoreCheckIntervalSecond = config.getLong(Config.MEMSTORE_CHECK_INTERVAL_SECOND,
 				Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND);
-		this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
-
+		// this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT,
+		// Config.DEFAULT_FAIL_TRY_COUNT);
 		if (StringUtils.isNotBlank(this.dbRule)) {
 			dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
 		}
@@ -95,16 +97,17 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 
 		this.columns = config.getList(Key.COLUMN, String.class);
 		this.columnNumber = this.columns.size();
-		//
+		// 不能超过100
 		this.batchSize = config.getInt(Key.BATCH_SIZE, 100);
+		this.batchSize = Math.min(100, batchSize);
 		this.batchByteSize = config.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
-		writeMode = config.getString(Key.WRITE_MODE, "INSERT");
+		// OceanBase 所有操作都是 insert into on duplicate key update 模式
+		// TODO writeMode应该使用enum来定义
+		this.writeMode = "update";
 		emptyAsNull = config.getBool(Key.EMPTY_AS_NULL, true);
-		INSERT_OR_REPLACE_TEMPLATE = config.getString(Constant.INSERT_OR_REPLACE_TEMPLATE_MARK);
 
 		// init writerbuffer map,每一个db对应一个buffer
 		List<Object> conns = config.getList(Constant.CONN_MARK, Object.class);
-
 		for (int i = 0; i < conns.size(); i++) {
 			Configuration connConf = Configuration.from(conns.get(i).toString());
 			String jdbcUrl = connConf.getString(Key.JDBC_URL);
@@ -120,11 +123,18 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 				metaDbTablePair.setLeft(dbName);
 				metaDbTablePair.setRight(tableList.get(0));
 			}
+
 			// init每一个table的insert语句
 			Connection conn = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, username, password);
 			try {
 				for (String tableName : tableList) {
-					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn, writeMode));
+					//TODO
+					if (tableName.contains("[")) {
+						LOG.error(config.toJSON());
+						LOG.error(connConf.toJSON());
+						System.exit(0);
+					}
+					tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn));
 				}
 			} finally {
 				DBUtil.closeDBResources(null, null, conn);
@@ -333,64 +343,73 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 						break;
 					}
 				}
-				int tryCount = write(conn, tableName, list);
-				if (tryCount >= failTryCount) {
-					String msg = "OB无法写入 重试超过10次,jdbc=" + dbBuffer.getJdbcUrl();
-					LOG.error(msg);
-					throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, msg);
-				}
+				write(conn, tableName, list);
 			}
 		}
 	}
 
-	private int write(Connection conn, String tableName, List<Record> list) throws SQLException {
+	private void write(Connection conn, String tableName, List<Record> list) throws SQLException {
 		String writeSql = tableWriteSqlMap.get(tableName);
-		int tryCount = 0;
-		while (tryCount < failTryCount) {
+		try {
+			conn.setAutoCommit(false);
+			PreparedStatement ps = null;
 			try {
-				conn.setAutoCommit(false);
-				PreparedStatement ps = null;
-				try {
-					ps = conn.prepareStatement(writeSql);
-					for (Record record : list) {
-						ps = fillPreparedStatement(ps, record);
-						ps.addBatch();
-					}
-					ps.executeBatch();
-					conn.commit();
-				} catch (SQLException e) {
-					LOG.warn("回滚此次写入, 休眠 30 秒,采用每次写入一行方式提交. 因为:" + e.getMessage());
-					conn.rollback();
-					OBUtils.sleep(30);
-					doRuleOneInsert(conn, tableName, list);
-				} finally {
-					DBUtil.closeDBResources(ps, null);
-					list.clear();
+				ps = conn.prepareStatement(writeSql);
+				for (Record record : list) {
+					ps = fillPreparedStatement(ps, record);
+					ps.addBatch();
 				}
-				return tryCount;
-			} catch (Throwable t) {
-				LOG.warn("write OB fail,try 30 second later", t);
-				OBUtils.sleep(30);
+				ps.executeBatch();
+				conn.commit();
+			} catch (SQLException e) {
+				LOG.warn("回滚此次写入, 休眠 1 秒,采用每次写入一行方式提交. 因为:", e);
+				conn.rollback();
+				OBUtils.sleep(1000);
+				doRuleOneInsert(conn, tableName, list);
+			} finally {
+				DBUtil.closeDBResources(ps, null);
 			}
-			tryCount++;
+		} catch (Throwable t) {
+			throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "write OB fail");
 		}
-		return tryCount;
+
 	}
 
+	/**
+	 * 逐条 重试3次,每次间隔10毫秒,若失败则当作脏数据处理
+	 * 
+	 * @param conn
+	 * @param tableName
+	 * @param list
+	 */
 	private void doRuleOneInsert(Connection conn, String tableName, List<Record> list) {
 		PreparedStatement ps = null;
+		int maxTryCount = 3;// 最大重试次数
+		long tryInterval = 10;// 每次间隔10毫秒
 		try {
 			conn.setAutoCommit(true);
 			for (Record record : list) {
-				try {
-					ps = fillPreparedStatement(ps, record);
-					ps.execute();
-				} catch (SQLException e) {
-					LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:" + e.toString());
-					this.taskPluginCollector.collectDirtyRecord(record, e);
-				} finally {
-					// 最后不要忘了关闭 preparedStatement
-					ps.clearParameters();
+				int i = 0;
+				Throwable ex = null;
+				for (; i < maxTryCount; i++) {
+					try {
+						ps = fillPreparedStatement(ps, record);
+						ps.execute();
+					} catch (Throwable e) {
+						ex = e;
+						LOG.error("写入表[" + tableName + "]失败,休眠[" + tryInterval + "]毫秒,数据:" + record,
+								i == 0 ? e.toString() : e);
+						OBUtils.sleep(tryInterval);
+					} finally {
+						// 最后不要忘了关闭 preparedStatement
+						if (ps != null) {
+							ps.clearParameters();
+						}
+					}
+				}
+				if (i >= maxTryCount) {
+					LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:", ex);
+					this.taskPluginCollector.collectDirtyRecord(record, ex);
 				}
 			}
 		} catch (Exception e) {
@@ -416,8 +435,18 @@ public class OceanBaseWriterTask extends CommonRdbmsWriter.Task {
 		while (OBUtils.isMemstoreFull(conn, memstoreThreshold)) {
 			LOG.warn("OB memstore is full,sleep 60 seconds, jdbc=" + dbBuffer.getJdbcUrl() + ",threshold="
 					+ memstoreThreshold);
-			OBUtils.sleep(60);
+			OBUtils.sleep(60000);
 		}
 		dbBuffer.setLastCheckMemstoreTime(now);
+	}
+
+	@Override
+	public void post(Configuration writerSliceConfig) {
+		// do nothing
+	}
+
+	@Override
+	public void prepare(Configuration writerSliceConfig) {
+		// do nothing
 	}
 }

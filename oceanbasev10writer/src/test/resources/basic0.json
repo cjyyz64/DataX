@@ -12,6 +12,7 @@
                     "name": "oceanbasev10writer",
                     "parameter": {
                         "writeMode": "replace",
+                        "failTryCount":"1",
                         "username": "datax",
                         "password": "datax",
                         "column": [
@@ -31,15 +32,9 @@
                         "connection": [
                             {
                                 "table": [
-                                    "datax_test", "users"
+                                    "db_info_for_writer"
                                 ],
-                                "jdbcUrl": "jdbc:mysql://10.232.130.7:3306/test"
-                            },
-                            {
-                                "table": [
-                                    "db_info_for_writer_10", "db_info_for_writer_1[1-6]"
-                                ],
-                                "jdbcUrl": "jdbc:mysql://10.232.130.6:3306/test"
+                                "jdbcUrl": "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax?useUnicode=true&characterEncoding=utf-8"
                             }
                         ],
                         "preSql": [
@@ -47,6 +42,8 @@
                         ],
                         "postSql": [
                             "update @table set db_modify_time = now() where db_id = 1;"
+                        ],
+                        "session": [
                         ]
                     }
                 }

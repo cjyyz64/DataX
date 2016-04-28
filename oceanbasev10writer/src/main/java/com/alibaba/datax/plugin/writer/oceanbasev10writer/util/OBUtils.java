@@ -15,10 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter.Task;
 
 public class OBUtils {
@@ -37,7 +34,7 @@ public class OBUtils {
 			// 只要有满足条件的,则表示当前租户 有个机器的memstore即将满
 			result = rs.next();
 		} catch (Throwable e) {
-			LOG.error("check memstore fail", e);
+			LOG.error("check memstore fail"+e.getMessage());
 			result = false;
 		} finally {
 			DBUtil.closeDBResources(rs, ps, null);
@@ -53,34 +50,19 @@ public class OBUtils {
 	 * @param writeMode
 	 * @return
 	 */
-	public static String buildWriteSql(String tableName, List<String> columnHolders, Connection conn, String writeMode) {
+	public static String buildWriteSql(String tableName, List<String> columnHolders, Connection conn) {
 		List<String> valueHolders = new ArrayList<String>(columnHolders.size());
 		for (int i = 0; i < columnHolders.size(); i++) {
 			valueHolders.add("?");
 		}
-		boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
-				|| writeMode.trim().toLowerCase().startsWith("replace");
-
-		if (!isWriteModeLegal) {
-			throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-					String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
-		}
-
+		// 一定是insert into on duplicate key update 模式
 		String writeDataSqlTemplate;
-		if (writeMode.trim().toLowerCase().startsWith("replace")) {
-			// upper case
-			Set<String> skipColumns = getSkipColumns(conn, tableName);
-			writeDataSqlTemplate = new StringBuilder().append("INSERT INTO " + tableName + " (")
-					.append(StringUtils.join(columnHolders, ",")).append(") VALUES(")
-					.append(StringUtils.join(valueHolders, ",")).append(")")
-					.append(onDuplicateKeyUpdateString(columnHolders, skipColumns)).toString();
-		} else {
-
-			writeDataSqlTemplate = new StringBuilder().append(writeMode).append(" INTO %s (")
-					.append(StringUtils.join(columnHolders, ",")).append(") VALUES(")
-					.append(StringUtils.join(valueHolders, ",")).append(")").toString();
-		}
-
+		Set<String> skipColumns = getSkipColumns(conn, tableName);
+		//TODO table  column  key word
+		writeDataSqlTemplate = new StringBuilder().append("INSERT INTO " + tableName + " (")
+				.append(StringUtils.join(columnHolders, ",")).append(") VALUES(")
+				.append(StringUtils.join(valueHolders, ",")).append(")")
+				.append(onDuplicateKeyUpdateString(columnHolders, skipColumns)).toString();
 		return writeDataSqlTemplate;
 	}
 
@@ -110,7 +92,7 @@ public class OBUtils {
 				return uniqueKeys.values().iterator().next();
 			}
 		} catch (Throwable e) {
-			LOG.error("show index from table fail", e);
+			LOG.error("show index from table fail :" + show, e);
 		} finally {
 			DBUtil.closeDBResources(rs, ps, null);
 		}
@@ -121,8 +103,8 @@ public class OBUtils {
 		if (columnHolders == null || columnHolders.size() < 1) {
 			return "";
 		}
-		StringBuilder sb = new StringBuilder();
-		sb.append(" ON DUPLICATE KEY UPDATE ");
+		StringBuilder builder = new StringBuilder();
+		builder.append(" ON DUPLICATE KEY UPDATE ");
 		List<String> list = new ArrayList<String>();
 		for (String column : columnHolders) {
 			// skip update columns
@@ -131,31 +113,26 @@ public class OBUtils {
 			}
 			list.add(column + "=VALUES(" + column + ")");
 		}
-		sb.append(StringUtils.join(list, ','));
-		return sb.toString();
+		if (!list.isEmpty()) {
+			builder.append(StringUtils.join(list, ','));
+		} else {
+			// 如果除了UK 没有别的字段,则更新第一个字段
+			String column = columnHolders.get(0);
+			builder.append(column + "=VALUES(" + column + ")");
+		}
+		return builder.toString();
 	}
 
 	/**
-	 * 休眠n秒
+	 * 休眠n毫秒
 	 * 
-	 * @param n
-	 *            n秒
+	 * @param ms
+	 *            毫秒
 	 */
-	public static void sleep(long n) {
+	public static void sleep(long ms) {
 		try {
-			Thread.sleep(1000 * n);
+			Thread.sleep(ms);
 		} catch (InterruptedException e) {
 		}
-	}
-
-	/**
-	 * 判断是不是 OB10
-	 * 
-	 * @param writerSliceConfig
-	 * @return
-	 */
-	public static boolean isOb10(Configuration writerSliceConfig) {
-		// OriginalConfPretreatmentUtil.isOB10(jdbcUrl);
-		return false;
 	}
 }

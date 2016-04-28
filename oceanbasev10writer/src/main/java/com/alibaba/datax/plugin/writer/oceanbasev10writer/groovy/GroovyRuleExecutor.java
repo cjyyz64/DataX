@@ -25,7 +25,7 @@ public class GroovyRuleExecutor extends WrappedGroovyRule {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public String parseParam(String paramInDoller, Map parameters) {
         RuleColumn ruleColumn = null;
         if (!paramInDoller.contains(",")) {

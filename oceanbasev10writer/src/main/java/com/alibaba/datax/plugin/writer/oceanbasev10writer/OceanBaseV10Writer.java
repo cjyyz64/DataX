@@ -8,17 +8,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
-import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.SingleTableWriterTask;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.MultiTableWriterTask;
 
 /**
  * 2016-04-07
@@ -47,7 +47,7 @@ public class OceanBaseV10Writer extends Writer {
 	 */
 	public static class Job extends Writer.Job {
 		private Configuration originalConfig = null;
-		private CommonRdbmsWriter.Job commonRdbmsWriterJob;
+		private CommonRdbmsWriter.Job commonJob;
 		private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
 		/**
@@ -57,8 +57,8 @@ public class OceanBaseV10Writer extends Writer {
 		@Override
 		public void init() {
 			this.originalConfig = super.getPluginJobConf();
-			this.commonRdbmsWriterJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
-			this.commonRdbmsWriterJob.init(this.originalConfig);
+			this.commonJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
+			this.commonJob.init(this.originalConfig);
 		}
 
 		/**
@@ -67,11 +67,10 @@ public class OceanBaseV10Writer extends Writer {
 		// 一般来说，是需要推迟到 task 中进行pre 的执行（单表情况例外）
 		@Override
 		public void prepare() {
-			this.commonRdbmsWriterJob.prepare(this.originalConfig);
 			int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
 			if (tableNumber == 1) {
-				throw DataXException.asDataXException(DBUtilErrorCode.CONF_ERROR,
-						"tableNumber=1, OceanBaseV10Writer只能支持分库分表任务");
+				this.commonJob.prepare(this.originalConfig);
+				return;
 			}
 			String username = originalConfig.getString(Key.USERNAME);
 			String password = originalConfig.getString(Key.PASSWORD);
@@ -111,6 +110,10 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public List<Configuration> split(int mandatoryNumber) {
+			int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
+			if (tableNumber == 1) {
+				return this.commonJob.split(this.originalConfig, mandatoryNumber);
+			}
 			Configuration simplifiedConf = this.originalConfig;
 
 			List<Configuration> splitResultConfigs = new ArrayList<Configuration>();
@@ -125,6 +128,11 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public void post() {
+			int tableNumber = originalConfig.getInt(Constant.TABLE_NUMBER_MARK);
+			if (tableNumber == 1) {
+				commonJob.post(this.originalConfig);
+				return;
+			}
 			String username = originalConfig.getString(Key.USERNAME);
 			String password = originalConfig.getString(Key.PASSWORD);
 			List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
@@ -158,14 +166,14 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public void destroy() {
-			this.commonRdbmsWriterJob.destroy(this.originalConfig);
+			this.commonJob.destroy(this.originalConfig);
 		}
-
 	}
 
 	public static class Task extends Writer.Task {
+		private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 		private Configuration writerSliceConfig;
-		private CommonRdbmsWriter.Task commonRdbmsWriterTask;
+		private CommonRdbmsWriter.Task writerTask;
 
 		/**
 		 * 注意：此方法每个 Task 都会执行一次。 最佳实践：此处通过对 taskConfig 配置的读取，进而初始化一些资源为
@@ -174,10 +182,14 @@ public class OceanBaseV10Writer extends Writer {
 		@Override
 		public void init() {
 			this.writerSliceConfig = super.getPluginJobConf();
-			// int tableNumber =
-			// writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
-			this.commonRdbmsWriterTask = new OceanBaseWriterTask(DATABASE_TYPE);
-			this.commonRdbmsWriterTask.init(this.writerSliceConfig);
+			int tableNumber = writerSliceConfig.getInt(Constant.TABLE_NUMBER_MARK);
+			if (tableNumber == 1) {
+				this.writerTask = new SingleTableWriterTask(DATABASE_TYPE);
+			} else {
+				this.writerTask = new MultiTableWriterTask(DATABASE_TYPE);
+			}
+			LOG.info("tableNumber:" + tableNumber + ",writerTask Class:" + writerTask.getClass().getName());
+			this.writerTask.init(this.writerSliceConfig);
 		}
 
 		/**
@@ -186,15 +198,14 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public void prepare() {
-			// do nothing
+			this.writerTask.prepare(this.writerSliceConfig);
 		}
 
 		/**
 		 * 注意：此方法每个 Task 都会执行一次。 最佳实践：此处适当封装确保简洁清晰完成数据写入工作。
 		 */
 		public void startWrite(RecordReceiver recordReceiver) {
-			this.commonRdbmsWriterTask.startWrite(recordReceiver, this.writerSliceConfig,
-					super.getTaskPluginCollector());
+			this.writerTask.startWrite(recordReceiver, this.writerSliceConfig, super.getTaskPluginCollector());
 		}
 
 		/**
@@ -202,7 +213,7 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public void post() {
-			// do nothing
+			this.writerTask.post(this.writerSliceConfig);
 		}
 
 		/**
@@ -210,8 +221,7 @@ public class OceanBaseV10Writer extends Writer {
 		 */
 		@Override
 		public void destroy() {
-			this.commonRdbmsWriterTask.destroy(this.writerSliceConfig);
+			this.writerTask.destroy(this.writerSliceConfig);
 		}
-
 	}
 }
