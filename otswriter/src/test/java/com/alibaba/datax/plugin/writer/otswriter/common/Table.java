@@ -66,7 +66,7 @@ public class Table {
                 1000
                 );
 
-        Thread.sleep(10000);
+        Thread.sleep(2000);
     }
     
     public void insertData(long begin, long rowCount) {

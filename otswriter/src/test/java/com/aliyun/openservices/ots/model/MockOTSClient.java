@@ -205,13 +205,16 @@ public class MockOTSClient implements OTS{
         // STRING PK, STRING ATTR, BINARY ATTR的检查
 
         for (Entry<String, List<RowPutChange>> en : input.entrySet()) {
+            int index = -1;
             for (RowPutChange change : en.getValue()) {// row
                 boolean flag = true;
+                index++;
+                String tableName = en.getKey();
                 for (Entry<String, PrimaryKeyValue> pk : change.getRowPrimaryKey().getPrimaryKey().entrySet()) {
                     switch(pk.getValue().getType()) {
                         case STRING:
                             if (pk.getValue().asString().length() > 1024) {
-                                result.addPutRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "STRING PK SIZE > 1KB")));
+                                result.addPutRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "STRING PK SIZE > 1KB"), index));
                                 flag = false;
                             }
                             break;
@@ -223,13 +226,13 @@ public class MockOTSClient implements OTS{
                     switch (attr.getValue().getType()) {
                         case BINARY:
                             if (attr.getValue().asBinary().length > 64*1024) {
-                                result.addPutRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "BINARY ATTR SIZE > 64KB")));
+                                result.addPutRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "BINARY ATTR SIZE > 64KB"), index));
                                 flag = false;
                             }
                             break;
                         case STRING:
                             if (attr.getValue().asString().length() > 64*1024) {
-                                result.addPutRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "STRING ATTR SIZE > 64KB")));
+                                result.addPutRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "STRING ATTR SIZE > 64KB"), index));
                                 flag = false;
                             }
                             break;
@@ -242,9 +245,9 @@ public class MockOTSClient implements OTS{
                     // mock sql worker
                     try {
                         send(OTSOpType.PUT_ROW, change.getTableName(), change.getRowPrimaryKey().getPrimaryKey(), change.getAttributeColumns());
-                        result.addPutRowResult(change.getTableName(), new RowStatus(new ConsumedCapacity()));
+                        result.addPutRowResult(new RowStatus(tableName, new ConsumedCapacity(), index));
                     } catch (RuntimeException e) {
-                        result.addPutRowResult(change.getTableName(), new RowStatus(new Error(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "CU NOT ENOUGH")));
+                        result.addPutRowResult(new RowStatus(tableName, new Error(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "CU NOT ENOUGH"), index));
                     }
                 }
             }
@@ -300,13 +303,16 @@ public class MockOTSClient implements OTS{
         // STRING PK, STRING ATTR, BINARY ATTR的检查
 
         for (Entry<String, List<RowUpdateChange>> en : input.entrySet()) {
+            int index = -1;
+            String tableName = en.getKey();
             for (RowUpdateChange change : en.getValue()) {// row
+                index++;
                 boolean flag = true;
                 for (Entry<String, PrimaryKeyValue> pk : change.getRowPrimaryKey().getPrimaryKey().entrySet()) {
                     switch(pk.getValue().getType()) {
                         case STRING:
                             if (pk.getValue().asString().length() > 1024) {
-                                result.addUpdateRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "STRING PK SIZE > 1KB")));
+                                result.addUpdateRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "STRING PK SIZE > 1KB"), index));
                                 flag = false;
                             }
                             break;
@@ -320,14 +326,14 @@ public class MockOTSClient implements OTS{
                     switch (attr.getValue().getType()) {
                         case BINARY:
                             if (attr.getValue().asBinary().length > 64*1024) {
-                                result.addUpdateRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "BINARY ATTR SIZE > 64KB")));
+                                result.addUpdateRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "BINARY ATTR SIZE > 64KB"), index));
                                 flag = false;
                             }
 
                             break;
                         case STRING:
                             if (attr.getValue().asString().length() > 64*1024) {
-                                result.addUpdateRowResult(en.getKey(), new RowStatus(new Error(OTSErrorCode.INVALID_PARAMETER, "STRING ATTR SIZE > 64KB")));
+                                result.addUpdateRowResult(new RowStatus(tableName, new Error(OTSErrorCode.INVALID_PARAMETER, "STRING ATTR SIZE > 64KB"), index));
                                 flag = false;
                             }
                             break;
@@ -340,9 +346,9 @@ public class MockOTSClient implements OTS{
                     // mock worker
                     try {
                         send(OTSOpType.UPDATE_ROW, change.getTableName(), change.getRowPrimaryKey().getPrimaryKey(), change.getAttributeColumns());
-                        result.addUpdateRowResult(change.getTableName(), new RowStatus(new ConsumedCapacity()));
+                        result.addUpdateRowResult(new RowStatus(tableName, new ConsumedCapacity(), index));
                     } catch (RuntimeException e) {
-                        result.addUpdateRowResult(change.getTableName(), new RowStatus(new Error(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "CU NOT ENOUGH")));
+                        result.addUpdateRowResult(new RowStatus(tableName, new Error(OTSErrorCode.NOT_ENOUGH_CAPACITY_UNIT, "CU NOT ENOUGH"), index));
                     }
                 }
             }
