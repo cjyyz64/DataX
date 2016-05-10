@@ -1,16 +1,5 @@
 package com.alibaba.datax.plugin.writer.otswriter.functiontest;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.junit.AfterClass;
-import org.junit.Test;
-
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
@@ -30,6 +19,12 @@ import com.alibaba.datax.test.simulator.util.RecordReceiverForTest;
 import com.aliyun.openservices.ots.model.ColumnType;
 import com.aliyun.openservices.ots.model.ColumnValue;
 import com.aliyun.openservices.ots.model.PrimaryKeyType;
+import org.junit.AfterClass;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * 通过Update的方式导入数据到OTS中，验证数据的正确性

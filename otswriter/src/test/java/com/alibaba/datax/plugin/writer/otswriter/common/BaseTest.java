@@ -32,12 +32,12 @@ public class BaseTest{
     }
     
     public void createTable(List<PrimaryKeyType> pkType) throws Exception {
-        createTable(pkType, 5000, 5000);
+        createTable(pkType, 0, 0);
     }
     
     public void prepareData(List<PrimaryKeyType> pkType, List<ColumnType> attrTypes, long begin, long rowCount, double nullPercent) throws Exception {
         Table t = new Table(ots, tableName, pkType, attrTypes, nullPercent);
-        t.create(5000, 5000);
+        t.create(0, 0);
         t.insertData(begin, rowCount);
     }
     

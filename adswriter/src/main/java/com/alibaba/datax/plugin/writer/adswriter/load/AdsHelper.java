@@ -13,11 +13,13 @@ import com.alibaba.datax.plugin.writer.adswriter.ads.ColumnInfo;
 import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
 import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -31,13 +33,15 @@ public class AdsHelper {
     private String password;
     private String schema;
     private Long socketTimeout;
+    private String suffix;
 
-    public AdsHelper(String adsUrl, String userName, String password, String schema, Long socketTimeout) {
+    public AdsHelper(String adsUrl, String userName, String password, String schema, Long socketTimeout, String suffix) {
         this.adsURL = adsUrl;
         this.userName = userName;
         this.password = password;
         this.schema = schema;
         this.socketTimeout = socketTimeout;
+        this.suffix = suffix;
     }
 
     public String getAdsURL() {
@@ -104,23 +108,23 @@ public class AdsHelper {
                     null);
         }
 
-        String sql = "select ordinal_position,column_name,data_type,type_name,column_comment from information_schema.columns where table_schema='"
-                + schema + "' and table_name='" + table + "' order by ordinal_position";
-
+        
         Connection connection = null;
         Statement statement = null;
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout, this.suffix);
 
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
             connectionProps.put("password", password);
             connection = DriverManager.getConnection(url, connectionProps);
             statement = connection.createStatement();
-
-            rs = statement.executeQuery(sql);
+            // ads 表名、schema名不区分大小写, 提高用户易用性, 注意列顺序性
+            String columnMetaSql = String.format("select ordinal_position,column_name,data_type,type_name,column_comment from information_schema.columns where lower(table_schema) = `'%s'` and lower(table_name) = `'%s'` order by ordinal_position", schema.toLowerCase(), table.toLowerCase());
+            LOG.info(String.format("检查列信息sql语句:%s", columnMetaSql));
+            rs = statement.executeQuery(columnMetaSql);
 
             TableInfo tableInfo = new TableInfo();
             List<ColumnInfo> columnInfoList = new ArrayList<ColumnInfo>();
@@ -137,11 +141,30 @@ public class AdsHelper {
             if (columnInfoList.isEmpty()) {
                 throw DataXException.asDataXException(AdsWriterErrorCode.NO_ADS_TABLE, table + "不存在或者查询不到列信息. ");
             }
-
             tableInfo.setColumns(columnInfoList);
             tableInfo.setTableSchema(schema);
             tableInfo.setTableName(table);
-
+            DBUtil.closeDBResources(rs, statement, null);
+            
+            String tableMetaSql = String.format("select update_type, partition_type, partition_column, partition_count, primary_key_columns from information_schema.tables where lower(table_schema) = `'%s'` and lower(table_name) = `'%s'`", schema.toLowerCase(), table.toLowerCase());
+            LOG.info(String.format("检查表信息sql语句:%s", tableMetaSql));
+            statement = connection.createStatement();
+            rs = statement.executeQuery(tableMetaSql);
+            while (DBUtil.asyncResultSetNext(rs)) {
+                tableInfo.setUpdateType(rs.getString(1));
+                tableInfo.setPartitionType(rs.getString(2));
+                tableInfo.setPartitionColumn(rs.getString(3));
+                tableInfo.setPartitionCount(rs.getInt(4));
+                //primary_key_columns  ads主键是逗号分隔的，可以有多个
+                String primaryKeyColumns = rs.getString(5);
+                if (StringUtils.isNotBlank(primaryKeyColumns)) {
+                    tableInfo.setPrimaryKeyColumns(Arrays.asList(StringUtils.split(primaryKeyColumns, ",")));
+                } else {
+                    tableInfo.setPrimaryKeyColumns(null);
+                }
+                break;
+            }
+            DBUtil.closeDBResources(rs, statement, null);
             return tableInfo;
 
         } catch (ClassNotFoundException e) {
@@ -244,7 +267,7 @@ public class AdsHelper {
         ResultSet rs = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout);
+            String url = AdsUtil.prepareJdbcUrl(this.adsURL, this.schema, this.socketTimeout, this.suffix);
             Properties connectionProps = new Properties();
             connectionProps.put("user", userName);
             connectionProps.put("password", password);
@@ -350,6 +373,7 @@ public class AdsHelper {
             final String finalAdsUrl = this.adsURL;
             final String finalSchema = this.schema;
             final Long finalSocketTimeout = this.socketTimeout;
+            final String suffix = this.suffix;
             return RetryUtil.executeWithRetry(new Callable<String>() {
                 @Override
                 public String call() throws Exception {
@@ -358,7 +382,7 @@ public class AdsHelper {
                     ResultSet rs = null;
                     try {
                         
-                        String url = AdsUtil.prepareJdbcUrl(finalAdsUrl, finalSchema, finalSocketTimeout);
+                        String url = AdsUtil.prepareJdbcUrl(finalAdsUrl, finalSchema, finalSocketTimeout, suffix);
                         Properties connectionProps = new Properties();
                         connectionProps.put("user", userName);
                         connectionProps.put("password", password);

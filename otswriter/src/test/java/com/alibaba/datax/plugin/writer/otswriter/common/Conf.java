@@ -41,7 +41,7 @@ public class Conf {
         conf.setOperation(op);
 
         conf.setRetry(18);
-        conf.setSleepInMilliSecond(100);
+        conf.setSleepInMillisecond(100);
         conf.setBatchWriteCount(100);
         conf.setConcurrencyWrite(5);
         conf.setIoThreadCount(1);

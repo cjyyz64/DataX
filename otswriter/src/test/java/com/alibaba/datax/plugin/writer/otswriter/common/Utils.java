@@ -1,5 +1,6 @@
 package com.alibaba.datax.plugin.writer.otswriter.common;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -133,14 +134,13 @@ public class Utils {
     }
 
     public static Configuration loadConf() {
-        String path = "src/test/resources/conf.json";
+        File file = new File(Thread.currentThread().getContextClassLoader().getResource("conf.json").getFile());
         InputStream f;
         try {
-            f = new FileInputStream(path);
+            f = new FileInputStream(file);
             Configuration p = Configuration.from(f);
             return p;
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;

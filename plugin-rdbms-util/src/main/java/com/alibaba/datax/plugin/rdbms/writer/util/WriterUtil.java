@@ -108,21 +108,21 @@ public final class WriterUtil {
         }
     }
 
-    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode) {
-        return getWriteTemplate(columnHolders, valueHolders, writeMode, null, false);
-    }
-
-    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode,DataBaseType dataBaseType, boolean useUpdate) {
+    public static String getWriteTemplate(List<String> columnHolders, List<String> valueHolders, String writeMode, DataBaseType dataBaseType, boolean forceUseUpdate) {
         boolean isWriteModeLegal = writeMode.trim().toLowerCase().startsWith("insert")
-                || writeMode.trim().toLowerCase().startsWith("replace");
+                || writeMode.trim().toLowerCase().startsWith("replace")
+                || writeMode.trim().toLowerCase().startsWith("update");
 
         if (!isWriteModeLegal) {
             throw DataXException.asDataXException(DBUtilErrorCode.ILLEGAL_VALUE,
-                    String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
+                    String.format("您所配置的 writeMode:%s 错误. 因为DataX 目前仅支持replace,update 或 insert 方式. 请检查您的配置并作出修改.", writeMode));
         }
-
+        // && writeMode.trim().toLowerCase().startsWith("replace")
         String writeDataSqlTemplate;
-        if (dataBaseType != null && dataBaseType == DataBaseType.MySql && useUpdate && writeMode.trim().toLowerCase().startsWith("replace")) {
+        if (forceUseUpdate ||
+                ((dataBaseType == DataBaseType.MySql || dataBaseType == DataBaseType.Tddl) && writeMode.trim().toLowerCase().startsWith("update"))
+                ) {
+            //update只在mysql下使用
 
             writeDataSqlTemplate = new StringBuilder()
                     .append("INSERT INTO %s (").append(StringUtils.join(columnHolders, ","))
@@ -132,6 +132,10 @@ public final class WriterUtil {
                     .toString();
         } else {
 
+            //这里是保护,如果其他错误的使用了update,需要更换为replace
+            if (writeMode.trim().toLowerCase().startsWith("update")) {
+                writeMode = "replace";
+            }
             writeDataSqlTemplate = new StringBuilder().append(writeMode)
                     .append(" INTO %s (").append(StringUtils.join(columnHolders, ","))
                     .append(") VALUES(").append(StringUtils.join(valueHolders, ","))

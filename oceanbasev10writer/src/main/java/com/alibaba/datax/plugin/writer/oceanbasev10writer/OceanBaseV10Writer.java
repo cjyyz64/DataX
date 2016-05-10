@@ -1,13 +1,5 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer;
 
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -19,6 +11,13 @@ import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.MultiTableWriterTask;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.SingleTableWriterTask;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 2016-04-07

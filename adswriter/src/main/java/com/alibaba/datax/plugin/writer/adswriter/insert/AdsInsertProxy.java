@@ -6,82 +6,187 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
+import com.alibaba.datax.plugin.writer.adswriter.ads.TableInfo;
+import com.alibaba.datax.plugin.writer.adswriter.util.AdsUtil;
 import com.alibaba.datax.plugin.writer.adswriter.util.Constant;
 import com.alibaba.datax.plugin.writer.adswriter.util.Key;
 import com.mysql.jdbc.JDBC4PreparedStatement;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 
 public class AdsInsertProxy {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(AdsInsertProxy.class);
+    private static final boolean IS_DEBUG_ENABLE = LOG.isDebugEnabled();
 
     private String table;
     private List<String> columns;
     private TaskPluginCollector taskPluginCollector;
     private Configuration configuration;
     private Boolean emptyAsNull;
-    private String sqlPrefix;
+    
+    private String writeMode;
+    
+    private String insertSqlPrefix;
+    private String deleteSqlPrefix;
+    private int opColumnIndex;
+    private String lastDmlMode;
+    // columnName: <java sql type, ads type name>
+    private Map<String, Pair<Integer, String>> adsTableColumnsMetaData;
+    private Map<String, Pair<Integer, String>> userConfigColumnsMetaData;
+    // columnName: index @ ads column
+    private Map<String, Integer> primaryKeyNameIndexMap;
+    
+    private int retryTimeUpperLimit;
+    private Connection currentConnection;
 
-    private Triple<List<String>, List<Integer>, List<String>> resultSetMetaData;
-
-    public AdsInsertProxy(String table, List<String> columns, Configuration configuration, TaskPluginCollector taskPluginCollector) {
+    public AdsInsertProxy(String table, List<String> columns, Configuration configuration, TaskPluginCollector taskPluginCollector, TableInfo tableInfo) {
         this.table = table;
         this.columns = columns;
         this.configuration = configuration;
         this.taskPluginCollector = taskPluginCollector;
         this.emptyAsNull = configuration.getBool(Key.EMPTY_AS_NULL, false);
-        this.sqlPrefix = "insert into " + this.table + "("
-                + StringUtils.join(columns, ",") + ") values";
+        this.writeMode = configuration.getString(Key.WRITE_MODE);
+        this.insertSqlPrefix = String.format(Constant.INSERT_TEMPLATE, this.table, StringUtils.join(columns, ","));
+        this.deleteSqlPrefix = String.format(Constant.DELETE_TEMPLATE, this.table);
+        this.opColumnIndex = configuration.getInt(Key.OPIndex, 0);
+        this.retryTimeUpperLimit = configuration.getInt(
+                Key.RETRY_CONNECTION_TIME, Constant.DEFAULT_RETRY_TIMES);
+        
+        //目前ads新建的表如果未插入数据不能通过select colums from table where 1=2，获取列信息，需要读取ads数据字典
+        //not this: this.resultSetMetaData = DBUtil.getColumnMetaData(connection, this.table, StringUtils.join(this.columns, ","));
+        //no retry here(fetch meta data) 注意实时表列换序的可能
+        this.adsTableColumnsMetaData = AdsInsertUtil.getColumnMetaData(tableInfo, this.columns);
+        this.userConfigColumnsMetaData = new HashMap<String, Pair<Integer, String>>();
+        
+        List<String> primaryKeyColumnName =  tableInfo.getPrimaryKeyColumns();
+        List<String> adsColumnsNames = tableInfo.getColumnsNames();
+        this.primaryKeyNameIndexMap = new HashMap<String, Integer>();
+        //warn: 要使用用户配置的column顺序, 不要使用从ads元数据获取的column顺序, 原来复用load列顺序其实有问题的
+        for (int i = 0; i < this.columns.size(); i++) {
+            String oriEachColumn = this.columns.get(i);
+            String eachColumn = oriEachColumn;
+            // 防御性保留字
+            if (eachColumn.startsWith(Constant.ADS_QUOTE_CHARACTER) && eachColumn.endsWith(Constant.ADS_QUOTE_CHARACTER)) {
+                eachColumn = eachColumn.substring(1, eachColumn.length() - 1);
+            }
+            for (String eachPrimary : primaryKeyColumnName) {
+                if (eachColumn.equalsIgnoreCase(eachPrimary)) {
+                    this.primaryKeyNameIndexMap.put(oriEachColumn, i);
+                }
+            }
+            for (String eachAdsColumn : adsColumnsNames) {
+                if (eachColumn.equalsIgnoreCase(eachAdsColumn)) {
+                    this.userConfigColumnsMetaData.put(oriEachColumn, this.adsTableColumnsMetaData.get(eachAdsColumn));
+                }
+            }
+        }
     }
 
     public void startWriteWithConnection(RecordReceiver recordReceiver,
                                                 Connection connection,
                                                 int columnNumber) {
-        //目前 ads 新建的表 如果未插入数据  不能通过select colums from table where 1=2，获取列信息。
-//        this.resultSetMetaData = DBUtil.getColumnMetaData(connection,
-//                this.table, StringUtils.join(this.columns, ","));
-
-        this.resultSetMetaData = AdsInsertUtil.getColumnMetaData(configuration, columns);
-
+        this.currentConnection = connection;
         int batchSize = this.configuration.getInt(Key.BATCH_SIZE, Constant.DEFAULT_BATCH_SIZE);
+        // insert缓冲，多个insert合并发送到ads
         List<Record> writeBuffer = new ArrayList<Record>(batchSize);
+        List<Record> deleteBuffer = null;
+        if (this.writeMode.equalsIgnoreCase(Constant.STREAMMODE)) {
+            // delete缓冲，多个delete合并发送到ads
+            deleteBuffer = new ArrayList<Record>(batchSize);
+        }
         try {
             Record record;
             while ((record = recordReceiver.getFromReader()) != null) {
-                if (record.getColumnNumber() != columnNumber) {
-                    // 源头读取字段列数与目的表字段写入列数不相等，直接报错
-                    throw DataXException
-                            .asDataXException(
-                                    DBUtilErrorCode.CONF_ERROR,
-                                    String.format(
-                                            "列配置信息有错误. 因为您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置并作出修改.",
-                                            record.getColumnNumber(),
-                                            columnNumber));
-                }
-
-                writeBuffer.add(record);
-
-                if (writeBuffer.size() >= batchSize) {
-                    //doOneInsert(connection, writeBuffer);
-                    doBatchInsertWithOneStatement(connection, writeBuffer);
-                    writeBuffer.clear();
+                if (this.writeMode.equalsIgnoreCase(Constant.INSERTMODE)) {
+                    if (record.getColumnNumber() != columnNumber) {
+                        // 源头读取字段列数与目的表字段写入列数不相等，直接报错
+                        throw DataXException
+                                .asDataXException(
+                                        DBUtilErrorCode.CONF_ERROR,
+                                        String.format(
+                                                "列配置信息有错误. 因为您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不相等. 请检查您的配置并作出修改.",
+                                                record.getColumnNumber(),
+                                                columnNumber));
+                    }
+                    writeBuffer.add(record);
+                    if (writeBuffer.size() >= batchSize) {
+                        doBatchDmlWithOneStatement(writeBuffer, Constant.INSERTMODE);
+                        writeBuffer.clear();
+                    }
+                } else {
+                    if (record.getColumnNumber() != columnNumber + 1) {
+                        // 源头读取字段列数需要为目的表字段写入列数+1, 直接报错, 源头多了一列OP
+                        throw DataXException
+                                .asDataXException(
+                                        DBUtilErrorCode.CONF_ERROR,
+                                        String.format(
+                                                "列配置信息有错误. 因为您配置的任务中，源头读取字段数:%s 与 目的表要写入的字段数:%s 不满足源头多1列操作类型列. 请检查您的配置并作出修改.",
+                                                record.getColumnNumber(),
+                                                columnNumber));
+                    }
+                    String optionColumnValue = record.getColumn(this.opColumnIndex).asString();
+                    OperationType operationType = OperationType.asOperationType(optionColumnValue);
+                    if (operationType.isInsertTemplate()) {
+                        writeBuffer.add(record);
+                        if (this.lastDmlMode == null || this.lastDmlMode == Constant.INSERTMODE ) {
+                            this.lastDmlMode = Constant.INSERTMODE;
+                            if (writeBuffer.size() >= batchSize) {
+                                doBatchDmlWithOneStatement(writeBuffer, Constant.INSERTMODE);
+                                writeBuffer.clear();
+                            }
+                        } else  {
+                            this.lastDmlMode = Constant.INSERTMODE;
+                            // 模式变换触发一次提交ads delete, 并进入insert模式
+                            doBatchDmlWithOneStatement(deleteBuffer, Constant.DELETEMODE);
+                            deleteBuffer.clear();
+                        }
+                    } else if (operationType.isDeleteTemplate()) {
+                        deleteBuffer.add(record);
+                        if (this.lastDmlMode == null || this.lastDmlMode == Constant.DELETEMODE ) { 
+                            this.lastDmlMode = Constant.DELETEMODE;
+                            if (deleteBuffer.size() >= batchSize) {
+                                doBatchDmlWithOneStatement(deleteBuffer, Constant.DELETEMODE);
+                                deleteBuffer.clear();
+                            }
+                        } else {
+                            this.lastDmlMode = Constant.DELETEMODE;
+                            // 模式变换触发一次提交ads insert, 并进入delete模式
+                            doBatchDmlWithOneStatement(writeBuffer, Constant.INSERTMODE);
+                            writeBuffer.clear();
+                        }
+                    } else {
+                        // 注意OP操作类型的脏数据, 这里不需要重试
+                        this.taskPluginCollector.collectDirtyRecord(record, String.format("不支持您的更新类型:%s", optionColumnValue));
+                    }
                 }
             }
+            
             if (!writeBuffer.isEmpty()) {
-                doOneInsert(connection, writeBuffer);
+                doOneRecord(writeBuffer, Constant.INSERTMODE);
                 writeBuffer.clear();
+            }
+            // 2个缓冲最多一个不为空同时
+            if (null!= deleteBuffer && !deleteBuffer.isEmpty()) {
+                doOneRecord(deleteBuffer, Constant.DELETEMODE);
+                deleteBuffer.clear();
             }
         } catch (Exception e) {
             throw DataXException.asDataXException(
@@ -92,63 +197,39 @@ public class AdsInsertProxy {
         }
     }
 
-    //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧
-    @Deprecated
-    protected void doBatchInsert(Connection connection, List<Record> buffer) throws SQLException {
-        Statement statement = null;
-        try {
-            connection.setAutoCommit(false);
-            statement = connection.createStatement();
-
-            for (Record record : buffer) {
-                String sql = generateInsertSql(connection, record);
-                statement.addBatch(sql);
-            }
-            statement.executeBatch();
-            connection.commit();
-        } catch (SQLException e) {
-            LOG.warn("回滚此次写入, 采用每次写入一行方式提交. 因为:" + e.getMessage(), e);
-            connection.rollback();
-            doOneInsert(connection, buffer);
-        } catch (Exception e) {
-            throw DataXException.asDataXException(
-                    DBUtilErrorCode.WRITE_DATA_ERROR, e);
-        } finally {
-            DBUtil.closeDBResources(statement, null);
-        }
-    }
-    
-    private void doBatchInsertWithOneStatement(Connection connection,
-            List<Record> buffer) throws SQLException {
+    //warn: ADS 无法支持事物，这里面的roll back都是不管用的吧, not used
+    private void doBatchDmlWithOneStatement(List<Record> buffer, String mode) throws SQLException {
         Statement statement = null;
         String sql = null;
         try {
-            connection.setAutoCommit(true);
-            statement = connection.createStatement();
             int bufferSize = buffer.size();
             if (buffer.isEmpty()) {
                 return;
             }
             StringBuilder sqlSb = new StringBuilder();
-            sqlSb.append(this.generateInsertSql(connection, buffer.get(0)));
+            // connection.setAutoCommit(true);
+            //mysql impl warn: if a database access error occurs or this method is called on a closed connection throw SQLException
+            statement = this.currentConnection.createStatement();
+            sqlSb.append(this.generateDmlSql(this.currentConnection, buffer.get(0), mode));
             for (int i = 1; i < bufferSize; i++) {
                 Record record = buffer.get(i);
-                this.appendInsertSqlValues(connection, record, sqlSb);
+                this.appendDmlSqlValues(this.currentConnection, record, sqlSb, mode);
             }
-            try {
-                sql = sqlSb.toString();
+            sql = sqlSb.toString();
+            if (IS_DEBUG_ENABLE) {
                 LOG.debug(sql);
-                int status = statement.executeUpdate(sql);
-                sql = null;
-            } catch (SQLException e) {
-                LOG.warn("doBatchInsertWithOneStatement meet a exception: " + sql, e);
-                LOG.info("try to re insert each record...");
-                // warn: 无法明确得知具体那一条是脏数据了
-                doOneInsert(connection, buffer);
-                // for (Record eachRecord : buffer) {
-                // this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
-                // }
             }
+            @SuppressWarnings("unused")
+            int status = statement.executeUpdate(sql);
+            sql = null;
+        } catch (SQLException e) {
+            LOG.warn("doBatchDmlWithOneStatement meet a exception: " + sql, e);
+            LOG.info("try to re execute for each record...");
+            doOneRecord(buffer, mode);
+            // below is the old way
+            // for (Record eachRecord : buffer) {
+            // this.taskPluginCollector.collectDirtyRecord(eachRecord, e);
+            // }
         } catch (Exception e) {
             LOG.error("插入异常, sql: " + sql);
             throw DataXException.asDataXException(
@@ -157,25 +238,64 @@ public class AdsInsertProxy {
             DBUtil.closeDBResources(statement, null);
         }
     }
-
-    protected void doOneInsert(Connection connection, List<Record> buffer) {
+    
+    protected void doOneRecord(List<Record> buffer, final String mode) {
+        List<Class<?>> retryExceptionClasss = new ArrayList<Class<?>>();
+        retryExceptionClasss.add(com.mysql.jdbc.exceptions.jdbc4.CommunicationsException.class);
+        retryExceptionClasss.add(java.net.SocketException.class);
+        for (final Record record : buffer) {
+            try {
+                RetryUtil.executeWithRetry(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        doOneRecordDml(record, mode);
+                        return true;
+                    }
+                }, this.retryTimeUpperLimit, 2000L, true, retryExceptionClasss);
+            } catch (Exception e) {
+                // 不能重试的一行，记录脏数据
+                this.taskPluginCollector.collectDirtyRecord(record, e);
+            }
+        }
+    }
+    
+    @SuppressWarnings("resource")
+    protected void doOneRecordDml(Record record, String mode) throws Exception {
         Statement statement = null;
         String sql = null;
         try {
-            connection.setAutoCommit(true);
-            statement = connection.createStatement();
-            
-            for (Record record : buffer) {
-                try {
-                    sql = generateInsertSql(connection, record);
-                    LOG.debug(sql);
-                    int status = statement.executeUpdate(sql);
-                    sql = null;
-                } catch (SQLException e) {
-                    LOG.error("doOneInsert meet a exception: " + sql, e);
-                    this.taskPluginCollector.collectDirtyRecord(record, e);
-                }
+            // connection.setAutoCommit(true);
+            statement = this.currentConnection.createStatement();
+            sql = generateDmlSql(this.currentConnection, record, mode);
+            if (IS_DEBUG_ENABLE) {
+                LOG.debug(sql);
             }
+            @SuppressWarnings("unused")
+            int status = statement.executeUpdate(sql);
+            sql = null;
+        } catch (SQLException e) {
+            LOG.error("doOneDml meet a exception: " + sql, e);
+            //need retry before record dirty data
+            //this.taskPluginCollector.collectDirtyRecord(record, e);
+            // 更新当前可用连接
+            Exception eachException = e;
+            int maxIter = 0;// 避免死循环
+            while (null != eachException && maxIter < 100) {
+                if (this.isRetryable(eachException)) {
+                    LOG.warn("doOneDml meet a retry exception: " + e.getMessage());
+                    this.currentConnection = AdsUtil.getAdsConnect(this.configuration);
+                    throw eachException;
+                } else {
+                    try {
+                        eachException = (Exception) eachException.getCause();
+                    } catch (Exception castException) {
+                        LOG.warn("doOneDml meet a no! retry exception: " + e.getMessage());
+                        throw e;
+                    }
+                }
+                maxIter++;
+            }
+            throw e;
         } catch (Exception e) {
             LOG.error("插入异常, sql: " + sql);
             throw DataXException.asDataXException(
@@ -184,34 +304,97 @@ public class AdsInsertProxy {
             DBUtil.closeDBResources(statement, null);
         }
     }
-
-    private String generateInsertSql(Connection connection, Record record) throws SQLException {
-        StringBuilder sqlSb = new StringBuilder(this.sqlPrefix + "(");
-        for (int i = 0; i < columns.size(); i++) {
-            if((i+1) != columns.size()) {
-                sqlSb.append("?,");
-            } else {
-                sqlSb.append("?");
+    
+    private boolean isRetryable(Throwable e) {
+        Class<?> meetExceptionClass = e.getClass();
+        if (meetExceptionClass == com.mysql.jdbc.exceptions.jdbc4.CommunicationsException.class) {
+            return true;
+        }
+        if (meetExceptionClass == java.net.SocketException.class) {
+            return true;
+        }
+        return false;
+    }
+    
+    private String generateDmlSql(Connection connection, Record record, String mode) throws SQLException {
+        String sql = null;
+        StringBuilder sqlSb = new StringBuilder();
+        if (mode.equalsIgnoreCase(Constant.INSERTMODE)) {
+            sqlSb.append(this.insertSqlPrefix);
+            sqlSb.append("(");
+            int columnsSize = this.columns.size();
+            for (int i = 0; i < columnsSize; i++) {
+                if((i + 1) != columnsSize) {
+                    sqlSb.append("?,");
+                } else {
+                    sqlSb.append("?");
+                }
             }
+            sqlSb.append(")");
+            //mysql impl warn: if a database access error occurs or this method is called on a closed connection
+            PreparedStatement statement = connection.prepareStatement(sqlSb.toString());
+            for (int i = 0; i < this.columns.size(); i++) {
+                int preparedParamsIndex = i;
+                if (Constant.STREAMMODE.equalsIgnoreCase(this.writeMode)) {
+                    if (preparedParamsIndex >= this.opColumnIndex) {
+                        preparedParamsIndex = i + 1;
+                    } 
+                }
+                String columnName = this.columns.get(i);
+                int columnSqltype = this.userConfigColumnsMetaData.get(columnName).getLeft();
+                checkColumnType(statement, columnSqltype, record.getColumn(preparedParamsIndex), i, columnName);
+            }
+            sql = ((JDBC4PreparedStatement) statement).asSql();
+            DBUtil.closeDBResources(statement, null);
+        } else {
+            sqlSb.append(this.deleteSqlPrefix);
+            sqlSb.append("(");
+            Set<Entry<String, Integer>> primaryEntrySet = this.primaryKeyNameIndexMap.entrySet();
+            int entrySetSize = primaryEntrySet.size();
+            int i = 0;
+            for (Entry<String, Integer> eachEntry : primaryEntrySet) {
+                if((i + 1) != entrySetSize) {
+                    sqlSb.append(String.format(" (%s = ?) and ", eachEntry.getKey()));
+                } else {
+                    sqlSb.append(String.format(" (%s = ?) ", eachEntry.getKey()));
+                }
+                i++;
+            }
+            sqlSb.append(")");
+            //mysql impl warn: if a database access error occurs or this method is called on a closed connection
+            PreparedStatement statement = connection.prepareStatement(sqlSb.toString());
+            i = 0;
+            //ads的real time表只能是1级分区、且分区列类型是long, 但是这里是需要主键删除的
+            for (Entry<String, Integer> each : primaryEntrySet) {
+                String columnName = each.getKey();
+                int columnSqlType = this.userConfigColumnsMetaData.get(columnName).getLeft();
+                int primaryKeyInUserConfigIndex = this.primaryKeyNameIndexMap.get(columnName);
+                if (primaryKeyInUserConfigIndex >= this.opColumnIndex) {
+                    primaryKeyInUserConfigIndex ++;
+                }
+                checkColumnType(statement, columnSqlType, record.getColumn(primaryKeyInUserConfigIndex), i, columnName);
+                i++;
+            }
+            sql = ((JDBC4PreparedStatement) statement).asSql();
+            DBUtil.closeDBResources(statement, null);
         }
-        sqlSb.append(")");
-        PreparedStatement statement = connection.prepareStatement(sqlSb.toString());
-        for (int i = 0; i < columns.size(); i++) {
-            int columnSqltype = this.resultSetMetaData.getMiddle().get(i);
-            checkColumnType(statement, columnSqltype, record.getColumn(i), i);
-        }
-        String sql = ((JDBC4PreparedStatement) statement).asSql();
-        DBUtil.closeDBResources(statement, null);
         return sql;
     }
     
-    private void appendInsertSqlValues(Connection connection, Record record, StringBuilder sqlSb) throws SQLException { 
-        String sqlResult = this.generateInsertSql(connection, record);
-        sqlSb.append(",");
-        sqlSb.append(sqlResult.substring(this.sqlPrefix.length()));
+    private void appendDmlSqlValues(Connection connection, Record record, StringBuilder sqlSb, String mode) throws SQLException { 
+        String sqlResult = this.generateDmlSql(connection, record, mode);
+        if (mode.equalsIgnoreCase(Constant.INSERTMODE)) {
+            sqlSb.append(",");
+            sqlSb.append(sqlResult.substring(this.insertSqlPrefix.length()));
+        } else {
+            // 之前已经充分增加过括号了
+            sqlSb.append(" or ");
+            sqlSb.append(sqlResult.substring(this.deleteSqlPrefix.length()));
+        }
     }
 
-    private void checkColumnType(PreparedStatement statement, int columnSqltype, Column column, int columnIndex) throws SQLException {
+    @SuppressWarnings({ "null" })
+    private void checkColumnType(PreparedStatement statement, int columnSqltype, Column column, int preparedPatamIndex, String columnName) throws SQLException {
         java.util.Date utilDate;
         switch (columnSqltype) {
             case Types.CHAR:
@@ -223,7 +406,7 @@ public class AdsInsertProxy {
             case Types.NVARCHAR:
             case Types.LONGNVARCHAR:
                 String strValue = column.asString();
-                statement.setString(columnIndex + 1, strValue);
+                statement.setString(preparedPatamIndex + 1, strValue);
                 break;
 
             case Types.SMALLINT:
@@ -234,9 +417,10 @@ public class AdsInsertProxy {
             case Types.REAL:
                 String numValue = column.asString();
                 if(emptyAsNull && "".equals(numValue) || numValue == null){
-                    statement.setLong(columnIndex + 1, (Long) null);
+                    //statement.setObject(preparedPatamIndex + 1,  null);
+                    statement.setNull(preparedPatamIndex + 1, Types.BIGINT);
                 } else{
-                    statement.setLong(columnIndex + 1, column.asLong());
+                    statement.setLong(preparedPatamIndex + 1, column.asLong());
                 }
                 break;
                 
@@ -244,16 +428,22 @@ public class AdsInsertProxy {
             case Types.DOUBLE:
                 String floatValue = column.asString();
                 if(emptyAsNull && "".equals(floatValue) || floatValue == null){
-                    statement.setDouble(columnIndex + 1, (Double) null);
+                    //statement.setObject(preparedPatamIndex + 1,  null);
+                    statement.setNull(preparedPatamIndex + 1, Types.DOUBLE);
                 } else{
-                    statement.setDouble(columnIndex + 1, column.asDouble());
+                    statement.setDouble(preparedPatamIndex + 1, column.asDouble());
                 }
                 break;
 
             //tinyint is a little special in some database like mysql {boolean->tinyint(1)}
             case Types.TINYINT:
                 Long longValue = column.asLong();
-                statement.setLong(columnIndex + 1, longValue);
+                if (null == longValue) {
+                    statement.setNull(preparedPatamIndex + 1, Types.BIGINT);
+                } else {
+                    statement.setLong(preparedPatamIndex + 1, longValue);
+                }
+                
                 break;
 
             case Types.DATE:
@@ -272,7 +462,7 @@ public class AdsInsertProxy {
                 if (null != utilDate) {
                     sqlDate = new java.sql.Date(utilDate.getTime());
                 } 
-                statement.setDate(columnIndex + 1, sqlDate);
+                statement.setDate(preparedPatamIndex + 1, sqlDate);
                 break;
 
             case Types.TIME:
@@ -291,7 +481,7 @@ public class AdsInsertProxy {
                 if (null != utilDate) {
                     sqlTime = new java.sql.Time(utilDate.getTime());
                 }
-                statement.setTime(columnIndex + 1, sqlTime);
+                statement.setTime(preparedPatamIndex + 1, sqlTime);
                 break;
 
             case Types.TIMESTAMP:
@@ -311,25 +501,27 @@ public class AdsInsertProxy {
                     sqlTimestamp = new java.sql.Timestamp(
                             utilDate.getTime());
                 }
-                statement.setTimestamp(columnIndex + 1, sqlTimestamp);
+                statement.setTimestamp(preparedPatamIndex + 1, sqlTimestamp);
                 break;
 
             case Types.BOOLEAN:
-            case Types.BIT:
-                statement.setBoolean(columnIndex + 1, column.asBoolean());
+            //case Types.BIT: ads 没有bit
+                Boolean booleanValue = column.asBoolean();
+                if (null == booleanValue) {
+                    statement.setNull(preparedPatamIndex + 1, Types.BOOLEAN);
+                } else {
+                    statement.setBoolean(preparedPatamIndex + 1, booleanValue);
+                }
+                
                 break;
             default:
+                Pair<Integer, String> columnMetaPair = this.userConfigColumnsMetaData.get(columnName);
                 throw DataXException
                         .asDataXException(
                                 DBUtilErrorCode.UNSUPPORTED_TYPE,
                                 String.format(
-                                        "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%d], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
-                                        this.resultSetMetaData.getLeft()
-                                                .get(columnIndex),
-                                        this.resultSetMetaData.getMiddle()
-                                                .get(columnIndex),
-                                        this.resultSetMetaData.getRight()
-                                                .get(columnIndex)));
+                                        "您的配置文件中的列配置信息有误. 因为DataX 不支持数据库写入这种字段类型. 字段名:[%s], 字段类型:[%s], 字段Java类型:[%s]. 请修改表中该字段的类型或者不同步该字段.",
+                                        columnName, columnMetaPair.getRight(), columnMetaPair.getLeft()));
         }
     }
 }
