@@ -1,6 +1,6 @@
 {
-    "endpoint":"http://redchen-instance.cn-hangzhou.ots.aliyuncs.com",
-    "accessid":"5viOHfldyK6K72ht",
-    "accesskey":"n1raV0YxsLv0TG4nSVWqTJ7YSq2mvK",
-    "instance-name":"redchen-instance"
+    "endpoint":"http://10.101.168.111:7000",
+    "accessid":"accessid_for_zzf_test",
+    "accesskey":"accesskey_for_zzf_test",
+    "instance-name":"publictest"
 }

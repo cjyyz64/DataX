@@ -94,7 +94,7 @@ public class RecordCountNotMatchConfigErrorFunctiontest{
         conf.setOperation(OTSOpType.UPDATE_ROW);
         
         conf.setRetry(1);
-        conf.setSleepInMilliSecond(100);
+        conf.setSleepInMillisecond(100);
         conf.setBatchWriteCount(5);
         conf.setConcurrencyWrite(5);
         

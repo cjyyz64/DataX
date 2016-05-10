@@ -362,6 +362,9 @@ public class ParamParseFunctiontest {
         input.add("PUTROW");
         //writeMode的置为UPADTEROW
         input.add("UPDATEROW");
+        input.add("DELETEROW");
+        input.add("DeleteRow");
+        input.add("deleterow");
         
         for (String str : input) {
             LOG.debug("Param:{}", str);
@@ -381,7 +384,7 @@ public class ParamParseFunctiontest {
             proxy.init(p);
             assertTrue(false);
         } catch (Exception e) {
-            assertEquals("The 'writeMode' only support 'PutRow' and 'UpdateRow' not 'hello'.", e.getMessage());
+            assertEquals("The 'writeMode' only support 'PutRow', 'UpdateRow' or 'DeleteRow', not 'hello'.", e.getMessage());
         }
     }
     
@@ -395,12 +398,12 @@ public class ParamParseFunctiontest {
         proxy.init(p);
         OTSConf conf = proxy.getOTSConf();
         assertEquals(18,  conf.getRetry());
-        assertEquals(100, conf.getSleepInMilliSecond());
+        assertEquals(100, conf.getSleepInMillisecond());
         assertEquals(100, conf.getBatchWriteCount());
         assertEquals(5,  conf.getConcurrencyWrite());
         assertEquals(1,   conf.getIoThreadCount());
-        assertEquals(60000, conf.getSocketTimeout());
-        assertEquals(60000, conf.getConnectTimeout());
+        assertEquals(20000, conf.getSocketTimeout());
+        assertEquals(10000, conf.getConnectTimeout());
         assertEquals(1024*1024, conf.getRestrictConf().getRequestTotalSizeLimition());
     }
     
@@ -410,19 +413,19 @@ public class ParamParseFunctiontest {
         OtsWriterMasterProxy proxy = new OtsWriterMasterProxy();
         Map<String, String> lines = this.getLines();
         lines.put(OTSConst.RETRY, "\"maxRetryTime\": 11");
-        lines.put(OTSConst.SLEEP_IN_MILLI_SECOND, "\"retrySleepInMillionSecond\": 12");
+        lines.put(OTSConst.SLEEP_IN_MILLISECOND, "\"retrySleepInMillisecond\": 12");
         lines.put(OTSConst.BATCH_WRITE_COUNT, "\"batchWriteCount\": 13");
         lines.put(OTSConst.CONCURRENCY_WRITE, "\"concurrencyWrite\": 14");
         lines.put(OTSConst.IO_THREAD_COUNT, "\"ioThreadCount\": 15");
-        lines.put(OTSConst.SOCKET_TIMEOUT, "\"socketTimeoutInMillionSecond\": 17");
-        lines.put(OTSConst.CONNECT_TIMEOUT, "\"connectTimeoutInMillionSecond\": 18");
-        lines.put(OTSConst.REQUEST_TOTAL_SIZE_LIMITION, "\"requestTotalSizeLimition\": 19");
+        lines.put(OTSConst.SOCKET_TIMEOUT, "\"socketTimeoutInMillisecond\": 17");
+        lines.put(OTSConst.CONNECT_TIMEOUT, "\"connectTimeoutInMillisecond\": 18");
+        lines.put(OTSConst.REQUEST_TOTAL_SIZE_LIMITATION, "\"requestTotalSizeLimitation\": 19");
         String json = this.linesToJson(lines);
         Configuration p = Configuration.from(json);
         proxy.init(p);
         OTSConf conf = proxy.getOTSConf();
         assertEquals(11, conf.getRetry());
-        assertEquals(12, conf.getSleepInMilliSecond());
+        assertEquals(12, conf.getSleepInMillisecond());
         assertEquals(13, conf.getBatchWriteCount());
         assertEquals(14, conf.getConcurrencyWrite());
         assertEquals(15, conf.getIoThreadCount());
