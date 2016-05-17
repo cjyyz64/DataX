@@ -351,9 +351,9 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 				ps.executeBatch();
 				conn.commit();
 			} catch (SQLException e) {
-				LOG.warn("回滚此次写入, 休眠 1 秒,采用每次写入一行方式提交. 因为:", e);
+				LOG.warn("回滚此次写入, 休眠 10 秒,采用每次写入一行方式提交. 因为:SQLState:"+e.getSQLState()+",ErrorCode:"+e.getErrorCode(), e);
 				conn.rollback();
-				OBUtils.sleep(1000);
+				OBUtils.sleep(10000);
 				doRuleOneInsert(conn, tableName, list);
 			} finally {
 				DBUtil.closeDBResources(ps, null);

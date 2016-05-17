@@ -5,12 +5,14 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.core.statistics.communication.Communication;
 import com.alibaba.datax.core.taskgroup.runner.ReaderRunner;
 import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.container.LoadUtil;
 import com.alibaba.datax.test.simulator.util.BasicPluginTest;
 import com.alibaba.datax.test.simulator.util.RecordSenderForTest;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
@@ -161,6 +163,7 @@ public abstract class BasicReaderPluginTest extends BasicPluginTest {
                 PluginType.READER, getTestPluginName());
 
         readerRunner.setJobConf(jobConf);
+        readerRunner.setRunnerCommunication(new Communication()); 
         readerRunner.setRecordSender(new RecordSenderForTest(printWriter,
                 noteRecordForTest));
 

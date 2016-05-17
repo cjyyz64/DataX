@@ -110,13 +110,13 @@ public final class OBDataSource {
 
                 public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
                     return null;//for > JDK6 compile
-                }
+                };
 
                 private String connectionProperties(){
                     long ms = timeout * 60 * 1000;
                     long us = ms * 1000;
                     log.debug(String.format("set timeout to %s minutes", timeout));
-                    return String.format("socketTimeout=%d;sessionVariables=ob_query_timeout=%d",ms,us);
+                    return String.format("useServerPrepStmts=false;socketTimeout=%d;sessionVariables=ob_query_timeout=%d",ms,us);
                 }
             };
         }

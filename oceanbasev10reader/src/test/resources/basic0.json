@@ -1,0 +1,51 @@
+{
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 5
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "oceanbasev10reader",
+                    "parameter": {
+                        "username": "datax",
+                        "password": "datax",
+                        "column": [
+                            "db_id",
+                            "db_type",
+                            "db_ip",
+                            "db_port",
+                            "db_role",
+                            "db_name",
+                            "db_username",
+                            "db_password",
+                            "db_modify_time",
+                            "db_modify_user",
+                            "db_description",
+                            "db_tddl_info"
+                        ],
+                        "where": "",
+                        "session": {
+                            "character_set_client": "utf8",
+                            "character_set_results": "utf8",
+                            "character_set_connection": "utf8"
+                        },
+                        "connection": [
+                            {
+                                "table": [
+                                    "db_info_for_writer"
+                                ],
+                                "jdbcUrl": [
+                                    "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax?useUnicode=true&characterEncoding=utf-8"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "writer": {}
+            }
+        ]
+    }
+}
