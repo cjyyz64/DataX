@@ -85,6 +85,12 @@ public class BufferBarrels {
         }
     }
 
+    public String getJSONData(){
+        JSONArray data = new JSONArray(bufferToList(buffer));
+        return data.toJSONString();
+    }
+
+
     /**
      * 提交缓冲区数据
      */
@@ -99,13 +105,12 @@ public class BufferBarrels {
             httpPost = new HttpPost(String.format("%s/%s?alive=%d", baseUrl, appkey, ttl));
             httpPost.addHeader("Connection", "Keep-Alive");
             httpPost.addHeader("token", token);
-            JSONArray data = new JSONArray(bufferToList(buffer));
             if (gzip) {
                 httpPost.addHeader("Content-Encoding", "gzip");
-                byte[] zipData = gzip((data.toJSONString().getBytes(UTF_8)));
+                byte[] zipData = gzip((getJSONData().getBytes(UTF_8)));
                 postEntity = new ByteArrayEntity(zipData, ContentType.APPLICATION_JSON);
             } else {
-                postEntity = new StringEntity(new JSONArray(bufferToList(buffer)).toJSONString(), UTF_8);
+                postEntity = new StringEntity(getJSONData(), UTF_8);
             }
             httpPost.setEntity(postEntity);
             resp = hc.execute(httpPost);
@@ -115,14 +120,14 @@ public class BufferBarrels {
                 return;
             } else {
                 log.error("Batch Insert Error:" + result);
-                failedCount += batchSize;
+                failedCount += buffer.size();
             }
         } catch (ClientProtocolException e) {
             log.error("Batch Insert Error", e);
-            failedCount += batchSize;
+            failedCount += buffer.size();
         } catch (IOException e) {
             log.error("Batch Insert Error", e);
-            failedCount += batchSize;
+            failedCount += buffer.size();
         } finally {
             try {
                 if (resp != null) {
