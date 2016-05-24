@@ -66,4 +66,9 @@ public class BaiscTest extends BasicWriterPluginTest {
         task.startWrite(super.createRecordReceiverForTest());
         Assert.assertEquals(10,task.getBarrels().getFailedCount());
     }
+
+    @Test
+    public void testJob() throws Exception {
+        super.doWriterTest("it.json",2);
+    }
 }

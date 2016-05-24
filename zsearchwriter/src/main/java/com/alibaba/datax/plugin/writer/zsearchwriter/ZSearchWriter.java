@@ -7,7 +7,7 @@
 //import com.alibaba.datax.common.spi.Writer;
 //import com.alibaba.datax.common.util.Configuration;
 //import com.alipay.zsearch.sdk.ErrorMessage;
-//import com.alipay.zsearch.sdk.Pair;
+//import com.alipay.zsearch.sdk.Triple;
 //import com.alipay.zsearch.sdk.ZSearch;
 //import org.apache.commons.lang3.StringUtils;
 //import org.apache.http.HttpResponse;
@@ -110,7 +110,7 @@
 //
 //                for (int i = 0; i < record.getColumnNumber(); i++) {
 //                    Column column = record.getColumn(i);
-//                    Pair<String, String> columnMeta = zSearchConfig.getColumnMeta(i);
+//                    Triple<String, String> columnMeta = zSearchConfig.getColumnMeta(i);
 //                    String columnName = columnMeta.fst;
 //                    String columnType = columnMeta.snd;
 //

@@ -6,11 +6,14 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.fastjson.JSON;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
@@ -26,6 +29,29 @@ import java.util.*;
 public class ZSearchBatchWriter extends Writer {
 
     private static final Logger log = LoggerFactory.getLogger(ZSearchBatchWriter.class);
+    private static HttpClient httpClient = new DefaultHttpClient();
+
+    /**
+     * 清除表数据
+     *
+     * @param server
+     * @param tableName
+     */
+    private static void doCleanup(String server, String tableName) {
+        HttpDelete delete = new HttpDelete(String.format("%s/%s/_filter", server, tableName));
+        delete.addHeader("admin", "nimda");
+        httpCall(delete);
+    }
+
+    private static String httpCall(HttpRequestBase request) {
+        try {
+            HttpResponse resp = httpClient.execute(request);
+            return EntityUtils.toString(resp.getEntity());
+        } catch (IOException e) {
+            throw DataXException
+                    .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "zsearch服务端连接出错");
+        }
+    }
 
     /**
      * Job
@@ -33,7 +59,7 @@ public class ZSearchBatchWriter extends Writer {
     public static class Job extends Writer.Job {
         private static final Logger LOG = LoggerFactory.getLogger(Job.class);
 
-        private Configuration jobConfig = null;
+        private Configuration jobConfig     = null;
         private ZSearchConfig zSearchConfig = null;
 
         @Override
@@ -100,6 +126,7 @@ public class ZSearchBatchWriter extends Writer {
             log.info("::::::::PREPARED::::::" + Thread.currentThread().getId());
         }
 
+
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
             Record record = null;
@@ -109,7 +136,7 @@ public class ZSearchBatchWriter extends Writer {
                 Map<String, Object> data = new HashMap<String, Object>();
                 for (int i = 0; i < record.getColumnNumber(); i++) {
                     Column column = record.getColumn(i);
-                    Pair<String, String> columnMeta = zSearchConfig.getColumnMeta(i);
+                    Triple<String, String, Boolean> columnMeta = zSearchConfig.getColumnMeta(i);
                     String columnName = columnMeta.fst;
                     String columnType = columnMeta.snd;
                     // pk
@@ -130,10 +157,12 @@ public class ZSearchBatchWriter extends Writer {
                     } else if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
                         data.put(columnName, column.asDouble());
                     } else if (ZSearchConfig.TYPE_TEXT.equals(columnType)) {
-                        columnName = columnName.endsWith("_text") ? columnName : columnName + "_text";
+                        columnName =
+                                columnName.endsWith("_text") ? columnName : columnName + "_text";
                         data.put(columnName, column.asString());
                     } else {
-                        throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
+                        throw DataXException
+                                .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
                     }
                 }
                 // 如果未定义主键添加UUID为PK
@@ -172,17 +201,20 @@ public class ZSearchBatchWriter extends Writer {
             notConnected(conf.server, "[$server]zsearch server 无法连接");
             notNull(conf.tableName, "[$tableName]目标表名不能为空");
             notNull(conf.column, "[$column]映射的列配置不能为空");
+            preaperAttr(conf.server,conf.tableName,conf.tableToken,conf.columnMeta);
         }
 
         private static void notNull(String str, String message) {
             if ((str == null || "".equals(str))) {
-                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
+                throw DataXException
+                        .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
             }
         }
 
         private static void notNull(Collection coll, String message) {
             if ((coll == null || coll.size() == 0)) {
-                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
+                throw DataXException
+                        .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
             }
         }
 
@@ -190,34 +222,68 @@ public class ZSearchBatchWriter extends Writer {
             HttpGet httpGet = new HttpGet(String.format("%s/ping", server));
             String ok = httpCall(httpGet);
             if (!"OK".equals(ok)) {
-                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
+                throw DataXException
+                        .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
+            }
+        }
+
+        /**
+         * 正排准备,预先发送个假数据
+         */
+        private static void preaperAttr(String server,String tableName,String token,List<Triple<String,String,Boolean>> metaList){
+            Map<String,Object> data=new HashMap<String, Object>();
+            Map<String,Object> other=new HashMap<String, Object>();
+            //取出需要正排的字段
+            for(Triple<String,String,Boolean> one:metaList){
+                String columnName=one.fst;
+                String columnType=one.snd;
+                if(one.trd!=Boolean.TRUE) {
+                    if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
+                        data.put(columnName, 1.23);//易错字段
+                    }
+                    continue;
+                }
+                if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)||ZSearchConfig.TYPE_TEXT.equals(columnType)) {
+                    continue;
+                }
+                if (ZSearchConfig.TYPE_STRING.equals(columnType)) {
+                    data.put(columnName, "sample_string");
+                } else if (ZSearchConfig.TYPE_LONG.equals(columnType)) {
+                    data.put(columnName, 100000000000L);
+                } else if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
+                    data.put(columnName, 1.23);
+                } else {
+                    throw DataXException
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
+                }
+            }
+            data.putAll(other);
+            if(data.size()==0){
+                return;
+            }
+            try {
+                //发送假数据
+                HttpPost httpPost = new HttpPost(String.format("%s/%s/datax_writer_add_attr?alive=%d", server, tableName, 10));
+                httpPost.addHeader("token", token);
+                httpPost.setEntity(new StringEntity(JSON.toJSONString(data)));
+                String ok = httpCall(httpPost);
+                if (!"OK".equals(ok)) {
+                    throw DataXException
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"密钥错误");
+                }
+                //删除假数据
+                HttpDelete httpDelete=new HttpDelete(String.format("%s/%s/datax_writer_add_attr", server, tableName));
+                httpPost.addHeader("token", token);
+                ok = httpCall(httpDelete);
+                if (!"OK".equals(ok)) {
+                    throw DataXException
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"删除预设失败");
+                }
+            }catch (Exception e){
+                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"验证失败",e);
             }
         }
 
     }
-
-    /**
-     * 清除表数据
-     *
-     * @param server
-     * @param tableName
-     */
-    private static void doCleanup(String server, String tableName) {
-        HttpDelete delete = new HttpDelete(String.format("%s/%s/_filter", server, tableName));
-        delete.addHeader("admin", "nimda");
-        httpCall(delete);
-    }
-
-    private static HttpClient httpClient = new DefaultHttpClient();
-
-    private static String httpCall(HttpRequestBase request) {
-        try {
-            HttpResponse resp = httpClient.execute(request);
-            return EntityUtils.toString(resp.getEntity());
-        } catch (IOException e) {
-            throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "zsearch服务端连接出错");
-        }
-    }
-
 
 }

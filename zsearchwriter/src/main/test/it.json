@@ -9,9 +9,9 @@
         "writer": {
           "name": "zsearchwriter",
           "parameter": {
-            "server": "http://xxx",
-            "tableName": "tableName",
-            "tableToken": "tableToken",
+            "server": "http://zsearch-dev.alipay.net:9200",
+            "tableName": "datax-test",
+            "tableToken": "xxxxx",
             "ttl": 1800,
             "cleanup": false,
             "batchSize" : 100,

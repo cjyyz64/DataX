@@ -16,10 +16,10 @@ public class ZSearchConfig {
     //   类型定义 主键字段定义
     // ----------------------------------------
 
-    public static final String TYPE_STRING = "string";
-    public static final String TYPE_TEXT = "text";
-    public static final String TYPE_LONG = "long";
-    public static final String TYPE_DOUBLE = "double";
+    public static final String TYPE_STRING             = "string";
+    public static final String TYPE_TEXT               = "text";
+    public static final String TYPE_LONG               = "long";
+    public static final String TYPE_DOUBLE             = "double";
     public static final String PRIMARY_KEY_COLUMN_NAME = "pk";
 
     // ----------------------------------------
@@ -27,37 +27,27 @@ public class ZSearchConfig {
     // ----------------------------------------
 
     // zsearch 服务器路径
-    public final String server;
+    public final String                                server;
     // 表名
-    public final String tableName;
+    public final String                                tableName;
     // 表token
-    public final String tableToken;
+    public final String                                tableToken;
     // 失效时间，不是必须，默认一年
-    public final int ttl;
+    public final int                                   ttl;
     // 批次大小
-    public final int batchSize;
+    public final int                                   batchSize;
     // Http Pool 大小
-    public final int httpPoolSize;
+    public final int                                   httpPoolSize;
     // 是否清除表数据 ， 不是必须，默认不清表
-    public final boolean cleanup;
+    public final boolean                               cleanup;
     // 是否开启gzip， 默认不开启
-    public final boolean gzip;
+    public final boolean                               gzip;
     // 列
-    public final List column;
+    public final List                                  column;
     // 列 json转换成pair
-    public final List<Pair<String, String>> columnMeta;
+    public final List<Triple<String, String, Boolean>> columnMeta;
 
-    private ZSearchConfig(
-            String server,
-            String tableName,
-            String tableToken,
-            List column,
-            int ttl,
-            int batchSize,
-            int httpPoolSize,
-            boolean cleanup,
-            boolean gzip
-    ) {
+    private ZSearchConfig(String server, String tableName, String tableToken, List column, int ttl, int batchSize, int httpPoolSize, boolean cleanup, boolean gzip) {
         this.server = server;
         this.tableName = tableName;
         this.tableToken = tableToken;
@@ -67,16 +57,13 @@ public class ZSearchConfig {
         this.cleanup = cleanup;
         this.column = column;
         this.gzip = gzip;
-        this.columnMeta = new ArrayList<Pair<String, String>>(column.size());
+        this.columnMeta = new ArrayList<Triple<String, String, Boolean>>(column.size());
         for (Object col : column) {
             JSONObject jo = JSONObject.parseObject(col.toString());
-            Pair pair = Pair.of(jo.getString("name"), jo.getString("type"));
-            columnMeta.add(pair);
+            Triple triple = Triple
+                    .of(jo.getString("name"), jo.getString("type"), jo.getBoolean("attr"));
+            columnMeta.add(triple);
         }
-    }
-
-    public Pair getColumnMeta(int index) {
-        return columnMeta.get(index);
     }
 
     /**
@@ -86,16 +73,14 @@ public class ZSearchConfig {
      * @return
      */
     public static ZSearchConfig of(Configuration conf) {
-        return new ZSearchConfig(
-                conf.getString("server"),
-                conf.getString("tableName"),
-                conf.getString("tableToken"),
-                conf.getList("column"),
-                conf.getInt("ttl", 60 * 60 * 24 * 360),
-                conf.getInt("batchSize", 100),
-                conf.getInt("httpPoolSize", 50),
-                conf.getBool("cleanup", false),
-                conf.getBool("gzip", false)
-        );
+        return new ZSearchConfig(conf.getString("server"), conf.getString("tableName"), conf
+                .getString("tableToken"), conf.getList("column"), conf
+                .getInt("ttl", 60 * 60 * 24 * 360), conf.getInt("batchSize", 100), conf
+                .getInt("httpPoolSize", 50), conf.getBool("cleanup", false), conf
+                .getBool("gzip", false));
+    }
+
+    public Triple<String,String,Boolean> getColumnMeta(int index) {
+        return columnMeta.get(index);
     }
 }
