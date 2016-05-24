@@ -19,8 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -86,8 +84,7 @@ public class BufferBarrels {
     }
 
     public String getJSONData(){
-        JSONArray data = new JSONArray(bufferToList(buffer));
-        return data.toJSONString();
+        return JSONArray.toJSONString(buffer);
     }
 
 
@@ -143,13 +140,6 @@ public class BufferBarrels {
         }
     }
 
-    private List bufferToList(BlockingDeque<Map> blockingDeque) {
-        List list = new ArrayList(blockingDeque.size());
-        for (Object o : blockingDeque) {
-            list.add(o);
-        }
-        return list;
-    }
 
     /**
      * Gzip 压缩数据

@@ -83,6 +83,11 @@ public class ZSearchBatchWriter extends Writer {
         private ZSearchConfig zSearchConfig;
         private BufferBarrels barrels;
 
+        /* get barrels */
+        public BufferBarrels getBarrels() {
+            return barrels;
+        }
+
         @Override
         public void init() {
             this.taskConfig = super.getPluginJobConf();

@@ -4,6 +4,7 @@ import com.alibaba.datax.common.element.DoubleColumn;
 import com.alibaba.datax.common.element.LongColumn;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
 import com.alibaba.fastjson.JSONArray;
@@ -20,8 +21,9 @@ import java.util.Map;
  * Created by jxy on 5/24/16.
  */
 public class BaiscTest extends BasicWriterPluginTest {
-    ZSearchConfig zsearchConfig= ZSearchConfig.of(getJobConf(TESTCLASSES_PATH + File.separator
-            + "sample.json"));
+    Configuration configutation=getJobConf(TESTCLASSES_PATH + File.separator
+            +"resources"+File.separator+"sample.json").getListConfiguration("job.content").get(0).getConfiguration("writer.parameter");
+    ZSearchConfig zsearchConfig= ZSearchConfig.of(configutation);
     @Override
     protected List<Record> buildDataForWriter() {
         List<Record> list=new ArrayList<Record>(10);
@@ -32,6 +34,7 @@ public class BaiscTest extends BasicWriterPluginTest {
             record.addColumn(new DoubleColumn(i/10.0));
             record.addColumn(new LongColumn(i));
             record.addColumn(new StringColumn("HAHAHA"));
+            list.add(record);
         }
         return list;
     }
@@ -53,5 +56,14 @@ public class BaiscTest extends BasicWriterPluginTest {
             buffer.addData(map);
         }
         Assert.assertEquals(JSONArray.toJSONString(expectList),buffer.getJSONData());
+    }
+
+    @Test
+    public void testStartWrite() throws Exception {
+        ZSearchBatchWriter.Task task=new ZSearchBatchWriter.Task();
+        task.setPluginJobConf(configutation);
+        task.init();
+        task.startWrite(super.createRecordReceiverForTest());
+        Assert.assertEquals(10,task.getBarrels().getFailedCount());
     }
 }

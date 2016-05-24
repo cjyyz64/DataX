@@ -9,7 +9,7 @@
         "writer": {
           "name": "zsearchwriter",
           "parameter": {
-            "server": "http://zsearch-dev.alipay.net:9200",
+            "server": "http://xxx",
             "tableName": "tableName",
             "tableToken": "tableToken",
             "ttl": 1800,
