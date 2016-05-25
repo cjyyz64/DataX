@@ -17,8 +17,8 @@
             "batchSize" : 100,
             "httpPoolSize" : 50,
             "column": [
-              { "name": "pk","type": "string","attr":true },
-              { "name": "col_1_string","type": "string","attr":true },
+              { "name": "pk","type": "string","sort":true },
+              { "name": "col_1_string","type": "string","sort":true },
               { "name": "col_2_double","type": "double" },
               { "name": "col_3_long","type": "long" },
               { "name": "col_4_text","type": "text" }

@@ -61,7 +61,7 @@ public class ZSearchConfig {
         for (Object col : column) {
             JSONObject jo = JSONObject.parseObject(col.toString());
             Triple triple = Triple
-                    .of(jo.getString("name"), jo.getString("type"), jo.getBoolean("attr"));
+                    .of(jo.getString("name"), jo.getString("type"), jo.getBoolean("sort"));
             columnMeta.add(triple);
         }
     }

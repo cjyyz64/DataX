@@ -50,7 +50,7 @@
             "ttl": 1800,
             "column": [
               { "name": "c1", "type": "string"},
-              { "name": "c2", "type": "string","attr":true},
+              { "name": "c2", "type": "string","sort":true},
               { "name": "c3", "type": "string"},
               { "name": "c4", "type": "string"},
               { "name": "c5", "type": "string"}
