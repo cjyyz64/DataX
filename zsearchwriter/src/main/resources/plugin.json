@@ -2,5 +2,5 @@
     "name": "zsearchwriter",
     "class": "com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter",
     "description": "适用于: 生产环境.  原理: TODO",
-    "developer": "开发者名字, bug reported to : 开发者邮箱"
+    "developer": "城破,善仁, bug reported to :xinyu.jxy@alipay.com "
 }
