@@ -57,12 +57,13 @@ public class ZSearchConfig {
         this.cleanup = cleanup;
         this.column = column;
         this.gzip = gzip;
-        this.columnMeta = new ArrayList<Triple<String, String, Boolean>>(column.size());
-        for (Object col : column) {
-            JSONObject jo = JSONObject.parseObject(col.toString());
-            Triple triple = Triple
-                    .of(jo.getString("name"), jo.getString("type"), jo.getBoolean("sort"));
-            columnMeta.add(triple);
+        this.columnMeta = new ArrayList<Triple<String, String, Boolean>>();
+        if(column!=null) {
+            for (Object col : column) {
+                JSONObject jo = JSONObject.parseObject(col.toString());
+                Triple triple = Triple.of(jo.getString("name"), jo.getString("type"), jo.getBoolean("sort"));
+                columnMeta.add(triple);
+            }
         }
     }
 

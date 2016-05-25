@@ -1,0 +1,141 @@
+
+DataX (201605031020-500771), From Alibaba !
+Copyright (C) 2010-2015, Alibaba Group. All Rights Reserved.
+
+
+2016-05-25 20:23:36.312 [main] INFO  VMInfo - VMInfo# operatingSystem class => com.sun.management.UnixOperatingSystem
+2016-05-25 20:23:36.323 [main] INFO  Engine - the machine info  => 
+
+	osInfo:	Oracle Corporation 1.7 24.75-b04-internal
+	jvmInfo:	Linux amd64 2.6.32-220.23.2.ali927.el5.x86_64
+	cpu num:	4
+
+	totalPhysicalMemory:	7.81G
+	freePhysicalMemory:	0.57G
+	maxFileDescriptorCount:	655360
+	currentOpenFileDescriptorCount:	86
+
+	GC Names	[PS MarkSweep, PS Scavenge]
+
+	MEMORY_NAME                    | allocation_size                | init_size                      
+	PS Survivor Space              | 42.50MB                        | 42.50MB                        
+	PS Old Gen                     | 683.00MB                       | 683.00MB                       
+	PS Eden Space                  | 256.50MB                       | 256.50MB                       
+	Code Cache                     | 48.00MB                        | 2.44MB                         
+	PS Perm Gen                    | 82.00MB                        | 21.00MB                        
+
+
+2016-05-25 20:23:36.377 [main] INFO  Engine - 
+{
+	"content":[
+		{
+			"reader":{
+				"name":"streamreader",
+				"parameter":{
+					"column":[
+						{
+							"type":"string",
+							"value":"pp1"
+						},
+						{
+							"type":"long",
+							"value":19890604
+						},
+						{
+							"type":"date",
+							"value":"1989-06-04 00:00:00"
+						},
+						{
+							"type":"bool",
+							"value":true
+						},
+						{
+							"type":"bytes",
+							"value":"test"
+						}
+					],
+					"sliceRecordCount":1000000
+				}
+			},
+			"writer":{
+				"name":"zsearchwriter",
+				"parameter":{
+					"accessId":"datax",
+					"accessKey":"*****",
+					"batchSize":3000,
+					"column":[
+						{
+							"name":"c1",
+							"type":"hahaha"
+						},
+						{
+							"name":"c2",
+							"sort":true,
+							"type":"string"
+						},
+						{
+							"name":"c3",
+							"type":"string"
+						},
+						{
+							"name":"c4",
+							"type":"string"
+						},
+						{
+							"name":"c5",
+							"type":"string"
+						}
+					],
+					"encoding":"UTF-8",
+					"endpoint":"http://zsearch-dev.alipay.net:9200",
+					"gzip":"false",
+					"ttl":1800
+				}
+			}
+		}
+	],
+	"setting":{
+		"errorLimit":{
+			"percentage":0.02,
+			"record":0
+		},
+		"speed":{
+			"channel":5
+		}
+	}
+}
+
+2016-05-25 20:23:36.909 [main] WARN  Engine - prioriy set to 0, because NumberFormatException, the value is: null
+2016-05-25 20:23:36.912 [main] INFO  PerfTrace - PerfTrace traceId=job_-1, isEnable=true, priority=0
+2016-05-25 20:23:36.912 [main] INFO  JobContainer - DataX jobContainer starts job.
+2016-05-25 20:23:36.917 [main] INFO  JobContainer - Set jobId = 0
+2016-05-25 20:23:37.118 [job-0] ERROR JobContainer - Exception when job run
+com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - 不支持的类型:hahaha
+	at com.alibaba.datax.common.exception.DataXException.asDataXException(DataXException.java:26) ~[datax-common-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.putData(ZSearchBatchWriter.java:248) ~[zsearchwriter-0.1.5-SNAPSHOT.jar:na]
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.prepareMeta(ZSearchBatchWriter.java:304) ~[zsearchwriter-0.1.5-SNAPSHOT.jar:na]
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.verify(ZSearchBatchWriter.java:203) ~[zsearchwriter-0.1.5-SNAPSHOT.jar:na]
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Job.init(ZSearchBatchWriter.java:69) ~[zsearchwriter-0.1.5-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.job.JobContainer.initJobWriter(JobContainer.java:745) ~[datax-core-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.job.JobContainer.init(JobContainer.java:317) ~[datax-core-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.job.JobContainer.start(JobContainer.java:118) ~[datax-core-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.Engine.start(Engine.java:92) [datax-core-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.Engine.entry(Engine.java:171) [datax-core-0.0.1-SNAPSHOT.jar:na]
+	at com.alibaba.datax.core.Engine.main(Engine.java:204) [datax-core-0.0.1-SNAPSHOT.jar:na]
+2016-05-25 20:23:37.126 [job-0] INFO  StandAloneJobContainerCommunicator - Total 0 records, 0 bytes | Speed 0B/s, 0 records/s | Error 0 records, 0 bytes |  All Task WaitWriterTime 0.000s |  All Task WaitReaderTime 0.000s | Percentage 0.00%
+2016-05-25 20:23:37.128 [job-0] ERROR Engine - 
+
+经DataX智能分析,该任务最可能的错误原因是:
+com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - 不支持的类型:hahaha
+	at com.alibaba.datax.common.exception.DataXException.asDataXException(DataXException.java:26)
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.putData(ZSearchBatchWriter.java:248)
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.prepareMeta(ZSearchBatchWriter.java:304)
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Vailidator.verify(ZSearchBatchWriter.java:203)
+	at com.alibaba.datax.plugin.writer.zsearchwriter.ZSearchBatchWriter$Job.init(ZSearchBatchWriter.java:69)
+	at com.alibaba.datax.core.job.JobContainer.initJobWriter(JobContainer.java:745)
+	at com.alibaba.datax.core.job.JobContainer.init(JobContainer.java:317)
+	at com.alibaba.datax.core.job.JobContainer.start(JobContainer.java:118)
+	at com.alibaba.datax.core.Engine.start(Engine.java:92)
+	at com.alibaba.datax.core.Engine.entry(Engine.java:171)
+	at com.alibaba.datax.core.Engine.main(Engine.java:204)
+

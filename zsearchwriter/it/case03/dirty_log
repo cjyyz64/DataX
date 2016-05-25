@@ -1,0 +1,2 @@
+com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - [$column]映射的列配置不能为空
+com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - [$column]映射的列配置不能为空

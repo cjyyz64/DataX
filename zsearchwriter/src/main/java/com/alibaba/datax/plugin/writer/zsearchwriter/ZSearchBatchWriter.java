@@ -49,7 +49,7 @@ public class ZSearchBatchWriter extends Writer {
             return EntityUtils.toString(resp.getEntity());
         } catch (IOException e) {
             throw DataXException
-                    .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "zsearch服务端连接出错");
+                    .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "zsearch 无法连接");
         }
     }
 
@@ -196,8 +196,8 @@ public class ZSearchBatchWriter extends Writer {
     private abstract static class Vailidator {
 
         public static void verify(ZSearchConfig conf) {
-            notNull(conf.endpoint, "[$endpoint]zsearch endpoint 地址不能为空");
-            notConnected(conf.endpoint, "[$endpoint]zsearch endpoint 无法连接");
+            notNull(conf.endpoint, "[$endpoint]zsearch 地址不能为空");
+            notConnected(conf.endpoint, "[$endpoint]zsearch 无法连接");
             notNull(conf.accessId, "[$accessId]目标表名不能为空");
             notNull(conf.column, "[$column]映射的列配置不能为空");
             prepareMeta(conf.endpoint, conf.accessId, conf.accessKey, conf.columnMeta);

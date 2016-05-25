@@ -1,0 +1,4 @@
+2016-05-25 20:24:32.835 [taskGroup-0] INFO  Channel - Channel set record_speed_limit to 10000.
+2016-05-25 20:24:42.838 [job-0] INFO  StandAloneJobContainerCommunicator - Total 100 records, 2400 bytes | Speed 240B/s, 10 records/s | Error 0 records, 0 bytes |  All Task WaitWriterTime 0.001s |  All Task WaitReaderTime 0.000s | Percentage 100.00%
+2016-05-25 20:24:42.852 [job-0] INFO  StandAloneJobContainerCommunicator - Total 100 records, 2400 bytes | Speed 240B/s, 10 records/s | Error 0 records, 0 bytes |  All Task WaitWriterTime 0.001s |  All Task WaitReaderTime 0.000s | Percentage 100.00%
+读出记录总数                    :                 100
