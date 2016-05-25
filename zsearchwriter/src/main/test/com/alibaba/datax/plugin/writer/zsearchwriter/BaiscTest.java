@@ -23,7 +23,6 @@ import java.util.Map;
 public class BaiscTest extends BasicWriterPluginTest {
     Configuration configutation=getJobConf(TESTCLASSES_PATH + File.separator
             +"resources"+File.separator+"sample.json").getListConfiguration("job.content").get(0).getConfiguration("writer.parameter");
-    ZSearchConfig zsearchConfig= ZSearchConfig.of(configutation);
     @Override
     protected List<Record> buildDataForWriter() {
         List<Record> list=new ArrayList<Record>(10);
@@ -46,6 +45,7 @@ public class BaiscTest extends BasicWriterPluginTest {
 
     @Test
     public void testBufferBarrels() throws Exception {
+        ZSearchConfig zsearchConfig= ZSearchConfig.of(configutation);
         BufferBarrels buffer=new BufferBarrels(zsearchConfig);
         List<Map<String,Object>> expectList=new ArrayList<Map<String, Object>>(10);
         for(int i=0;i<10;i++){

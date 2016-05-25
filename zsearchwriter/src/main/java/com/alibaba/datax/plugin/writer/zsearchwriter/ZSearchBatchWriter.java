@@ -28,8 +28,8 @@ import java.util.*;
  */
 public class ZSearchBatchWriter extends Writer {
 
-    private static final Logger log = LoggerFactory.getLogger(ZSearchBatchWriter.class);
-    private static HttpClient httpClient = new DefaultHttpClient();
+    private static final Logger     log        = LoggerFactory.getLogger(ZSearchBatchWriter.class);
+    private static       HttpClient httpClient = new DefaultHttpClient();
 
     /**
      * 清除表数据
@@ -201,7 +201,7 @@ public class ZSearchBatchWriter extends Writer {
             notConnected(conf.server, "[$server]zsearch server 无法连接");
             notNull(conf.tableName, "[$tableName]目标表名不能为空");
             notNull(conf.column, "[$column]映射的列配置不能为空");
-            preaperAttr(conf.server,conf.tableName,conf.tableToken,conf.columnMeta);
+            prepareMeta(conf.server, conf.tableName, conf.tableToken, conf.columnMeta);
         }
 
         private static void notNull(String str, String message) {
@@ -227,61 +227,100 @@ public class ZSearchBatchWriter extends Writer {
             }
         }
 
+
         /**
-         * 正排准备,预先发送个假数据
+         * 将data转成zsearch格式
+         *
+         * @param columnType
+         * @param columnName
+         * @param data
          */
-        private static void preaperAttr(String server,String tableName,String token,List<Triple<String,String,Boolean>> metaList){
-            Map<String,Object> data=new HashMap<String, Object>();
-            Map<String,Object> other=new HashMap<String, Object>();
-            //取出需要正排的字段
-            for(Triple<String,String,Boolean> one:metaList){
-                String columnName=one.fst;
-                String columnType=one.snd;
-                if(one.trd!=Boolean.TRUE) {
-                    if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
-                        data.put(columnName, 1.23);//易错字段
-                    }
-                    continue;
-                }
-                if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)||ZSearchConfig.TYPE_TEXT.equals(columnType)) {
-                    continue;
-                }
-                if (ZSearchConfig.TYPE_STRING.equals(columnType)) {
-                    data.put(columnName, "sample_string");
-                } else if (ZSearchConfig.TYPE_LONG.equals(columnType)) {
-                    data.put(columnName, 100000000000L);
-                } else if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
-                    data.put(columnName, 1.23);
-                } else {
-                    throw DataXException
-                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
-                }
+        private static void putData(String columnType, String columnName, Map<String, Object> data) {
+            if (ZSearchConfig.TYPE_STRING.equals(columnType)) {
+                data.put(columnName, "sample_string");
+            } else if (ZSearchConfig.TYPE_LONG.equals(columnType)) {
+                data.put(columnName, 100000000000L);
+            } else if (ZSearchConfig.TYPE_DOUBLE.equals(columnType)) {
+                data.put(columnName, 1.23);
+            } else if (ZSearchConfig.TYPE_TEXT.equals(columnType)) {
+                columnName = columnName.endsWith("_text") ? columnName : columnName + "_text";
+                data.put(columnName, "sample_text");
+            } else {
+                throw DataXException
+                        .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
             }
-            data.putAll(other);
-            if(data.size()==0){
-                return;
-            }
+        }
+
+        /**
+         * 发送假数据并删除
+         *
+         * @param server
+         * @param tableName
+         * @param token
+         * @param data
+         */
+        private static void sendFakeData(String server, String tableName, String token, Map data) {
             try {
                 //发送假数据
-                HttpPost httpPost = new HttpPost(String.format("%s/%s/datax_writer_add_attr?alive=%d", server, tableName, 10));
+                HttpPost httpPost = new HttpPost(String
+                        .format("%s/%s/datax_writer_add_attr?alive=%d", server, tableName, 10));
                 httpPost.addHeader("token", token);
                 httpPost.setEntity(new StringEntity(JSON.toJSONString(data)));
                 String ok = httpCall(httpPost);
                 if (!"OK".equals(ok)) {
                     throw DataXException
-                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"密钥错误");
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "密钥错误");
                 }
                 //删除假数据
-                HttpDelete httpDelete=new HttpDelete(String.format("%s/%s/datax_writer_add_attr", server, tableName));
+                HttpDelete httpDelete = new HttpDelete(String
+                        .format("%s/%s/datax_writer_add_attr", server, tableName));
                 httpPost.addHeader("token", token);
                 ok = httpCall(httpDelete);
                 if (!"OK".equals(ok)) {
                     throw DataXException
-                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"删除预设失败");
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "删除预设失败");
                 }
-            }catch (Exception e){
-                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE,"验证失败",e);
+            } catch (Exception e) {
+                throw DataXException
+                        .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "验证失败", e);
             }
+        }
+
+        /**
+         * Meta准备,预先发送一个meta信息,强行正排和防止并发
+         */
+        private static void prepareMeta(String server, String tableName, String token, List<Triple<String, String, Boolean>> metaList) {
+            Map<String, Object> data = new HashMap<String, Object>();
+            Map<String, Object> other = new HashMap<String, Object>();
+            //取出需要正排的字段
+            for (Triple<String, String, Boolean> one : metaList) {
+                String columnName = one.fst;
+                String columnType = one.snd;
+                //单条发送不需要pk
+                if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)) {
+                    continue;
+                }
+                if (one.trd != Boolean.TRUE) {
+                    //不是正排
+                    putData(columnType, columnName, other);
+                } else {
+                    //正排
+                    //text字段不进正排
+                    if (ZSearchConfig.TYPE_TEXT.equals(columnType)) {
+                        continue;
+                    }
+                    putData(columnType, columnName, data);
+                }
+            }
+            if (data.size() > 0) {
+                //先保证正排
+                sendFakeData(server, tableName, token, data);
+            }
+            if (other.size() > 0) {
+                //再保证字段类型和防并发
+                sendFakeData(server, tableName, token, other);
+            }
+
         }
 
     }
