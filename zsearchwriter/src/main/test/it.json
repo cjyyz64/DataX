@@ -42,9 +42,9 @@
         "writer": {
           "name": "zsearchwriter",
           "parameter": {
-            "server": "http://zsearch-dev.alipay.net:9200",
-            "tableName": "datax",
-            "tableToken": "xVp4e",
+            "endpoint": "http://zsearch-dev.alipay.net:9200",
+            "accessId": "datax",
+            "accessKey": "xVp4e",
             "gzip": "false",
             "batchSize": 3000,
             "ttl": 1800,

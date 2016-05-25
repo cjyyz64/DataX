@@ -9,9 +9,9 @@
         "writer": {
           "name": "zsearchwriter",
           "parameter": {
-            "server": "http://xxx",
-            "tableName": "tableName",
-            "tableToken": "tableToken",
+            "endpoint": "http://xxx",
+            "accessId": "tableName",
+            "accessKey": "tableToken",
             "ttl": 1800,
             "cleanup": false,
             "batchSize" : 100,

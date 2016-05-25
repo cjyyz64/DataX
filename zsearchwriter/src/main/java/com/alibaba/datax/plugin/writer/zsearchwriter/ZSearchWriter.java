@@ -51,7 +51,7 @@
 //        @Override
 //        public void prepare() {
 //            if (zSearchConfig.cleanup) {
-//                doCleanup(zSearchConfig.server, zSearchConfig.accessKey);
+//                doCleanup(zSearchConfig.endpoint, zSearchConfig.accessKey);
 //            }
 //        }
 //
@@ -92,7 +92,7 @@
 //        public void init() {
 //            this.taskConfig = super.getPluginJobConf();
 //            this.zSearchConfig = ZSearchConfig.of(taskConfig);
-//            this.zSearch = new ZSearch(zSearchConfig.accessKey, zSearchConfig.accessSecret, zSearchConfig.server);
+//            this.zSearch = new ZSearch(zSearchConfig.accessKey, zSearchConfig.accessSecret, zSearchConfig.endpoint);
 //        }
 //
 //        @Override
@@ -171,8 +171,8 @@
 //    private abstract static class Vailidator {
 //
 //        public static void verify(ZSearchConfig conf) {
-//            notNull(conf.server, "[$server]zsearch server 地址不能为空");
-//            notConnected(conf.server, "[$server]zsearch server 无法连接");
+//            notNull(conf.endpoint, "[$endpoint]zsearch endpoint 地址不能为空");
+//            notConnected(conf.endpoint, "[$endpoint]zsearch endpoint 无法连接");
 //            notNull(conf.accessKey, "[$accessKey]目标表名不能为空");
 //            notNull(conf.column, "[$column]映射的列配置不能为空");
 //        }
@@ -189,8 +189,8 @@
 //            }
 //        }
 //
-//        private static void notConnected(String server, String message) {
-//            HttpGet httpGet = new HttpGet(String.format("%s/ping", server));
+//        private static void notConnected(String endpoint, String message) {
+//            HttpGet httpGet = new HttpGet(String.format("%s/ping", endpoint));
 //            String ok = httpCall(httpGet);
 //            if (!"OK".equals(ok)) {
 //                throw DataXException.asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, message);
@@ -202,11 +202,11 @@
 //    /**
 //     * 清除表数据
 //     *
-//     * @param server
+//     * @param endpoint
 //     * @param accessKey
 //     */
-//    private static void doCleanup(String server, String accessKey) {
-//        HttpDelete delete = new HttpDelete(String.format("%s/%s/_filter", server, accessKey));
+//    private static void doCleanup(String endpoint, String accessKey) {
+//        HttpDelete delete = new HttpDelete(String.format("%s/%s/_filter", endpoint, accessKey));
 //        delete.addHeader("admin", "nimda");
 //        httpCall(delete);
 //    }

@@ -72,7 +72,7 @@ public class ZSearchBatchWriter extends Writer {
         @Override
         public void prepare() {
             if (zSearchConfig.cleanup) {
-                doCleanup(zSearchConfig.server, zSearchConfig.tableName);
+                doCleanup(zSearchConfig.endpoint, zSearchConfig.accessId);
             }
         }
 
@@ -161,8 +161,8 @@ public class ZSearchBatchWriter extends Writer {
                                 columnName.endsWith("_text") ? columnName : columnName + "_text";
                         data.put(columnName, column.asString());
                     } else {
-                        throw DataXException
-                                .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "不支持的类型:" + columnType);
+                        //脏数据
+                        getTaskPluginCollector().collectDirtyRecord(record,"类型错误:不支持的类型:" + columnType);
                     }
                 }
                 // 如果未定义主键添加UUID为PK
@@ -176,7 +176,6 @@ public class ZSearchBatchWriter extends Writer {
             // 缓冲区余量
             barrels.forceFlush();
 
-            log.info("成功导入总数:" + barrels.getTotal());
             log.info("失败导入总数:" + barrels.getFailedCount());
         }
 
@@ -197,11 +196,11 @@ public class ZSearchBatchWriter extends Writer {
     private abstract static class Vailidator {
 
         public static void verify(ZSearchConfig conf) {
-            notNull(conf.server, "[$server]zsearch server 地址不能为空");
-            notConnected(conf.server, "[$server]zsearch server 无法连接");
-            notNull(conf.tableName, "[$tableName]目标表名不能为空");
+            notNull(conf.endpoint, "[$endpoint]zsearch endpoint 地址不能为空");
+            notConnected(conf.endpoint, "[$endpoint]zsearch endpoint 无法连接");
+            notNull(conf.accessId, "[$accessId]目标表名不能为空");
             notNull(conf.column, "[$column]映射的列配置不能为空");
-            prepareMeta(conf.server, conf.tableName, conf.tableToken, conf.columnMeta);
+            prepareMeta(conf.endpoint, conf.accessId, conf.accessKey, conf.columnMeta);
         }
 
         private static void notNull(String str, String message) {

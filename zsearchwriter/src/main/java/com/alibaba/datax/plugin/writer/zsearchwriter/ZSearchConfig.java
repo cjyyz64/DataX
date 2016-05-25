@@ -27,11 +27,11 @@ public class ZSearchConfig {
     // ----------------------------------------
 
     // zsearch 服务器路径
-    public final String                                server;
+    public final String                                endpoint;
     // 表名
-    public final String                                tableName;
+    public final String                                accessId;
     // 表token
-    public final String                                tableToken;
+    public final String                                accessKey;
     // 失效时间，不是必须，默认一年
     public final int                                   ttl;
     // 批次大小
@@ -47,10 +47,10 @@ public class ZSearchConfig {
     // 列 json转换成pair
     public final List<Triple<String, String, Boolean>> columnMeta;
 
-    private ZSearchConfig(String server, String tableName, String tableToken, List column, int ttl, int batchSize, int httpPoolSize, boolean cleanup, boolean gzip) {
-        this.server = server;
-        this.tableName = tableName;
-        this.tableToken = tableToken;
+    private ZSearchConfig(String endpoint, String accessId, String accessKey, List column, int ttl, int batchSize, int httpPoolSize, boolean cleanup, boolean gzip) {
+        this.endpoint = endpoint;
+        this.accessId = accessId;
+        this.accessKey = accessKey;
         this.ttl = ttl;
         this.batchSize = batchSize;
         this.httpPoolSize = httpPoolSize;
@@ -73,8 +73,8 @@ public class ZSearchConfig {
      * @return
      */
     public static ZSearchConfig of(Configuration conf) {
-        return new ZSearchConfig(conf.getString("server"), conf.getString("tableName"), conf
-                .getString("tableToken"), conf.getList("column"), conf
+        return new ZSearchConfig(conf.getString("endpoint"), conf.getString("accessId"), conf
+                .getString("accessKey"), conf.getList("column"), conf
                 .getInt("ttl", 60 * 60 * 24 * 360), conf.getInt("batchSize", 100), conf
                 .getInt("httpPoolSize", 50), conf.getBool("cleanup", false), conf
                 .getBool("gzip", false));
