@@ -175,15 +175,18 @@ public final class OriginalConfPretreatmentUtil {
                         if (null == column) {
                             quotedColumns.add(null);
                         } else {
-                            if (allColumns.contains(column.toLowerCase())) {
-                                quotedColumns.add(column);
-                            } else {
-                                // 可能是由于用户填写为函数，或者自己对字段进行了`处理或者常量
-                                quotedColumns.add(column);
-                            }
+                        	quotedColumns.add(column);
+                        	//这个判断没有任何意义
+//                            if (allColumns.contains(column.toLowerCase())) {
+//                                quotedColumns.add(column);
+//                            } else {
+//                                // 可能是由于用户填写为函数，或者自己对字段进行了`处理或者常量
+//                            	quotedColumns.add(column);
+//                            }
                         }
                     }
 
+                    originalConfig.set(Key.COLUMN_LIST, quotedColumns);
                     originalConfig.set(Key.COLUMN,
                             StringUtils.join(quotedColumns, ","));
                     if (StringUtils.isNotBlank(splitPk)) {
