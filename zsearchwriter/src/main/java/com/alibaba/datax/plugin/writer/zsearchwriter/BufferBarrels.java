@@ -162,7 +162,7 @@ public class BufferBarrels {
             resp = hc.execute(httpPost);
             String result = EntityUtils.toString(resp.getEntity());
             if (!"OK".equals(result)) {
-                throw new RuntimeException("Batch insert Error");
+                throw new RuntimeException("Batch insert Error: "+result);
             }
         } finally {
             try {

@@ -1,2 +1,0 @@
-com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - [$accessId]目标表名不能为空
-com.alibaba.datax.common.exception.DataXException: Code:[ZSearchWriter-00], Description:[您配置的值不合法.].  - [$accessId]目标表名不能为空
