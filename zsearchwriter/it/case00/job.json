@@ -1,0 +1,63 @@
+{
+"job": {
+    "setting": {
+      "speed": {
+        "channel":5
+      },
+      "errorLimit": {
+        "record": 0,
+        "percentage": 0.02
+      }
+    },
+    "content": [
+      {
+        "reader": {
+          "name": "streamreader",
+          "parameter": {
+            "column" : [
+              {
+                "value": "pp1",
+                "type": "string"
+              },
+              {
+                "value": 19890604,
+                "type": "long"
+              },
+              {
+                "value": "1989-06-04 00:00:00",
+                "type": "date"
+              },
+              {
+                "value": true,
+                "type": "bool"
+              },
+              {
+                "value": "test",
+                "type": "bytes"
+              }
+            ],
+            "sliceRecordCount": 1000000
+          }
+        },
+        "writer": {
+          "name": "zsearchwriter",
+          "parameter": {
+            "accessId": "datax",
+            "accessKey": "xVp4e",
+            "gzip": "false",
+            "batchSize": 3000,
+            "ttl": 1800,
+            "column": [
+              { "name": "c1", "type": "string"},
+              { "name": "c2", "type": "string","sort":true},
+              { "name": "c3", "type": "string"},
+              { "name": "c4", "type": "string"},
+              { "name": "c5", "type": "string"}
+            ],
+            "encoding": "UTF-8"
+          }
+        }
+      }
+    ]
+  }
+}

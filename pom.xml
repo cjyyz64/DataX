@@ -93,6 +93,7 @@
         <module>rdbmswriter</module>
         <module>hbase11xwriter</module>
         <module>hbase094xwriter</module>
+        <module>zsearchwriter</module>
         <!--hook-->
         <module>dqchook</module>
 
