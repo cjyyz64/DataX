@@ -172,18 +172,18 @@ public final class OriginalConfPretreatmentUtil {
                                     "您的配置文件中的列配置信息有误. 因为根据您的配置，数据库表的列中存在多个*. 请检查您的配置并作出修改. ");
                         }
 
-                        if (null == column) {
-                            quotedColumns.add(null);
-                        } else {
-                        	quotedColumns.add(column);
-                        	//这个判断没有任何意义
+                        quotedColumns.add(column);
+                        //以下判断没有任何意义
+//                        if (null == column) {
+//                            quotedColumns.add(null);
+//                        } else {
 //                            if (allColumns.contains(column.toLowerCase())) {
 //                                quotedColumns.add(column);
 //                            } else {
 //                                // 可能是由于用户填写为函数，或者自己对字段进行了`处理或者常量
 //                            	quotedColumns.add(column);
 //                            }
-                        }
+//                        }
                     }
 
                     originalConfig.set(Key.COLUMN_LIST, quotedColumns);

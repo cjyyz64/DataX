@@ -36,7 +36,8 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 	private String password;
 	private String jdbcUrl;
 	private String mandatoryEncoding;
-	private int queryTimeoutSeconds;//
+	private int queryTimeoutSeconds;//查询超时 默认48小时
+	private  boolean isOb=true;//考虑与MySQL的兼容性,这里标识出来用于
 
 	public ReaderTask(int taskGropuId, int taskId) {
 		super(OBUtils.DATABASE_TYPE, taskGropuId, taskId);
@@ -46,22 +47,29 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 
 	public void init(Configuration readerSliceConfig) {
 		/* for database connection */
-		this.username = readerSliceConfig.getString(Key.USERNAME);
-		this.password = readerSliceConfig.getString(Key.PASSWORD);
-		this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
-		this.queryTimeoutSeconds = readerSliceConfig.getInt(Config.QUERY_TIMEOUT_SECOND,
-				Config.DEFAULT_QUERY_TIMEOUT_SECOND);
+        this.username = readerSliceConfig.getString(Key.USERNAME);
+        this.password = readerSliceConfig.getString(Key.PASSWORD);
+        this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
+        this.queryTimeoutSeconds = readerSliceConfig.getInt(Config.QUERY_TIMEOUT_SECOND,
+        		Config.DEFAULT_QUERY_TIMEOUT_SECOND);
 
-		String[] ss = this.jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
-		if (ss.length != 3) {
-			throw DataXException.asDataXException(DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
-		}
-		LOG.info("this is ob1_0 jdbc url.");
-		this.username = ss[1].trim() + ":" + this.username;
-		this.jdbcUrl = ss[2];
-		LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
+        //ob10的处理
+        if (this.jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
+            String[] ss = this.jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+            if (ss.length != 3) {
+                throw DataXException
+                        .asDataXException(
+                                DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10格式错误，请联系askdatax");
+            }
+            LOG.info("this is ob1_0 jdbc url.");
+            this.username = ss[1].trim() +":"+this.username;
+            this.jdbcUrl = ss[2];
+            LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
+        }else{
+        	isOb=false;
+        }
 
-		this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
+        this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 	}
 
 	/**
@@ -75,6 +83,11 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 	@Override
 	public void startRead(Configuration readerSliceConfig, RecordSender recordSender,
 			TaskPluginCollector taskPluginCollector, int fetchSize) {
+		//如果不是OB则走MySQL的实现
+		if(!isOb){
+			super.startRead(readerSliceConfig, recordSender, taskPluginCollector, fetchSize);
+			return;
+		}
 		String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
 		String table = readerSliceConfig.getString(Key.TABLE);
 		PerfTrace.getInstance().addTaskDetails(taskId, table + "," + jdbcUrl);
@@ -101,8 +114,8 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 		}
 		Connection conn = DBUtil.getConnection(OBUtils.DATABASE_TYPE, jdbcUrl, username, password);
 		try {
-			OBUtils.matchPkIndexs(conn, context.getTable(), context.getColumns(), context);
 		} catch (Throwable e) {
+			OBUtils.matchPkIndexs(conn, context.getTable(), context.getColumns(), context);
 			LOG.warn("fetch PkIndexs fail,table=" + context.getTable(), e);
 		} finally {
 			DBUtil.closeDBResources(null, null, conn);

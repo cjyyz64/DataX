@@ -26,9 +26,10 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
-import com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer.RuleWriterDbBuffer;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ConnHolder;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.DataBaseWriterBuffer;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.groovy.GroovyRuleExecutor;
-import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.OBUtils;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
 
 /**
  * 2016-04-07
@@ -40,7 +41,7 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.OBUtils;
  */
 public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 
-	private List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+	private List<DataBaseWriterBuffer> dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 
 	private GroovyRuleExecutor dbRuleExecutor = null;
 
@@ -64,9 +65,8 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 	// memstore检查的间隔
 	private long memstoreCheckIntervalSecond = Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND;
 
-	// 失败重试次数 经与强思讨论 暂时不做
-	// 未来需明确哪些OceanBase异常 可重试的再做
-	// private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
+	// 失败重试次数
+	private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
 
 	public MultiTableWriterTask(DataBaseType dataBaseType) {
 		super(dataBaseType);
@@ -86,8 +86,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
 		this.memstoreCheckIntervalSecond = config.getLong(Config.MEMSTORE_CHECK_INTERVAL_SECOND,
 				Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND);
-		// this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT,
-		// Config.DEFAULT_FAIL_TRY_COUNT);
+		this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
 		if (StringUtils.isNotBlank(this.dbRule)) {
 			dbRuleExecutor = new GroovyRuleExecutor(dbRule, dbNamePattern);
 		}
@@ -102,21 +101,18 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		this.batchSize = Math.min(100, batchSize);
 		this.batchByteSize = config.getInt(Key.BATCH_BYTE_SIZE, Constant.DEFAULT_BATCH_BYTE_SIZE);
 		// OceanBase 所有操作都是 insert into on duplicate key update 模式
-		// TODO writeMode应该使用enum来定义
+		// writeMode应该使用enum来定义
 		this.writeMode = "update";
 		emptyAsNull = config.getBool(Key.EMPTY_AS_NULL, true);
 
-		// init writerbuffer map,每一个db对应一个buffer
 		List<Object> conns = config.getList(Constant.CONN_MARK, Object.class);
 		for (int i = 0; i < conns.size(); i++) {
 			Configuration connConf = Configuration.from(conns.get(i).toString());
 			String jdbcUrl = connConf.getString(Key.JDBC_URL);
 			List<String> tableList = connConf.getList(Key.TABLE, String.class);
-			RuleWriterDbBuffer writerBuffer = new RuleWriterDbBuffer();
-			writerBuffer.setJdbcUrl(jdbcUrl);
-			writerBuffer.initTableBuffer(tableList);
 			String dbName = getDbNameFromJdbcUrl(jdbcUrl);
-			writerBuffer.setDbName(dbName);
+			DataBaseWriterBuffer writerBuffer = new DataBaseWriterBuffer(config, jdbcUrl, username, password, dbName);
+			writerBuffer.initTableBuffer(tableList);
 			dbBufferList.add(writerBuffer);
 			// 确定获取meta元信息的db和table
 			if (i == 0 && tableList.size() > 0) {
@@ -129,11 +125,11 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		checkRule(dbBufferList);
 	}
 
-	public void checkRule(List<RuleWriterDbBuffer> dbBufferList) {
+	public void checkRule(List<DataBaseWriterBuffer> dbBufferList) {
 		// 如果配置的分表名完全不同， 则必须要填写tableRule规则
 		List<String> allTableList = new ArrayList<String>();
 		List<String> allDbList = new ArrayList<String>();
-		for (RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+		for (DataBaseWriterBuffer ruleWriterDbBuffer : dbBufferList) {
 			allTableList.addAll(ruleWriterDbBuffer.getTableBuffer().keySet());
 			allDbList.add(ruleWriterDbBuffer.getDbName());
 		}
@@ -190,12 +186,11 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 	@Override
 	public void startWrite(RecordReceiver recordReceiver, Configuration writerSliceConfig,
 			TaskPluginCollector taskPluginCollector) {
-		for (RuleWriterDbBuffer dbBuffer : dbBufferList) {
-			dbBuffer.initConnection(writerSliceConfig, username, password);
+		for (DataBaseWriterBuffer dbBuffer : dbBufferList) {
+			Connection conn = dbBuffer.getConnHolder().initConnection();
 			// init每一个table的insert语句
-			Connection conn = dbBuffer.getConnection() ;
 			for (String tableName : dbBuffer.getTableList()) {
-				tableWriteSqlMap.put(tableName, OBUtils.buildWriteSql(tableName, columns, conn));
+				tableWriteSqlMap.put(tableName, ObWriterUtils.buildWriteSql(tableName, columns, conn));
 			}
 		}
 
@@ -203,7 +198,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 
 		// 用于写入数据的时候的类型根据目的表字段类型转换
 		String metaTable = metaDbTablePair.getRight();
-		this.resultSetMetaData = DBUtil.getColumnMetaData(dbBufferList.get(0).getConnection(), metaTable,
+		this.resultSetMetaData = DBUtil.getColumnMetaData(dbBufferList.get(0).getConnHolder().getConn(), metaTable,
 				StringUtils.join(this.columns, ","));
 
 		List<Record> writeBuffer = new ArrayList<Record>(this.batchSize);
@@ -239,19 +234,19 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 	}
 
 	public void closeBufferConn() {
-		for (RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
-			DBUtil.closeDBResources(null, null, ruleWriterDbBuffer.getConnection());
+		for (DataBaseWriterBuffer ruleWriterDbBuffer : dbBufferList) {
+			DBUtil.closeDBResources(null, null, ruleWriterDbBuffer.getConnHolder().getConn());
 		}
 	}
 
 	private void calcRuleAndAddBuffer(Record record) {
 		Map<String, Object> recordMap = convertRecord2Map(record);
-		RuleWriterDbBuffer rightBuffer = null;
+		DataBaseWriterBuffer rightBuffer = null;
 
 		// 如果dbRule为空,则通过tableName反查出来dbName
 		if (dbRuleExecutor == null && tableRuleExecutor != null) {
 			String tableName = tableRuleExecutor.executeRule(recordMap);
-			for (RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+			for (DataBaseWriterBuffer ruleWriterDbBuffer : dbBufferList) {
 				if (ruleWriterDbBuffer.getTableBuffer().keySet().contains(tableName)) {
 					rightBuffer = ruleWriterDbBuffer;
 					break;
@@ -265,7 +260,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		} else if (dbRuleExecutor != null && tableRuleExecutor != null) {// 两个规则都不为空，需要严格匹配计算出来的dbName和tableName
 			String dbName = dbRuleExecutor.executeRule(recordMap);
 			String tableName = tableRuleExecutor.executeRule(recordMap);
-			for (RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+			for (DataBaseWriterBuffer ruleWriterDbBuffer : dbBufferList) {
 				if (StringUtils.equals(ruleWriterDbBuffer.getDbName(), dbName)
 						&& ruleWriterDbBuffer.getTableBuffer().keySet().contains(tableName)) {
 					rightBuffer = ruleWriterDbBuffer;
@@ -279,7 +274,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 			rightBuffer.addRecord(record, tableName);
 		} else if (dbRuleExecutor != null && tableRuleExecutor == null) {// 只存在dbRule，那么只能是多个分库的所有的table名称都相同
 			String dbName = dbRuleExecutor.executeRule(recordMap);
-			for (RuleWriterDbBuffer ruleWriterDbBuffer : dbBufferList) {
+			for (DataBaseWriterBuffer ruleWriterDbBuffer : dbBufferList) {
 				if (StringUtils.equals(ruleWriterDbBuffer.getDbName(), dbName)) {
 					rightBuffer = ruleWriterDbBuffer;
 					break;
@@ -313,8 +308,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 		}
 
 		// do batchInsert
-		for (RuleWriterDbBuffer dbBuffer : dbBufferList) {
-			Connection conn = dbBuffer.getConnection();
+		for (DataBaseWriterBuffer dbBuffer : dbBufferList) {
 			checkMemstore(dbBuffer);
 			for (Map.Entry<String, LinkedList<Record>> entry : dbBuffer.getTableBuffer().entrySet()) {
 				String tableName = entry.getKey();
@@ -332,36 +326,65 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 						break;
 					}
 				}
-				write(conn, tableName, list);
+				write(dbBuffer.getConnHolder(), tableName, list);
 			}
 		}
 	}
 
-	private void write(Connection conn, String tableName, List<Record> list) throws SQLException {
+	private void write(ConnHolder connHolder, String tableName, List<Record> list) {
 		String writeSql = tableWriteSqlMap.get(tableName);
+		boolean success = false;
 		try {
-			conn.setAutoCommit(false);
-			PreparedStatement ps = null;
-			try {
-				ps = conn.prepareStatement(writeSql);
-				for (Record record : list) {
-					ps = fillPreparedStatement(ps, record);
-					ps.addBatch();
+			for (int i = 0; i < failTryCount; i++) {
+				Connection conn = connHolder.getConn();
+				conn.setAutoCommit(false);
+				PreparedStatement ps = null;
+				try {
+					ps = conn.prepareStatement(writeSql);
+					for (Record record : list) {
+						ps = fillPreparedStatement(ps, record);
+						ps.addBatch();
+					}
+					ps.executeBatch();
+					conn.commit();
+					// 标记执行正常,且退出for循环
+					success = true;
+					break;
+				} catch (SQLException e) {
+					// 如果是OB系统级异常,则需要重建连接
+					boolean fatalFail = ObWriterUtils.isFatalError(e);
+					if (fatalFail) {
+						LOG.warn(
+								"遇到OB致命异常,回滚此次写入, 休眠 5分钟,SQLState:" + e.getSQLState() + ",ErrorCode:"
+										+ e.getErrorCode(), e);
+						ObWriterUtils.sleep(300000);
+						connHolder.reconnect();
+						// 如果是可恢复的异常,则重试
+					} else if (ObWriterUtils.isRecoverableError(e)) {
+						LOG.warn(
+								"遇到OB可恢复异常,回滚此次写入, 休眠 1分钟,SQLState:" + e.getSQLState() + ",ErrorCode:"
+										+ e.getErrorCode(), e);
+						conn.rollback();
+						ObWriterUtils.sleep(60000);
+						// 其它异常直接退出,采用逐条写入方式
+					} else {
+						LOG.warn(
+								"遇到OB异常,回滚此次写入, 休眠 1秒,采用逐条写入提交,SQLState:" + e.getSQLState() + ",ErrorCode:"
+										+ e.getErrorCode(), e);
+						conn.rollback();
+						ObWriterUtils.sleep(1000);
+						break;
+					}
+				} finally {
+					DBUtil.closeDBResources(ps, null);
 				}
-				ps.executeBatch();
-				conn.commit();
-			} catch (SQLException e) {
-				LOG.warn("回滚此次写入, 休眠 10 秒,采用每次写入一行方式提交. 因为:SQLState:"+e.getSQLState()+",ErrorCode:"+e.getErrorCode(), e);
-				conn.rollback();
-				OBUtils.sleep(10000);
-				doRuleOneInsert(conn, tableName, list);
-			} finally {
-				DBUtil.closeDBResources(ps, null);
 			}
-		} catch (Throwable t) {
-			throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "write OB fail");
+		} catch (SQLException e) {
+			LOG.warn("遇到OB异常,回滚此次写入, 采用逐条写入提交,SQLState:" + e.getSQLState() + ",ErrorCode:" + e.getErrorCode(), e);
 		}
-
+		if (!success) {
+			doRuleOneInsert(connHolder.getConn(), tableName, list);
+		}
 	}
 
 	/**
@@ -386,11 +409,12 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 					try {
 						ps = fillPreparedStatement(ps, record);
 						ps.execute();
+						break;
 					} catch (Throwable e) {
 						ex = e;
 						LOG.error("写入表[" + tableName + "]失败,休眠[" + tryInterval + "]毫秒,数据:" + record,
 								i == 0 ? e.toString() : e);
-						OBUtils.sleep(tryInterval);
+						ObWriterUtils.sleep(tryInterval);
 					} finally {
 						// 最后不要忘了关闭 preparedStatement
 						if (ps != null) {
@@ -399,7 +423,7 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 					}
 				}
 				if (i >= maxTryCount) {
-					LOG.error("写入表[" + tableName + "]存在脏数据, 写入异常为:", ex);
+					LOG.error("写入表[" + tableName + "]存在脏数据,record="+record+", 写入异常为:", ex);
 					this.taskPluginCollector.collectDirtyRecord(record, ex);
 				}
 			}
@@ -417,16 +441,16 @@ public class MultiTableWriterTask extends CommonRdbmsWriter.Task {
 	 * 
 	 * @param conn
 	 */
-	private void checkMemstore(RuleWriterDbBuffer dbBuffer) {
+	private void checkMemstore(DataBaseWriterBuffer dbBuffer) {
 		long now = System.currentTimeMillis();
 		if (now - dbBuffer.getLastCheckMemstoreTime() < 1000 * memstoreCheckIntervalSecond) {
 			return;
 		}
-		Connection conn = dbBuffer.getConnection();
-		while (OBUtils.isMemstoreFull(conn, memstoreThreshold)) {
-			LOG.warn("OB memstore is full,sleep 60 seconds, jdbc=" + dbBuffer.getJdbcUrl() + ",threshold="
-					+ memstoreThreshold);
-			OBUtils.sleep(60000);
+		Connection conn = dbBuffer.getConnHolder().getConn();
+		while (ObWriterUtils.isMemstoreFull(conn, memstoreThreshold)) {
+			LOG.warn("OB memstore is full,sleep 60 seconds, jdbc=" + dbBuffer.getConnHolder().getJdbcUrl()
+					+ ",threshold=" + memstoreThreshold);
+			ObWriterUtils.sleep(60000);
 		}
 		dbBuffer.setLastCheckMemstoreTime(now);
 	}

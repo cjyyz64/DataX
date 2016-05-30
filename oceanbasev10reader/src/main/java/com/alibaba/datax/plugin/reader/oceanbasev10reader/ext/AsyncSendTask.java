@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.RecordSender;
-import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.TaskContext;
 
 /**

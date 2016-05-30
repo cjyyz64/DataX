@@ -68,6 +68,8 @@ public class OBUtils {
 			String pkc = pkColumns[i];
 			int j = 0;
 			for (int k = columns.size(); j < k; j++) {
+				//如果用户定义的 columns中 带有 ``,也不影响,
+				//最多只是在select里多加了几列PK column
 				if (StringUtils.equalsIgnoreCase(pkc, columns.get(j))) {
 					pkIndexs[i] = j;
 					break;
