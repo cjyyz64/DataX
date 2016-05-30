@@ -13,19 +13,19 @@
         "content": [
             {
                 "reader": {
-                    "name": "mysqlreader",
+                    "name": "oceanbasev10reader",
                     "parameter": {
-                        "username": "chinan",
-                        "password": "chinan",
+                        "username": "datax",
+                        "password": "datax",
                         "column": ["id", "now()", "name"],
                         "splitPk": "id",
                         "connection": [
                             {
                                 "table": [
-                                    "t0"
+                                    "t"
                                 ],
                                 "jdbcUrl": [
-                                    "jdbc:mysql://10.101.84.9:3306/test"
+                                    "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax?useUnicode=true&characterEncoding=utf-8"
                                 ]
                             }
                         ]

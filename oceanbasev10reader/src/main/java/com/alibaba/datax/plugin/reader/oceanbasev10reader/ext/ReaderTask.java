@@ -91,7 +91,6 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 		String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
 		String table = readerSliceConfig.getString(Key.TABLE);
 		PerfTrace.getInstance().addTaskDetails(taskId, table + "," + jdbcUrl);
-		LOG.info("Begin to read record by Sql: [{}\n] {}.", querySql, jdbcUrl);
 		List<String> columns = readerSliceConfig.getList(Key.COLUMN_LIST, String.class);
 		String where = readerSliceConfig.getString(Key.WHERE);
 		TaskContext context = new TaskContext(table, columns, where, fetchSize);
@@ -112,10 +111,11 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 			doRead(recordSender, taskPluginCollector, context);
 			return;
 		}
+		//check primary key index
 		Connection conn = DBUtil.getConnection(OBUtils.DATABASE_TYPE, jdbcUrl, username, password);
 		try {
-		} catch (Throwable e) {
 			OBUtils.matchPkIndexs(conn, context.getTable(), context.getColumns(), context);
+		} catch (Throwable e) {
 			LOG.warn("fetch PkIndexs fail,table=" + context.getTable(), e);
 		} finally {
 			DBUtil.closeDBResources(null, null, conn);
@@ -154,19 +154,13 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 	}
 
 	private void doRead(RecordSender recordSender, TaskPluginCollector taskPluginCollector, TaskContext context) {
+		LOG.info("Begin to read record by Sql: [{}\n] {}.", context.getQuerySql(), jdbcUrl);
 		Connection conn = DBUtil.getConnection(OBUtils.DATABASE_TYPE, jdbcUrl, username, password);
-		// session config .etc related
-		// DBUtil.dealWithSessionConfig(conn, readerSliceConfig,
-		// OBUtils.DATABASE_TYPE, basicMsg);
-		// OceanBase special session config
 		OBUtils.initConn4Reader(conn, queryTimeoutSeconds);
-
 		Statement stmt = null;
 		ResultSet rs = null;
 		PerfRecord perfRecord = new PerfRecord(taskGroupId, taskId, PerfRecord.PHASE.SQL_QUERY);
 		perfRecord.start();
-		AsyncSendTask asyncSend = new AsyncSendTask(recordSender, context, 1024);
-		asyncSend.start();
 		try {
 			LOG.warn("exe sql:" + context.getQuerySql());
 			if (context.getPkIndexs() == null || context.getSavePoint() == null) {
@@ -186,37 +180,32 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 				rs = ps.executeQuery();
 			}
 			perfRecord.end();
-
 			ResultSetMetaData metaData = rs.getMetaData();
 			int columnNumber = metaData.getColumnCount();
 			long lastTime = System.nanoTime();
-			// int i = 0;
 			while (rs.next()) {
 				context.addCost(System.nanoTime() - lastTime);
-				// 仅仅buildRecord没有真正send
-				Record savePoint = buildRecord(recordSender, rs, metaData, columnNumber, mandatoryEncoding,
+				Record row = buildRecord(recordSender, rs, metaData, columnNumber, mandatoryEncoding,
 						taskPluginCollector);
-				asyncSend.send(savePoint);
+				//如果是querySql
+				if (row.getColumnNumber() == context.getTransferColumnNumber() || context.getTransferColumnNumber()==-1) {
+					recordSender.sendToWriter(row);
+				} else {
+					Record newRow = recordSender.createRecord();
+					for (int i = 0; i < context.getTransferColumnNumber(); i++) {
+						newRow.addColumn(row.getColumn(i));
+					}
+					recordSender.sendToWriter(newRow);
+				}
+				context.setSavePoint(row);
 				lastTime = System.nanoTime();
-				// mock 每1000条 停10ms
-				// i++;
-				// if (i >= 1000) {
-				// OBUtils.sleep(10);
-				// i = 0;
-				// }
 			}
 		} catch (Exception e) {
 			LOG.error("reader data fail", e);
 			throw RdbmsException.asQueryException(OBUtils.DATABASE_TYPE, e, context.getQuerySql(), context.getTable(),
 					username);
 		} finally {
-			asyncSend.shutdown();
 			OBUtils.asyncClose(rs, stmt, conn);
-			try {
-				asyncSend.join();
-			} catch (InterruptedException e) {
-				//没有正常做完也不要紧,因为context的 SavePoint的根据 真正的send记录来保存的
-			}
 		}
 	}
 

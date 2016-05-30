@@ -16,21 +16,22 @@ public class TaskContext {
 	// pk在column中的index,用于绑定变量时从savePoint中读取值
 	// 如果这个值为null,则表示 不是断点续读的场景
 	private int[] pkIndexs;
-	
+
 	private final List<String> columns;
 
 	private String[] pkColumns;
-	
+
 	private long cost;
-	
+
 	private final int transferColumnNumber;
 
-	public TaskContext(String table, List<String> columns,String where,int fetchSize) {
+	public TaskContext(String table, List<String> columns, String where, int fetchSize) {
 		super();
 		this.table = table;
-		this.columns=columns;
-		this.transferColumnNumber = columns.size();
-		this.where=where;
+		this.columns = columns;
+		// 针对只有querySql的场景
+		this.transferColumnNumber = columns == null ? -1 : columns.size();
+		this.where = where;
 		this.fetchSize = fetchSize;
 	}
 
@@ -42,7 +43,6 @@ public class TaskContext {
 		this.querySql = querySql;
 	}
 
-	
 	public String getWhere() {
 		return where;
 	}
@@ -62,7 +62,7 @@ public class TaskContext {
 	public void setPkIndexs(int[] pkIndexs) {
 		this.pkIndexs = pkIndexs;
 	}
-	
+
 	public List<String> getColumns() {
 		return columns;
 	}

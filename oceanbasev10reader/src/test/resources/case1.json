@@ -8,10 +8,10 @@
         "content": [
             {
                 "reader": {
-                    "name": "mysqlreader",
+                    "name": "oceanbasev10reader",
                     "parameter": {
-                        "username": "root",
-                        "password": "root",
+                        "username": "datax",
+                        "password": "datax",
                         "where": "",
                         "connection": [
                             {
@@ -20,8 +20,7 @@
                                 ],
                                 "jdbcUrl": [
                                     "jdbc:mysql://bad_ip:3306/datax_mysql_test_db",
-                                    "jdbc:mysql://10.232.128.67:bad_port/datax_mysql_test_db",
-                                    "jdbc:mysql://10.232.128.67:3306/datax_mysql_test_db"
+                                    "||_dsc_ob10_dsc_||obdv2:sys||_dsc_ob10_dsc_||jdbc:mysql://10.210.170.12:2883/datax?useUnicode=true&characterEncoding=utf-8"
                                 ]
                             }
                         ]
