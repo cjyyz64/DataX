@@ -1,6 +1,5 @@
-package com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer;
+package com.alibaba.datax.plugin.writer.oceanbasev10writer.ext;
 
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,27 +9,26 @@ import java.util.Map;
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
-import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 
 /**
  * 
  * @author biliang.wbl
  *
  */
-public class RuleWriterDbBuffer {
-
-	private String jdbcUrl;
-	private String dbName;
+public class DataBaseWriterBuffer {
+	private final ConnHolder connHolder;
+	private final String dbName;
 	private Map<String, LinkedList<Record>> tableBuffer = new HashMap<String, LinkedList<Record>>();
-	private Connection connection;
 	private long lastCheckMemstoreTime;
-
-	public void initConnection(Configuration writerSliceConfig, String userName, String password) {
-		String BASIC_MESSAGE = String.format("jdbcUrl:[%s]", this.jdbcUrl);
-		connection = DBUtil.getConnection(DataBaseType.MySql, jdbcUrl, userName, password);
-		DBUtil.dealWithSessionConfig(connection, writerSliceConfig, DataBaseType.MySql, BASIC_MESSAGE);
+	
+	public DataBaseWriterBuffer(Configuration config,String jdbcUrl, String userName, String password,String dbName){
+		this.connHolder = new ConnHolder(config, jdbcUrl, userName, password);
+		this.dbName=dbName;
+	}
+	
+	public ConnHolder getConnHolder(){
+		return connHolder;
 	}
 
 	public void initTableBuffer(List<String> tableList) {
@@ -47,7 +45,7 @@ public class RuleWriterDbBuffer {
 		LinkedList<Record> recordList = tableBuffer.get(tableName);
 		if (recordList == null) {
 			throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "通过规则计算出来的table不存在, 算出的tableName="
-					+ tableName + ",db=" + jdbcUrl + ", 请检查您配置的规则.");
+					+ tableName + ",db=" + connHolder.getJdbcUrl() + ", 请检查您配置的规则.");
 		}
 		recordList.add(record);
 	}
@@ -56,24 +54,8 @@ public class RuleWriterDbBuffer {
 		return tableBuffer;
 	}
 
-	public void setJdbcUrl(String jdbcUrl) {
-		this.jdbcUrl = jdbcUrl;
-	}
-
-	public Connection getConnection() {
-		return connection;
-	}
-
-	public void setDbName(String dbName) {
-		this.dbName = dbName;
-	}
-
 	public String getDbName() {
 		return dbName;
-	}
-
-	public String getJdbcUrl() {
-		return jdbcUrl;
 	}
 
 	public long getLastCheckMemstoreTime() {
