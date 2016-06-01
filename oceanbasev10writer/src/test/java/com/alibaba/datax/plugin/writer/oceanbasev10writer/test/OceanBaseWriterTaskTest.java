@@ -22,7 +22,7 @@ import com.alibaba.datax.core.util.ConfigParser;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
-import com.alibaba.datax.plugin.writer.oceanbasev10writer.buffer.RuleWriterDbBuffer;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.DataBaseWriterBuffer;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.groovy.GroovyRuleExecutor;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.MultiTableWriterTask;
 
@@ -85,7 +85,7 @@ public class OceanBaseWriterTaskTest {
 		MultiTableWriterTask task = new MultiTableWriterTask(DataBaseType.MySql);
 
 		// 多库多表，并且每一张表都不相同，tableRule为必填
-		List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+		List<DataBaseWriterBuffer> dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 		dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
 		dbBufferList.add(generateNewBuffer("db02:tb03,tb04"));
 		try {
@@ -98,7 +98,7 @@ public class OceanBaseWriterTaskTest {
 		task.checkRule(dbBufferList);
 
 		// 多库多表，并且每一张表都不相同，tableRule为必填
-		dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+		dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 		dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
 		dbBufferList.add(generateNewBuffer("db01:tb03,tb04"));
 		task.checkRule(dbBufferList);
@@ -108,7 +108,7 @@ public class OceanBaseWriterTaskTest {
 	public void testCheckRule多库多表表名部分表相同() {
 		MultiTableWriterTask task = new MultiTableWriterTask(DataBaseType.MySql);
 		ReflectionTestUtils.setField(task, "tableRuleExecutor", new GroovyRuleExecutor("", ""));
-		List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+		List<DataBaseWriterBuffer> dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 		dbBufferList.add(generateNewBuffer("db01:tb01,tb02"));
 		dbBufferList.add(generateNewBuffer("db02:tb01,tb02"));
 		try {
@@ -124,7 +124,7 @@ public class OceanBaseWriterTaskTest {
 	@Test
 	public void testCheckRule多库多表库名全部不同表名全部相同() {
 		MultiTableWriterTask task = new MultiTableWriterTask(DataBaseType.MySql);
-		List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+		List<DataBaseWriterBuffer> dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 		dbBufferList.add(generateNewBuffer("db01:tb01"));
 		dbBufferList.add(generateNewBuffer("db02:tb01"));
 		try {
@@ -140,7 +140,7 @@ public class OceanBaseWriterTaskTest {
 	@Test
 	public void testCheckRule多库多表库名表名全部相同() {
 		MultiTableWriterTask task = new MultiTableWriterTask(DataBaseType.MySql);
-		List<RuleWriterDbBuffer> dbBufferList = new ArrayList<RuleWriterDbBuffer>();
+		List<DataBaseWriterBuffer> dbBufferList = new ArrayList<DataBaseWriterBuffer>();
 		dbBufferList.add(generateNewBuffer("db01:tb01"));
 		dbBufferList.add(generateNewBuffer("db01:tb01"));
 		try {
@@ -150,11 +150,10 @@ public class OceanBaseWriterTaskTest {
 		}
 	}
 
-	public RuleWriterDbBuffer generateNewBuffer(String dbTableStr) {
+	public DataBaseWriterBuffer generateNewBuffer(String dbTableStr) {
 		String dbName = dbTableStr.split(":")[0];
 		String[] tableArray = dbTableStr.split(":")[1].split(",");
-		RuleWriterDbBuffer ruleWriterDbBuffer = new RuleWriterDbBuffer();
-		ruleWriterDbBuffer.setDbName(dbName);
+		DataBaseWriterBuffer ruleWriterDbBuffer = new DataBaseWriterBuffer(null,null,null,null,dbName);
 		List<String> tableList = Arrays.asList(tableArray);
 		ruleWriterDbBuffer.initTableBuffer(tableList);
 		return ruleWriterDbBuffer;

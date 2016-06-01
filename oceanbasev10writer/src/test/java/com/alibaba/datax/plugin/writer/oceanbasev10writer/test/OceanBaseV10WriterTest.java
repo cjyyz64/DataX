@@ -53,13 +53,13 @@ public class OceanBaseV10WriterTest extends BasicWriterPluginTest {
 		int readerSliceNumber = 8;
 		super.doWriterTest("basic11.json", readerSliceNumber);
 		System.out.println("dirRecordList.size:" + super.dirRecordList.size());
-		Assert.assertEquals(dirRecordList.size(), readerSliceNumber);
+		Assert.assertEquals(readerSliceNumber,dirRecordList.size());
 	}
 
 	@Override
 	protected List<Record> buildDataForWriter() {
 		List<Record> list = new ArrayList<Record>();
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 200; i++) {
 			Record r = new DefaultRecord();
 			r.addColumn(new LongColumn(i));
 			r.addColumn(new LongColumn(6));
