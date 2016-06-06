@@ -1,0 +1,34 @@
+{
+    "content": [
+        {
+            "reader": {
+                "name": "mysqlreader",
+                "parameter": {
+                    "username": "username?",
+                    "password": "password?",
+                    "connection": [
+                        {
+                            "jdbcUrl": [
+                                "jdbc:mysql://ip1:port1/dbName?"
+                            ],
+                            "table": [
+                                "table0?"
+                            ]
+                        }
+                    ],
+                    "column": [
+                        "firstColumn?",
+                        "secondColumn?"
+                    ],
+                    "where": "modifyTime>'2014-08-08'?",
+                    "splitPk": "onlyOnePkColumn?",
+                    "preSql": [
+                        "sql must and only return 0 means its data is ok.",
+                        "sql must and only return 0 means its data is ok."
+                    ]
+                }
+            },
+            "writer": {}
+        }
+    ]
+}

@@ -44,7 +44,7 @@ public class SubCommonRdbmsReader extends CommonRdbmsReader {
         }
 
         @Override
-        protected void transportOneRecord(RecordSender recordSender,
+        protected Record transportOneRecord(RecordSender recordSender,
                 ResultSet rs, ResultSetMetaData metaData, int columnNumber,
                 String mandatoryEncoding,
                 TaskPluginCollector taskPluginCollector) {
@@ -163,6 +163,7 @@ public class SubCommonRdbmsReader extends CommonRdbmsReader {
                 }
             }
             recordSender.sendToWriter(record);
+            return record;
         }
     }
 }
