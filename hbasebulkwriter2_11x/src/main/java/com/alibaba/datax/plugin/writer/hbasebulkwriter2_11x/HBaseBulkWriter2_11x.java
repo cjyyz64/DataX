@@ -320,6 +320,7 @@ public class HBaseBulkWriter2_11x extends Writer {
             String line;
             while ((line = reader.readLine()) != null) {
                 LOG.info("ODPS_SORT_SCRIPT => " + line);
+                Thread.sleep(5000);
             }
             int resCode = p.waitFor();
 
@@ -393,6 +394,7 @@ public class HBaseBulkWriter2_11x extends Writer {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     LOG.info("ODPS_CLEAR_SCRIPT => " + line);
+                    Thread.sleep(1000);
                 }
                 int resCode = p.waitFor();
 
