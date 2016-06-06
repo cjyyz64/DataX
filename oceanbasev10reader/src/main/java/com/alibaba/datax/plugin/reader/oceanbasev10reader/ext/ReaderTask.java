@@ -52,7 +52,6 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         this.jdbcUrl = readerSliceConfig.getString(Key.JDBC_URL);
         this.queryTimeoutSeconds = readerSliceConfig.getInt(Config.QUERY_TIMEOUT_SECOND,
         		Config.DEFAULT_QUERY_TIMEOUT_SECOND);
-
         //ob10的处理
         if (this.jdbcUrl.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
             String[] ss = this.jdbcUrl.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
@@ -65,11 +64,12 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             this.username = ss[1].trim() +":"+this.username;
             this.jdbcUrl = ss[2];
             LOG.info("this is ob1_0 jdbc url. user=" + this.username + " :url=" + this.jdbcUrl);
+            //OB专用的
+            this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
         }else{
         	isOb=false;
+        	super.init(readerSliceConfig);
         }
-
-        this.mandatoryEncoding = readerSliceConfig.getString(Key.MANDATORY_ENCODING, "");
 	}
 
 	/**
@@ -208,5 +208,4 @@ public class ReaderTask extends CommonRdbmsReader.Task {
 			OBUtils.asyncClose(rs, stmt, conn);
 		}
 	}
-
-}
+	}
