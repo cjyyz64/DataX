@@ -204,7 +204,7 @@ public class OssReader extends Reader {
 
             // 将每个单独的 object 作为一个 slice
             List<String> objects = parseOriginObjects(readerOriginConfig
-                    .getList(Constants.OBJECT, String.class));
+                    .getList(Constant.OBJECT, String.class));
             if (0 == objects.size()) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.EMPTY_BUCKET_EXCEPTION,
@@ -216,7 +216,7 @@ public class OssReader extends Reader {
 
             for (String object : objects) {
                 Configuration splitedConfig = this.readerOriginConfig.clone();
-                splitedConfig.set(Constants.OBJECT, object);
+                splitedConfig.set(Constant.OBJECT, object);
                 readerSplitConfigs.add(splitedConfig);
             }
             LOG.debug("split() ok and end...");
