@@ -16,6 +16,8 @@ public final class Key {
 
     // 是数组配置
     public final static String COLUMN = "column";
+    
+    public final static String COLUMN_LIST = "columnList";
 
     public final static String WHERE = "where";
 

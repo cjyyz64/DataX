@@ -273,11 +273,10 @@ public class ZSearchBatchWriter extends Writer {
                 //删除假数据
                 HttpDelete httpDelete = new HttpDelete(String
                         .format("%s/%s/datax_writer_add_attr", server, tableName));
-                httpPost.addHeader("token", token);
+                httpDelete.addHeader("token", token);
                 ok = httpCall(httpDelete);
                 if (!"OK".equals(ok)) {
-                    throw DataXException
-                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "删除预设失败");
+                    log.warn("删除预设失败");
                 }
             } catch (Exception e) {
                 throw DataXException
