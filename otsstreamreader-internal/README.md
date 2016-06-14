@@ -6,7 +6,19 @@ OTSStreamReader-Internal插件主要用于OTS Internal模型的增量数据导�
 
 与全量导出插件不同，增量导出插件只有多版本模式，同时不支持指定列。这是与增量导出的原理有关的，导出的格式下面有详细介绍。
 
-使用插件前必须确保表上已经开启Stream功能，可以在建表的时候指定开启，或者使用SDK的UpdateTable接口开启，SDK版本需要使用3.1.1。
+使用插件前必须确保表上已经开启Stream功能，可以在建表的时候指定开启，或者使用SDK的UpdateTable接口开启，SDK版本需要使用3.1.1以上版本。
+
+    开启Stream的方法：
+    OTS ots = new OTSClient("", "", "", "");
+    1. 建表的时候开启：
+    CreateTableRequest createTableRequest = new CreateTableRequest(tableMeta);
+    createTableRequest.setStreamSpecification(new StreamSpecification(true, 72)); // 72代表增量数据保留72小时
+    ots.createTable(createTableRequest);
+    
+    2. 如果建表时未开启，可以通过UpdateTable开启:
+    UpdateTableRequest updateTableRequest = new UpdateTableRequest("tableName");
+    updateTableRequest.setStreamSpecification(new StreamSpecification(true, 72)); // 72代表增量数据保留72小时
+    ots.updateTable(updateTableRequest);
 
 使用上遇到问题可以联系@亦征。
 
