@@ -28,6 +28,8 @@ public final class Key {
 
     public final static String BATCH_SIZE = "batchSize";
     
+    public final static String BUFFER_SIZE = "bufferSize";
+    
     public final static String PRE_SQL = "preSql";
 
     public final static String POST_SQL = "postSql";

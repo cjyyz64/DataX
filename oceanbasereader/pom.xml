@@ -47,9 +47,8 @@
 			<groupId>com.alibaba.datax</groupId>
 			<artifactId>simulator</artifactId>
 			<version>${datax-project-version}</version>
-			<scope>test</scope>
+			<scope>compile</scope>
 		</dependency>
-
         <dependency>
             <groupId>com.alipay.oceanbase</groupId>
             <artifactId>oceanbase</artifactId>

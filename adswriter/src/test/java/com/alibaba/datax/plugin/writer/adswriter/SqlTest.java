@@ -244,9 +244,12 @@ public class SqlTest {
         appendInsertSqlValues.setAccessible(true);
 
         StringBuilder sqlSb = new StringBuilder();
-        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
-        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
-        appendInsertSqlValues.invoke(conn, record, sqlSb, Constant.STREAMMODE);
+        appendInsertSqlValues.invoke(proxy, conn, record, sqlSb,
+                Constant.STREAMMODE);
+        appendInsertSqlValues.invoke(proxy, conn, record, sqlSb,
+                Constant.STREAMMODE);
+        appendInsertSqlValues.invoke(proxy, conn, record, sqlSb,
+                Constant.STREAMMODE);
         System.out.print(sqlSb);
 
     }
