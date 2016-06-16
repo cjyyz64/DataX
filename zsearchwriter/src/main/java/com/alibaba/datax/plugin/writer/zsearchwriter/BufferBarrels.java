@@ -4,6 +4,8 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -179,13 +181,13 @@ public class BufferBarrels {
                 }
             }, 5, 0, false);
         } catch (Exception e) {
-            log.warn("batch insert error", e);
+            log.warn("batch insert failed try single");
             //批量失败,转为单条插入
-            String tmp = data.substring(1, data.length() - 1);
-            String[] dataList = tmp.split(",");
-            for (String one : dataList) {
+            JSONArray jsonArray=JSONArray.parseArray(data);
+            for (Object one : jsonArray) {
                 try {
-                    addSingle(one);
+                    JSONObject jsonObject= (JSONObject) one;
+                    addSingle(jsonObject.getString("_id"),jsonObject);
                 } catch (Exception e1) {
                     if (pluginCollector != null) {
                         //如果仍出错,则进脏数据
@@ -195,8 +197,8 @@ public class BufferBarrels {
                     failedCount++;
                 }
             }
-            if (dataList.length != length) {
-                log.error("Concurrency Error! currentData:" + data + " lenght:" + length);
+            if (jsonArray.size() != length) {
+                log.error("Concurrency Error! currentData:" + data + " length:" + length);
             }
         }
     }
@@ -218,10 +220,10 @@ public class BufferBarrels {
      * @param data
      * @throws Exception
      */
-    private void addSingle(String data) throws Exception {
-        String url = String.format("%s/%s/%s?alive=%d", baseUrl, accessId, JSON.parseObject(data)
-                .getString("_id"), ttl);
-        sendToZSearch(url, data);
+    private void addSingle(String id,JSONObject data) throws Exception {
+        String url = String.format("%s/%s/%s?alive=%d", baseUrl, accessId, id, ttl);
+        data.remove("_id");
+        sendToZSearch(url, data.toJSONString());
     }
 
     /**
