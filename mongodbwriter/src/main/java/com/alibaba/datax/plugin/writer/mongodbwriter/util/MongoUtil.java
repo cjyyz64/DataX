@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 
 /**
  * Created by jianying.wcj on 2015/3/17 0017.
+ * Modified by mingyan.zc on 2016/6/13.
  */
 public class MongoUtil {
 
@@ -63,14 +64,13 @@ public class MongoUtil {
      * @return
      */
     private static boolean isHostPortPattern(List<Object> addressList) {
-        boolean isMatch = false;
         for(Object address : addressList) {
-            String regex = "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+):([0-9]+)";
-            if(((String)address).matches(regex)) {
-                isMatch = true;
+            String regex = "(\\S+):([0-9]+)";
+            if(!((String)address).matches(regex)) {
+                return false;
             }
         }
-        return isMatch;
+        return true;
     }
     /**
      * 转换为mongo地址协议
