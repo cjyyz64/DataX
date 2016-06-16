@@ -1,0 +1,61 @@
+{
+    "setting": {},
+    "job": {
+        "setting": {
+            "speed": {
+                "channel": 2
+            }
+        },
+        "content": [
+            {
+                "reader": {
+                    "name": "ftpreader",
+                    "parameter": {
+                        "host": "xxxxx",
+                        "port": "21",
+                        "username": "testftp",
+                        "password": "111111111111",
+                        "protocol": "ftp",
+                        "path": [
+                            "/home/hanfa.shf/ftproot/xx1.txt"
+                        ],
+                        "encoding": "UTF-8",
+                        "column": [
+                            {
+                                "index": 0,
+                                "type": "long"
+                            },
+                            {
+                                "index": 1,
+                                "type": "boolean"
+                            },
+                            {
+                                "index": 2,
+                                "type": "double"
+                            },
+                            {
+                                "index": 3,
+                                "type": "string"
+                            },
+                            {
+                                "index": 4,
+                                "type": "date",
+                                "format": "yyyy.MM.dd"
+                            }
+                        ],
+                        "fieldDelimiter": ","
+                    }
+                },
+                "writer": {
+                    "name": "txtfilewriter",
+                    "parameter": {
+                        "path": "/home/yuxiong.wangyx/datax-test/readers/ftpreader/case00/result",
+                        "fileName": "shihf",
+                        "writeMode": "truncate",
+                        "format": "yyyy-MM-dd"
+                    }
+                }
+            }
+        ]
+    }
+}

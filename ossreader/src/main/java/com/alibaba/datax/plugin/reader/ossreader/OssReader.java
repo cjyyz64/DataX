@@ -218,6 +218,7 @@ public class OssReader extends Reader {
                 Configuration splitedConfig = this.readerOriginConfig.clone();
                 splitedConfig.set(Constant.OBJECT, object);
                 readerSplitConfigs.add(splitedConfig);
+                LOG.info(String.format("OSS object to be read:%s", object));
             }
             LOG.debug("split() ok and end...");
             return readerSplitConfigs;
