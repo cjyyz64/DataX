@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.io.compress.LzoCodec;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,6 +100,28 @@ public class HBaseHelper {
         LOG.info("checkTmpOutputDir => " + outputDir);
     }
 
+
+    public static String checkOutputDirAndMakeForWapper(Configuration conf, String outputDir) throws IOException {
+        if (outputDir == null || outputDir.trim().length() == 0) {
+            throw DataXException.asDataXException(BulkWriterError.RUNTIME, "DATAX FATAL! 没有生成有效的配置(缺少hbase_output),请联系askdatax");
+        }
+
+        FileSystem fs = FileSystem.get(conf);
+
+        Path path = new Path(outputDir);
+
+        if (fs.exists(path)) {
+            LOG.info("checkOutputDirAndMakeForWapper# {} 目录已经存在, 尝试清空 ", outputDir);
+            fs.delete(new Path(outputDir));
+        }
+        if (!fs.exists(path)) {
+            fs.mkdirs(path);
+        }
+        LOG.info("checkOutputDirAndMake# 使用的目录为{} ", outputDir);
+        return outputDir;
+    }
+
+
     public static String checkOutputDirAndMake(Configuration conf, String outputDir)
             throws IOException {
         if (outputDir == null || outputDir.trim().length() == 0) {
@@ -137,6 +160,7 @@ public class HBaseHelper {
 
     public static void loadNativeLibrary() {
         try {
+            Log.info("loadNativeLibrary "+HBaseConsts.PLUGIN_HOME + "/libs/native");
             System.load(HBaseConsts.PLUGIN_HOME + "/libs/native/libhadoop.so");
             System.load(HBaseConsts.PLUGIN_HOME + "/libs/native/liblzo2.so.2");
         } catch (UnsatisfiedLinkError e) {

@@ -40,6 +40,7 @@ public class HBaseBulker {
     private long startTs;
     private String nullMode;
     private Table htable;
+    private String hbaseBulkLoadControl = "true";
     @Deprecated
     private String encoding;
     /**
@@ -101,6 +102,7 @@ public class HBaseBulker {
     }
 
     public void loadDynamicColumnConfig(Configuration conf) {
+        this.hbaseBulkLoadControl = conf.getString(Key.PREFIX_DYNAMIC + "." + Key.KEY_BULKLOAD_ENABLE, "true");
         this.table = conf.getString(Key.PREFIX_DYNAMIC + "." + Key.KEY_HBASE_TABLE);
         if (this.table == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
@@ -145,6 +147,7 @@ public class HBaseBulker {
     }
 
     public void loadFixedColumnConfig(Configuration conf) {
+        this.hbaseBulkLoadControl = conf.getString(Key.PREFIX_FIXED + "." + Key.KEY_BULKLOAD_ENABLE, "true");
         this.table = conf.getString(Key.PREFIX_FIXED + "." + Key.KEY_HBASE_TABLE);
         if (this.table == null) {
             throw DataXException.asDataXException(BulkWriterError.CONFIG_MISSING,
@@ -241,6 +244,10 @@ public class HBaseBulker {
     public int post() {
 
         LOG.info("================ HBaseBulkWriter Phase 3 hbase doBulkLoad starting... ================ ");
+        if(hbaseBulkLoadControl.equalsIgnoreCase("false")){
+            LOG.info("bulkLoad is off, not need post");
+            return 0;
+        }
         try {
             String uri = hbaseConf.get("fs.default.name");
             if (isTruncateTable) {
@@ -271,6 +278,10 @@ public class HBaseBulker {
     }
 
     public void clearDir() {
+        if(hbaseBulkLoadControl.equalsIgnoreCase("false")){
+            LOG.info("bulkLoad is off, not need clearDir");
+            return;
+        }
         HBaseHelper.clearTmpOutputDir(hbaseConf, hdfsOutputDir);
     }
 }
