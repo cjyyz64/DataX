@@ -2,7 +2,7 @@ package com.alibaba.datax.plugin.writer.zsearchwriter;
 
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.RetryUtil;
-import com.alibaba.datax.core.statistics.plugin.task.util.DirtyRecord;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -160,14 +160,19 @@ public class BufferBarrels {
         //获得JSON数据,清空缓存,排他切禁写,所以用写锁
         Lock writeLock = lock.writeLock();
         writeLock.lock();
+        String data;
+        int size;
+//        log.info("写锁加锁");
         try {
-            retrySend(getJSONData(), buffer.size());
+            data=getJSONData();
+            size=buffer.size();
             buffer.clear();
             totalSize.set(0);
         } finally {
             writeLock.unlock();
+//            log.info("写锁释放");
         }
-
+        retrySend(data, size);
     }
 
     private void retrySend(final String data, final long length) {
@@ -192,7 +197,7 @@ public class BufferBarrels {
                     if (pluginCollector != null) {
                         //如果仍出错,则进脏数据
                         pluginCollector
-                                .collectDirtyRecord(new DirtyRecord(), "insert error: " + one);
+                                .collectDirtyRecord(new DefaultRecord(), "insert error: " + one);
                     }
                     failedCount++;
                 }
