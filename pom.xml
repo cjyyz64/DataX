@@ -72,6 +72,7 @@
         <module>drdswriter</module>
         <module>odpswriter</module>
         <module>txtfilewriter</module>
+        <module>ftpwriter</module>
         <module>hdfswriter</module>
         <module>streamwriter</module>
         <module>otswriter</module>

@@ -6,10 +6,11 @@
 		<artifactId>datax-all</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>plugin-unstructured-storage-util</artifactId>
-	<name>plugin-unstructured-storage-util</name>
-	<description>plugin-unstructured-storage-util通用的文件类型的读取写入方法，供TxtFileReader/Writer, OSSReader/Writer 使用。</description>
+	<artifactId>ftpwriter</artifactId>
+	<name>ftpwriter</name>
+	<description>FtpWriter提供了写数据到指定ftp服务器文件功能。</description>
 	<packaging>jar</packaging>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.alibaba.datax</groupId>
@@ -21,6 +22,11 @@
 					<groupId>org.slf4j</groupId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>com.alibaba.datax</groupId>
+			<artifactId>plugin-unstructured-storage-util</artifactId>
+			<version>${datax-project-version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -35,26 +41,16 @@
 			<artifactId>guava</artifactId>
 			<version>16.0.1</version>
 		</dependency>
+
 		<dependency>
-			<groupId>net.sourceforge.javacsv</groupId>
-			<artifactId>javacsv</artifactId>
-			<version>2.0</version>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.51</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-compress</artifactId>
-			<version>1.9</version>
-		</dependency>
-		<dependency>
-			<groupId>org.anarres.lzo</groupId>
-			<artifactId>lzo-core</artifactId>
-			<version>1.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>com.aliyun.oss</groupId>
-			<artifactId>aliyun-sdk-oss</artifactId>
-			<version>2.0.2</version>
-			<scope>test</scope>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
+			<version>3.3</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -62,4 +58,36 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- compiler plugin -->
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+					<encoding>${project-sourceEncoding}</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<descriptors>
+						<descriptor>src/main/assembly/package.xml</descriptor>
+					</descriptors>
+					<finalName>datax</finalName>
+				</configuration>
+				<executions>
+					<execution>
+						<id>dwzip</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>
