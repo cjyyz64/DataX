@@ -82,6 +82,6 @@ public class BaiscTest extends BasicWriterPluginTest {
 
     @Test
     public void testJob() throws Exception {
-        super.doWriterTest("it.json",2);
+        super.doWriterTest("it.json",100000);
     }
 }

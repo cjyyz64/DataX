@@ -1,11 +1,13 @@
 package com.alibaba.datax.plugin.writer.zsearchwriter;
 
+import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -23,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.Callable;
@@ -39,19 +42,25 @@ import java.util.zip.GZIPOutputStream;
 public class BufferBarrels {
     private static final Logger log            = LoggerFactory.getLogger(BufferBarrels.class);
     private static final String UTF_8          = "UTF-8";
-    private static final long   batchSizeLimit = 64 * 1024 * 1024;
-
+    private static final long   batchSizeLimit = 32 * 1000 * 1000;
+    private static final Record dirtyFakeRecord=new DefaultRecord();
     private String                         baseUrl;
     private PoolingClientConnectionManager cm;
     private HttpClient                     hc;
     private BlockingDeque<String>          buffer;
-    private long                           failedCount;
+    private AtomicLong                           failedCount;
     private String                         accessId, accessKey;
     private int batchSize, ttl;
     private boolean             gzip;
     private AtomicLong          totalSize;
     private TaskPluginCollector pluginCollector;
     private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private static List<Class<?>> retryClasses;
+    static{
+        retryClasses= Lists.newArrayList();
+        retryClasses.add(IOException.class);
+    }
+
 
     public BufferBarrels(ZSearchConfig zSearchConfig, TaskPluginCollector taskPluginCollector) {
         this(zSearchConfig);
@@ -76,7 +85,7 @@ public class BufferBarrels {
         this.accessKey = zSearchConfig.accessKey;
         this.gzip = zSearchConfig.gzip;
         this.ttl = zSearchConfig.ttl;
-        this.failedCount = 0;
+        this.failedCount = new AtomicLong(0);
         this.totalSize = new AtomicLong(0);
     }
 
@@ -95,7 +104,9 @@ public class BufferBarrels {
         } catch (IOException e) {
         } finally {
             try {
-                output.close();
+                if(output!=null) {
+                    output.close();
+                }
             } catch (IOException e) {
             }
         }
@@ -117,8 +128,16 @@ public class BufferBarrels {
         try {
             buffer.add(dataString);
             //计算容量
-            totalSize.addAndGet(dataString.getBytes().length);
-        } finally {
+            totalSize.addAndGet(dataString.getBytes(UTF_8).length);
+        }catch (Exception e){
+            if (pluginCollector != null) {
+                //如果仍出错,则进脏数据
+                pluginCollector
+                        .collectDirtyRecord(dirtyFakeRecord, "insert error: " + dataString);
+            }
+            failedCount.incrementAndGet();
+        }
+        finally {
             readLock.unlock();
         }
         //一定要先释放读锁再刷新,因为发送的时候会用到写锁,如果读锁没释放就会死锁
@@ -157,11 +176,12 @@ public class BufferBarrels {
         if (buffer.size() == 0) {
             return;
         }
+        String data;
+        int size;
         //获得JSON数据,清空缓存,排他切禁写,所以用写锁
         Lock writeLock = lock.writeLock();
         writeLock.lock();
-        String data;
-        int size;
+
 //        log.info("写锁加锁");
         try {
             data=getJSONData();
@@ -176,7 +196,7 @@ public class BufferBarrels {
     }
 
     private void retrySend(final String data, final long length) {
-        //网络抖动重试5次,之间不等待
+        //网络抖动重试2次,之间不等待
         try {
             RetryUtil.executeWithRetry(new Callable<Object>() {
                 @Override
@@ -184,11 +204,11 @@ public class BufferBarrels {
                     addBatch(data);
                     return null;
                 }
-            }, 5, 0, false);
+            }, 2, 0, false);
         } catch (Exception e) {
             log.warn("batch insert failed try single");
             //批量失败,转为单条插入
-            JSONArray jsonArray=JSONArray.parseArray(data);
+            JSONArray jsonArray= JSONArray.parseArray(data);
             for (Object one : jsonArray) {
                 try {
                     JSONObject jsonObject= (JSONObject) one;
@@ -199,7 +219,7 @@ public class BufferBarrels {
                         pluginCollector
                                 .collectDirtyRecord(new DefaultRecord(), "insert error: " + one);
                     }
-                    failedCount++;
+                    failedCount.incrementAndGet();
                 }
             }
             if (jsonArray.size() != length) {
@@ -244,7 +264,7 @@ public class BufferBarrels {
         HttpEntity postEntity = null;
         try {
             httpPost = new HttpPost(url);
-            httpPost.addHeader("Connection", "Keep-Alive");
+//            httpPost.addHeader("Connection", "Keep-Alive");
             httpPost.addHeader("token", accessKey);
             if (gzip) {
                 httpPost.addHeader("Content-Encoding", "gzip");
@@ -264,11 +284,15 @@ public class BufferBarrels {
                 if (resp != null) {
                     EntityUtils.consume(resp.getEntity());
                 }
-                EntityUtils.consume(postEntity);
+                if(postEntity!=null) {
+                    EntityUtils.consume(postEntity);
+                }
+                if (httpPost != null){
+                    httpPost.abort();
+                }
             } catch (IOException e) {
                 log.error("Batch Insert Error", e);
             }
-            if (httpPost != null) httpPost.abort();
         }
     }
 
@@ -278,7 +302,7 @@ public class BufferBarrels {
      * @return
      */
     public long getFailedCount() {
-        return failedCount;
+        return failedCount.get();
     }
 
 }

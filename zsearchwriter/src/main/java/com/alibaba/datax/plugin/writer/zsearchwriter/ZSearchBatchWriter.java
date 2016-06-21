@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -296,7 +297,7 @@ public class ZSearchBatchWriter extends Writer {
                 if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)) {
                     continue;
                 }
-                if (one.trd != Boolean.TRUE) {
+                if (BooleanUtils.isTrue(one.trd)) {
                     //不是正排
                     putData(columnType, columnName, other);
                 } else {
