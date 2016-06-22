@@ -5,7 +5,6 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -206,25 +205,27 @@ public class BufferBarrels {
                 }
             }, 2, 0, false);
         } catch (Exception e) {
-            log.warn("batch insert failed try single");
+            log.warn("batch insert failed " ,e);
+            failedCount.addAndGet(length);
+            pluginCollector.collectDirtyRecord(dirtyFakeRecord, "insert error number: " + length);
             //批量失败,转为单条插入
-            JSONArray jsonArray= JSONArray.parseArray(data);
-            for (Object one : jsonArray) {
-                try {
-                    JSONObject jsonObject= (JSONObject) one;
-                    addSingle(jsonObject.getString("_id"),jsonObject);
-                } catch (Exception e1) {
-                    if (pluginCollector != null) {
-                        //如果仍出错,则进脏数据
-                        pluginCollector
-                                .collectDirtyRecord(new DefaultRecord(), "insert error: " + one);
-                    }
-                    failedCount.incrementAndGet();
-                }
-            }
-            if (jsonArray.size() != length) {
-                log.error("Concurrency Error! currentData:" + data + " length:" + length);
-            }
+//            JSONArray jsonArray= JSONArray.parseArray(data);
+//            for (Object one : jsonArray) {
+//                try {
+//                    JSONObject jsonObject= (JSONObject) one;
+//                    addSingle(jsonObject.getString("_id"),jsonObject);
+//                } catch (Exception e1) {
+//                    if (pluginCollector != null) {
+//                        //如果仍出错,则进脏数据
+//                        pluginCollector
+//                                .collectDirtyRecord(dirtyFakeRecord, "insert error: " + one);
+//                    }
+//                    failedCount.incrementAndGet();
+//                }
+//            }
+//            if (jsonArray.size() != length) {
+//                log.error("Concurrency Error! currentData:" + data + " length:" + length);
+//            }
         }
     }
 
