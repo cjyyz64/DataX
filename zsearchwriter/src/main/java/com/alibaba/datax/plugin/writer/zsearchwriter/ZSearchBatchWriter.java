@@ -297,7 +297,7 @@ public class ZSearchBatchWriter extends Writer {
                 if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)) {
                     continue;
                 }
-                if (BooleanUtils.isTrue(one.trd)) {
+                if (BooleanUtils.isNotTrue(one.trd)) {
                     //不是正排
                     putData(columnType, columnName, other);
                 } else {
