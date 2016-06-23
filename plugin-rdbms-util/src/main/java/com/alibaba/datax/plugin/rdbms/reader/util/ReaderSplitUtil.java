@@ -22,6 +22,8 @@ public final class ReaderSplitUtil {
         boolean isTableMode = originalSliceConfig.getBool(Constant.IS_TABLE_MODE).booleanValue();
         int eachTableShouldSplittedNumber = -1;
         if (isTableMode) {
+            // adviceNumber这里是channel数量大小, 即datax并发task数量
+            // eachTableShouldSplittedNumber是单表应该切分的份数, 向上取整可能和adviceNumber没有比例关系了已经
             eachTableShouldSplittedNumber = calculateEachTableShouldSplittedNumber(
                     adviceNumber, originalSliceConfig.getInt(Constant.TABLE_NUMBER_MARK));
         }
@@ -61,8 +63,12 @@ public final class ReaderSplitUtil {
                         && StringUtils.isNotBlank(splitPk);
                 if (needSplitTable) {
                     if (tables.size() == 1) {
-                        //如果是单表的，主键切分num=num*2+1
-                        eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 2 + 1;
+                        //原来:如果是单表的，主键切分num=num*2+1
+                        // splitPk is null这类的情况的数据量本身就比真实数据量少很多, 和channel大小比率关系时，不建议考虑
+                        //eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 2 + 1;// 不应该加1导致长尾
+                        
+                        //考虑其他比率数字?(splitPk is null, 忽略此长尾)
+                        eachTableShouldSplittedNumber = eachTableShouldSplittedNumber * 5;
                     }
                     // 尝试对每个表，切分为eachTableShouldSplittedNumber 份
                     for (String table : tables) {
