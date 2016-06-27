@@ -7,6 +7,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -118,7 +119,7 @@ public class ZSearchBatchWriter extends Writer {
         public void init() {
             this.taskConfig = super.getPluginJobConf();
             this.zSearchConfig = ZSearchConfig.of(taskConfig);
-            this.barrels = new BufferBarrels(zSearchConfig);
+            this.barrels = new BufferBarrels(zSearchConfig,getTaskPluginCollector());
         }
 
         @Override
@@ -130,7 +131,6 @@ public class ZSearchBatchWriter extends Writer {
         @Override
         public void startWrite(RecordReceiver recordReceiver) {
             Record record = null;
-
             while ((record = recordReceiver.getFromReader()) != null) {
                 // 组装数据
                 Map<String, Object> data = new HashMap<String, Object>();
@@ -171,7 +171,6 @@ public class ZSearchBatchWriter extends Writer {
                 }
                 // 添加到队列 批次发送
                 barrels.addData(data);
-                barrels.tryFlush();
             }
             // 缓冲区余量
             barrels.forceFlush();
@@ -298,7 +297,7 @@ public class ZSearchBatchWriter extends Writer {
                 if (columnName.equals(ZSearchConfig.PRIMARY_KEY_COLUMN_NAME)) {
                     continue;
                 }
-                if (one.trd != Boolean.TRUE) {
+                if (BooleanUtils.isNotTrue(one.trd)) {
                     //不是正排
                     putData(columnType, columnName, other);
                 } else {
