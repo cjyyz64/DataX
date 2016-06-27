@@ -38,6 +38,10 @@ public final class Key {
 
     public static final String KEY_ROWKEY_TYPE = "rowkeyType";
 
+    public static final String KEY_BULKLOAD_ENABLE = "hbaseBulkLoadControl";
+    public static final String KEY_SKYNET_JOBID = "skynetJobId";
+    public static final String KEY_SKYNET_TASKID = "skynetTaskId";
+
     /**
      * the columns to write into table For Example:
      * 0|long|family1:qualifier1,1|string

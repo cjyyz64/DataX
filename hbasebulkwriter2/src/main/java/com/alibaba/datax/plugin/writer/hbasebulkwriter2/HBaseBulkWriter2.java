@@ -42,6 +42,7 @@ public class HBaseBulkWriter2 extends Writer {
     }
 
 
+    @SuppressWarnings("Duplicates")
     public static class Job extends Writer.Job {
 
         private static final Logger LOG = LoggerFactory.getLogger(HBaseBulkWriter2.class);
@@ -298,8 +299,8 @@ public class HBaseBulkWriter2 extends Writer {
                 hBaseJobParameterConf = getFixColumnConf(writerOriginPluginConf, suffix);
             }
 
-
             jobConfiguration.set("job.content[0].writer.parameter." + mode, hBaseJobParameterConf);
+            jobConfiguration.remove("job.content[0].writer.parameter." + Key.PARAMETER_TYPE_ORIGIN);
 
             LOG.info("================ HBaseBulkWriter Phase 1 preHandler finish... ================ ");
 
@@ -431,8 +432,13 @@ public class HBaseBulkWriter2 extends Writer {
             }
 
             fixColumnConf.hbaseTable = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
+            fixColumnConf.hbaseBulkLoadControl = writerOriginPluginConf.getString(Key.KEY_BULKLOAD_ENABLE, "true");
             //需要检查hdfs目录，确保目录唯一，否则更换为新的目录名
-            fixColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, fixColumnConf.hbaseTable);
+            if(fixColumnConf.hbaseBulkLoadControl.equalsIgnoreCase("true")) {
+                fixColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, fixColumnConf.hbaseTable);
+            }else{
+                fixColumnConf.hbaseOutput = getFixHDFSDirNameForWapper(writerOriginPluginConf, fixColumnConf.hbaseTable);
+            }
             fixColumnConf.hbaseConfig = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
             fixColumnConf.hdfsConfig = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
             fixColumnConf.nullMode = writerOriginPluginConf.getString(Key.KEY_NULL_MODE);
@@ -457,8 +463,13 @@ public class HBaseBulkWriter2 extends Writer {
             }
 
             dynamicColumnConf.hbaseTable = writerOriginPluginConf.getString(Key.KEY_HBASE_TABLE);
+            dynamicColumnConf.hbaseBulkLoadControl = writerOriginPluginConf.getString(Key.KEY_BULKLOAD_ENABLE, "true");
             //需要检查hdfs目录，确保目录唯一，否则更换为新的目录名
-            dynamicColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, dynamicColumnConf.hbaseTable);
+            if(dynamicColumnConf.hbaseBulkLoadControl.equalsIgnoreCase("true")) {
+                dynamicColumnConf.hbaseOutput = getUniqHDFSDirName(writerOriginPluginConf, suffix, dynamicColumnConf.hbaseTable);
+            }else{
+                dynamicColumnConf.hbaseOutput = getFixHDFSDirNameForWapper(writerOriginPluginConf, dynamicColumnConf.hbaseTable);
+            }
             dynamicColumnConf.hbaseConfig = writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG);
             dynamicColumnConf.hdfsConfig = writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG);
             dynamicColumnConf.rowkeyType = writerOriginPluginConf.getString(Key.KEY_ROWKEY_TYPE);
@@ -469,6 +480,40 @@ public class HBaseBulkWriter2 extends Writer {
             dynamicColumnConf.encoding = writerOriginPluginConf.getString(Key.KEY_ENCODING);
             dynamicColumnConf.configuration = (Map<String, String>) writerOriginPluginConf.get(Key.KEY_HBASE_CONFIGURATION, Map.class);
             return dynamicColumnConf;
+        }
+
+        private String getFixHDFSDirNameForWapper(Configuration writerOriginPluginConf, String hbaseTable) {
+            final org.apache.hadoop.conf.Configuration conf = HBaseHelper.getConfiguration(
+                    writerOriginPluginConf.getString(Key.KEY_HDFS_CONFIG),
+                    writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIG),
+                    writerOriginPluginConf.getString(Key.KEY_HBASE_CONFIGURATION),
+                    null);
+
+            //同步中心增加调度的jobId和taskId,使用环境变量。
+//            String skynetJobId=writerOriginPluginConf.getString(Key.KEY_SKYNET_JOBID);
+//            String skynetTaskId=writerOriginPluginConf.getString(Key.KEY_SKYNET_TASKID);
+
+            Map<String, String> envProp = System.getenv();
+            String skynetJobId =  envProp.get("SKYNET_JOBID");
+            String skynetTaskId =  envProp.get("SKYNET_TASKID");
+
+            String configHDFSPath = writerOriginPluginConf.getString(Key.KEY_HBASE_OUTPUT);
+
+            configHDFSPath = Strings.isNullOrEmpty(configHDFSPath) ? Key.HDFS_DIR_BULKLOAD : configHDFSPath;
+
+            final String originDir = configHDFSPath + "/dscBulkloadWapper/" + skynetJobId + "/" + skynetTaskId + "/" + hbaseTable;
+            String res = null;
+            try {
+                res = RetryUtil.executeWithRetry(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        return HBaseHelper.checkOutputDirAndMakeForWapper(conf, originDir);
+                    }
+                }, 10, 1, true);
+            } catch (Exception e) {
+                throw DataXException.asDataXException(BulkWriterError.RUNTIME, "获取hdfs目录失败，请联系hbase同学检查hdfs集群", e);
+            }
+            return res;
         }
 
         private String getUniqHDFSDirName(Configuration writerOriginPluginConf, String suffix, String hbaseTable) {
