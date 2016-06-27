@@ -9,6 +9,7 @@ import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.datax.test.simulator.BasicWriterPluginTest;
 import com.alibaba.fastjson.JSONArray;
 import junit.framework.Assert;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 
 import java.io.File;
@@ -25,8 +26,8 @@ public class BaiscTest extends BasicWriterPluginTest {
             +"resources"+File.separator+"sample.json").getListConfiguration("job.content").get(0).getConfiguration("writer.parameter");
     @Override
     protected List<Record> buildDataForWriter() {
-        List<Record> list=new ArrayList<Record>(10);
-        for(int i=0;i<10;i++){
+        List<Record> list=new ArrayList<Record>(10000);
+        for(int i=0;i<10000;i++){
             Record record=new DefaultRecord();
             record.addColumn(new StringColumn("pk_"+i));
             record.addColumn(new StringColumn("String_"+i));
@@ -57,18 +58,30 @@ public class BaiscTest extends BasicWriterPluginTest {
         }
         Assert.assertEquals(JSONArray.toJSONString(expectList),buffer.getJSONData());
     }
-
+    @Test
+    public void testBufferBarrelsMaxSize() throws Exception {
+        ZSearchConfig zsearchConfig= ZSearchConfig.of(configutation);
+        BufferBarrels buffer=new BufferBarrels(zsearchConfig);
+        String random=RandomStringUtils.randomAscii(1024*1024);
+        for(int i=0;i<1000;i++){
+            Map<String,Object> map=new HashMap<String, Object>();
+            map.put("id",i);
+            map.put("context",random);
+            buffer.addData(map);
+        }
+        System.out.println(buffer.getJSONData());
+    }
     @Test
     public void testStartWrite() throws Exception {
         ZSearchBatchWriter.Task task=new ZSearchBatchWriter.Task();
         task.setPluginJobConf(configutation);
         task.init();
         task.startWrite(super.createRecordReceiverForTest());
-        Assert.assertEquals(10,task.getBarrels().getFailedCount());
+        Assert.assertEquals(0,task.getBarrels().getFailedCount());
     }
 
     @Test
     public void testJob() throws Exception {
-        super.doWriterTest("it.json",2);
+        super.doWriterTest("it.json",100000);
     }
 }

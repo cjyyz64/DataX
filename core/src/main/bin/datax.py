@@ -22,6 +22,8 @@ DEFAULT_PROPERTY_CONF = "-Dfile.encoding=UTF-8 -Dlogback.statusListenerClass=ch.
     DATAX_HOME, LOGBACK_FILE)
 ENGINE_COMMAND = "java -server ${jvm} %s -classpath %s  ${params} com.alibaba.datax.core.Engine -mode ${mode} -jobid ${jobid} -job ${job}" % (
     DEFAULT_PROPERTY_CONF, CLASS_PATH)
+WAPPER_BULKLOAD_COMMAND = "java -server %s %s -classpath %s com.alibaba.datax.core.WapperHbaseBulk " % (
+    DEFAULT_JVM, DEFAULT_PROPERTY_CONF, CLASS_PATH)
 REMOTE_DEBUG_CONFIG = "-Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=9999"
 
 RET_STATE = {
@@ -87,6 +89,8 @@ def getOptionParser():
                                  help="Set to remote debug mode.")
     devEnvOptionGroup.add_option("--loglevel", metavar="<log level>", dest="loglevel", action="store",
                                  default="info", help="Set log level such as: debug, info, all etc.")
+    prodEnvOptionGroup.add_option("--wapper_bulkload", metavar="<wapper for hbasebulkload>", dest="wapper_bulkload", action="store", default="false",
+                                  help="Wapper for hbaseBulkload.")
     parser.add_option_group(devEnvOptionGroup)
     return parser
 
@@ -153,11 +157,16 @@ if __name__ == "__main__":
     printCopyright()
     parser = getOptionParser()
     options, args = parser.parse_args(sys.argv[1:])
-    if len(args) != 1:
-        parser.print_help()
-        sys.exit(RET_STATE['FAIL'])
 
-    startCommand = buildStartCommand(options, args)
+    # bulkload的wapper,如果不能解析到env,再到这里增加参数,包括调度的jobID以及bulkLoad参数
+    if options.wapper_bulkload.lower().strip() == "true":
+        startCommand = WAPPER_BULKLOAD_COMMAND
+    else:
+        if len(args) != 1:
+            parser.print_help()
+            sys.exit(RET_STATE['FAIL'])
+        startCommand = buildStartCommand(options, args)
+
     # print startCommand
 
     child_process = subprocess.Popen(startCommand, shell=True)

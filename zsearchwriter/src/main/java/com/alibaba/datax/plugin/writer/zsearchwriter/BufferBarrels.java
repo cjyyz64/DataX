@@ -1,7 +1,11 @@
 package com.alibaba.datax.plugin.writer.zsearchwriter;
 
-import com.alibaba.datax.common.util.RetryUtil;
-import com.alibaba.fastjson.JSONArray;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
+import com.alibaba.datax.core.transport.record.DefaultRecord;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.collect.Lists;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -19,11 +23,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -31,19 +37,33 @@ import java.util.zip.GZIPOutputStream;
  * 收集数据批量发送至ZSearch服务器
  */
 public class BufferBarrels {
-    private static final Logger log            = LoggerFactory.getLogger(BufferBarrels.class);
-    private static final String UTF_8          = "UTF-8";
-    private static final long   batchSizeLimit = 64 * 1024 * 1024;
+    private static final Logger log             = LoggerFactory.getLogger(BufferBarrels.class);
+    private static final String UTF_8           = "UTF-8";
+    private static final long   batchSizeLimit  = 32 * 1000 * 1000;
+    private static final Record dirtyFakeRecord = new DefaultRecord();
+    private static List<Class<?>> retryClasses;
+
+    static {
+        retryClasses = Lists.newArrayList();
+        retryClasses.add(IOException.class);
+    }
 
     private String                         baseUrl;
     private PoolingClientConnectionManager cm;
     private HttpClient                     hc;
-    private BlockingDeque                  buffer;
-    private long                           failedCount;
+    private BlockingDeque<String>          buffer;
+    private AtomicLong                     failedCount;
     private String                         accessId, accessKey;
     private int batchSize, ttl;
     private boolean             gzip;
     private AtomicLong          totalSize;
+    private TaskPluginCollector pluginCollector;
+    private ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public BufferBarrels(ZSearchConfig zSearchConfig, TaskPluginCollector taskPluginCollector) {
+        this(zSearchConfig);
+        this.pluginCollector = taskPluginCollector;
+    }
 
     //String serverUrl, String accessId, String accessKey, int poolSize, int batchSize
     public BufferBarrels(ZSearchConfig zSearchConfig) {
@@ -63,7 +83,7 @@ public class BufferBarrels {
         this.accessKey = zSearchConfig.accessKey;
         this.gzip = zSearchConfig.gzip;
         this.ttl = zSearchConfig.ttl;
-        this.failedCount = 0;
+        this.failedCount = new AtomicLong(0);
         this.totalSize = new AtomicLong(0);
     }
 
@@ -82,7 +102,9 @@ public class BufferBarrels {
         } catch (IOException e) {
         } finally {
             try {
-                output.close();
+                if (output != null) {
+                    output.close();
+                }
             } catch (IOException e) {
             }
         }
@@ -91,27 +113,56 @@ public class BufferBarrels {
 
     /**
      * 添加数据至缓冲区
-     * TODO:8MB 限制
+     * DataX还有单行8MB的要求,但是因为我们都是从reader读出的,没有加上太多字符,所以应该不用关心（除非key很长）
      *
      * @param data
      */
     public void addData(Map data) {
-        buffer.add(data);
-        //计算容量
-        totalSize.addAndGet(32 * data.size());
+        //转成String 方便计算容量
+        String dataString = JSON.toJSONString(data);
+        //可以多个同时写入,所以用读锁
+        Lock readLock = lock.readLock();
+        readLock.lock();
+        try {
+            buffer.add(dataString);
+            //计算容量
+            totalSize.addAndGet(dataString.getBytes(UTF_8).length);
+        } catch (Exception e) {
+            if (pluginCollector != null) {
+                //如果仍出错,则进脏数据
+                pluginCollector.collectDirtyRecord(dirtyFakeRecord, "insert error: " + dataString);
+            }
+            failedCount.incrementAndGet();
+        } finally {
+            readLock.unlock();
+        }
+        //一定要先释放读锁再刷新,因为发送的时候会用到写锁,如果读锁没释放就会死锁
+        tryFlush();
     }
 
     /**
-     * 尝试提交缓冲区数据
+     * 尝试提交缓冲区数据,同步操作
      */
-    public void tryFlush() {
+    private synchronized void tryFlush() {
         if (buffer.size() == batchSize || totalSize.get() > batchSizeLimit) {
             forceFlush();
         }
     }
 
+    /**
+     * 手动生成JSON数据,不能用JSON类,因为Buffer中已经转为String,如果用JSON类会出错
+     *
+     * @return
+     */
     public String getJSONData() {
-        return JSONArray.toJSONString(buffer);
+        StringBuilder sb = new StringBuilder("[");
+        for (String s : buffer) {
+            sb.append(s);
+            sb.append(",");
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append("]");
+        return sb.toString();
     }
 
     /**
@@ -121,36 +172,100 @@ public class BufferBarrels {
         if (buffer.size() == 0) {
             return;
         }
-        retrySend(getJSONData(), buffer.size());
-        buffer.clear();
-        totalSize.set(0);
+        String data;
+        int size;
+        //获得JSON数据,清空缓存,排他切禁写,所以用写锁
+        Lock writeLock = lock.writeLock();
+        writeLock.lock();
 
+//        log.info("写锁加锁");
+        try {
+            data = getJSONData();
+            size = buffer.size();
+            buffer.clear();
+            totalSize.set(0);
+        } finally {
+            writeLock.unlock();
+//            log.info("写锁释放");
+        }
+        retrySend(data, size);
     }
 
     private void retrySend(final String data, final long length) {
-        //网络抖动重试5次,之间不等待
         try {
-            RetryUtil.executeWithRetry(new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    sendToZSearch(data);
-                    return null;
-                }
-            }, 5, 0, false);
+            //去除重试
+            addBatch(data);
+            //网络抖动重试2次,之间不等待
+//            RetryUtil.executeWithRetry(new Callable<Object>() {
+//                @Override
+//                public Object call() throws Exception {
+//                    addBatch(data);
+//                    return null;
+//                }
+//            }, 2, 0, false);
         } catch (Exception e) {
-            log.warn("batch insert error",e);
-            failedCount += length;
+            log.warn("batch insert failed ", e);
+            failedCount.addAndGet(length);
+            pluginCollector.collectDirtyRecord(dirtyFakeRecord, "insert error number: " + length);
+            //批量失败,转为单条插入
+//            JSONArray jsonArray= JSONArray.parseArray(data);
+//            for (Object one : jsonArray) {
+//                try {
+//                    JSONObject jsonObject= (JSONObject) one;
+//                    addSingle(jsonObject.getString("_id"),jsonObject);
+//                } catch (Exception e1) {
+//                    if (pluginCollector != null) {
+//                        //如果仍出错,则进脏数据
+//                        pluginCollector
+//                                .collectDirtyRecord(dirtyFakeRecord, "insert error: " + one);
+//                    }
+//                    failedCount.incrementAndGet();
+//                }
+//            }
+//            if (jsonArray.size() != length) {
+//                log.error("Concurrency Error! currentData:" + data + " length:" + length);
+//            }
         }
     }
 
-    private void sendToZSearch(String data) throws Exception {
+    /**
+     * 批量插入
+     *
+     * @param data
+     * @throws Exception
+     */
+    private void addBatch(String data) throws Exception {
+        String url = String.format("%s/%s?alive=%d", baseUrl, accessId, ttl);
+        sendToZSearch(url, data);
+    }
+
+    /**
+     * 单条插入
+     *
+     * @param data
+     * @throws Exception
+     */
+    private void addSingle(String id, JSONObject data) throws Exception {
+        String url = String.format("%s/%s/%s?alive=%d", baseUrl, accessId, id, ttl);
+        data.remove("_id");
+        sendToZSearch(url, data.toJSONString());
+    }
+
+    /**
+     * 真实发送方法
+     *
+     * @param url
+     * @param data
+     * @throws Exception
+     */
+    private void sendToZSearch(String url, String data) throws Exception {
         HttpResponse resp = null;
         HttpPost httpPost = null;
         HttpEntity postEntity = null;
         try {
-            httpPost = new HttpPost(String.format("%s/%s?alive=%d", baseUrl, accessId, ttl));
-            httpPost.addHeader("Connection", "Keep-Alive");
-            httpPost.addHeader("accessKey", accessKey);
+            httpPost = new HttpPost(url);
+//            httpPost.addHeader("Connection", "Keep-Alive");
+            httpPost.addHeader("token", accessKey);
             if (gzip) {
                 httpPost.addHeader("Content-Encoding", "gzip");
                 byte[] zipData = gzip((data.getBytes(UTF_8)));
@@ -162,18 +277,22 @@ public class BufferBarrels {
             resp = hc.execute(httpPost);
             String result = EntityUtils.toString(resp.getEntity());
             if (!"OK".equals(result)) {
-                throw new RuntimeException("Batch insert Error: "+result);
+                throw new RuntimeException("Batch insert Error: " + result);
             }
         } finally {
             try {
                 if (resp != null) {
                     EntityUtils.consume(resp.getEntity());
                 }
-                EntityUtils.consume(postEntity);
+                if (postEntity != null) {
+                    EntityUtils.consume(postEntity);
+                }
+                if (httpPost != null) {
+                    httpPost.abort();
+                }
             } catch (IOException e) {
                 log.error("Batch Insert Error", e);
             }
-            if (httpPost != null) httpPost.abort();
         }
     }
 
@@ -183,8 +302,7 @@ public class BufferBarrels {
      * @return
      */
     public long getFailedCount() {
-        return failedCount;
+        return failedCount.get();
     }
-
 
 }

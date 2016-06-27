@@ -20,6 +20,7 @@ public class FixColumnConf implements HBaseJobParameterConf {
     public String timeCol;
     public String bucketNum;
     public String encoding;
+    public String hbaseBulkLoadControl;
     public Map<String, String> configuration;
 
 
@@ -101,6 +102,10 @@ public class FixColumnConf implements HBaseJobParameterConf {
 
     public String getEncoding() {
         return encoding;
+    }
+
+    public String getHbaseBulkLoadControl() {
+        return hbaseBulkLoadControl;
     }
 
     public Map<String, String> getConfiguration() {

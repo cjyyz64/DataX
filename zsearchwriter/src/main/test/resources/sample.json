@@ -9,12 +9,12 @@
         "writer": {
           "name": "zsearchwriter",
           "parameter": {
-            "endpoint": "http://xxx",
-            "accessId": "tableName",
+            "endpoint": "http://zsearch-dev.alipay.net:9200",
+            "accessId": "test",
             "accessKey": "tableToken",
             "ttl": 1800,
             "cleanup": false,
-            "batchSize" : 100,
+            "batchSize" : 3000,
             "httpPoolSize" : 50,
             "column": [
               { "name": "pk","type": "string","sort":true },

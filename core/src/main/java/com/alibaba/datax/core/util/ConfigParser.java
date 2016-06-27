@@ -97,7 +97,7 @@ public final class ConfigParser {
                 httpGet.setURI(url.toURI());
                 DataxServiceUtil.signature(url.getPath(), "GET", httpGet, null);
 
-                jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 6, 1000l);
+                jobContent = httpClientUtil.executeAndGetWithFailedRetry(httpGet, 1, 1000l);
             } catch (Exception e) {
                 throw DataXException.asDataXException(FrameworkErrorCode.CONFIG_ERROR, "获取作业配置信息失败:" + jobResource, e);
             }
@@ -116,7 +116,7 @@ public final class ConfigParser {
         return jobContent;
     }
 
-    private static Configuration parsePluginConfig(List<String> wantPluginNames) {
+    public static Configuration parsePluginConfig(List<String> wantPluginNames) {
         Configuration configuration = Configuration.newDefault();
 
         Set<String> replicaCheckPluginSet = new HashSet<String>();

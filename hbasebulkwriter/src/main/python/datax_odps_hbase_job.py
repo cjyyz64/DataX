@@ -85,7 +85,7 @@ def exec_datax_job(project, src_table, odps_column, suffix,
                    dst_table, hbase_rowkey, hbase_column, hdfs_config, hbase_config, cluster_id, hbase_output, concurrency,
                    bucket_num, time_col, start_ts, null_mode, dynamic_qualifier, rowkey_type, truncate,
                    access_id, access_key, tunnel_server, odps_server, compress)
-    jobConfigPath = 'datax_hbasebulkwriter_job.json'
+    jobConfigPath = "/tmp/datax_hbasebulkwriter_%s_job.json" % suffix
     fileHandler = open(jobConfigPath,'w')
     fileHandler.write(jobJSON)
     fileHandler.close()
@@ -102,6 +102,11 @@ def exec_datax_job(project, src_table, odps_column, suffix,
     # urgly, refator later
     tmp_table = "t_datax_odps2hbase_table_%s_%s" % (src_table, suffix)
     odpsutil.drop_table(tmp_table)
+
+    try:
+        os.remove(jobConfigPath)
+    except Exception, ex:
+        odpsutil.log(r"remove tmp file[%s] has Exception %s." % (jobConfigPath, str(ex)))
 
     util.log_phase(phase_name, is_end=True)
 
