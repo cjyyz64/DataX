@@ -206,7 +206,7 @@ public class WapperHbaseBulk {
             String hbaseControl = jobConfig.getString("data.writer.hbaseBulkLoadControl", "true");
 
             if (hbaseControl.toLowerCase().equals("true")) {
-                throw new WapperBulkLoadException(String.format("上游hbaseBulkWriter任务开启了upload功能,因此wapperBulkLoad不能执行,dscJobId=%s,dscJobVersion=%s", jobId.getFileId(), jobId.getFileVersion()));
+                throw new WapperBulkLoadException(String.format("上游hbaseBulkWriter任务开启了upload功能,或者不是hbaseBulkWriter任务,因此不能执行bulkLoadWapper。请查看dscJobId=%s,dscJobVersion=%s", jobId.getFileId(), jobId.getFileVersion()));
             }
 
             result.add(new HBaseBulkLoadWorker(jobId, jobConfig));
