@@ -374,7 +374,7 @@ public class WapperHbaseBulk {
             if (hbaseVersion.equalsIgnoreCase("094x")) {
                 return "com.alibaba.datax.plugin.writer.hbasebulkwriter2.WapperHBaseBulker";
             } else if (hbaseVersion.equalsIgnoreCase("11x")) {
-                return "com.alibaba.datax.plugin.writer.hbasebulkwriter2_11.WapperHBaseBulker";
+                return "com.alibaba.datax.plugin.writer.hbasebulkwriter2_11x.WapperHBaseBulker";
             } else {
                 throw new WapperBulkLoadException(String.format("错误的上游hbaseBulkWriter任务的hbase版本(%s),因此wapperBulkLoad不能执行,dscJobId=%s,dscJobVersion=%s", hbaseVersion, skynetWapper.getFileId(), skynetWapper.getFileVersion()));
             }
