@@ -8,8 +8,10 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.anarres.lzo.LzoCompressor1x_1;
 import org.anarres.lzo.LzoOutputStream;
@@ -131,6 +133,61 @@ public class UnstructuredStorageWriterUtil {
                     String.format("您配置的fileFormat [%s]错误, 支持csv, plainText两种.",
                             fileFormat));
         }
+    }
+    
+    public static List<Configuration> split(Configuration writerSliceConfig,
+            Set<String> originAllFileExists, int mandatoryNumber) {
+        LOG.info("begin do split...");
+        Set<String> allFileExists = new HashSet<String>();
+        allFileExists.addAll(originAllFileExists);
+        List<Configuration> writerSplitConfigs = new ArrayList<Configuration>();
+        String filePrefix = writerSliceConfig.getString(Key.FILE_NAME);
+
+        String fileSuffix;
+        for (int i = 0; i < mandatoryNumber; i++) {
+            // handle same file name
+            Configuration splitedTaskConfig = writerSliceConfig.clone();
+            String fullFileName = null;
+            fileSuffix = UUID.randomUUID().toString().replace('-', '_');
+            fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+            while (allFileExists.contains(fullFileName)) {
+                fileSuffix = UUID.randomUUID().toString().replace('-', '_');
+                fullFileName = String.format("%s__%s", filePrefix, fileSuffix);
+            }
+            allFileExists.add(fullFileName);
+            splitedTaskConfig.set(Key.FILE_NAME, fullFileName);
+            LOG.info(String
+                    .format("splited write file name:[%s]", fullFileName));
+            writerSplitConfigs.add(splitedTaskConfig);
+        }
+        LOG.info("end do split.");
+        return writerSplitConfigs;
+    }
+
+    public static String buildFilePath(String path, String fileName,
+            String suffix) {
+        boolean isEndWithSeparator = false;
+        switch (IOUtils.DIR_SEPARATOR) {
+        case IOUtils.DIR_SEPARATOR_UNIX:
+            isEndWithSeparator = path.endsWith(String
+                    .valueOf(IOUtils.DIR_SEPARATOR));
+            break;
+        case IOUtils.DIR_SEPARATOR_WINDOWS:
+            isEndWithSeparator = path.endsWith(String
+                    .valueOf(IOUtils.DIR_SEPARATOR_WINDOWS));
+            break;
+        default:
+            break;
+        }
+        if (!isEndWithSeparator) {
+            path = path + IOUtils.DIR_SEPARATOR;
+        }
+        if (null == suffix) {
+            suffix = "";
+        } else {
+            suffix = suffix.trim();
+        }
+        return String.format("%s%s%s", path, fileName, suffix);
     }
 
     public static void writeToStream(RecordReceiver lineReceiver,

@@ -1,0 +1,15 @@
+target
+/lib
+/classes
+*.class
+.idea/
+*.iml
+out/
+hsf/
+.project
+.settings
+.classpath
+.gitignore
+*.pyc
+*.DS_Store
+.git

@@ -194,17 +194,18 @@ public class UnstructuredStorageReaderUtil {
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
 							tarArchiveInputStream, encoding));
-				} else if ("zip".equalsIgnoreCase(compress)) {
-					ZipArchiveInputStream zipArchiveInputStream = new ZipArchiveInputStream(
-							inputStream);
-					reader = new BufferedReader(new InputStreamReader(
-							zipArchiveInputStream, encoding));
-				}*/ else {
+				}*/ 
+                else if ("zip".equalsIgnoreCase(compress)) {
+                    ZipCycleInputStream zipCycleInputStream = new ZipCycleInputStream(
+                            inputStream);
+                    reader = new BufferedReader(new InputStreamReader(
+                            zipCycleInputStream, encoding));
+                } else {
 					throw DataXException
 							.asDataXException(
 									UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
 									String.format(
-											"仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
+											"仅支持 gzip, bzip2, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]",
 											compress));
 				}
 			}
@@ -487,10 +488,10 @@ public class UnstructuredStorageReaderUtil {
 					.getUnnecessaryValue(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS,null,null);
 			if(compress != null){
 				compress = compress.toLowerCase().trim();
-				boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress);
+				boolean compressTag = "gzip".equals(compress) || "bzip2".equals(compress) || "zip".equals(compress);
 				if (!compressTag) {
 					throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-							String.format("仅支持 gzip, bzip2 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]", compress));
+							String.format("仅支持 gzip, bzip2, zip 文件压缩格式 , 不支持您配置的文件压缩格式: [%s]", compress));
 				}
 			}		
 			readerConfiguration.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.COMPRESS, compress);

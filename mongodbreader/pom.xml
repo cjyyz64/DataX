@@ -36,10 +36,6 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
         <!-- mongodb 依赖 -->
         <dependency>
 		  <groupId>org.mongodb</groupId>
