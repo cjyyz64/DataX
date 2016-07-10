@@ -10,6 +10,7 @@ import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.StreamClie
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.TimeUtils;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.OTSException;
+import com.aliyun.openservices.ots.internal.model.StreamDetails;
 import com.aliyun.openservices.ots.internal.model.StreamShard;
 import com.aliyun.openservices.ots.internal.streamclient.Worker;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
@@ -43,7 +44,8 @@ public class OTSStreamReaderSlaveProxy {
     public void init(final OTSStreamReaderConfig otsStreamReaderConfig) {
         this.config = otsStreamReaderConfig;
         this.ots = OTSHelper.getOTSInstance(config);
-        this.streamId = OTSHelper.getStreamDetails(ots, config.getDataTable()).getStreamId();
+        StreamDetails streamDetails = OTSHelper.getStreamDetails(ots, config.getDataTable());
+        this.streamId = streamDetails.getStreamId();
         this.checkpointInfoTracker = new CheckpointTimeTracker(ots, config.getStatusTable(), streamId);
         this.checker = new OTSStreamReaderChecker(ots, config);
 
@@ -55,6 +57,23 @@ public class OTSStreamReaderSlaveProxy {
         }
         boolean findCheckpoints = checker.checkAndSetCheckpointsAtStartTimestamp(checkpointInfoTracker, shardToCheckpointMap);
         shouldSkip = !findCheckpoints;
+
+        /**
+         * 为了减少扫描量, 获取每个分片最近一次的位点.
+         */
+        if(!findCheckpoints) {
+            long expirationTime = (streamDetails.getExpirationTime() - 1) * TimeUtils.HOUR_IN_MILLIS;
+            long timeRangeBegin = System.currentTimeMillis() - expirationTime;
+            long timeRangeEnd = this.config.getStartTimestampMillis() - 1;
+            if (timeRangeBegin < timeRangeEnd) {
+                for (StreamShard shard : shards) {
+                    String checkpoint = this.checkpointInfoTracker.getShardLargestCheckpointInTimeRange(shard.getShardId(), timeRangeBegin, timeRangeEnd);
+                    if (checkpoint != null) {
+                        shardToCheckpointMap.put(shard.getShardId(), checkpoint);
+                    }
+                }
+            }
+        }
     }
 
     private void updateShardToReadyTimeMap(List<StreamShard> orderedShardList, Map<String, String> checkpointMap) {
@@ -77,12 +96,28 @@ public class OTSStreamReaderSlaveProxy {
         }
     }
 
+    private int calcThreadNum(Map<String, String> shardToCheckpointMap) {
+        if (this.config.getThreadNum() > 0) {
+            LOG.info("ThreadNum: {}.", this.config.getThreadNum());
+            return this.config.getThreadNum();
+        }
+        int shardNotEnd = 0;
+        for (Map.Entry<String, String> entry : shardToCheckpointMap.entrySet()) {
+            if (!entry.getValue().equals(CheckpointPosition.SHARD_END)) {
+                shardNotEnd++;
+            }
+        }
+        int threadNum = Math.min(Runtime.getRuntime().availableProcessors() * 3, shardNotEnd + 2);
+        LOG.info("ThreadNum: {}.", threadNum);
+        return threadNum;
+    }
+
     public void startRead(RecordSender recordSender) {
         try {
             IRecordProcessorFactory processorFactory =
                     StreamClientHelper.getRecordProcessorFactory(ots, config, shouldSkip, shardToCheckpointMap,
                             shardToLastProcessTimeMap, checkpointInfoTracker, recordSender);
-            ExecutorService executorService = Executors.newCachedThreadPool();
+            ExecutorService executorService = Executors.newFixedThreadPool(calcThreadNum(shardToCheckpointMap));
             worker = StreamClientHelper.getWorkerInstance(ots, config, processorFactory, executorService);
 
             Thread thread = new Thread(worker);

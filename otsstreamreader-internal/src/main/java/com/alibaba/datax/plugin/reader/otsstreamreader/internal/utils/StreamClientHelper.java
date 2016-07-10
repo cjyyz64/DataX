@@ -11,6 +11,7 @@ import com.aliyun.openservices.ots.internal.model.*;
 import com.aliyun.openservices.ots.internal.streamclient.ClientConfig;
 import com.aliyun.openservices.ots.internal.streamclient.StreamConfig;
 import com.aliyun.openservices.ots.internal.streamclient.Worker;
+import com.aliyun.openservices.ots.internal.streamclient.lease.MemoryLeaseManager;
 import com.aliyun.openservices.ots.internal.streamclient.model.IRecordProcessor;
 import com.aliyun.openservices.ots.internal.streamclient.model.IRecordProcessorFactory;
 
@@ -50,7 +51,7 @@ public class StreamClientHelper {
         streamConfig.setStatusTableName(config.getStatusTable());
 
         Worker worker = new Worker("Datax_OTSStream_Reader", clientConfig,
-                streamConfig, factory, executorService);
+                streamConfig, factory, executorService, new MemoryLeaseManager());
         return worker;
     }
 
