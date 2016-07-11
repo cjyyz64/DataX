@@ -29,6 +29,10 @@ public class KeyConstant {
      */
     public static final String MONGO_COLLECTION_NAME = "collectionName";
     /**
+     * mongodb 查询条件
+     */
+    public static final String MONGO_QUERY = "query";
+    /**
      * mongodb 的列
      */
     public static final String MONGO_COLUMN = "column";
