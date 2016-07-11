@@ -118,6 +118,52 @@ public class CheckpointTimeTracker {
         return checkpointMap;
     }
 
+    /**
+     * 设置某个分片某个时间的checkpoint, 用于寻找某个分片在一定区间内较大的checkpoint, 减少扫描的数据量.
+     * @param shardId
+     * @param timestamp
+     * @param checkpointValue
+     */
+    public void setShardTimeCheckpoint(String shardId, long timestamp, String checkpointValue) {
+        PutRowRequest putRowRequest = getOTSRequestForSetShardTimeCheckpoint(shardId, timestamp, checkpointValue);
+        ots.putRow(putRowRequest);
+        LOG.info("SetShardTimeCheckpoint: timestamp: {}, shardId: {}, checkpointValue: {}.", timestamp, shardId, checkpointValue);
+    }
+
+    /**
+     * 获取某个分片在某个时间范围内最大的checkpoint, 用于寻找某个分片在一定区间内较大的checkpoint, 减少扫描的数据量.
+     * @param shardId
+     * @param startTimestamp
+     * @param endTimestamp
+     * @return
+     */
+    public String getShardLargestCheckpointInTimeRange(String shardId, long startTimestamp, long endTimestamp) {
+        PrimaryKey startPk = getPrimaryKeyForShardTimeCheckpoint(shardId, endTimestamp);
+        PrimaryKey endPk = getPrimaryKeyForShardTimeCheckpoint(shardId, startTimestamp);
+        RangeRowQueryCriteria rangeRowQueryCriteria = new RangeRowQueryCriteria(statusTable);
+        rangeRowQueryCriteria.setMaxVersions(1);
+        rangeRowQueryCriteria.setDirection(Direction.BACKWARD);
+        rangeRowQueryCriteria.setLimit(1);
+        rangeRowQueryCriteria.setInclusiveStartPrimaryKey(startPk);
+        rangeRowQueryCriteria.setExclusiveEndPrimaryKey(endPk);
+        GetRangeRequest getRangeRequest = new GetRangeRequest(rangeRowQueryCriteria);
+
+        GetRangeResult result = ots.getRange(getRangeRequest);
+        if (result.getRows().isEmpty()) {
+            return null;
+        } else {
+            try {
+                String checkpoint  = result.getRows().get(0).getLatestColumn(StatusTableConstants.CHECKPOINT_COLUMN_NAME).getValue().asString();
+                String time = result.getRows().get(0).getPrimaryKey().getPrimaryKeyColumn(2).getValue().asString().split(StatusTableConstants.TIME_SHARD_SEPARATOR)[1];
+                LOG.info("find checkpoint for shard {} in time {}.", shardId, time);
+                return checkpoint;
+            } catch (Exception ex) {
+                LOG.error("Error when get shard time checkpoint.", ex);
+                return null;
+            }
+        }
+    }
+
     public void clearShardCountAndAllCheckpoints(long timestamp) {
         PrimaryKey primaryKey = getPrimaryKeyForShardCount(timestamp);
         DeleteRowRequest deleteRowRequest = getOTSRequestForDelete(primaryKey);
@@ -162,8 +208,30 @@ public class CheckpointTimeTracker {
         return primaryKey;
     }
 
+    private PrimaryKey getPrimaryKeyForShardTimeCheckpoint(String shardId, long timestamp) {
+        String statusValue = shardId + StatusTableConstants.TIME_SHARD_SEPARATOR + String.format("%16d", timestamp);
+
+        List<PrimaryKeyColumn> pkCols = new ArrayList<PrimaryKeyColumn>();
+        pkCols.add(new PrimaryKeyColumn(StatusTableConstants.PK1_STREAM_ID, PrimaryKeyValue.fromString(streamId)));
+        pkCols.add(new PrimaryKeyColumn(StatusTableConstants.PK2_STATUS_TYPE, PrimaryKeyValue.fromString(StatusTableConstants.STATUS_TYPE_SHARD_CHECKPOINT)));
+        pkCols.add(new PrimaryKeyColumn(StatusTableConstants.PK3_STATUS_VALUE, PrimaryKeyValue.fromString(statusValue)));
+
+        PrimaryKey primaryKey = new PrimaryKey(pkCols);
+        return primaryKey;
+    }
+
     private PutRowRequest getOTSRequestForSetCheckpoint(long timestamp, String shardId, String checkpointValue) {
         PrimaryKey primaryKey = getPrimaryKeyForCheckpoint(timestamp, shardId);
+
+        RowPutChange rowPutChange = new RowPutChange(statusTable, primaryKey);
+        rowPutChange.addColumn(StatusTableConstants.CHECKPOINT_COLUMN_NAME, ColumnValue.fromString(checkpointValue));
+
+        PutRowRequest putRowRequest = new PutRowRequest(rowPutChange);
+        return putRowRequest;
+    }
+
+    private PutRowRequest getOTSRequestForSetShardTimeCheckpoint(String shardId, long timestamp, String checkpointValue) {
+        PrimaryKey primaryKey = getPrimaryKeyForShardTimeCheckpoint(shardId, timestamp);
 
         RowPutChange rowPutChange = new RowPutChange(statusTable, primaryKey);
         rowPutChange.addColumn(StatusTableConstants.CHECKPOINT_COLUMN_NAME, ColumnValue.fromString(checkpointValue));

@@ -35,7 +35,6 @@ public class RecordSenderForTest implements RecordSender{
                 return 0;
             }
 
-            @Override
             public int getMemorySize() {
                 return 0;
             }

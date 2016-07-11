@@ -30,6 +30,8 @@ public class OTSHelper {
         OTSRetryStrategyForStreamReader retryStrategy = new OTSRetryStrategyForStreamReader();
         retryStrategy.setMaxRetries(config.getMaxRetries());
         clientConfig.setRetryStrategy(retryStrategy);
+        clientConfig.setConnectionTimeoutInMillisecond(50 * 1000);
+        clientConfig.setSocketTimeoutInMillisecond(50 * 1000);
         OTS ots = new OTSClient(config.getEndpoint(), config.getAccessId(),
                 config.getAccessKey(), config.getInstanceName(), clientConfig);
         return ots;

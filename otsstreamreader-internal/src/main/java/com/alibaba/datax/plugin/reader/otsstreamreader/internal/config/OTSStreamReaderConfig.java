@@ -32,6 +32,7 @@ public class OTSStreamReaderConfig {
     private static final String KEY_MAX_RETRIES = "maxRetries";
     private static final String KEY_MODE = "mode";
     private static final String KEY_COLUMN = "column";
+    private static final String KEY_THREAD_NUM = "threadNum";
 
     private static final int DEFAULT_MAX_RETRIES = 30;
 
@@ -45,6 +46,7 @@ public class OTSStreamReaderConfig {
     private long endTimestampMillis;
     private boolean isExportSequenceInfo;
     private int maxRetries = DEFAULT_MAX_RETRIES;
+    private int threadNum = -1;
 
     private Mode mode;
     private List<String> columns;
@@ -173,6 +175,10 @@ public class OTSStreamReaderConfig {
         config.setStatusTable(ParamChecker.checkStringAndGet(param, KEY_STATUS_TABLE_NAME, true));
         config.setIsExportSequenceInfo(param.getBool(KEY_IS_EXPORT_SEQUENCE_INFO, false));
 
+        if (param.getInt(KEY_THREAD_NUM) != null) {
+            config.setThreadNum(param.getInt(KEY_THREAD_NUM));
+        }
+
         if (param.getString(KEY_DATE) == null &&
                 (param.getLong(KEY_START_TIMESTAMP_MILLIS) == null || param.getLong(KEY_END_TIMESTAMP_MILLIS) == null) && 
                 (param.getLong(KEY_START_TIME_STRING) == null || param.getLong(KEY_END_TIME_STRING) == null)) {
@@ -287,5 +293,13 @@ public class OTSStreamReaderConfig {
 
     public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
+    }
+
+    public int getThreadNum() {
+        return threadNum;
+    }
+
+    public void setThreadNum(int threadNum) {
+        this.threadNum = threadNum;
     }
 }

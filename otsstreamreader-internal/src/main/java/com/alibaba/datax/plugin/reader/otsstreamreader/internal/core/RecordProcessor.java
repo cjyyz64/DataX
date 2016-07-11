@@ -4,6 +4,7 @@ import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.Mode;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConfig;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.OTSStreamReaderException;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.TimeUtils;
 import com.aliyun.openservices.ots.internal.OTS;
 import com.aliyun.openservices.ots.internal.model.GetShardIteratorRequest;
 import com.aliyun.openservices.ots.internal.model.GetStreamRecordRequest;
@@ -20,6 +21,7 @@ public class RecordProcessor implements IRecordProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(RecordProcessor.class);
     private static final long LARGE_TIMESTAMP = System.currentTimeMillis() * 10;
+    private static final long RECORD_CHECKPOINT_INTERVAL = 10 * TimeUtils.MINUTE_IN_MILLIS;
 
     private final OTS ots;
     private final long startTimestampMillis;
@@ -32,6 +34,7 @@ public class RecordProcessor implements IRecordProcessor {
     private final RecordSender recordSender;
     private final boolean isExportSequenceInfo;
     private IStreamRecordSender otsStreamRecordSender;
+    private long lastRecordCheckpointTime;
 
     private String lastCheckpoint;
     protected String shardId; // "protected" for unit test
@@ -53,6 +56,7 @@ public class RecordProcessor implements IRecordProcessor {
         this.checkpointTimeTracker = checkpointTimeTracker;
         this.recordSender = recordSender;
         this.isExportSequenceInfo = config.isExportSequenceInfo();
+        this.lastRecordCheckpointTime = startTimestampMillis;
     }
 
     public void initialize(InitializationInput initializationInput) {
@@ -133,13 +137,19 @@ public class RecordProcessor implements IRecordProcessor {
         if (records.size() == 0) {
             if (!largestPermittedCheckpoint.equals(CheckpointPosition.SHARD_END)) {
                 checkpointTimeTracker.setCheckpoint(endTimestampMillis, shardId, lastCheckpoint);
+                checkpointTimeTracker.setShardTimeCheckpoint(shardId, endTimestampMillis, lastCheckpoint);
                 return true;
             }
         }
         int size = records.size();
         for (int i = 0; i < size; i++) {
-            if (getTimestamp(records.get(i)) < endTimestampMillis) {
-                if (shouldSkip && (getTimestamp(records.get(i)) < startTimestampMillis)) {
+            long timestamp = getTimestamp(records.get(i));
+            if (timestamp < endTimestampMillis) {
+                if (timestamp >= lastRecordCheckpointTime + RECORD_CHECKPOINT_INTERVAL) {
+                    lastRecordCheckpointTime = timestamp;
+                    checkpointTimeTracker.setShardTimeCheckpoint(shardId, timestamp, getIterator(records, i));
+                }
+                if (shouldSkip && (timestamp < startTimestampMillis)) {
                     continue;
                 }
                 shouldSkip = false;
@@ -147,6 +157,7 @@ public class RecordProcessor implements IRecordProcessor {
             } else {
                 String iterator = getIterator(records, i);
                 checkpointTimeTracker.setCheckpoint(endTimestampMillis, shardId, iterator);
+                checkpointTimeTracker.setShardTimeCheckpoint(shardId, endTimestampMillis, iterator);
                 return true;
             }
         }
@@ -157,7 +168,11 @@ public class RecordProcessor implements IRecordProcessor {
         try {
             List<StreamRecord> records = processRecordsInput.getRecords();
 
-            LOG.info("StartProcessRecords: size: {}.", records.size());
+            if (records.isEmpty()) {
+                LOG.info("StartProcessRecords: size: {}.", records.size());
+            } else {
+                LOG.info("StartProcessRecords: size: {}, recordTime: {}.", records.size(), getTimestamp(records.get(0)));
+            }
 
             if (process(records, processRecordsInput.getCheckpointer().getLargestPermittedCheckpointValue())) {
                 /**
@@ -193,6 +208,7 @@ public class RecordProcessor implements IRecordProcessor {
                  */
                 shardToLastProcessTimeMap.put(shardId, LARGE_TIMESTAMP);
                 checkpointTimeTracker.setCheckpoint(endTimestampMillis, shardId, CheckpointPosition.SHARD_END);
+                checkpointTimeTracker.setShardTimeCheckpoint(shardId, endTimestampMillis, CheckpointPosition.SHARD_END);
                 shutdownInput.getCheckpointer().checkpoint();
             }
             if (reason != ShutdownReason.TERMINATE && reason != ShutdownReason.PROCESS_DONE) {
