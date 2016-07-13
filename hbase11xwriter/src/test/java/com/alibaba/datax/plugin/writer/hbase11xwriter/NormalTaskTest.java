@@ -2,6 +2,8 @@ package com.alibaba.datax.plugin.writer.hbase11xwriter;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.plugin.RecordReceiver;
+import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.core.transport.record.DefaultRecord;
 import com.alibaba.fastjson.JSON;
@@ -19,6 +21,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by shf on 16/4/6.
@@ -240,4 +244,32 @@ public class NormalTaskTest {
 
     }
 
+    @Test
+    public void testStartWriter() throws Exception {
+        com.alibaba.datax.common.util.Configuration configuration = Configuration.newDefault();
+        String hbaseConfig= "{\"hbase.rootdir\":\"hdfs://10.101.85.161:9000/hbase\"," +
+                "\"hbase.cluster.distributed\":\"true\"," +
+                "\"hbase.zookeeper.quorum\":\"v101085161.sqa.zmf\"}";
+        configuration.set("hbaseConfig",hbaseConfig);
+        configuration.set("table","users");
+        String column = "[{\"index\":\"1\",\"name\":\"info:age\",\"type\":\"string\"}]";
+        List columnjson = JSON.parseObject(column, new TypeReference<List>() {});
+        configuration.set(Key.COLUMN,columnjson);
+        String rowkeyColumn = "[{\"index\":\"0\",\"type\":\"string\"}]";
+        List rowkeyColumnjson = JSON.parseObject(rowkeyColumn, new TypeReference<List>() {});
+        configuration.set(Key.ROWKEY_COLUMN,rowkeyColumnjson);
+        configuration.set(Key.MODE,"normal");
+        configuration.set(Key.NULL_MODE,"skip");
+        NormalTask normalTask = new NormalTask(configuration);
+
+        RecordReceiver lineReceiver = mock(RecordReceiver.class);
+        Record record = new DefaultRecord();
+        record.addColumn(new StringColumn("aaa"));
+        record.addColumn(new LongColumn((Long)null));
+
+        when(lineReceiver.getFromReader()).thenReturn(record).thenReturn(null);
+
+        TaskPluginCollector taskPluginCollector = mock(TaskPluginCollector.class);
+        normalTask.startWriter(lineReceiver, taskPluginCollector);
+    }
 }

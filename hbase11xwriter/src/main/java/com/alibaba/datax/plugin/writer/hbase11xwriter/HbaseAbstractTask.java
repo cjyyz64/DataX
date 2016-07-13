@@ -8,6 +8,7 @@ import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.BufferedMutator;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public abstract class HbaseAbstractTask {
     public String encoding;
     public Boolean walFlag;
     public BufferedMutator bufferedMutator;
+    public int maxKeyValueSize;
 
 
     public HbaseAbstractTask(com.alibaba.datax.common.util.Configuration configuration) {
@@ -42,18 +44,32 @@ public abstract class HbaseAbstractTask {
         this.encoding = configuration.getString(Key.ENCODING,Constant.DEFAULT_ENCODING);
         this.nullMode = NullModeType.getByTypeName(configuration.getString(Key.NULL_MODE,Constant.DEFAULT_NULL_MODE));
         this.walFlag = configuration.getBool(Key.WAL_FLAG, false);
+        this.maxKeyValueSize = Hbase11xHelper.getMaxKeyValueSize(configuration);
     }
 
     public void startWriter(RecordReceiver lineReceiver, TaskPluginCollector taskPluginCollector){
-        Record record = null;
+        Record record;
         try {
             while ((record = lineReceiver.getFromReader()) != null) {
-                Put put = null;
+                Put put;
                 try {
                     put = convertRecordToPut(record);
                 } catch (Exception e) {
                     taskPluginCollector.collectDirtyRecord(record, e);
                     continue;
+                }
+                if(put.isEmpty() && nullMode.equals(NullModeType.Skip)){
+                    LOG.info(String.format("record is empty, 您配置nullMode为[skip],将会忽略这条记录,record[%s]", record.toString()));
+                    continue;
+                }else {
+                    //写入hbase前校验,手动调用hbase校验
+                    //KeyValue size too large
+                    try {
+                        HTable.validatePut(put, maxKeyValueSize);
+                    }catch (IllegalArgumentException e){
+                        taskPluginCollector.collectDirtyRecord(record, e);
+                        continue;
+                    }
                 }
                 //this.htable.put(put);
                 this.bufferedMutator.mutate(put);
@@ -76,7 +92,7 @@ public abstract class HbaseAbstractTask {
 
 
     public byte[] getColumnByte(ColumnType columnType, Column column){
-        byte[] bytes = null;
+        byte[] bytes;
         if(column.getRawData() != null){
             switch (columnType) {
                 case INT:
@@ -119,7 +135,7 @@ public abstract class HbaseAbstractTask {
     }
 
     public byte[] getValueByte(ColumnType columnType, String value){
-        byte[] bytes = null;
+        byte[] bytes;
         if(value != null){
             switch (columnType) {
                 case INT:

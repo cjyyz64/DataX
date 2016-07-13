@@ -6,7 +6,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
@@ -44,15 +43,28 @@ public abstract class HbaseAbstractTask {
     }
 
     public void startWriter(RecordReceiver lineReceiver,TaskPluginCollector taskPluginCollector){
-        Record record = null;
+        Record record;
         try {
             while ((record = lineReceiver.getFromReader()) != null) {
-                Put put = null;
+                Put put;
                 try {
                     put = convertRecordToPut(record);
                 } catch (Exception e) {
                     taskPluginCollector.collectDirtyRecord(record, e);
                     continue;
+                }
+                if(put.isEmpty() && nullMode.equals(NullModeType.Skip)){
+                    LOG.info(String.format("record[%s] is empty, 您配置nullMode为[skip],将会忽略这条记录", record.toString()));
+                    continue;
+                }else {
+                    //写入hbase前校验,手动调用hbase校验
+                    //KeyValue size too large
+                    try {
+                        this.htable.validatePut(put);
+                    }catch (IllegalArgumentException e){
+                        taskPluginCollector.collectDirtyRecord(record, e);
+                        continue;
+                    }
                 }
                 this.htable.put(put);
             }
@@ -71,7 +83,7 @@ public abstract class HbaseAbstractTask {
     }
 
     public byte[] getColumnByte(ColumnType columnType, Column column){
-        byte[] bytes = null;
+        byte[] bytes;
         if(column.getRawData() != null){
             switch (columnType) {
                 case INT:
@@ -114,7 +126,7 @@ public abstract class HbaseAbstractTask {
     }
 
     public byte[] getValueByte(ColumnType columnType, String value){
-        byte[] bytes = null;
+        byte[] bytes;
         if(value != null){
             switch (columnType) {
                 case INT:
