@@ -27,7 +27,7 @@ public enum ColumnType {
 
     public static ColumnType getByTypeName(String typeName) {
         for (ColumnType columnType : values()) {
-            if (columnType.typeName.equalsIgnoreCase(typeName)) {
+            if (columnType.typeName.equalsIgnoreCase(typeName.trim())) {
                 return columnType;
             }
         }
