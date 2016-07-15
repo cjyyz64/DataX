@@ -267,7 +267,7 @@ public class ZSearchBatchWriter extends Writer {
                 String ok = httpCall(httpPost);
                 if (!"OK".equals(ok)) {
                     throw DataXException
-                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "密钥错误");
+                            .asDataXException(ZSearchWriterErrorCode.BAD_CONFIG_VALUE, "初始化错误:"+ok);
                 }
                 //删除假数据
                 HttpDelete httpDelete = new HttpDelete(String
