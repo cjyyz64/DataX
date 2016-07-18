@@ -104,21 +104,6 @@ public class Hbase11xHelper {
         return bufferedMutator;
     }
 
-    public static int getMaxKeyValueSize(com.alibaba.datax.common.util.Configuration configuration){
-        String hbaseConfig = configuration.getString(Key.HBASE_CONFIG);
-        String userTable = configuration.getString(Key.TABLE);
-        long writeBufferSize = configuration.getLong(Key.WRITE_BUFFER_SIZE, Constant.DEFAULT_WRITE_BUFFER_SIZE);
-        org.apache.hadoop.conf.Configuration hConfiguration = Hbase11xHelper.getHbaseConfiguration(hbaseConfig);
-        TableName hTableName = TableName.valueOf(userTable);
-        BufferedMutatorParams bufferedMutatorParams = new BufferedMutatorParams(hTableName)
-                .pool(HTable.getDefaultExecutor(hConfiguration))
-                .writeBufferSize(writeBufferSize);
-        //设置maxKeyValueSize,参考org.apache.hadoop.hbase.client.BufferedMutatorImpl
-        int maxKeyValueSizeConf = hConfiguration.getInt("hbase.client.keyvalue.maxsize", -1);
-        return bufferedMutatorParams.getMaxKeyValueSize() != -1?bufferedMutatorParams.getMaxKeyValueSize():maxKeyValueSizeConf;
-    }
-
-
     public static void deleteTable(com.alibaba.datax.common.util.Configuration configuration) {
         String userTable = configuration.getString(Key.TABLE);
         LOG.info(String.format("由于您配置了deleteType delete,HBasWriter begins to delete table %s .", userTable));

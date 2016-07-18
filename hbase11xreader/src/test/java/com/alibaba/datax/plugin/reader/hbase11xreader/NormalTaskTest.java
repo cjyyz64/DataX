@@ -54,7 +54,7 @@ public class NormalTaskTest {
         while (result!= null){
             System.out.println(new String(result.getRow()));
             System.out.println(new Date());
-            Thread.sleep(120000);
+            Thread.sleep(2000);
             System.out.println(new Date());
             result = normalTask.getNextHbaseRow();
             i++;

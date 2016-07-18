@@ -53,20 +53,17 @@ public abstract class HbaseAbstractTask {
                     taskPluginCollector.collectDirtyRecord(record, e);
                     continue;
                 }
-                if(put.isEmpty() && nullMode.equals(NullModeType.Skip)){
-                    LOG.info(String.format("record[%s] is empty, 您配置nullMode为[skip],将会忽略这条记录", record.toString()));
-                    continue;
-                }else {
-                    //写入hbase前校验,手动调用hbase校验
-                    //KeyValue size too large
-                    try {
-                        this.htable.validatePut(put);
-                    }catch (IllegalArgumentException e){
+                try {
+                    this.htable.put(put);
+                } catch (IllegalArgumentException e) {
+                    if(e.getMessage().equals("No columns to insert") && nullMode.equals(NullModeType.Skip)){
+                        LOG.info(String.format("record is empty, 您配置nullMode为[skip],将会忽略这条记录,record[%s]", record.toString()));
+                        continue;
+                    }else {
                         taskPluginCollector.collectDirtyRecord(record, e);
                         continue;
                     }
                 }
-                this.htable.put(put);
             }
         }catch (IOException e){
             throw DataXException.asDataXException(Hbase094xWriterErrorCode.PUT_HBASE_ERROR,e);
