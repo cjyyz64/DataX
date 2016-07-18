@@ -23,7 +23,7 @@ public class StatusTableConstants {
      * 格式如下：
      *
      * PK1 : StreamId   : "dataTable_131231"
-     * PK2 : StatusType  : "CheckpointsAtTimePoint"
+     * PK2 : StatusType  : "CheckpointForDataxReader"
      *
      * 记录Checkpoint：
      *      PK3    : StatusValue : "1444357620415   shard1"  (Time + \t + ShardId)
@@ -39,6 +39,14 @@ public class StatusTableConstants {
     public static String CHECKPOINT_COLUMN_NAME = "Checkpoint";
     public static String SHARDCOUNT_COLUMN_NAME = "ShardCount";
 
+    /**
+     * 记录某个Shard在某个时间的Checkpoint
+     * PK1: StreamId : "dataTable_131231"
+     * PK2: StatusType: "ShardTimeCheckpointForDataxReader"
+     * PK3: StatusValue: "shard1    1444357620415"  (ShardId + \t + Time)
+     * Column: Checkpoint : "checkpoint"
+     */
+    public static String STATUS_TYPE_SHARD_CHECKPOINT = "ShardTimeCheckpointForDataxReader";
 
     /**
      * 记录Shard的Lease信息，格式如下：
