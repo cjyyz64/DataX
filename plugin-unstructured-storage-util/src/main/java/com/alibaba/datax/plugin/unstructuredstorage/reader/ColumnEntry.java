@@ -1,5 +1,10 @@
 package com.alibaba.datax.plugin.unstructuredstorage.reader;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
+import org.apache.commons.lang3.StringUtils;
+
 import com.alibaba.fastjson.JSON;
 
 public class ColumnEntry {
@@ -7,6 +12,7 @@ public class ColumnEntry {
     private String type;
     private String value;
     private String format;
+    private DateFormat dateParse;
 
     public Integer getIndex() {
         return index;
@@ -38,6 +44,13 @@ public class ColumnEntry {
 
     public void setFormat(String format) {
         this.format = format;
+        if (StringUtils.isNotBlank(this.format)) {
+            this.dateParse = new SimpleDateFormat(this.format);
+        }
+    }
+
+    public DateFormat getDateFormat() {
+        return this.dateParse;
     }
 
     public String toJSONString() {
