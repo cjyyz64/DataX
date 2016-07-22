@@ -1,6 +1,7 @@
 package com.alibaba.datax.plugin.writer.hbase094xwriter;
 
 import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.Arrays;
 
@@ -23,14 +24,18 @@ public enum ColumnType {
     }
 
     public static ColumnType getByTypeName(String typeName) {
+        if(StringUtils.isBlank(typeName)){
+            throw DataXException.asDataXException(Hbase094xWriterErrorCode.ILLEGAL_VALUE,
+                    String.format("Hbasewriter 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
+        }
         for (ColumnType columnType : values()) {
-            if (columnType.typeName.equalsIgnoreCase(typeName)) {
+            if (StringUtils.equalsIgnoreCase(columnType.typeName, typeName.trim())) {
                 return columnType;
             }
         }
 
         throw DataXException.asDataXException(Hbase094xWriterErrorCode.ILLEGAL_VALUE,
-                String.format("Hbase11xwriter 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
+                String.format("Hbasewriter 不支持该类型:%s, 目前支持的类型是:%s", typeName, Arrays.asList(values())));
     }
 
     @Override

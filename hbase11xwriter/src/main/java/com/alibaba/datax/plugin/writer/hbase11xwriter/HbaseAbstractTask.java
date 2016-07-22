@@ -45,18 +45,28 @@ public abstract class HbaseAbstractTask {
     }
 
     public void startWriter(RecordReceiver lineReceiver, TaskPluginCollector taskPluginCollector){
-        Record record = null;
+        Record record;
         try {
             while ((record = lineReceiver.getFromReader()) != null) {
-                Put put = null;
+                Put put;
                 try {
                     put = convertRecordToPut(record);
                 } catch (Exception e) {
                     taskPluginCollector.collectDirtyRecord(record, e);
                     continue;
                 }
-                //this.htable.put(put);
-                this.bufferedMutator.mutate(put);
+                try {
+                    //this.htable.put(put);
+                    this.bufferedMutator.mutate(put);
+                } catch (IllegalArgumentException e) {
+                    if(e.getMessage().equals("No columns to insert") && nullMode.equals(NullModeType.Skip)){
+                        LOG.info(String.format("record is empty, 您配置nullMode为[skip],将会忽略这条记录,record[%s]", record.toString()));
+                        continue;
+                    }else {
+                        taskPluginCollector.collectDirtyRecord(record, e);
+                        continue;
+                    }
+                }
             }
         }catch (IOException e){
             throw DataXException.asDataXException(Hbase11xWriterErrorCode.PUT_HBASE_ERROR,e);
@@ -76,7 +86,7 @@ public abstract class HbaseAbstractTask {
 
 
     public byte[] getColumnByte(ColumnType columnType, Column column){
-        byte[] bytes = null;
+        byte[] bytes;
         if(column.getRawData() != null){
             switch (columnType) {
                 case INT:
@@ -119,7 +129,7 @@ public abstract class HbaseAbstractTask {
     }
 
     public byte[] getValueByte(ColumnType columnType, String value){
-        byte[] bytes = null;
+        byte[] bytes;
         if(value != null){
             switch (columnType) {
                 case INT:

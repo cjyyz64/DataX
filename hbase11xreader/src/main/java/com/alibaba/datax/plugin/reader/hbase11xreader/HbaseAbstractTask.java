@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.reader.hbase11xreader;
 
 import com.alibaba.datax.common.element.*;
 import com.alibaba.datax.common.exception.DataXException;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -12,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
 public abstract class HbaseAbstractTask {
     private final static Logger LOG = LoggerFactory.getLogger(HbaseAbstractTask.class);
@@ -92,32 +92,32 @@ public abstract class HbaseAbstractTask {
         Column column;
         switch (columnType) {
             case BOOLEAN:
-                column = new BoolColumn(byteArray == null ? null : Bytes.toBoolean(byteArray));
+                column = new BoolColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toBoolean(byteArray));
                 break;
             case SHORT:
-                column = new LongColumn(byteArray == null ? null : String.valueOf(Bytes.toShort(byteArray)));
+                column = new LongColumn(ArrayUtils.isEmpty(byteArray) ? null : String.valueOf(Bytes.toShort(byteArray)));
                 break;
             case INT:
-                column = new LongColumn(byteArray == null ? null : Bytes.toInt(byteArray));
+                column = new LongColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toInt(byteArray));
                 break;
             case LONG:
-                column = new LongColumn(byteArray == null ? null : Bytes.toLong(byteArray));
+                column = new LongColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toLong(byteArray));
                 break;
             case FLOAT:
-                column = new DoubleColumn(byteArray == null ? null : Bytes.toFloat(byteArray));
+                column = new DoubleColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toFloat(byteArray));
                 break;
             case DOUBLE:
-                column = new DoubleColumn(byteArray == null ? null : Bytes.toDouble(byteArray));
+                column = new DoubleColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toDouble(byteArray));
                 break;
             case STRING:
-                column = new StringColumn(byteArray == null ? null : new String(byteArray, encoding));
+                column = new StringColumn(ArrayUtils.isEmpty(byteArray) ? null : new String(byteArray, encoding));
                 break;
             case BINARY_STRING:
-                column = new StringColumn(byteArray == null ? null : Bytes.toStringBinary(byteArray));
+                column = new StringColumn(ArrayUtils.isEmpty(byteArray) ? null : Bytes.toStringBinary(byteArray));
                 break;
             case DATE:
                 String dateValue = Bytes.toStringBinary(byteArray);
-                column = new DateColumn(byteArray == null ? null : DateUtils.parseDate(dateValue, new String[]{dateformat}));
+                column = new DateColumn(ArrayUtils.isEmpty(byteArray) ? null : DateUtils.parseDate(dateValue, new String[]{dateformat}));
                 break;
             default:
                 throw DataXException.asDataXException(Hbase11xReaderErrorCode.ILLEGAL_VALUE, "Hbasereader 不支持您配置的列类型:" + columnType);
