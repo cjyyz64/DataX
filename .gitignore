@@ -13,3 +13,11 @@ hsf/
 *.pyc
 *.DS_Store
 .git
+/simulator/
+zsearchwriter/
+tairwriter/
+/tddlwriter/
+/mysqlwriter/
+/oceanbasereader/
+/oceanbasewriter/
+/otswriter-internal/

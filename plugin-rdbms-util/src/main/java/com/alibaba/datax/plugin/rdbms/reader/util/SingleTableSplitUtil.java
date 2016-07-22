@@ -261,7 +261,7 @@ public class SingleTableSplitUtil {
         }
         return isValidLongType;
     }
-
+    
     private static boolean isStringType(int type) {
         return type == Types.CHAR || type == Types.NCHAR
                 || type == Types.VARCHAR || type == Types.LONGVARCHAR

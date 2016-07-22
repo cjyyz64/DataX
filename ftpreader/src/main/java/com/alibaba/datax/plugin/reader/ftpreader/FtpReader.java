@@ -14,12 +14,6 @@ import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderUtil;
 
-/**
- * 
- * @ClassName: FtpFileReader
- * @date 2015年7月6日 上午9:24:57
- *
- */
 public class FtpReader extends Reader {
 	public static class Job extends Reader.Job {
 		private static final Logger LOG = LoggerFactory.getLogger(Job.class);

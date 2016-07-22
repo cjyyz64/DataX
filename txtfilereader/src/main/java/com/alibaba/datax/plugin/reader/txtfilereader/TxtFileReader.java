@@ -80,9 +80,9 @@ public class TxtFileReader extends Reader {
 							com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
 							com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
 			if (StringUtils.isBlank(encoding)) {
-				this.originConfig
-						.set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
-								null);
+                this.originConfig
+                        .set(com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+                                com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
 			} else {
 				try {
 					encoding = encoding.trim();

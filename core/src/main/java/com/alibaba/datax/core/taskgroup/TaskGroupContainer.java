@@ -21,13 +21,11 @@ import com.alibaba.datax.core.transport.channel.Channel;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordExchanger;
 import com.alibaba.datax.core.transport.exchanger.BufferedRecordTransformerExchanger;
 import com.alibaba.datax.core.transport.transformer.TransformerExecution;
-import com.alibaba.datax.core.transport.transformer.TransformerInfo;
 import com.alibaba.datax.core.util.ClassUtil;
 import com.alibaba.datax.core.util.FrameworkErrorCode;
 import com.alibaba.datax.core.util.TransformerUtil;
 import com.alibaba.datax.core.util.container.CoreConstant;
 import com.alibaba.datax.core.util.container.LoadUtil;
-import com.alibaba.datax.dataxservice.face.domain.enums.ExecuteMode;
 import com.alibaba.datax.dataxservice.face.domain.enums.State;
 import com.alibaba.fastjson.JSON;
 import org.apache.commons.lang3.Validate;
@@ -108,7 +106,6 @@ public class TaskGroupContainer extends AbstractContainer {
             /**
              * 2分钟汇报一次性能统计
              */
-            long perfReportIntervalMultiple = 12;
 
             // 获取channel数目
             int channelNumber = this.configuration.getInt(
@@ -144,7 +141,6 @@ public class TaskGroupContainer extends AbstractContainer {
             Map<Integer, Long> taskStartTimeMap = new HashMap<Integer, Long>(); //任务开始时间
 
             long lastReportTimeStamp = 0;
-            long lastPerfReportTimeStamp = 0;
             Communication lastTaskGroupContainerCommunication = new Communication();
 
             while (true) {

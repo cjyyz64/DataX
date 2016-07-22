@@ -32,13 +32,6 @@
 			<systemPath>${basedir}/src/main/libs/Dm7JdbcDriver16.jar</systemPath>
 		</dependency>
 		<dependency>
-			<groupId>com.ibm.db2</groupId>
-			<artifactId>db2jcc</artifactId>
-			<version>4</version>
-			<scope>system</scope>
-			<systemPath>${basedir}/src/main/libs/db2jcc4.jar</systemPath>
-		</dependency>
-		<dependency>
             <groupId>com.sybase</groupId>
             <artifactId>jconn3</artifactId>
             <version>1.0.0-SNAPSHOT</version>
