@@ -8,10 +8,11 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.UnsupportedCharsetException;
-import java.text.SimpleDateFormat;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
 
 /*import org.anarres.lzo.LzoDecompressor1z_safe;
 import org.anarres.lzo.LzoInputStream;
@@ -366,8 +367,8 @@ public class UnstructuredStorageReaderUtil {
 						if (columnIndex >= sourceLine.length) {
 							String message = String
 									.format("您尝试读取的列越界,源文件该行有 [%s] 列,您尝试读取第 [%s] 列, 数据详情[%s]",
-											sourceLine.length, columnIndex + 1,
-											sourceLine);
+                                            sourceLine.length, columnIndex + 1,
+                                            StringUtils.join(sourceLine, ","));
 							LOG.warn(message);
 							throw new IndexOutOfBoundsException(message);
 						}
@@ -422,11 +423,11 @@ public class UnstructuredStorageReaderUtil {
 								String formatString = columnConfig.getFormat();
 								//if (null != formatString) {
 								if (StringUtils.isNotBlank(formatString)) {
-									// 用户自己配置的格式转换
-									SimpleDateFormat format = new SimpleDateFormat(
-											formatString);
-									columnGenerated = new DateColumn(
-											format.parse(columnValue));
+                                    // 用户自己配置的格式转换, 脏数据行为出现变化
+                                    DateFormat format = columnConfig
+                                            .getDateFormat();
+                                    columnGenerated = new DateColumn(
+                                            format.parse(columnValue));
 								} else {
 									// 框架尝试转换
 									columnGenerated = new DateColumn(
@@ -495,10 +496,11 @@ public class UnstructuredStorageReaderUtil {
      * */
 	public static void validateParameter(Configuration readerConfiguration) {
 	
-		// encoding check
-		 String encoding = readerConfiguration.getUnnecessaryValue(
-					com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
-					com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING,null);
+        // encoding check
+        String encoding = readerConfiguration
+                .getString(
+                        com.alibaba.datax.plugin.unstructuredstorage.reader.Key.ENCODING,
+                        com.alibaba.datax.plugin.unstructuredstorage.reader.Constant.DEFAULT_ENCODING);
 		 try {
              encoding = encoding.trim();
              readerConfiguration.set(Key.ENCODING, encoding);
