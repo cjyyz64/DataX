@@ -1,9 +1,10 @@
 package com.alibaba.datax.common.statistics;
 
+import com.alibaba.datax.common.statistics.PerfTrace.JobStatisticsDto2;
 import com.alibaba.datax.common.statistics.PerfTrace.SumPerf4Report;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.dataxservice.face.domain.JobStatisticsDto2;
 import com.alibaba.fastjson.JSON;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
