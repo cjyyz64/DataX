@@ -21,3 +21,10 @@ tairwriter/
 /oceanbasereader/
 /oceanbasewriter/
 /otswriter-internal/
+.gitignore
+.settings
+.classpath
+.project
+target
+.git
+.idea
