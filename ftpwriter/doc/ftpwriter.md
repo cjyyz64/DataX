@@ -49,7 +49,7 @@ FtpWriter实现了从DataX协议转为FTP文件功能，FTP文件本身是无结
                     "name": "ftpwriter",
                     "parameter": {
                         "protocol": "sftp",
-                        "host": "10.101.86.94",
+                        "host": "***",
                         "port": 22,
                         "username": "xxx",
                         "password": "xxx",
