@@ -3,13 +3,11 @@ package com.alibaba.datax.plugin.writer.hbase11xsqlwriter;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.List;
 
 /**
@@ -27,7 +25,6 @@ public class HbaseSQLWriterConfig {
     // 表配置
     private String tableName;
     private List<String> columns;           // 目的表的所有列的列名，包括主键和非主键，不包括时间列
-    private VersionColumn version;
 
     // 其他配置
     private NullModeType nullMode;
@@ -60,14 +57,6 @@ public class HbaseSQLWriterConfig {
      */
     public List<String> getColumns() {
         return columns;
-    }
-
-    /**
-     *
-     * @return
-     */
-    public VersionColumn getVersion() {
-        return version;
     }
 
     /**
@@ -178,90 +167,6 @@ public class HbaseSQLWriterConfig {
         }
     }
 
-    public static class VersionColumn {
-        private int index = -1;
-        private SimpleDateFormat formatter = null;
-        private long value = HConstants.LATEST_TIMESTAMP;
-        private boolean isConstant;
-
-        private VersionColumn(int index, String formatter) {
-            assert index >= 0;
-
-            this.isConstant = false;
-            this.index = index;
-            validateFormatter(formatter);
-        }
-
-        private VersionColumn(String v, String formatter) {
-            assert v != null;
-
-            this.isConstant = true;
-            validateFormatter(formatter);
-            if (this.formatter != null) {
-                try {
-                    this.value = this.formatter.parse(v).getTime();
-                } catch (Throwable t) {
-                    throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                            "无法解析versionColumn value，您配置的format为" + formatter + "，值为" + v +
-                            "，请检查您的配置 或者 联系 Hbase 管理员.");
-                }
-            } else {
-                // 用户没有指定formatter，则当做long值来解析
-                try {
-                    this.value = Long.parseLong(v);
-                } catch (Throwable t) {
-                    throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                            "您配置的versionColumn value (" + v + ")不是数值类型，但又未配置formatter，无法解析时间戳常量，请检查您的配置 或者 联系 Hbase 管理员.");
-                }
-            }
-        }
-
-        private void validateFormatter(String formatter) {
-            if ((formatter != null) && !formatter.isEmpty()) {
-                try {
-                    this.formatter = new SimpleDateFormat(formatter);
-                    this.formatter.applyPattern(formatter);
-                } catch (Throwable t) {
-                    throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                            "非法的时间日期formatter，" + formatter + "，请检查您的配置 或者 联系 Hbase 管理员.");
-                }
-            }
-        }
-
-        public boolean isConstant() {
-            return isConstant;
-        }
-
-        public long getValue() {
-            return value;
-        }
-
-        public int getIndex() {
-            return index;
-        }
-
-        public SimpleDateFormat getFormatter() {
-            return formatter;
-        }
-
-        @Override
-        public String toString() {
-            StringBuilder ret = new StringBuilder("[versionColumn]");
-            if (isConstant()) {
-                ret.append("constant ");
-                ret.append(value);
-            } else {
-                ret.append("column ");
-                ret.append(index);
-                if (formatter != null) {
-                    ret.append(", formatter: ");
-                    ret.append(formatter.toPattern());
-                }
-            }
-            return ret.toString();
-        }
-    }
-
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
@@ -281,10 +186,6 @@ public class HbaseSQLWriterConfig {
         }
         ret.setLength(ret.length() - 1);
         ret.append("\n");
-        if (version != null) {
-            ret.append(version.toString());
-            ret.append("\n");
-        }
 
         // 其他配置
         ret.append("[nullMode]");

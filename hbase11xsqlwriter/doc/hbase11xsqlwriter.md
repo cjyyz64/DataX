@@ -113,7 +113,7 @@ HBase11xsqlwriter实现了向hbase中的SQL表(phoenix)批量导入数据的功�
 
 * **hbaseConfig**
 
-   * 描述：hbase集群地址，必须填写zk和znode
+   * 描述：hbase集群地址，zk为必填项，格式：ip1,ip2,ip3，注意，多个IP之间使用英文的逗号分隔。znode是可选的，默认值是/hbase
    * 必选：是
    * 默认值：无
 

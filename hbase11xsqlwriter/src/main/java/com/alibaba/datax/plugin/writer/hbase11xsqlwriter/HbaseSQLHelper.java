@@ -47,6 +47,9 @@ public class HbaseSQLHelper {
         Map<String, String> hbaseConfigMap = JSON.parseObject(hbaseCfgString, new TypeReference<Map<String, String>>() {});
         String zkQuorum = hbaseConfigMap.get(Key.HBASE_ZK_QUORUM);
         String znode = hbaseConfigMap.get(Key.HBASE_ZNODE_PARENT);
+        if (znode == null || znode.isEmpty()) {
+            znode = Constant.DEFAULT_ZNODE;
+        }
         return new Pair<String, String>(zkQuorum, znode);
     }
 
