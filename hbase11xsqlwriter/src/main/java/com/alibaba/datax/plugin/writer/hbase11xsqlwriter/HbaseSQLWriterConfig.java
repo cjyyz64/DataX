@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -176,50 +175,6 @@ public class HbaseSQLWriterConfig {
         if (cfg.columns == null || cfg.columns.isEmpty()) {
             throw DataXException.asDataXException(
                     HbaseSQLWriterErrorCode.ILLEGAL_VALUE, "HBase的columns配置不能为空,请添加目标表的列名配置.");
-        }
-
-        // 解析版本配置
-        parseVersionColumn(cfg, dataxCfg);
-    }
-
-    private static void parseVersionColumn(HbaseSQLWriterConfig cfg, Configuration dataxCfg) {
-        Configuration verCfg = dataxCfg.getConfiguration(Key.VERSION_COLUMN);
-        if (verCfg == null) {
-            // 用户未指定version配置，默认使用当前时间
-            return;
-        }
-
-        // 解析version mode和其他参数
-        String modeString = verCfg.getString(Key.VERSION_MODE);
-        if (modeString == null || modeString.isEmpty()) {
-            // mode为必选项
-            throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                    "versionColumn的mode为必选项，目前支持如下配置" + Arrays.asList(VersionMode.values()) + "，请为其配置一个有效的值.");
-        }
-        VersionMode mode = VersionMode.getByName(modeString);
-        Integer index = verCfg.getInt(Key.VERSION_COLUMN_INDEX);
-        String formatter = verCfg.getString(Key.VERSION_COLUMN_FORMATTER);
-        String value = verCfg.getString(Key.VERSION_COLUMN_VALUE);
-
-        if (mode == VersionMode.Column) {
-            // 用户指定一列作为version
-            if (index == null) {
-                throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                        "您选择了使用指定的列作为version，但未指定列的index，请检查您的配置 或者 联系 HBase 管理员.");
-            }
-            if (index < 0 || index > cfg.getColumns().size()) {
-                throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                        "您配置的versionColumn index非法，合法的值域为[0," + cfg.columns.size() + "]，而您配置的值为" + index +
-                        "，请检查您的配置 或者 联系 Hbase 管理员.");
-            }
-            cfg.version = new VersionColumn(index, formatter);
-        } else {
-            // 用户使用一个常量值作为version
-            if (value == null || value.isEmpty()) {
-                throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                        "您配置的versionColumn value为空，请补充该配置");
-            }
-            cfg.version = new VersionColumn(value, formatter);
         }
     }
 

@@ -181,24 +181,6 @@ public class HbaseSQLWriterTask {
         upsertBuilder.setLength(upsertBuilder.length() - 1);  // 移除末尾多余的逗号
         upsertBuilder.append(")");
 
-        // 如果是显式指定时间戳的方式，还要加上timestamps属性
-        HbaseSQLWriterConfig.VersionColumn version = cfg.getVersion();
-        if (version != null) {
-            if (version.isConstant()) {
-                // 用户使用常量的时间戳，直接拼接在后面
-                upsertBuilder.append(" timestamps ");
-                upsertBuilder.append(version.getValue());
-            } else {
-                // 用户使用record中的一列作为时间戳
-                upsertBuilder.append(" timestamps ?");
-                this.needExplicitVersion = true;
-                if (version.getIndex() == numberOfColumnsToWrite) {
-                    // 用户指定了独立的列作为时间戳列，则需要从record中多读一列。否则，用户是复用列
-                    numberOfColumnsToRead++;
-                }
-            }
-        }
-
         String sql = upsertBuilder.toString();
         PreparedStatement ps = connection.prepareStatement(sql);
         LOG.debug("SQL template generated: " + sql);

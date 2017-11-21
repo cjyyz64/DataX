@@ -23,15 +23,6 @@ public final class Key {
     public static final String NAME = "name";
 
     /**
-     * 【可选】版本列配置
-     */
-    public final static String VERSION_COLUMN = "versionColumn";
-    public final static String VERSION_MODE = "mode";
-    public final static String VERSION_COLUMN_INDEX = "index";
-    public final static String VERSION_COLUMN_VALUE = "value";
-    public final static String VERSION_COLUMN_FORMATTER = "formatter";
-
-    /**
      * 【可选】遇到空值默认跳过
      */
     public static  final String NULL_MODE = "nullMode";
