@@ -88,7 +88,8 @@
         <module>plugin-unstructured-storage-util</module>
         <!-- developing module -->
         <module>hbasewriter</module>
-  </modules>
+        <module>hbase11xsqlwriter</module>
+    </modules>
 
     <dependencyManagement>
         <dependencies>
