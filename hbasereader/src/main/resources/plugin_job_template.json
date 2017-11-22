@@ -1,7 +1,7 @@
 {
     "name": "hbasereader",
     "parameter": {
-        "hbaseConfig": "",
+        "hbaseConfig": {},
         "table": "",
         "encoding": "",
         "mode": "",

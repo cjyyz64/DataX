@@ -6,6 +6,8 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
@@ -19,6 +21,7 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
@@ -29,10 +32,36 @@ public  class HdfsHelper {
     public static final Logger LOG = LoggerFactory.getLogger(HdfsWriter.Job.class);
     public FileSystem fileSystem = null;
     public JobConf conf = null;
+    public org.apache.hadoop.conf.Configuration hadoopConf = null;
+    public static final String HADOOP_SECURITY_AUTHENTICATION_KEY = "hadoop.security.authentication";
+    public static final String HDFS_DEFAULTFS_KEY = "fs.defaultFS";
 
-    public void getFileSystem(String defaultFS){
-        org.apache.hadoop.conf.Configuration hadoopConf = new org.apache.hadoop.conf.Configuration();
-        hadoopConf.set("fs.defaultFS", defaultFS);
+    // Kerberos
+    private Boolean haveKerberos = false;
+    private String  kerberosKeytabFilePath;
+    private String  kerberosPrincipal;
+
+    public void getFileSystem(String defaultFS, Configuration taskConfig){
+        hadoopConf = new org.apache.hadoop.conf.Configuration();
+
+        Configuration hadoopSiteParams = taskConfig.getConfiguration(Key.HADOOP_CONFIG);
+        JSONObject hadoopSiteParamsAsJsonObject = JSON.parseObject(taskConfig.getString(Key.HADOOP_CONFIG));
+        if (null != hadoopSiteParams) {
+            Set<String> paramKeys = hadoopSiteParams.getKeys();
+            for (String each : paramKeys) {
+                hadoopConf.set(each, hadoopSiteParamsAsJsonObject.getString(each));
+            }
+        }
+        hadoopConf.set(HDFS_DEFAULTFS_KEY, defaultFS);
+
+        //是否有Kerberos认证
+        this.haveKerberos = taskConfig.getBool(Key.HAVE_KERBEROS, false);
+        if(haveKerberos){
+            this.kerberosKeytabFilePath = taskConfig.getString(Key.KERBEROS_KEYTAB_FILE_PATH);
+            this.kerberosPrincipal = taskConfig.getString(Key.KERBEROS_PRINCIPAL);
+            hadoopConf.set(HADOOP_SECURITY_AUTHENTICATION_KEY, "kerberos");
+        }
+        this.kerberosAuthentication(this.kerberosPrincipal, this.kerberosKeytabFilePath);
         conf = new JobConf(hadoopConf);
         try {
             fileSystem = FileSystem.get(conf);
@@ -56,11 +85,26 @@ public  class HdfsHelper {
         }
     }
 
+    private void kerberosAuthentication(String kerberosPrincipal, String kerberosKeytabFilePath){
+        if(haveKerberos && StringUtils.isNotBlank(this.kerberosPrincipal) && StringUtils.isNotBlank(this.kerberosKeytabFilePath)){
+            UserGroupInformation.setConfiguration(this.hadoopConf);
+            try {
+                UserGroupInformation.loginUserFromKeytab(kerberosPrincipal, kerberosKeytabFilePath);
+            } catch (Exception e) {
+                String message = String.format("kerberos认证失败,请确定kerberosKeytabFilePath[%s]和kerberosPrincipal[%s]填写正确",
+                        kerberosKeytabFilePath, kerberosPrincipal);
+                LOG.error(message);
+                throw DataXException.asDataXException(HdfsWriterErrorCode.KERBEROS_LOGIN_ERROR, e);
+            }
+        }
+    }
+
     /**
      *获取指定目录先的文件列表
      * @param dir
      * @return
      * 拿到的是文件全路径，
+     * eg：hdfs://10.101.204.12:9000/user/hive/warehouse/writer.db/text/test.textfile
      */
     public String[] hdfsDirList(String dir){
         Path path = new Path(dir);

@@ -222,7 +222,6 @@ boolean skipEmptyRecords = true;//是否跳过空行
 boolean captureRawRecord = true;
 ```
 
-
 ### 3.3 类型转换
 
 本地文件本身不提供数据类型，该类型是DataX TxtFileReader定义：
