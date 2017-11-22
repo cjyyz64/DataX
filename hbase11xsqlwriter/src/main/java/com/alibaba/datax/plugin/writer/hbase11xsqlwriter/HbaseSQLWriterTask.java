@@ -17,7 +17,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -211,35 +210,6 @@ public class HbaseSQLWriterTask {
             // PreparedStatement中的索引从1开始，所以用i+1
             setupColumn(i + 1, sqlType, col);
         }
-
-        // 如果有必要，则设置时间戳列
-        if (needExplicitVersion) {
-            setupVersionValue(record);
-        }
-    }
-
-    private void setupVersionValue(Record record) throws SQLException {
-        Column verCol = record.getColumn(cfg.getVersion().getIndex());
-        if (verCol.getRawData() == null) {
-            throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                    "version列的值不能为null, 请检查您的配置 或者 联系 Hbase 管理员.");
-        }
-
-        long ts;
-        SimpleDateFormat sdf = cfg.getVersion().getFormatter();
-        if (sdf != null) {
-            String v = verCol.asString();
-            try {
-                ts = sdf.parse(v).getTime();
-            } catch (Throwable t) {
-                throw DataXException.asDataXException(HbaseSQLWriterErrorCode.ILLEGAL_VALUE,
-                        "不支持您配置的列类型:" + v + ", 请检查您的配置 或者 联系 Hbase 管理员.");
-            }
-        } else {
-            ts = verCol.asLong();
-        }
-
-        ps.setLong(numberOfColumnsToWrite + 1, ts);
     }
 
     private void setupColumn(int pos, int sqlType, Column col) throws SQLException {
