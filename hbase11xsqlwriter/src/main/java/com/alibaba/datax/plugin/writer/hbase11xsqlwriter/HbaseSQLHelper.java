@@ -75,7 +75,7 @@ public class HbaseSQLHelper {
         try {
             List<String> columnNames = cfg.getColumns();
             for (String colName : columnNames) {
-                schema.getColumn(colName);
+                schema.getColumnForColumnName(colName);
             }
         } catch (ColumnNotFoundException e) {
             // 用户配置的列名在元数据中不存在

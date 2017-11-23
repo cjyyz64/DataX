@@ -195,7 +195,7 @@ public class HbaseSQLWriterTask {
 
         for (int i = 0; i < columnNames.size(); i++) {
             String name = columnNames.get(i);
-            PDataType type = ptable.getColumn(name).getDataType();
+            PDataType type = ptable.getColumnForColumnName(name).getDataType();
             types[i] = type.getSqlType();
             LOG.debug("Column name : " + name + ", sql type = " + type.getSqlType() + " " + type.getSqlTypeName());
         }
