@@ -52,11 +52,10 @@
         <module>oraclereader</module>
         <module>odpsreader</module>
         <module>otsreader</module>
-        <!-- <module>otsstreamreader</module> -->
+        <module>otsstreamreader</module>
         <module>txtfilereader</module>
         <module>hdfsreader</module>
         <module>streamreader</module>
-        <module>hbasereader</module>
         <module>ossreader</module>
         <module>ftpreader</module>
         <module>mongodbreader</module>
@@ -83,13 +82,11 @@
         <module>rdbmswriter</module>
         <module>hbase11xwriter</module>
         <module>hbase094xwriter</module>
+        <module>hbase11xsqlwriter</module>
 
-        <!-- some support module -->
+        <!-- common support module -->
         <module>plugin-rdbms-util</module>
         <module>plugin-unstructured-storage-util</module>
-        <!-- developing module -->
-        <module>hbasewriter</module>
-        <module>hbase11xsqlwriter</module>
     </modules>
 
     <dependencyManagement>
