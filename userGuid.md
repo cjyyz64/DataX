@@ -207,6 +207,9 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 * [OssReader](http://gitlab.alibaba-inc.com/datax/datax/wikis/datax-plugin-ossreader): 针对公有云OSS产品的批量数据抽取工具。
 * StreamReader
 
+**时间序列数据库**
+* [TstbReader](https://github.com/alibaba/DataX/blob/master/tsdbreader/doc/tsdbreader.md): 针对公有云TSDB产品的批量数据抽取工具。
+
 ### Writer
 
 ----
@@ -241,6 +244,9 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 * [OssWriter](http://gitlab.alibaba-inc.com/datax/datax/wikis/datax-plugin-osswriter): 使用OSS SDK写入OSS数据。
 * [HdfsWriter](http://gitlab.alibaba-inc.com/datax/datax/wikis/datax-plugin-hdfswriter): 提供向Hdfs文件系统中写入textfile文件和orcfile文件功能。
 * StreamWriter
+
+**时间序列数据库**
+* [TstbWriter](https://github.com/alibaba/DataX/blob/master/tsdbwriter/doc/tsdbhttpwriter.md): 针对公有云TSDB产品的批量数据写入工具。
 
 * [DataX Transform] (https://github.com/alibaba/DataX/blob/master/transformer/doc/transformer.md): DataX Transform功能说明
 
