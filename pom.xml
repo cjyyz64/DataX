@@ -93,6 +93,7 @@
         <module>hbase094xwriter</module>
         <module>hbase11xsqlwriter</module>
         <module>hbase20xsqlwriter</module>
+        <module>elasticsearchwriter</module>
         <module>tsdbwriter</module>
         <module>adbpgwriter</module>
         <module>cassandrawriter</module>
