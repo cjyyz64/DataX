@@ -90,6 +90,7 @@
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>
         <module>gdbwriter</module>
+        <module>tdenginewriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
