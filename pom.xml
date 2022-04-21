@@ -91,6 +91,7 @@
         <module>clickhousewriter</module>
         <module>gdbwriter</module>
         <module>tdenginewriter</module>
+        <module>oscarwriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
