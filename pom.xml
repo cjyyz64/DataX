@@ -94,6 +94,7 @@
         <module>hbase11xsqlwriter</module>
         <module>hbase20xsqlwriter</module>
         <module>tsdbwriter</module>
+        <module>adbpgwriter</module>
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>
         <module>gdbwriter</module>
