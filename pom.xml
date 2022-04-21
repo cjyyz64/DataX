@@ -63,6 +63,7 @@
         <module>rdbmsreader</module>
         <module>hbase11xreader</module>
         <module>hbase094xreader</module>
+        <module>hbase20xsqlreader</module>
         <module>tsdbreader</module>
         <module>opentsdbreader</module>
         <module>cassandrareader</module>
@@ -90,6 +91,7 @@
         <module>hbase11xwriter</module>
         <module>hbase094xwriter</module>
         <module>hbase11xsqlwriter</module>
+        <module>hbase20xsqlwriter</module>
         <module>tsdbwriter</module>
         <module>cassandrawriter</module>
         <module>clickhousewriter</module>

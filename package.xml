@@ -160,6 +160,13 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>hbase20xsqlreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>hbase094xreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -331,6 +338,13 @@
         </fileSet>
         <fileSet>
             <directory>hbase11xsqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>hbase20xsqlwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
