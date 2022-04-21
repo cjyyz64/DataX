@@ -102,6 +102,7 @@
         <module>tdenginewriter</module>
         <module>oscarwriter</module>
         <module>oceanbasev10writer</module>
+        <module>kuduwriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
