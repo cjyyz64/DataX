@@ -63,6 +63,7 @@
         <module>hbase11xreader</module>
         <module>hbase094xreader</module>
         <module>tsdbreader</module>
+        <module>cassandrareader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -85,6 +86,7 @@
         <module>hbase094xwriter</module>
         <module>hbase11xsqlwriter</module>
         <module>tsdbwriter</module>
+        <module>cassandrawriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
