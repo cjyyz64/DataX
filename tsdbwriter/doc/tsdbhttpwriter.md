@@ -30,17 +30,15 @@ TSDBWriter 插件实现了将数据点写入到阿里巴巴自研 TSDB 数据库
   "job": {
     "content": [
       {
-      "reader": {
-          "name": "tsdbreader",
+        "reader": {
+          "name": "opentsdbreader",
           "parameter": {
-            "sinkDbType": "TSDB",
-            "endpoint": "http://localhost:8242",
+            "endpoint": "http://localhost:4242",
             "column": [
               "m"
             ],
-            "splitIntervalMs": 60000,
-            "beginDateTime": "2019-01-01 00:00:00",
-            "endDateTime": "2019-01-01 01:00:00"
+            "startTime": "2019-01-01 00:00:00",
+            "endTime": "2019-01-01 03:00:00"
           }
         },
         "writer": {

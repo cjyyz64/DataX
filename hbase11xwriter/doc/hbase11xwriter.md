@@ -31,37 +31,6 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 
 3、写入hbase的时间戳（版本）支持：用当前时间作为版本，指定源端列作为版本，指定一个时间 三种方式作为版本；
 
-4、HbaseWriter中有一个必填配置项是：hbaseConfig，需要你联系 HBase PE，将hbase-site.xml 中与连接 HBase 相关的配置项提取出来，以 json 格式填入，同时可以补充更多HBase client的配置来优化与服务器的交互。   
-
-
-如：hbase-site.xml的配置内容如下
-
-```
-<configuration>
-  <property>
-    <name>hbase.rootdir</name>
-    <value>hdfs://ip:9000/hbase</value>
-  </property>
-  <property>
-    <name>hbase.cluster.distributed</name>
-    <value>true</value>
-  </property>
-  <property>
-    <name>hbase.zookeeper.quorum</name>
-    <value>***</value>
-  </property>
-</configuration>
-```
-转换后的json为：
-
-```
-"hbaseConfig": {
-              "hbase.rootdir": "hdfs: //ip: 9000/hbase",
-              "hbase.cluster.distributed": "true",
-              "hbase.zookeeper.quorum": "***"
-            }
-```
-
 ### 1.2 限制
 
 1、目前只支持源端为横表写入，不支持竖表（源端读出的为四元组: rowKey，family:qualifier，timestamp，value）模式的数据写入；本期目标主要是替换DataX2中的habsewriter，下次迭代考虑支持。
@@ -133,8 +102,6 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
           "name": "hbase11xwriter",
           "parameter": {
             "hbaseConfig": {
-              "hbase.rootdir": "hdfs: //ip: 9000/hbase",
-              "hbase.cluster.distributed": "true",
               "hbase.zookeeper.quorum": "***"
             },
             "table": "writer",
@@ -200,7 +167,7 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 
 * **hbaseConfig**
 
-	* 描述：每个HBase集群提供给DataX客户端连接的配置信息存放在hbase-site.xml，请联系你的HBase PE提供配置信息，并转换为JSON格式。同时可以补充更多HBase client的配置，如：设置scan的cache、batch来优化与服务器的交互。
+	* 描述：连接HBase集群需要的配置信息，JSON格式。必填的项是hbase.zookeeper.quorum，表示HBase的ZK链接地址。同时可以补充更多HBase client的配置，如：设置scan的cache、batch来优化与服务器的交互。
  
 	* 必选：是 <br />
  
@@ -236,19 +203,20 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 	* 描述：要写入的hbase字段。index：指定该列对应reader端column的索引，从0开始；name：指定hbase表中的列，必须为 列族:列名 的格式；type：指定写入数据类型，用于转换HBase byte[]。配置格式如下：
 	
 	```
-"column": [
-              {
-                "index":1,
-                "name": "cf1:q1",
-                "type": "string"
-              },
-              {
-                "index":2,
-                "name": "cf1:q2",
-                "type": "string"
-              }
-           ］ 	
-		            
+
+	"column": [
+		      {
+			"index":1,
+			"name": "cf1:q1",
+			"type": "string"
+		      },
+		      {
+			"index":2,
+			"name": "cf1:q2",
+			"type": "string"
+		      }
+		   ］ 	
+
 	```
 
 	* 必选：是<br />
@@ -260,17 +228,17 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 	* 描述：要写入的hbase的rowkey列。index：指定该列对应reader端column的索引，从0开始，若为常量index为－1；type：指定写入数据类型，用于转换HBase byte[]；value：配置常量，常作为多个字段的拼接符。hbasewriter会将rowkeyColumn中所有列按照配置顺序进行拼接作为写入hbase的rowkey，不能全为常量。配置格式如下：
 	
 	```
-"rowkeyColumn": [
-                {
-                  "index":0,
-                  "type":"string"
-                },
-                {
-                  "index":-1,
-                  "type":"string",
-                  "value":"_"
-                }
-            ] 	
+	"rowkeyColumn": [
+			{
+			  "index":0,
+			  "type":"string"
+			},
+			{
+			  "index":-1,
+			  "type":"string",
+			  "value":"_"
+			}
+		    ] 	
 		            
 	```
 
@@ -283,19 +251,19 @@ HbaseWriter 插件实现了从向Hbase中写取数据。在底层实现上，Hba
 	* 描述：指定写入hbase的时间戳。支持：当前时间、指定时间列，指定时间，三者选一。若不配置表示用当前时间。index：指定对应reader端column的索引，从0开始，需保证能转换为long,若是Date类型，会尝试用yyyy-MM-dd HH:mm:ss和yyyy-MM-dd HH:mm:ss SSS去解析；若为指定时间index为－1；value：指定时间的值,long值。配置格式如下：
 	
 	```
-"versionColumn":{
-	"index":1
-}
+	"versionColumn":{
+		"index":1
+	}
 		            
 	```
 	
 	或者
 	
 	```
-"versionColumn":{
-	"index":－1,
-	"value":123456789
-}
+	"versionColumn":{
+		"index":－1,
+		"value":123456789
+	}
 		            
 	```
 

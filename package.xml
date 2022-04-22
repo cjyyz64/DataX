@@ -160,20 +160,6 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>hbase11xsqlreader/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>hbase20xsqlreader/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>hbase094xreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -182,13 +168,6 @@
         </fileSet>
         <fileSet>
             <directory>opentsdbreader/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>tsdbreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -212,6 +191,13 @@
         <!-- writer -->
         <fileSet>
             <directory>mysqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>tdenginewriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -351,7 +337,7 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>hbase20xsqlwriter/target/datax/</directory>
+            <directory>hbase11xsqlreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -365,7 +351,28 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>hbase20xsqlreader/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>hbase20xsqlwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>tsdbwriter/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>tsdbreader/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
@@ -393,20 +400,6 @@
             <outputDirectory>datax</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>gdbwriter/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>tdenginewriter/target/datax/</directory>
-            <includes>
-                <include>**/*.*</include>
-            </includes>
-            <outputDirectory>datax</outputDirectory>
-        </fileSet>
-        <fileSet>
             <directory>oscarwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
@@ -415,6 +408,13 @@
         </fileSet>
         <fileSet>
             <directory>oceanbasev10writer/target/datax/</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+            <outputDirectory>datax</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>gdbwriter/target/datax/</directory>
             <includes>
                 <include>**/*.*</include>
             </includes>
