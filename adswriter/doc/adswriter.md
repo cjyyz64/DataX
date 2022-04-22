@@ -38,7 +38,7 @@ DataX 将数据导入ADS为当前导入任务分配的ADS项目表，随后DataX
 
 ![中转导入](http://aligitlab.oss-cn-hangzhou-zmf.aliyuncs.com/uploads/cdp/cdp/f805dea46b/_____2015-04-10___12.06.21.png)
 
-1. CDP底层得到明文的 jdbc://host:port/dbname + username + password + table， 以此连接ADS， 执行show grants; 前置检查该用户是否有ADS中目标表的Load Data或者更高的权限。注意，此时ADSWriter使用用户填写的ADS用户名+密码信息完成登录鉴权工作。
+1. DataX底层得到明文的 jdbc://host:port/dbname + username + password + table， 以此连接ADS， 执行show grants; 前置检查该用户是否有ADS中目标表的Load Data或者更高的权限。注意，此时ADSWriter使用用户填写的ADS用户名+密码信息完成登录鉴权工作。
 
 2. 检查通过后，通过ADS中目标表的元数据反向生成ODPS DDL，在ODPS中间project中，以ADSWriter的账户建立ODPS表（非分区表，生命周期设为1-2Day), 并调用ODPSWriter把数据源的数据写入该ODPS表中。
 	
@@ -108,8 +108,8 @@ DataX 将数据直连ADS接口，利用ADS暴露的INSERT接口直写到ADS。�
               "accessId": "xxx",
               "accessKey": "xxx",
               "account": "xxx@aliyun.com",
-              "odpsServer": "http://service.odpsstg.aliyun-inc.com/stgnew",
-              "tunnelServer": "http://tunnel.odpsstg.aliyun-inc.com",
+              "odpsServer": "xxx",
+              "tunnelServer": "xxx",
               "accountType": "aliyun",
               "project": "transfer_project"
             },
