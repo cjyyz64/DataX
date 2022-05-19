@@ -4,7 +4,6 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.spi.Reader;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.plugin.reader.hdfsreader.HdfsReader;
 import com.alibaba.datax.plugin.reader.ossreader.util.HdfsParquetUtil;
 import com.alibaba.datax.plugin.reader.ossreader.util.OssSplitUtil;
@@ -40,7 +39,6 @@ public class OssReader extends Reader {
     public static class Job extends Reader.Job {
         private static final Logger LOG = LoggerFactory
                 .getLogger(OssReader.Job.class);
-        private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(OssReader.class, Locale.ENGLISH, MessageSource.timeZone);
 
         private Configuration readerOriginConfig = null;
 
@@ -92,22 +90,21 @@ public class OssReader extends Reader {
             endpoint = this.readerOriginConfig.getString(Key.ENDPOINT);
             if (StringUtils.isBlank(endpoint)) {
                 throw DataXException.asDataXException(
-                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.1"));
+                        OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,"invalid endpoint");
             }
 
             accessId = this.readerOriginConfig.getString(Key.ACCESSID);
             if (StringUtils.isBlank(accessId)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.2"));
+                        "invalid accessId");
             }
 
             accessKey = this.readerOriginConfig.getString(Key.ACCESSKEY);
             if (StringUtils.isBlank(accessKey)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.3"));
+                        "invalid accessKey");
             }
         }
         // warn: 提前验证endpoint,accessId,accessKey,bucket,object的有效性
@@ -121,18 +118,18 @@ public class OssReader extends Reader {
             if (StringUtils.isBlank(bucket)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.4"));
+                        "invalid bucket");
             }else if(!ossClient.doesBucketExist(bucket)){
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.19", bucket));
+                        "invalid bucket");
             }
 
             String object = this.readerOriginConfig.getString(Key.OBJECT);
             if (StringUtils.isBlank(object)) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.5"));
+                        "invalid object");
             }
 
             if (this.isBinaryFile){
@@ -193,7 +190,7 @@ public class OssReader extends Reader {
             }else if (0 == objects.size()) {
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.EMPTY_BUCKET_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.13",
+                        String.format("Unable to find the object to read. Please confirm your configured item [bucket]: %s object: %s",
                                 this.readerOriginConfig.get(Key.BUCKET),
                                 this.readerOriginConfig.get(Key.OBJECT)));
             }
@@ -218,8 +215,10 @@ public class OssReader extends Reader {
              * 单文件的大小太小（理论64M一个block），导致问题比较少
              */
             if(readerSplitConfigs.size() < adviceNumber){
-                LOG.info(MESSAGE_SOURCE.message("ossreader.17",
-                        objects.size(), adviceNumber, objects.size(), objects.size()));
+                LOG.info("[Note]: During OSSReader data synchronization, one file can only be synchronized in one task. You want to synchronize {} files " +
+                                "and the number is less than the number of channels you configured: {}. " +
+                                "Therefore, please take note that DataX will actually have {} sub-tasks, that is, the actual concurrent channels = {}",
+                        objects.size(), adviceNumber, objects.size(), objects.size());
             }
             LOG.info("split() ok and end...");
             return readerSplitConfigs;
@@ -289,17 +288,17 @@ public class OssReader extends Reader {
                     // endPoint配置错误
                     throw DataXException.asDataXException(
                             OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                            MESSAGE_SOURCE.message("ossreader.24", endpoint), e);
+                            "The endpoint you configured is not correct. Please check the endpoint configuration", e);
                 }else if(errorMessage.contains("InvalidAccessKeyId")){
                     // accessId配置错误
                     throw DataXException.asDataXException(
                             OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                            MESSAGE_SOURCE.message("ossreader.21", accessId), e);
+                            "The accessId you configured is not correct. Please check the accessId configuration", e);
                 }else if(errorMessage.contains("SignatureDoesNotMatch")){
                     // accessKey配置错误
                     throw DataXException.asDataXException(
                             OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                            MESSAGE_SOURCE.message("ossreader.22", accessKey), e);
+                           "The accessKey you configured is not correct. Please check the accessId configuration", e);
                 }else if(errorMessage.contains("NoSuchKey")){
                     if (e instanceof OSSException) {
                         OSSException ossException = (OSSException) e;
@@ -312,17 +311,17 @@ public class OssReader extends Reader {
                     // object配置错误
                     throw DataXException.asDataXException(
                             OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                            MESSAGE_SOURCE.message("ossreader.20", object));
+                            "The object you configured is not correct. Please check the accessId configuration");
                 }else{
                     // 其他错误
                     throw DataXException.asDataXException(
                             OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                            MESSAGE_SOURCE.message("ossreader.18", errorMessage), e);
+                            String.format("Please check whether the configuration of [endpoint], [accessId], [accessKey], [bucket], and [object] are correct. Error reason: %s",e.getMessage()), e);
                 }
             }else{
                 throw DataXException.asDataXException(
                         OssReaderErrorCode.CONFIG_INVALID_EXCEPTION,
-                        MESSAGE_SOURCE.message("ossreader.23"), e);
+                        "The configured json is invalid", e);
             }
         }
 
@@ -349,7 +348,7 @@ public class OssReader extends Reader {
 
             List<ObjectListing> remoteObjectListings = new ArrayList<ObjectListing>();
 
-            LOG.debug(MESSAGE_SOURCE.message("ossreader.14", parentDir));
+            LOG.debug("Parent folder: {}", parentDir);
             List<String> remoteObjects = new ArrayList<String>();
             OSSClient client = OssUtil.initOssClient(readerOriginConfig);
 

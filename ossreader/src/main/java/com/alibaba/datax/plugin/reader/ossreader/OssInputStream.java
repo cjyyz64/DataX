@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.reader.ossreader;
 
 import com.alibaba.datax.common.exception.DataXException;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.common.util.RetryUtil;
 import com.aliyun.oss.OSSClient;
 import com.aliyun.oss.model.GetObjectRequest;
@@ -36,7 +35,6 @@ public class OssInputStream extends InputStream {
     private int retryTimes = 60;
 
     private static final Logger LOG = LoggerFactory.getLogger(OssInputStream.class);
-    private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(OssInputStream.class);
 
     /**
      * 如果start为0, end为1000, inputstream范围是[0,1000],共1001个字节
@@ -65,8 +63,7 @@ public class OssInputStream extends InputStream {
             }, this.retryTimes, 5000, false);
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    OssReaderErrorCode.RUNTIME_EXCEPTION,
-                    MESSAGE_SOURCE.message("ossreader.16", e.getMessage()), e);
+                    OssReaderErrorCode.RUNTIME_EXCEPTION,e.getMessage(), e);
         }
     }
 
@@ -86,8 +83,7 @@ public class OssInputStream extends InputStream {
             }, this.retryTimes, 5000, false);
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    OssReaderErrorCode.RUNTIME_EXCEPTION,
-                    MESSAGE_SOURCE.message("ossreader.16", e.getMessage()), e);
+                    OssReaderErrorCode.RUNTIME_EXCEPTION, e.getMessage(), e);
         }
     }
 
@@ -103,8 +99,7 @@ public class OssInputStream extends InputStream {
                         startIndex++;
                         return c;
                     } catch (Exception e) {
-                        LOG.warn(MESSAGE_SOURCE.message("ossinputstream.4",
-                                startIndex, e.getMessage()));
+                        LOG.warn(e.getMessage(),e);
                         /**
                          * 必须将inputStream先关闭, 否则会造成连接泄漏
                          */
@@ -120,19 +115,18 @@ public class OssInputStream extends InputStream {
             return cbyte;
         } catch (Exception e) {
             throw DataXException.asDataXException(
-                    OssReaderErrorCode.RUNTIME_EXCEPTION,
-                    MESSAGE_SOURCE.message("ossinputstream.1", e.getMessage()), e);
+                    OssReaderErrorCode.RUNTIME_EXCEPTION, e.getMessage(), e);
         }
     }
 
     private InputStream getOssRangeInuptStream(final long startIndex) {
-        LOG.info(MESSAGE_SOURCE.message("ossinputstream.2", startIndex));
+        LOG.info("Start to retry reading [inputStream] from Byte {}", startIndex);
         // 第二个参数值设为-1，表示不设置结束的字节位置,读取startIndex及其以后的所有数据
         getObjectRequest.setRange(startIndex, this.endIndex);
         // 范围下载
         OSSObject ossObject = ossClient.getObject(getObjectRequest);
         // 读取InputStream
-        LOG.info(MESSAGE_SOURCE.message("ossinputstream.3", startIndex));
+        LOG.info("Start to retry reading [inputStream] from Byte {}", startIndex);
         return ossObject.getObjectContent();
     }
 }

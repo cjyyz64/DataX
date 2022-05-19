@@ -1,7 +1,6 @@
 package com.alibaba.datax.plugin.unstructuredstorage.writer;
 
 import com.alibaba.datax.common.spi.ErrorCode;
-import com.alibaba.datax.common.util.MessageSource;
 
 
 public enum UnstructuredStorageWriterErrorCode implements ErrorCode {

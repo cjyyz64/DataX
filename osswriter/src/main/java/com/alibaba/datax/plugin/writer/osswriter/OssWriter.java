@@ -8,7 +8,6 @@ import java.util.concurrent.Callable;
 
 import com.alibaba.datax.common.element.BytesColumn;
 import com.alibaba.datax.common.element.Column;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.common.util.RangeSplitUtil;
 import com.alibaba.datax.plugin.unstructuredstorage.FileFormat;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.binaryFileUtil.BinaryFileWriterUtil;
@@ -42,7 +41,6 @@ import static com.alibaba.datax.plugin.unstructuredstorage.writer.Constant.*;
  * Created by haiwei.luo on 15-02-09.
  */
 public class OssWriter extends Writer {
-    private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(OssWriter.class);
 
     public static int parseParentPathLength(List<String> path) {
         if (path == null || path.size() != 1) {
@@ -150,7 +148,7 @@ public class OssWriter extends Writer {
             String compress = this.writerSliceConfig
                     .getString(com.alibaba.datax.plugin.unstructuredstorage.writer.Key.COMPRESS);
             if (StringUtils.isNotBlank(compress)) {
-                String errorMessage = MESSAGE_SOURCE.message("osswriter.1", compress);
+                String errorMessage = String.format("OSS writes do not support compression for the moment. The compressed item %s does not work", compress);
                 LOG.error(errorMessage);
                 throw DataXException.asDataXException(
                         OssWriterErrorCode.ILLEGAL_VALUE, errorMessage);
@@ -184,7 +182,7 @@ public class OssWriter extends Writer {
                 if ("prefix".equalsIgnoreCase(truncateMode)) {
                     BinaryFileWriterUtil.checkFileNameIfRepeatedThrowException(sourceFileName);
                     if (TRUNCATE.equals(writeMode)) {
-                        LOG.info(MESSAGE_SOURCE.message("osswriter.3", bucket, object));
+                        LOG.info("You have configured [writeMode] [truncate], so the system will start to clear the objects starting with [{}] under [{}]. ", bucket, object);
                         // warn: 默认情况下，如果Bucket中的Object数量大于100，则只会返回100个Object
                         while (true) {
                             ObjectListing listing = null;
@@ -258,7 +256,7 @@ public class OssWriter extends Writer {
                     // warn: do not create bucket for user
                     if (!this.ossClient.doesBucketExist(bucket)) {
                         // this.ossClient.createBucket(bucket);
-                        String errorMessage = MESSAGE_SOURCE.message("osswriter.2", bucket);
+                        String errorMessage = String.format("The [bucket]: %s you configured does not exist. Please confirm your configuration items. ", bucket);
                         LOG.error(errorMessage);
                         throw DataXException.asDataXException(
                                 OssWriterErrorCode.ILLEGAL_VALUE, errorMessage);
@@ -292,7 +290,7 @@ public class OssWriter extends Writer {
             boolean doesObjectExist = this.ossClient.doesObjectExist(bucket, object);
             LOG.info("does object [{}] exist in bucket {} : {}", object, bucket, doesObjectExist);
             if (TRUNCATE.equals(writeMode)) {
-                LOG.info(MESSAGE_SOURCE.message("osswriter.8", bucket, object));
+                LOG.info("Because you have configured writeMode truncate, and writeSingleObject is true, start cleaning up the duplicate object [{}] under [{}]", bucket, object);
                 if (doesObjectExist) {
                     LOG.info("object [{}] has exist in bucket, delete it!", object, bucket);
                     this.ossClient.deleteObject(bucket, object);
@@ -301,14 +299,14 @@ public class OssWriter extends Writer {
                 throw DataXException
                         .asDataXException(
                                 OssWriterErrorCode.ILLEGAL_VALUE,
-                                MESSAGE_SOURCE.message("osswriter.9", bucket, object));
+                                "Illegal value");
             } else if (NOCONFLICT.equals(writeMode)) {
-                LOG.info(MESSAGE_SOURCE.message("osswriter.10", bucket, object));
+                LOG.info("Because you have configured writeMode nonConflict, and writeSingleObject is true, start checking bucket [{}] under the same name object [{}]", bucket, object);
                 if (doesObjectExist) {
                     throw DataXException
                             .asDataXException(
                                     OssWriterErrorCode.ILLEGAL_VALUE,
-                                    MESSAGE_SOURCE.message("osswriter.11", bucket, object));
+                                    String.format("Buffet you configured: %s There is a duplicate name of Object %s", bucket, object));
                 }
             }
         }
@@ -323,7 +321,7 @@ public class OssWriter extends Writer {
         private void doPrepareForMutliObject(String bucket, String object, String writeMode) {
             // truncate option handler
             if (TRUNCATE.equals(writeMode)) {
-                LOG.info(MESSAGE_SOURCE.message("osswriter.3", bucket, object));
+                LOG.info("You have configured [writeMode] [truncate], so the system will start to clear the objects starting with [{}] under [{}]. ", bucket, object);
                 // warn: 默认情况下，如果Bucket中的Object数量大于100，则只会返回100个Object
                 while (true) {
                     ObjectListing listing = null;
@@ -342,9 +340,9 @@ public class OssWriter extends Writer {
                     }
                 }
             } else if (APPEND.equals(writeMode)) {
-                LOG.info(MESSAGE_SOURCE.message("osswriter.4", bucket, object));
+                LOG.info("You have configured [writeMode] [append], so the system won\\u2019t perform the clearing before writing. Data is written to objects with the name prefix of [{}] under the bucket: [{}]. ", bucket, object);
             } else if (NOCONFLICT.equals(writeMode)) {
-                LOG.info(MESSAGE_SOURCE.message("osswriter.5", bucket, object));
+                LOG.info("You have configured [writeMode] [nonConflict], so the system will start to check objects whose names start with [{}] under the bucket: [{}]. ", bucket, object);
                 ObjectListing listing = this.ossClient.listObjects(bucket,
                         object);
                 if (0 < listing.getObjectSummaries().size()) {
@@ -361,7 +359,7 @@ public class OssWriter extends Writer {
                     throw DataXException
                             .asDataXException(
                                     OssWriterErrorCode.ILLEGAL_VALUE,
-                                    MESSAGE_SOURCE.message("osswriter.6", bucket, object));
+                                    String.format("The [bucket] you configured: %s contains objects with the name prefix of %s.", bucket, object));
                 }
             }
         }
@@ -730,7 +728,7 @@ public class OssWriter extends Writer {
                 while ((record = lineReceiver.getFromReader()) != null) {
                     //单文件同步暂不支持轮转[目前单文件支持同步约最大100GB大小]
                     if (OssSingleObject.currentPartNumber.intValue() > Constant.MAX_BLOCK_SIZE) {
-                        throw DataXException.asDataXException(MESSAGE_SOURCE.message("osswriter.12",
+                        throw DataXException.asDataXException(String.format("When writeSingleObject is true, the write size of your single object has exceeded the maximum value of %s MB.",
                                 (Constant.MAX_BLOCK_SIZE * this.blockSizeInByte / 1024 / 1024)));
                     }
 
