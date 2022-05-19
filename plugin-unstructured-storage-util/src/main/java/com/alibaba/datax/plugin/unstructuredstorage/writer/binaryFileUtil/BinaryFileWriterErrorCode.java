@@ -1,12 +1,11 @@
 package com.alibaba.datax.plugin.unstructuredstorage.writer.binaryFileUtil;
 
 import com.alibaba.datax.common.spi.ErrorCode;
-import com.alibaba.datax.common.util.MessageSource;
 
 public enum BinaryFileWriterErrorCode implements ErrorCode {
-	ILLEGAL_VALUE("UnstructuredStorageWriter-00", MessageSource.loadResourceBundle(BinaryFileWriterErrorCode.class).message("errorcode.illegal_value")),
-	REPEATED_FILE_NAME("UnstructuredStorageWriter-01", MessageSource.loadResourceBundle(BinaryFileWriterErrorCode.class).message("errorcode.repeated_file_name")),
-	REQUIRED_VALUE("UnstructuredStorageWriter-02", MessageSource.loadResourceBundle(BinaryFileWriterErrorCode.class).message("errorcode.required_value")),;
+	ILLEGAL_VALUE("UnstructuredStorageWriter-00", "errorcode.illegal_value"),
+	REPEATED_FILE_NAME("UnstructuredStorageWriter-01", "errorcode.repeated_file_name"),
+	REQUIRED_VALUE("UnstructuredStorageWriter-02","errorcode.required_value"),;
 
 	private final String code;
 	private final String description;

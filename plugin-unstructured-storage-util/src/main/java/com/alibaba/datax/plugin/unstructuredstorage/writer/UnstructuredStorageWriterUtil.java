@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.alibaba.datax.common.element.BytesColumn;
-import com.alibaba.datax.common.util.MessageSource;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
@@ -37,7 +36,6 @@ public class UnstructuredStorageWriterUtil {
 
     private static final Logger LOG = LoggerFactory
             .getLogger(UnstructuredStorageWriterUtil.class);
-    private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(UnstructuredStorageWriterUtil.class);
 
     /**
      * check parameter: writeMode, encoding, compress, filedDelimiter
@@ -53,8 +51,7 @@ public class UnstructuredStorageWriterUtil {
         if (!supportedWriteModes.contains(writeMode)) {
             throw DataXException
                     .asDataXException(
-                            UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                            MESSAGE_SOURCE.message("unstructuredstoragewriterutil.1", writeMode));
+                            UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, writeMode);
         }
         writerConfiguration.set(Key.WRITE_MODE, writeMode);
 
@@ -62,7 +59,6 @@ public class UnstructuredStorageWriterUtil {
         String encoding = writerConfiguration.getString(Key.ENCODING);
         if (StringUtils.isBlank(encoding)) {
             // like "  ", null
-            LOG.warn(MESSAGE_SOURCE.message("unstructuredstoragewriterutil.2", Constant.DEFAULT_ENCODING));
             writerConfiguration.set(Key.ENCODING, Constant.DEFAULT_ENCODING);
         } else {
             try {
@@ -71,8 +67,7 @@ public class UnstructuredStorageWriterUtil {
                 Charsets.toCharset(encoding);
             } catch (Exception e) {
                 throw DataXException.asDataXException(
-                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                        MESSAGE_SOURCE.message("unstructuredstoragewriterutil.3", encoding), e);
+                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, e);
             }
         }
 
@@ -83,10 +78,8 @@ public class UnstructuredStorageWriterUtil {
         } else {
             Set<String> supportedCompress = Sets.newHashSet("gzip", "bzip2");
             if (!supportedCompress.contains(compress.toLowerCase().trim())) {
-                String message = MESSAGE_SOURCE.message("unstructuredstoragewriterutil.4", StringUtils.join(supportedCompress, ","), compress);
                 throw DataXException.asDataXException(
-                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                        String.format(message, compress));
+                        UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, String.format("unsupported commpress format %s ", compress));
             }
         }
 
@@ -95,12 +88,11 @@ public class UnstructuredStorageWriterUtil {
         if (StringUtils.isBlank(fileFormat)) {
             fileFormat = Constant.FILE_FORMAT_TEXT;
             writerConfiguration.set(Key.FILE_FORMAT, fileFormat);
-            LOG.warn(MESSAGE_SOURCE.message("unstructuredstoragewriterutil.13", fileFormat));
         }
         if (!Constant.FILE_FORMAT_CSV.equals(fileFormat)
                 && !Constant.FILE_FORMAT_TEXT.equals(fileFormat)) {
             throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, MESSAGE_SOURCE.message("unstructuredstoragewriterutil.7", fileFormat));
+                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, String.format("unsupported fileFormat  %s ", fileFormat));
         }
 
         // fieldDelimiter check
@@ -110,12 +102,11 @@ public class UnstructuredStorageWriterUtil {
                 null != delimiterInStr && 1 != delimiterInStr.length()) {
             throw DataXException.asDataXException(
                     UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                    MESSAGE_SOURCE.message("unstructuredstoragewriterutil.5", delimiterInStr));
+                    String.format("unsupported delimiterInStr  %s ", delimiterInStr));
         }
         if (null == delimiterInStr) {
             delimiterInStr = String.valueOf(Constant.DEFAULT_FIELD_DELIMITER);
             writerConfiguration.set(Key.FIELD_DELIMITER, delimiterInStr);
-            LOG.warn(MESSAGE_SOURCE.message("unstructuredstoragewriterutil.6", delimiterInStr));
         }
     }
 
@@ -181,8 +172,6 @@ public class UnstructuredStorageWriterUtil {
                 Constant.DEFAULT_ENCODING);
         // handle blank encoding
         if (StringUtils.isBlank(encoding)) {
-            LOG.warn(MESSAGE_SOURCE.message("unstructuredstoragewriterutil.8", encoding,
-                    Constant.DEFAULT_ENCODING));
             encoding = Constant.DEFAULT_ENCODING;
         }
         String compress = config.getString(Key.COMPRESS);
@@ -208,8 +197,7 @@ public class UnstructuredStorageWriterUtil {
                 } else {
                     throw DataXException
                             .asDataXException(
-                                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE,
-                                    MESSAGE_SOURCE.message("unstructuredstoragewriterutil.9", compress));
+                                    UnstructuredStorageWriterErrorCode.ILLEGAL_VALUE, compress);
                 }
             }
             UnstructuredStorageWriterUtil.doWriteToStream(lineReceiver, writer,
@@ -217,16 +205,13 @@ public class UnstructuredStorageWriterUtil {
         } catch (UnsupportedEncodingException uee) {
             throw DataXException
                     .asDataXException(
-                            UnstructuredStorageWriterErrorCode.Write_FILE_WITH_CHARSET_ERROR,
-                            MESSAGE_SOURCE.message("unstructuredstoragewriterutil.10", encoding), uee);
+                            UnstructuredStorageWriterErrorCode.Write_FILE_WITH_CHARSET_ERROR, uee);
         } catch (NullPointerException e) {
             throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.RUNTIME_EXCEPTION,
-                    MESSAGE_SOURCE.message("unstructuredstoragewriterutil.11"), e);
+                    UnstructuredStorageWriterErrorCode.RUNTIME_EXCEPTION,e);
         } catch (IOException e) {
             throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR,
-                    MESSAGE_SOURCE.message("unstructuredstoragewriterutil.12", context), e);
+                    UnstructuredStorageWriterErrorCode.Write_FILE_IO_ERROR, e);
         } finally {
             IOUtils.closeQuietly(writer);
         }
@@ -336,8 +321,7 @@ public class UnstructuredStorageWriterUtil {
             // throw exception, it is not dirty data,
             // may be network unreachable and the other problem
             throw DataXException.asDataXException(
-                    UnstructuredStorageWriterErrorCode.Write_ERROR,
-                    MESSAGE_SOURCE.message("unstructuredstoragewriterutil.15", e.getMessage()));
+                    UnstructuredStorageWriterErrorCode.Write_ERROR, e.getMessage(),e);
         }
     }
 

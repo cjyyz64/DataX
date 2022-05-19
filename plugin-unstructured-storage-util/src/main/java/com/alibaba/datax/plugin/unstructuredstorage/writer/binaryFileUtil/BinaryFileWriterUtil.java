@@ -5,7 +5,6 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.Key;
 import com.alibaba.datax.plugin.unstructuredstorage.writer.UnstructuredStorageWriterErrorCode;
@@ -32,7 +31,6 @@ public class BinaryFileWriterUtil {
 
     private static final Logger LOG = LoggerFactory.getLogger(BinaryFileWriterUtil.class);
 
-    private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(BinaryFileWriterUtil.class);
 
     /**
      * 从RecordReceiver获取源文件Bytes数组, 写到目的端
@@ -70,7 +68,7 @@ public class BinaryFileWriterUtil {
             throw DataXException
                     .asDataXException(
                             BinaryFileWriterErrorCode.ILLEGAL_VALUE,
-                            MESSAGE_SOURCE.message("binaryFileUtil.1", writeMode));
+                            String.format("Synchronous binary format file, only supports truncate and nonConflict modes, does not support the writeMode mode you configured: %s", writeMode));
         }
         writerConfiguration.set(Key.WRITE_MODE, writeMode);
     }

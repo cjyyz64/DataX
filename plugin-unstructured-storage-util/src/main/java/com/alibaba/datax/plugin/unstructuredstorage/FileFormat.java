@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.unstructuredstorage;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.Constant;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.Key;
 import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageReaderErrorCode;
@@ -52,7 +51,7 @@ public enum  FileFormat {
             }
         }
         throw DataXException.asDataXException(UnstructuredStorageReaderErrorCode.ILLEGAL_VALUE,
-                MessageSource.loadResourceBundle(FileFormat.class).message("fileformaterror.1", fileFormat, Arrays.asList(values())));
+               String.format("DataX 不支持该 fileFormat 类型:%s, 目前支持的 fileFormat 类型是:%s", fileFormat, Arrays.asList(values())));
     }
 
     public boolean equalsIgnoreCase(String fileFormat){
