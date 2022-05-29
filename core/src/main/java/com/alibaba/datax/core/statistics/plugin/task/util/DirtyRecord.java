@@ -132,6 +132,12 @@ class DirtyColumn extends Column {
 		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
 				"该方法不支持!");
 	}
+	
+	@Override
+	public Date asDate(String dateFormat) {
+		throw DataXException.asDataXException(FrameworkErrorCode.RUNTIME_ERROR,
+				"该方法不支持!");
+	}
 
 	@Override
 	public byte[] asBytes() {
