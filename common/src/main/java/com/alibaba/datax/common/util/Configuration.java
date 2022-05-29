@@ -51,7 +51,6 @@ import java.util.*;
  * 3. 输出JSON，将上述对象转为JSON，要把上述Map的多级key转为树形结构，并输出为JSON <br>
  */
 public class Configuration {
-
     /**
      * 对于加密的keyPath，需要记录下来
      * 为的是后面分布式情况下将该值加密后抛到DataXServer中
