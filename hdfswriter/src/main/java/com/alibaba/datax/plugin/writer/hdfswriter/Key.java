@@ -34,13 +34,6 @@ public class Key {
     // hadoop config
     public static final String HADOOP_CONFIG = "hadoopConfig";
 
-    // PanguFS
-    public final static String PANGU_FS_CONFIG = "panguFSConfig";
-    public final static String PANGU_FS_CONFIG_NUWA_CLUSTER = "nuwaCluster";
-    public final static String PANGU_FS_CONFIG_NUWA_SERVERS = "nuwaServers";
-    public final static String PANGU_FS_CONFIG_NUWA_PROXIES = "nuwaProxies";
-    public final static String PANGU_FS_CONFIG_CAPABILITY = "capability";
-
     // useOldRawDataTransf
     public final static String PARQUET_FILE_USE_RAW_DATA_TRANSF = "useRawDataTransf";
 
