@@ -142,38 +142,4 @@ public class HdfsParquetUtil {
         pathAndFileName.put(Key.FILE_NAME, fileName);
         return pathAndFileName;
     }
-
-    public static void main(String[] args){
-        FileSystem fileSystem = null;
-        JobConf conf = null;
-        org.apache.hadoop.conf.Configuration hadoopConf = new org.apache.hadoop.conf.Configuration();
-        hadoopConf.set("fs.oss.impl", "org.apache.hadoop.fs.aliyun.oss.AliyunOSSFileSystem");
-        hadoopConf.set("fs.defaultFS", "oss://datax-hdfs-oss");
-        hadoopConf.set(Key.FS_OSS_ACCESSID,"LTAINbR9UHfIOMgB");
-        hadoopConf.set(Key.FS_OSS_ACCESSKEY,"OU9g38cCpTLfuUZd9M20mWsB0VQX9Z");
-        hadoopConf.set(Key.FS_OSS_ENDPOINT,"http://oss-cn-hangzhou.aliyuncs.com");
-        conf = new JobConf(hadoopConf);
-        try {
-            fileSystem = AliyunOSSFileSystem.get(conf);
-            boolean test = fileSystem.exists(new Path("/tests/case61"));
-            System.out.println(test);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
-    public static void test( String object){
-        String path = "/";
-        String fileName = object;
-
-        int index = object.lastIndexOf("/");
-        if(index > 0){
-            path = object.substring(0,index);
-            fileName = object.substring(index+1,object.length());
-        }
-        System.out.println("path:"+path);
-        System.out.println("fileName:"+fileName);
-    }
 }
