@@ -7,7 +7,7 @@ import java.util.Map;
 //This file is part of OpenTSDB.
 
 //Copyright (C) 2010-2012  The OpenTSDB Authors.
-//Copyright @ 2019 alibaba.com
+//Copyright（C）2019 Alibaba Group Holding Ltd.
 
 //
 
