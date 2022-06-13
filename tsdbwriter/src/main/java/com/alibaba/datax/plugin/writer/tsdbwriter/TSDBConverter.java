@@ -8,7 +8,6 @@ import com.aliyun.hitsdb.client.value.request.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,7 +56,7 @@ class TSDBConverter {
                 }
             }
             for (Point.MetricBuilder metricBuilder : metricBuilders) {
-                dps.add(metricBuilder.tag(tags).timestamp(time).build());
+                dps.add(metricBuilder.tag(tags).timestamp(time).build(false));
             }
         }
         return dps;
@@ -89,7 +88,7 @@ class TSDBConverter {
                     builder.field(name, column.asString());
                 }
             }
-            MultiFieldPoint point = builder.build();
+            MultiFieldPoint point = builder.build(false);
             dps.add(point);
         }
         return dps;

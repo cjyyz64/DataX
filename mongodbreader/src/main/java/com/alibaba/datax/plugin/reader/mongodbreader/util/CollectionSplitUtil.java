@@ -1,23 +1,20 @@
 package com.alibaba.datax.plugin.reader.mongodbreader.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.reader.mongodbreader.KeyConstant;
 import com.alibaba.datax.plugin.reader.mongodbreader.MongoDBReaderErrorCode;
-
 import com.google.common.base.Strings;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoCommandException;
-import com.mongodb.MongoCredential;
-import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by jianying.wcj on 2015/3/19 0019.
@@ -167,36 +164,6 @@ public class CollectionSplitUtil {
         rangeList.add(range);
 
         return rangeList;
-    }
-
-    public static void main(String[] args) {
-        ServerAddress sa = new ServerAddress("10.101.72.137", 3002);
-        MongoCredential credential = MongoCredential.createCredential("root", "test", "Qa123456".toCharArray());
-        MongoClient mongoClient = new MongoClient(sa, Arrays.asList(credential));
-        String dbName = "test";
-        String collName = "test4";
-        boolean isObjectId = isPrimaryIdObjectId(mongoClient, dbName, collName);
-        List<Range> rangeList = doSplitCollection(2, mongoClient, dbName, collName, isObjectId);
-        //String query = "{_id: {\"$oid\" :\"595c903c03e6b9f551b6a80e\"}}";
-        for(Range range : rangeList) {
-            System.out.printf("range.lowerBound: %s, upperBound: %s\n", range.lowerBound, range.upperBound);
-            Document filter = new Document();
-            if (range.lowerBound == "min") {
-                if (range.upperBound != "max") {
-                    filter.append("_id", new Document("$lt", isObjectId ? new ObjectId(range.upperBound.toString()) : range.upperBound));
-                }
-            } else if (range.upperBound == "max") {
-                filter.append(KeyConstant.MONGO_PRIMARY_ID, new Document("$gte", isObjectId ? new ObjectId(range.lowerBound.toString()) : range.lowerBound));
-            } else {
-                filter.append(KeyConstant.MONGO_PRIMARY_ID, new Document("$gte", isObjectId ? new ObjectId(range.lowerBound.toString()) : range.lowerBound).append("$lt", isObjectId ? new ObjectId(range.upperBound.toString()) : range.upperBound));
-            }
-            //Document queryFilter = Document.parse(query);
-            //filter = new Document("$and", Arrays.asList(filter, queryFilter));
-            //System.out.println(filter);
-            MongoDatabase database = mongoClient.getDatabase(dbName);
-            MongoCollection col = database.getCollection(collName);
-            System.out.println(col.count(filter));
-        }
     }
 }
 
