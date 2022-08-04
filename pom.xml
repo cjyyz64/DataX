@@ -76,7 +76,8 @@
         <module>gdbreader</module>
         <module>tsdbreader</module>
         <module>opentsdbreader</module>
-
+        <module>loghubreader</module>
+        <module>datahubreader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -114,6 +115,8 @@
         <module>tsdbwriter</module>
         <module>gdbwriter</module>
         <module>oscarwriter</module>
+        <module>loghubwriter</module>
+        <module>datahubwriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
