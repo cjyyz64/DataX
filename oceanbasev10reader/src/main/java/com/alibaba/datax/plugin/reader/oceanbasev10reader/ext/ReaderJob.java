@@ -78,7 +78,8 @@ public class ReaderJob extends CommonRdbmsReader.Job {
         final String obJdbcDelimiter = com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING;
         if (jdbcUrl.startsWith(obJdbcDelimiter)) {
             String[] ss = jdbcUrl.split(obJdbcDelimiter);
-            if (ss.length >= 2) {
+            int elementCount = 2;
+            if (ss.length >= elementCount) {
                 String tenant = ss[1].trim();
                 String[] sss = tenant.split(":");
                 return sss[0];
