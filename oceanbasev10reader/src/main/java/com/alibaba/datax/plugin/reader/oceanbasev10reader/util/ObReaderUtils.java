@@ -37,6 +37,9 @@ public class ObReaderUtils {
 
     public static final DataBaseType databaseType = DataBaseType.OceanBase;
 
+    private static final String TABLE_SCHEMA_DELIMITER = ".";
+
+    private static final Pattern JDBC_PATTERN = Pattern.compile("jdbc:(oceanbase|mysql)://([\\w\\.-]+:\\d+)/([\\w\\.-]+)");
 
     private static Set<String> keywordsFromString2HashSet(final String keywords) {
         return new HashSet(Arrays.asList(keywords.split(",")));
@@ -144,7 +147,7 @@ public class ObReaderUtils {
         if (isOracleMode(context.getCompatibleMode())) {
             tableName = tableName.toUpperCase();
             String schema;
-            if (tableName.contains(".")) {
+            if (tableName.contains(TABLE_SCHEMA_DELIMITER)) {
                 schema = String.format("'%s'", tableName.substring(0, tableName.indexOf(".")));
                 tableName = tableName.substring(tableName.indexOf(".") + 1);
             } else {
@@ -462,7 +465,7 @@ public class ObReaderUtils {
         if (isOracleMode(compatibleMode)) {
             String schema;
             tableName = tableName.toUpperCase();
-            if (tableName.contains(".")) {
+            if (tableName.contains(TABLE_SCHEMA_DELIMITER)) {
                 schema = String.format("'%s'", tableName.substring(0, tableName.indexOf(".")));
                 tableName = tableName.substring(tableName.indexOf(".") + 1);
             } else {
@@ -513,7 +516,7 @@ public class ObReaderUtils {
                 Iterator<Map.Entry<String, List<String>>> iterator = allIndex.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<String, List<String>> entry = iterator.next();
-                    if (entry.getKey().equals("PRIMARY")) {
+                    if ("PRIMARY".equals(entry.getKey())) {
                         continue;
                     }
 
@@ -770,9 +773,7 @@ public class ObReaderUtils {
     }
 
     public static String getDbNameFromJdbcUrl(String jdbcUrl) {
-        final Pattern pattern = Pattern.compile("jdbc:(oceanbase|mysql)://([\\w\\.-]+:\\d+)/([\\w\\.-]+)");
-
-        Matcher matcher = pattern.matcher(jdbcUrl);
+        Matcher matcher = JDBC_PATTERN.matcher(jdbcUrl);
         if (matcher.find()) {
             return matcher.group(3);
         } else {

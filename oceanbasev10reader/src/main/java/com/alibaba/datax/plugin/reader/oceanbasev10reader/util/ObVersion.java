@@ -16,8 +16,10 @@ public class ObVersion implements Comparable<ObVersion> {
     private int patchNumber;
 
     public static final ObVersion V2276 = valueOf("2.2.76");
-    public static final ObVersion defaultVersion =
+    private static final ObVersion DEFAULT_VERSION =
         valueOf(System.getProperty("defaultObVersion","3.2.3.0"));
+
+    private static final int VERSION_PART_COUNT = 4;
 
     public ObVersion(String version) {
         try {
@@ -26,7 +28,7 @@ public class ObVersion implements Comparable<ObVersion> {
             minorVersion = Integer.valueOf(versionParts[1]);
             releaseNumber = Integer.valueOf(versionParts[2]);
             int tempPatchNum = 0;
-            if (versionParts.length == 4) {
+            if (versionParts.length == VERSION_PART_COUNT) {
                 try {
                     tempPatchNum = Integer.valueOf(versionParts[3]);
                 } catch (Exception e) {
@@ -36,11 +38,11 @@ public class ObVersion implements Comparable<ObVersion> {
             patchNumber = tempPatchNum;
         } catch (Exception ex) {
             LOG.warn("fail to get ob version, using default {} {}",
-                defaultVersion, ex.getMessage());
-            majorVersion  = defaultVersion.majorVersion;
-            minorVersion  = defaultVersion.minorVersion;
-            releaseNumber = defaultVersion.releaseNumber;
-            patchNumber   = defaultVersion.patchNumber;
+                DEFAULT_VERSION, ex.getMessage());
+            majorVersion  = DEFAULT_VERSION.majorVersion;
+            minorVersion  = DEFAULT_VERSION.minorVersion;
+            releaseNumber = DEFAULT_VERSION.releaseNumber;
+            patchNumber   = DEFAULT_VERSION.patchNumber;
         }
     }
 
