@@ -6,11 +6,6 @@ import io.searchbox.client.JestResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * @author yiyi adam.zwj@alibaba-inc.com
- * @version 2020
- * @date 2020-02-19
- */
 public class ClusterInfoResult extends JestResult {
 
 	private static final Pattern FIRST_NUMBER = Pattern.compile("\\d");

@@ -2,5 +2,5 @@
     "name": "datahubreader",
     "class": "com.alibaba.datax.plugin.reader.datahubreader.DatahubReader",
     "description": "datahub reader",
-    "developer": "weiguang.sunwg, bug reported to : weiguang.sunwg@alibaba-inc.com"
+    "developer": "alibaba"
 }
