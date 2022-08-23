@@ -3,11 +3,6 @@ package com.alibaba.datax.plugin.writer.elasticsearchwriter.jest;
 import io.searchbox.action.GenericResultAbstractAction;
 import io.searchbox.client.config.ElasticsearchVersion;
 
-/**
- * @author yiyi adam.zwj@alibaba-inc.com
- * @version 2020
- * @date 2020-02-20
- */
 public class PutMapping7  extends GenericResultAbstractAction {
 	protected PutMapping7(PutMapping7.Builder builder) {
 		super(builder);

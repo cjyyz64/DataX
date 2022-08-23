@@ -2,5 +2,5 @@
     "name": "datahubwriter",
     "class": "com.alibaba.datax.plugin.writer.datahubwriter.DatahubWriter",
     "description": "datahub writer",
-    "developer": "jingshan.mjs, bug reported to : jingshan.mjs@alibaba-inc.com"
+    "developer": "alibaba"
 }
