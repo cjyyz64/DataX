@@ -78,6 +78,7 @@
         <module>opentsdbreader</module>
         <module>loghubreader</module>
         <module>datahubreader</module>
+        <module>starrocksreader</module>
 
         <!-- writer -->
         <module>mysqlwriter</module>
@@ -117,6 +118,7 @@
         <module>oscarwriter</module>
         <module>loghubwriter</module>
         <module>datahubwriter</module>
+        <module>starrockswriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
