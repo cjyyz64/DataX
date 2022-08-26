@@ -3,8 +3,11 @@ package com.alibaba.datax.plugin.writer.elasticsearchwriter;
 /**
  * Created by xiongfeng.bxf on 17/3/1.
  */
-public enum ESFieldType {
+public enum ElasticSearchFieldType {
     ID,
+    PARENT,
+    ROUTING,
+    VERSION,
     STRING,
     TEXT,
     KEYWORD,
@@ -24,20 +27,18 @@ public enum ESFieldType {
     DATE_RANGE,
     GEO_POINT,
     GEO_SHAPE,
-
     IP,
+    IP_RANGE,
     COMPLETION,
     TOKEN_COUNT,
-
-    ARRAY,
     OBJECT,
     NESTED;
 
-    public static ESFieldType getESFieldType(String type) {
+    public static ElasticSearchFieldType getESFieldType(String type) {
         if (type == null) {
             return null;
         }
-        for (ESFieldType f : ESFieldType.values()) {
+        for (ElasticSearchFieldType f : ElasticSearchFieldType.values()) {
             if (f.name().compareTo(type.toUpperCase()) == 0) {
                 return f;
             }
