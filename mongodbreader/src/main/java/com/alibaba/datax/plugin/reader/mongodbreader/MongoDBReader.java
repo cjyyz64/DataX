@@ -134,6 +134,9 @@ public class MongoDBReader extends Reader {
                             if (name.length > 1) {
                                 Object obj;
                                 Document nestedDocument = item;
+                                // a.b.c    a   ,  b   , c
+                                // {"a.b":{"c":1}}
+                                // a\.b.c
                                 for (String str : name) {
                                     obj = nestedDocument.get(str);
                                     if (obj instanceof Document) {
