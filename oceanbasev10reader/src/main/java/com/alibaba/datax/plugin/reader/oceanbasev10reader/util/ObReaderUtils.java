@@ -45,7 +45,7 @@ public class ObReaderUtils {
         return new HashSet(Arrays.asList(keywords.split(",")));
     }
 
-    public static String escapeDatabaseKeywords(String keyword) {
+    public static String escapeDatabaseKeyword(String keyword) {
         if (databaseKeywords == null) {
             if (isOracleMode(compatibleMode)) {
                 databaseKeywords = keywordsFromString2HashSet(ORACLE_KEYWORDS);
@@ -60,10 +60,10 @@ public class ObReaderUtils {
         return keyword;
     }
 
-    public static void escapeDatabaseKeywords(List<String> ids) {
+    public static void escapeDatabaseKeyword(List<String> ids) {
         if (ids != null && ids.size() > 0) {
             for (int i = 0; i < ids.size(); i++) {
-                ids.set(i, escapeDatabaseKeywords(ids.get(i)));
+                ids.set(i, escapeDatabaseKeyword(ids.get(i)));
             }
         }
     }
@@ -173,7 +173,7 @@ public class ObReaderUtils {
             while (rs.next()) {
                 hasPk = true;
                 String columnName = rs.getString("Column_name");
-                columnName = escapeDatabaseKeywords(columnName);
+                columnName = escapeDatabaseKeyword(columnName);
                 if (!realIndex.contains(columnName)) {
                     realIndex.add(columnName);
                 }

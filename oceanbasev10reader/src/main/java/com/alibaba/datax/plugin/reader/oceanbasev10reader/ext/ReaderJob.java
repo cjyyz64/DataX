@@ -26,7 +26,7 @@ public class ReaderJob extends CommonRdbmsReader.Job {
     public void init(Configuration originalConfig) {
         //将config中的column和table中的关键字进行转义
         List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
-        ObReaderUtils.escapeDatabaseKeywords(columns);
+        ObReaderUtils.escapeDatabaseKeyword(columns);
         originalConfig.set(Key.COLUMN, columns);
 
         List<JSONObject> conns = originalConfig.getList(Constant.CONN_MARK, JSONObject.class);
@@ -37,7 +37,7 @@ public class ReaderJob extends CommonRdbmsReader.Job {
 
             // tables will be null when querySql is configured
             if (tables != null) {
-                ObReaderUtils.escapeDatabaseKeywords(tables);
+                ObReaderUtils.escapeDatabaseKeyword(tables);
                 originalConfig.set(String.format("%s[%d].%s", Constant.CONN_MARK, i, Key.TABLE),
                     tables);
             }
