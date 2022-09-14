@@ -380,6 +380,9 @@ public final class DBUtil {
             // unit ms
             prop.put("oracle.jdbc.ReadTimeout", socketTimeout);
         }
+        if (dataBaseType == DataBaseType.OceanBase) {
+            url = url.replace("mysql", "oceanbase");
+        }
 
         return connect(dataBaseType, url, prop);
     }
