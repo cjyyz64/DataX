@@ -36,11 +36,6 @@
             <artifactId>aliyun-log</artifactId>
             <version>0.6.12</version>
         </dependency>
-        <dependency>
-            <groupId>com.taobao.diamond</groupId>
-            <artifactId>diamond-utils</artifactId>
-            <version>3.2.6</version>
-        </dependency>
     </dependencies>
 
     <build>

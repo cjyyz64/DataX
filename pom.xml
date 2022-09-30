@@ -82,6 +82,7 @@
 
         <!-- writer -->
         <module>mysqlwriter</module>
+        <module>starrockswriter</module>
         <module>drdswriter</module>
         <module>oraclewriter</module>
         <module>sqlserverwriter</module>
@@ -89,8 +90,6 @@
         <module>kingbaseeswriter</module>
         <module>adswriter</module>
         <module>oceanbasev10writer</module>
-        <module>cassandrawriter</module>
-        <module>clickhousewriter</module>
         <module>adbpgwriter</module>
         <module>hologresjdbcwriter</module>
         <module>rdbmswriter</module>
@@ -118,7 +117,8 @@
         <module>oscarwriter</module>
         <module>loghubwriter</module>
         <module>datahubwriter</module>
-        <module>starrockswriter</module>
+        <module>cassandrawriter</module>
+        <module>clickhousewriter</module>
 
         <!-- common support module -->
         <module>plugin-rdbms-util</module>
@@ -252,6 +252,14 @@
     </pluginRepositories>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/java</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
