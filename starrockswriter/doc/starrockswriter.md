@@ -129,6 +129,10 @@ StarRocksWriter 插件实现了写入数据到 StarRocks 主库的目的表的�
 
 	* 描述：目的表需要写入数据的字段,字段之间用英文逗号分隔。例如: "column": ["id","name","age"]。
 
+			**column配置项必须指定，不能留空！**
+
+               注意：我们强烈不推荐你这样配置，因为当你目的表字段个数、类型等有改动时，你的任务可能运行不正确或者失败
+
 	* 必选：是 <br />
 
 	* 默认值：否 <br />
@@ -171,7 +175,7 @@ StarRocksWriter 插件实现了写入数据到 StarRocks 主库的目的表的�
 
  	* 必选：否 <br />
 
-	* 默认值：5242880 (5M)
+	* 默认值：104857600 (100M)
 
 * **flushInterval**
 
@@ -200,3 +204,19 @@ StarRocksWriter 插件实现了写入数据到 StarRocks 主库的目的表的�
     "row_delimiter": "\\x02"
 }
 ```
+
+如需更改导入格式为`json`， 则正确配置 `loadProps` 即可：
+```json
+"loadProps": {
+    "format": "json",
+    "strip_outer_array": true
+}
+```
+
+## 4 性能报告
+
+
+## 5 约束限制
+
+
+## FAQ

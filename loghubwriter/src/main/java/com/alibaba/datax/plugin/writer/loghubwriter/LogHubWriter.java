@@ -6,6 +6,7 @@ import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.common.util.StrUtil;
 import com.aliyun.openservices.log.Client;
 import com.aliyun.openservices.log.common.LogItem;
 import com.aliyun.openservices.log.common.Shard;
@@ -15,9 +16,10 @@ import com.aliyun.openservices.log.request.PutLogsRequest;
 import com.aliyun.openservices.log.response.ListShardResponse;
 import com.aliyun.openservices.log.response.PutLogsResponse;
 
-import com.taobao.diamond.md5.MD5;
+import org.apache.commons.codec.digest.Md5Crypt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import sun.security.provider.MD5;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -186,7 +188,7 @@ public class LogHubWriter extends Writer {
                         }
                     }
 
-                    String hashKey = getShardHashKey(MD5.getInstance().getMD5String(id), shards);
+                    String hashKey = getShardHashKey(StrUtil.getMd5(id), shards);
                     if (!logMap.containsKey(hashKey)) {
                         info(LOG, "Hash key:" + hashKey);
                         logMap.put(hashKey, new ArrayList<LogItem>());
