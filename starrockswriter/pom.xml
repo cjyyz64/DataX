@@ -71,12 +71,6 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>5.1.46</version>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba.datax</groupId>
-            <artifactId>simulator</artifactId>
-            <version>${datax-project-version}</version>
-            <scope>test</scope>
-        </dependency>
 	</dependencies>
 
 	<build>

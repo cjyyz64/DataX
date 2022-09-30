@@ -120,7 +120,7 @@ public class StarRocksWriter extends Writer {
                                 .asDataXException(
                                         DBUtilErrorCode.CONF_ERROR,
                                         String.format(
-                                                "Column configuration error. The number of reader columns and the number of writer columns are not equal.",
+                                                "Column configuration error. The number of reader columns %d and the number of writer columns %d are not equal.",
                                                 record.getColumnNumber(),
                                                 options.getColumns().size()));
                     }
