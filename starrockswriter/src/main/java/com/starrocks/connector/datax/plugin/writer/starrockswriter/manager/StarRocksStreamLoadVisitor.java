@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
  
 public class StarRocksStreamLoadVisitor {
@@ -35,7 +37,14 @@ public class StarRocksStreamLoadVisitor {
     private static final Logger LOG = LoggerFactory.getLogger(StarRocksStreamLoadVisitor.class);
 
     private final StarRocksWriterOptions writerOptions;
-    private int pos;
+    private long pos;
+    private static final String RESULT_FAILED = "Fail";
+    private static final String RESULT_LABEL_EXISTED = "Label Already Exists";
+    private static final String LAEBL_STATE_VISIBLE = "VISIBLE";
+    private static final String LAEBL_STATE_COMMITTED = "COMMITTED";
+    private static final String RESULT_LABEL_PREPARE = "PREPARE";
+    private static final String RESULT_LABEL_ABORTED = "ABORTED";
+    private static final String RESULT_LABEL_UNKNOWN = "UNKNOWN";
 
     public StarRocksStreamLoadVisitor(StarRocksWriterOptions writerOptions) {
         this.writerOptions = writerOptions;
@@ -65,7 +74,7 @@ public class StarRocksStreamLoadVisitor {
         if (LOG.isDebugEnabled()) {
             LOG.debug(new StringBuilder("StreamLoad response:\n").append(JSON.toJSONString(loadResult)).toString());
         }
-        if ("Fail".equals(loadResult.get(keyStatus))) {
+        if (RESULT_FAILED.equals(loadResult.get(keyStatus))) {
             StringBuilder errorBuilder = new StringBuilder("Failed to flush data to StarRocks.\n");
             if (loadResult.containsKey("Message")) {
                 errorBuilder.append(loadResult.get("Message"));
@@ -84,16 +93,18 @@ public class StarRocksStreamLoadVisitor {
                 errorBuilder.append('\n');
             }
             throw new IOException(errorBuilder.toString());
+        } else if (RESULT_LABEL_EXISTED.equals(loadResult.get(keyStatus))) {
+            LOG.debug(new StringBuilder("StreamLoad response:\n").append(JSON.toJSONString(loadResult)).toString());
+            // has to block-checking the state to get the final result
+            checkLabelState(host, flushData.getLabel());
         }
     }
 
     private String getAvailableHost() {
         List<String> hostList = writerOptions.getLoadUrlList();
-        if (pos >= hostList.size()) {
-            pos = 0;
-        }
-        for (; pos < hostList.size(); pos++) {
-            String host = new StringBuilder("http://").append(hostList.get(pos)).toString();
+        long tmp = pos + hostList.size();
+        for (; pos < tmp; pos++) {
+            String host = new StringBuilder("http://").append(hostList.get((int) (pos % hostList.size()))).toString();
             if (tryHttpConnection(host)) {
                 return host;
             }
@@ -117,7 +128,7 @@ public class StarRocksStreamLoadVisitor {
 
     private byte[] joinRows(List<byte[]> rows, int totalBytes) {
         if (StarRocksWriterOptions.StreamLoadFormat.CSV.equals(writerOptions.getStreamLoadFormat())) {
-            Map<String, Object> props = writerOptions.getLoadProps();
+            Map<String, Object> props = (writerOptions.getLoadProps() == null ? new HashMap<>() : writerOptions.getLoadProps());
             byte[] lineDelimiter = StarRocksDelimiterParser.parse((String)props.get("row_delimiter"), "\n").getBytes(StandardCharsets.UTF_8);
             ByteBuffer bos = ByteBuffer.allocate(totalBytes + rows.size() * lineDelimiter.length);
             for (byte[] row : rows) {
@@ -146,13 +157,66 @@ public class StarRocksStreamLoadVisitor {
     }
 
     @SuppressWarnings("unchecked")
+    private void checkLabelState(String host, String label) throws IOException {
+        int idx = 0;
+        while(true) {
+            try {
+                TimeUnit.SECONDS.sleep(Math.min(++idx, 5));
+            } catch (InterruptedException ex) {
+                break;
+            }
+            try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+                HttpGet httpGet = new HttpGet(new StringBuilder(host).append("/api/").append(writerOptions.getDatabase()).append("/get_load_state?label=").append(label).toString());
+                httpGet.setHeader("Authorization", getBasicAuthHeader(writerOptions.getUsername(), writerOptions.getPassword()));
+                httpGet.setHeader("Connection", "close");
+
+                try (CloseableHttpResponse resp = httpclient.execute(httpGet)) {
+                    HttpEntity respEntity = getHttpEntity(resp);
+                    if (respEntity == null) {
+                        throw new IOException(String.format("Failed to flush data to StarRocks, Error " +
+                                "could not get the final state of label[%s].\n", label), null);
+                    }
+                    Map<String, Object> result = (Map<String, Object>)JSON.parse(EntityUtils.toString(respEntity));
+                    String labelState = (String)result.get("state");
+                    if (null == labelState) {
+                        throw new IOException(String.format("Failed to flush data to StarRocks, Error " +
+                                "could not get the final state of label[%s]. response[%s]\n", label, EntityUtils.toString(respEntity)), null);
+                    }
+                    LOG.info(String.format("Checking label[%s] state[%s]\n", label, labelState));
+                    switch(labelState) {
+                        case LAEBL_STATE_VISIBLE:
+                        case LAEBL_STATE_COMMITTED:
+                            return;
+                        case RESULT_LABEL_PREPARE:
+                            continue;
+                        case RESULT_LABEL_ABORTED:
+                            throw new StarRocksStreamLoadFailedException(String.format("Failed to flush data to StarRocks, Error " +
+                                    "label[%s] state[%s]\n", label, labelState), null, true);
+                        case RESULT_LABEL_UNKNOWN:
+                        default:
+                            throw new IOException(String.format("Failed to flush data to StarRocks, Error " +
+                                "label[%s] state[%s]\n", label, labelState), null);
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     private Map<String, Object> doHttpPut(String loadUrl, String label, byte[] data) throws IOException {
         LOG.info(String.format("Executing stream load to: '%s', size: '%s'", loadUrl, data.length));
-        try (CloseableHttpClient httpclient = buildHttpClient()) {
+        final HttpClientBuilder httpClientBuilder = HttpClients.custom()
+            .setRedirectStrategy(new DefaultRedirectStrategy() {
+                @Override
+                protected boolean isRedirectable(String method) {
+                    return true;
+                }
+            });
+        try (CloseableHttpClient httpclient = httpClientBuilder.build()) {
             HttpPut httpPut = new HttpPut(loadUrl);
             List<String> cols = writerOptions.getColumns();
-            if (null != cols && !cols.isEmpty()) {
-                httpPut.setHeader("columns", String.join(",", cols));
+            if (null != cols && !cols.isEmpty() && StarRocksWriterOptions.StreamLoadFormat.CSV.equals(writerOptions.getStreamLoadFormat())) {
+                httpPut.setHeader("columns", String.join(",", cols.stream().map(f -> String.format("`%s`", f)).collect(Collectors.toList())));
             }
             if (null != writerOptions.getLoadProps()) {
                 for (Map.Entry<String, Object> entry : writerOptions.getLoadProps().entrySet()) {
@@ -191,6 +255,26 @@ public class StarRocksStreamLoadVisitor {
         }
     }
 
+    private String getBasicAuthHeader(String username, String password) {
+        String auth = username + ":" + password;
+        byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
+        return new StringBuilder("Basic ").append(new String(encodedAuth)).toString();
+    }
+
+    private HttpEntity getHttpEntity(CloseableHttpResponse resp) {
+        int code = resp.getStatusLine().getStatusCode();
+        if (200 != code) {
+            LOG.warn("Request failed with code:{}", code);
+            return null;
+        }
+        HttpEntity respEntity = resp.getEntity();
+        if (null == respEntity) {
+            LOG.warn("Request failed with empty response.");
+            return null;
+        }
+        return respEntity;
+    }
+	
     private String doHttpGet(String getUrl) throws IOException {
         LOG.info("Executing GET from {}.", getUrl);
         try (CloseableHttpClient httpclient = buildHttpClient()) {
@@ -215,12 +299,6 @@ public class StarRocksStreamLoadVisitor {
                 }
             });
         return httpClientBuilder.build();
-    }
-    
-    private String getBasicAuthHeader(String username, String password) {
-        String auth = username + ":" + password;
-        byte[] encodedAuth = Base64.encodeBase64(auth.getBytes(StandardCharsets.UTF_8));
-        return new StringBuilder("Basic ").append(new String(encodedAuth)).toString();
     }
 
 }
