@@ -130,12 +130,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
 			allTaskInQueue = false;
 		}
-
-		String version = config.getString(Config.OB_VERSION);
-		int pIdx = version.lastIndexOf('.');
-		if ((Float.valueOf(version.substring(0, pIdx)) >= 2.1f)) {
-			isOb2 = true;
-		}
 	}
 
 	private void initPartCalculator(ServerConnectInfo connectInfo) {
