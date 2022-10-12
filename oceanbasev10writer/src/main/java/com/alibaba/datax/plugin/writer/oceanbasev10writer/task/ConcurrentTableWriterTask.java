@@ -76,7 +76,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	private Condition condition = lock.newCondition();
 	
 	private long startTime;
-	private boolean isOb2 = false;
 	private String obWriteMode = "update";
 	private boolean isOracleCompatibleMode = false;
 	private String obUpdateColumns = null;
@@ -307,7 +306,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		    LOG.warn("fail to get partition id: " + e1.getMessage() + ", record: " + record);
 		}
 
-        if (partId == null && isOb2) {
+        if (partId == null) {
             LOG.debug("fail to calculate parition id, just put into the default buffer.");
             partId = Long.MAX_VALUE;
         }
