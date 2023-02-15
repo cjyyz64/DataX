@@ -105,13 +105,13 @@ AdbMysqlWriter 通过 DataX 框架获取 Reader 生成的协议数据，AdbMysql
 
 * **jdbcUrl**
 
-	* 描述：目的数据库的 JDBC 连接信息。作业运行时，DataX 会在你提供的 jdbcUrl 后面追加如下属性：yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true
+    * 描述：目的数据库的 JDBC 连接信息。作业运行时，DataX 会在你提供的 jdbcUrl 后面追加如下属性：yearIsDateType=false&zeroDateTimeBehavior=convertToNull&rewriteBatchedStatements=true
 
-	           注意：1、在一个数据库上只能配置一个 jdbcUrl
-	                2、一个 AdbMySQL 写入任务仅能配置一个 jdbcUrl
-	                3、jdbcUrl按照MySQL官方规范，并可以填写连接附加控制信息，比如想指定连接编码为 gbk ，则在 jdbcUrl 后面追加属性 useUnicode=true&characterEncoding=gbk。具体请参看 Mysql官方文档或者咨询对应 DBA。
+               注意：1、在一个数据库上只能配置一个 jdbcUrl
+                    2、一个 AdbMySQL 写入任务仅能配置一个 jdbcUrl
+                    3、jdbcUrl按照MySQL官方规范，并可以填写连接附加控制信息，比如想指定连接编码为 gbk ，则在 jdbcUrl 后面追加属性 useUnicode=true&characterEncoding=gbk。具体请参看 Mysql官方文档或者咨询对应 DBA。
 
-	* 必选：是 <br />
+ 	* 必选：是 <br />
 
 	* 默认值：无 <br />
 
@@ -135,7 +135,7 @@ AdbMysqlWriter 通过 DataX 框架获取 Reader 生成的协议数据，AdbMysql
 
 	* 描述：目的表的表名称。只能配置一个 AdbMySQL 的表名称。
 
-	           注意：table 和 jdbcUrl 必须包含在 connection 配置单元中
+               注意：table 和 jdbcUrl 必须包含在 connection 配置单元中
 
 	* 必选：是 <br />
 
@@ -145,10 +145,10 @@ AdbMysqlWriter 通过 DataX 框架获取 Reader 生成的协议数据，AdbMysql
 
 	* 描述：目的表需要写入数据的字段,字段之间用英文逗号分隔。例如: "column": ["id", "name", "age"]。如果要依次写入全部列，使用`*`表示, 例如: `"column": ["*"]`。
 
-	  	**column配置项必须指定，不能留空！**
+			**column配置项必须指定，不能留空！**
 
-	           注意：1、我们强烈不推荐你这样配置，因为当你目的表字段个数、类型等有改动时，你的任务可能运行不正确或者失败
-	                2、 column 不能配置任何常量值
+               注意：1、我们强烈不推荐你这样配置，因为当你目的表字段个数、类型等有改动时，你的任务可能运行不正确或者失败
+                    2、 column 不能配置任何常量值
 
 	* 必选：是 <br />
 
@@ -183,7 +183,7 @@ AdbMysqlWriter 通过 DataX 框架获取 Reader 生成的协议数据，AdbMysql
 	* 描述：控制写入数据到目标表采用 `insert into` 或者 `replace into` 或者 `ON DUPLICATE KEY UPDATE` 语句<br />
 
 	* 必选：是 <br />
-
+	
 	* 所有选项：insert/replace/update <br />
 
 	* 默认值：replace <br />
