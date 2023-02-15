@@ -1,9 +1,9 @@
 ![Datax-logo](https://github.com/alibaba/DataX/blob/master/images/DataX-logo.jpg)
 
-
 # DataX
 
 [![Leaderboard](https://img.shields.io/badge/DataX-%E6%9F%A5%E7%9C%8B%E8%B4%A1%E7%8C%AE%E6%8E%92%E8%A1%8C%E6%A6%9C-orange)](https://opensource.alibaba.com/contribution_leaderboard/details?projectValue=datax)
+
 DataX 是阿里云 [DataWorks数据集成](https://www.aliyun.com/product/bigdata/ide) 的开源版本，在阿里巴巴集团内被广泛使用的离线数据同步工具/平台。DataX 实现了包括 MySQL、Oracle、OceanBase、SqlServer、Postgre、HDFS、Hive、ADS、HBase、TableStore(OTS)、MaxCompute(ODPS)、Hologres、DRDS, databend 等各种异构数据源之间高效的数据同步功能。
 
 # DataX 商业版本
@@ -48,7 +48,7 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 |              | Kingbase                  |     √     |     √     |                                         [读](https://github.com/alibaba/DataX/blob/master/drdsreader/doc/drdsreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/drdswriter/doc/drdswriter.md)                                         |
 |              | 通用RDBMS(支持所有关系型数据库)       |     √     |     √     |                                       [读](https://github.com/alibaba/DataX/blob/master/rdbmsreader/doc/rdbmsreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/rdbmswriter/doc/rdbmswriter.md)                                       |
 | 阿里云数仓数据存储    | ODPS                      |     √     |     √     |                                         [读](https://github.com/alibaba/DataX/blob/master/odpsreader/doc/odpsreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/odpswriter/doc/odpswriter.md)                                         |
-|              | ADB        |           |     √     |[写](https://github.com/alibaba/DataX/blob/master/adbmysqlwriter/doc/adbmysqlwriter.md)|
+|              | ADB                       |           |     √     |                                                                             [写](https://github.com/alibaba/DataX/blob/master/adbmysqlwriter/doc/adbmysqlwriter.md)                                                                             |
 |              | ADS                       |           |     √     |                                                                                  [写](https://github.com/alibaba/DataX/blob/master/adswriter/doc/adswriter.md)                                                                                  |
 |              | OSS                       |     √     |     √     |                                           [读](https://github.com/alibaba/DataX/blob/master/ossreader/doc/ossreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/osswriter/doc/osswriter.md)                                           |
 |              | OCS                       |           |     √     |                                                                                  [写](https://github.com/alibaba/DataX/blob/master/ocswriter/doc/ocswriter.md)                                                                                  |
