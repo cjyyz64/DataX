@@ -53,6 +53,7 @@ public class ElasticSearchClient {
     public ElasticSearchClient(Configuration conf) {
         this.conf = conf;
         String endpoint = Key.getEndpoint(conf);
+        String[] endpoints = endpoint.split(",");
         String user = Key.getUsername(conf);
         String passwd = Key.getPassword(conf);
         boolean multiThread = Key.isMultiThread(conf);
@@ -63,7 +64,7 @@ public class ElasticSearchClient {
         int totalConnection = this.conf.getInt("maxTotalConnection", 200);
         JestClientFactory factory = new JestClientFactory();
         Builder httpClientConfig = new HttpClientConfig
-                .Builder(endpoint)
+                .Builder(Arrays.asList(endpoints))
 //                .setPreemptiveAuth(new HttpHost(endpoint))
                 .multiThreaded(multiThread)
                 .connTimeout(readTimeout)
