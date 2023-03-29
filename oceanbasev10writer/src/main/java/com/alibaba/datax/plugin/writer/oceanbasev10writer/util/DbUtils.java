@@ -5,6 +5,7 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static com.alibaba.datax.plugin.writer.oceanbasev10writer.Config.DEFAULT_FAIL_TRY_COUNT;
 
 public class DbUtils {
 
@@ -35,6 +35,7 @@ public class DbUtils {
         ResultSet result = null;
         String value = null;
         int retry = 0;
+        int failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
         do {
             try {
                 if (retry > 0) {
@@ -61,7 +62,7 @@ public class DbUtils {
             } finally {
                 DBUtil.closeDBResources(result, stmt, conn);
             }
-        } while (retry < DEFAULT_FAIL_TRY_COUNT);
+        } while (retry < failTryCount);
 
         return value;
     }
