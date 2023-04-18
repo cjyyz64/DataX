@@ -65,6 +65,22 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.alipay.oceanbase</groupId>
+            <artifactId>ooceanbase-client</artifactId>
+            <version>1.1.10</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/libs/oceanbase-client-1.1.10.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oceanbase</groupId>
+            <artifactId>ob-partition-calculator</artifactId>
+            <version>1.7.1-RELEASE</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/src/main/libs/ob-partition-calculator-1.7.1-RELEASE.jar</systemPath>
+        </dependency>
+
 		<dependency>
 		  <groupId>log4j</groupId>
 		  <artifactId>log4j</artifactId>

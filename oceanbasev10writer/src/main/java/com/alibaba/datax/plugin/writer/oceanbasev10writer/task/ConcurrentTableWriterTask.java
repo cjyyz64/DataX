@@ -14,13 +14,12 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ConnHolder;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ObClientConnHolder;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ServerConnectInfo;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.IObPartCalculator;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.ObPartitionCalculatorV1;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.ObPartitionCalculatorV2;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
-import com.alipay.oceanbase.obproxy.data.TableEntryKey;
 import com.alipay.oceanbase.obproxy.util.ObPartitionIdCalculator;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.oceanbase.partition.calculator.enums.ObServerMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -35,8 +34,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-//import java.sql.PreparedStatement;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ConcurrentTableWriterTask.class);
@@ -61,26 +61,27 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 
 	private ObPartitionIdCalculator partCalculator = null;
 
-	private HashMap<Long, List<Record>> groupInsertValues;
-	List<Record> unknownPartRecords = new ArrayList<Record>();
-//	private List<Record> unknownPartRecords;
-	private List<Integer> partitionKeyIndexes;
-	
-	private ConcurrentTableWriter concurrentWriter = null;
-	
-	private ConnHolder connHolder;
-	
-	private boolean allTaskInQueue = false;
-	
-	private Lock lock = new ReentrantLock();
-	private Condition condition = lock.newCondition();
-	
-	private long startTime;
-	private String obWriteMode = "update";
-	private boolean isOracleCompatibleMode = false;
-	private String obUpdateColumns = null;
-	private List<Pair<String, int[]>> deleteColPos;
-	private String dbName;
+    private HashMap<Long, List<Record>> groupInsertValues;
+    List<Record> unknownPartRecords = new ArrayList<Record>();
+
+    private IObPartCalculator obPartCalculator;
+
+    private ConcurrentTableWriter concurrentWriter = null;
+
+    private ConnHolder connHolder;
+
+    private boolean allTaskInQueue = false;
+
+    private Lock lock = new ReentrantLock();
+    private Condition condition = lock.newCondition();
+
+    private long startTime;
+    private String obWriteMode = "update";
+    private boolean isOracleCompatibleMode = false;
+    private String obUpdateColumns = null;
+    private List<Pair<String, int[]>> deleteColPos;
+    private String dbName;
+    private int calPartFailedCount = 0;
 
 	@Override
 	public void init(Configuration config) {
@@ -115,43 +116,36 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
         }
 
         if (config.getBool(Config.USE_PART_CALCULATOR, Config.DEFAULT_USE_PART_CALCULATOR)) {
-            initPartCalculator(connectInfo);
+            this.obPartCalculator = createPartitionCalculator(connectInfo, ObServerMode.from(config.getString(Config.OB_COMPATIBLE_MODE), config.getString(Config.OB_VERSION)));
         } else {
             LOG.info("Disable partition calculation feature.");
         }
 
-		obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
-		groupInsertValues = new HashMap<Long, List<Record>>();
-		partitionKeyIndexes = new ArrayList<Integer>();
-		rewriteSql();
+        obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
+        groupInsertValues = new HashMap<Long, List<Record>>();
+        rewriteSql();
 
-		if (null == concurrentWriter) {
-			concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
-			allTaskInQueue = false;
-		}
-	}
+        if (null == concurrentWriter) {
+            concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
+            allTaskInQueue = false;
+        }
+    }
 
-	private void initPartCalculator(ServerConnectInfo connectInfo) {
-		int retry = 0;
-		LOG.info(String.format("create tableEntryKey with clusterName %s, tenantName %s, databaseName %s, tableName %s",
-				connectInfo.clusterName, connectInfo.tenantName, connectInfo.databaseName, table));
-		TableEntryKey tableEntryKey = new TableEntryKey(connectInfo.clusterName, connectInfo.tenantName,
-				connectInfo.databaseName, table);
-		do {
-			try {
-				if (retry > 0) {
-					int sleep = retry > 8 ? 500 : (1 << retry);
-					TimeUnit.SECONDS.sleep(sleep);
-					LOG.info("retry create new part calculator, the {} times", retry);
-				}
-				LOG.info("create partCalculator with address: " + connectInfo.ipPort);
-				partCalculator = new ObPartitionIdCalculator(connectInfo.ipPort, tableEntryKey);
-			} catch (Exception ex) {
-				++retry;
-				LOG.warn("create new part calculator failed, retry {}: {}", retry, ex.getMessage());
-			}
-		} while (partCalculator == null && retry < 3); // try 3 times
-	}
+    /**
+     * 创建需要的分区计算组件
+     *
+     * @param connectInfo
+     * @return
+     */
+    private IObPartCalculator createPartitionCalculator(ServerConnectInfo connectInfo, ObServerMode obServerMode) {
+        if (obServerMode.isSubsequentFrom("3.0.0.0")) {
+            LOG.info("oceanbase version is {}, use ob-partition-calculator to calculate partition Id.", obServerMode.getVersion());
+            return new ObPartitionCalculatorV2(connectInfo, table, obServerMode, columns);
+        }
+
+        LOG.info("oceanbase version is {}, use ocj to calculate partition Id.", obServerMode.getVersion());
+        return new ObPartitionCalculatorV1(connectInfo, table, columns);
+    }
 
 	public boolean isFinished() {
 		return allTaskInQueue && concurrentWriter.checkFinish();
@@ -179,38 +173,14 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		this.writeRecordSql = ObWriterUtils.buildWriteSql(table, columns, conn, obWriteMode, obUpdateColumns);
 		LOG.info("writeRecordSql :{}", this.writeRecordSql);
 	}
-	
+
+    @Override
 	public void prepare(Configuration writerSliceConfig) {
 		super.prepare(writerSliceConfig);
-		calPartitionKeyIndex(partitionKeyIndexes);
 		concurrentWriter.start();
 	}
 
-	private void calPartitionKeyIndex(List<Integer> partKeyIndexes) {
-		partKeyIndexes.clear();
-		if (null == partCalculator) {
-			LOG.error("partCalculator is null");
-			return;
-		}
-		for (int i = 0; i < columns.size(); ++i) {
-			if (partCalculator.isPartitionKeyColumn(columns.get(i))) {
-			    LOG.info(columns.get(i) + " is partition key.");
-				partKeyIndexes.add(i);
-			}
-		}
-	}
-
-	private Long calPartitionId(List<Integer> partKeyIndexes, Record record) {
-	    if (partCalculator == null) {
-	        return null;
-	    }
-		for (Integer i : partKeyIndexes) {
-			partCalculator.addColumn(columns.get(i), record.getColumn(i).asString());
-		}
-		return partCalculator.calculate();
-	}
-	
-	@Override
+    @Override
     public void startWriteWithConnection(RecordReceiver recordReceiver, TaskPluginCollector taskPluginCollector, Connection connection) {
         this.taskPluginCollector = taskPluginCollector;
 
@@ -282,10 +252,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		taskPluginCollector.collectDirtyRecord(record, e);
 	}
 
-	public void insertOneRecord(Connection connection, List<Record> buffer) {
-		doOneInsert(connection, buffer);
-	}
-
 	private void addLeftRecords() {
 		//不需要刷新Cache，已经是最后一批数据了
 		for (List<Record> groupValues : groupInsertValues.values()) {
@@ -301,7 +267,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	private void addRecordToCache(final Record record) {
 		Long partId =null;
 		try {
-			partId = calPartitionId(partitionKeyIndexes, record);
+            partId = obPartCalculator.calculate(record);
 		} catch (Exception e1) {
 		    LOG.warn("fail to get partition id: " + e1.getMessage() + ", record: " + record);
 		}
