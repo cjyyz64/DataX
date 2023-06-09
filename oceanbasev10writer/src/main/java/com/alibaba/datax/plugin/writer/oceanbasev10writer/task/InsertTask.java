@@ -1,16 +1,22 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer.task;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ObClientConnHolder;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +28,8 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ConnHolder;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ServerConnectInfo;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.ConcurrentTableWriterTask.ConcurrentTableWriter;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils.LoadMode.PAUSE;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils.LoadMode.SLOW;
 
 public class InsertTask implements Runnable {
 
@@ -45,7 +53,16 @@ public class InsertTask implements Runnable {
 	private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
 	private boolean printCost = Config.DEFAULT_PRINT_COST;
 	private long costBound = Config.DEFAULT_COST_BOUND;
-	private List<Pair<String, int[]>> deleteMeta;
+	// private List<Pair<String, int[]>> deleteMeta;
+
+	private Cache<Integer, String> STMT_CACHE = CacheBuilder.newBuilder() //
+		.initialCapacity(64) //
+		.maximumSize(8192) //
+		.softValues() // Soft reference may cause COLLECTED
+		.concurrencyLevel(256) //
+		.expireAfterAccess(5, TimeUnit.MINUTES).removalListener(n -> {
+			LOG.debug("Remove the cached statement as the key has been marked: {}", n.getCause());
+		}).build();
 
 	public InsertTask(
 			final long taskId,
@@ -64,7 +81,7 @@ public class InsertTask implements Runnable {
                                          connInfo.getFullUserName(), connInfo.password);
 		this.writeRecordSql = writeRecordSql;
 		this.isStop = false;
-		this.deleteMeta = deleteMeta;
+		// this.deleteMeta = deleteMeta;
 		connHolder.initConnection();
 	}
 	
@@ -90,7 +107,7 @@ public class InsertTask implements Runnable {
 				List<Record> records = queue.poll();
 				if (null != records) {
 					doMultiInsert(records, this.printCost, this.costBound);
-
+					// doMultiInsertV2(records);
 				} else if (writerTask.isFinished()) {
 					writerTask.singalTaskFinish();
 					LOG.debug("not more task, thread exist ...");
@@ -120,35 +137,35 @@ public class InsertTask implements Runnable {
 		}
 	}
 
-	private void doDelete(Connection conn, final List<Record> buffer) throws SQLException {
-		if(deleteMeta == null || deleteMeta.size() == 0) {
-			return;
-		}
-		for (int i = 0; i < deleteMeta.size(); i++) {
-			String deleteSql = deleteMeta.get(i).getKey();
-			int[] valueIdx = deleteMeta.get(i).getValue();
-			PreparedStatement ps = null;
-			try {
-				ps = conn.prepareStatement(deleteSql);
-				StringBuilder builder = new StringBuilder();
-				for (Record record : buffer) {
-					int bindIndex = 0;
-					for (int idx : valueIdx) {
-						writerTask.fillStatementIndex(ps, bindIndex++, idx, record.getColumn(idx));
-						builder.append(record.getColumn(idx).asString()).append(",");
-					}
-					ps.addBatch();
-				}
-				LOG.debug("delete values: " + builder.toString());
-				ps.executeBatch();
-			} catch (SQLException ex) {
-				LOG.error("SQL Exception when delete records with {}", deleteSql, ex);
-				throw ex;
-			} finally {
-				DBUtil.closeDBResources(ps, null);
-			}
-		}
-	}
+	// private void doDelete(Connection conn, final List<Record> buffer) throws SQLException {
+	// 	if(deleteMeta == null || deleteMeta.size() == 0) {
+	// 		return;
+	// 	}
+	// 	for (int i = 0; i < deleteMeta.size(); i++) {
+	// 		String deleteSql = deleteMeta.get(i).getKey();
+	// 		int[] valueIdx = deleteMeta.get(i).getValue();
+	// 		PreparedStatement ps = null;
+	// 		try {
+	// 			ps = conn.prepareStatement(deleteSql);
+	// 			StringBuilder builder = new StringBuilder();
+	// 			for (Record record : buffer) {
+	// 				int bindIndex = 0;
+	// 				for (int idx : valueIdx) {
+	// 					writerTask.fillStatementIndex(ps, bindIndex++, idx, record.getColumn(idx));
+	// 					builder.append(record.getColumn(idx).asString()).append(",");
+	// 				}
+	// 				ps.addBatch();
+	// 			}
+	// 			LOG.debug("delete values: " + builder.toString());
+	// 			ps.executeBatch();
+	// 		} catch (SQLException ex) {
+	// 			LOG.error("SQL Exception when delete records with {}", deleteSql, ex);
+	// 			throw ex;
+	// 		} finally {
+	// 			DBUtil.closeDBResources(ps, null);
+	// 		}
+	// 	}
+	// }
 
 	public void doMultiInsert(final List<Record> buffer, final boolean printCost, final long restrict) {
 		checkMemstore();
@@ -159,12 +176,12 @@ public class InsertTask implements Runnable {
 		try {
 			for (int i = 0; i < failTryCount; ++i) {
 				if (i > 0) {
-					try {
-						int sleep = i >= 9 ? 500 : 1 << i;//不明白为什么要sleep 500s
-						TimeUnit.SECONDS.sleep(sleep);
-					} catch (InterruptedException e) {
-						LOG.info("thread interrupted ..., ignore");
-					}
+					// try {
+					// 	int sleep = i >= 9 ? 500 : 1 << i;//不明白为什么要sleep 500s
+					// 	TimeUnit.SECONDS.sleep(sleep);
+					// } catch (InterruptedException e) {
+					// 	LOG.info("thread interrupted ..., ignore");
+					// }
 					conn = connHolder.getConn();
 					LOG.info("retry {}, start do batch insert, size={}", i, buffer.size());
 					checkMemstore();
@@ -175,7 +192,7 @@ public class InsertTask implements Runnable {
 					conn.setAutoCommit(false);
 
 					// do delete if necessary
-					doDelete(conn, buffer);
+					// doDelete(conn, buffer);
 
 					ps = conn.prepareStatement(writeRecordSql);
 					for (Record record : buffer) {
@@ -184,6 +201,97 @@ public class InsertTask implements Runnable {
 					}
 					ps.executeBatch();
 					conn.commit();
+					success = true;
+					cost = System.currentTimeMillis() - startTime;
+					calStatistic(cost);
+					break;
+				} catch (SQLException e) {
+					LOG.warn("Insert fatal error SqlState ={}, errorCode = {}, {}", e.getSQLState(), e.getErrorCode(), e);
+					if (LOG.isDebugEnabled() && (i == 0 || i > 10)) {
+						for (Record record : buffer) {
+							LOG.warn("ERROR : record {}", record);
+						}
+					}
+					// 按照错误码分类，分情况处理
+					// 如果是OB系统级异常,则需要重建连接
+					boolean fatalFail = ObWriterUtils.isFatalError(e);
+					if (fatalFail) {
+						ObWriterUtils.sleep(300000);
+						connHolder.reconnect();
+						// 如果是可恢复的异常,则重试
+					} else if (ObWriterUtils.isRecoverableError(e)) {
+						conn.rollback();
+						ObWriterUtils.sleep(60000);
+					} else {// 其它异常直接退出,采用逐条写入方式
+						conn.rollback();
+						ObWriterUtils.sleep(1000);
+						break;
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					LOG.warn("Insert error unexpected {}", e);
+				} finally {
+					DBUtil.closeDBResources(ps, null);
+				}
+			}
+		} catch (SQLException e) {
+			LOG.warn("ERROR:retry failSql State ={}, errorCode = {}, {}", e.getSQLState(), e.getErrorCode(), e);
+		}
+
+		if (!success) {
+			try {
+				LOG.info("do one insert");
+				conn = connHolder.reconnect();
+				writerTask.doOneInsert(conn, buffer);
+				cost = System.currentTimeMillis() - startTime;
+				calStatistic(cost);
+			} finally {
+			}
+		}
+	}
+
+	public void doMultiInsertV2(final List<Record> buffer) {
+		checkMemstore();
+		Connection conn = connHolder.getConn();
+		boolean success = false;
+		long cost = 0;
+		long startTime = 0;
+		try {
+			for (int i = 0; i < failTryCount; ++i) {
+				if (i > 0) {
+					// try {
+					// 	int sleep = i >= 9 ? 500 : 1 << i;//不明白为什么要sleep 500s
+					// 	TimeUnit.SECONDS.sleep(sleep);
+					// } catch (InterruptedException e) {
+					// 	LOG.info("thread interrupted ..., ignore");
+					// }
+					conn = connHolder.getConn();
+					LOG.info("retry {}, start do batch insert, size={}", i, buffer.size());
+					checkMemstore();
+				}
+				startTime = System.currentTimeMillis();
+				PreparedStatement ps = null;
+				try {
+					// conn.setAutoCommit(false);
+
+					// do delete if necessary
+					// doDelete(conn, buffer);
+					int recordCount = buffer.get(0).getColumnNumber();
+					ps = conn.prepareStatement(getInsertSql(recordCount, buffer.size()));
+					int idx = 1;
+					for (Record record : buffer) {
+						int position = 0;
+						while (position<recordCount){
+							ps.setObject(idx++,record.getColumn(position++).asString());
+						}
+					}
+					// for (Record record : buffer) {
+					// 	ps = writerTask.fillStatement(ps, record);
+					// 	ps.addBatch();
+					// }
+					// ps.executeBatch();
+					ps.executeUpdate();
+					//conn.commit();
 					success = true;
 					cost = System.currentTimeMillis() - startTime;
 					calStatistic(cost);
@@ -225,7 +333,7 @@ public class InsertTask implements Runnable {
 			try {
 				LOG.info("do one insert");
 				conn = connHolder.reconnect();
-				doOneInsert(conn, buffer);
+				writerTask.doOneInsert(conn, buffer);
 				cost = System.currentTimeMillis() - startTime;
 				calStatistic(cost);
 			} finally {
@@ -233,54 +341,78 @@ public class InsertTask implements Runnable {
 		}
 	}
 
-	// process one row, delete before insert
-	private void doOneInsert(Connection connection, List<Record> buffer) {
-		List<PreparedStatement> deletePstmtList = new ArrayList();
-		PreparedStatement preparedStatement = null;
+	private String getInsertSql(int valueCount, int recordCounts) {
 		try {
-			connection.setAutoCommit(false);
-			if (deleteMeta != null && deleteMeta.size() > 0) {
-				for (int i = 0; i < deleteMeta.size(); i++) {
-					String deleteSql = deleteMeta.get(i).getKey();
-					deletePstmtList.add(connection.prepareStatement(deleteSql));
+			return STMT_CACHE.get(recordCounts, () -> {
+				StringBuilder sb = new StringBuilder(this.writeRecordSql);
+				String placeHolders = "(" + Stream.iterate(0, t -> t + 1).limit(valueCount).map(e -> "?").collect(Collectors.joining(",")) + ")";
+				for (int i = 0; i < recordCounts - 1; i++) {
+					sb.append(",").append(placeHolders);
 				}
-			}
-
-			preparedStatement = connection.prepareStatement(this.writeRecordSql);
-			for (Record record : buffer) {
-				try {
-					for (int i = 0; i < deletePstmtList.size(); i++) {
-						PreparedStatement deleteStmt = deletePstmtList.get(i);
-						int[] valueIdx = deleteMeta.get(i).getValue();
-						int bindIndex = 0;
-						for (int idx : valueIdx) {
-							writerTask.fillStatementIndex(deleteStmt, bindIndex++, idx, record.getColumn(idx));
-						}
-						deleteStmt.execute();
-					}
-					preparedStatement = writerTask.fillStatement(preparedStatement, record);
-					preparedStatement.execute();
-					connection.commit();
-				} catch (SQLException e) {
-					writerTask.collectDirtyRecord(record, e);
-				} finally {
-					// 此处不应该关闭statement，后续的数据还需要用到
-				}
-			}
-		} catch (Exception e) {
-			throw DataXException.asDataXException(
-					DBUtilErrorCode.WRITE_DATA_ERROR, e);
-		} finally {
-			DBUtil.closeDBResources(preparedStatement, null);
-			for (PreparedStatement pstmt : deletePstmtList) {
-				DBUtil.closeDBResources(pstmt, null);
-			}
+				return sb.toString();
+			});
+		} catch (ExecutionException e) {
+			throw new RuntimeException("Get cached sql statement failed. ", e);
 		}
+
 	}
 
+	// process one row, delete before insert
+	// private void doOneInsert(Connection connection, List<Record> buffer) {
+	// 	List<PreparedStatement> deletePstmtList = new ArrayList();
+	// 	PreparedStatement preparedStatement = null;
+	// 	try {
+	// 		connection.setAutoCommit(false);
+	// 		if (deleteMeta != null && deleteMeta.size() > 0) {
+	// 			for (int i = 0; i < deleteMeta.size(); i++) {
+	// 				String deleteSql = deleteMeta.get(i).getKey();
+	// 				deletePstmtList.add(connection.prepareStatement(deleteSql));
+	// 			}
+	// 		}
+	//
+	// 		preparedStatement = connection.prepareStatement(this.writeRecordSql);
+	// 		for (Record record : buffer) {
+	// 			try {
+	// 				for (int i = 0; i < deletePstmtList.size(); i++) {
+	// 					PreparedStatement deleteStmt = deletePstmtList.get(i);
+	// 					int[] valueIdx = deleteMeta.get(i).getValue();
+	// 					int bindIndex = 0;
+	// 					for (int idx : valueIdx) {
+	// 						writerTask.fillStatementIndex(deleteStmt, bindIndex++, idx, record.getColumn(idx));
+	// 					}
+	// 					deleteStmt.execute();
+	// 				}
+	// 				preparedStatement = writerTask.fillStatement(preparedStatement, record);
+	// 				preparedStatement.execute();
+	// 				connection.commit();
+	// 			} catch (SQLException e) {
+	// 				writerTask.collectDirtyRecord(record, e);
+	// 			} finally {
+	// 				// 此处不应该关闭statement，后续的数据还需要用到
+	// 			}
+	// 		}
+	// 	} catch (Exception e) {
+	// 		throw DataXException.asDataXException(
+	// 				DBUtilErrorCode.WRITE_DATA_ERROR, e);
+	// 	} finally {
+	// 		DBUtil.closeDBResources(preparedStatement, null);
+	// 		for (PreparedStatement pstmt : deletePstmtList) {
+	// 			DBUtil.closeDBResources(pstmt, null);
+	// 		}
+	// 	}
+	// }
+
 	private void checkMemstore() {
-		while (writerTask.isMemStoreFull()) {
-			ObWriterUtils.sleep(30000);
+		// while (writerTask.isMemStoreFull()) {
+		// 	ObWriterUtils.sleep(30000);
+		// }
+
+		if (writerTask.isShouldSlow()) {
+			ObWriterUtils.sleep(100);
+		} else  {
+			while (writerTask.isShouldPause()) {
+				ObWriterUtils.sleep(100);
+			}
 		}
 	}
 }

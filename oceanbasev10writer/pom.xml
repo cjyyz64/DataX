@@ -81,6 +81,12 @@
             <systemPath>${basedir}/src/main/libs/ob-partition-calculator-1.7.1-RELEASE.jar</systemPath>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>27.0-jre</version>
+        </dependency>
+
 		<dependency>
 		  <groupId>log4j</groupId>
 		  <artifactId>log4j</artifactId>

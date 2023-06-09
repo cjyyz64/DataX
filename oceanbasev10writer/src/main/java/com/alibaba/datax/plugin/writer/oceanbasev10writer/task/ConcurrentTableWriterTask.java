@@ -18,7 +18,6 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.IObPartCalculator
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.ObPartitionCalculatorV1;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.part.ObPartitionCalculatorV2;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
-import com.alipay.oceanbase.obproxy.util.ObPartitionIdCalculator;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -37,6 +36,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.Config.DEFAULT_SLOW_MEMSTORE_THRESHOLD;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils.LoadMode.FAST;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils.LoadMode.PAUSE;
+import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils.LoadMode.SLOW;
 
 public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ConcurrentTableWriterTask.class);
@@ -47,6 +50,8 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	private long memstoreCheckIntervalSecond = Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND;
 	// 最后一次检查
 	private long lastCheckMemstoreTime;
+
+	private volatile ObWriterUtils.LoadMode loadMode = FAST;
     
     private static AtomicLong totalTask = new AtomicLong(0);
     private long taskId = -1;
@@ -58,8 +63,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		super(dataBaseType);
 		taskId = totalTask.getAndIncrement();
 	}
-
-	private ObPartitionIdCalculator partCalculator = null;
 
     private HashMap<Long, List<Record>> groupInsertValues;
     List<Record> unknownPartRecords = new ArrayList<Record>();
@@ -267,9 +270,11 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	private void addRecordToCache(final Record record) {
 		Long partId =null;
 		try {
-            partId = obPartCalculator.calculate(record);
+			partId = obPartCalculator == null ? Long.MAX_VALUE : obPartCalculator.calculate(record);
 		} catch (Exception e1) {
-		    LOG.warn("fail to get partition id: " + e1.getMessage() + ", record: " + record);
+			if (calPartFailedCount++ < 10) {
+				LOG.warn("fail to get partition id: " + e1.getMessage() + ", record: " + record);
+			}
 		}
 
         if (partId == null) {
@@ -320,21 +325,49 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		return new ArrayList<Record>(batchSize);
 	}
 	private void checkMemStore() {
-		Connection checkConn = checkConnHolder.reconnect();
+		Connection checkConn = checkConnHolder.getConn();
+		try {
+			if (checkConn == null || checkConn.isClosed()) {
+				checkConn = checkConnHolder.reconnect();
+			}
+		}catch (Exception e) {
+			LOG.warn("Check connection is unusable");
+		}
+
 		long now = System.currentTimeMillis();
 		if (now - lastCheckMemstoreTime < 1000 * memstoreCheckIntervalSecond) {
 			return;
 		}
-		boolean isFull = ObWriterUtils.isMemstoreFull(checkConn, memstoreThreshold);
-		this.isMemStoreFull.set(isFull);
-		if (isFull) {
-			LOG.warn("OB memstore is full,sleep 30 seconds, threshold=" + memstoreThreshold);
+		// boolean isFull = ObWriterUtils.isMemstoreFull(checkConn, memstoreThreshold);
+		// this.isMemStoreFull.set(isFull);
+		// if (isFull) {
+		// 	LOG.warn("OB memstore is full,sleep 30 seconds, threshold=" + memstoreThreshold);
+		// }
+
+		double memUsedRatio = ObWriterUtils.queryMemUsedRatio(checkConn);
+		if (memUsedRatio >= DEFAULT_SLOW_MEMSTORE_THRESHOLD) {
+			this.loadMode = memUsedRatio >= memstoreThreshold ? PAUSE : SLOW;
+			LOG.info("Memstore used ration is {}. Load data {}", memUsedRatio, loadMode.name());
+		}else {
+			this.loadMode = FAST;
 		}
 		lastCheckMemstoreTime = now;
 	}
 	
 	public boolean isMemStoreFull() {
 		return isMemStoreFull.get();
+	}
+
+	// public ObWriterUtils.LoadMode getLoadMode() {
+	// 	return this.loadMode;
+	// }
+
+	public boolean isShouldPause() {
+		return this.loadMode.equals(PAUSE);
+	}
+
+	public boolean isShouldSlow() {
+		return this.loadMode.equals(SLOW);
 	}
 	
 	public void printEveryTime() {
@@ -461,7 +494,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		public void addBatchRecords(final List<Record> records) throws InterruptedException {
 			boolean isSucc = false;
 			while (!isSucc) {
-				isSucc = queue.offer(records, 5, TimeUnit.SECONDS);
+				isSucc = queue.offer(records, 5, TimeUnit.MILLISECONDS);
 				checkMemStore();
 			}
 			totalTaskCount.incrementAndGet();

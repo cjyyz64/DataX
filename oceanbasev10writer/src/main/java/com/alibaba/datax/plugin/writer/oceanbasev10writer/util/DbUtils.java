@@ -85,8 +85,6 @@ public class DbUtils {
 
         String tenantName = "sys";
         String[][] userConfigs = {
-            {"ocp_monitor_b", "dS3N2MIA3U"},
-            {"ocp_monitor", "ocenabasev5_monitor"},
             {"monitor", "monitor"}
         };
 
