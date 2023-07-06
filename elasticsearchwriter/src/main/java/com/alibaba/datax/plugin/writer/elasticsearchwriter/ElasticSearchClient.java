@@ -53,6 +53,7 @@ public class ElasticSearchClient {
     public ElasticSearchClient(Configuration conf) {
         this.conf = conf;
         String endpoint = Key.getEndpoint(conf);
+        //es是支持集群写入的
         String[] endpoints = endpoint.split(",");
         String user = Key.getUsername(conf);
         String passwd = Key.getPassword(conf);
