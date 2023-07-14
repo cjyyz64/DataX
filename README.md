@@ -38,7 +38,7 @@ DataX本身作为数据同步框架，将不同数据源的同步抽象为从源
 DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、NOSQL、大数据计算系统都已经接入，目前支持数据如下图，详情请点击：[DataX数据源参考指南](https://github.com/alibaba/DataX/wiki/DataX-all-data-channels)
 
 | 类型               | 数据源                          | Reader(读) | Writer(写) |                             文档                             |
-| ------------------ | ------------------------------- | :--------: | :--------: | :----------------------------------------------------------: |
+|--------------|---------------------------|:---------:|:---------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 | RDBMS 关系型数据库 | MySQL                           |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/mysqlreader/doc/mysqlreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/mysqlwriter/doc/mysqlwriter.md) |
 |                    | Oracle                          |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/oraclereader/doc/oraclereader.md) 、[写](https://github.com/alibaba/DataX/blob/master/oraclewriter/doc/oraclewriter.md) |
 |                    | OceanBase                       |     √      |     √      | [读](https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.0/use-datax-to-full-migration-data-to-oceanbase) 、[写](https://open.oceanbase.com/docs/community/oceanbase-database/V3.1.0/use-datax-to-full-migration-data-to-oceanbase) |
@@ -67,7 +67,7 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 |                    | Cassandra                       |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/cassandrareader/doc/cassandrareader.md) 、[写](https://github.com/alibaba/DataX/blob/master/cassandrawriter/doc/cassandrawriter.md) |
 | 数仓数据存储       | StarRocks                       |     √      |     √      | 读 、[写](https://github.com/alibaba/DataX/blob/master/starrockswriter/doc/starrockswriter.md) |
 |                    | ApacheDoris                     |            |     √      | [写](https://github.com/alibaba/DataX/blob/master/doriswriter/doc/doriswriter.md) |
-|                    | ClickHouse                      |            |     √      |                              写                              |
+|                    | ClickHouse                      |     √      |     √      |                              读 、写                                |
 |                    | Databend                        |            |     √      | [写](https://github.com/alibaba/DataX/blob/master/databendwriter/doc/databendwriter.md) |
 |                    | Hive                            |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/hdfsreader/doc/hdfsreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/hdfswriter/doc/hdfswriter.md) |
 |                    | kudu                            |            |     √      | [写](https://github.com/alibaba/DataX/blob/master/hdfswriter/doc/hdfswriter.md) |
@@ -79,8 +79,6 @@ DataX目前已经有了比较全面的插件体系，主流的RDBMS数据库、N
 | 时间序列数据库     | OpenTSDB                        |     √      |            | [读](https://github.com/alibaba/DataX/blob/master/opentsdbreader/doc/opentsdbreader.md) |
 |                    | TSDB                            |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/tsdbreader/doc/tsdbreader.md) 、[写](https://github.com/alibaba/DataX/blob/master/tsdbwriter/doc/tsdbhttpwriter.md) |
 |                    | TDengine                        |     √      |     √      | [读](https://github.com/alibaba/DataX/blob/master/tdenginereader/doc/tdenginereader-CN.md) 、[写](https://github.com/alibaba/DataX/blob/master/tdenginewriter/doc/tdenginewriter-CN.md) |
-
-
 
 # 阿里云DataWorks数据集成
 
