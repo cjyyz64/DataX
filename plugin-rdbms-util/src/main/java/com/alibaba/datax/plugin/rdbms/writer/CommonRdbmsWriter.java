@@ -213,7 +213,7 @@ public class CommonRdbmsWriter {
             this.jdbcUrl = writerSliceConfig.getString(Key.JDBC_URL);
 
             //ob10的处理
-            if (this.jdbcUrl.startsWith(Constant.OB10_SPLIT_STRING) && this.dataBaseType == DataBaseType.MySql) {
+            if (this.jdbcUrl.startsWith(Constant.OB10_SPLIT_STRING)) {
                 String[] ss = this.jdbcUrl.split(Constant.OB10_SPLIT_STRING_PATTERN);
                 if (ss.length != 3) {
                     throw DataXException

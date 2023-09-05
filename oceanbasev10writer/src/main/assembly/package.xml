@@ -38,5 +38,10 @@
             <outputDirectory>plugin/writer/oceanbasev10writer/libs</outputDirectory>
             <scope>runtime</scope>
         </dependencySet>
+        <dependencySet>
+            <useProjectArtifact>false</useProjectArtifact>
+            <outputDirectory>plugin/writer/oceanbasev10writer/libs</outputDirectory>
+            <scope>system</scope>
+        </dependencySet>
     </dependencySets>
 </assembly>

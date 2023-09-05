@@ -9,7 +9,6 @@ import com.oceanbase.partition.calculator.ObPartIdCalculator;
 import com.oceanbase.partition.calculator.enums.ObPartLevel;
 import com.oceanbase.partition.calculator.enums.ObServerMode;
 import com.oceanbase.partition.calculator.helper.TableEntryExtractor;
-import com.oceanbase.partition.calculator.helper.TableEntryExtractorV4;
 import com.oceanbase.partition.calculator.model.TableEntry;
 import com.oceanbase.partition.calculator.model.TableEntryKey;
 import com.oceanbase.partition.calculator.model.Version;
@@ -98,23 +97,23 @@ public class ObPartitionCalculatorV2 implements IObPartCalculator {
         boolean subsequentFromV4 = !mode.getVersion().isOlderThan(new Version("4.0.0.0"));
         try {
             TableEntry tableEntry;
-            if (subsequentFromV4) {
-                TableEntryExtractorV4 extractor = new TableEntryExtractorV4();
-                // OceanBase 4.0.0.0及之后版本均使用业务租户连接计算分区
-                try (Connection conn = DBUtil.getConnection(DataBaseType.OceanBase, connectInfo.jdbcUrl, connectInfo.getFullUserName(), connectInfo.password)) {
-                    tableEntry = extractor.queryTableEntry(conn, tableEntryKey);
-                }
-            } else {
+            try (Connection conn = getConnection(connectInfo, subsequentFromV4)){
                 TableEntryExtractor extractor = new TableEntryExtractor();
-                // OceanBase 4.0.0.0之前版本使用sys租户连接计算分区
-                try (Connection conn = DbUtils.buildSysConn(connectInfo.jdbcUrl, connectInfo.clusterName)) {
-                    tableEntry = extractor.queryTableEntry(conn, tableEntryKey);
-                }
+                tableEntry = extractor.queryTableEntry(conn, tableEntryKey,subsequentFromV4);
             }
             this.calculator = new ObPartIdCalculator(false, tableEntry, subsequentFromV4);
         } catch (Exception e) {
             LOG.warn("create new part calculator failed. reason: {}", e.getMessage());
         }
+    }
+
+    private Connection getConnection(ServerConnectInfo connectInfo, boolean subsequentFromV4) throws Exception {
+        // OceanBase 4.0.0.0及之后版本均使用业务租户连接计算分区
+        if (subsequentFromV4) {
+            return DBUtil.getConnection(DataBaseType.OceanBase, connectInfo.jdbcUrl, connectInfo.getFullUserName(), connectInfo.password);
+        }
+        // OceanBase 4.0.0.0之前版本使用sys租户连接计算分区
+        return DbUtils.buildSysConn(connectInfo.jdbcUrl, connectInfo.clusterName);
     }
 
     /**

@@ -75,10 +75,10 @@
 
         <dependency>
             <groupId>com.oceanbase</groupId>
-            <artifactId>ob-partition-calculator</artifactId>
-            <version>1.7.1-RELEASE</version>
+            <artifactId>shade-ob-partition-calculator</artifactId>
+            <version>1.0-SNAPSHOT</version>
             <scope>system</scope>
-            <systemPath>${basedir}/src/main/libs/ob-partition-calculator-1.7.1-RELEASE.jar</systemPath>
+            <systemPath>${pom.basedir}/src/main/libs/shade-ob-partition-calculator-1.0-SNAPSHOT.jar</systemPath>
         </dependency>
 
         <dependency>

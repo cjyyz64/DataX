@@ -17,7 +17,6 @@ import java.util.Map;
 public class StandAloneJobContainerCommunicator extends AbstractContainerCommunicator {
     private static final Logger LOG = LoggerFactory
             .getLogger(StandAloneJobContainerCommunicator.class);
-    private static final Logger PROGRESS_LOG = LoggerFactory.getLogger("progressLog");
 
     public StandAloneJobContainerCommunicator(Configuration configuration) {
         super(configuration);
@@ -49,7 +48,6 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
         super.getReporter().reportJobCommunication(super.getJobId(), communication);
         String snapshot = CommunicationTool.Stringify.getSnapshot(communication);
         LOG.info(snapshot);
-        PROGRESS_LOG.info(snapshot);
         reportVmInfo();
     }
 
