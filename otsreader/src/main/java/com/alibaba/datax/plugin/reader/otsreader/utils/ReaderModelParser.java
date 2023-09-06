@@ -1,14 +1,13 @@
 package com.alibaba.datax.plugin.reader.otsreader.utils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.codec.binary.Base64;
-
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSColumn;
 import com.alibaba.datax.plugin.reader.otsreader.model.OTSConst;
 import com.aliyun.openservices.ots.model.PrimaryKeyValue;
+import org.apache.commons.codec.binary.Base64;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 主要对OTS PrimaryKey，OTSColumn的解析
@@ -55,7 +54,7 @@ public class ReaderModelParser {
     }
     
     public static OTSColumn parseOTSColumn(Map<String, Object> item) {
-        if (item.containsKey(OTSConst.NAME) && item.size() == 1) {
+        if (item.containsKey(OTSConst.NAME)) {
             Object name = item.get(OTSConst.NAME);
             if (name instanceof String) {
                 String nameStr = (String) name;
