@@ -24,7 +24,7 @@ public class ObWriterUtils {
 	private static final String CHECK_MEMSTORE_4_0 = "select 1 from %s.gv$ob_memstore t where t.MEMSTORE_USED>t.MEMSTORE_LIMIT * ?";
 
 	private static String CHECK_MEMSTORE_RATIO = "select min(t.total/t.mem_limit) from %s.gv$memstore t";
-	private static final String CHECK_MEMSTORE_RATIO_4_0 = "select min(t.total/t.mem_limit) from %s.gv$ob_memstore t";
+	private static final String CHECK_MEMSTORE_RATIO_4_0 = "select min(t.MEMSTORE_USED/t.MEMSTORE_LIMIT) from %s.gv$ob_memstore t";
 
 	private static Set<String> databaseKeywords;
 	private static String compatibleMode = null;
