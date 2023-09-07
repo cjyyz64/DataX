@@ -11,7 +11,9 @@ import com.alibaba.datax.plugin.unstructuredstorage.reader.UnstructuredStorageRe
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -74,6 +76,10 @@ public class DFSUtil {
     public static final String HDFS_DEFAULTFS_KEY = "fs.defaultFS";
     public static final String HADOOP_SECURITY_AUTHENTICATION_KEY = "hadoop.security.authentication";
 
+    private Boolean skipEmptyOrcFile = false;
+
+    private Integer orcFileEmptySize = null;
+
 
     public DFSUtil(Configuration taskConfig) {
         hadoopConf = new org.apache.hadoop.conf.Configuration();
@@ -97,6 +103,7 @@ public class DFSUtil {
             this.hadoopConf.set(HADOOP_SECURITY_AUTHENTICATION_KEY, "kerberos");
         }
         this.kerberosAuthentication(this.kerberosPrincipal, this.kerberosKeytabFilePath);
+        this.skipEmptyOrcFile = taskConfig.getBool(Key.SKIP_EMPTY_ORCFILE, false);
 
         LOG.info(String.format("hadoopConfig details:%s", JSON.toJSONString(this.hadoopConf)));
     }
@@ -120,10 +127,11 @@ public class DFSUtil {
      * @param srcPaths          路径列表
      * @param specifiedFileType 指定文件类型
      */
-    public HashSet<String> getAllFiles(List<String> srcPaths, String specifiedFileType) {
+    public HashSet<String> getAllFiles(List<String> srcPaths, String specifiedFileType, Boolean skipEmptyOrcFile, Integer orcFileEmptySize) {
 
         this.specifiedFileType = specifiedFileType;
-
+        this.skipEmptyOrcFile = skipEmptyOrcFile;
+        this.orcFileEmptySize = orcFileEmptySize;
         if (!srcPaths.isEmpty()) {
             for (String eachPath : srcPaths) {
                 LOG.info(String.format("get HDFS all files in path = [%s]", eachPath));
@@ -145,8 +153,12 @@ public class DFSUtil {
                 FileStatus stats[] = hdfs.globStatus(path);
                 for (FileStatus f : stats) {
                     if (f.isFile()) {
-                        if (f.getLen() == 0) {
+                        long fileLength = f.getLen();
+                        if (fileLength == 0) {
                             String message = String.format("文件[%s]长度为0，将会跳过不作处理！", hdfsPath);
+                            LOG.warn(message);
+                        } else if (BooleanUtils.isTrue(this.skipEmptyOrcFile) && this.orcFileEmptySize != null && fileLength <= this.orcFileEmptySize) {
+                            String message = String.format("The orc file [%s] is empty, file size: %s, DataX will skip it !", f.getPath().toString(), fileLength);
                             LOG.warn(message);
                         } else {
                             addSourceFileByType(f.getPath().toString());
@@ -185,7 +197,16 @@ public class DFSUtil {
                 LOG.info(String.format("[%s] 是目录, 递归获取该目录下的文件", f.getPath().toString()));
                 getHDFSAllFilesNORegex(f.getPath().toString(), hdfs);
             } else if (f.isFile()) {
-
+                long fileLength = f.getLen();
+                if (fileLength == 0) {
+                    String message = String.format("The file [%s] is empty, DataX will skip it !", f.getPath().toString());
+                    LOG.warn(message);
+                    continue;
+                } else if (BooleanUtils.isTrue(this.skipEmptyOrcFile) && this.orcFileEmptySize != null && fileLength <= this.orcFileEmptySize) {
+                    String message = String.format("The orc file [%s] is empty, file size: %s, DataX will skip it !", f.getPath().toString(), fileLength);
+                    LOG.warn(message);
+                    continue;
+                }
                 addSourceFileByType(f.getPath().toString());
             } else {
                 String message = String.format("该路径[%s]文件类型既不是目录也不是文件，插件自动忽略。",
@@ -350,7 +371,19 @@ public class DFSUtil {
                 //Each file as a split
                 //TODO multy threads
                 // OrcInputFormat getSplits params numSplits not used, splits size = block numbers
-                InputSplit[] splits = in.getSplits(conf, -1);
+                InputSplit[] splits;
+                try {
+                    splits = in.getSplits(conf, 1);
+                } catch (Exception splitException) {
+                    if (Boolean.TRUE.equals(this.skipEmptyOrcFile)) {
+                        boolean isOrcFileEmptyException = checkIsOrcEmptyFileExecption(splitException);
+                        if (isOrcFileEmptyException) {
+                            LOG.info("skipEmptyOrcFile: true, \"{}\" is an empty orc file, skip it!", sourceOrcFilePath);
+                            return;
+                        }
+                    }
+                    throw splitException;
+                }
                 for (InputSplit split : splits) {
                     {
                         RecordReader reader = in.getRecordReader(split, conf, Reporter.NULL);
@@ -386,6 +419,18 @@ public class DFSUtil {
             String message = String.format("请确认您所读取的列配置正确！columnIndexMax 小于0,column:%s", JSON.toJSONString(column));
             throw DataXException.asDataXException(HdfsReaderErrorCode.BAD_CONFIG_VALUE, message);
         }
+    }
+
+    private boolean checkIsOrcEmptyFileExecption(Exception e) {
+        if (e == null) {
+            return false;
+        }
+
+        String fullStackTrace = ExceptionUtils.getStackTrace(e);
+        if (fullStackTrace.contains("org.apache.orc.impl.ReaderImpl.getRawDataSizeOfColumn") && fullStackTrace.contains("Caused by: java.lang.IndexOutOfBoundsException: Index: 1, Size: 1")) {
+            return true;
+        }
+        return false;
     }
 
     private Record transportOneRecord(List<ColumnEntry> columnConfigs, List<Object> recordFields
