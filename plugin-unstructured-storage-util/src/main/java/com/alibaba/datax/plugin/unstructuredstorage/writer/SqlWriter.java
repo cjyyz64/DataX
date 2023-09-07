@@ -1,0 +1,70 @@
+package com.alibaba.datax.plugin.unstructuredstorage.writer;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class SqlWriter implements UnstructuredWriter {
+    private static final Logger LOG = LoggerFactory.getLogger(SqlWriter.class);
+
+    private Writer sqlWriter;
+    private String quotaChar;
+    private String lineSeparator;
+    private String tableName;
+    private StringBuilder insertPrefix;
+
+    public SqlWriter(Writer writer, String quotaChar, String tableName, String lineSeparator, List<String> columnNames) {
+        this.sqlWriter = writer;
+        this.quotaChar = quotaChar;
+        this.lineSeparator = lineSeparator;
+        this.tableName = tableName;
+        buildInsertPrefix(columnNames);
+    }
+
+    @Override
+    public void writeOneRecord(List<String> splitedRows) throws IOException {
+        if (splitedRows.isEmpty()) {
+            LOG.info("Found one record line which is empty.");
+            return;
+        }
+
+        StringBuilder sqlPatten = new StringBuilder(4096).append(insertPrefix);
+        sqlPatten.append(splitedRows.stream().map(e -> "'" + e + "'").collect(Collectors.joining(",")));
+        sqlPatten.append(");").append(lineSeparator);
+        this.sqlWriter.write(sqlPatten.toString());
+    }
+
+    private void buildInsertPrefix(List<String> columnNames) {
+        StringBuilder sb = new StringBuilder(columnNames.size() * 32);
+
+        for (String columnName : columnNames) {
+            if (sb.length() > 0) {
+                sb.append(",");
+            }
+            sb.append(quotaChar).append(columnName).append(quotaChar);
+        }
+
+        int capacity = 16 + tableName.length() + sb.length();
+        this.insertPrefix = new StringBuilder(capacity);
+        this.insertPrefix.append("INSERT INTO ").append(tableName).append(" (").append(sb).append(")").append(" VALUES(");
+    }
+
+    public void appendCommit() throws IOException {
+        this.sqlWriter.write("commit;");
+    }
+
+    @Override
+    public void flush() throws IOException {
+        this.sqlWriter.flush();
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.sqlWriter.close();
+    }
+}

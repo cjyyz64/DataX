@@ -5,11 +5,15 @@ public class Key {
     // must have
     public static final String FILE_NAME = "fileName";
 
+    public static final String TABLE_NAME = "table";
+
     // must have
     public static final String WRITE_MODE = "writeMode";
 
     // not must , not default ,
     public static final String FIELD_DELIMITER = "fieldDelimiter";
+
+    public static final String QUOTA_CHARACTER = "columnDelimiter";
 
     // not must , default os's line delimiter
     public static final String LINE_DELIMITER = "lineDelimiter";
