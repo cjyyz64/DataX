@@ -5,6 +5,7 @@ import com.alibaba.datax.common.exception.DataXException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.Time;
 import java.util.Date;
 
 /**
@@ -12,124 +13,160 @@ import java.util.Date;
  */
 public class DateColumn extends Column {
 
-	private DateType subType = DateType.DATETIME;
+    private DateType subType = DateType.DATETIME;
 
-	public static enum DateType {
-		DATE, TIME, DATETIME
-	}
+    private int nanos = 0;
 
-	/**
-	 * 构建值为null的DateColumn，使用Date子类型为DATETIME
-	 * */
-	public DateColumn() {
-		this((Long)null);
-	}
+    private int precision = -1;
 
-	/**
-	 * 构建值为stamp(Unix时间戳)的DateColumn，使用Date子类型为DATETIME
-	 * 实际存储有date改为long的ms，节省存储
-	 * */
-	public DateColumn(final Long stamp) {
-		super(stamp, Column.Type.DATE, (null == stamp ? 0 : 8));
-	}
+    public static enum DateType {
+        DATE, TIME, DATETIME
+    }
 
-	/**
-	 * 构建值为date(java.util.Date)的DateColumn，使用Date子类型为DATETIME
-	 * */
-	public DateColumn(final Date date) {
-		this(date == null ? null : date.getTime());
-	}
+    /**
+     * 构建值为time(java.sql.Time)的DateColumn，使用Date子类型为TIME，只有时间，没有日期
+     */
+    public DateColumn(Time time, int nanos, int jdbcPrecision) {
+        this(time);
+        if (time != null) {
+            setNanos(nanos);
+        }
+        if (jdbcPrecision == 10) {
+            setPrecision(0);
+        }
+        if (jdbcPrecision >= 12 && jdbcPrecision <= 17) {
+            setPrecision(jdbcPrecision - 11);
+        }
+    }
 
-	/**
-	 * 构建值为date(java.sql.Date)的DateColumn，使用Date子类型为DATE，只有日期，没有时间
-	 * */
-	public DateColumn(final java.sql.Date date) {
-		this(date == null ? null : date.getTime());
-		this.setSubType(DateType.DATE);
-	}
+    public long getNanos() {
+        return nanos;
+    }
 
-	/**
-	 * 构建值为time(java.sql.Time)的DateColumn，使用Date子类型为TIME，只有时间，没有日期
-	 * */
-	public DateColumn(final java.sql.Time time) {
-		this(time == null ? null : time.getTime());
-		this.setSubType(DateType.TIME);
-	}
+    public void setNanos(int nanos) {
+        this.nanos = nanos;
+    }
 
-	/**
-	 * 构建值为ts(java.sql.Timestamp)的DateColumn，使用Date子类型为DATETIME
-	 * */
-	public DateColumn(final java.sql.Timestamp ts) {
-		this(ts == null ? null : ts.getTime());
-		this.setSubType(DateType.DATETIME);
-	}
+    public int getPrecision() {
+        return precision;
+    }
 
-	@Override
-	public Long asLong() {
+    public void setPrecision(int precision) {
+        this.precision = precision;
+    }
 
-		return (Long)this.getRawData();
-	}
+    /**
+     * 构建值为null的DateColumn，使用Date子类型为DATETIME
+     */
+    public DateColumn() {
+        this((Long) null);
+    }
 
-	@Override
-	public String asString() {
-		try {
-			return ColumnCast.date2String(this);
-		} catch (Exception e) {
-			throw DataXException.asDataXException(
-					CommonErrorCode.CONVERT_NOT_SUPPORT,
-					String.format("Date[%s]类型不能转为String .", this.toString()));
-		}
-	}
+    /**
+     * 构建值为stamp(Unix时间戳)的DateColumn，使用Date子类型为DATETIME
+     * 实际存储有date改为long的ms，节省存储
+     */
+    public DateColumn(final Long stamp) {
+        super(stamp, Column.Type.DATE, (null == stamp ? 0 : 8));
+    }
 
-	@Override
-	public Date asDate() {
-		if (null == this.getRawData()) {
-			return null;
-		}
+    /**
+     * 构建值为date(java.util.Date)的DateColumn，使用Date子类型为DATETIME
+     */
+    public DateColumn(final Date date) {
+        this(date == null ? null : date.getTime());
+    }
 
-		return new Date((Long)this.getRawData());
-	}
-	
-	@Override
-	public Date asDate(String dateFormat) {
-		return asDate();
-	}
+    /**
+     * 构建值为date(java.sql.Date)的DateColumn，使用Date子类型为DATE，只有日期，没有时间
+     */
+    public DateColumn(final java.sql.Date date) {
+        this(date == null ? null : date.getTime());
+        this.setSubType(DateType.DATE);
+    }
 
-	@Override
-	public byte[] asBytes() {
-		throw DataXException.asDataXException(
-				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Bytes .");
-	}
+    /**
+     * 构建值为time(java.sql.Time)的DateColumn，使用Date子类型为TIME，只有时间，没有日期
+     */
+    public DateColumn(final java.sql.Time time) {
+        this(time == null ? null : time.getTime());
+        this.setSubType(DateType.TIME);
+    }
 
-	@Override
-	public Boolean asBoolean() {
-		throw DataXException.asDataXException(
-				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Boolean .");
-	}
+    /**
+     * 构建值为ts(java.sql.Timestamp)的DateColumn，使用Date子类型为DATETIME
+     */
+    public DateColumn(final java.sql.Timestamp ts) {
+        this(ts == null ? null : ts.getTime());
+        this.setSubType(DateType.DATETIME);
+    }
 
-	@Override
-	public Double asDouble() {
-		throw DataXException.asDataXException(
-				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Double .");
-	}
+    @Override
+    public Long asLong() {
 
-	@Override
-	public BigInteger asBigInteger() {
-		throw DataXException.asDataXException(
-				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigInteger .");
-	}
+        return (Long) this.getRawData();
+    }
 
-	@Override
-	public BigDecimal asBigDecimal() {
-		throw DataXException.asDataXException(
-				CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .");
-	}
+    @Override
+    public String asString() {
+        try {
+            return ColumnCast.date2String(this);
+        } catch (Exception e) {
+            throw DataXException.asDataXException(
+                    CommonErrorCode.CONVERT_NOT_SUPPORT,
+                    String.format("Date[%s]类型不能转为String .", this.toString()));
+        }
+    }
 
-	public DateType getSubType() {
-		return subType;
-	}
+    @Override
+    public Date asDate() {
+        if (null == this.getRawData()) {
+            return null;
+        }
 
-	public void setSubType(DateType subType) {
-		this.subType = subType;
-	}
+        return new Date((Long) this.getRawData());
+    }
+
+    @Override
+    public Date asDate(String dateFormat) {
+        return asDate();
+    }
+
+    @Override
+    public byte[] asBytes() {
+        throw DataXException.asDataXException(
+                CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Bytes .");
+    }
+
+    @Override
+    public Boolean asBoolean() {
+        throw DataXException.asDataXException(
+                CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Boolean .");
+    }
+
+    @Override
+    public Double asDouble() {
+        throw DataXException.asDataXException(
+                CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为Double .");
+    }
+
+    @Override
+    public BigInteger asBigInteger() {
+        throw DataXException.asDataXException(
+                CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigInteger .");
+    }
+
+    @Override
+    public BigDecimal asBigDecimal() {
+        throw DataXException.asDataXException(
+                CommonErrorCode.CONVERT_NOT_SUPPORT, "Date类型不能转为BigDecimal .");
+    }
+
+    public DateType getSubType() {
+        return subType;
+    }
+
+    public void setSubType(DateType subType) {
+        this.subType = subType;
+    }
 }
