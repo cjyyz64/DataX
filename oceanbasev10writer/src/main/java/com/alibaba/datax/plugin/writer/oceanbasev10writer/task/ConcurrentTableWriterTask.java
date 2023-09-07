@@ -316,11 +316,13 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	}
 	
 	public void print() {
-		LOG.debug("Statistic total task {}, finished {}, queue Size {}",
-				concurrentWriter.getTotalTaskCount(),
-				concurrentWriter.getFinishTaskCount(),
-				concurrentWriter.getTaskQueueSize());
-		concurrentWriter.printStatistics();
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("Statistic total task {}, finished {}, queue Size {}",
+					concurrentWriter.getTotalTaskCount(),
+					concurrentWriter.getFinishTaskCount(),
+					concurrentWriter.getTaskQueueSize());
+			concurrentWriter.printStatistics();
+		}
 	}
 	
 	public void waitTaskFinish() {
