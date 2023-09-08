@@ -237,6 +237,7 @@ public class UnstructuredStorageWriterUtil {
         // warn: default false
         String fileFormat = config.getString(Key.FILE_FORMAT, Constant.FILE_FORMAT_TEXT);
         boolean isSqlFormat = Constant.FILE_FORMAT_SQL.equalsIgnoreCase(fileFormat);
+        int commitSize = config.getInt(Key.COMMIT_SIZE, Constant.DEFAULT_COMMIT_SIZE);
         UnstructuredWriter unstructuredWriter = produceUnstructuredWriter(fileFormat, config, writer);
 
         List<String> headers = config.getList(Key.HEADER, String.class);
@@ -245,11 +246,16 @@ public class UnstructuredStorageWriterUtil {
         }
 
         Record record = null;
+        int receivedCount = 0;
         String byteEncoding = config.getString(Key.BYTE_ENCODING);
         while ((record = lineReceiver.getFromReader()) != null) {
             UnstructuredStorageWriterUtil.transportOneRecord(record,
                     nullFormat, dateParse, taskPluginCollector,
                     unstructuredWriter, byteEncoding);
+            receivedCount++;
+            if (isSqlFormat && receivedCount % commitSize == 0) {
+                ((SqlWriter) unstructuredWriter).appendCommit();
+            }
         }
 
         if (isSqlFormat) {
@@ -272,7 +278,7 @@ public class UnstructuredStorageWriterUtil {
         } else if (StringUtils.equalsIgnoreCase(fileFormat, Constant.FILE_FORMAT_SQL)) {
             String tableName = config.getString(Key.TABLE_NAME);
             Preconditions.checkArgument(StringUtils.isNotEmpty(tableName), "table name is empty");
-            String quoteChar = config.getString(Key.QUOTA_CHARACTER);
+            String quoteChar = config.getString(Key.QUOTE_CHARACTER);
             Preconditions.checkArgument(StringUtils.isNotEmpty(quoteChar), "quote character is empty");
             String lineSeparator = config.getString(Key.LINE_DELIMITER, IOUtils.LINE_SEPARATOR);
             List<String> headers = config.getList(Key.HEADER, String.class);

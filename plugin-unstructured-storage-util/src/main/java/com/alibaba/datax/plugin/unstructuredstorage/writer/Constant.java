@@ -17,6 +17,8 @@ public class Constant {
 	//每个分块10MB，最大10000个分块, MAX_FILE_SIZE 单位: MB
 	public static final Long MAX_FILE_SIZE = 10 * 10000L;
 
+	public static final int DEFAULT_COMMIT_SIZE = 2000;
+
 	public static final String DEFAULT_SUFFIX = "";
 
 	public static final String TRUNCATE = "truncate";

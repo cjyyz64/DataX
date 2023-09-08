@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.unstructuredstorage.writer;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,7 @@ public class SqlWriter implements UnstructuredWriter {
         }
 
         StringBuilder sqlPatten = new StringBuilder(4096).append(insertPrefix);
-        sqlPatten.append(splitedRows.stream().map(e -> "'" + e + "'").collect(Collectors.joining(",")));
+        sqlPatten.append(splitedRows.stream().map(e -> "'" + DataXCsvWriter.replace(e, "'", "''") + "'").collect(Collectors.joining(",")));
         sqlPatten.append(");").append(lineSeparator);
         this.sqlWriter.write(sqlPatten.toString());
     }
@@ -55,7 +54,7 @@ public class SqlWriter implements UnstructuredWriter {
     }
 
     public void appendCommit() throws IOException {
-        this.sqlWriter.write("commit;");
+        this.sqlWriter.write("commit;" + lineSeparator);
     }
 
     @Override
