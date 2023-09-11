@@ -12,14 +12,14 @@ public class SqlWriter implements UnstructuredWriter {
     private static final Logger LOG = LoggerFactory.getLogger(SqlWriter.class);
 
     private Writer sqlWriter;
-    private String quotaChar;
+    private String quoteChar;
     private String lineSeparator;
     private String tableName;
     private StringBuilder insertPrefix;
 
-    public SqlWriter(Writer writer, String quotaChar, String tableName, String lineSeparator, List<String> columnNames) {
+    public SqlWriter(Writer writer, String quoteChar, String tableName, String lineSeparator, List<String> columnNames) {
         this.sqlWriter = writer;
-        this.quotaChar = quotaChar;
+        this.quoteChar = quoteChar;
         this.lineSeparator = lineSeparator;
         this.tableName = tableName;
         buildInsertPrefix(columnNames);
@@ -45,7 +45,7 @@ public class SqlWriter implements UnstructuredWriter {
             if (sb.length() > 0) {
                 sb.append(",");
             }
-            sb.append(quotaChar).append(columnName).append(quotaChar);
+            sb.append(quoteChar).append(columnName).append(quoteChar);
         }
 
         int capacity = 16 + tableName.length() + sb.length();
