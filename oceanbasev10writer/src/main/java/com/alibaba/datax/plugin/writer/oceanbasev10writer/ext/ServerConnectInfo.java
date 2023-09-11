@@ -46,7 +46,7 @@ public class ServerConnectInfo {
 	private void parseFullUserName(final String fullUserName) {
 		int tenantIndex = fullUserName.indexOf("@");
 		int clusterIndex = fullUserName.indexOf("#");
-		if (fullUserName.contains(":")) {
+		if (fullUserName.contains(":") && tenantIndex < 0) {
 			String[] names = fullUserName.split(":");
 			if (names.length != 3) {
 				throw new RuntimeException("invalid argument: " + fullUserName);
@@ -56,9 +56,9 @@ public class ServerConnectInfo {
 				this.userName = names[2];
 			}
 		} else if (!publicCloud || tenantIndex < 0) {
-			this.userName = fullUserName;
-			this.clusterName = EMPTY;
-			this.tenantName = EMPTY;
+			this.userName = tenantIndex < 0 ? fullUserName : fullUserName.substring(0, tenantIndex);
+			this.clusterName = clusterIndex < 0 ? EMPTY : fullUserName.substring(clusterIndex + 1);
+			this.tenantName = tenantIndex < 0 ? EMPTY : fullUserName.substring(tenantIndex + 1, clusterIndex);
 		} else {
 			// If in public cloud, the username with format user@tenant#cluster should be parsed, otherwise, connection can't be created.
 			this.userName = fullUserName.substring(0, tenantIndex);

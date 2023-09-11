@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ObPartitionCalculatorV2 implements IObPartCalculator {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ObPartitionCalculatorV1.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ObPartitionCalculatorV2.class);
 
     /**
      * OB的模式以及版本信息
