@@ -4,15 +4,19 @@ import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConfig;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.config.OTSStreamReaderConstants;
-import com.alibaba.datax.plugin.reader.otsstreamreader.internal.core.*;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.core.CheckpointTimeTracker;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.core.OTSStreamReaderChecker;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.core.RecordProcessor;
+import com.alibaba.datax.plugin.reader.otsstreamreader.internal.core.ShardStatusChecker;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.model.ShardCheckpoint;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.model.StreamJob;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.OTSHelper;
 import com.alibaba.datax.plugin.reader.otsstreamreader.internal.utils.TimeUtils;
-import com.alicloud.openservices.tablestore.*;
-import com.alicloud.openservices.tablestore.model.*;
+import com.alicloud.openservices.tablestore.SyncClientInterface;
+import com.alicloud.openservices.tablestore.TableStoreException;
+import com.alicloud.openservices.tablestore.model.StreamDetails;
+import com.alicloud.openservices.tablestore.model.StreamShard;
 import com.aliyun.openservices.ots.internal.streamclient.model.CheckpointPosition;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,16 +40,18 @@ public class OTSStreamReaderSlaveProxy {
     private boolean findCheckpoints; // whether find checkpoint for last job, if so, we should read from checkpoint and skip nothing.
     private String slaveId = UUID.randomUUID().toString();
     private StreamDetails streamDetails;
+    private boolean enableSeekIteratorByTimestamp;
 
     public void init(final OTSStreamReaderConfig otsStreamReaderConfig, StreamJob streamJob, List<StreamShard> allShards, Set<String> ownedShardIds) {
         slaveNumber.getAndIncrement();
         this.config = otsStreamReaderConfig;
         this.ots = OTSHelper.getOTSInstance(config);
         this.streamJob = streamJob;
-        this.streamDetails = OTSHelper.getStreamDetails(ots, this.streamJob.getTableName());
+        this.streamDetails = OTSHelper.getStreamDetails(ots, this.streamJob.getTableName(),config.isTimeseriesTable());
         this.checkpointInfoTracker = new CheckpointTimeTracker(ots, config.getStatusTable(), this.streamJob.getStreamId());
         this.checker = new OTSStreamReaderChecker(ots, config);
         this.allShardsMap = OTSHelper.toShardMap(allShards);
+        this.enableSeekIteratorByTimestamp = otsStreamReaderConfig.getEnableSeekIteratorByTimestamp();
 
         LOG.info("SlaveId: {}, ShardIds: {}, OwnedShards: {}.", slaveId, allShards, ownedShardIds);
         this.ownedShards = new HashMap<String, StreamShard>();
@@ -58,12 +64,12 @@ public class OTSStreamReaderSlaveProxy {
         }
 
         findCheckpoints = checker.checkAndSetCheckpoints(checkpointInfoTracker, allShardsMap, streamJob, shardToCheckpointMap);
-        if (!findCheckpoints) {
-            LOG.info("Checkpoint for stream '{}' in timestamp '{}' is not found.", streamJob.getStreamId(), streamJob.getStartTimeInMillis());
+        if (!findCheckpoints && !enableSeekIteratorByTimestamp) {
+            LOG.info("Checkpoint for stream '{}' in timestamp '{}' is not found. EnableSeekIteratorByTimestamp: {}", streamJob.getStreamId(), streamJob.getStartTimeInMillis(), this.enableSeekIteratorByTimestamp);
             setWithNearestCheckpoint();
         }
 
-        LOG.info("Find checkpoints: {}.", findCheckpoints);
+        LOG.info("Find checkpoints: {}, EnableSeekIteratorByTimestamp: {}", findCheckpoints, enableSeekIteratorByTimestamp);
         for (Map.Entry<String, StreamShard> shard : ownedShards.entrySet()) {
             LOG.info("Shard to process, ShardInfo: [{}], StartCheckpoint: [{}].", shard.getValue(), shardToCheckpointMap.get(shard.getKey()));
         }

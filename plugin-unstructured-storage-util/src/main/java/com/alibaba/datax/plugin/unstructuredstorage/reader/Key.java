@@ -85,6 +85,9 @@ public class Key {
 	 * 同步的时候，只同步 tar.gz 里面文件名后缀为 .dat 的文件
 	 */
 	public static final String TAR_FILE_FILTER_PATTERN = "tarFileFilterPattern";
-	public static final String ENABLE_INNER_SPLIT = "enableInnerSplit";
+    public static final String ENABLE_INNER_SPLIT = "enableInnerSplit";
+
+    public static final String HIVE_PARTION_COLUMN = "hivePartitionColumn";
+
 
 }
