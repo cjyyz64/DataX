@@ -46,7 +46,6 @@ public class StandAloneJobContainerCommunicator extends AbstractContainerCommuni
     @Override
     public void report(Communication communication) {
         super.getReporter().reportJobCommunication(super.getJobId(), communication);
-
         LOG.info(CommunicationTool.Stringify.getSnapshot(communication));
         reportVmInfo();
     }
