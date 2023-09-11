@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <property name="progress.dir" value="${datax.home}/log/progress"/>
     <property name="log.dir" value="${datax.home}/log/" />
     <property name="perf.dir" value="${datax.home}/log_perf/" />
     <timestamp key="ymd" datePattern="yyyy-MM-dd"/>
@@ -133,6 +132,10 @@
         </layout>
     </appender>
     -->
+
+    <logger name="com.alibaba.datax.common.statistics.PerfRecord"  level="INFO" additivity="false">
+        <appender-ref ref="PERF" />
+    </logger>
 
     <root level="${loglevel:-INFO}">
         <appender-ref ref="STDOUT" />
