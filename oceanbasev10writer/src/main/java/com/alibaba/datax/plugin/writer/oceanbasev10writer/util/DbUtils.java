@@ -94,11 +94,11 @@ public class DbUtils {
                 conn = DBUtil.getConnectionWithoutRetry(DataBaseType.OceanBase, sysJDBCUrl, String.format("%s@%s#%s", userConfig[0],
                     tenantName, clusterName), userConfig[1]);
             } catch (Exception e) {
-                LOG.info("fail connecting to ob: " + e.getMessage());
+                LOG.warn("fail connecting to ob: " + e.getMessage());
 
             }
             if (conn == null) {
-                LOG.info("fail to get connection with user " + userConfig[0] + ", try alternative user.");
+                LOG.warn("fail to get connection with user " + userConfig[0] + ", try alternative user.");
             } else {
                 break;
             }

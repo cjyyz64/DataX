@@ -102,8 +102,7 @@ public class ObWriterUtils {
 				result = rs.getDouble(1);
 			}
 		} catch (Throwable e) {
-			LOG.error("Check memstore fail, reason: {}. Use a random value instead.", e.getMessage());
-			// result = false;
+			LOG.warn("Check memstore fail, reason: {}. Use a random value instead.", e.getMessage());
 			result = RandomUtils.nextDouble(0.3D, DEFAULT_SLOW_MEMSTORE_THRESHOLD + 0.2D);
 		} finally {
 			//do not need to close the statment in ob1.0
@@ -219,7 +218,7 @@ public class ObWriterUtils {
 				}
 				List<String> s = uniqueKeys.get(keyName);
 				if (s == null) {
-					s = new ArrayList();
+					s = new ArrayList<>();
 					uniqueKeys.put(keyName, s);
 				}
 				s.add(columnName);
@@ -291,7 +290,7 @@ public class ObWriterUtils {
 				String columnName = StringUtils.upperCase(rs.getString("Column_name"));
 				Set<String> s = uniqueKeys.get(keyName);
 				if (s == null) {
-					s = new HashSet();
+					s = new HashSet<>();
 					uniqueKeys.put(keyName, s);
 				}
 				s.add(columnName);

@@ -30,7 +30,7 @@ public abstract class AbstractConnHolder {
                 return conn;
             }
         } catch (Exception e) {
-            LOG.error("judge connection is closed or not failed. try to reconnect.", e);
+            LOG.warn("judge connection is closed or not failed. try to reconnect.", e);
         }
         return reconnect();
     }
