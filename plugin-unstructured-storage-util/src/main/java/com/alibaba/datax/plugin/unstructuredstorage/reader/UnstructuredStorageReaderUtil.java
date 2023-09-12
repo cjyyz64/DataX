@@ -12,7 +12,6 @@ import com.csvreader.CsvReader;
 import org.apache.commons.beanutils.BeanUtils;
 import io.airlift.compress.snappy.SnappyCodec;
 import io.airlift.compress.snappy.SnappyFramedInputStream;
-import org.anarres.lzo.*;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
@@ -118,17 +117,18 @@ public class UnstructuredStorageReaderUtil {
 						encoding), bufferSize);
 			} else {
 				// TODO compress
-				if ("lzo_deflate".equalsIgnoreCase(compress)) {
-					LzoInputStream lzoInputStream = new LzoInputStream(
-							inputStream, new LzoDecompressor1x_safe());
-					reader = new BufferedReader(new InputStreamReader(
-							lzoInputStream, encoding));
-				} else if ("lzo".equalsIgnoreCase(compress)) {
-					LzoInputStream lzopInputStream = new ExpandLzopInputStream(
-							inputStream);
-					reader = new BufferedReader(new InputStreamReader(
-							lzopInputStream, encoding));
-				} else if ("gzip".equalsIgnoreCase(compress)) {
+//				if ("lzo_deflate".equalsIgnoreCase(compress)) {
+//					LzoInputStream lzoInputStream = new LzoInputStream(
+//							inputStream, new LzoDecompressor1x_safe());
+//					reader = new BufferedReader(new InputStreamReader(
+//							lzoInputStream, encoding));
+//				} else if ("lzo".equalsIgnoreCase(compress)) {
+//					LzoInputStream lzopInputStream = new ExpandLzopInputStream(
+//							inputStream);
+//					reader = new BufferedReader(new InputStreamReader(
+//							lzopInputStream, encoding));
+//				}
+				if ("gzip".equalsIgnoreCase(compress)) {
 					CompressorInputStream compressorInputStream = new GzipCompressorInputStream(
 							inputStream);
 					reader = new BufferedReader(new InputStreamReader(
