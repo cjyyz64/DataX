@@ -17,15 +17,9 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
  *
  */
 public class ObClientConnHolder extends AbstractConnHolder {
-	private final String jdbcUrl;
-	private final String userName;
-	private final String password;
 
 	public ObClientConnHolder(Configuration config, String jdbcUrl, String userName, String password) {
-		super(config);
-		this.jdbcUrl = jdbcUrl;
-		this.userName = userName;
-		this.password = password;
+		super(config, jdbcUrl,userName,password);
 	}
 
 	// Connect to ob with obclient and obproxy
@@ -59,5 +53,9 @@ public class ObClientConnHolder extends AbstractConnHolder {
 	@Override
 	public void destroy() {
 		DBUtil.closeDBResources(null, conn);
+	}
+
+	@Override
+	public void doCommit() {
 	}
 }

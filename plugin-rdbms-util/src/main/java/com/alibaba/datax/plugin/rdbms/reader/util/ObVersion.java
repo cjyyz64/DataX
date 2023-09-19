@@ -17,6 +17,7 @@ public class ObVersion implements Comparable<ObVersion> {
 
     public static final ObVersion V2276 = valueOf("2.2.76");
     public static final ObVersion V4000 = valueOf("4.0.0.0");
+    public static final ObVersion V4210 = valueOf("4.2.1.0");
 
     private static final ObVersion DEFAULT_VERSION =
         valueOf(System.getProperty("defaultObVersion","3.2.3.0"));

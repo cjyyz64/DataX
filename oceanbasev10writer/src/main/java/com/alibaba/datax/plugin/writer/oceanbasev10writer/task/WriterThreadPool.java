@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WriterThreadPool {
-    private static final Logger LOG = LoggerFactory.getLogger(InsertTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractInsertTask.class);
 	
 	private static ExecutorService executorService = Executors.newCachedThreadPool();
 	
@@ -25,12 +25,12 @@ public class WriterThreadPool {
 		LOG.info("shutdown executor service success...");
 	}
 	
-	public static synchronized void execute(InsertTask task) {
+	public static synchronized void execute(AbstractInsertTask task) {
 		executorService.execute(task);
 	}
 	
-	public static synchronized void executeBatch(List<InsertTask> tasks) {
-		for (InsertTask task : tasks) {
+	public static synchronized void executeBatch(List<AbstractInsertTask> tasks) {
+		for (AbstractInsertTask task : tasks) {
 			executorService.execute(task);
 		}
 	}

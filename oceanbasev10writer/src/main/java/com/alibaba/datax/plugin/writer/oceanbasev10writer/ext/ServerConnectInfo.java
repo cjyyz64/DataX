@@ -15,6 +15,8 @@ public class ServerConnectInfo {
 	public String ipPort;
 	public String jdbcUrl;
 	public boolean publicCloud;
+	public String host;
+	public int rpcPort;
 
 	/**
 	 *
@@ -36,8 +38,9 @@ public class ServerConnectInfo {
 			String ipPort = matcher.group(1);
 			String dbName = matcher.group(2);
 			this.ipPort = ipPort;
+			this.host = ipPort.split(":")[0];
 			this.databaseName = dbName;
-			this.publicCloud = ipPort.split(":")[0].endsWith("aliyuncs.com");
+			this.publicCloud = host.endsWith("aliyuncs.com");
 		} else {
 			throw new RuntimeException("Invalid argument:" + jdbcUrl);
 		}
@@ -94,5 +97,9 @@ public class ServerConnectInfo {
 			return this.userName;
 		}
 		return builder.toString();
+	}
+
+	public void setRpcPort(int rpcPort) {
+		this.rpcPort = rpcPort;
 	}
 }

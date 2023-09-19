@@ -61,4 +61,14 @@ public interface Config {
 
 	String USE_PART_CALCULATOR = "usePartCalculator";
 	boolean DEFAULT_USE_PART_CALCULATOR = false;
+
+
+	String BLOCKS_COUNT = "blocksCount";
+
+	String DIRECT_PATH = "directPath";
+
+	// 区别于recordLimit，这个参数仅针对某张表。即一张表超过最大错误数不会影响其他表。仅用于旁路导入。
+	String MAX_ERRORS = "maxErrors";
+
+	String RPC_PORT = "rpcPort";
 }

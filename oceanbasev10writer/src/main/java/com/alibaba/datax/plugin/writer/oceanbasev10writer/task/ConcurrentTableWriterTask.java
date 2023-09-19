@@ -67,6 +67,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private String obUpdateColumns = null;
     private String dbName;
     private int calPartFailedCount = 0;
+	private boolean directPath;
 
 	public ConcurrentTableWriterTask(DataBaseType dataBaseType) {
 		super(dataBaseType);
@@ -81,35 +82,40 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		this.writeMode = "update";
         obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
+		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, 0));
 		dbName = connectInfo.databaseName;
-		//init check memstore
-		this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
-		this.memstoreCheckIntervalSecond = config.getLong(Config.MEMSTORE_CHECK_INTERVAL_SECOND,
-				Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND);
+		this.directPath = config.getBool(Config.DIRECT_PATH, false);
 
-		this.connHolder = new ObClientConnHolder(config, connectInfo.jdbcUrl,
-				connectInfo.getFullUserName(), connectInfo.password);
-		this.isOracleCompatibleMode = ObWriterUtils.isOracleMode();
-		if (isOracleCompatibleMode) {
-			connectInfo.databaseName = connectInfo.databaseName.toUpperCase();
-			//在转义的情况下不翻译
-			if (!(table.startsWith("\"") && table.endsWith("\""))) {
-				table = table.toUpperCase();
+		if (!directPath) {
+			//init check memstore
+			this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
+			this.memstoreCheckIntervalSecond = config.getLong(Config.MEMSTORE_CHECK_INTERVAL_SECOND,
+					Config.DEFAULT_MEMSTORE_CHECK_INTERVAL_SECOND);
+
+			this.connHolder = new ObClientConnHolder(config, connectInfo.jdbcUrl,
+					connectInfo.getFullUserName(), connectInfo.password);
+			this.isOracleCompatibleMode = ObWriterUtils.isOracleMode();
+			if (isOracleCompatibleMode) {
+				connectInfo.databaseName = connectInfo.databaseName.toUpperCase();
+				//在转义的情况下不翻译
+				if (!(table.startsWith("\"") && table.endsWith("\""))) {
+					table = table.toUpperCase();
+				}
+
+				LOG.info(String.format("this is oracle compatible mode, change database to %s, table to %s",
+						connectInfo.databaseName, table));
 			}
 
-			LOG.info(String.format("this is oracle compatible mode, change database to %s, table to %s",
-					connectInfo.databaseName, table));
-        }
+			if (config.getBool(Config.USE_PART_CALCULATOR, Config.DEFAULT_USE_PART_CALCULATOR)) {
+				this.obPartCalculator = createPartitionCalculator(connectInfo, ObServerMode.from(config.getString(Config.OB_COMPATIBLE_MODE), config.getString(Config.OB_VERSION)));
+			} else {
+				LOG.info("Disable partition calculation feature.");
+			}
 
-        if (config.getBool(Config.USE_PART_CALCULATOR, Config.DEFAULT_USE_PART_CALCULATOR)) {
-            this.obPartCalculator = createPartitionCalculator(connectInfo, ObServerMode.from(config.getString(Config.OB_COMPATIBLE_MODE), config.getString(Config.OB_VERSION)));
-        } else {
-            LOG.info("Disable partition calculation feature.");
-        }
-
-        obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
-        groupInsertValues = new HashMap<Long, List<Record>>();
-        rewriteSql();
+			obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
+			groupInsertValues = new HashMap<Long, List<Record>>();
+			rewriteSql();
+		}
 
         if (null == concurrentWriter) {
             concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
@@ -125,20 +131,16 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
      */
     private IObPartCalculator createPartitionCalculator(ServerConnectInfo connectInfo, ObServerMode obServerMode) {
         if (obServerMode.isSubsequentFrom("3.0.0.0")) {
-            LOG.info("oceanbase version is {}, use ob-partition-calculator to calculate partition Id.", obServerMode.getVersion());
+            LOG.info("oceanbase version is {}, use ob-partition-calculator to calculate partition id.", obServerMode.getVersion());
             return new ObPartitionCalculatorV2(connectInfo, table, obServerMode, columns);
         }
 
-        LOG.info("oceanbase version is {}, use ocj to calculate partition Id.", obServerMode.getVersion());
+        LOG.info("oceanbase version is {}, use ocj to calculate partition id.", obServerMode.getVersion());
         return new ObPartitionCalculatorV1(connectInfo, table, columns);
     }
 
 	public boolean isFinished() {
 		return allTaskInQueue && concurrentWriter.checkFinish();
-	}
-	
-	public boolean allTaskInQueue() {
-		return allTaskInQueue;
 	}
 	
 	public void setPutAllTaskInQueue() {
@@ -302,10 +304,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		}
 		lastCheckMemstoreTime = now;
 	}
-	
-	public boolean isMemStoreFull() {
-		return isMemStoreFull.get();
-	}
 
 	public boolean isShouldPause() {
 		return this.loadMode.equals(PAUSE);
@@ -314,7 +312,15 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	public boolean isShouldSlow() {
 		return this.loadMode.equals(SLOW);
 	}
-	
+
+	public boolean isDirectPath() {
+		return directPath;
+	}
+
+	public String getTable() {
+		return table;
+	}
+
 	public void print() {
 		if (LOG.isDebugEnabled()) {
 			LOG.debug("Statistic total task {}, finished {}, queue Size {}",
@@ -334,6 +340,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 				print();
 				checkMemStore();
 			}
+			concurrentWriter.doCommit();
 		} catch (InterruptedException e) {
 			LOG.warn("Concurrent table writer wait task finish interrupt");
 		} finally {
@@ -360,7 +367,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	
 	public class ConcurrentTableWriter {
 		private BlockingQueue<List<Record>> queue;
-		private List<InsertTask> insertTasks;
+		private List<AbstractInsertTask> insertTasks;
 		private Configuration config;
 		private ServerConnectInfo connectInfo;
 		private String rewriteRecordSql;
@@ -370,8 +377,8 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 
 		public ConcurrentTableWriter(Configuration config, ServerConnectInfo connInfo, String rewriteRecordSql) {
 			threadCount = config.getInt(Config.WRITER_THREAD_COUNT, Config.DEFAULT_WRITER_THREAD_COUNT);
-			queue = new LinkedBlockingQueue<List<Record>>(threadCount << 1);
-			insertTasks = new ArrayList<InsertTask>(threadCount);
+			queue = new LinkedBlockingQueue<>(threadCount << 1);
+			insertTasks = new ArrayList<>(threadCount);
 			this.config = config;
 			this.connectInfo = connInfo;
 			this.rewriteRecordSql = rewriteRecordSql;
@@ -394,7 +401,11 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		public void increFinishCount() {
 			finishTaskCount.incrementAndGet();
 		}
-		
+
+		public String getRewriteRecordSql() {
+			return rewriteRecordSql;
+		}
+
 		//should check after put all the task in the queue
 		public boolean checkFinish() {
 			long finishCount = finishTaskCount.get();
@@ -405,18 +416,28 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		public synchronized void start() {
 			for (int i = 0; i < threadCount; ++i) {
 			    LOG.info("start {} insert task.", (i+1));
-				InsertTask insertTask = new InsertTask(taskId, queue, config, connectInfo, rewriteRecordSql);
-				insertTask.setWriterTask(ConcurrentTableWriterTask.this);
-				insertTask.setWriter(this);
-				insertTasks.add(insertTask);
+				insertTasks.add(buildInsertTask());
 			}
 			WriterThreadPool.executeBatch(insertTasks);
 		}
-		
+
+		private AbstractInsertTask buildInsertTask() {
+			AbstractInsertTask insertTask = null;
+			if (directPath) {
+				insertTask = new DirectPathInsertTask(taskId, queue, config, connectInfo);
+			} else {
+				insertTask = new JdbcInsertTask(taskId, queue, config, connectInfo);
+			}
+			insertTask.setWriterTask(ConcurrentTableWriterTask.this);
+			insertTask.setWriter(this);
+			insertTask.initConnHolder();
+			return insertTask;
+		}
+
 		public void printStatistics() {
 			long insertTotalCost = 0;
 			long insertTotalCount = 0;
-			for (InsertTask task: insertTasks) {
+			for (AbstractInsertTask task: insertTasks) {
 				insertTotalCost += task.getTotalCost();
 				insertTotalCount += task.getInsertCount();
 			}
@@ -436,16 +457,24 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			}
 			totalTaskCount.incrementAndGet();
 		}
-		
+
+		public int getThreadCount() {
+			return threadCount;
+		}
+
 		public synchronized void destory() {
 			if (insertTasks != null) {
-				for(InsertTask task : insertTasks) {
+				for(AbstractInsertTask task : insertTasks) {
 					task.setStop();
 				}
-				for(InsertTask task: insertTasks) {
+				for(AbstractInsertTask task: insertTasks) {
 					task.destroy();
 				}
 			}
+		}
+
+		public void doCommit() {
+			this.insertTasks.get(0).getConnHolder().doCommit();
 		}
 	}
 }
