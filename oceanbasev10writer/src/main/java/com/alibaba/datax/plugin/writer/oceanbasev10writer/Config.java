@@ -61,4 +61,7 @@ public interface Config {
 
 	String USE_PART_CALCULATOR = "usePartCalculator";
 	boolean DEFAULT_USE_PART_CALCULATOR = false;
+
+	String TENANT_NAME = "tenantName";
+	String CLUSTER_NAME = "clusterName";
 }

@@ -55,19 +55,18 @@ public class ServerConnectInfo {
 				this.tenantName = names[1];
 				this.userName = names[2];
 			}
-		} else if (!publicCloud || tenantIndex < 0) {
-			this.userName = tenantIndex < 0 ? fullUserName : fullUserName.substring(0, tenantIndex);
-			this.clusterName = clusterIndex < 0 ? EMPTY : fullUserName.substring(clusterIndex + 1);
-			this.tenantName = tenantIndex < 0 ? EMPTY : fullUserName.substring(tenantIndex + 1, clusterIndex);
+		} else if (tenantIndex < 0) {
+			this.userName =  fullUserName;
+			this.clusterName = EMPTY;
+			this.tenantName = EMPTY;
 		} else {
-			// If in public cloud, the username with format user@tenant#cluster should be parsed, otherwise, connection can't be created.
 			this.userName = fullUserName.substring(0, tenantIndex);
-			if (clusterIndex > tenantIndex) {
-				this.tenantName = fullUserName.substring(tenantIndex + 1, clusterIndex);
-				this.clusterName = fullUserName.substring(clusterIndex + 1);
-			} else {
-				this.tenantName = fullUserName.substring(tenantIndex + 1);
+			if (clusterIndex < 0) {
 				this.clusterName = EMPTY;
+				this.tenantName = fullUserName.substring(tenantIndex + 1);
+			} else {
+				this.clusterName = fullUserName.substring(clusterIndex + 1);
+				this.tenantName = fullUserName.substring(tenantIndex + 1, clusterIndex);
 			}
 		}
 	}
@@ -83,6 +82,9 @@ public class ServerConnectInfo {
 	public String getFullUserName() {
 		StringBuilder builder = new StringBuilder();
 		builder.append(userName);
+		if (publicCloud) {
+			return builder.toString();
+		}
 		if (!EMPTY.equals(tenantName)) {
 			builder.append("@").append(tenantName);
 		}
