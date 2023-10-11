@@ -46,9 +46,13 @@ public abstract class AbstractConnHolder {
         return initConnection();
     }
 
-    public abstract String getJdbcUrl();
+    public String getUserName() {
+        return userName;
+    }
 
-    public abstract String getUserName();
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
 
     public abstract void destroy();
 

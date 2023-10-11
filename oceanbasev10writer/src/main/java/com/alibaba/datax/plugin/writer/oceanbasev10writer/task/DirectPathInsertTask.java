@@ -2,7 +2,6 @@ package com.alibaba.datax.plugin.writer.oceanbasev10writer.task;
 
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
-import com.alibaba.datax.common.util.MessageSource;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.Table;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.TableCache;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.DirectPathConnHolder;
@@ -19,12 +18,9 @@ import java.util.List;
 import java.util.Queue;
 
 public class DirectPathInsertTask extends AbstractInsertTask {
-    private static final MessageSource MESSAGE_SOURCE = MessageSource.loadResourceBundle(InsertTask.class);
-
     private static final Logger LOG = LoggerFactory.getLogger(DirectPathInsertTask.class);
 
-    public DirectPathInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config,
-                                ServerConnectInfo connectInfo) {
+    public DirectPathInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config, ServerConnectInfo connectInfo) {
         super(taskId, recordsQueue, config, connectInfo);
     }
 
@@ -60,13 +56,11 @@ public class DirectPathInsertTask extends AbstractInsertTask {
                 }
                 calStatistic(System.currentTimeMillis() - startTime);
                 stmt.clearBatch();
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 String msg = MessageFormat.format("Insert data into table \"{0}\" failed. Error: {1}", writerTask.getTable(), ex.getMessage());
                 LOG.error(msg);
                 table.setError(ex);
                 table.setStatus(Table.Status.FAILURE);
-            } finally {
-//                subFile.markdone();
             }
         }
     }

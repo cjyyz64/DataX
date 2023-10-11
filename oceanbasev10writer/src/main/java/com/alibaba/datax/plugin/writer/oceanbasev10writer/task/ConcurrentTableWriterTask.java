@@ -53,7 +53,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     
     private static AtomicLong totalTask = new AtomicLong(0);
     private long taskId = -1;
-    private AtomicBoolean isMemStoreFull = new AtomicBoolean(false);
     private HashMap<Long, List<Record>> groupInsertValues;
     private IObPartCalculator obPartCalculator;
     private ConcurrentTableWriter concurrentWriter = null;
@@ -65,7 +64,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private String obWriteMode = "update";
     private boolean isOracleCompatibleMode = false;
     private String obUpdateColumns = null;
-    private String dbName;
     private int calPartFailedCount = 0;
 	private boolean directPath;
 
@@ -80,10 +78,9 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		// OceanBase 所有操作都是 insert into on duplicate key update 模式
 		// writeMode应该使用enum来定义
 		this.writeMode = "update";
-        obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
+        this.obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
-		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, 0));
-		dbName = connectInfo.databaseName;
+		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, Integer.parseInt(connectInfo.ipPort.split(":")[1])));
 		this.directPath = config.getBool(Config.DIRECT_PATH, false);
 
 		if (!directPath) {
@@ -113,7 +110,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			}
 
 			obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
-			groupInsertValues = new HashMap<Long, List<Record>>();
+			groupInsertValues = new HashMap<>();
 			rewriteSql();
 		}
 
@@ -203,21 +200,18 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
                 if (record.getColumnNumber() != this.columnNumber) {
                     // 源头读取字段列数与目的表字段写入列数不相等，直接报错
                 	LOG.error("column not equal {} != {}, record = {}",
-                			this.columnNumber, record.getColumnNumber(), record.toString());
-                    throw DataXException
-                            .asDataXException(
+                			this.columnNumber, record.getColumnNumber(), record);
+                    throw DataXException.asDataXException(
                                     DBUtilErrorCode.CONF_ERROR,
                                     String.format("Recoverable exception in OB. Roll back this write and hibernate for one minute. SQLState: %d. ErrorCode: %d",
-                                            record.getColumnNumber(),
-                                            this.columnNumber));
+                                            record.getColumnNumber(), this.columnNumber));
                 }
                 addRecordToCache(record);
             }
             addLeftRecords();
             waitTaskFinish();
         } catch (Exception e) {
-            throw DataXException.asDataXException(
-                    DBUtilErrorCode.WRITE_DATA_ERROR, e);
+            throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, e);
         } finally {
             DBUtil.closeDBResources(null, null, connection);
         }
@@ -336,7 +330,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		lock.lock();
 		try {
 			while (!concurrentWriter.checkFinish()) {
-				condition.await(15, TimeUnit.SECONDS);
+				condition.await(50, TimeUnit.MILLISECONDS);
 				print();
 				checkMemStore();
 			}
@@ -374,6 +368,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		private AtomicLong totalTaskCount;
 		private AtomicLong finishTaskCount;
 		private final int threadCount;
+		private Throwable throwable;
 
 		public ConcurrentTableWriter(Configuration config, ServerConnectInfo connInfo, String rewriteRecordSql) {
 			threadCount = config.getInt(Config.WRITER_THREAD_COUNT, Config.DEFAULT_WRITER_THREAD_COUNT);
@@ -406,11 +401,15 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			return rewriteRecordSql;
 		}
 
+		public void setThrowable(Throwable throwable) {
+			this.throwable = throwable;
+		}
+
 		//should check after put all the task in the queue
 		public boolean checkFinish() {
 			long finishCount = finishTaskCount.get();
 			long totalCount = totalTaskCount.get();
-			return finishCount == totalCount;
+			return (finishCount == totalCount) || throwable != null;
 		}
 		
 		public synchronized void start() {

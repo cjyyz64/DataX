@@ -14,7 +14,7 @@ import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractInsertTask implements Runnable{
-    private static final Logger LOG = LoggerFactory.getLogger(InsertTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractInsertTask.class);
     protected final long taskId;
     protected ConcurrentTableWriterTask writerTask;
     protected ConcurrentTableWriterTask.ConcurrentTableWriter writer;
@@ -90,7 +90,7 @@ public abstract class AbstractInsertTask implements Runnable{
             } catch (InterruptedException e) {
                 LOG.debug("TableWriter is interrupt");
             } catch (Exception e) {
-                LOG.warn("ERROR UNEXPECTED {}", e);
+                LOG.warn("ERROR UNEXPECTED ", e);
                 break;
             }
         }

@@ -2,18 +2,25 @@ package com.alibaba.datax.plugin.writer.oceanbasev10writer.ext;
 
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.Table;
 
 import com.alipay.oceanbase.rpc.protocol.payload.impl.direct_load.ObLoadDupActionType;
 import com.oceanbase.directpath.jdbc.DirectPathConnection;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DirectPathConnHolder extends AbstractConnHolder {
+    private static final Logger LOG = LoggerFactory.getLogger(DirectPathConnHolder.class);
+
     /**
      * The server side timeout.
      */
@@ -33,9 +40,18 @@ public class DirectPathConnHolder extends AbstractConnHolder {
 
     public DirectPathConnHolder(Configuration config, ServerConnectInfo connectInfo, String tableName, int threads) {
         super(config, connectInfo.jdbcUrl, connectInfo.userName, connectInfo.password);
+        // direct path:
+        //● publicCloud & odp - single or full
+        //● publicCloud & observer - not support
+        //● !publicCloud & odp - full
+        //● !publicCloud & observer - single
+        this.userName = connectInfo.getFullUserName();
         this.host = connectInfo.host;
         this.rpcPort = connectInfo.rpcPort;
         this.tenantName = connectInfo.tenantName;
+        if (!connectInfo.publicCloud && StringUtils.isEmpty(tenantName)) {
+            throw new IllegalStateException("tenant name is needed when using direct path load in private cloud.");
+        }
         this.databaseName = connectInfo.databaseName;
         this.tableName = tableName;
         this.threads = threads;
@@ -71,22 +87,18 @@ public class DirectPathConnHolder extends AbstractConnHolder {
     }
 
     @Override
-    public String getJdbcUrl() {
-        return null;
-    }
-
-    @Override
-    public String getUserName() {
-        return null;
-    }
-
-    @Override
     public void destroy() {
-
+        if (((DirectPathConnection)conn).isFinished()) {
+            DBUtil.closeDBResources(null, conn);
+        }
     }
 
     @Override
     public void doCommit() {
-
+        try {
+            conn.commit();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
