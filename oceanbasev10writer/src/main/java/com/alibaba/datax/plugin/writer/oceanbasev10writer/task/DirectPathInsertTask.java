@@ -4,11 +4,11 @@ import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.Table;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.TableCache;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.directPath.DirectPathConnection;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.directPath.DirectPathPreparedStatement;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.DirectPathConnHolder;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ServerConnectInfo;
 
-import com.oceanbase.directpath.jdbc.DirectPathConnection;
-import com.oceanbase.directpath.jdbc.DirectPathPreparedStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +20,8 @@ import java.util.Queue;
 public class DirectPathInsertTask extends AbstractInsertTask {
     private static final Logger LOG = LoggerFactory.getLogger(DirectPathInsertTask.class);
 
-    public DirectPathInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config, ServerConnectInfo connectInfo) {
-        super(taskId, recordsQueue, config, connectInfo);
+    public DirectPathInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config, ServerConnectInfo connectInfo, ConcurrentTableWriterTask.ConcurrentTableWriter writer) {
+        super(taskId, recordsQueue, config, connectInfo, writer);
     }
 
     @Override
@@ -44,7 +44,7 @@ public class DirectPathInsertTask extends AbstractInsertTask {
                 Object[] values = new Object[columnNumber];
                 for (Record record : records) {
                     for (int i = 0; i < columnNumber; i++) {
-                        values[i] = record.getColumn(i);
+                        values[i] = record.getColumn(i).asString();
                     }
                     stmt.addBatch(values);
                 }
@@ -58,9 +58,10 @@ public class DirectPathInsertTask extends AbstractInsertTask {
                 stmt.clearBatch();
             } catch (Throwable ex) {
                 String msg = MessageFormat.format("Insert data into table \"{0}\" failed. Error: {1}", writerTask.getTable(), ex.getMessage());
-                LOG.error(msg);
+                LOG.error(msg, ex);
                 table.setError(ex);
                 table.setStatus(Table.Status.FAILURE);
+                writer.setThrowable(ex);
             }
         }
     }

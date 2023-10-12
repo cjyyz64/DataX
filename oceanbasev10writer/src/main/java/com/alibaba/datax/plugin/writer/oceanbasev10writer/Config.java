@@ -71,4 +71,6 @@ public interface Config {
 	String MAX_ERRORS = "maxErrors";
 
 	String RPC_PORT = "rpcPort";
+
+	String DIRECT_PATH_PROPERTIES = "directPathProperties";
 }

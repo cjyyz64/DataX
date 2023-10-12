@@ -82,6 +82,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
 		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, Integer.parseInt(connectInfo.ipPort.split(":")[1])));
 		this.directPath = config.getBool(Config.DIRECT_PATH, false);
+		this.groupInsertValues = new HashMap<>();
 
 		if (!directPath) {
 			//init check memstore
@@ -110,7 +111,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			}
 
 			obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
-			groupInsertValues = new HashMap<>();
 			rewriteSql();
 		}
 
@@ -205,7 +205,10 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
                                     DBUtilErrorCode.CONF_ERROR,
                                     String.format("Recoverable exception in OB. Roll back this write and hibernate for one minute. SQLState: %d. ErrorCode: %d",
                                             record.getColumnNumber(), this.columnNumber));
-                }
+                }// TODO add fast fail
+				if (this.concurrentWriter.throwable != null) {
+					throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "Error happened when insert data to oceanbase, fast fail.",this.concurrentWriter.throwable);
+				}
                 addRecordToCache(record);
             }
             addLeftRecords();
@@ -276,6 +279,9 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		return new ArrayList<Record>(batchSize);
 	}
 	private void checkMemStore() {
+		if (directPath) {
+			return;
+		}
 		Connection checkConn = connHolder.getConn();
 		try {
 			if (checkConn == null || checkConn.isClosed()) {
@@ -351,11 +357,13 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	
 	@Override
 	public void destroy(Configuration writerSliceConfig) {
-	   if(concurrentWriter!=null) {
-		concurrentWriter.destory();
+		if (concurrentWriter != null) {
+			concurrentWriter.destory();
 		}
-		// 把本级持有的conn关闭掉
-		DBUtil.closeDBResources(null, connHolder.getConn());
+		if (!directPath) {
+			// 把本级持有的conn关闭掉
+			DBUtil.closeDBResources(null, connHolder.getConn());
+		}
 		super.destroy(writerSliceConfig);
 	}
 	
@@ -423,12 +431,11 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		private AbstractInsertTask buildInsertTask() {
 			AbstractInsertTask insertTask = null;
 			if (directPath) {
-				insertTask = new DirectPathInsertTask(taskId, queue, config, connectInfo);
+				insertTask = new DirectPathInsertTask(taskId, queue, config, connectInfo, this);
 			} else {
-				insertTask = new JdbcInsertTask(taskId, queue, config, connectInfo);
+				insertTask = new JdbcInsertTask(taskId, queue, config, connectInfo, this);
 			}
 			insertTask.setWriterTask(ConcurrentTableWriterTask.this);
-			insertTask.setWriter(this);
 			insertTask.initConnHolder();
 			return insertTask;
 		}

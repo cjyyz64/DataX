@@ -28,7 +28,7 @@ public abstract class AbstractInsertTask implements Runnable{
     private boolean printCost = Config.DEFAULT_PRINT_COST;
     private long costBound = Config.DEFAULT_COST_BOUND;
 
-    public AbstractInsertTask(final long taskId, Queue<List<Record>> recordsQueue, Configuration config, ServerConnectInfo connectInfo) {
+    public AbstractInsertTask(final long taskId, Queue<List<Record>> recordsQueue, Configuration config, ServerConnectInfo connectInfo, ConcurrentTableWriterTask.ConcurrentTableWriter writer) {
         this.taskId = taskId;
         this.queue = recordsQueue;
         this.config = config;
@@ -36,6 +36,7 @@ public abstract class AbstractInsertTask implements Runnable{
         this.isStop = false;
         this.printCost = config.getBool(Config.PRINT_COST, Config.DEFAULT_PRINT_COST);
         this.costBound = config.getLong(Config.COST_BOUND, Config.DEFAULT_COST_BOUND);
+        this.writer = writer;
     }
 
     public abstract void initConnHolder();

@@ -25,8 +25,8 @@ public class JdbcInsertTask extends AbstractInsertTask {
     private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
 
     public JdbcInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config,
-                          ServerConnectInfo connectInfo) {
-        super(taskId, recordsQueue, config, connectInfo);
+                          ServerConnectInfo connectInfo, ConcurrentTableWriterTask.ConcurrentTableWriter writer) {
+        super(taskId, recordsQueue, config, connectInfo, writer);
         this.writeRecordSql = writer.getRewriteRecordSql();
         this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
     }

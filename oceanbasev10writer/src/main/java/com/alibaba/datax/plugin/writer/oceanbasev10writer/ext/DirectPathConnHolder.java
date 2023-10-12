@@ -6,16 +6,18 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.common.Table;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.directPath.DirectPathConnection;
 
 import com.alipay.oceanbase.rpc.protocol.payload.impl.direct_load.ObLoadDupActionType;
-import com.oceanbase.directpath.jdbc.DirectPathConnection;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DirectPathConnHolder extends AbstractConnHolder {
@@ -36,10 +38,16 @@ public class DirectPathConnHolder extends AbstractConnHolder {
     private int blocks;
     private int threads;
     private int maxErrors;
+    private Properties rpcProperties;
     private ObLoadDupActionType duplicateKeyAction;
 
-    public DirectPathConnHolder(Configuration config, ServerConnectInfo connectInfo, String tableName, int threads) {
+    public DirectPathConnHolder(Configuration config, ServerConnectInfo connectInfo, String tableName, int threadsPerChannel) {
         super(config, connectInfo.jdbcUrl, connectInfo.userName, connectInfo.password);
+        Properties rpcProperties = new Properties();
+        Map<String, Object> directPathConf = config.getMap(Config.DIRECT_PATH_PROPERTIES);
+        if (directPathConf != null) {
+            rpcProperties.putAll(directPathConf);
+        }
         // direct path:
         //● publicCloud & odp - single or full
         //● publicCloud & observer - not support
@@ -54,9 +62,10 @@ public class DirectPathConnHolder extends AbstractConnHolder {
         }
         this.databaseName = connectInfo.databaseName;
         this.tableName = tableName;
-        this.threads = threads;
         this.blocks = config.getInt(Config.BLOCKS_COUNT);
+        this.threads = threadsPerChannel * Math.min(blocks, 32);
         this.maxErrors = config.getInt(Config.MAX_ERRORS, 0);
+        this.rpcProperties = rpcProperties;
         this.duplicateKeyAction = "insert".equalsIgnoreCase(config.getString(Config.OB_WRITE_MODE)) ? ObLoadDupActionType.IGNORE : ObLoadDupActionType.REPLACE;
     }
 
@@ -77,6 +86,7 @@ public class DirectPathConnHolder extends AbstractConnHolder {
                             .maxErrorCount(maxErrors) //
                             .duplicateKeyAction(duplicateKeyAction) //
                             .serverTimeout(SERVER_TIMEOUT) //
+                            .rpcProperties(rpcProperties)
                             .build();
                 } catch (Exception ex) {
                     throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, ex);
