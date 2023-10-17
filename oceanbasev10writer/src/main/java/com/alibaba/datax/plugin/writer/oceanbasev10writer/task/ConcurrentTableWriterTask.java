@@ -27,11 +27,12 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static com.alibaba.datax.plugin.writer.oceanbasev10writer.Config.DEFAULT_SLOW_MEMSTORE_THRESHOLD;
@@ -80,6 +81,12 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		this.writeMode = "update";
         this.obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
+		if (StringUtils.isNotEmpty(config.getString(Config.TENANT_NAME))) {
+			connectInfo.tenantName = config.getString(Config.TENANT_NAME);
+		}
+		if (StringUtils.isNotEmpty(config.getString(Config.CLUSTER_NAME))) {
+			connectInfo.clusterName = config.getString(Config.CLUSTER_NAME);
+		}
 		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, Integer.parseInt(connectInfo.ipPort.split(":")[1])));
 		this.directPath = config.getBool(Config.DIRECT_PATH, false);
 		this.groupInsertValues = new HashMap<>();

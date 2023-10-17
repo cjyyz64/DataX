@@ -1,6 +1,5 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer;
 
-import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.spi.Writer;
 import com.alibaba.datax.common.util.Configuration;
@@ -11,6 +10,7 @@ import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter;
 import com.alibaba.datax.plugin.rdbms.writer.Constant;
 import com.alibaba.datax.plugin.rdbms.writer.Key;
 import com.alibaba.datax.plugin.rdbms.writer.util.WriterUtil;
+import com.alibaba.datax.plugin.writer.oceanbasev10writer.ext.ServerConnectInfo;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.task.ConcurrentTableWriterTask;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.DbUtils;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
@@ -60,6 +60,7 @@ public class OceanBaseV10Writer extends Writer {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
+            dealUsername();
             checkCompatibleMode(originalConfig);
             //将config中的column和table中的关键字进行转义
             List<String> columns = originalConfig.getList(Key.COLUMN, String.class);
@@ -76,6 +77,23 @@ public class OceanBaseV10Writer extends Writer {
             }
             this.commonJob = new CommonRdbmsWriter.Job(DATABASE_TYPE);
             this.commonJob.init(this.originalConfig);
+        }
+
+        private void dealUsername() {
+            final String username = originalConfig.getString(Key.USERNAME);
+            final String password = originalConfig.getString(Key.PASSWORD);
+            String jdbcUrl = originalConfig.getString(Key.JDBC_URL);
+
+            if (jdbcUrl == null) {
+                List<Object> conns = originalConfig.getList(Constant.CONN_MARK, Object.class);
+                Configuration connConf = Configuration.from(conns.get(0).toString());
+                jdbcUrl = connConf.getString(Key.JDBC_URL);
+            }
+            jdbcUrl = DATABASE_TYPE.appendJDBCSuffixForWriter(jdbcUrl);
+            ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
+            originalConfig.set(Key.USERNAME, connectInfo.getFullUserName());
+            originalConfig.set(Config.TENANT_NAME, connectInfo.tenantName);
+            originalConfig.set(Config.CLUSTER_NAME, connectInfo.clusterName);
         }
 
         /**
