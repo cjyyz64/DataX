@@ -32,6 +32,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static com.alibaba.datax.plugin.writer.oceanbasev10writer.Config.DEFAULT_SLOW_MEMSTORE_THRESHOLD;
@@ -53,7 +55,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     
     private static AtomicLong totalTask = new AtomicLong(0);
     private long taskId = -1;
-    private AtomicBoolean isMemStoreFull = new AtomicBoolean(false);
     private HashMap<Long, List<Record>> groupInsertValues;
     private IObPartCalculator obPartCalculator;
     private ConcurrentTableWriter concurrentWriter = null;
@@ -81,6 +82,12 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		this.writeMode = "update";
         obWriteMode = config.getString(Config.OB_WRITE_MODE, "update");
 		ServerConnectInfo connectInfo = new ServerConnectInfo(jdbcUrl, username, password);
+		if (StringUtils.isNotEmpty(config.getString(Config.TENANT_NAME))) {
+			connectInfo.tenantName = config.getString(Config.TENANT_NAME);
+		}
+		if (StringUtils.isNotEmpty(config.getString(Config.CLUSTER_NAME))) {
+			connectInfo.clusterName = config.getString(Config.CLUSTER_NAME);
+		}
 		dbName = connectInfo.databaseName;
 		//init check memstore
 		this.memstoreThreshold = config.getDouble(Config.MEMSTORE_THRESHOLD, Config.DEFAULT_MEMSTORE_THRESHOLD);
@@ -302,10 +309,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		}
 		lastCheckMemstoreTime = now;
 	}
-	
-	public boolean isMemStoreFull() {
-		return isMemStoreFull.get();
-	}
 
 	public boolean isShouldPause() {
 		return this.loadMode.equals(PAUSE);
@@ -330,7 +333,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		lock.lock();
 		try {
 			while (!concurrentWriter.checkFinish()) {
-				condition.await(15, TimeUnit.SECONDS);
+				condition.await(50, TimeUnit.MILLISECONDS);
 				print();
 				checkMemStore();
 			}
