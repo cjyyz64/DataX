@@ -98,7 +98,7 @@ public class DirectPathConnHolder extends AbstractConnHolder {
 
     @Override
     public void destroy() {
-        if (((DirectPathConnection)conn).isFinished()) {
+        if (conn != null && ((DirectPathConnection) conn).isFinished()) {
             DBUtil.closeDBResources(null, conn);
         }
     }
@@ -106,7 +106,9 @@ public class DirectPathConnHolder extends AbstractConnHolder {
     @Override
     public void doCommit() {
         try {
-            conn.commit();
+            if (conn != null) {
+                conn.commit();
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
