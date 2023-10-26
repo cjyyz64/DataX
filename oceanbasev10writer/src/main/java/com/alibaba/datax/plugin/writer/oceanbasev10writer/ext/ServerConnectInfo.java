@@ -96,7 +96,7 @@ public class ServerConnectInfo {
 	public String getFullUserName() {
 		StringBuilder builder = new StringBuilder();
 		builder.append(userName);
-		if (publicCloud) {
+		if (publicCloud || (rpcPort != 0 && EMPTY.equals(clusterName))) {
 			return builder.toString();
 		}
 		if (!EMPTY.equals(tenantName)) {

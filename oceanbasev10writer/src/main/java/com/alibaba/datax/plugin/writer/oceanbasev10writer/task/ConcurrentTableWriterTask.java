@@ -87,7 +87,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		if (StringUtils.isNotEmpty(config.getString(Config.CLUSTER_NAME))) {
 			connectInfo.clusterName = config.getString(Config.CLUSTER_NAME);
 		}
-		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, Integer.parseInt(connectInfo.ipPort.split(":")[1])));
+		connectInfo.setRpcPort(config.getInt(Config.RPC_PORT, 0));
 		this.directPath = config.getBool(Config.DIRECT_PATH, false);
 		this.groupInsertValues = new HashMap<>();
 
