@@ -181,7 +181,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
         do {
         	try {
         		if (retryTimes > 0) {
-        			TimeUnit.SECONDS.sleep((1 << retryTimes));
+        			TimeUnit.SECONDS.sleep(Math.min(1 << retryTimes, 10));
     				DBUtil.closeDBResources(null, connection);
         			connection = DBUtil.getConnection(dataBaseType, jdbcUrl, username, password);
         			LOG.warn("getColumnMetaData of table {} failed, retry the {} times ...", this.table, retryTimes);
@@ -212,7 +212,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
                                     DBUtilErrorCode.CONF_ERROR,
                                     String.format("Recoverable exception in OB. Roll back this write and hibernate for one minute. SQLState: %d. ErrorCode: %d",
                                             record.getColumnNumber(), this.columnNumber));
-                }// TODO add fast fail
+                }
 				if (this.concurrentWriter.throwable != null) {
 					throw DataXException.asDataXException(DBUtilErrorCode.WRITE_DATA_ERROR, "Error happened when insert data to oceanbase, fast fail.",this.concurrentWriter.throwable);
 				}
