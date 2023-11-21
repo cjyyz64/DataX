@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +43,7 @@ import static com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUt
 
 public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ConcurrentTableWriterTask.class);
-
+	private Configuration config;
 	// memstore_total 与 memstore_limit 比例的阈值,一旦超过这个值,则暂停写入
 	private double memstoreThreshold = Config.DEFAULT_MEMSTORE_THRESHOLD;
 	// memstore检查的间隔
@@ -67,6 +68,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
     private String obUpdateColumns = null;
     private int calPartFailedCount = 0;
 	private boolean directPath;
+	private Map<String, String> placeHolderMap;
 
 	public ConcurrentTableWriterTask(DataBaseType dataBaseType) {
 		super(dataBaseType);
@@ -76,6 +78,7 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	@Override
 	public void init(Configuration config) {
 		super.init(config);
+		this.config = config;
 		// OceanBase 所有操作都是 insert into on duplicate key update 模式
 		// writeMode应该使用enum来定义
 		this.writeMode = "update";
@@ -118,11 +121,11 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			}
 
 			obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
-			rewriteSql();
+			this.placeHolderMap = config.getMap(Config.CUSTOMIZED_PLACEHOLDER, new HashMap<>(), String.class);
 		}
 
         if (null == concurrentWriter) {
-            concurrentWriter = new ConcurrentTableWriter(config, connectInfo, writeRecordSql);
+            concurrentWriter = new ConcurrentTableWriter(config, connectInfo);
             allTaskInQueue = false;
         }
     }
@@ -153,16 +156,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 				concurrentWriter.getTaskQueueSize(),
 				concurrentWriter.getTotalTaskCount(),
 				concurrentWriter.getFinishTaskCount());
-	}
-	
-	private void rewriteSql() {
-		Connection conn = connHolder.initConnection();
-		if (isOracleCompatibleMode && obWriteMode.equalsIgnoreCase("update")) {
-			// change obWriteMode to insert so the insert statement will be generated.
-			obWriteMode = "insert";
-		}
-		this.writeRecordSql = ObWriterUtils.buildWriteSql(table, columns, conn, obWriteMode, obUpdateColumns);
-		LOG.info("writeRecordSql :{}", this.writeRecordSql);
 	}
 
     @Override
@@ -199,6 +192,8 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 			} finally {
         	}
         } while (needRetry && retryTimes < 100);
+		// 写数据库的SQL语句
+		rewriteSql();
 
         try {
             Record record;
@@ -230,6 +225,16 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	public PreparedStatement fillStatement(PreparedStatement preparedStatement, Record record)
 			throws SQLException {
 		return fillPreparedStatement(preparedStatement, record);
+	}
+
+	private void rewriteSql() {
+		if ("insert".equalsIgnoreCase(this.obWriteMode)) {
+			this.writeRecordSql = ObWriterUtils.buildInsertSql(this.table, this.columns, placeHolderMap);
+		} else {
+			Connection conn = connHolder.initConnection();
+			this.writeRecordSql = this.isOracleCompatibleMode ? ObWriterUtils.buildOracleUpdateSql(config, jdbcUrl, table, columns, conn, placeHolderMap) : ObWriterUtils.buildMysqlUpdateSql(config, table, columns, conn, placeHolderMap);
+		}
+		LOG.info("writeRecordSql :{}", this.writeRecordSql);
 	}
 
 	private void addLeftRecords() {
@@ -320,12 +325,12 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		return this.loadMode.equals(SLOW);
 	}
 
-	public boolean isDirectPath() {
-		return directPath;
-	}
-
 	public String getTable() {
 		return table;
+	}
+
+	public String getWriteRecordSql() {
+		return writeRecordSql;
 	}
 
 	public void print() {
@@ -379,19 +384,17 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		private List<AbstractInsertTask> insertTasks;
 		private Configuration config;
 		private ServerConnectInfo connectInfo;
-		private String rewriteRecordSql;
 		private AtomicLong totalTaskCount;
 		private AtomicLong finishTaskCount;
 		private final int threadCount;
 		private Throwable throwable;
 
-		public ConcurrentTableWriter(Configuration config, ServerConnectInfo connInfo, String rewriteRecordSql) {
+		public ConcurrentTableWriter(Configuration config, ServerConnectInfo connInfo) {
 			threadCount = config.getInt(Config.WRITER_THREAD_COUNT, Config.DEFAULT_WRITER_THREAD_COUNT);
 			queue = new LinkedBlockingQueue<>(threadCount << 1);
 			insertTasks = new ArrayList<>(threadCount);
 			this.config = config;
 			this.connectInfo = connInfo;
-			this.rewriteRecordSql = rewriteRecordSql;
 			this.totalTaskCount = new AtomicLong(0);
 			this.finishTaskCount = new AtomicLong(0);
 		}
@@ -410,10 +413,6 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 		
 		public void increFinishCount() {
 			finishTaskCount.incrementAndGet();
-		}
-
-		public String getRewriteRecordSql() {
-			return rewriteRecordSql;
 		}
 
 		public void setThrowable(Throwable throwable) {

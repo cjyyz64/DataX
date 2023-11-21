@@ -58,6 +58,7 @@ public interface Config {
 	int DEFAULT_OCJ_CREATE_RESOURCE_TIMEOUT = 60000; // 60s
 
 	String OB_UPDATE_COLUMNS = "obUpdateColumns";
+	String ON_CLAUSE_COLUMNS = "onClauseColumns";
 
 	String USE_PART_CALCULATOR = "usePartCalculator";
 	boolean DEFAULT_USE_PART_CALCULATOR = false;
@@ -75,4 +76,6 @@ public interface Config {
 	String RPC_PORT = "rpcPort";
 
 	String DIRECT_PATH_PROPERTIES = "directPathProperties";
+
+	String CUSTOMIZED_PLACEHOLDER = "customizedPlaceHolder";
 }

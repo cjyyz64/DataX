@@ -19,7 +19,6 @@ import java.util.Queue;
 
 public class JdbcInsertTask extends AbstractInsertTask {
     private static final Logger LOG = LoggerFactory.getLogger(JdbcInsertTask.class);
-    private String writeRecordSql;
 
     // 失败重试次数
     private int failTryCount = Config.DEFAULT_FAIL_TRY_COUNT;
@@ -27,7 +26,6 @@ public class JdbcInsertTask extends AbstractInsertTask {
     public JdbcInsertTask(long taskId, Queue<List<Record>> recordsQueue, Configuration config,
                           ServerConnectInfo connectInfo, ConcurrentTableWriterTask.ConcurrentTableWriter writer) {
         super(taskId, recordsQueue, config, connectInfo, writer);
-        this.writeRecordSql = writer.getRewriteRecordSql();
         this.failTryCount = config.getInt(Config.FAIL_TRY_COUNT, Config.DEFAULT_FAIL_TRY_COUNT);
     }
 
@@ -55,7 +53,7 @@ public class JdbcInsertTask extends AbstractInsertTask {
                 PreparedStatement ps = null;
                 try {
                     conn.setAutoCommit(false);
-                    ps = conn.prepareStatement(writeRecordSql);
+                    ps = conn.prepareStatement(writerTask.getWriteRecordSql());
                     for (Record record : records) {
                         ps = writerTask.fillStatement(ps, record);
                         ps.addBatch();
@@ -90,7 +88,7 @@ public class JdbcInsertTask extends AbstractInsertTask {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    LOG.warn("Insert error unexpected {}", e);
+                    LOG.warn("Insert error unexpected: ", e);
                 } finally {
                     DBUtil.closeDBResources(ps, null);
                 }
