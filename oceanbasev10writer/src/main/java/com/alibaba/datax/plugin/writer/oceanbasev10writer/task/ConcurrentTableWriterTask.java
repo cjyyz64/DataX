@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer.task;
 
+import com.alibaba.datax.common.element.Column;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.exception.DataXException;
 import com.alibaba.datax.common.plugin.RecordReceiver;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
@@ -21,6 +23,7 @@ import com.oceanbase.partition.calculator.enums.ObServerMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +35,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -225,6 +229,36 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	public PreparedStatement fillStatement(PreparedStatement preparedStatement, Record record)
 			throws SQLException {
 		return fillPreparedStatement(preparedStatement, record);
+	}
+
+	@Override
+	protected boolean fillPreparedStatementColumnType4CustomType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
+		if (columnSqltype == -102 || columnSqltype == -101) {
+			// TIMESTAMP WITH TIMEZONE
+			// TIMESTAMP WITH LOCAL TIMEZONE
+			java.util.Date utilDate;
+			Timestamp sqlTimestamp = null;
+			String timestampStr = column.asString();
+			if (column instanceof StringColumn && timestampStr != null) {
+				// JAVA TIMESTAMP 类型入参必须是 "2017-07-12 14:39:00.123566" 格式
+				String pattern = "^\\d+-\\d+-\\d+ \\d+:\\d+:\\d+.\\d+";
+				boolean isMatch = Pattern.matches(pattern, timestampStr);
+				if (isMatch) {
+					sqlTimestamp = Timestamp.valueOf(timestampStr);
+					preparedStatement.setTimestamp(columnIndex + 1, sqlTimestamp);
+					return true;
+				}
+			}
+			// 统一使用String格式插入，避免出现时区错误的问题
+			preparedStatement.setString(columnIndex + 1, timestampStr);
+			return true;
+		} else if (columnSqltype == -103 || columnSqltype == -104) {
+			// INTERVAL YEAR TO MONTH
+			// INTERVAL DAY TO SECOND
+			preparedStatement.setString(columnIndex + 1, column.asString());
+			return true;
+		}
+		return false;
 	}
 
 	private void rewriteSql() {

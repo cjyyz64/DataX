@@ -543,6 +543,10 @@ public class CommonRdbmsWriter {
                     }
                     break;
                 default:
+                    boolean isHandled = fillPreparedStatementColumnType4CustomType(preparedStatement, columnIndex, columnSqltype, column);
+                    if (isHandled) {
+                        break;
+                    }
                     throw DataXException
                             .asDataXException(
                                     DBUtilErrorCode.UNSUPPORTED_TYPE,
@@ -556,6 +560,20 @@ public class CommonRdbmsWriter {
                                                     .get(columnIndex)));
             }
             return preparedStatement;
+        }
+
+        /**
+         * 给子类预留的扩展点，用于处理特殊的数据库字段类型，默认什么都不做
+         *
+         * @param preparedStatement
+         * @param columnIndex
+         * @param columnSqltype
+         * @param column
+         * @return true表示类型子类处理过，反之false
+         * @throws SQLException 入参错误或解析异常时抛出
+         */
+        protected boolean fillPreparedStatementColumnType4CustomType(PreparedStatement preparedStatement, int columnIndex, int columnSqltype, Column column) throws SQLException {
+            return false;
         }
 
         private void calcWriteRecordSql() {
