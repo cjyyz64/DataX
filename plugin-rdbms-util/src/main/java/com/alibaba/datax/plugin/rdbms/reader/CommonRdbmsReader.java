@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -325,6 +326,10 @@ public class CommonRdbmsReader {
                         break;
 
                     default:
+                        boolean isHandled = buildRecord4CustomType(record, rs, i, metaData, columnNumber, mandatoryEncoding, taskPluginCollector);
+                        if (isHandled) {
+                            break;
+                        }
                         throw DataXException
                                 .asDataXException(
                                         DBUtilErrorCode.UNSUPPORTED_TYPE,
@@ -347,6 +352,23 @@ public class CommonRdbmsReader {
                 }
             }
             return record;
+        }
+
+        /**
+         * 给子类预留的扩展点，用于处理特殊的数据库字段类型，默认什么都不做
+         *
+         * @param record              record实例
+         * @param rs
+         * @param colIdx              字段序号
+         * @param metaData
+         * @param columnNumber
+         * @param mandatoryEncoding
+         * @param taskPluginCollector
+         * @return true表示类型子类处理过，反之false
+         */
+        protected boolean buildRecord4CustomType(Record record, ResultSet rs, int colIdx, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding, TaskPluginCollector taskPluginCollector) throws
+                SQLException {
+            return false;
         }
     }
 

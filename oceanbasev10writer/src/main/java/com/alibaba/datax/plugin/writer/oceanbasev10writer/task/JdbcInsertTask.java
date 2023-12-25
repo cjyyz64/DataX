@@ -115,9 +115,4 @@ public class JdbcInsertTask extends AbstractInsertTask {
             }
         }
     }
-
-    @Override
-    public void destroy() {
-        connHolder.destroy();
-    }
 }

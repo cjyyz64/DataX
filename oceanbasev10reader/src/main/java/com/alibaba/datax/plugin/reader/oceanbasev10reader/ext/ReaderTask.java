@@ -1,7 +1,9 @@
 package com.alibaba.datax.plugin.reader.oceanbasev10reader.ext;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
@@ -15,13 +17,20 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.Config;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.ObReaderUtils;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.TaskContext;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ReaderTask extends CommonRdbmsReader.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ReaderTask.class);
@@ -202,7 +211,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         }
         Statement stmt = null;
         ResultSet rs = null;
-        String sql = "select 1" + (compatibleMode == ObReaderUtils.OB_COMPATIBLE_MODE_ORACLE ? " from dual" : "");
+        String sql = "select 1" + (Objects.equals(compatibleMode, ObReaderUtils.OB_COMPATIBLE_MODE_ORACLE) ? " from dual" : "");
         try {
             stmt = conn.createStatement();
             rs = stmt.executeQuery(sql);
@@ -293,5 +302,25 @@ public class ReaderTask extends CommonRdbmsReader.Task {
                 ObReaderUtils.close(rs, ps, conn);
             }
         }
+    }
+
+    @Override
+    protected boolean buildRecord4CustomType(Record record, ResultSet rs, int colIdx, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding, TaskPluginCollector taskPluginCollector)
+            throws SQLException {
+        int sqlType = metaData.getColumnType(colIdx);
+        if (sqlType == -101 || sqlType == -102) {
+            // TIMESTAMP WITH TIMEZONE
+            // TIMESTAMP WITH LOCAL TIMEZONE
+            DateColumn dateColumn;
+            dateColumn = new DateColumn(rs.getTimestamp(colIdx));
+            record.addColumn(dateColumn);
+            return true;
+        } else if (sqlType == -103 || sqlType == -104) {
+            // INTERVAL YEAR TO MONTH
+            // INTERVAL DAY TO SECOND
+            record.addColumn(new StringColumn(rs.getString(colIdx)));
+            return true;
+        }
+        return false;
     }
 }

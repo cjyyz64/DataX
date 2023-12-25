@@ -41,7 +41,11 @@ public abstract class AbstractInsertTask implements Runnable{
 
     public abstract void initConnHolder();
 
-    public void destroy() {}
+    public void destroy() {
+        if (connHolder != null) {
+            connHolder.destroy();
+        }
+    }
 
     public void setWriterTask(ConcurrentTableWriterTask writerTask) {
         this.writerTask = writerTask;

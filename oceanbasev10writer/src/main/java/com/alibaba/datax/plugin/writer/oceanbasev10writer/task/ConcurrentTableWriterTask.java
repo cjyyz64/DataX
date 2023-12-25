@@ -193,9 +193,8 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
         		LOG.warn("fetch column meta of [{}] failed..., retry {} times", this.table, retryTimes);
         	} catch (InterruptedException e) {
 				LOG.warn("startWriteWithConnection interrupt, ignored");
-			} finally {
-        	}
-        } while (needRetry && retryTimes < 100);
+			}
+		} while (needRetry && retryTimes < 100);
 		// 写数据库的SQL语句
 		rewriteSql();
 
@@ -262,6 +261,9 @@ public class ConcurrentTableWriterTask extends CommonRdbmsWriter.Task {
 	}
 
 	private void rewriteSql() {
+		if (directPath) {
+			return;
+		}
 		if ("insert".equalsIgnoreCase(this.obWriteMode)) {
 			this.writeRecordSql = ObWriterUtils.buildInsertSql(this.table, this.columns, placeHolderMap);
 		} else {

@@ -28,13 +28,9 @@ public class OceanBaseReader extends Reader {
         @Override
         public void init() {
             this.originalConfig = super.getPluginJobConf();
-
-            Integer userConfigedFetchSize = this.originalConfig.getInt(Constant.FETCH_SIZE);
-            if (userConfigedFetchSize != null) {
-                LOG.warn("The [fetchSize] is not recognized, please use readBatchSize instead.");
-            }
-            this.originalConfig.set(Constant.FETCH_SIZE, Integer.MIN_VALUE);
             setDatabaseType(originalConfig);
+            int defaultFetchSize = "ORACLE".equalsIgnoreCase(ObReaderUtils.compatibleMode) ? 10 : Integer.MIN_VALUE;
+            this.originalConfig.set(Constant.FETCH_SIZE, this.originalConfig.getInt(Constant.FETCH_SIZE, defaultFetchSize));
             this.readerJob = new ReaderJob();
             this.readerJob.init(this.originalConfig);
         }
