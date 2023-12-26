@@ -1,11 +1,10 @@
 package com.alibaba.datax.plugin.reader.oceanbasev10reader.util;
 
-import java.sql.Connection;
-import java.util.Collections;
-import java.util.List;
-
 import com.alibaba.datax.common.element.Record;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.ext.IndexSchema;
+
+import java.sql.Connection;
+import java.util.List;
 
 public class TaskContext {
     private Connection conn;
@@ -45,7 +44,7 @@ public class TaskContext {
 
     private final int transferColumnNumber;
 
-    public TaskContext(String table, List<String> columns, String where, int fetchSize) {
+    public TaskContext(String dbName, String table, List<String> columns, String where, int fetchSize) {
         this.dbName = dbName;
         this.table = table;
         this.columns = columns;
