@@ -1,7 +1,9 @@
 package com.alibaba.datax.plugin.reader.oceanbasev10reader.ext;
 
 import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DateColumn;
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
 import com.alibaba.datax.common.plugin.RecordSender;
 import com.alibaba.datax.common.plugin.TaskPluginCollector;
 import com.alibaba.datax.common.statistics.PerfRecord;
@@ -15,13 +17,20 @@ import com.alibaba.datax.plugin.rdbms.util.RdbmsException;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.Config;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.ObReaderUtils;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.util.TaskContext;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class ReaderTask extends CommonRdbmsReader.Task {
     private static final Logger LOG = LoggerFactory.getLogger(ReaderTask.class);
@@ -39,7 +48,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
     private boolean reuseConn = false;
 
     public ReaderTask(int taskGroupId, int taskId) {
-        super(ObReaderUtils.databaseType, taskGroupId, taskId);
+        super(ObReaderUtils.DATABASE_TYPE, taskGroupId, taskId);
         this.taskGroupId = taskGroupId;
         this.taskId = taskId;
     }
@@ -90,6 +99,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
     public void startRead(Configuration readerSliceConfig, RecordSender recordSender,
                           TaskPluginCollector taskPluginCollector, int fetchSize) {
         String querySql = readerSliceConfig.getString(Key.QUERY_SQL);
+        String dbName = readerSliceConfig.getString(Key.DBNAME);
         String table = readerSliceConfig.getString(Key.TABLE);
         PerfTrace.getInstance().addTaskDetails(taskId, table + "," + jdbcUrl);
         List<String> columns = readerSliceConfig.getList(Key.COLUMN_LIST, String.class);
@@ -104,7 +114,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         if (readBatchSize < 10000) {
             readBatchSize = 10000;
         }
-        TaskContext context = new TaskContext(table, columns, where, fetchSize);
+        TaskContext context = new TaskContext(dbName, table, columns, where, fetchSize);
         context.setQuerySql(querySql);
         context.setWeakRead(weakRead);
         context.setCompatibleMode(compatibleMode);
@@ -134,17 +144,21 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             return;
         }
         // check primary key index
-        Connection conn = DBUtil.getConnection(ObReaderUtils.databaseType, jdbcUrl, username, password);
+        Connection conn = DBUtil.getConnection(ObReaderUtils.DATABASE_TYPE, jdbcUrl, username, password);
         ObReaderUtils.initConn4Reader(conn, queryTimeoutSeconds);
         context.setConn(conn);
         try {
-            ObReaderUtils.initIndex(conn, context);
-            ObReaderUtils.matchPkIndexs(conn, context);
+            ObReaderUtils.initPageQueryIndex(conn, context);
+            ObReaderUtils.matchPkIndexs(context);
         } catch (Throwable e) {
             LOG.warn("fetch PkIndexs fail,table=" + context.getTable(), e);
         }
         // 如果不是table 且 pk不存在 则仍然使用原来的做法
+        StringBuilder queryTemplate = ObReaderUtils.buildQueryTemplate(context);
         if (context.getPkIndexs() == null) {
+            if (StringUtils.isBlank(context.getQuerySql())) {
+                context.setQuerySql(queryTemplate.toString());
+            }
             doRead(recordSender, taskPluginCollector, context);
             return;
         }
@@ -161,8 +175,8 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         // 正常结束 则 break
         // }
         context.setReadBatchSize(readBatchSize);
-        String getFirstQuerySql = ObReaderUtils.buildFirstQuerySql(context);
-        String appendQuerySql = ObReaderUtils.buildAppendQuerySql(conn, context);
+        String getFirstQuerySql = ObReaderUtils.buildFirstQuerySql(context, queryTemplate);
+        String appendQuerySql = ObReaderUtils.buildAppendQuerySql(context, queryTemplate);
         LOG.warn("start table scan key : {}", context.getIndexName() == null ? "primary" : context.getIndexName());
         context.setQuerySql(getFirstQuerySql);
         boolean firstQuery = true;
@@ -180,7 +194,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
                 }
             } catch (Throwable e) {
                 if (retryLimit == ++retryCount) {
-                    throw RdbmsException.asQueryException(ObReaderUtils.databaseType, new Exception(e),
+                    throw RdbmsException.asQueryException(ObReaderUtils.DATABASE_TYPE, new Exception(e),
                             context.getQuerySql(), context.getTable(), username);
                 }
                 LOG.error("read fail, retry count " + retryCount + ", sleep 60 second, save point:" +
@@ -202,7 +216,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         }
         Statement stmt = null;
         ResultSet rs = null;
-        String sql = "select 1" + (compatibleMode == ObReaderUtils.OB_COMPATIBLE_MODE_ORACLE ? " from dual" : "");
+        String sql = "select 1" + (Objects.equals(compatibleMode, ObReaderUtils.OB_COMPATIBLE_MODE_ORACLE) ? " from dual" : "");
         try {
             stmt = conn.createStatement();
             rs = stmt.executeQuery(sql);
@@ -223,7 +237,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             LOG.info("connection is alive, will reuse this connection.");
         } else {
             LOG.info("Create new connection for reader.");
-            conn = DBUtil.getConnection(ObReaderUtils.databaseType, jdbcUrl, username, password);
+            conn = DBUtil.getConnection(ObReaderUtils.DATABASE_TYPE, jdbcUrl, username, password);
             ObReaderUtils.initConn4Reader(conn, queryTimeoutSeconds);
             context.setConn(conn);
         }
@@ -283,7 +297,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             ObReaderUtils.close(null, null, context.getConn());
             context.setConn(null);
             LOG.error("reader data fail", e);
-            throw RdbmsException.asQueryException(ObReaderUtils.databaseType, e, context.getQuerySql(),
+            throw RdbmsException.asQueryException(ObReaderUtils.DATABASE_TYPE, e, context.getQuerySql(),
                     context.getTable(), username);
         } finally {
             perfRecord.end();
@@ -293,5 +307,25 @@ public class ReaderTask extends CommonRdbmsReader.Task {
                 ObReaderUtils.close(rs, ps, conn);
             }
         }
+    }
+
+    @Override
+    protected boolean buildRecord4CustomType(Record record, ResultSet rs, int colIdx, ResultSetMetaData metaData, int columnNumber, String mandatoryEncoding, TaskPluginCollector taskPluginCollector)
+            throws SQLException {
+        int sqlType = metaData.getColumnType(colIdx);
+        if (sqlType == -101 || sqlType == -102) {
+            // TIMESTAMP WITH TIMEZONE
+            // TIMESTAMP WITH LOCAL TIMEZONE
+            DateColumn dateColumn;
+            dateColumn = new DateColumn(rs.getTimestamp(colIdx));
+            record.addColumn(dateColumn);
+            return true;
+        } else if (sqlType == -103 || sqlType == -104) {
+            // INTERVAL YEAR TO MONTH
+            // INTERVAL DAY TO SECOND
+            record.addColumn(new StringColumn(rs.getString(colIdx)));
+            return true;
+        }
+        return false;
     }
 }

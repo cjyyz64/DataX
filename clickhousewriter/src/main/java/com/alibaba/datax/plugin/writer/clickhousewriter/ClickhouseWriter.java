@@ -271,9 +271,10 @@ public class ClickhouseWriter extends Writer {
 					}
 				}
 
-				boolean fillPreparedStatementColumnType4CustomType(PreparedStatement ps,
-				                                                   int columnIndex, int columnSqltype,
-				                                                   Column column) throws SQLException {
+				@Override
+				protected boolean fillPreparedStatementColumnType4CustomType(PreparedStatement ps,
+																			 int columnIndex, int columnSqltype,
+																			 Column column) throws SQLException {
 					switch (columnSqltype) {
 						case Types.OTHER:
 							if (this.resultSetMetaData.getRight().get(columnIndex).startsWith("Tuple")) {

@@ -13,9 +13,15 @@ public abstract class AbstractConnHolder {
 
     protected final Configuration config;
     protected Connection conn;
+    protected String jdbcUrl;
+    protected String userName;
+    protected String password;
 
-    public AbstractConnHolder(Configuration config) {
+    public AbstractConnHolder(Configuration config, String jdbcUrl, String userName, String password) {
         this.config = config;
+        this.jdbcUrl = jdbcUrl;
+        this.userName = userName;
+        this.password = password;
     }
 
     public abstract Connection initConnection();
@@ -40,9 +46,15 @@ public abstract class AbstractConnHolder {
         return initConnection();
     }
 
-    public abstract String getJdbcUrl();
+    public String getUserName() {
+        return userName;
+    }
 
-    public abstract String getUserName();
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
 
     public abstract void destroy();
+
+    public abstract void doCommit();
 }

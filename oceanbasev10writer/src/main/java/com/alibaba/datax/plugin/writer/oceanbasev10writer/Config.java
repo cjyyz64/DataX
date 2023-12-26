@@ -58,10 +58,24 @@ public interface Config {
 	int DEFAULT_OCJ_CREATE_RESOURCE_TIMEOUT = 60000; // 60s
 
 	String OB_UPDATE_COLUMNS = "obUpdateColumns";
+	String ON_CLAUSE_COLUMNS = "onClauseColumns";
 
 	String USE_PART_CALCULATOR = "usePartCalculator";
 	boolean DEFAULT_USE_PART_CALCULATOR = false;
 
 	String TENANT_NAME = "tenantName";
 	String CLUSTER_NAME = "clusterName";
+
+	String BLOCKS_COUNT = "blocksCount";
+
+	String DIRECT_PATH = "directPath";
+
+	// 区别于recordLimit，这个参数仅针对某张表。即一张表超过最大错误数不会影响其他表。仅用于旁路导入。
+	String MAX_ERRORS = "maxErrors";
+
+	String RPC_PORT = "rpcPort";
+
+	String DIRECT_PATH_PROPERTIES = "directPathProperties";
+
+	String CUSTOMIZED_PLACEHOLDER = "customizedPlaceHolder";
 }

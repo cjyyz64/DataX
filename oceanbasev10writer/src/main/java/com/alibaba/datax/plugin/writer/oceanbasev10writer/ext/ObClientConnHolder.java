@@ -10,6 +10,9 @@ import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 数据库连接代理对象,负责创建连接，重新连接
  *
@@ -17,15 +20,10 @@ import com.alibaba.datax.plugin.writer.oceanbasev10writer.util.ObWriterUtils;
  *
  */
 public class ObClientConnHolder extends AbstractConnHolder {
-	private final String jdbcUrl;
-	private final String userName;
-	private final String password;
+	private static final Logger LOG = LoggerFactory.getLogger(ObClientConnHolder.class);
 
 	public ObClientConnHolder(Configuration config, String jdbcUrl, String userName, String password) {
-		super(config);
-		this.jdbcUrl = jdbcUrl;
-		this.userName = userName;
-		this.password = password;
+		super(config, jdbcUrl,userName,password);
 	}
 
 	// Connect to ob with obclient and obproxy
@@ -47,17 +45,10 @@ public class ObClientConnHolder extends AbstractConnHolder {
 	}
 
 	@Override
-	public String getJdbcUrl() {
-		return jdbcUrl;
-	}
-
-	@Override
-	public String getUserName() {
-		return userName;
-	}
-
-	@Override
 	public void destroy() {
 		DBUtil.closeDBResources(null, conn);
 	}
+
+	@Override
+	public void doCommit() {}
 }

@@ -1,9 +1,13 @@
 package com.alibaba.datax.plugin.writer.oceanbasev10writer.util;
 
+import com.alibaba.datax.common.util.Configuration;
 import com.alibaba.datax.plugin.rdbms.reader.util.ObVersion;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
 import com.alibaba.datax.plugin.rdbms.writer.CommonRdbmsWriter.Task;
 import com.alibaba.datax.plugin.writer.oceanbasev10writer.Config;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -13,6 +17,10 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import static com.alibaba.datax.plugin.writer.oceanbasev10writer.Config.DEFAULT_SLOW_MEMSTORE_THRESHOLD;
 
 public class ObWriterUtils {
@@ -232,6 +240,24 @@ public class ObWriterUtils {
 		return uniqueKeys;
 	}
 
+	public static String getSchema(String tableName, String jdbcUrl) {
+		String schemaName;
+		if (tableName.contains(".")) {
+			schemaName = tableName.substring(0, tableName.indexOf("."));
+		} else {
+			Pattern pattern = Pattern.compile("jdbc:(oceanbase|mysql)://([\\w\\.-]+:\\d+)/([\\w\\.-]+)");
+			Matcher matcher = pattern.matcher(jdbcUrl);
+			if (matcher.find()) {
+				schemaName = matcher.group(3);
+			} else {
+				throw new RuntimeException("Invalid argument: " + jdbcUrl);
+			}
+		}
+
+		LOG.info("db name is " + schemaName);
+		return schemaName;
+	}
+
 	/**
 	 *
 	 * @param tableName
@@ -271,6 +297,170 @@ public class ObWriterUtils {
         }
 
 		return writeDataSqlTemplate;
+	}
+
+	public static String buildInsertSql(String tableName, List<String> columnHolders) {
+		return buildInsertSql(tableName, columnHolders, new HashMap<>());
+	}
+
+	public static String buildInsertSql(String tableName, List<String> columnHolders, Map<String, String> placeHolderMap) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("INSERT INTO ").append(tableName).append(" (").append(StringUtils.join(columnHolders, ",")).append(") VALUES(");
+		String placeHolders = columnHolders.stream().map(e -> placeHolderMap.getOrDefault(e, "?")).collect(Collectors.joining(","));
+		sb.append(placeHolders).append(")");
+		return sb.toString();
+	}
+
+	public static String buildMysqlUpdateSql(Configuration config, String tableName, List<String> columnHolders, Connection conn) {
+		return buildMysqlUpdateSql(config, tableName, columnHolders, conn, new HashMap<>());
+	}
+
+	public static String buildMysqlUpdateSql(Configuration config, String tableName, List<String> columnHolders, Connection conn, Map<String, String> placeHolderMap) {
+		String sql = buildInsertSql(tableName, columnHolders, placeHolderMap);
+
+		String obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
+		if (StringUtils.isBlank(obUpdateColumns)) {
+			Set<String> skipColumns = getSkipColumns(conn, tableName);
+
+			StringBuilder columnList = new StringBuilder();
+			for (String column : skipColumns) {
+				columnList.append(column).append(",");
+			}
+			LOG.info("Skip columns: " + columnList);
+			sql = sql + onDuplicateKeyUpdateString(columnHolders, skipColumns);
+		} else {
+			LOG.info("Update columns: " + obUpdateColumns);
+			sql = sql + onDuplicateKeyUpdateString(obUpdateColumns);
+		}
+
+		return sql;
+	}
+
+	public static String buildOracleUpdateSql(Configuration config, String jdbcUrl, String tableName, List<String> columnHolders, Connection conn) {
+		return buildOracleUpdateSql(config, jdbcUrl, tableName, columnHolders, conn, new HashMap<>());
+	}
+
+	public static String buildOracleUpdateSql(Configuration config, String jdbcUrl, String tableName, List<String> columnHolders, Connection conn, Map<String, String> placeHolders) {
+		/*
+		 * 选择merge into on的部分
+		 * 检查用户是否指定join的列
+		 * 1.指定则使用用户的
+		 * 2.未指定则寻找主键或第一个唯一键，优先主键
+		 * 3.没有主键或唯一键则表示不会发生冲突直接返回insert语句
+		 */
+		List<String> onClauseColumns = getOnClauseColumns(config, jdbcUrl, tableName, conn);
+		if (onClauseColumns.size() == 0) {
+			return buildInsertSql(tableName, columnHolders, placeHolders);
+		}
+
+		// build sql
+		StringBuilder sql = new StringBuilder("MERGE INTO ").append(tableName).append(" T1 ");
+
+		// using clause
+		List<String> valueHolders = Lists.newArrayList();
+		sql.append("USING (SELECT ");
+		for (String column : columnHolders) {
+			String placeHolder = placeHolders.getOrDefault(column, "?") + " AS " + column.toUpperCase();
+			valueHolders.add(placeHolder);
+		}
+		sql.append(StringUtils.join(valueHolders, ", ")).append(" FROM DUAL) T2 ");
+
+		// on clause
+		// note: on中出现的列不能在update中出现
+		sql.append("ON (");
+		valueHolders.clear();
+		for (String column : onClauseColumns) {
+			valueHolders.add(String.format("T1.%s = T2.%s", column, column));
+		}
+		sql.append(StringUtils.join(valueHolders, " AND ")).append(") ");
+
+		// update clause
+		sql.append("WHEN MATCHED THEN UPDATE SET ");
+		List<String> updateColumns;
+		String obUpdateColumns = config.getString(Config.OB_UPDATE_COLUMNS, null);
+		if (StringUtils.isBlank(obUpdateColumns)) {
+			updateColumns = columnHolders.stream().map(String::toUpperCase).collect(Collectors.toList());
+			updateColumns.removeAll(onClauseColumns);
+			// TODO: 保证语法正确，没有非唯一键的列，更新第一列。可能会有问题，on出现的列不运行update。
+			if (updateColumns.size() == 0) {
+				updateColumns = Lists.newArrayList(columnHolders.get(0));
+			}
+		} else {
+			updateColumns = Lists.newArrayList(obUpdateColumns.split(","));
+		}
+		valueHolders.clear();
+		for (String column : updateColumns) {
+			valueHolders.add(String.format("T1.%s=T2.%s", column, column));
+		}
+		sql.append(StringUtils.join(valueHolders, ", "));
+
+		// insert clause
+		sql.append(" WHEN NOT MATCHED THEN INSERT (");
+		valueHolders.clear();
+		for (String column : columnHolders) {
+			valueHolders.add(String.format("T1.%s", column.toUpperCase()));
+		}
+		sql.append(StringUtils.join(valueHolders, ", "));
+		sql.append(") VALUES (");
+		valueHolders.clear();
+		for (String column : columnHolders) {
+			valueHolders.add(String.format("T2.%s", column.toUpperCase()));
+		}
+		sql.append(StringUtils.join(valueHolders, ", ")).append(")");
+
+		return sql.toString();
+	}
+
+	private static List<String> getOnClauseColumns(Configuration config, String jdbcUrl, String tableName, Connection conn) {
+		List<String> onClauseColumns = Lists.newArrayList(config.getString(Config.ON_CLAUSE_COLUMNS, "").split(","));
+		onClauseColumns = onClauseColumns.stream().filter(StringUtils::isNotBlank).collect(Collectors.toList());
+		if (onClauseColumns.size() == 0) {
+			String schemaName = getSchema(tableName, jdbcUrl);
+			onClauseColumns = getOnClauseColumns(schemaName, tableName, conn);
+		}
+		return onClauseColumns.stream().map(String::toUpperCase).collect(Collectors.toList());
+	}
+
+	private static List<String> getOnClauseColumns(String schemaName, String tableName, Connection conn) {
+		String sql = "SELECT cols.COLUMN_NAME, cols.CONSTRAINT_NAME, cons.CONSTRAINT_TYPE " + "FROM all_constraints cons, all_cons_columns cols " + "WHERE cols.table_name = '" + tableName.toUpperCase() + "' AND (cons.constraint_type = 'P' OR cons.constraint_type = 'U') " + "AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner " + "AND cols.owner = '" + schemaName.toUpperCase() + "' ";
+
+		Statement statement = null;
+		ResultSet resultSet = null;
+		Map<String, List<String>> indexNameColumnMap = Maps.newHashMap();
+		String pkName = null;
+		try {
+			statement = conn.createStatement();
+			resultSet = statement.executeQuery(sql);
+			while (resultSet.next()) {
+				String constraintName = resultSet.getString("CONSTRAINT_NAME");
+				String columnName = resultSet.getString("COLUMN_NAME");
+
+				if (StringUtils.isBlank(pkName) && "P".equals(resultSet.getString("CONSTRAINT_TYPE"))) {
+					pkName = constraintName;
+				}
+
+				List<String> columnNames = indexNameColumnMap.computeIfAbsent(constraintName, k -> new ArrayList<>());
+				columnNames.add(columnName.toUpperCase());
+			}
+		} catch (SQLException e) {
+			throw new RuntimeException("Failed to query unique/primary key info", e);
+		} finally {
+			DBUtil.closeDBResources(resultSet, statement, null);
+		}
+
+		// 获取主键，主键不存在获取第一个唯一键
+		List<String> result;
+		if (indexNameColumnMap.containsKey(pkName)) {
+			result = indexNameColumnMap.get(pkName);
+		} else {
+			if (indexNameColumnMap.size() != 0) {
+				result = indexNameColumnMap.values().iterator().next();
+			} else {
+				result = Lists.newArrayList();
+			}
+		}
+
+		return result;
 	}
 
 	private static Set<String> getSkipColumns(Connection conn, String tableName) {

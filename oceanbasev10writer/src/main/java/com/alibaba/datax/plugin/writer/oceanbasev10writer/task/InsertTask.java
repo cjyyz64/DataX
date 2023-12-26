@@ -94,7 +94,7 @@ public class InsertTask implements Runnable {
             try {
                 List<Record> records = queue.poll(5, TimeUnit.MILLISECONDS);
                 if (null != records) {
-                    doMultiInsert(records, this.printCost, this.costBound);
+                    doMultiInsert(records);
                 } else if (writerTask.isFinished()) {
                     writerTask.singalTaskFinish();
                     LOG.debug("not more task, thread exist ...");
@@ -122,7 +122,7 @@ public class InsertTask implements Runnable {
         }
     }
 
-    public void doMultiInsert(final List<Record> buffer, final boolean printCost, final long restrict) {
+    public void doMultiInsert(final List<Record> buffer) {
         checkMemstore();
         Connection conn = connHolder.getConn();
         boolean success = false;

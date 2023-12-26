@@ -9,12 +9,15 @@ public class ServerConnectInfo {
 	
 	public String clusterName;
 	public String tenantName;
+	// userName doesn't contain tenantName or clusterName
 	public String userName;
 	public String password;
 	public String databaseName;
 	public String ipPort;
 	public String jdbcUrl;
+	public String host;
 	public boolean publicCloud;
+	public int rpcPort;
 
 	/**
 	 *
@@ -36,8 +39,9 @@ public class ServerConnectInfo {
 			String ipPort = matcher.group(1);
 			String dbName = matcher.group(2);
 			this.ipPort = ipPort;
+			this.host = ipPort.split(":")[0];
 			this.databaseName = dbName;
-			this.publicCloud = ipPort.split(":")[0].endsWith("aliyuncs.com");
+			this.publicCloud = host.endsWith("aliyuncs.com");
 		} else {
 			throw new RuntimeException("Invalid argument:" + jdbcUrl);
 		}
@@ -46,6 +50,7 @@ public class ServerConnectInfo {
 	private void parseFullUserName(final String fullUserName) {
 		int tenantIndex = fullUserName.indexOf("@");
 		int clusterIndex = fullUserName.indexOf("#");
+		// 适用于jdbcUrl以||_dsc_ob10_dsc_开头的场景
 		if (fullUserName.contains(":") && tenantIndex < 0) {
 			String[] names = fullUserName.split(":");
 			if (names.length != 3) {
@@ -56,10 +61,12 @@ public class ServerConnectInfo {
 				this.userName = names[2];
 			}
 		} else if (tenantIndex < 0) {
-			this.userName =  fullUserName;
+			// 适用于short jdbcUrl，且username中不含租户名（主要是公有云场景，此场景下不计算分区）
+			this.userName = fullUserName;
 			this.clusterName = EMPTY;
 			this.tenantName = EMPTY;
 		} else {
+			// 适用于short jdbcUrl，且username中含租户名
 			this.userName = fullUserName.substring(0, tenantIndex);
 			if (clusterIndex < 0) {
 				this.clusterName = EMPTY;
@@ -73,16 +80,23 @@ public class ServerConnectInfo {
 
 	@Override
 	public String toString() {
-		StringBuffer strBuffer = new StringBuffer();
-		return strBuffer.append("clusterName:").append(clusterName).append(", tenantName:").append(tenantName)
-				.append(", userName:").append(userName).append(", databaseName:").append(databaseName)
-				.append(", ipPort:").append(ipPort).append(", jdbcUrl:").append(jdbcUrl).toString();
+		return "ServerConnectInfo{" +
+				"clusterName='" + clusterName + '\'' +
+				", tenantName='" + tenantName + '\'' +
+				", userName='" + userName + '\'' +
+				", password='" + password + '\'' +
+				", databaseName='" + databaseName + '\'' +
+				", ipPort='" + ipPort + '\'' +
+				", jdbcUrl='" + jdbcUrl + '\'' +
+				", publicCloud=" + publicCloud +
+				", rpcPort=" + rpcPort +
+				'}';
 	}
 
 	public String getFullUserName() {
 		StringBuilder builder = new StringBuilder();
 		builder.append(userName);
-		if (publicCloud) {
+		if (publicCloud || (rpcPort != 0 && EMPTY.equals(clusterName))) {
 			return builder.toString();
 		}
 		if (!EMPTY.equals(tenantName)) {
@@ -96,5 +110,9 @@ public class ServerConnectInfo {
 			return this.userName;
 		}
 		return builder.toString();
+	}
+
+	public void setRpcPort(int rpcPort) {
+		this.rpcPort = rpcPort;
 	}
 }

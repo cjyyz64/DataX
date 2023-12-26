@@ -54,7 +54,7 @@ public class PartitionSplitUtil {
      */
     public static PartInfo getObOraclePartInfoBySQL(Configuration config, String tableName) {
         PartInfo partInfo;
-        DataBaseType dbType = ObReaderUtils.databaseType;
+        DataBaseType dbType = ObReaderUtils.DATABASE_TYPE;
         String jdbcUrl = config.getString(Key.JDBC_URL);
         String username = config.getString(Key.USERNAME);
         String password = config.getString(Key.PASSWORD);
@@ -65,7 +65,7 @@ public class PartitionSplitUtil {
         // check if the table has subpartitions or not
         String getSubPartSql = String.format(ORACLE_GET_SUBPART_TEMPLATE, tableName, dbname);
         List<String> partList = ObReaderUtils.getResultsFromSql(conn, getSubPartSql);
-        if (partList != null && partList.size() > 0) {
+        if (partList.size() > 0) {
             partInfo = new PartInfo(PartType.SUBPARTITION);
             partInfo.addPart(partList);
             return partInfo;
@@ -73,7 +73,7 @@ public class PartitionSplitUtil {
 
         String getPartSql = String.format(ORACLE_GET_PART_TEMPLATE, tableName, dbname);
         partList = ObReaderUtils.getResultsFromSql(conn, getPartSql);
-        if (partList != null && partList.size() > 0) {
+        if (partList.size() > 0) {
             partInfo = new PartInfo(PartType.PARTITION);
             partInfo.addPart(partList);
             return partInfo;
