@@ -5,19 +5,19 @@ import java.util.Collections;
 import java.util.List;
 
 import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.plugin.reader.oceanbasev10reader.ext.IndexSchema;
 
 public class TaskContext {
     private Connection conn;
+    private String dbName;
     private final String table;
-    private String indexName;
-    // 辅助索引的字段列表
-    private List<String> secondaryIndexColumns = Collections.emptyList();
     private String querySql;
     private final String where;
     private final int fetchSize;
     private long readBatchSize = -1;
     private boolean weakRead = true;
     private String userSavePoint;
+    private IndexSchema pageQuerySchema;
     private String compatibleMode = ObReaderUtils.OB_COMPATIBLE_MODE_MYSQL;
 
     public String getPartitionName() {
@@ -46,7 +46,7 @@ public class TaskContext {
     private final int transferColumnNumber;
 
     public TaskContext(String table, List<String> columns, String where, int fetchSize) {
-        super();
+        this.dbName = dbName;
         this.table = table;
         this.columns = columns;
         // 针对只有querySql的场景
@@ -64,19 +64,15 @@ public class TaskContext {
     }
 
     public String getIndexName() {
-        return indexName;
+        return pageQuerySchema != null ? pageQuerySchema.getIndexName() : "";
     }
 
-    public void setIndexName(String indexName) {
-        this.indexName = indexName;
+    public void setPageQuerySchema(IndexSchema indexSchema) {
+        this.pageQuerySchema = indexSchema;
     }
 
-    public List<String> getSecondaryIndexColumns() {
-        return secondaryIndexColumns;
-    }
-
-    public void setSecondaryIndexColumns(List<String> secondaryIndexColumns) {
-        this.secondaryIndexColumns = secondaryIndexColumns;
+    public IndexSchema getPageQuerySchema() {
+        return this.pageQuerySchema;
     }
 
     public String getQuerySql() {
@@ -121,6 +117,10 @@ public class TaskContext {
 
     public void setPkColumns(String[] pkColumns) {
         this.pkColumns = pkColumns;
+    }
+
+    public String getDbName() {
+        return dbName;
     }
 
     public String getTable() {

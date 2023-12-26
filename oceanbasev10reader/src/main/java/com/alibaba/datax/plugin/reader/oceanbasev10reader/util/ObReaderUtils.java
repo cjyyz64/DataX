@@ -1,23 +1,52 @@
 package com.alibaba.datax.plugin.reader.oceanbasev10reader.util;
 
-import com.alibaba.datax.common.element.*;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
+
+import com.alibaba.datax.common.element.BoolColumn;
+import com.alibaba.datax.common.element.BytesColumn;
+import com.alibaba.datax.common.element.Column;
+import com.alibaba.datax.common.element.DateColumn;
+import com.alibaba.datax.common.element.DoubleColumn;
+import com.alibaba.datax.common.element.LongColumn;
+import com.alibaba.datax.common.element.Record;
+import com.alibaba.datax.common.element.StringColumn;
+import com.alibaba.datax.common.exception.DataXException;
+import com.alibaba.datax.common.util.Configuration;
+import com.alibaba.datax.common.util.DataXCaseEnvUtil;
+import com.alibaba.datax.common.util.RetryUtil;
+import com.alibaba.datax.plugin.rdbms.reader.Key;
 import com.alibaba.datax.plugin.rdbms.reader.util.ObVersion;
 import com.alibaba.datax.plugin.rdbms.reader.util.SingleTableSplitUtil;
 import com.alibaba.datax.plugin.rdbms.util.DBUtil;
+import com.alibaba.datax.plugin.rdbms.util.DBUtilErrorCode;
 import com.alibaba.datax.plugin.rdbms.util.DataBaseType;
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.ext.Constant;
+import com.alibaba.datax.plugin.reader.oceanbasev10reader.ext.IndexSchema;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLExpr;
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOpExpr;
 import com.alibaba.druid.sql.ast.expr.SQLBinaryOperator;
-import org.apache.commons.lang3.ArrayUtils;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.*;
-import java.util.*;
-import java.util.Map.Entry;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,8 +55,46 @@ import java.util.regex.Pattern;
  */
 public class ObReaderUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ObReaderUtils.class);
-    private static final String MYSQL_KEYWORDS = "ACCESSIBLE,ACCOUNT,ACTION,ADD,AFTER,AGAINST,AGGREGATE,ALGORITHM,ALL,ALTER,ALWAYS,ANALYSE,AND,ANY,AS,ASC,ASCII,ASENSITIVE,AT,AUTO_INCREMENT,AUTOEXTEND_SIZE,AVG,AVG_ROW_LENGTH,BACKUP,BEFORE,BEGIN,BETWEEN,BIGINT,BINARY,BINLOG,BIT,BLOB,BLOCK,BOOL,BOOLEAN,BOTH,BTREE,BY,BYTE,CACHE,CALL,CASCADE,CASCADED,CASE,CATALOG_NAME,CHAIN,CHANGE,CHANGED,CHANNEL,CHAR,CHARACTER,CHARSET,CHECK,CHECKSUM,CIPHER,CLASS_ORIGIN,CLIENT,CLOSE,COALESCE,CODE,COLLATE,COLLATION,COLUMN,COLUMN_FORMAT,COLUMN_NAME,COLUMNS,COMMENT,COMMIT,COMMITTED,COMPACT,COMPLETION,COMPRESSED,COMPRESSION,CONCURRENT,CONDITION,CONNECTION,CONSISTENT,CONSTRAINT,CONSTRAINT_CATALOG,CONSTRAINT_NAME,CONSTRAINT_SCHEMA,CONTAINS,CONTEXT,CONTINUE,CONVERT,CPU,CREATE,CROSS,CUBE,CURRENT,CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,CURRENT_USER,CURSOR,CURSOR_NAME,DATA,DATABASE,DATABASES,DATAFILE,DATE,DATETIME,DAY,DAY_HOUR,DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DEALLOCATE,DEC,DECIMAL,DECLARE,DEFAULT,DEFAULT_AUTH,DEFINER,DELAY_KEY_WRITE,DELAYED,DELETE,DES_KEY_FILE,DESC,DESCRIBE,DETERMINISTIC,DIAGNOSTICS,DIRECTORY,DISABLE,DISCARD,DISK,DISTINCT,DISTINCTROW,DIV,DO,DOUBLE,DROP,DUAL,DUMPFILE,DUPLICATE,DYNAMIC,EACH,ELSE,ELSEIF,ENABLE,ENCLOSED,ENCRYPTION,END,ENDS,ENGINE,ENGINES,ENUM,ERROR,ERRORS,ESCAPE,ESCAPED,EVENT,EVENTS,EVERY,EXCHANGE,EXECUTE,EXISTS,EXIT,EXPANSION,EXPIRE,EXPLAIN,EXPORT,EXTENDED,EXTENT_SIZE,FAST,FAULTS,FETCH,FIELDS,FILE,FILE_BLOCK_SIZE,FILTER,FIRST,FIXED,FLOAT,FLOAT4,FLOAT8,FLUSH,FOLLOWS,FOR,FORCE,FOREIGN,FORMAT,FOUND,FROM,FULL,FULLTEXT,FUNCTION,GENERAL,GENERATED,GEOMETRY,GEOMETRYCOLLECTION,GET,GET_FORMAT,GLOBAL,GRANT,GRANTS,GROUP,GROUP_REPLICATION,HANDLER,HASH,HAVING,HELP,HIGH_PRIORITY,HOST,HOSTS,HOUR,HOUR_MICROSECOND,HOUR_MINUTE,HOUR_SECOND,IDENTIFIED,IF,IGNORE,IGNORE_SERVER_IDS,IMPORT,IN,INDEX,INDEXES,INFILE,INITIAL_SIZE,INNER,INOUT,INSENSITIVE,INSERT,INSERT_METHOD,INSTALL,INSTANCE,INT,INT1,INT2,INT3,INT4,INT8,INTEGER,INTERVAL,INTO,INVOKER,IO,IO_AFTER_GTIDS,IO_BEFORE_GTIDS,IO_THREAD,IPC,IS,ISOLATION,ISSUER,ITERATE,JOIN,JSON,KEY,KEY_BLOCK_SIZE,KEYS,KILL,LANGUAGE,LAST,LEADING,LEAVE,LEAVES,LEFT,LESS,LEVEL,LIKE,LIMIT,LINEAR,LINES,LINESTRING,LIST,LOAD,LOCAL,LOCALTIME,LOCALTIMESTAMP,LOCK,LOCKS,LOGFILE,LOGS,LONG,LONGBLOB,LONGTEXT,LOOP,LOW_PRIORITY,MASTER,MASTER_AUTO_POSITION,MASTER_BIND,MASTER_CONNECT_RETRY,MASTER_DELAY,MASTER_HEARTBEAT_PERIOD,MASTER_HOST,MASTER_LOG_FILE,MASTER_LOG_POS,MASTER_PASSWORD,MASTER_PORT,MASTER_RETRY_COUNT,MASTER_SERVER_ID,MASTER_SSL,MASTER_SSL_CA,MASTER_SSL_CAPATH,MASTER_SSL_CERT,MASTER_SSL_CIPHER,MASTER_SSL_CRL,MASTER_SSL_CRLPATH,MASTER_SSL_KEY,MASTER_SSL_VERIFY_SERVER_CERT,MASTER_TLS_VERSION,MASTER_USER,MATCH,MAX_CONNECTIONS_PER_HOUR,MAX_QUERIES_PER_HOUR,MAX_ROWS,MAX_SIZE,MAX_STATEMENT_TIME,MAX_UPDATES_PER_HOUR,MAX_USER_CONNECTIONS,MAXVALUE,MEDIUM,MEDIUMBLOB,MEDIUMINT,MEDIUMTEXT,MEMORY,MERGE,MESSAGE_TEXT,MICROSECOND,MIDDLEINT,MIGRATE,MIN_ROWS,MINUTE,MINUTE_MICROSECOND,MINUTE_SECOND,MOD,MODE,MODIFIES,MODIFY,MONTH,MULTILINESTRING,MULTIPOINT,MULTIPOLYGON,MUTEX,MYSQL_ERRNO,NAME,NAMES,NATIONAL,NATURAL,NCHAR,NDB,NDBCLUSTER,NEVER,NEW,NEXT,NO,NO_WAIT,NO_WRITE_TO_BINLOG,NODEGROUP,NONBLOCKING,NONE,NOT,NULL,NUMBER,NUMERIC,NVARCHAR,OFFSET,OLD_PASSWORD,ON,ONE,ONLY,OPEN,OPTIMIZE,OPTIMIZER_COSTS,OPTION,OPTIONALLY,OPTIONS,OR,ORDER,OUT,OUTER,OUTFILE,OWNER,PACK_KEYS,PAGE,PARSE_GCOL_EXPR,PARSER,PARTIAL,PARTITION,PARTITIONING,PARTITIONS,PASSWORD,PHASE,PLUGIN,PLUGIN_DIR,PLUGINS,POINT,POLYGON,PORT,PRECEDES,PRECISION,PREPARE,PRESERVE,PREV,PRIMARY,PRIVILEGES,PROCEDURE,PROCESSLIST,PROFILE,PROFILES,PROXY,PURGE,QUARTER,QUERY,QUICK,RANGE,READ,READ_ONLY,READ_WRITE,READS,REAL,REBUILD,RECOVER,REDO_BUFFER_SIZE,REDOFILE,REDUNDANT,REFERENCES,REGEXP,RELAY,RELAY_LOG_FILE,RELAY_LOG_POS,RELAY_THREAD,RELAYLOG,RELEASE,RELOAD,REMOVE,RENAME,REORGANIZE,REPAIR,REPEAT,REPEATABLE,REPLACE,REPLICATE_DO_DB,REPLICATE_DO_TABLE,REPLICATE_IGNORE_DB,REPLICATE_IGNORE_TABLE,REPLICATE_REWRITE_DB,REPLICATE_WILD_DO_TABLE,REPLICATE_WILD_IGNORE_TABLE,REPLICATION,REQUIRE,RESET,RESIGNAL,RESTORE,RESTRICT,RESUME,RETURN,RETURNED_SQLSTATE,RETURNS,REVERSE,REVOKE,RIGHT,RLIKE,ROLLBACK,ROLLUP,ROTATE,ROUTINE,ROW,ROW_COUNT,ROW_FORMAT,ROWS,RTREE,SAVEPOINT,SCHEDULE,SCHEMA,SCHEMA_NAME,SCHEMAS,SECOND,SECOND_MICROSECOND,SECURITY,SELECT,SENSITIVE,SEPARATOR,SERIAL,SERIALIZABLE,SERVER,SESSION,SET,SHARE,SHOW,SHUTDOWN,SIGNAL,SIGNED,SIMPLE,SLAVE,SLOW,SMALLINT,SNAPSHOT,SOCKET,SOME,SONAME,SOUNDS,SOURCE,SPATIAL,SPECIFIC,SQL,SQL_AFTER_GTIDS,SQL_AFTER_MTS_GAPS,SQL_BEFORE_GTIDS,SQL_BIG_RESULT,SQL_BUFFER_RESULT,SQL_CACHE,SQL_CALC_FOUND_ROWS,SQL_NO_CACHE,SQL_SMALL_RESULT,SQL_THREAD,SQL_TSI_DAY,SQL_TSI_HOUR,SQL_TSI_MINUTE,SQL_TSI_MONTH,SQL_TSI_QUARTER,SQL_TSI_SECOND,SQL_TSI_WEEK,SQL_TSI_YEAR,SQLEXCEPTION,SQLSTATE,SQLWARNING,SSL,STACKED,START,STARTING,STARTS,STATS_AUTO_RECALC,STATS_PERSISTENT,STATS_SAMPLE_PAGES,STATUS,STOP,STORAGE,STORED,STRAIGHT_JOIN,STRING,SUBCLASS_ORIGIN,SUBJECT,SUBPARTITION,SUBPARTITIONS,SUPER,SUSPEND,SWAPS,SWITCHES,TABLE,TABLE_CHECKSUM,TABLE_NAME,TABLES,TABLESPACE,TEMPORARY,TEMPTABLE,TERMINATED,TEXT,THAN,THEN,TIME,TIMESTAMP,TIMESTAMPADD,TIMESTAMPDIFF,TINYBLOB,TINYINT,TINYTEXT,TO,TRAILING,TRANSACTION,TRIGGER,TRIGGERS,TRUNCATE,TYPE,TYPES,UNCOMMITTED,UNDEFINED,UNDO,UNDO_BUFFER_SIZE,UNDOFILE,UNICODE,UNINSTALL,UNION,UNIQUE,UNKNOWN,UNLOCK,UNSIGNED,UNTIL,UPDATE,UPGRADE,USAGE,USE,USE_FRM,USER,USER_RESOURCES,USING,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VALIDATION,VALUE,VALUES,VARBINARY,VARCHAR,VARCHARACTER,VARIABLES,VARYING,VIEW,VIRTUAL,WAIT,WARNINGS,WEEK,WEIGHT_STRING,WHEN,WHERE,WHILE,WITH,WITHOUT,WORK,WRAPPER,WRITE,X509,XA,XID,XML,XOR,YEAR,YEAR_MONTH,ZEROFILL,FALSE,TRUE";
-    private static final String ORACLE_KEYWORDS = "ACCESS,ADD,ALL,ALTER,AND,ANY,ARRAYLEN,AS,ASC,AUDIT,BETWEEN,BY,CHAR,CHECK,CLUSTER,COLUMN,COMMENT,COMPRESS,CONNECT,CREATE,CURRENT,DATE,DECIMAL,DEFAULT,DELETE,DESC,DISTINCT,DROP,ELSE,EXCLUSIVE,EXISTS,FILE,FLOAT,FOR,FROM,GRANT,GROUP,HAVING,IDENTIFIED,IMMEDIATE,IN,INCREMENT,INDEX,INITIAL,INSERT,INTEGER,INTERSECT,INTO,IS,LEVEL,LIKE,LOCK,LONG,MAXEXTENTS,MINUS,MODE,MODIFY,NOAUDIT,NOCOMPRESS,NOT,NOTFOUND,NOWAIT,NUMBER,OF,OFFLINE,ON,ONLINE,OPTION,OR,ORDER,PCTFREE,PRIOR,PRIVILEGES,PUBLIC,RAW,RENAME,RESOURCE,REVOKE,ROW,ROWID,ROWLABEL,ROWNUM,ROWS,SELECT,SESSION,SET,SHARE,SIZE,SMALLINT,SQLBUF,START,SUCCESSFUL,SYNONYM,TABLE,THEN,TO,TRIGGER,UID,UNION,UNIQUE,UPDATE,USER,VALIDATE,VALUES,VARCHAR,VARCHAR2,VIEW,WHENEVER,WHERE,WITH,KEY,NAME,VALUE,TYPE";
+    private static final String MYSQL_KEYWORDS =
+            "ACCESSIBLE,ACCOUNT,ACTION,ADD,AFTER,AGAINST,AGGREGATE,ALGORITHM,ALL,ALTER,ALWAYS,ANALYSE,AND,ANY,AS,ASC,ASCII,ASENSITIVE,AT,AUTO_INCREMENT,AUTOEXTEND_SIZE,AVG,AVG_ROW_LENGTH,BACKUP,"
+                    + "BEFORE,BEGIN,BETWEEN,BIGINT,BINARY,BINLOG,BIT,BLOB,BLOCK,BOOL,BOOLEAN,BOTH,BTREE,BY,BYTE,CACHE,CALL,CASCADE,CASCADED,CASE,CATALOG_NAME,CHAIN,CHANGE,CHANGED,CHANNEL,CHAR,"
+                    + "CHARACTER,CHARSET,CHECK,CHECKSUM,CIPHER,CLASS_ORIGIN,CLIENT,CLOSE,COALESCE,CODE,COLLATE,COLLATION,COLUMN,COLUMN_FORMAT,COLUMN_NAME,COLUMNS,COMMENT,COMMIT,COMMITTED,COMPACT,"
+                    + "COMPLETION,COMPRESSED,COMPRESSION,CONCURRENT,CONDITION,CONNECTION,CONSISTENT,CONSTRAINT,CONSTRAINT_CATALOG,CONSTRAINT_NAME,CONSTRAINT_SCHEMA,CONTAINS,CONTEXT,CONTINUE,"
+                    + "CONVERT,CPU,CREATE,CROSS,CUBE,CURRENT,CURRENT_DATE,CURRENT_TIME,CURRENT_TIMESTAMP,CURRENT_USER,CURSOR,CURSOR_NAME,DATA,DATABASE,DATABASES,DATAFILE,DATE,DATETIME,DAY,DAY_HOUR,"
+                    + "DAY_MICROSECOND,DAY_MINUTE,DAY_SECOND,DEALLOCATE,DEC,DECIMAL,DECLARE,DEFAULT,DEFAULT_AUTH,DEFINER,DELAY_KEY_WRITE,DELAYED,DELETE,DES_KEY_FILE,DESC,DESCRIBE,DETERMINISTIC,"
+                    + "DIAGNOSTICS,DIRECTORY,DISABLE,DISCARD,DISK,DISTINCT,DISTINCTROW,DIV,DO,DOUBLE,DROP,DUAL,DUMPFILE,DUPLICATE,DYNAMIC,EACH,ELSE,ELSEIF,ENABLE,ENCLOSED,ENCRYPTION,END,ENDS,"
+                    + "ENGINE,ENGINES,ENUM,ERROR,ERRORS,ESCAPE,ESCAPED,EVENT,EVENTS,EVERY,EXCHANGE,EXECUTE,EXISTS,EXIT,EXPANSION,EXPIRE,EXPLAIN,EXPORT,EXTENDED,EXTENT_SIZE,FAST,FAULTS,FETCH,FIELDS,"
+                    + "FILE,FILE_BLOCK_SIZE,FILTER,FIRST,FIXED,FLOAT,FLOAT4,FLOAT8,FLUSH,FOLLOWS,FOR,FORCE,FOREIGN,FORMAT,FOUND,FROM,FULL,FULLTEXT,FUNCTION,GENERAL,GENERATED,GEOMETRY,"
+                    + "GEOMETRYCOLLECTION,GET,GET_FORMAT,GLOBAL,GRANT,GRANTS,GROUP,GROUP_REPLICATION,HANDLER,HASH,HAVING,HELP,HIGH_PRIORITY,HOST,HOSTS,HOUR,HOUR_MICROSECOND,HOUR_MINUTE,HOUR_SECOND,"
+                    + "IDENTIFIED,IF,IGNORE,IGNORE_SERVER_IDS,IMPORT,IN,INDEX,INDEXES,INFILE,INITIAL_SIZE,INNER,INOUT,INSENSITIVE,INSERT,INSERT_METHOD,INSTALL,INSTANCE,INT,INT1,INT2,INT3,INT4,INT8,"
+                    + "INTEGER,INTERVAL,INTO,INVOKER,IO,IO_AFTER_GTIDS,IO_BEFORE_GTIDS,IO_THREAD,IPC,IS,ISOLATION,ISSUER,ITERATE,JOIN,JSON,KEY,KEY_BLOCK_SIZE,KEYS,KILL,LANGUAGE,LAST,LEADING,LEAVE,"
+                    + "LEAVES,LEFT,LESS,LEVEL,LIKE,LIMIT,LINEAR,LINES,LINESTRING,LIST,LOAD,LOCAL,LOCALTIME,LOCALTIMESTAMP,LOCK,LOCKS,LOGFILE,LOGS,LONG,LONGBLOB,LONGTEXT,LOOP,LOW_PRIORITY,MASTER,"
+                    + "MASTER_AUTO_POSITION,MASTER_BIND,MASTER_CONNECT_RETRY,MASTER_DELAY,MASTER_HEARTBEAT_PERIOD,MASTER_HOST,MASTER_LOG_FILE,MASTER_LOG_POS,MASTER_PASSWORD,MASTER_PORT,"
+                    + "MASTER_RETRY_COUNT,MASTER_SERVER_ID,MASTER_SSL,MASTER_SSL_CA,MASTER_SSL_CAPATH,MASTER_SSL_CERT,MASTER_SSL_CIPHER,MASTER_SSL_CRL,MASTER_SSL_CRLPATH,MASTER_SSL_KEY,"
+                    + "MASTER_SSL_VERIFY_SERVER_CERT,MASTER_TLS_VERSION,MASTER_USER,MATCH,MAX_CONNECTIONS_PER_HOUR,MAX_QUERIES_PER_HOUR,MAX_ROWS,MAX_SIZE,MAX_STATEMENT_TIME,MAX_UPDATES_PER_HOUR,"
+                    + "MAX_USER_CONNECTIONS,MAXVALUE,MEDIUM,MEDIUMBLOB,MEDIUMINT,MEDIUMTEXT,MEMORY,MERGE,MESSAGE_TEXT,MICROSECOND,MIDDLEINT,MIGRATE,MIN_ROWS,MINUTE,MINUTE_MICROSECOND,MINUTE_SECOND,"
+                    + "MOD,MODE,MODIFIES,MODIFY,MONTH,MULTILINESTRING,MULTIPOINT,MULTIPOLYGON,MUTEX,MYSQL_ERRNO,NAME,NAMES,NATIONAL,NATURAL,NCHAR,NDB,NDBCLUSTER,NEVER,NEW,NEXT,NO,NO_WAIT,"
+                    + "NO_WRITE_TO_BINLOG,NODEGROUP,NONBLOCKING,NONE,NOT,NULL,NUMBER,NUMERIC,NVARCHAR,OFFSET,OLD_PASSWORD,ON,ONE,ONLY,OPEN,OPTIMIZE,OPTIMIZER_COSTS,OPTION,OPTIONALLY,OPTIONS,OR,"
+                    + "ORDER,OUT,OUTER,OUTFILE,OWNER,PACK_KEYS,PAGE,PARSE_GCOL_EXPR,PARSER,PARTIAL,PARTITION,PARTITIONING,PARTITIONS,PASSWORD,PHASE,PLUGIN,PLUGIN_DIR,PLUGINS,POINT,POLYGON,PORT,"
+                    + "PRECEDES,PRECISION,PREPARE,PRESERVE,PREV,PRIMARY,PRIVILEGES,PROCEDURE,PROCESSLIST,PROFILE,PROFILES,PROXY,PURGE,QUARTER,QUERY,QUICK,RANGE,READ,READ_ONLY,READ_WRITE,READS,REAL,"
+                    + "REBUILD,RECOVER,REDO_BUFFER_SIZE,REDOFILE,REDUNDANT,REFERENCES,REGEXP,RELAY,RELAY_LOG_FILE,RELAY_LOG_POS,RELAY_THREAD,RELAYLOG,RELEASE,RELOAD,REMOVE,RENAME,REORGANIZE,REPAIR,"
+                    + "REPEAT,REPEATABLE,REPLACE,REPLICATE_DO_DB,REPLICATE_DO_TABLE,REPLICATE_IGNORE_DB,REPLICATE_IGNORE_TABLE,REPLICATE_REWRITE_DB,REPLICATE_WILD_DO_TABLE,"
+                    + "REPLICATE_WILD_IGNORE_TABLE,REPLICATION,REQUIRE,RESET,RESIGNAL,RESTORE,RESTRICT,RESUME,RETURN,RETURNED_SQLSTATE,RETURNS,REVERSE,REVOKE,RIGHT,RLIKE,ROLLBACK,ROLLUP,ROTATE,"
+                    + "ROUTINE,ROW,ROW_COUNT,ROW_FORMAT,ROWS,RTREE,SAVEPOINT,SCHEDULE,SCHEMA,SCHEMA_NAME,SCHEMAS,SECOND,SECOND_MICROSECOND,SECURITY,SELECT,SENSITIVE,SEPARATOR,SERIAL,SERIALIZABLE,"
+                    + "SERVER,SESSION,SET,SHARE,SHOW,SHUTDOWN,SIGNAL,SIGNED,SIMPLE,SLAVE,SLOW,SMALLINT,SNAPSHOT,SOCKET,SOME,SONAME,SOUNDS,SOURCE,SPATIAL,SPECIFIC,SQL,SQL_AFTER_GTIDS,"
+                    + "SQL_AFTER_MTS_GAPS,SQL_BEFORE_GTIDS,SQL_BIG_RESULT,SQL_BUFFER_RESULT,SQL_CACHE,SQL_CALC_FOUND_ROWS,SQL_NO_CACHE,SQL_SMALL_RESULT,SQL_THREAD,SQL_TSI_DAY,SQL_TSI_HOUR,"
+                    + "SQL_TSI_MINUTE,SQL_TSI_MONTH,SQL_TSI_QUARTER,SQL_TSI_SECOND,SQL_TSI_WEEK,SQL_TSI_YEAR,SQLEXCEPTION,SQLSTATE,SQLWARNING,SSL,STACKED,START,STARTING,STARTS,STATS_AUTO_RECALC,"
+                    + "STATS_PERSISTENT,STATS_SAMPLE_PAGES,STATUS,STOP,STORAGE,STORED,STRAIGHT_JOIN,STRING,SUBCLASS_ORIGIN,SUBJECT,SUBPARTITION,SUBPARTITIONS,SUPER,SUSPEND,SWAPS,SWITCHES,TABLE,"
+                    + "TABLE_CHECKSUM,TABLE_NAME,TABLES,TABLESPACE,TEMPORARY,TEMPTABLE,TERMINATED,TEXT,THAN,THEN,TIME,TIMESTAMP,TIMESTAMPADD,TIMESTAMPDIFF,TINYBLOB,TINYINT,TINYTEXT,TO,TRAILING,"
+                    + "TRANSACTION,TRIGGER,TRIGGERS,TRUNCATE,TYPE,TYPES,UNCOMMITTED,UNDEFINED,UNDO,UNDO_BUFFER_SIZE,UNDOFILE,UNICODE,UNINSTALL,UNION,UNIQUE,UNKNOWN,UNLOCK,UNSIGNED,UNTIL,UPDATE,"
+                    + "UPGRADE,USAGE,USE,USE_FRM,USER,USER_RESOURCES,USING,UTC_DATE,UTC_TIME,UTC_TIMESTAMP,VALIDATION,VALUE,VALUES,VARBINARY,VARCHAR,VARCHARACTER,VARIABLES,VARYING,VIEW,VIRTUAL,"
+                    + "WAIT,WARNINGS,WEEK,WEIGHT_STRING,WHEN,WHERE,WHILE,WITH,WITHOUT,WORK,WRAPPER,WRITE,X509,XA,XID,XML,XOR,YEAR,YEAR_MONTH,ZEROFILL,FALSE,TRUE";
+    private static final String ORACLE_KEYWORDS =
+            "ACCESS,ADD,ALL,ALTER,AND,ANY,ARRAYLEN,AS,ASC,AUDIT,BETWEEN,BY,CHAR,CHECK,CLUSTER,COLUMN,COMMENT,COMPRESS,CONNECT,CREATE,CURRENT,DATE,DECIMAL,DEFAULT,DELETE,DESC,DISTINCT,DROP,ELSE,"
+                    + "EXCLUSIVE,EXISTS,FILE,FLOAT,FOR,FROM,GRANT,GROUP,HAVING,IDENTIFIED,IMMEDIATE,IN,INCREMENT,INDEX,INITIAL,INSERT,INTEGER,INTERSECT,INTO,IS,LEVEL,LIKE,LOCK,LONG,MAXEXTENTS,"
+                    + "MINUS,MODE,MODIFY,NOAUDIT,NOCOMPRESS,NOT,NOTFOUND,NOWAIT,NUMBER,OF,OFFLINE,ON,ONLINE,OPTION,OR,ORDER,PCTFREE,PRIOR,PRIVILEGES,PUBLIC,RAW,RENAME,RESOURCE,REVOKE,ROW,ROWID,"
+                    + "ROWLABEL,ROWNUM,ROWS,SELECT,SESSION,SET,SHARE,SIZE,SMALLINT,SQLBUF,START,SUCCESSFUL,SYNONYM,TABLE,THEN,TO,TRIGGER,UID,UNION,UNIQUE,UPDATE,USER,VALIDATE,VALUES,VARCHAR,"
+                    + "VARCHAR2,VIEW,WHENEVER,WHERE,WITH,KEY,NAME,VALUE,TYPE";
 
     private static Set<String> databaseKeywords;
     final static public String OB_COMPATIBLE_MODE = "obCompatibilityMode";
@@ -36,14 +103,16 @@ public class ObReaderUtils {
 
     public static String compatibleMode = OB_COMPATIBLE_MODE_MYSQL;
 
-    public static final DataBaseType databaseType = DataBaseType.OceanBase;
+    public static DataBaseType DATABASE_TYPE = DataBaseType.OceanBase;
+
+    public static ObVersion obVersion;
 
     private static final String TABLE_SCHEMA_DELIMITER = ".";
 
     private static final Pattern JDBC_PATTERN = Pattern.compile("jdbc:(oceanbase|mysql)://([\\w\\.-]+:\\d+)/([\\w\\.-]+)");
 
     private static Set<String> keywordsFromString2HashSet(final String keywords) {
-        return new HashSet(Arrays.asList(keywords.split(",")));
+        return new HashSet<>(Arrays.asList(keywords.split(",")));
     }
 
     public static String escapeDatabaseKeyword(String keyword) {
@@ -102,34 +171,32 @@ public class ObReaderUtils {
     }
 
     /**
-     * @param conn
+     * Add pageQuery columns if they are not in selected projection column
+     *
      * @param context
      */
-    public static void matchPkIndexs(Connection conn, TaskContext context) {
-        String[] pkColumns = getPkColumns(conn, context);
-        if (ArrayUtils.isEmpty(pkColumns)) {
-            LOG.warn("table=" + context.getTable() + " has no primary key");
+    public static void matchPkIndexs(TaskContext context) {
+        IndexSchema pageQuerySchema = context.getPageQuerySchema();
+        if (pageQuerySchema == null || pageQuerySchema.getNotNullColumns() == null) {
+            LOG.warn("table=" + context.getTable() + " has no primary key or not null unique index");
             return;
         }
+        boolean isOracleMode = isOracleMode(context.getCompatibleMode());
         List<String> columns = context.getColumns();
-
         // 最后参与排序的索引列
-
-        context.setPkColumns(pkColumns);
-
-        final String escapeChar = isOracleMode(context.getCompatibleMode()) ? "\"" : "`";
-        int[] pkIndexs = new int[pkColumns.length];
-        for (int i = 0, n = pkColumns.length; i < n; i++) {
-            String pkc = pkColumns[i];
-            String escapedPkc = String.format("%s%s%s", escapeChar, pkc, escapeChar);
+        String[] pageQueryColumns = pageQuerySchema.getNotNullColumns().toArray(new String[0]);
+        context.setPkColumns(pageQueryColumns);
+        int[] pkIndexs = new int[pageQueryColumns.length];
+        for (int i = 0, n = pageQueryColumns.length; i < n; i++) {
+            String pkc = pageQueryColumns[i];
+            String escapedPkc = wrapName(pkc, isOracleMode);
             int j = 0;
             for (int k = columns.size(); j < k; j++) {
                 // 如果用户定义的 columns中 带有 ``,也不影响,
                 // 最多只是在select里多加了几列PK column
-                if (StringUtils.equalsIgnoreCase(pkc, columns.get(j))
-                    || StringUtils.equalsIgnoreCase(escapedPkc, columns.get(j))) {
+                if (StringUtils.equalsIgnoreCase(pkc, columns.get(j)) || StringUtils.equalsIgnoreCase(escapedPkc, columns.get(j))) {
                     pkIndexs[i] = j;
-                    pkColumns[i] = columns.get(j);
+                    pageQueryColumns[i] = columns.get(j);
                     break;
                 }
             }
@@ -142,56 +209,25 @@ public class ObReaderUtils {
         context.setPkIndexs(pkIndexs);
     }
 
-    private static String[] getPkColumns(Connection conn, TaskContext context) {
-        String tableName = context.getTable();
-        String sql = "show index from " + tableName + " where Key_name='PRIMARY'";
-        if (isOracleMode(context.getCompatibleMode())) {
-            tableName = tableName.toUpperCase();
-            String schema;
-            if (tableName.contains(TABLE_SCHEMA_DELIMITER)) {
-                schema = String.format("'%s'", tableName.substring(0, tableName.indexOf(".")));
-                tableName = tableName.substring(tableName.indexOf(".") + 1);
-            } else {
-                schema = "(select sys_context('USERENV','current_schema') from dual)";
-            }
-            sql = String.format(
-                "SELECT cols.column_name Column_name " +
-                    "FROM all_constraints cons, all_cons_columns cols " +
-                    "WHERE cols.table_name = '%s' AND cons.constraint_type = 'P' " +
-                    "AND cons.constraint_name = cols.constraint_name " +
-                    "AND cons.owner = cols.owner and cons.OWNER = %s",
-                tableName, schema);
+    public static StringBuilder buildQueryTemplate(TaskContext context) {
+        String indexName = context.getIndexName();
+        String partInfo = StringUtils.isNotBlank(context.getPartitionName()) ? String.format(" partition(%s) ", context.getPartitionName()) : EMPTY;
+        StringBuilder sb = new StringBuilder();
+        sb.append("select ");
+        boolean weakRead = context.getWeakRead();
+        if (StringUtils.isNotEmpty(indexName)) {
+            String weakReadHint = weakRead ? "+READ_CONSISTENCY(WEAK)," : "+";
+            sb.append(" /*").append(weakReadHint).append("index(").append(context.getTable()).append(" ").append(indexName).append(")*/ ");
+        } else if (weakRead) {
+            sb.append(" /*+READ_CONSISTENCY(WEAK)*/ ");
         }
-        LOG.info("get primary key by sql: " + sql);
-        Statement ps = null;
-        ResultSet rs = null;
-        List<String> realIndex = new ArrayList<String>();
-        realIndex.addAll(context.getSecondaryIndexColumns());
-        try {
-            ps = conn.createStatement();
-            rs = ps.executeQuery(sql);
-            boolean hasPk = false;
-            while (rs.next()) {
-                hasPk = true;
-                String columnName = rs.getString("Column_name");
-                columnName = escapeDatabaseKeyword(columnName);
-                if (!realIndex.contains(columnName)) {
-                    realIndex.add(columnName);
-                }
-            }
+        sb.append(StringUtils.join(context.getColumns(), ','));
+        sb.append(" from ").append(context.getTable()).append(partInfo);
 
-            if (hasPk) {
-                String[] pks = new String[realIndex.size()];
-                realIndex.toArray(pks);
-                return pks;
-            }
-        } catch (Throwable e) {
-            LOG.error("show index from table fail :" + sql, e);
-        } finally {
-            close(rs, ps, null);
+        if (StringUtils.isNotEmpty(context.getWhere())) {
+            sb.append(" where (").append(context.getWhere()).append(")");
         }
-
-        return null;
+        return sb;
     }
 
     /**
@@ -200,26 +236,9 @@ public class ObReaderUtils {
      * @param context
      * @return
      */
-    public static String buildFirstQuerySql(TaskContext context) {
+    public static String buildFirstQuerySql(TaskContext context, StringBuilder queryTemplate) {
         String userSavePoint = context.getUserSavePoint();
-        String indexName = context.getIndexName();
-        String sql = "select ";
-        boolean weakRead = context.getWeakRead();
-        if (StringUtils.isNotEmpty(indexName)) {
-            String weakReadHint = weakRead ? "+READ_CONSISTENCY(WEAK)," : "+";
-            sql += " /*" + weakReadHint + "index(" + context.getTable() + " " + indexName + ")*/ ";
-        } else if (weakRead) {
-            sql += " /*+READ_CONSISTENCY(WEAK)*/ ";
-        }
-        sql += StringUtils.join(context.getColumns(), ',');
-        sql += " from " + context.getTable();
-        if (context.getPartitionName() != null) {
-            sql += String.format(" partition(%s) ", context.getPartitionName());
-        }
-        if (StringUtils.isNotEmpty(context.getWhere())) {
-            sql += " where " + context.getWhere();
-        }
-
+        String sql = queryTemplate.toString();
         if (userSavePoint != null && userSavePoint.length() != 0) {
             userSavePoint = userSavePoint.replace("=", ">");
             sql += (StringUtils.isNotEmpty(context.getWhere()) ? " and " : " where ") + userSavePoint;
@@ -231,48 +250,30 @@ public class ObReaderUtils {
         if (ObReaderUtils.isOracleMode(context.getCompatibleMode()) && context.getReadBatchSize() != -1) {
             sql = String.format("select * from (%s) where rownum <= %d", sql, context.getReadBatchSize());
         }
-
         return sql;
     }
 
     /**
      * 增量查的SQL
      *
-     * @param conn
      * @param context
-     * @return sql
+     * @param queryTemplate
+     * @return String
      */
-    public static String buildAppendQuerySql(Connection conn, TaskContext context) {
-        String indexName = context.getIndexName();
-        boolean weakRead = context.getWeakRead();
-        String sql = "select ";
-        if (StringUtils.isNotEmpty(indexName)) {
-            String weakReadHint = weakRead ? "+READ_CONSISTENCY(WEAK)," : "+";
-            sql += " /*" + weakReadHint + "index(" + context.getTable() + " " + indexName + ")*/ ";
-        } else if (weakRead) {
-            sql += " /*+READ_CONSISTENCY(WEAK)*/ ";
-        }
-        sql += StringUtils.join(context.getColumns(), ',') + " from " + context.getTable();
-
-        if (context.getPartitionName() != null) {
-            sql += String.format(" partition(%s) ", context.getPartitionName());
-        }
-
-        sql += " where ";
-        String append = "(" + StringUtils.join(context.getPkColumns(), ',') + ") > ("
-                + buildPlaceHolder(context.getPkColumns().length) + ")";
-
+    public static String buildAppendQuerySql(TaskContext context, StringBuilder queryTemplate) {
+        String sql = queryTemplate.toString();
+        String append = "(" + StringUtils.join(context.getPkColumns(), ',') + ") > (" + buildPlaceHolder(context.getPkColumns().length) + ")";
         if (StringUtils.isNotEmpty(context.getWhere())) {
-            sql += "(" + context.getWhere() + ") and ";
+            sql += " and ";
+        } else {
+            sql += " where ";
         }
-
         sql = String.format("%s %s order by %s asc", sql, append, StringUtils.join(context.getPkColumns(), ','));
 
         // Using sub-query to apply rownum < readBatchSize since where has higher priority than order by
         if (ObReaderUtils.isOracleMode(context.getCompatibleMode()) && context.getReadBatchSize() != -1) {
             sql = String.format("select * from (%s) where rownum <= %d", sql, context.getReadBatchSize());
         }
-
         return sql;
     }
 
@@ -360,35 +361,37 @@ public class ObReaderUtils {
     }
 
     /**
-     * 先解析成where
-     * <p>
-     * 再判断是否存在索引
+     * 先解析成where, 再判断是否存在索引
      *
      * @param conn
      * @param context
      * @return
      */
-    public static void initIndex(Connection conn, TaskContext context) {
-        if (StringUtils.isEmpty(context.getWhere())) {
-            return;
+    public static void initPageQueryIndex(Connection conn, TaskContext context) {
+        Set<String> columnsInCondition = fetchColumnsInCondition(context.getWhere(), conn, context.getTable());
+        Map<String, IndexSchema> allIndex = ObReaderUtils.getAllIndex(conn, context.getDbName(), context.getTable(), context.getCompatibleMode());
+        IndexSchema indexSchema = getIndexName(allIndex, columnsInCondition, true);
+        LOG.info("possible index:" + indexSchema + ",where:" + context.getWhere());
+        if (indexSchema != null) {
+            LOG.info("choose index name:" + indexSchema.getIndexName() + ",columns:" + indexSchema.getNotNullColumns());
+            context.setPageQuerySchema(indexSchema);
         }
-        SQLExpr expr = SQLUtils.toSQLExpr(context.getWhere(), "mysql");
-        List<String> allColumnsInTab = getAllColumnFromTab(conn, context.getTable());
+    }
+
+    public static Set<String> fetchColumnsInCondition(String where, Connection conn, String table) {
+        if (StringUtils.isEmpty(where)) {
+            return null;
+        }
+        SQLExpr expr = SQLUtils.toSQLExpr(where, "mysql");
+        List<String> allColumnsInTab = getAllColumnFromTab(conn, table);
         List<String> allColNames = getColNames(allColumnsInTab, expr);
 
         if (allColNames == null) {
-            return;
+            return null;
         }
 
         // Remove the duplicated column names
-        Set<String> colNames = new TreeSet<String>();
-        for (String colName : allColNames) {
-            if (!colNames.contains(colName)) {
-                colNames.add(colName);
-            }
-        }
-        List<String> indexNames = getIndexName(conn, context.getTable(), colNames, context.getCompatibleMode());
-        findBestIndex(conn, indexNames, context.getTable(), context);
+        return new TreeSet<>(allColNames);
     }
 
     private static List<String> getAllColumnFromTab(Connection conn, String tableName) {
@@ -460,38 +463,29 @@ public class ObReaderUtils {
         return colNames;
     }
 
-    private static Map<String, List<String>> getAllIndex(Connection conn, String tableName, String compatibleMode) {
-        Map<String, List<String>> allIndex = new HashMap<String, List<String>>();
+    /**
+     * Find all indexes including pk, uk and other ordinary index with their all columns
+     *
+     * @param conn
+     * @param dbName
+     * @param tableName
+     * @param compatibleMode
+     * @return Map<String, IndexSchema>
+     */
+    public static Map<String, IndexSchema> getAllIndex(Connection conn, String dbName, String tableName, String compatibleMode) {
+        Map<String, IndexSchema> allIndex = new HashMap<>();
         String sql = "show index from " + tableName;
         if (isOracleMode(compatibleMode)) {
-            String schema;
             tableName = tableName.toUpperCase();
-            if (tableName.contains(TABLE_SCHEMA_DELIMITER)) {
-                schema = String.format("'%s'", tableName.substring(0, tableName.indexOf(".")));
-                tableName = tableName.substring(tableName.indexOf(".") + 1);
-            } else {
-                schema = "(select sys_context('USERENV','current_schema') from dual)";
-            }
-
-            sql = String.format(
-                "SELECT INDEX_NAME Key_name, COLUMN_NAME Column_name " +
-                    "from all_ind_columns " +
-                    "where TABLE_NAME = '%s' and TABLE_OWNER = %s " +
-                    " union all " +
-                    "SELECT DISTINCT " +
-                    "CASE " +
-                    "WHEN cons.CONSTRAINT_TYPE = 'P' THEN 'PRIMARY' " +
-                    "WHEN cons.CONSTRAINT_TYPE = 'U' THEN cons.CONSTRAINT_NAME " +
-                    "ELSE '' " +
-                    "END AS Key_name, " +
-                    "cols.column_name Column_name " +
-                    "FROM all_constraints cons, all_cons_columns cols " +
-                    "WHERE cols.table_name = '%s' AND cons.constraint_type in('P', 'U') " +
-                    "AND cons.constraint_name = cols.constraint_name AND cons.owner = cols.owner " +
-                    "AND cons.owner = %s",
-                tableName, schema, tableName, schema);
+            sql =
+                    "SELECT I.INDEX_NAME AS Key_name,I.COLUMN_NAME AS Column_name,CASE WHEN C.CONSTRAINT_TYPE = 'P' THEN -2 WHEN C.CONSTRAINT_TYPE = 'U' THEN -1 ELSE 1 END AS Non_unique,T.NULLABLE AS"
+                            + " \"Null\" "
+                            + "FROM all_ind_columns I "
+                            + "LEFT JOIN ALL_CONSTRAINTS C ON I.TABLE_OWNER=C.OWNER AND I.TABLE_NAME=C.TABLE_NAME AND I.INDEX_NAME = C.CONSTRAINT_NAME "
+                            + "INNER JOIN ALL_TAB_COLS T ON i.TABLE_OWNER=T.OWNER AND i.TABLE_NAME=T.TABLE_NAME AND i.COLUMN_NAME=T.COLUMN_NAME AND T.HIDDEN_COLUMN='NO' "
+                            + "WHERE I.TABLE_NAME = '%s' AND I.TABLE_OWNER = '%s' ORDER BY I.COLUMN_POSITION";
+            sql = String.format(sql, tableName.toUpperCase(), dbName.toUpperCase());
         }
-
         Statement stmt = null;
         ResultSet rs = null;
 
@@ -500,41 +494,12 @@ public class ObReaderUtils {
             stmt = conn.createStatement();
             rs = stmt.executeQuery(sql);
             while (rs.next()) {
-                String keyName = rs.getString("Key_name");
+                int constraintType = rs.getInt("Non_unique");
+                String realIndexName = rs.getString("Key_name");
+                String keyName = constraintType == -2 ? "PRIMARY" : realIndexName;
                 String colName = rs.getString("Column_name").toUpperCase();
-                if (allIndex.containsKey(keyName)) {
-                    allIndex.get(keyName).add(colName);
-                } else {
-                    List<String> allColumns = new ArrayList<String>();
-                    allColumns.add(colName);
-                    allIndex.put(keyName, allColumns);
-                }
-            }
-
-            // add primary key to all index
-            if (allIndex.containsKey("PRIMARY")) {
-                List<String> colsInPrimary = allIndex.get("PRIMARY");
-                Iterator<Map.Entry<String, List<String>>> iterator = allIndex.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<String, List<String>> entry = iterator.next();
-                    if ("PRIMARY".equals(entry.getKey())) {
-                        continue;
-                    }
-
-                    // remove the index which is identical with primary key
-                    List<String> indexColumns = entry.getValue();
-                    if (colsInPrimary.equals(indexColumns)) {
-                        iterator.remove();
-                    } else {
-                        // add primary key to the index if the index is not on the column
-                        colsInPrimary.forEach(
-                            c -> {
-                                if (!indexColumns.contains(c)) {
-                                    indexColumns.add(c);
-                                }
-                            });
-                    }
-                }
+                boolean isNullable = "YES".equalsIgnoreCase(rs.getString("Null")) || "Y".equalsIgnoreCase(rs.getString("Null"));
+                allIndex.computeIfAbsent(keyName, k -> new IndexSchema(realIndexName, constraintType)).addColumn(colName, isNullable);
             }
         } catch (Exception e) {
             LOG.error("fail to get all keys from table" + sql, e);
@@ -542,132 +507,8 @@ public class ObReaderUtils {
             close(rs, stmt, null);
         }
 
-        LOG.info("all index: " + allIndex.toString());
+        LOG.info("all index: " + allIndex);
         return allIndex;
-    }
-
-    /**
-     * find out the indexes which contains all columns in where conditions
-     * @param conn
-     * @param table
-     * @param colNamesInCondition
-     * @return
-     */
-    private static List<String> getIndexName(Connection conn, String table,
-                                             Set<String> colNamesInCondition, String compatibleMode) {
-        List<String> indexNames = new ArrayList<String>();
-        if (colNamesInCondition == null || colNamesInCondition.size() == 0) {
-            LOG.info("there is no qulified conditions in the where clause, skip index selection.");
-            return indexNames;
-        }
-
-        LOG.info("columnNamesInConditions: " + String.join(",", colNamesInCondition));
-
-        Map<String, List<String>> allIndex = getAllIndex(conn, table, compatibleMode);
-        for (String keyName : allIndex.keySet()) {
-            boolean indexNotMatch = false;
-            // If the index does not have all the column in where conditions, it
-            // can not be chosen
-            // the selected index must start with the columns in where condition
-            if (allIndex.get(keyName).size() < colNamesInCondition.size()) {
-                indexNotMatch = true;
-            } else {
-                // the first number columns of this index
-                int num = colNamesInCondition.size();
-                for (String colName : allIndex.get(keyName)) {
-                    if (!colNamesInCondition.contains(colName)) {
-                        indexNotMatch = true;
-                        break;
-                    }
-                    if (--num == 0) {
-                        break;
-                    }
-                }
-            }
-
-            if (indexNotMatch) {
-                continue;
-            } else {
-                indexNames.add(keyName);
-            }
-        }
-
-        return indexNames;
-    }
-
-    /**
-     * 以 column开头的索引,可能有多个,也可能存在多列的情形
-     * <p>
-     * 所以,需要选择列数最少的
-     *
-     * @param indexNames
-     * @param context
-     */
-    private static void findBestIndex(Connection conn, List<String> indexNames, String table, TaskContext context) {
-        if (indexNames.size() == 0) {
-            LOG.warn("table has no index.");
-            return;
-        }
-
-        Map<String, Map<Integer, String>> allIndexs = new HashMap<String, Map<Integer, String>>();
-        String sql = "show index from " + table + " where key_name in (" + buildPlaceHolder(indexNames.size()) + ")";
-        if (isOracleMode(context.getCompatibleMode())) {
-            Map<String, List<String>> allIndexInTab = getAllIndex(conn, table, context.getCompatibleMode());
-            for (String indexName : indexNames) {
-                if (allIndexInTab.containsKey(indexName)) {
-                    Map<Integer, String> index = new TreeMap<Integer, String>();
-                    List<String> columnList = allIndexInTab.get(indexName);
-                    for (int i = 1; i <= columnList.size(); i++) {
-                        index.put(i, columnList.get(i - 1));
-                    }
-                    allIndexs.put(indexName, index);
-                } else {
-                    LOG.error("index does not exist: " + indexName);
-                }
-            }
-        } else {
-            PreparedStatement ps = null;
-            ResultSet rs = null;
-            try {
-                ps = conn.prepareStatement(sql);
-                for (int i = 0, n = indexNames.size(); i < n; i++) {
-                    ps.setString(i + 1, indexNames.get(i));
-                }
-                rs = ps.executeQuery();
-                while (rs.next()) {
-                    String keyName = rs.getString("Key_name");
-                    Map<Integer, String> index = allIndexs.get(keyName);
-                    if (index == null) {
-                        index = new TreeMap<Integer, String>();
-                        allIndexs.put(keyName, index);
-                    }
-                    int keyInIndex = rs.getInt("Seq_in_index");
-                    String column = rs.getString("Column_name");
-                    index.put(keyInIndex, column);
-                }
-            } catch (Throwable e) {
-                LOG.error("show index from table fail :" + sql, e);
-            } finally {
-                close(rs, ps, null);
-            }
-        }
-
-        LOG.info("possible index:" + allIndexs + ",where:" + context.getWhere());
-
-        Entry<String, Map<Integer, String>> chooseIndex = null;
-        int columnCount = Integer.MAX_VALUE;
-        for (Entry<String, Map<Integer, String>> entry : allIndexs.entrySet()) {
-            if (entry.getValue().size() < columnCount) {
-                columnCount = entry.getValue().size();
-                chooseIndex = entry;
-            }
-        }
-
-        if (chooseIndex != null) {
-            LOG.info("choose index name:" + chooseIndex.getKey() + ",columns:" + chooseIndex.getValue());
-            context.setIndexName(chooseIndex.getKey());
-            context.setSecondaryIndexColumns(new ArrayList<String>(chooseIndex.getValue().values()));
-        }
     }
 
     /**
@@ -682,29 +523,60 @@ public class ObReaderUtils {
     }
 
     /**
-     * 判断是否重复record
+     * Find the most suitable index which should meet the conditions below:
+     * If unique constraint is needed,
+     * 1. existing where clause: the shortest unique index(including pk) contains the most columns in where clause
+     * 2. no where clause: choose pk first, if no pk, choose the shortest uk
+     * <p>
+     * If no need unique,
+     * 1. existing where clause: the shortest index(including pk,uk,ordinary index) contains the most columns in where clause
+     * 2. no where clause: choose pk first, if no pk, choose the shortest uk and then shortest ordinary index
      *
-     * @param savePoint
-     * @param row
-     * @param pkIndexs
-     * @return
+     * @param allIndex
+     * @param colNamesInCondition
+     * @param needUnique          If this method is used to split, needUnique is false; If used to page query, needUnique is true.
+     * @return IndexSchema Return the most suitable index, if no index was chosen return null
      */
-    public static boolean isPkEquals(Record savePoint, Record row, int[] pkIndexs) {
-        if (savePoint == null || row == null) {
-            return false;
-        }
-        try {
-            for (int index : pkIndexs) {
-                Object left = savePoint.getColumn(index).getRawData();
-                Object right = row.getColumn(index).getRawData();
-                if (!left.equals(right)) {
-                    return false;
+    public static IndexSchema getIndexName(Map<String, IndexSchema> allIndex, Set<String> colNamesInCondition, boolean needUnique) {
+        if (colNamesInCondition == null || colNamesInCondition.size() == 0) {
+            if (allIndex.containsKey("PRIMARY")) {
+                return allIndex.get("PRIMARY");
+            }
+            IndexSchema chosenIndex = null;
+            boolean hasUnique = false;
+            for (IndexSchema indexSchema : allIndex.values()) {
+                if (needUnique && !indexSchema.isValueUnique()) {
+                    continue;
+                }
+                if (chosenIndex == null) {
+                    chosenIndex = indexSchema;
+                    hasUnique = chosenIndex.isUniqueIndex();
+                } else if (indexSchema.isUniqueIndex()) {
+                    hasUnique = true;
+                    chosenIndex = (!chosenIndex.isUniqueIndex() || indexSchema.compareTo(chosenIndex) > 0) ? indexSchema : chosenIndex;
+                } else if (!needUnique && !hasUnique) {
+                    chosenIndex = indexSchema.compareTo(chosenIndex) > 0 ? indexSchema : chosenIndex;
                 }
             }
-        } catch (Throwable e) {
-            return false;
+            return chosenIndex;
         }
-        return true;
+
+        LOG.info("columNamesInConditions: " + String.join(",", colNamesInCondition));
+        int score = 0;
+        IndexSchema chosenIndex = null;
+        for (IndexSchema indexSchema : allIndex.values()) {
+            if (needUnique && !indexSchema.isValueUnique()) {
+                continue;
+            }
+            int tempScore = colNamesInCondition.stream().mapToInt(e -> indexSchema.containColumn(e) ? 1 : 0).sum();
+            if (tempScore > score) {
+                score = tempScore;
+                chosenIndex = indexSchema;
+            } else if (tempScore == score) {
+                chosenIndex = (chosenIndex == null || indexSchema.compareTo(chosenIndex) > 0) ? indexSchema : chosenIndex;
+            }
+        }
+        return chosenIndex;
     }
 
     public static String buildPlaceHolder(int n) {
@@ -770,7 +642,7 @@ public class ObReaderUtils {
     }
 
     public static boolean isOracleMode(String mode) {
-        return (mode != null && OB_COMPATIBLE_MODE_ORACLE.equalsIgnoreCase(mode));
+        return OB_COMPATIBLE_MODE_ORACLE.equalsIgnoreCase(mode);
     }
 
     public static String getDbNameFromJdbcUrl(String jdbcUrl) {
@@ -806,11 +678,12 @@ public class ObReaderUtils {
 
     /**
      * compare two ob versions
+     *
      * @param version1
      * @param version2
-     * @return  0 when the two versions are the same
-     *         -1 when version1 is smaller (earlier) than version2
-     *          1 when version is bigger (later) than version2
+     * @return 0 when the two versions are the same
+     * -1 when version1 is smaller (earlier) than version2
+     * 1 when version is bigger (later) than version2
      */
     public static int compareObVersion(String version1, String version2) {
         if (version1 == null || version2 == null) {
@@ -822,13 +695,12 @@ public class ObReaderUtils {
     }
 
     /**
-     *
      * @param conn
      * @param sql
      * @return
      */
     public static List<String> getResultsFromSql(Connection conn, String sql) {
-        List<String> list = new ArrayList();
+        List<String> list = new ArrayList<>();
         Statement stmt = null;
         ResultSet rs = null;
 
@@ -851,17 +723,68 @@ public class ObReaderUtils {
 
     /**
      * get obversion, try ob_version first, and then try version if failed
+     *
      * @param conn
      * @return
      */
     public static ObVersion getObVersion(Connection conn) {
+        if (obVersion != null) {
+            return obVersion;
+        }
         List<String> results = getResultsFromSql(conn, "select ob_version()");
         if (results.size() == 0) {
             results = getResultsFromSql(conn, "select version()");
         }
-        ObVersion obVersion = new ObVersion(results.get(0));
+        obVersion = new ObVersion(results.get(0));
 
         LOG.info("obVersion: " + obVersion);
         return obVersion;
+    }
+
+    public static Connection getConnection(Configuration connConf) {
+        String userName = connConf.getString(Key.USERNAME);
+        String password = connConf.getString(Key.PASSWORD);
+        String jdbcUrl = connConf.getString(Key.JDBC_URL);
+        return getConnection(jdbcUrl, userName, password, connConf);
+    }
+
+    public static Connection getConnection(String jdbcUrl, String username, String password, Configuration conf) {
+        Connection connection = null;
+        try {
+            connection = RetryUtil.executeWithRetry(() -> {
+                String user = username;
+                String url = jdbcUrl;
+                if (url.startsWith(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING)) {
+                    String[] ss = url.split(com.alibaba.datax.plugin.rdbms.writer.Constant.OB10_SPLIT_STRING_PATTERN);
+                    if (ss.length != 3) {
+                        throw DataXException.asDataXException(DBUtilErrorCode.JDBC_OB10_ADDRESS_ERROR, "JDBC OB10 format error.");
+                    }
+                    LOG.debug("this is ob1_0 jdbc url");
+                    user = ss[1].trim() + ":" + user;
+                    if (OB_COMPATIBLE_MODE_MYSQL.equalsIgnoreCase(compatibleMode)) {
+                        url = ss[2];
+                    } else {
+                        url = ss[2].replace("mysql", "oceanbase");
+                    }
+                    LOG.debug("this is ob1_0 jdbc url. user=" + user + " :url=" + url);
+                }
+
+                Properties prop = new Properties();
+                prop.put("user", user);
+                prop.put("password", password);
+                Class.forName(DATABASE_TYPE.getDriverClassName());
+                LOG.debug("loading driver class: {}", DATABASE_TYPE.getDriverClassName());
+                return DriverManager.getConnection(url, prop);
+            }, DataXCaseEnvUtil.getRetryTimes(9), DataXCaseEnvUtil.getRetryInterval(1000L), DataXCaseEnvUtil.getRetryExponential(true));
+        } catch (Exception e) {
+            throw DataXException.asDataXException(DBUtilErrorCode.CONN_DB_ERROR, "Database connection failed.", e);
+        }
+        DBUtil.dealWithSessionConfig(connection, conf, DATABASE_TYPE, String.format("jdbcUrl:[%s]", jdbcUrl));
+        return connection;
+    }
+
+    public static String wrapName(String name, boolean isOracleMode) {
+        String quoteChar = isOracleMode ? "\"" : "`";
+        return String.format("%s%s%s", quoteChar, name, quoteChar);
     }
 }

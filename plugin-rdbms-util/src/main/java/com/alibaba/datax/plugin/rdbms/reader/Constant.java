@@ -1,6 +1,8 @@
 package com.alibaba.datax.plugin.rdbms.reader;
 
 public final class Constant {
+    public static final String LIMIT_SPLIT = "limitSplit";
+
     public static final String PK_TYPE = "pkType";
 
     public static final Object PK_TYPE_STRING = "pkTypeString";

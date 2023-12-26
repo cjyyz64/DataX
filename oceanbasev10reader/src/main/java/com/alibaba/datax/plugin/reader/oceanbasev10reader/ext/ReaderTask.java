@@ -48,7 +48,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
     private boolean reuseConn = false;
 
     public ReaderTask(int taskGroupId, int taskId) {
-        super(ObReaderUtils.databaseType, taskGroupId, taskId);
+        super(ObReaderUtils.DATABASE_TYPE, taskGroupId, taskId);
         this.taskGroupId = taskGroupId;
         this.taskId = taskId;
     }
@@ -143,17 +143,21 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             return;
         }
         // check primary key index
-        Connection conn = DBUtil.getConnection(ObReaderUtils.databaseType, jdbcUrl, username, password);
+        Connection conn = DBUtil.getConnection(ObReaderUtils.DATABASE_TYPE, jdbcUrl, username, password);
         ObReaderUtils.initConn4Reader(conn, queryTimeoutSeconds);
         context.setConn(conn);
         try {
-            ObReaderUtils.initIndex(conn, context);
-            ObReaderUtils.matchPkIndexs(conn, context);
+            ObReaderUtils.initPageQueryIndex(conn, context);
+            ObReaderUtils.matchPkIndexs(context);
         } catch (Throwable e) {
             LOG.warn("fetch PkIndexs fail,table=" + context.getTable(), e);
         }
         // 如果不是table 且 pk不存在 则仍然使用原来的做法
+        StringBuilder queryTemplate = ObReaderUtils.buildQueryTemplate(context);
         if (context.getPkIndexs() == null) {
+            if (StringUtils.isBlank(context.getQuerySql())) {
+                context.setQuerySql(queryTemplate.toString());
+            }
             doRead(recordSender, taskPluginCollector, context);
             return;
         }
@@ -170,8 +174,8 @@ public class ReaderTask extends CommonRdbmsReader.Task {
         // 正常结束 则 break
         // }
         context.setReadBatchSize(readBatchSize);
-        String getFirstQuerySql = ObReaderUtils.buildFirstQuerySql(context);
-        String appendQuerySql = ObReaderUtils.buildAppendQuerySql(conn, context);
+        String getFirstQuerySql = ObReaderUtils.buildFirstQuerySql(context, queryTemplate);
+        String appendQuerySql = ObReaderUtils.buildAppendQuerySql(context, queryTemplate);
         LOG.warn("start table scan key : {}", context.getIndexName() == null ? "primary" : context.getIndexName());
         context.setQuerySql(getFirstQuerySql);
         boolean firstQuery = true;
@@ -189,7 +193,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
                 }
             } catch (Throwable e) {
                 if (retryLimit == ++retryCount) {
-                    throw RdbmsException.asQueryException(ObReaderUtils.databaseType, new Exception(e),
+                    throw RdbmsException.asQueryException(ObReaderUtils.DATABASE_TYPE, new Exception(e),
                             context.getQuerySql(), context.getTable(), username);
                 }
                 LOG.error("read fail, retry count " + retryCount + ", sleep 60 second, save point:" +
@@ -232,7 +236,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             LOG.info("connection is alive, will reuse this connection.");
         } else {
             LOG.info("Create new connection for reader.");
-            conn = DBUtil.getConnection(ObReaderUtils.databaseType, jdbcUrl, username, password);
+            conn = DBUtil.getConnection(ObReaderUtils.DATABASE_TYPE, jdbcUrl, username, password);
             ObReaderUtils.initConn4Reader(conn, queryTimeoutSeconds);
             context.setConn(conn);
         }
@@ -292,7 +296,7 @@ public class ReaderTask extends CommonRdbmsReader.Task {
             ObReaderUtils.close(null, null, context.getConn());
             context.setConn(null);
             LOG.error("reader data fail", e);
-            throw RdbmsException.asQueryException(ObReaderUtils.databaseType, e, context.getQuerySql(),
+            throw RdbmsException.asQueryException(ObReaderUtils.DATABASE_TYPE, e, context.getQuerySql(),
                     context.getTable(), username);
         } finally {
             perfRecord.end();

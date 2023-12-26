@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.util.List;
 
 import com.alibaba.datax.plugin.reader.oceanbasev10reader.ext.ObReaderKey;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +45,7 @@ public class OceanBaseReader extends Reader {
         @Override
         public void preCheck() {
             init();
-            this.readerJob.preCheck(this.originalConfig, ObReaderUtils.databaseType);
+            this.readerJob.preCheck(this.originalConfig, ObReaderUtils.DATABASE_TYPE);
 
         }
 
@@ -51,11 +53,9 @@ public class OceanBaseReader extends Reader {
         public List<Configuration> split(int adviceNumber) {
             String splitPk = originalConfig.getString(Key.SPLIT_PK);
             List<String> quotedColumns = originalConfig.getList(Key.COLUMN_LIST, String.class);
-            if (splitPk != null && splitPk.length() > 0 && quotedColumns != null) {
-                String escapeChar = ObReaderUtils.isOracleMode(originalConfig.getString(ObReaderKey.OB_COMPATIBILITY_MODE))
-                    ? "\"" : "`";
-                if (!splitPk.startsWith(escapeChar) && !splitPk.endsWith(escapeChar)) {
-                    splitPk = escapeChar + splitPk + escapeChar;
+            if (StringUtils.isNotBlank(splitPk) && quotedColumns != null) {
+                if (ObReaderUtils.isEscapeMode(splitPk)) {
+                    splitPk = ObReaderUtils.wrapName(splitPk, ObReaderUtils.isOracleMode(originalConfig.getString(ObReaderKey.OB_COMPATIBILITY_MODE)));
                 }
                 for (String column : quotedColumns) {
                     if (column.equals(splitPk)) {
