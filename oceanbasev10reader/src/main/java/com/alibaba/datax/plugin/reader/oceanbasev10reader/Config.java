@@ -13,8 +13,4 @@ public interface Config {
 
     String RETRY_LIMIT = "retryLimit";
     int DEFAULT_RETRY_LIMIT = 10;
-
-    String SPLIT_SIZE = "splitSize";
-
-    String CONVERT_TO_NULL_IF_YEAR_VALUE_IS_NULL = "convertToNullIfYearValueIsNull";
 }
